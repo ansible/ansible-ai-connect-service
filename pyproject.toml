@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ansible-wisdom"
 description = "Ansible Wisdom Service"
 readme = "README.rst"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",
@@ -17,3 +17,10 @@ dependencies = [
     'social-auth-app-django',
 ]
 dynamic = ["version"]
+
+[tool]
+
+[tool.black]
+line-length = 100
+fast = true
+skip-string-normalization = true
