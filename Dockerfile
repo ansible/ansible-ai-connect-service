@@ -4,13 +4,15 @@ FROM pytorch/torchserve:latest-gpu
 RUN pip3 install transformers==4.21.1 torchserve
 USER model-server
 
+ARG MODEL_PATH=./model
+
 # copy model artifacts, custom handler and other dependencies
-COPY ./ansible_wisdom/model/handler.py /home/model-server/
+COPY ./torchserve/handler.py /home/model-server/
 COPY ./config.properties /home/model-server/
 # rg: do we need this?
 #COPY ./index_to_name.json /home/model-server/
 
-COPY ./model/wisdom.mar /home/model-server/model-store
+COPY ${MODEL_PATH}/wisdom.mar /home/model-server/model-store
 
 # expose health and prediction listener ports from the image
 EXPOSE 7080
