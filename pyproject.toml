@@ -13,12 +13,15 @@ classifiers = [
 ]
 dependencies = [
     "django",
-    'djangorestframework',
-    'social-auth-app-django',
+    "djangorestframework",
+    "social-auth-app-django",
 ]
 dynamic = ["version"]
 
 [tool]
+
+[tool.setuptools]
+packages = ["ansible_wisdom"]
 
 [tool.black]
 line-length = 100
