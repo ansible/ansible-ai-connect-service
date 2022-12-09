@@ -1,4 +1,7 @@
 MODEL_PATH ?= ./model/wisdom
+CONTAINER_RUNTIME ?= podman
+DOCKER_VOLUME_PATH ?= ${PWD}/model
+ENVIRONMENT ?= development
 
 model-archive:
 	python -m venv .venv
@@ -13,10 +16,10 @@ model-archive:
 	--export-path=${MODEL_PATH}
 
 container:
-	podman build -t wisdom:latest .
+	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -t wisdom:latest .
 
 run-server:
-	podman run -it --rm -p 7080:7080 --name=wisdom wisdom:latest
+	${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${DOCKER_VOLUME_PATH}:/home/model-server/model-store --name=wisdom wisdom:latest
 
 clean:
 	rm ${MODEL_PATH}/wisdom.mar
