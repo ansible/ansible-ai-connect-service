@@ -114,7 +114,7 @@ class TransformersClassifierHandler(BaseHandler):
 
             logger.info(f'past the prediction phase, not converting back to decoded {preds}')
 
-        # TODO may be missign a few steps here between this step and tokenizer
+        # TODO may be missing a few steps here between this step and tokenizer
         # output is a tensor of shape [1, ] .. so we need to get the first item
         output = self.tokenizer.tokenizer.decode(preds[0])
         result = ''
