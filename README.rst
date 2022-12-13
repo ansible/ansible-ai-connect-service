@@ -6,6 +6,8 @@ Note: This repository is under active development and is not yet ready for produ
 
 ##  Running server locally
 
+### Host
+
 1. Install all the dependencies using
 ```
 pip install -r requirements.txt
@@ -21,6 +23,29 @@ HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
 ```
 
 4. this will start the application at `http://127.0.0.1:8000/`
+
+### Container
+
+1. Specify the model location (default is `./model/wisdom`)
+```
+export MODEL_PATH=./model/wisdom
+```
+2. Generate the model archive
+```
+make mode-archive
+```
+3. Build the container image
+```
+make container
+```
+to produce a production container:
+```
+ENVIRONMENT=production make container
+```
+4. Run the server in dev mode
+```
+make run-server
+```
 
 ## Posting a request
 
