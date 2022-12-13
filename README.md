@@ -24,30 +24,19 @@ HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
 
 ### Container
 
-1. Specify the model location (default is `./model/wisdom`)
+1. Generate model archive, build container and run server
 ```bash
 export MODEL_PATH=./model/wisdom
-```
-2. Generate the model archive
-```bash
 make mode-archive
-```
-3. Build the container image
-```bash
 make container
-```
-to produce a production container:
-```bash
-ENVIRONMENT=production make container
-```
-4. Run the server in dev mode
-```bash
 make run-server
 ```
 
 ## Posting a request
 
 Post a request using curl
+
+### Host
 
 ```bash
 curl -X 'POST' \
@@ -56,6 +45,17 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   		"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"
+    }'
+```
+
+### Container
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/predictions/wisdom/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
     }'
 ```
 
