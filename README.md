@@ -1,8 +1,6 @@
-
 # Ansible Wisdom service
 
 Note: This repository is under active development and is not yet ready for production use.
-
 
 ##  Running server locally
 
@@ -16,8 +14,8 @@ pip install -r requirements.txt
 2. Copy the latest checkpoint under `.checkpoint/latest` directory within
 the root folder of the project, alternatively, edit the variable `ANSIBLE_WISDOM_AI_CHECKPOINT_PATH` in `ansible_wisdom/main/settings/development.py` file to point to the checkpoint location on disk.
 
-2. Run the server using
-```
+3. Run the server using
+```bash
 cd ansible_wisdom
 HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
 ```
@@ -27,23 +25,23 @@ HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
 ### Container
 
 1. Specify the model location (default is `./model/wisdom`)
-```
+```bash
 export MODEL_PATH=./model/wisdom
 ```
 2. Generate the model archive
-```
+```bash
 make mode-archive
 ```
 3. Build the container image
-```
+```bash
 make container
 ```
 to produce a production container:
-```
+```bash
 ENVIRONMENT=production make container
 ```
 4. Run the server in dev mode
-```
+```bash
 make run-server
 ```
 
@@ -51,7 +49,7 @@ make run-server
 
 Post a request using curl
 
-```
+```bash
 curl -X 'POST' \
   'http://127.0.0.1:8000/api/completions/' \
   -H 'accept: application/json' \
