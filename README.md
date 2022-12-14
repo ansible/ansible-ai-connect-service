@@ -49,14 +49,27 @@ curl -X 'POST' \
 ```
 
 ### Container
+
+:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when using podman-remote.
+
+Request:
 ```bash
 curl -X 'POST' \
-  'http://127.0.0.1:8000/predictions/wisdom/' \
+  'http://127.0.0.1:7080/predictions/wisdom/' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
         "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
     }'
+```
+
+Response:
+```json
+{
+  "predictions": [
+    "- name: ansible Convert instance config dict to a list\n      set_fact:\n        ansible_list: \"{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}\"\n      when: server.changed | bool\n"
+  ]
+}
 ```
 
 ## Test cases
