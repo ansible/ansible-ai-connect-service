@@ -32,6 +32,32 @@ make container
 make run-server
 ```
 
+### OpenShift
+
+1. Create new project
+```bash
+oc project <project name>
+```
+
+2. Assign privileged context to builder account (:warning: do not do this in production)
+```bash
+oc adm policy add-scc-to-user privileged system:serviceaccount:<project name>:builder
+```
+
+3. Build/deploy container and expose route
+```bash
+oc new-build  --strategy=docker --binary --name <app name>
+oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)'
+oc new-app <app name>
+oc expose svc/<app name>
+oc get route <app name>
+```
+
+4. (workaround) Set correct service port
+```bash
+oc patch route <app name> -p '{"spec":{"port":{"targetPort": "7080-tcp"}}}'
+```
+
 ## Posting a request
 
 Post a request using curl
@@ -48,7 +74,7 @@ curl -X 'POST' \
     }'
 ```
 
-### Container
+### Container / OpenShift
 
 :information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when using podman-remote.
 
