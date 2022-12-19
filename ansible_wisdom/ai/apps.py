@@ -1,16 +1,31 @@
-from ai.api.ansible.model import AnsibleModel
 from django.apps import AppConfig
 from django.conf import settings
+
+from .api.mode_mesh.base import ModelMeshClient
 
 
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
-    model = AnsibleModel()
+    model_mesh_client = None
 
     def ready(self) -> None:
-        checkpoint_location = settings.ANSIBLE_WISDOM_AI_CHECKPOINT_PATH
-        if not checkpoint_location:
-            raise ValueError("ANSIBLE_WISDOM_AI_CHECKPOINT_PATH is not set")
-        self.model.load_model(checkpoint_location)
+        if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
+            from .api.mode_mesh.grpc_client import GrpcClient
+
+            self.model_mesh_client = GrpcClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                management_url=settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
+            from .api.mode_mesh.http_client import HttpClient
+
+            self.model_mesh_client = HttpClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                management_url=settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
+            )
+        else:
+            raise ValueError(
+                f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
+            )
         return super().ready()
