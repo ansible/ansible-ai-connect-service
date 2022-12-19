@@ -11,16 +11,16 @@ Note: This repository is under active development and is not yet ready for produ
 pip install -r requirements.txt
 ```
 
-2. Copy the latest checkpoint under `.checkpoint/latest` directory within
+1. Copy the latest checkpoint under `.checkpoint/latest` directory within
 the root folder of the project, alternatively, edit the variable `ANSIBLE_WISDOM_AI_CHECKPOINT_PATH` in `ansible_wisdom/main/settings/development.py` file to point to the checkpoint location on disk.
 
-3. Run the server using
+1. Run the server using
 ```bash
 cd ansible_wisdom
 HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
 ```
 
-4. this will start the application at `http://127.0.0.1:8000/`
+1. this will start the application at `http://127.0.0.1:8000/`
 
 ### Container
 
@@ -34,27 +34,32 @@ make run-server
 
 ### OpenShift
 
+1. Generate model archive
+```bash
+make model-archive
+```
 1. Create new project
 ```bash
-oc project <project name>
+oc new-project <project name>
 ```
 
-2. Assign privileged context to builder account (:warning: do not do this in production)
+1. Assign privileged context to builder account (:warning: do not do this in production)
 ```bash
 oc adm policy add-scc-to-user privileged system:serviceaccount:<project name>:builder
 ```
 
-3. Build/deploy container and expose route
+1. Build/deploy container and expose route
 ```bash
-oc new-build  --strategy=docker --binary --name <app name>
+oc new-build --strategy=docker --binary --name <app name>
 oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)'
 oc new-app <app name>
 oc expose svc/<app name>
-oc get route <app name>
+oc get builds
 ```
 
-4. (workaround) Set correct service port
+1. (workaround) Set correct service port
 ```bash
+oc get route <app name>
 oc patch route <app name> -p '{"spec":{"port":{"targetPort": "7080-tcp"}}}'
 ```
 
