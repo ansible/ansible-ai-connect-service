@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "social_django",
     "ai",
 ]
 
@@ -50,6 +51,22 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = [
+    "social_core.backends.github.GithubOrganizationOAuth2",
+    "social_core.backends.github.GithubTeamOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# SOCIAL_AUTH_GITHUB_ORG_NAME = 'ansible'
+# SOCIAL_AUTH_GITHUB_TEAM_ID = 7011896
+# # Wisdom Eng Team : gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-eng
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
+
 
 ROOT_URLCONF = "main.urls"
 
@@ -123,3 +140,5 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+APPEND_SLASH = False

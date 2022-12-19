@@ -2,29 +2,20 @@
 
 Note: This repository is under active development and is not yet ready for production use.
 
-##  Running server locally
+## Running the server locally
 
-### Host
+1. Clone the repository and install all the dependencies
 
-1. Install all the dependencies using
-```
+```bash
 pip install -r requirements.txt
 ```
 
-1. Copy the latest checkpoint under `.checkpoint/latest` directory within
-the root folder of the project, alternatively, edit the variable `ANSIBLE_WISDOM_AI_CHECKPOINT_PATH` in `ansible_wisdom/main/settings/development.py` file to point to the checkpoint location on disk.
+1. Copy the model to the `MODEL_PATH` folder
 
-1. Run the server using
+1. Build the model archive, build the container and start the model mesh server
+
 ```bash
-cd ansible_wisdom
-HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python manage.py runserver
-```
-
-1. this will start the application at `http://127.0.0.1:8000/`
-
-### Container
-
-1. Generate model archive, build container and run server
+# Using container
 ```bash
 export MODEL_PATH=./model/wisdom
 make mode-archive
@@ -32,7 +23,7 @@ make container
 make run-server
 ```
 
-### OpenShift
+## Running the server on OpenShift
 
 1. Generate model archive
 ```bash
@@ -63,38 +54,25 @@ oc get route <app name>
 oc patch route <app name> -p '{"spec":{"port":{"targetPort": "7080-tcp"}}}'
 ```
 
-## Posting a request
+## Testing the completion API
 
-Post a request using curl
-
-### Host
-
-```bash
-curl -X 'POST' \
-  'http://127.0.0.1:8000/api/completions/' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  		"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"
-    }'
-```
-
-### Container / OpenShift
-
-:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when using podman-remote.
+:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when running the container using podman-remote.
 
 Request:
+
 ```bash
+# Post a request using curl
 curl -X 'POST' \
-  'http://127.0.0.1:7080/predictions/wisdom/' \
+  'http://127.0.0.1:8000/api/ai/completions/' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-        "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
+    "context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"
     }'
 ```
 
 Response:
+
 ```json
 {
   "predictions": [
@@ -104,7 +82,5 @@ Response:
 ```
 
 ## Test cases
-Work in progress
 
-## TODO
--
+Work in progress
