@@ -12,7 +12,7 @@ model-archive:
 	--version=1.0 \
 	--serialized-file=${MODEL_PATH}/pytorch_model.bin \
 	--handler=./torchserve/handler.py \
-	--extra-files "${MODEL_PATH}/added_tokens.json,${MODEL_PATH}/config.json,${MODEL_PATH}/merges.txt,${MODEL_PATH}/pytorch_model.bin,${MODEL_PATH}/special_tokens_map.json,${MODEL_PATH}/tokenizer.json,${MODEL_PATH}/tokenizer_config.json,${MODEL_PATH}/training_flags.json,${MODEL_PATH}/vocab.json,./ansible_wisdom/ai/api/ansible/tokenizer.py" \
+	--extra-files "${MODEL_PATH}/added_tokens.json,${MODEL_PATH}/config.json,${MODEL_PATH}/merges.txt,${MODEL_PATH}/pytorch_model.bin,${MODEL_PATH}/special_tokens_map.json,${MODEL_PATH}/tokenizer.json,${MODEL_PATH}/tokenizer_config.json,${MODEL_PATH}/training_flags.json,${MODEL_PATH}/vocab.json,./torchserve/tokenizer.py" \
 	--export-path=${MODEL_PATH}
 
 container:

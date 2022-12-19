@@ -15,11 +15,17 @@ pip install -r requirements.txt
 1. Build the model archive, build the container and start the model mesh server
 
 ```bash
-# Using container
-```bash
 export MODEL_PATH=./model/wisdom
 make mode-archive
 make container
+make run-server
+```
+
+:information_source: NOTE: to include the model archive in the container image (for running via podman-remote or on macOS)
+```bash
+export MODEL_PATH=./model/wisdom
+make mode-archive
+ENVIRONMENT=production make container
 make run-server
 ```
 
@@ -42,10 +48,9 @@ oc adm policy add-scc-to-user privileged system:serviceaccount:<project name>:bu
 1. Build/deploy container and expose route
 ```bash
 oc new-build --strategy=docker --binary --name <app name>
-oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)'
+oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)' --wait=true
 oc new-app <app name>
 oc expose svc/<app name>
-oc get builds
 ```
 
 1. (workaround) Set correct service port
