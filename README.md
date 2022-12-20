@@ -16,7 +16,7 @@ pip install -r requirements.txt
 
 ```bash
 export MODEL_PATH=./model/wisdom
-make mode-archive
+make model-archive
 make container
 make run-server
 ```
@@ -24,8 +24,9 @@ make run-server
 :information_source: NOTE: to include the model archive in the container image (for running via podman-remote or on macOS)
 ```bash
 export MODEL_PATH=./model/wisdom
-make mode-archive
-ENVIRONMENT=production make container
+export ENVIRONMENT=production
+make model-archive
+make container
 make run-server
 ```
 

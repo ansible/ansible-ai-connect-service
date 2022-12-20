@@ -1,6 +1,5 @@
-MODEL_PATH ?= ./model/wisdom
+MODEL_PATH ?= ${PWD}/model/wisdom
 CONTAINER_RUNTIME ?= podman
-DOCKER_VOLUME_PATH ?= ${PWD}/model
 ENVIRONMENT ?= development
 
 model-archive:
@@ -19,7 +18,11 @@ container:
 	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -t wisdom:latest .
 
 run-server:
-	${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${DOCKER_VOLUME_PATH}:/home/model-server/model-store --name=wisdom wisdom:latest
+	@if [ "${ENVIRONMENT}" != "production" ]; then\
+		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${MODEL_PATH}/wisdom.mar:/home/model-server/model-store/wisdom.mar --name=wisdom wisdom:latest;\
+	else\
+		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 --name=wisdom wisdom:latest;\
+	fi
 
 clean:
 	rm ${MODEL_PATH}/wisdom.mar

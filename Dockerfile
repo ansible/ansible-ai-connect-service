@@ -33,6 +33,6 @@ VOLUME /home/model-server/model-store
 
 FROM base as production
 
-ARG MODEL_PATH=./model
+ARG MODEL_PATH=./model/wisdom
 
 COPY --chown=1000:0 ${MODEL_PATH}/wisdom.mar /home/model-server/model-store
