@@ -12,9 +12,9 @@ Note: This repository is under active development and is not yet ready for produ
 pip install -r requirements.txt
 ```
 
-3. Run the server using
+2. Run the server using
 
-1. Copy the model in `MODEL_PATH` folder and start the model mesh server
+- Copy the model in `MODEL_PATH` folder and start the model mesh server
 
 ```bash
 # Using container
@@ -25,7 +25,7 @@ make container
 make run-server
 ```
 
-2. Test if the model mesh server is running
+3. Test if the model mesh server is running
 :information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when using podman-remote.
 
 Request:
@@ -50,9 +50,9 @@ Response:
 }
 ```
 
-3. Run the `ansible-wisdom-api` server
+4. Run the `ansible-wisdom-api` server
 
-- Update the `ASNIBLE_AI_MODEL_MESH_HOST` in `ansible_wisdom/main/settings/development.py` file to point to the model mesh server.
+- Update the `ANSIBLE_AI_MODEL_MESH_HOST` in `ansible_wisdom/main/settings/development.py` file to point to the model mesh server.
 
 - Run the server
 
@@ -63,7 +63,7 @@ python manage.py runserver
 
 - This will start the application at `http://127.0.0.1:8000/`
 
-4. Test the server
+5. Test the server
 
 Request:
 
