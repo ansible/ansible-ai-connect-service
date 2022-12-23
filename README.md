@@ -2,68 +2,67 @@
 
 Note: This repository is under active development and is not yet ready for production use.
 
-## Running server locally
+## Running the server locally
 
-### Host
-
-1. Clone the repository and install all the dependencies using
+1. Clone the repository and install all the dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run the server using
+1. Copy the model to the `MODEL_PATH` folder
 
-- Copy the model in `MODEL_PATH` folder and start the model mesh server
+1. Build the model archive, build the container and start the model mesh server
 
-```bash
-# Using container
 ```bash
 export MODEL_PATH=./model/wisdom
-make mode-archive
+make model-archive
 make container
 make run-server
 ```
 
-3. Test if the model mesh server is running
-:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when using podman-remote.
-
-Request:
-
+:information_source: NOTE: to include the model archive in the container image (for running via podman-remote or on macOS)
 ```bash
-curl -X 'POST' \
-  'http://127.0.0.1:7080/predictions/wisdom/' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
-    }'
+export MODEL_PATH=./model/wisdom
+export ENVIRONMENT=production
+make model-archive
+make container
+make run-server
 ```
 
-Response:
+## Running the server on OpenShift
 
-```json
-{
-  "predictions": [
-    "- name: ansible Convert instance config dict to a list\n      set_fact:\n        ansible_list: \"{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}\"\n      when: server.changed | bool\n"
-  ]
-}
-```
-
-4. Run the `ansible-wisdom-api` server
-
-- Update the `ANSIBLE_AI_MODEL_MESH_HOST` in `ansible_wisdom/main/settings/development.py` file to point to the model mesh server.
-
-- Run the server
-
+1. Generate model archive
 ```bash
-cd ansible_wisdom
-python manage.py runserver
+make model-archive
+```
+1. Create new project
+```bash
+oc new-project <project name>
 ```
 
-- This will start the application at `http://127.0.0.1:8000/`
+1. Assign privileged context to builder account (:warning: do not do this in production)
+```bash
+oc adm policy add-scc-to-user privileged system:serviceaccount:<project name>:builder
+```
 
-5. Test the server
+1. Build/deploy container and expose route
+```bash
+oc new-build --strategy=docker --binary --name <app name>
+oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)' --wait=true
+oc new-app <app name>
+oc expose svc/<app name>
+```
+
+1. (workaround) Set correct service port
+```bash
+oc get route <app name>
+oc patch route <app name> -p '{"spec":{"port":{"targetPort": "7080-tcp"}}}'
+```
+
+## Testing the completion API
+
+:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when running the container using podman-remote.
 
 Request:
 
@@ -82,18 +81,12 @@ Response:
 
 ```json
 {
-    "predictions": [
-        "- name: Install nginx and nodejs 12 Packages\n  apt:\n    name:\n      - nginx\n      - nodejs\n    state: latest\n"
-    ]
+  "predictions": [
+    "- name: ansible Convert instance config dict to a list\n      set_fact:\n        ansible_list: \"{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}\"\n      when: server.changed | bool\n"
+  ]
 }
 ```
-
-### Container
 
 ## Test cases
 
 Work in progress
-
-## TODO
-
--
