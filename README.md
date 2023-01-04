@@ -4,21 +4,41 @@ Note: This repository is under active development and is not yet ready for produ
 
 ## Running the server locally
 
-1. Clone the repository and install all the dependencies
+1. Clone the repository, create a virtual environment and install all the dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+```
+
+### Install model server dependencies
+:information_source: NOTE: Be sure to follow any post-installation steps suggested by the OpenJDK installer
+
+```bash
+brew install openjdk
 ```
 
 1. Copy the model to the `MODEL_PATH` folder
 
-1. Build the model archive, build the container and start the model mesh server
+1. Build the model archive
 
 ```bash
 export MODEL_PATH=./model/wisdom
 make model-archive
+```
+
+1. Run the server
+
+### Non-container
+```bash
+make run-model-server
+```
+
+### Container
+```bash
 make container
-make run-server
+make run-model-server-container
 ```
 
 :information_source: NOTE: to include the model archive in the container image (for running via podman-remote or on macOS)
@@ -27,7 +47,7 @@ export MODEL_PATH=./model/wisdom
 export ENVIRONMENT=production
 make model-archive
 make container
-make run-server
+make run-model-server-container
 ```
 
 ## Running the server on OpenShift

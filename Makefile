@@ -3,9 +3,6 @@ CONTAINER_RUNTIME ?= podman
 ENVIRONMENT ?= development
 
 model-archive:
-	python -m venv .venv
-	(source .venv/bin/activate)
-	pip install -r requirements-dev.txt
 	torch-model-archiver -f \
 	--model-name=wisdom \
 	--version=1.0 \
@@ -17,12 +14,18 @@ model-archive:
 container:
 	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -t wisdom:latest .
 
-run-server:
+run-model-server-container:
 	@if [ "${ENVIRONMENT}" != "production" ]; then\
 		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${MODEL_PATH}/wisdom.mar:/home/model-server/model-store/wisdom.mar --name=wisdom wisdom:latest;\
 	else\
 		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 --name=wisdom wisdom:latest;\
 	fi
+
+run-model-server:
+	torchserve --start --ts-config=./config.properties --models wisdom=wisdom.mar --model-store ./model/wisdom
+
+stop-model-server:
+	torchserve --stop
 
 clean:
 	rm ${MODEL_PATH}/wisdom.mar
