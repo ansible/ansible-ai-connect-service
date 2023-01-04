@@ -5,9 +5,8 @@ TAG=latest
 
 model-archive:
 	python -m venv .venv
-	(source .venv/bin/activate)
-	pip install -r requirements-dev.txt
-	torch-model-archiver -f \
+	.venv/bin/pip install -r requirements-dev.txt
+	.venv/bin/torch-model-archiver -f \
 	--model-name=wisdom \
 	--version=1.0 \
 	--serialized-file=${MODEL_PATH}/pytorch_model.bin \
