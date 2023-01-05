@@ -27,7 +27,9 @@ The Django application depends on a separate model server to perform the task su
     make run-django
     ```
 
-## Running the model server locally
+## Running the model server
+
+### Running the model server in docker
 
 1. Clone the repository and install all the dependencies
 
@@ -58,6 +60,74 @@ The Django application depends on a separate model server to perform the task su
 :information_source: NOTE: If you are running the container on RHEL, SELinux will prevent you from accessing the GPUs from the container. To work around this, for now, you can run `make run-model-server SECURITY_OPT="--security-opt=label=disable"`.
 
 :information_source: NOTE: To use a tag other than `latest`, pass a `TAG=` argument to `make model-container` and `make run-model-server`.
+
+### Running the model server on Mac OS
+
+(Tested on 2021 Macbook Pro with M1 Pro)
+
+* Rebuild wisdom.mar
+ 
+ Run the `make model-archive` ith this modified [torchserve/handler.py](torchserve/handler.py#L142)
+
+* Install and start the torchserve server
+
+```
+git clone git@github.com:pytorch/serve.git torchserve
+cd torchserve
+python3 -m venv .venv
+source .venv/bin/activate
+
+# The following is adapted from README of https://github.com/pytorch/serve 
+python ./ts_scripts/install_dependencies.py
+pip install torchserve torch-model-archiver torch-workflow-archiver
+
+### Drop in wisdom model
+pip install transformers==4.21.1
+mkdir ./model-dir
+# cp wisdom.mar to ./model-dir
+
+# Start the torchserve
+# will serve the 3 default ports 8080-8082 
+# refer to https://pytorch.org/serve/configuration.html#configure-torchserve-listening-address-and-port
+TS_MODEL_SERVER_HOME=. torchserve  --model-store ./model-dir/ --start --models all
+```
+
+* Test the serve using curl
+
+```
+curl -s -X 'POST' \
+  'http://127.0.0.1:8080/predictions/wisdom' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
+    }'
+
+```
+
+* Get back a successful response
+
+```
+- name: Install nginx and nodejs 12 Packages
+  apt:
+    name:
+      - nginx
+      - nodejs
+    state: latest
+```
+
+* Scale down workers to save resources
+
+```
+curl -v -X PUT "http://localhost:8081/models/wisdom?min_worker=1&synchronous=true"
+curl -v -X PUT "http://localhost:8081/models/wisdom?max_worker=1&synchronous=true"
+```
+
+* To stop the server
+
+`torchserve --stop`
+
+
 
 ## Running the server on OpenShift
 

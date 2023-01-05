@@ -137,6 +137,9 @@ class TransformersClassifierHandler(BaseHandler):
         :param context: Initial context contains model server system properties.
         :return: prediction output
         """
+        logger.info(f'handle data: {data}')
+        # yet to determine why this data structure is different when running mac local torchserve
+        data = data[0].get('body').get('instances')
         model_input = self.preprocess(data)
         model_output = self.inference(model_input)
         return self.postprocess([model_output])
