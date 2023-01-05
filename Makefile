@@ -21,7 +21,7 @@ model-container:
 # Start torchserve container
 run-model-server:
 	@if [ "${ENVIRONMENT}" != "production" ]; then\
-		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${MODEL_PATH}/wisdom.mar:/home/model-server/model-store/wisdom.mar --name=wisdom wisdom:${TAG};\
+		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 -v ${MODEL_PATH}/wisdom.mar:/home/model-server/model-store/wisdom.mar:Z --name=wisdom wisdom:${TAG};\
 	else\
 		${CONTAINER_RUNTIME} run -it --gpus all --rm -p 7080:7080 ${SECURITY_OPT} --name=wisdom wisdom:${TAG};\
 	fi
