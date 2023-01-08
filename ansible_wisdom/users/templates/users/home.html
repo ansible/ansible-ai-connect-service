@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Ansible Wisdom{% endblock title %}
+
+{% block content %}
+    <h2>Ansible Wisdom</h2>
+    <p>Thank you for participating in the Ansible Wisdom pilot.</p>
+    {% if user.is_authenticated %}
+    <p>You are signed in as {{user.username}} ({{user.email}}).</p>
+    <p>Access the <a href={{pilot_docs_url}} target="_blank">pilot test plan</a> to begin.</p>
+    <p><b>Authentication Token:</b> {{drf_token}}</p>
+    <br><br>
+    <a href="{% url 'logout' %}">Logout</a>
+    {% else %}
+    <p>You are not signed in.</p>
+    <a href="{% url 'login' %}">Login</a>
+    {% endif %}
+{% endblock content %}

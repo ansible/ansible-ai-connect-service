@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +39,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    'rest_framework.authtoken',
     "social_django",
+    "users",
     "ai",
 ]
 
@@ -50,21 +53,38 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware"
 ]
 
 AUTHENTICATION_BACKENDS = [
-    "social_core.backends.github.GithubOrganizationOAuth2",
+    # "social_core.backends.github.GithubOrganizationOAuth2",
     "social_core.backends.github.GithubTeamOAuth2",
+    # "social_core.backends.github.GithubOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-# SOCIAL_AUTH_GITHUB_ORG_NAME = 'ansible'
-# SOCIAL_AUTH_GITHUB_TEAM_ID = 7011896
-# # Wisdom Eng Team : gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-eng
+AUTH_USER_MODEL = "users.User"
+
+LOGIN_REDIRECT_URL = 'home'
+
+# To be updated with URL to pilot test plan
+PILOT_DOCS_URL = os.environ.get('PILOT_DOCS_URL', 'https://drive.google.com/drive/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg')
+
+SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
+SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
+SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
+SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+# # Wisdom Eng Team : gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'users.auth.BearerTokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated' # comment out to allow unauthenticated API access
+    ],
 }
 
 
@@ -73,7 +93,7 @@ ROOT_URLCONF = "main.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -81,6 +101,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "social_django.context_processors.backends",
             ],
         },
     },
