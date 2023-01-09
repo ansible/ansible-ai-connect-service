@@ -3,7 +3,7 @@ FROM pytorch/torchserve-nightly:latest-gpu as base
 USER 0
 
 # install dependencies
-RUN pip3 install transformers==4.21.1 torchserve && \
+RUN pip3 install transformers==4.21.2 && \
      chgrp -R 0 /home/model-server && \
      chmod -R g=u /home/model-server
 
@@ -22,10 +22,8 @@ ENV TRANSFORMERS_CACHE=~/.cache
 CMD ["torchserve", \
      "--start", \
      "--ts-config=/home/model-server/config.properties", \
-     "--models", \
-     "wisdom=wisdom.mar", \
-     "--model-store", \
-     "/home/model-server/model-store"]
+     "--models=wisdom=wisdom.mar", \
+     "--model-store=/home/model-server/model-store"]
 
 FROM base as development
 
