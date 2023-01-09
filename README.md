@@ -155,31 +155,31 @@ Review the screen recording for instruction on configuring the extension to acce
 ### Deploy OpenShift
 1. Download OpenShift installer
 2. From directory containing `install-config.yaml`:
-```bash
-./openshift-install create cluster
-```
+    ```bash
+    ./openshift-install create cluster
+    ```
 
 ### Preperatation
 1. (TODO): Create namespaces
 2. (TODO): Set variables required for deployment
-```bash
-$AWS_HOSTED_ZONE_ID
-$AWS_ACCESS_KEY_ID
-$AWS_HOSTED_ZONE_ID
-$AWS_ACCESS_KEY_ID
-$AWS_SECRET_ACCESS_KEY
-$PULL_SECRET
-$PUBLIC_SSH_KEY
-```
+    ```bash
+    $AWS_HOSTED_ZONE_ID
+    $AWS_ACCESS_KEY_ID
+    $AWS_HOSTED_ZONE_ID
+    $AWS_ACCESS_KEY_ID
+    $AWS_SECRET_ACCESS_KEY
+    $PULL_SECRET
+    $PUBLIC_SSH_KEY
+    ```
 
 ### Install operators
 1. Install cert-manager operator
 1. Install Node Feature Discovery operator
 1. Install NVIDIA GPU operator
 1. Create cluster GPU policy
-```bash
-oc apply -f deployment/gpu-cluster-policy.yaml
-```
+    ```bash
+    oc apply -f deployment/gpu-cluster-policy.yaml
+    ```
 
 ### Configure DNS
 1. Create a new DNS domain (under testing.ansible.com: wisdom.testing.ansible.com)
@@ -190,36 +190,36 @@ oc apply -f deployment/gpu-cluster-policy.yaml
 
 ### Configure cert-manager & create certificate
 1. Create secret containing AWS credentials used by cert-manager to create DNS entries as part of ACME challenge
-```bash
-oc apply -f deployment/prod-route53-credentials-secret
-```
+    ```bash
+    oc apply -f deployment/prod-route53-credentials-secret
+    ```
 1. Create production and staging cluster certificate issuers
-```bash
-oc apply -f deployment/*-clusterissuers.yaml
-```
+    ```bash
+    oc apply -f deployment/*-clusterissuers.yaml
+    ```
 1. Generate certificate
-```bash
-oc apply -f deployment/certificate.yaml
-```
+    ```bash
+    oc apply -f deployment/certificate.yaml
+    ```
 1. Set default ingress cert
-```bash
-oc patch ingresscontroller.operator default \
-     --type=merge -p \
-     '{"spec":{"defaultCertificate": {"name": "default-ingress"}}}' \
-     -n openshift-ingress-operator
-```
+    ```bash
+    oc patch ingresscontroller.operator default \
+        --type=merge -p \
+        '{"spec":{"defaultCertificate": {"name": "default-ingress"}}}' \
+        -n openshift-ingress-operator
+    ```
 1. Enable Edge TLS
-```bash
-oc patch ingresscontroller.operator default --type=merge -p '{"spec":{"tls": {"insecureEdgeTerminationPolicy": "Redirect", "termination": "edge"}}}' -n openshift-ingress-operator 
-```
+    ```bash
+    oc patch ingresscontroller.operator default --type=merge -p '{"spec":{"tls": {"insecureEdgeTerminationPolicy": "Redirect", "termination": "edge"}}}' -n openshift-ingress-operator 
+    ```
 
 ### Cleanup
 
 If you installed OpenShift via IPI, you should delete the AWS credentials from the cluster
 
-```bash
-oc delete secret aws-creds -n kube-system
-```
+    ```bash
+    oc delete secret aws-creds -n kube-system
+    ```
 
 ## Test cases
 
