@@ -1,0 +1,38 @@
+apiVersion: v1
+baseDomain: wisdom.testing.ansible.com
+compute:
+- architecture: amd64
+  hyperthreading: Enabled
+  name: worker
+  platform:
+    aws:
+      type: p3.2xlarge
+  replicas: 2
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  platform:
+    aws:
+      type: m5.xlarge
+  replicas: 3
+metadata:
+  creationTimestamp: null
+  name: dev
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16
+  networkType: OpenShiftSDN
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  aws:
+    region: us-east-2
+publish: External
+pullSecret: $PULL_SECRET
+sshKey: |
+  $PUBLIC_SSH_KEY
+

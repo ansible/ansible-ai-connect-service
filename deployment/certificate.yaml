@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: default-ingress
+  namespace: openshift-ingress
+spec:
+  secretName: default-ingress-cert
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  commonName: "wisdom.testing.ansible.com"
+  dnsNames:
+    - "wisdom.testing.ansible.com"
+    - "*.wisdom.testing.ansible.com"
+    - "apps.dev.wisdom.testing.ansible.com"
+    - "*.apps.dev.wisdom.testing.ansible.com"
