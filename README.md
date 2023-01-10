@@ -6,12 +6,26 @@ This repo contains a Django application that serves Ansible task suggestions for
 
 The Django application depends on a separate model server to perform the task suggestion predictions. There is a torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django application at the dev model server running at wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com as described below.
 
-## Running the Django application
+## Running the Django application (from container)
+
+1. Build the container
+
+    ```bash
+    make ansible-wisdom-container
+    ```
+
+2. Start the container
+
+    ```bash
+    run-django-container
+    ```
+
+## Running the Django application (from source)
 
 1. Clone the repository and install all the dependencies
 
     ```bash
-    pip install -r requirements.txt
+    pip install -r ansible_django/requirements.txt
     ```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
