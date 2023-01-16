@@ -136,3 +136,4 @@ model/**
 # ignore .vscode
 .vscode/
 
+logs/

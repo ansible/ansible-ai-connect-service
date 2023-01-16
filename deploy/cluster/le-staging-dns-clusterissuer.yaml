@@ -1,0 +1,28 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: gebhardt@redhat.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      name: letsencrypt-staging
+    # Add a single challenge solver, HTTP01 using nginx
+    solvers:
+    - selector:
+        dnsZones:
+          - "wisdom.testing.ansible.com"
+          - "apps.dev.wisdom.testing.ansible.com"
+      dns01:
+        route53:
+          region: us-east-2
+          hostedZoneID: $AWS_HOSTED_ZONE_ID
+          accessKeyID: $AWS_ACCESS_KEY_ID
+          secretAccessKeySecretRef:
+            name: prod-route53-credentials-secret
+            key: secret-access-key

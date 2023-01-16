@@ -1,0 +1,77 @@
+apiVersion: v1
+items:
+- apiVersion: nvidia.com/v1
+  kind: ClusterPolicy
+  metadata:
+    name: gpu-cluster-policy
+  spec:
+    daemonsets:
+      rollingUpdate:
+        maxUnavailable: "1"
+      updateStrategy: RollingUpdate
+    dcgm:
+      enabled: true
+    dcgmExporter:
+      config:
+        name: ""
+      enabled: true
+      serviceMonitor:
+        enabled: true
+    devicePlugin:
+      config:
+        default: ""
+        name: ""
+      enabled: true
+    driver:
+      certConfig:
+        name: ""
+      enabled: true
+      kernelModuleConfig:
+        name: ""
+      licensingConfig:
+        configMapName: ""
+        nlsEnabled: false
+      repoConfig:
+        configMapName: ""
+      virtualTopology:
+        config: ""
+    gfd:
+      enabled: true
+    mig:
+      strategy: single
+    migManager:
+      enabled: true
+    nodeStatusExporter:
+      enabled: true
+    operator:
+      defaultRuntime: crio
+      initContainer: {}
+      runtimeClass: nvidia
+      use_ocp_driver_toolkit: true
+    sandboxDevicePlugin:
+      enabled: true
+    sandboxWorkloads:
+      defaultWorkload: container
+      enabled: false
+    toolkit:
+      enabled: true
+      installDir: /usr/local/nvidia
+    validator:
+      plugin:
+        env:
+        - name: WITH_WORKLOAD
+          value: "true"
+    vfioManager:
+      enabled: true
+    vgpuDeviceManager:
+      config:
+        default: default
+      enabled: true
+    vgpuManager:
+      enabled: false
+  status:
+    namespace: nvidia-gpu-operator
+    state: ready
+kind: List
+metadata:
+  resourceVersion: ""

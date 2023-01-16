@@ -1,0 +1,24 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: wisdom
+  namespace: wisdom-dev
+  labels:
+    app: wisdom
+    app.kubernetes.io/component: wisdom
+    app.kubernetes.io/instance: wisdom
+  annotations:
+    openshift.io/host.generated: 'true'
+spec:
+  host: wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com
+  to:
+    kind: Service
+    name: wisdom
+    weight: 100
+  port:
+    targetPort: 7080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
+
