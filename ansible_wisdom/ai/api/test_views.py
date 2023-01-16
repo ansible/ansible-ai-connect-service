@@ -16,7 +16,7 @@ class CompletionsTestCase(TestCase):
         c = Client()
         with patch.object(apps.get_app_config('ai'), 'model_mesh_client', DummyMeshClient()):
             r = c.post('/api/ai/completions/', {"instances": []})
-            self.assertTrue(r.status_code == 200)
+            self.assertEqual(r.status_code, 200)
             for _ in range(10):
                 r = c.post('/api/ai/completions/', {"instances": []})
-            self.assertTrue(r.status_code == 429)
+            self.assertEqual(r.status_code, 429)
