@@ -170,7 +170,7 @@ Work in progress
 
 ## Development enviroment
 
-You can deploy a developmenet environment using `docker-compose` or `podman-compose`.
+You can deploy a development environment using `docker-compose` or `podman-compose`.
 
 If you're system use SELinux, you must manually create the `db_data` directory in the
 base directory and set the `container_file_t` the `db_data` and `ansible_wisdom` directories:
@@ -190,5 +190,7 @@ or `podman-compose`:
 ``` bash
 $ podman-compose -f tools/docker-compose/compose.yaml up
 ```
+
+The Django services listen on 127.0.0.1:8000.
 
 There is no pytorch service, you should adjust the `ANSIBLE_AI_MODEL_MESH_HOST` configuration key to point on an existing service.
