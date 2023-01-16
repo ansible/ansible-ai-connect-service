@@ -12,4 +12,3 @@ spec:
   source: redhat-operators
   sourceNamespace: openshift-marketplace
   startingCSV: nfd.4.11.0-202211091549
-

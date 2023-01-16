@@ -35,4 +35,3 @@ publish: External
 pullSecret: $PULL_SECRET
 sshKey: |
   $PUBLIC_SSH_KEY
-

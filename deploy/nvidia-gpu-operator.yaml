@@ -12,4 +12,3 @@ spec:
   source: certified-operators
   sourceNamespace: openshift-marketplace
   startingCSV: gpu-operator-certified.v22.9.1
-
