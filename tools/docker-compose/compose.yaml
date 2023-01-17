@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  django: &django
+    build:
+      context: $PWD
+      dockerfile: ansible_wisdom.Containerfile
+    depends_on:
+      - migrate
+      - redis
+      - db
+    restart: always
+    volumes:
+      - $PWD/ansible_wisdom:/opt/ansible_wisdom
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=main.settings.development
+    command: bash -c "/usr/bin/python3 /opt/ansible_wisdom/manage.py migrate --noinput && /usr/bin/python3 /opt/ansible_wisdom/manage.py runserver 0.0.0.0:8000"
+  redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - dbnet
+    expose:
+      - 6379
+  db:
+    image: docker.io/library/postgres:alpine
+    environment:
+      - POSTGRES_PASSWORD=wisdom
+      - POSTGRES_DB=wisdom
+      - POSTGRES_USER=wisdom
+    restart: always
+    networks:
+      - dbnet
+# Disabled because this doesn't work properly on MacOS.
+# [33] CONTEXT:  writing block 0 of relation base/16384/2658
+# 2023-01-17 21:46:56.579 UTC [33] LOG:  out of file descriptors: No file descriptors available; release and retry
+#    volumes:
+#      - $PWD/db_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+networks:
+  dbnet:

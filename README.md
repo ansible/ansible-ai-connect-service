@@ -6,12 +6,26 @@ This repo contains a Django application that serves Ansible task suggestions for
 
 The Django application depends on a separate model server to perform the task suggestion predictions. There is a torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django application at the dev model server running at wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com as described below.
 
-## Running the Django application
+## Running the Django application (from container)
+
+1. Build the container
+
+    ```bash
+    make ansible-wisdom-container
+    ```
+
+2. Start the container
+
+    ```bash
+    make run-django-container
+    ```
+
+## Running the Django application (from source)
 
 1. Clone the repository and install all the dependencies
 
     ```bash
-    pip install -r requirements.txt
+    pip install -r ansible_wisdom/requirements.txt
     ```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
@@ -153,3 +167,30 @@ Review the screen recording for instruction on configuring the extension to acce
 ## Test cases
 
 Work in progress
+
+## Development enviroment
+
+You can deploy a development environment using `docker-compose` or `podman-compose`.
+
+If you're system use SELinux, you must manually create the `db_data` directory in the
+base directory and set the `container_file_t` the `db_data` and `ansible_wisdom` directories:
+
+``` bash
+$ mkdir db_data; chcon -t container_file_t -R db_data/ ansible_wisdom/
+```
+
+You can then spawn the environment using the `docker-compose`:
+
+``` bash
+$ docker compose -f tools/docker-compose/compose.yaml up
+```
+
+or `podman-compose`:
+
+``` bash
+$ podman-compose -f tools/docker-compose/compose.yaml up
+```
+
+The Django services listen on 127.0.0.1:8000.
+
+There is no pytorch service, you should adjust the `ANSIBLE_AI_MODEL_MESH_HOST` configuration key to point on an existing service.

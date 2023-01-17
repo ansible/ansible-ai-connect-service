@@ -15,7 +15,10 @@ model-archive:
 	--export-path=${MODEL_PATH}
 
 model-container:
-	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -t wisdom:${TAG} .
+	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -f torchserve.Containerfile -t wisdom:${TAG} .
+
+ansible-wisdom-container:
+	${CONTAINER_RUNTIME} build -f ansible_wisdom.Containerfile -t ansible_wisdom .
 
 # Start torchserve container
 run-model-server:
@@ -28,6 +31,9 @@ run-model-server:
 # Run Django application
 run-django:
 	python ansible_wisdom/manage.py runserver
+
+run-django-container:
+	${CONTAINER_RUNTIME} run -it --rm -p 8000:8000 --name ansible-wisdom localhost/ansible_wisdom
 
 clean:
 	rm ${MODEL_PATH}/wisdom.mar
