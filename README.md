@@ -17,7 +17,7 @@ The Django application depends on a separate model server to perform the task su
 2. Start the container
 
     ```bash
-    run-django-container
+    make run-django-container
     ```
 
 ## Running the Django application (from source)
