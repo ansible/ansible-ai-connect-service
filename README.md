@@ -182,7 +182,7 @@ $ mkdir db_data; chcon -t container_file_t -R db_data/ ansible_wisdom/
 You can then spawn the environment using the `docker-compose`:
 
 ``` bash
-$ podman compose -f tools/docker-compose/compose.yaml up
+$ docker compose -f tools/docker-compose/compose.yaml up
 ```
 
 or `podman-compose`:
