@@ -27,6 +27,8 @@ DATABASES = {
         "HOST": "db",
     }
 }
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHES = {
