@@ -80,6 +80,9 @@ SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle'
+    ],
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'users.auth.BearerTokenAuthentication',

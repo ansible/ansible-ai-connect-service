@@ -3,6 +3,7 @@ import logging
 
 from django.apps import apps
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from .data.data_model import APIPayload, ModelMeshPayload
@@ -11,7 +12,13 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+class CompletionsUserRateThrottle(UserRateThrottle):
+    rate = '10/minute'
+
+
 class Completions(APIView):
+    throttle_classes = [CompletionsUserRateThrottle]
+
     def post(self, request) -> Response:
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         payload = APIPayload(**request.data)
