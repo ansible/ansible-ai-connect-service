@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'main/base.html' %}
 
 {% block title %}Ansible Wisdom{% endblock title %}
 
 {% block content %}
-    <h2>Ansible Wisdom</h2>
+    <h1>Ansible Wisdom</h1>
     <p>Thank you for participating in the Ansible Wisdom pilot.</p>
     {% if user.is_authenticated %}
     <p>You are signed in as {{user.username}} ({{user.email}}).</p>

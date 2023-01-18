@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'main/base.html' %}
 
 {% block title %}Ansible Wisdom - Login{% endblock title %}
 
 {% block content %} 
-    <h2>Ansible Wisdom - Login</h2>
+    <h1>Ansible Wisdom - Login</h1>
     <p>Access to the Ansible Wisdom pilot is restricted. Contact XXX for onboarding.</p>
     <a href="{% url 'social:begin' 'github-team' %}">Login with GitHub</a><br>
 {% endblock content %}

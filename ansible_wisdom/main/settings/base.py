@@ -65,7 +65,9 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = "users.User"
 
+LOGIN_URL='login'
 LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
 
 # To be updated with URL to pilot test plan
 PILOT_DOCS_URL = os.environ.get('PILOT_DOCS_URL', 'https://drive.google.com/drive/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg')

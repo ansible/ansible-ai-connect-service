@@ -37,5 +37,5 @@ urlpatterns = [
     # Temp Wisdom home page to share token for pilot
     path('', user_views.home, name='home'),
     path('login/', auth_views.LoginView.as_view(), name='login'),
-    path('accounts/logout/', lambda request: auth_views.logout_then_login(request, "/"), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
