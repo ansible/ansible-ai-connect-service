@@ -16,17 +16,26 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
+from django.contrib.auth import views as auth_views
 
 from .api import views as main_views
+from users import views as user_views
 
-router = routers.DefaultRouter()
-router.register(r'users', main_views.UserViewSet)
-router.register(r'groups', main_views.GroupViewSet)
+# router = routers.DefaultRouter()
+# router.register(r'users', main_views.UserViewSet)
+# router.register(r'groups', main_views.GroupViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # path('', include(router.urls)),
     path("admin/", admin.site.urls),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('', include('social_django.urls', namespace='social')),  # still need to hook the views up
+
+    # add the GitHub OAuth redirect URL /complete/github/
+    path('', include('social_django.urls', namespace='social')),
+        
     path("api/", include("ai.api.urls")),
+    
+    # Temp Wisdom home page to share token for pilot
+    path('', user_views.home, name='home'),
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

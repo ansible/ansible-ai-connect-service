@@ -1,8 +1,11 @@
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
+
 from rest_framework import permissions, viewsets
 
 from ..serializers import GroupSerializer, UserSerializer
 
+User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
