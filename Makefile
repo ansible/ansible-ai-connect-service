@@ -4,9 +4,9 @@ TAG=latest
 
 # Choose between docker and podman based on what is available 
 ifeq (, $(shell which podman))
-	CONTAINER_RUNTIME = docker
+	CONTAINER_RUNTIME ?= docker
 else
-	CONTAINER_RUNTIME = podman
+	CONTAINER_RUNTIME ?= podman
 endif
 
 model-archive:
