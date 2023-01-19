@@ -204,6 +204,11 @@ or `podman-compose`:
 $ podman-compose -f tools/docker-compose/compose.yaml up
 ```
 
-The Django services listen on 127.0.0.1:8000.
+Once the service is running, you can monitor your Django application with:
+
+- Docker: `docker logs -f docker-compose_django_1`
+- Podman: `podman logs -f docker-compose_django_1`
+
+The Django service listen on 127.0.0.1:8000.
 
 There is no pytorch service, you should adjust the `ANSIBLE_AI_MODEL_MESH_HOST` configuration key to point on an existing service.

@@ -5,7 +5,6 @@ services:
       context: $PWD
       dockerfile: ansible_wisdom.Containerfile
     depends_on:
-      - migrate
       - redis
       - db
     restart: always
@@ -19,7 +18,7 @@ services:
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
     command: bash -c "/usr/bin/python3 /opt/ansible_wisdom/manage.py migrate --noinput && /usr/bin/python3 /opt/ansible_wisdom/manage.py runserver 0.0.0.0:8000"
   redis:
-    image: redis:alpine
+    image: docker.io/library/redis:alpine
     restart: always
     networks:
       - dbnet
