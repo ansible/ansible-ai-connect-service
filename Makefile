@@ -10,8 +10,8 @@ else
 endif
 
 model-archive:
-	python -m venv .venv
-	.venv/bin/pip install -r requirements-dev.txt
+	python3 -m venv .venv
+	.venv/bin/pip3 install -r requirements-dev.txt
 	.venv/bin/torch-model-archiver -f \
 	--model-name=wisdom \
 	--version=1.0 \
