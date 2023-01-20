@@ -15,6 +15,9 @@ COPY --chown=1000:0 ./config.properties /home/model-server/
 EXPOSE 7080
 EXPOSE 7081
 
+COPY --chown=1000:0 ./anonymizor/ /home/model-server/anonymizor/
+RUN /usr/local/bin/pip3 install /home/model-server/anonymizor
+
 USER 1000
 
 # run Torchserve HTTP server to respond to prediction requests
