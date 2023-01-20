@@ -1,7 +1,13 @@
 MODEL_PATH ?= ${PWD}/model/wisdom
-CONTAINER_RUNTIME ?= podman
 ENVIRONMENT ?= development
 TAG=latest
+
+# Choose between docker and podman based on what is available 
+ifeq (, $(shell which podman))
+	CONTAINER_RUNTIME ?= docker
+else
+	CONTAINER_RUNTIME ?= podman
+endif
 
 model-archive:
 	python -m venv .venv
