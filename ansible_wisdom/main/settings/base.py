@@ -1,3 +1,4 @@
+from django.core.management.utils import get_random_secret_key
 """
 Django settings for main project.
 
@@ -20,14 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-0xv@3emv7ck!2m@4a&dlx!^#r*1z30&&789r-2hex#a)q597^6"
+SECRET_KEY = get_random_secret_key()
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["localhost"]
 
 # Application definition
 

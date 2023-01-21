@@ -15,6 +15,7 @@ services:
       - "8000:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=main.settings.development
+      - DEBUG_VALUE=${DEBUG_VALUE}
       - SOCIAL_AUTH_GITHUB_TEAM_KEY=${SOCIAL_AUTH_GITHUB_TEAM_KEY}
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
     command: bash -c "/usr/bin/python3 /opt/ansible_wisdom/manage.py migrate --noinput && /usr/bin/python3 /opt/ansible_wisdom/manage.py runserver 0.0.0.0:8000"

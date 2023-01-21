@@ -198,10 +198,20 @@ You can then spawn the environment using the `docker-compose`:
 $ docker compose -f tools/docker-compose/compose.yaml up
 ```
 
+:bug: To enable debugging:
+``` bash
+$ DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml --up
+```
+
 or `podman-compose`:
 
 ``` bash
 $ podman-compose -f tools/docker-compose/compose.yaml up
+```
+
+:bug: To enable debugging:
+``` bash
+$ DEBUG_VALUE=True podman-compose -f tools/docker-compose/compose.yaml up
 ```
 
 The Django services listen on 127.0.0.1:8000.
