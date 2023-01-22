@@ -3,9 +3,7 @@ from typing import Literal
 
 from .base import *  # NOQA
 
-from django.core.management.utils import get_random_secret_key
-
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["localhost"]
 

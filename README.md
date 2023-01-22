@@ -181,7 +181,7 @@ To test the API with no authentication, you can empty out REST_FRAMEWORK.DEFAULT
 
 Work in progress
 
-## Development enviroment
+## Development environment
 
 You can deploy a development environment using `docker-compose` or `podman-compose`.
 
@@ -195,23 +195,23 @@ $ mkdir db_data; chcon -t container_file_t -R db_data/ ansible_wisdom/
 You can then spawn the environment using the `docker-compose`:
 
 ``` bash
-$ docker compose -f tools/docker-compose/compose.yaml up
+$ SECRET_KEY="change this" docker compose -f tools/docker-compose/compose.yaml up
 ```
 
 :bug: To enable debugging:
 ``` bash
-$ DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml --up
+$ SECRET_KEY="change this" DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml --up
 ```
 
 or `podman-compose`:
 
 ``` bash
-$ podman-compose -f tools/docker-compose/compose.yaml up
+$ SECRET_KEY="change this" podman-compose -f tools/docker-compose/compose.yaml up
 ```
 
 :bug: To enable debugging:
 ``` bash
-$ DEBUG_VALUE=True podman-compose -f tools/docker-compose/compose.yaml up
+$ SECRET_KEY="change this" DEBUG_VALUE=True podman-compose -f tools/docker-compose/compose.yaml up
 ```
 
 Once the service is running, you can monitor your Django application with:

@@ -1,4 +1,3 @@
-from django.core.management.utils import get_random_secret_key
 """
 Django settings for main project.
 
@@ -11,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["localhost"]
 

@@ -3,8 +3,6 @@ from typing import Literal
 
 from .base import *  # NOQA
 
-from django.core.management.utils import get_random_secret_key
-
 
 ANSIBLE_AI_MODEL_NAME = "wisdom"
 ANSIBLE_AI_MODEL_MESH_HOST = os.environ["ANSIBLE_AI_MODEL_MESH_HOST"]
@@ -22,7 +20,7 @@ ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_MANAGEMENT_PORT}"
 )
 
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = [ANSIBLE_WISDOM_DOMAIN]
 
