@@ -20,6 +20,7 @@ from django.contrib.auth import views as auth_views
 
 from .api import views as main_views
 from users import views as user_views
+from social_django import urls as social_urls
 
 # router = routers.DefaultRouter()
 # router.register(r'users', main_views.UserViewSet)
@@ -29,13 +30,14 @@ urlpatterns = [
     # path('', include(router.urls)),
     path("admin/", admin.site.urls),
 
-    # add the GitHub OAuth redirect URL /complete/github/
+    # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
         
     path("api/", include("ai.api.urls")),
     
     # Temp Wisdom home page to share token for pilot
     path('', user_views.home, name='home'),
-    path('login/', auth_views.LoginView.as_view(), name='login'),
+    # path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('login/', user_views.login, name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

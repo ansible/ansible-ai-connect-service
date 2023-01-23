@@ -19,3 +19,7 @@ def home(request):
         token = Token.objects.get(user=user)
         context['drf_token'] = token.key
     return render(request, 'users/home.html', context)
+
+def login(request):
+    context = {'pilot_contact': settings.PILOT_CONTACT}
+    return render(request, 'users/login.html', context)
