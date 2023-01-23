@@ -61,12 +61,12 @@ def test_remove_email():
 
 def test_redact_ipv4_address():
     assert redact_ipv4_address(IPv4Address("192.168.3.5")) in IPv4Network("192.168.3.0/24")
-    assert redact_ipv4_address(IPv4Address("8.8.8.8")) == "8.8.8.8"
+    assert redact_ipv4_address(IPv4Address("8.8.8.8")) == IPv4Address("8.8.8.8")
     assert redact_ipv4_address(IPv4Address("8.8.8.9")) in IPv4Network("8.8.8.0/24")
 
 
 def test_redact_ipv6_address():
-    assert redact_ipv6_address(IPv6Address("2001:4860:4860::8888")) == "2001:4860:4860::8888"
+    assert redact_ipv6_address(IPv6Address("2001:4860:4860::8888")) == IPv6Address("2001:4860:4860::8888")
     assert IPv6Address(redact_ipv6_address(IPv6Address("2001:db8:3333:4444:5555:6666:7777:8888")))
 
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from typing import Any, List
+from typing import Any, Callable, List, Union
 import ciso8601
 import ipaddress
+from ipaddress import IPv4Address, IPv6Address
 import json
 import logging
 import random
@@ -132,10 +133,10 @@ common_ipv4_networks = [
 ]
 
 
-def redact_ipv4_address(value: ipaddress.IPv4Address) -> ipaddress.IPv4Address:
+def redact_ipv4_address(value: IPv4Address) -> IPv4Address:
     for i in common_ipv4_networks:
         if value in i:
-            return value.exploded
+            return value
     try:
         return value + random.randint(0, 100)
     except ipaddress.AddressValueError:
@@ -148,10 +149,10 @@ common_ipv6_networks = [
 ]
 
 
-def redact_ipv6_address(value: ipaddress.IPv6Address) -> ipaddress.IPv6Address:
+def redact_ipv6_address(value: IPv6Address) -> IPv6Address:
     for i in common_ipv6_networks:
         if value in i:
-            return value.compressed
+            return value
 
     def randomize(block):
         field = block.group(0)[1:]
@@ -168,9 +169,10 @@ def redact_ipv6_address(value: ipaddress.IPv6Address) -> ipaddress.IPv6Address:
 
 
 def redact_ip_address(value: str) -> str:
-    func = {4: redact_ipv4_address, 6: redact_ipv6_address}
     ip = ipaddress.ip_address(value)
-    return str(func[ip.version](ip))
+    func: Callable[[Union[IPv4Address | IPv6Address]], Union[IPv4Address | IPv6Address]]
+    func = {4: redact_ipv4_address, 6: redact_ipv6_address}[ip.version]  # type: ignore
+    return str(func(ip))
 
 
 def anonymize_field(value: str, name) -> str:
@@ -232,7 +234,7 @@ def anonymize_batch(predictions: List[str]) -> List[str]:
 def benchmark(train_json_path: str):
     """Helper used to validate the performance of the library"""
     cpt = 0
-    duration = 0
+    duration = 0.0
     with open(train_json_path, "r") as fd:
         while True:
             line = fd.readline()
