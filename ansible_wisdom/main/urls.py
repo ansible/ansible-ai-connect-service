@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
@@ -37,7 +38,6 @@ urlpatterns = [
     
     # Temp Wisdom home page to share token for pilot
     path('', user_views.home, name='home'),
-    # path('login/', auth_views.LoginView.as_view(), name='login'),
-    path('login/', user_views.login, name='login'),
+    path('login/', auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
