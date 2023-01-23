@@ -200,7 +200,7 @@ $ SECRET_KEY="change this" docker compose -f tools/docker-compose/compose.yaml u
 
 :bug: To enable debugging:
 ``` bash
-$ SECRET_KEY="change this" DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml --up
+$ SECRET_KEY="change this" DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml up
 ```
 
 or `podman-compose`:
