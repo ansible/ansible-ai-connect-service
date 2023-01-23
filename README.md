@@ -4,7 +4,7 @@ Note: This repository is under active development and is not yet ready for produ
 
 This repo contains a Django application that serves Ansible task suggestions for consumption by the Ansible VSCode extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint, etc.
 
-The Django application depends on a separate model server to perform the task suggestion predictions. There is a torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django application at the dev model server running at wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com as described below.
+The Django application depends on a separate model server to perform the task suggestion predictions. There is a torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django application at the dev model server running at model.wisdom.testing.ansible.com as described below.
 
 ## Running the Django application (from container)
 
@@ -28,7 +28,7 @@ The Django application depends on a separate model server to perform the task su
     pip install -r ansible_wisdom/requirements.txt
     ```
 
-1. Export the host and port for the model server. Skip this step if you want to use the model server on wisdom-wisdom-dev.apps.dev.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
+1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
     ```bash
     export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost" 
@@ -181,7 +181,7 @@ To test the API with no authentication, you can empty out REST_FRAMEWORK.DEFAULT
 
 Work in progress
 
-## Development enviroment
+## Development environment
 
 You can deploy a development environment using `docker-compose` or `podman-compose`.
 
@@ -195,13 +195,23 @@ $ mkdir db_data; chcon -t container_file_t -R db_data/ ansible_wisdom/
 You can then spawn the environment using the `docker-compose`:
 
 ``` bash
-$ docker compose -f tools/docker-compose/compose.yaml up
+$ SECRET_KEY="change this" docker compose -f tools/docker-compose/compose.yaml up
+```
+
+:bug: To enable debugging:
+``` bash
+$ SECRET_KEY="change this" DEBUG_VALUE=True docker compose -f tools/docker-compose/compose.yaml up
 ```
 
 or `podman-compose`:
 
 ``` bash
-$ podman-compose -f tools/docker-compose/compose.yaml up
+$ SECRET_KEY="change this" podman-compose -f tools/docker-compose/compose.yaml up
+```
+
+:bug: To enable debugging:
+``` bash
+$ SECRET_KEY="change this" DEBUG_VALUE=True podman-compose -f tools/docker-compose/compose.yaml up
 ```
 
 Once the service is running, you can monitor your Django application with:
