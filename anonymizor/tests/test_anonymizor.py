@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
 
-from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
+from ipaddress import IPv4Address, IPv4Network, IPv6Address
 import yaml
 
 from anonymizor.anonymizor import (
-    is_jinja2,
-    is_path,
-    is_email_address,
+    anonymize_batch,
     is_date,
+    is_email_address,
+    is_jinja2,
     is_password_field_name,
-    redact_ipv4_address,
-    remove_email,
+    is_path,
+    redact_ip_address,
     redact_ipv4_address,
     redact_ipv6_address,
-    redact_ip_address,
-    anonymize_field,
+    remove_email,
     walker,
-    anonymize_batch,
 )
 
 
@@ -72,7 +70,7 @@ def test_redact_ipv6_address():
     assert IPv6Address(redact_ipv6_address(IPv6Address("2001:db8:3333:4444:5555:6666:7777:8888")))
 
 
-def test_refact_ip_address():
+def test_redact_ip_address():
     assert redact_ip_address("2001:4860:4860::8888") == "2001:4860:4860::8888"
     assert IPv4Address(redact_ip_address("8.8.8.9"))
 

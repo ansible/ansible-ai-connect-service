@@ -85,7 +85,7 @@ def is_jinja2(content: str) -> bool:
 
 def is_ip_address(content: str):
     try:
-        ip = ipaddress.ip_address(content)
+        ipaddress.ip_address(content)
     except ValueError:
         return False
     return True
@@ -239,11 +239,10 @@ def benchmark(train_json_path: str):
             if not line:
                 break
             train_entry = json.loads(line)
-            from pprint import pprint
 
             prediction = yaml.safe_load(train_entry["output_script"])
             start = time.perf_counter()
-            ano = anonymize(prediction)
+            anonymize(prediction)
             duration += time.perf_counter() - start
             cpt += 1
     print(f"cpt: {cpt}")
