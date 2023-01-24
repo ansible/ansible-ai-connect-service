@@ -26,7 +26,7 @@ jobs:
     - name: Log in to quay.io
       uses: redhat-actions/podman-login@v1
       with:
-        registry: quay.io/${{ secrets.REGESTRY_NAME }}
+        registry: quay.io
         username: ${{ secrets.QUAY_USER }}
         password: ${{ secrets.QUAY_TOKEN }}
 
