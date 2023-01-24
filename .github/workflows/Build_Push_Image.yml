@@ -1,0 +1,37 @@
+name: Build and Push Image
+on:
+  push:
+    branches:
+      - main
+  # have the ability to trigger this workflow manually
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and push image
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build Image
+      id: build-image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: wisdom-service
+        tags: latest ${{ github.sha }}
+        containerfiles: |
+          ./ansible_wisdom.Containerfile
+
+    - name: Push To quay.io
+      id: push-to-quay
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.build-image.outputs.image }}
+        tags: ${{ steps.build-image.outputs.tags }}
+        registry: quay.io/${{ secrets.REGESTRY_NAME }}
+        username: ${{ secrets.REGESTRY_USER_NAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: Print image url
+      run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
