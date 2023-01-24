@@ -1,0 +1,3 @@
+- name: Initialize cpt
+  ansible.builtin.set_fact:
+    cpt: 0
