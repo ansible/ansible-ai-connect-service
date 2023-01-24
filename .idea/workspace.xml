@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="c0d5196f-b28c-4d8c-8b9b-053cf5b238d3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.github/workflows/Build_Push_Image.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/Build_Push_Image.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
