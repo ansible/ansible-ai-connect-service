@@ -9,6 +9,13 @@ else
 	CONTAINER_RUNTIME ?= podman
 endif
 
+# Choose between docker-compose and podman-compose based on what is available
+ifeq (, $(shell which podman-compose))
+	COMPOSE_RUNTIME ?= docker-compose
+else
+	COMPOSE_RUNTIME ?= podman-compose
+endif
+
 model-archive:
 	python3 -m venv .venv
 	.venv/bin/pip3 install -r requirements-dev.txt
@@ -40,6 +47,9 @@ run-django:
 
 run-django-container:
 	${CONTAINER_RUNTIME} run -it --rm -p 8000:8000 --name ansible-wisdom localhost/ansible_wisdom
+
+docker-compose:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
 
 clean:
 	rm ${MODEL_PATH}/wisdom.mar
