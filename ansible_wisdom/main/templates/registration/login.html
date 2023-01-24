@@ -4,6 +4,6 @@
 
 {% block content %} 
     <h1>Ansible Wisdom - Login</h1>
-    <p>Access to the Ansible Wisdom pilot is restricted. Contact XXX for onboarding.</p>
+    <p>Access to the Ansible Wisdom pilot is restricted. For access issues, contact {{ pilot_contact }}.</p>
     <a href="{% url 'social:begin' 'github-team' %}">Login with GitHub</a><br>
 {% endblock content %}
