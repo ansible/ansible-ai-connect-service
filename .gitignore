@@ -135,5 +135,8 @@ model/**
 
 # ignore .vscode
 .vscode/
+# ignore .vscode
+.idea/
+
 
 db_data
