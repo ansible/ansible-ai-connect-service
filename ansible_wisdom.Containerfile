@@ -4,10 +4,19 @@ ARG DJANGO_SETTINGS_MODULE=main.settings.development
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
-RUN dnf install -y libpq libpq-devel python39 python3-pip
+RUN dnf install -y \
+    python3-devel \
+    gcc \
+    libpq \
+    libpq-devel \
+    python3 \
+    python3-pip \
+    nginx
 
 COPY ansible_wisdom /var/www/ansible_wisdom
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
+COPY tools/configs/nginx.conf /etc/nginx/conf.d/wisdom.conf
+COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY requirements.txt /tmp
 
