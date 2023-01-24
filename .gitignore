@@ -135,7 +135,7 @@ model/**
 
 # ignore .vscode
 .vscode/
-# ignore .vscode
+# ignore .idea
 .idea/
 
 
