@@ -1,4 +1,5 @@
 #!/bin/bash
 /var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
 
-sleep infinity
+cd ansible_wisdom/
+/usr/local/bin/supervisord -n
