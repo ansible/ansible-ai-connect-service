@@ -11,7 +11,7 @@ services:
         condition: service_healthy
     restart: always
     volumes:
-      - $PWD/ansible_wisdom:/opt/ansible_wisdom
+      - $PWD/ansible_wisdom:/var/www/ansible_wisdom
     ports:
       - "8000:8000"
     environment:
@@ -19,8 +19,8 @@ services:
       - DEBUG_VALUE=${DEBUG_VALUE}
       - SOCIAL_AUTH_GITHUB_TEAM_KEY=${SOCIAL_AUTH_GITHUB_TEAM_KEY}
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
-      - SECRET_KEY=${SECRET_KEY}
-    command: bash -c "/usr/bin/python3 /opt/ansible_wisdom/manage.py migrate --noinput && /usr/bin/python3 /opt/ansible_wisdom/manage.py runserver 0.0.0.0:8000"
+      - SECRET_KEY=${SECRET_KEY:-somesecret}
+    command: launch-wisdom.sh
     networks:
       - dbnet
   redis:
