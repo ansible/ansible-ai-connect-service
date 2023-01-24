@@ -1,0 +1,4 @@
+requests
+PyYAML
+pytest-html
+pytest-testdox
