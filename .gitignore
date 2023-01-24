@@ -137,6 +137,6 @@ model/**
 .vscode/
 # ignore .idea
 .idea/
-
+.idea/workspace.xml
 
 db_data
