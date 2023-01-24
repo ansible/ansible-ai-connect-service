@@ -5,8 +5,10 @@ services:
       context: $PWD
       dockerfile: ansible_wisdom.Containerfile
     depends_on:
-      - redis
-      - db
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
     restart: always
     volumes:
       - $PWD/ansible_wisdom:/opt/ansible_wisdom
@@ -35,6 +37,8 @@ services:
       - POSTGRES_DB=wisdom
       - POSTGRES_USER=wisdom
     restart: always
+    healthcheck:
+      test: pg_isready -U wisdom
     networks:
       - dbnet
 # Disabled because this doesn't work properly on MacOS.
