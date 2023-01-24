@@ -11,4 +11,4 @@ EXPOSE 8000
 
 RUN /usr/bin/python3 -m pip install -r/opt/ansible_wisdom/requirements.txt && rm -r /root/.cache
 WORKDIR /opt
-CMD ["/usr/bin/python3", "/opt/ansible_wisdom/manage.py", "runserver", "0.0.0.0:8000"]
+CMD bash -c "/usr/bin/python3 /opt/ansible_wisdom/manage.py migrate --noinput && /usr/bin/python3 /opt/ansible_wisdom/manage.py runserver 0.0.0.0:8000"
