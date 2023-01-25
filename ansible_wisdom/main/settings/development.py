@@ -5,7 +5,7 @@ from .base import *  # NOQA
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
 
 ANSIBLE_AI_MODEL_NAME = "wisdom"
 ANSIBLE_AI_MODEL_MESH_HOST = os.getenv('ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com')
