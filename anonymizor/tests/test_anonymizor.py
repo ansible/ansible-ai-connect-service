@@ -51,6 +51,8 @@ def test_is_password_field_name():
     assert is_password_field_name("passwd") is True
     assert is_password_field_name("db_passwd") is True
     assert is_password_field_name("key_data") is True
+    assert is_password_field_name("key_name") is True
+    assert is_password_field_name("host_config_key") is True
 
 
 def test_remove_email():
