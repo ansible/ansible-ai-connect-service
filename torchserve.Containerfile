@@ -1,4 +1,4 @@
-FROM pytorch/torchserve-nightly:latest-gpu as base
+FROM docker.io/pytorch/torchserve-nightly:latest-gpu as base
 
 USER 0
 
