@@ -135,8 +135,12 @@ model/**
 
 # ignore .vscode
 .vscode/
+
 # ignore .idea
 .idea/
 .idea/workspace.xml
+
+# ignore emacs backup files
+*~
 
 db_data
