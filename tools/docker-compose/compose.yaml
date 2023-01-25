@@ -54,5 +54,11 @@ services:
 #      - $PWD/db_data:/var/lib/postgresql/data
     expose:
       - 5432
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - $PWD/prometheus:/opt/prometheus/
+    ports:
+      - "9090:9090"
 networks:
   dbnet:
