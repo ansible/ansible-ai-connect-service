@@ -5,8 +5,7 @@ import sys
 
 import torch
 # from ts.utils.util import PredictionException
-from tokenizer import AnsibleTokenizer
-from transformers import CodeGenForCausalLM
+from transformers import CodeGenForCausalLM, CodeGenTokenizerFast
 from ts.torch_handler.base_handler import BaseHandler
 
 from anonymizor import anonymizor
@@ -15,11 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class TransformersClassifierHandler(BaseHandler):
-    """
-    The handler takes an input string and returns the classification text
-    based on the serialized transformers checkpoint.
-    """
-
     def __init__(self):
         super(TransformersClassifierHandler, self).__init__()
         self.initialized = False
@@ -27,10 +21,6 @@ class TransformersClassifierHandler(BaseHandler):
         self.max_target_length = 248
 
     def initialize(self, ctx):
-        """Loads the model.pt file and initializes the model object.
-        Instantiates Tokenizer for preprocessor to use
-        Loads labels to name mapping file for post-processing inference response
-        """
         self.manifest = ctx.manifest
 
         properties = ctx.system_properties
@@ -41,63 +31,47 @@ class TransformersClassifierHandler(BaseHandler):
 
         # Read model serialize/pt file
         serialized_file = self.manifest["model"]["serializedFile"]
-        model_pt_path = os.path.join(model_dir, serialized_file)
-        if not os.path.isfile(model_pt_path):
-            raise RuntimeError("Missing the model.pt or pytorch_model.bin file")
+        serialized_file_path = os.path.join(model_dir, serialized_file)
+        if not os.path.isfile(serialized_file_path):
+            raise RuntimeError(f"Missing {serialized_file}")
 
-        # Load model
+        # Load model & tokenizer
+        self.tokenizer = CodeGenTokenizerFast.from_pretrained(model_dir)
+        # just to make sure truncation_side is set correctly
+        self.tokenizer.truncation_side = "left"
+        logger.debug(f"loading model from checkpoint {model_dir}")
         self.model = CodeGenForCausalLM.from_pretrained(model_dir)
         self.model.to(self.device)
         self.model.eval()
-        logger.debug('Transformer model from path {0} loaded successfully'.format(model_dir))
-
-        # Ensure to use the same tokenizer used during training
-        self.tokenizer = AnsibleTokenizer(1024)
-
-        # Read the mapping file, index to object name
-        mapping_file_path = os.path.join(model_dir, "index_to_name.json")
-
-        if os.path.isfile(mapping_file_path):
-            with open(mapping_file_path) as f:
-                self.mapping = json.load(f)
-        else:
-            logger.warning(
-                'Missing the index_to_name.json file. Inference output will not include class name.'
-            )
+        logger.debug(f"Transformer model from path {model_dir} and tokenizer {self.tokenizer} loaded")
 
         self.initialized = True
 
     def preprocess(self, data):
-        """Preprocessing input request by tokenizing
-        Extend with your own preprocessing steps as needed
-        """
-        pdata = data[0]
-        prefix_prompt = '- name: '
-        text = (
-            self.tokenizer.bos_token
-            + pdata.get("context")
-            + self.tokenizer.sep_token
-            + prefix_prompt
-            + pdata.get("prompt").strip()
-            + '\n'
-        )
+        prefix_prompt = ""
+        data_ref = data[0]
+        text = self.tokenizer.bos_token + data_ref.get("context") + \
+                self.tokenizer.sep_token + prefix_prompt + \
+                data_ref.get("prompt").strip() + "\n"
 
-        tokenizer_kwargs = {'truncation': True, 'padding': 'max_length', 'max_length': 1024}
+        tokenizer_kwargs = {
+            "truncation": True,
+            "max_length": self.model_size
+        }
         tokenized_input = self.tokenizer(text, **tokenizer_kwargs)
+
         return tokenized_input
 
     def inference(self, inputs):
-        """Predict the class of a text using a trained transformer model."""
+        source_ids_ = torch.Tensor(inputs["input_ids"]).long()
+        source_ids_len = source_ids_.shape[0]
+        source_ids_ = source_ids_.to(self.device)
 
-        source_ids_ = torch.Tensor(inputs['input_ids']).long()
-        source_ids_ = source_ids_.to(self.device)  # move to the core
+        print(f"source id tensor shape: {source_ids_.shape}",\
+                f" size of source id tensor {source_ids_.element_size()*source_ids_.nelement()}"\
+                f" and {sys.getsizeof(source_ids_.storage())}", sep="\n")
 
-        msg = f'''source id tensor shape: {source_ids_.shape}
-        size of source id tensor {source_ids_.element_size() * source_ids_.nelement()}
-        and {sys.getsizeof(source_ids_.storage())}'''
-        print(msg)
-
-        source_ids_ = torch.reshape(source_ids_, (1, self.model_size))
+        source_ids_ = torch.unsqueeze(source_ids_, 0)
 
         with torch.inference_mode():
             preds = self.model.generate(
@@ -114,34 +88,24 @@ class TransformersClassifierHandler(BaseHandler):
                 use_cache=True,
             )
 
-            logger.info(f'past the prediction phase, not converting back to decoded {preds}')
+            logger.debug(f"past the prediction phase, not converting back to decoded {preds}")
 
-        # TODO may be missing a few steps here between this step and tokenizer
-        # output is a tensor of shape [1, ] .. so we need to get the first item
-        output = self.tokenizer.tokenizer.decode(preds[0])
-        result = ''
-        try:
-            # V2+ model output
-            result = output.split(self.tokenizer.sep_token)[1].split(self.tokenizer.eos_token)[0]
-        except IndexError:
-            logger.error(f'failed to split ansible and endoftex token for: {output}')
+        preds_no_context = preds[0, source_ids_len: ]
+        output = self.tokenizer.decode(preds_no_context,
+                skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        logger.debug("Token count output: %d", len(preds_no_context))
 
-        return result
+        return output
 
     def postprocess(self, inference_output):
         logger.debug(f"structure before PII clean up: {inference_output}")
         anonymized = anonymizor.anonymize_batch(inference_output)
         logger.debug(f"structure after PII clean up: {anonymized}")
+
         return anonymized
 
     def handle(self, data, context):
-        """
-        Invoke by TorchServe for prediction request.
-        Do pre-processing of data, prediction using model and postprocessing of prediciton output
-        :param data: Input data for prediction
-        :param context: Initial context contains model server system properties.
-        :return: prediction output
-        """
         model_input = self.preprocess(data)
         model_output = self.inference(model_input)
+
         return self.postprocess([model_output])
