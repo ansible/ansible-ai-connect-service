@@ -1,4 +1,4 @@
-name: Build and Push Image
+name: Build and Push Model-Server Image
 on:
   push:
     paths:
