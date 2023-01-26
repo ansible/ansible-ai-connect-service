@@ -8,8 +8,6 @@ import torch
 from transformers import CodeGenForCausalLM, CodeGenTokenizerFast
 from ts.torch_handler.base_handler import BaseHandler
 
-from anonymizor import anonymizor
-
 logger = logging.getLogger(__name__)
 
 
@@ -98,11 +96,7 @@ class TransformersClassifierHandler(BaseHandler):
         return output
 
     def postprocess(self, inference_output):
-        logger.debug(f"structure before PII clean up: {inference_output}")
-        anonymized = anonymizor.anonymize_batch(inference_output)
-        logger.debug(f"structure after PII clean up: {anonymized}")
-
-        return anonymized
+        return inference_output
 
     def handle(self, data, context):
         model_input = self.preprocess(data)
