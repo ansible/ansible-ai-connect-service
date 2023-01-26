@@ -135,6 +135,9 @@ model/**
 
 # ignore .vscode
 .vscode/
+# ignore .idea
+.idea/
+.idea/workspace.xml
 
 # ignore .idea
 .idea/
