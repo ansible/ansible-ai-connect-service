@@ -15,13 +15,14 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
-from rest_framework import routers
 from django.contrib.auth import views as auth_views
+from django.urls import include
+from django.urls import path
+from rest_framework import routers
+from social_django import urls as social_urls
+from users import views as user_views
 
 from .api import views as main_views
-from users import views as user_views
-from social_django import urls as social_urls
 
 # router = routers.DefaultRouter()
 # router.register(r'users', main_views.UserViewSet)
@@ -30,14 +31,15 @@ from social_django import urls as social_urls
 urlpatterns = [
     # path('', include(router.urls)),
     path("admin/", admin.site.urls),
-
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-        
     path("api/", include("ai.api.urls")),
-    
     # Temp Wisdom home page to share token for pilot
     path('', user_views.home, name='home'),
-    path('login/', auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}), name='login'),
+    path(
+        'login/',
+        auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}),
+        name='login',
+    ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

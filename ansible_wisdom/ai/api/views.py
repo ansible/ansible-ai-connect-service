@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
-from .data.data_model import APIPayload, ModelMeshPayload
+from .data.data_model import APIPayload
+from .data.data_model import ModelMeshPayload
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)

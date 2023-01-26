@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-
-from typing import Any, Callable, List, Union
-import ciso8601
 import ipaddress
-from ipaddress import IPv4Address, IPv6Address
 import json
 import logging
 import random
 import re
 import time
+from ipaddress import IPv4Address
+from ipaddress import IPv6Address
+from typing import Any
+from typing import Callable
+from typing import List
+from typing import Union
+
+import ciso8601
 import yaml
 
 # Denylist regex to TC of secrets filter
@@ -237,7 +241,7 @@ def benchmark(train_json_path: str):
     """Helper used to validate the performance of the library"""
     cpt = 0
     duration = 0.0
-    with open(train_json_path, "r") as fd:
+    with open(train_json_path) as fd:
         while True:
             line = fd.readline()
             if not line:

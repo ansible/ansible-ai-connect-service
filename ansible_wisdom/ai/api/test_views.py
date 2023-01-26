@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
 from unittest.mock import patch
-from django.test import TestCase
-from django.test import Client
+
 from django.apps import apps
+from django.test import Client
+from django.test import TestCase
 from rest_framework.response import Response
 
 

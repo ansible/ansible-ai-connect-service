@@ -7,7 +7,7 @@ from .base import *  # NOQA
 ANSIBLE_AI_MODEL_NAME = "wisdom"
 ANSIBLE_AI_MODEL_MESH_HOST = os.environ["ANSIBLE_AI_MODEL_MESH_HOST"]
 ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.environ["ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT"]
-ANSIBLE_AI_MODEL_MESH_MANAGEMENT_PORT = 7081 # TODO: Update with correct port once exposed
+ANSIBLE_AI_MODEL_MESH_MANAGEMENT_PORT = 7081  # TODO: Update with correct port once exposed
 
 # For wildcard, use a "." prefix.
 # Example: .wisdom.ansible.com

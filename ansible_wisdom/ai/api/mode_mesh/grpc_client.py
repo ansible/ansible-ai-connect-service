@@ -7,8 +7,10 @@ from django.conf import settings
 from rest_framework.response import Response
 
 from .base import ModelMeshClient
-from .grpc_pb import (inference_pb2, inference_pb2_grpc, management_pb2,
-                      management_pb2_grpc)
+from .grpc_pb import inference_pb2
+from .grpc_pb import inference_pb2_grpc
+from .grpc_pb import management_pb2
+from .grpc_pb import management_pb2_grpc
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)

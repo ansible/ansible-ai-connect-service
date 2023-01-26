@@ -4,12 +4,13 @@ import os
 import sys
 
 import torch
-# from ts.utils.util import PredictionException
 from tokenizer import AnsibleTokenizer
 from transformers import CodeGenForCausalLM
 from ts.torch_handler.base_handler import BaseHandler
 
 from anonymizor import anonymizor
+
+# from ts.utils.util import PredictionException
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class TransformersClassifierHandler(BaseHandler):
     """
 
     def __init__(self):
-        super(TransformersClassifierHandler, self).__init__()
+        super().__init__()
         self.initialized = False
         self.model_size = 1024
         self.max_target_length = 248
@@ -49,7 +50,7 @@ class TransformersClassifierHandler(BaseHandler):
         self.model = CodeGenForCausalLM.from_pretrained(model_dir)
         self.model.to(self.device)
         self.model.eval()
-        logger.debug('Transformer model from path {0} loaded successfully'.format(model_dir))
+        logger.debug('Transformer model from path {} loaded successfully'.format(model_dir))
 
         # Ensure to use the same tokenizer used during training
         self.tokenizer = AnsibleTokenizer(1024)

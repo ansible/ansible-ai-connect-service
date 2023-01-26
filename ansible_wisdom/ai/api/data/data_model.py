@@ -1,5 +1,7 @@
 import logging
-from typing import List, TypedDict, Union
+from typing import List
+from typing import TypedDict
+from typing import Union
 
 from django.conf import settings
 from pydantic import BaseModel
