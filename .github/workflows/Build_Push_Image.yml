@@ -21,7 +21,7 @@ jobs:
         image: wisdom-service
         tags: latest ${{ github.sha }}
         containerfiles: |
-          ./ansible_wisdom.Containerfile
+          ./wisdom-service.Containerfile
 
     - name: Push To quay.io
       id: push-to-quay
