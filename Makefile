@@ -28,10 +28,10 @@ model-archive:
 	--export-path=${MODEL_PATH}
 
 model-container:
-	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -f torchserve.Containerfile -t wisdom:${TAG} .
+	${CONTAINER_RUNTIME} build --target ${ENVIRONMENT} -f wisdom-model-server.Containerfile -t wisdom:${TAG} .
 
 ansible-wisdom-container:
-	${CONTAINER_RUNTIME} build -f ansible_wisdom.Containerfile -t ansible_wisdom .
+	${CONTAINER_RUNTIME} build -f wisdom-service.Containerfile -t ansible_wisdom .
 
 # Start torchserve container
 run-model-server:
