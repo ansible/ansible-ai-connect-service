@@ -52,6 +52,8 @@ class TransformersClassifierHandler(BaseHandler):
                 self.tokenizer.sep_token + prefix_prompt + \
                 data_ref.get("prompt").strip() + "\n"
 
+        logger.debug(f"PREPROCESS: {text}")
+
         tokenizer_kwargs = {
             "truncation": True,
             "max_length": self.model_size
@@ -59,6 +61,10 @@ class TransformersClassifierHandler(BaseHandler):
         tokenized_input = self.tokenizer(text, **tokenizer_kwargs)
 
         return tokenized_input
+
+    def decode(self, preds):
+        return self.tokenizer.decode(preds,
+                skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
     def inference(self, inputs):
         source_ids_ = torch.Tensor(inputs["input_ids"]).long()
@@ -89,13 +95,18 @@ class TransformersClassifierHandler(BaseHandler):
             logger.debug(f"past the prediction phase, not converting back to decoded {preds}")
 
         preds_no_context = preds[0, source_ids_len: ]
-        output = self.tokenizer.decode(preds_no_context,
-                skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        output = self.decode(preds_no_context)
+
+        logger.debug(f"INPUT: {preds[0, :source_ids_len]}")
+        logger.debug(f"DECODED PREDS NO CONTEXT: {output}")
+        logger.debug(f"DECODED INPUT: {self.decode(preds[0, :source_ids_len])}")
+        logger.debug(f"ALL PREDS: {self.decode(preds[0,:])}")
         logger.debug("Token count output: %d", len(preds_no_context))
 
         return output
 
     def postprocess(self, inference_output):
+        logger.debug(f"INFERENCE OUTPUT: {inference_output}")
         return inference_output
 
     def handle(self, data, context):
