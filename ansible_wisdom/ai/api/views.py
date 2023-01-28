@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
+from .utils.transform import convert_keys
 from .data.data_model import APIPayload, ModelMeshPayload
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
@@ -21,13 +22,16 @@ class Completions(APIView):
 
     def post(self, request) -> Response:
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        payload = APIPayload(**request.data)
+        logger.debug(f"request payload from client: {request.data}")
+        request_data = convert_keys(request.data)
+        payload = APIPayload(**request_data)
+        logger.debug(f"converted payload from camel to snake case: {payload}")
         model_name = payload.model_name
         model_mesh_payload = ModelMeshPayload(
             instances=[{"prompt": payload.prompt, "context": payload.context}]
         )
         data = model_mesh_payload.dict()
-        logger.debug(f"Input to inference: {data}")
+        logger.debug(f"input to inference: {data}")
         response = model_mesh_client.infer(data, model_name=model_name)
-        logger.debug(f"Response from inference: {response.data}")
+        logger.debug(f"response from inference: {response.data}")
         return response
