@@ -1,8 +1,5 @@
 from typing import Any, Dict
 
-from requests import request
-
-
 def camel_to_snake(name: str) -> str:
     snake_case = ""
     for item in range(len(name)):
