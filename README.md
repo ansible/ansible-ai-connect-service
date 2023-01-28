@@ -222,3 +222,19 @@ Once the service is running, you can monitor your Django application with:
 The Django service listen on 127.0.0.1:8000.
 
 There is no pytorch service, you should adjust the `ANSIBLE_AI_MODEL_MESH_HOST` configuration key to point on an existing service.
+
+
+## Using pre-commit 
+
+Pre-commit should be used before pushing a new PR.
+To use pre-commit you need to first install it and it's dependencies by running:
+
+    ```bash
+    pip install -r requirements-dev.txt
+    ```
+
+once installed you can run the hooks with:
+
+    ```bash
+    pre-commit run --all
+    ```
