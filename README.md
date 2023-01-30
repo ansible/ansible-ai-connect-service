@@ -41,68 +41,6 @@ The Django application depends on a separate model server to perform the task su
     make run-django
     ```
 
-## Running the model server locally
-
-1. Clone the repository and install all the dependencies
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-1. Copy the model to the `MODEL_PATH` folder
-
-1. Build the model archive, build the container and start the model mesh server
-
-    ```bash
-    export MODEL_PATH=./model/wisdom
-    make model-archive
-    make model-container
-    make run-model-server
-    ```
-
-:information_source: NOTE: to include the model archive in the container image (for running via podman-remote or on macOS)
-    ```bash
-    export MODEL_PATH=./model/wisdom
-    export ENVIRONMENT=production
-    make model-archive
-    make model-container
-    make run-model-server
-    ```
-
-:information_source: NOTE: If you are running the container on RHEL, SELinux will prevent you from accessing the GPUs from the container. To work around this, for now, you can run `make run-model-server SECURITY_OPT="--security-opt=label=disable"`.
-
-:information_source: NOTE: To use a tag other than `latest`, pass a `TAG=` argument to `make model-container` and `make run-model-server`.
-
-## Running the server on OpenShift
-
-1. Generate model archive
-    ```bash
-    make model-archive
-    ```
-1. Create new project
-    ```bash
-    oc new-project <project name>
-    ```
-
-1. Assign privileged context to builder account (:warning: do not do this in production)
-    ```bash
-    oc adm policy add-scc-to-user privileged system:serviceaccount:<project name>:builder
-    ```
-
-1. Build/deploy container and expose route
-    ```bash
-    oc new-build --strategy=docker --binary --name <app name>
-    oc start-build <app name> --from-dir . --exclude='(^|\/)(.git|.venv|.tox)(\/|$)' --wait=true
-    oc new-app <app name>
-    oc expose svc/<app name>
-    ```
-
-1. (workaround) Set correct service port
-    ```bash
-    oc get route <app name>
-    oc patch route <app name> -p '{"spec":{"port":{"targetPort": "7080-tcp"}}}'
-    ```
-
 ## Testing the completion API
 
 The sample request below tests the task suggestion prediction API provided by the Django application. This is the same request the VSCode extension will make.
@@ -129,35 +67,6 @@ Response:
   ]
 }
 ```
-
-You can also directly test the model server prediction API.
-
-Request:
-
-```bash
-# Post a request using curl
-curl  -X 'POST' \
-  "$ANSIBLE_AI_MODEL_MESH_HOST:$ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT/predictions/wisdom" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "instances":[{"context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"}]
-    }'
-```
-
-Response:
-
-```json
-{
-  "predictions": [
-    "- name: Install nginx and nodejs 12 Packages\n  apt:\n    name:\n      - nginx\n      - nodejs\n    state: latest\n"
-  ]
-}
-```
-
-
-
-:information_source: A tunnel from localhost:7080 to remote-container-host:7080 is required when running the container using podman-remote.
 
 ## Using the VSCode extension
 
