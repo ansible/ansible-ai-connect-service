@@ -11,11 +11,6 @@ class APIPayload(BaseModel):
     model_name: str = settings.ANSIBLE_AI_MODEL_NAME
     prompt: str = ""
     context: str = ""
-    temperature: Union[int, None]
-    max_tokens: Union[int, None]
-    top_p: Union[int, None]
-    frequency_penalty: Union[int, None]
-    presence_penalty: Union[int, None]
     userId: Union[str, None]
     suggestionId: Union[str, None]
 
