@@ -5,7 +5,7 @@ import grpc
 from . import management_pb2 as management__pb2
 
 
-class ManagementAPIsServiceStub(object):
+class ManagementAPIsServiceStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -46,7 +46,7 @@ class ManagementAPIsServiceStub(object):
         )
 
 
-class ManagementAPIsServiceServicer(object):
+class ManagementAPIsServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
     def DescribeModel(self, request, context):
@@ -126,7 +126,7 @@ def add_ManagementAPIsServiceServicer_to_server(servicer, server):
 
 
 # This class is part of an EXPERIMENTAL API.
-class ManagementAPIsService(object):
+class ManagementAPIsService:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod

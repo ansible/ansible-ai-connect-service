@@ -144,3 +144,5 @@ model/**
 *~
 
 db_data
+# macos folder attributes
+.DS_Store

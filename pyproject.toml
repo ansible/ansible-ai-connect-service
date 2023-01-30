@@ -27,3 +27,6 @@ packages = ["ansible_wisdom"]
 line-length = 100
 fast = true
 skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
