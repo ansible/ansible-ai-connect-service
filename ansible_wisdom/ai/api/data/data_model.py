@@ -16,8 +16,8 @@ class APIPayload(BaseModel):
     top_p: Union[int, None]
     frequency_penalty: Union[int, None]
     presence_penalty: Union[int, None]
-    user_id: Union[str, None]
-    suggestion_id: Union[str, None]
+    userId: Union[str, None]
+    suggestionId: Union[str, None]
 
 
 class ModelMeshData(TypedDict):
