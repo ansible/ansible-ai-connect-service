@@ -25,6 +25,7 @@ COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
+COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY requirements.txt /var/www/

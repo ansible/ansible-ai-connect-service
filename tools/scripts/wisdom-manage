@@ -1,0 +1,3 @@
+#!/bin/bash
+
+/var/www/venv/bin/python /var/www/ansible_wisdom/manage.py "$@"
