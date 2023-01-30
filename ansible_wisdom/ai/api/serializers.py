@@ -1,8 +1,7 @@
-"""
-DRF Serializer classes for input/output validations and OpenAPI document generation.
-"""
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
+
+from ..models import AIModel
 
 
 @extend_schema_serializer(
@@ -88,3 +87,9 @@ class CompletionResponseSerializer(serializers.Serializer):
         fields = ['predictions']
 
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+
+
+class AIModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AIModel
+        fields = "__all__"

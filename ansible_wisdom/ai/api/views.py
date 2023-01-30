@@ -6,14 +6,21 @@ import yaml
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.generics import ListCreateAPIView
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from segment import analytics
 from yaml.error import MarkedYAMLError
 
+from ..models import AIModel
 from .data.data_model import APIPayload, ModelMeshPayload
-from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
+from .serializers import (
+    AIModelSerializer,
+    CompletionRequestSerializer,
+    CompletionResponseSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +53,7 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        model_mesh_client = self.initialize_model_mesh_client(request.query_parameters.get("model"))
         logger.debug(f"request payload from client: {request.data}")
         request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
@@ -79,6 +86,31 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         return response
+
+    def initialize_model_mesh_client(self, modelSelector=None):
+        if modelSelector is not None:
+            model_actual = AIModel.objects.filter(name=modelSelector)
+            if model_actual.exists():
+                model_actual = model_actual[0]
+                model_api_type = model_actual.model_mesh_api_type
+                model_inference_url = model_actual.inference_url
+                model_management_url = model_actual.management_url
+            else:
+                raise ValueError(f"Invalid model name: {modelSelector}")
+        else:
+            model_api_type = settings.ANSIBLE_AI_MODEL_MESH_API_TYPE
+            model_inference_url = settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL
+            model_management_url = settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL
+        if model_api_type == AIModel.ModelMeshType.GRPC:
+            model_client = GrpcClient
+        elif model_api_type == AIModel.ModelMeshType.HTTP:
+            model_client = HttpClient
+        else:
+            raise ValueError(f"Invalid model mesh client type: {model_api_type}")
+        return model_client(
+            inference_url=model_inference_url,
+            management_url=model.management_url,
+        )
 
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
@@ -176,3 +208,9 @@ class Completions(APIView):
                 "wisdomServicePostprocessingEvent",
                 event,
             )
+
+
+class AIModelList(ListCreateAPIView):
+    queryset = AIModel.objects.all()
+    serializer_class = AIModelSerializer
+    permissions_classes = [IsAdminUser]
