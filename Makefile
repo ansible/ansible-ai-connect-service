@@ -1,7 +1,7 @@
 ENVIRONMENT ?= development
 TAG ?= latest
 
-# Choose between docker and podman based on what is available 
+# Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
 	CONTAINER_RUNTIME ?= docker
 else
@@ -14,6 +14,8 @@ ifeq (, $(shell which podman-compose))
 else
 	COMPOSE_RUNTIME ?= podman-compose
 endif
+
+.PHONY: ansible-wisdom-container run-django run-django-container docker-compose
 
 ansible-wisdom-container:
 	${CONTAINER_RUNTIME} build -f wisdom-service.Containerfile -t ansible_wisdom .

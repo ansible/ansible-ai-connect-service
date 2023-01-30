@@ -1,16 +1,13 @@
+from django.conf import settings
+from django.shortcuts import render
+from requests.exceptions import HTTPError
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from django.shortcuts import render
-from rest_framework.authtoken.models import Token
-from django.conf import settings
-
-
 from social_django.utils import psa
 
-from requests.exceptions import HTTPError
 
 def home(request):
     user = request.user

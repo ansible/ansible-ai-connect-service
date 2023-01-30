@@ -6,7 +6,7 @@ from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from . import inference_pb2 as inference__pb2
 
 
-class InferenceAPIsServiceStub(object):
+class InferenceAPIsServiceStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -27,7 +27,7 @@ class InferenceAPIsServiceStub(object):
         )
 
 
-class InferenceAPIsServiceServicer(object):
+class InferenceAPIsServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
@@ -63,7 +63,7 @@ def add_InferenceAPIsServiceServicer_to_server(servicer, server):
 
 
 # This class is part of an EXPERIMENTAL API.
-class InferenceAPIsService(object):
+class InferenceAPIsService:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
