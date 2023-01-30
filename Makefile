@@ -16,6 +16,9 @@ else
 	COMPOSE_RUNTIME ?= podman-compose
 endif
 
+.PHONY: model-archive model-container ansible-wisdom-container \
+	run-model-server run-django run-django-container docker-compose clean
+
 model-archive:
 	python3 -m venv .venv
 	.venv/bin/pip3 install -r requirements-dev.txt
