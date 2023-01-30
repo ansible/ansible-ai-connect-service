@@ -25,15 +25,6 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = [ANSIBLE_WISDOM_DOMAIN]
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ["ANSIBLE_AI_DATABASE_NAME"],
-        "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
-        "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
-        "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
-    }
-}
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
