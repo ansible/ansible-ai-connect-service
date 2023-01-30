@@ -184,6 +184,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Absolute filesystem path to the directory where static file are collected via
+# the collectstatic command.
+STATIC_ROOT = '/var/www/wisdom/public/static'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
