@@ -31,7 +31,7 @@ The Django application depends on a separate model server to perform the task su
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
     ```bash
-    export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost" 
+    export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
     export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
     ```
 
@@ -168,7 +168,7 @@ Review the screen recording for instruction on configuring the extension to acce
 
 GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
 
-To test GitHub authentication locally, you will need to create a new OAuth App at https://github.com/settings/developers. Provide an Authorization callback URL of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. If you are running with the compose [development environment](#development-environment) described below, put these env vars in a .env file in the `tools/docker-compose` directory. 
+To test GitHub authentication locally, you will need to create a new OAuth App at https://github.com/settings/developers. Provide an Authorization callback URL of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. If you are running with the compose [development environment](#development-environment) described below, put these env vars in a .env file in the `tools/docker-compose` directory.
 
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
@@ -224,7 +224,7 @@ The Django service listen on 127.0.0.1:8000.
 There is no pytorch service, you should adjust the `ANSIBLE_AI_MODEL_MESH_HOST` configuration key to point on an existing service.
 
 
-## Using pre-commit 
+## Using pre-commit
 
 Pre-commit should be used before pushing a new PR.
 To use pre-commit you need to first install it and it's dependencies by running:

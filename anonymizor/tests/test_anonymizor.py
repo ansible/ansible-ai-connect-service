@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from ipaddress import IPv4Address, IPv4Network, IPv6Address
+
 import yaml
 
 from anonymizor.anonymizor import (
@@ -68,7 +69,9 @@ def test_redact_ipv4_address():
 
 
 def test_redact_ipv6_address():
-    assert redact_ipv6_address(IPv6Address("2001:4860:4860::8888")) == IPv6Address("2001:4860:4860::8888")
+    assert redact_ipv6_address(IPv6Address("2001:4860:4860::8888")) == IPv6Address(
+        "2001:4860:4860::8888"
+    )
     assert IPv6Address(redact_ipv6_address(IPv6Address("2001:db8:3333:4444:5555:6666:7777:8888")))
 
 

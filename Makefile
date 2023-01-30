@@ -2,7 +2,7 @@ MODEL_PATH ?= ${PWD}/model/wisdom
 ENVIRONMENT ?= development
 TAG ?= latest
 
-# Choose between docker and podman based on what is available 
+# Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
 	CONTAINER_RUNTIME ?= docker
 else
