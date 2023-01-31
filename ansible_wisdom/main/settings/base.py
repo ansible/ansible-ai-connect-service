@@ -75,7 +75,8 @@ SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
 SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
 SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
 SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
-# # Wisdom Eng Team : gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
+# Wisdom Eng Team:
+# gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -83,7 +84,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': ('users.auth.BearerTokenAuthentication',),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated'  # comment out to allow unauthenticated API access
+        'rest_framework.permissions.IsAuthenticated'  # comment out for unauthenticated API access
     ],
 }
 

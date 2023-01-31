@@ -30,7 +30,9 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    description="Library to clean up Ansible tasks from any Personally Identifiable Information (PII)",
+    description=(
+        "Library to clean up Ansible tasks from any Personally Identifiable Information (PII)"
+    ),
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + '\n\n' + history,
