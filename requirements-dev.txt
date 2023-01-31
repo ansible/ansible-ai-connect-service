@@ -1,3 +1,2 @@
 torch-model-archiver
 pre-commit
-pylint
