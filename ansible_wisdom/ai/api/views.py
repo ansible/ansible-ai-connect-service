@@ -8,6 +8,7 @@ from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAdminUser
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -17,6 +18,7 @@ from yaml.error import MarkedYAMLError
 from ..models import AIModel
 from .data.data_model import APIPayload, ModelMeshPayload
 from .serializers import (
+    AICompletionSerializer,
     AIModelSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
@@ -41,6 +43,8 @@ class Completions(APIView):
 
         permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     throttle_classes = [CompletionsUserRateThrottle]
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = "completions.html"
 
     @extend_schema(
         request=CompletionRequestSerializer,
@@ -53,6 +57,9 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        """model_actual = request.query_params.get(
+            "model", request.data.get("model_name", None)
+        )"""
         model_mesh_client = self.initialize_model_mesh_client(request.query_parameters.get("model"))
         logger.debug(f"request payload from client: {request.data}")
         request_serializer = CompletionRequestSerializer(data=request.data)
@@ -85,6 +92,19 @@ class Completions(APIView):
             f"response from postprocess for "
             f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
+        if request.accepted_renderer.media_type == "text/html":
+            return Response(
+                {
+                    "serializer": AICompletionSerializer(
+                        {
+                            "prompt": payload.prompt,
+                            "context": payload.context,
+                            "model_name": model_actual,
+                            "response_data": response.data,
+                        }
+                    )
+                }
+            )
         return response
 
     def initialize_model_mesh_client(self, modelSelector=None):
@@ -109,7 +129,7 @@ class Completions(APIView):
             raise ValueError(f"Invalid model mesh client type: {model_api_type}")
         return model_client(
             inference_url=model_inference_url,
-            management_url=model.management_url,
+            management_url=model_management_url,
         )
 
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
@@ -208,6 +228,15 @@ class Completions(APIView):
                 "wisdomServicePostprocessingEvent",
                 event,
             )
+
+    def get(self, request) -> Response:
+        serializer = AICompletionSerializer()
+        return Response({"serializer": serializer})
+        # model_mesh_client = self.initialize_model_mesh_client(
+        #     request.query_parameters.get("model"))
+        # model_name = request.query_parameters.get("model_name")
+        # response = model_mesh_client.status(model_name=model_name)
+        # return response
 
 
 class AIModelList(ListCreateAPIView):

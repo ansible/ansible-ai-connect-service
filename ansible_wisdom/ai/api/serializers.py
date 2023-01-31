@@ -93,3 +93,15 @@ class AIModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIModel
         fields = "__all__"
+
+
+class AICompletionSerializer(serializers.Serializer):
+    prompt = serializers.CharField(style={'base_template': 'textarea.html', 'rows': 10})
+    context = serializers.CharField(style={'base_template': 'textarea.html', 'rows': 10})
+    model_name = serializers.ChoiceField(
+        style={'base_template': 'select.html'},
+        choices=[*AIModel.objects.values_list("name", flat=True)],
+    )
+    response_data = serializers.CharField(
+        style={'base_template': 'textarea.html', 'rows': 10}
+    )  # , read_only=True)
