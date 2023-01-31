@@ -15,7 +15,7 @@ permissions:
   # Optional: allow read access to pull request.  Use with 'only-new-issues' option.
   # pull-requests: read
 jobs:
-  pre-commit:
+  pr_check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
