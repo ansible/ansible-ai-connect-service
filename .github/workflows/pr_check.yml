@@ -31,4 +31,4 @@ jobs:
       - name: Test with tox
         run: |
           cd anonymizor/
-          tox -e anonymizor/tests
+          tox -e tests
