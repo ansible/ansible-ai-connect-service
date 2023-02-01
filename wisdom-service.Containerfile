@@ -34,6 +34,7 @@ RUN for dir in \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 RUN /usr/bin/python3 -m venv /var/www/venv
 RUN /var/www/venv/bin/python3 -m pip install -r/var/www/ansible_wisdom/requirements.txt && rm -r /root/.cache
+RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 WORKDIR /var/www
 
 USER 1000
