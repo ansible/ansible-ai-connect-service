@@ -18,9 +18,9 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf remove -y epel-release
 
 COPY ansible_wisdom /var/www/ansible_wisdom
-RUN sed -i 's,/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
+COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
