@@ -6,41 +6,57 @@ from django.conf import settings
 
 from ari import postprocessing
 
+from .api.mode_mesh.base import ModelMeshClient
+
 logger = logging.getLogger(__name__)
 
 
-class AiConfig(AppConfig):
+class AIConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
-    model_mesh_client = None
     ari_caller = None
 
-    def ready(self) -> None:
-        if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
-            from .api.model_client.grpc_client import GrpcClient
+    def retrieve_client(self, model_name):
+        from .models import AIModel
 
-            self.model_mesh_client = GrpcClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-                management_url=settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
+        if model_name is None or model_name.strip() == "":
+            model_name = "default"
+        if model_name not in self.active_models:
+            model_actual = AIModel.objects.filter(name=model_name)
+            if not model_actual.exists():
+                raise ValueError("Unknown model name: {}".format(model_name))
+            model_actual = model_actual[0]
+            self.active_models[model_name] = self.initialize_connection(
+                model_actual.model_mesh_api_type,
+                model_actual.inference_url,
+                model_actual.management_url,
             )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
-            from .api.model_client.http_client import HttpClient
+        return self.active_models[model_name]
 
-            self.model_mesh_client = HttpClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-                management_url=settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
+    def initialize_connection(self, api_type, inference_url, management_url):
+        if api_type == "grpc":
+            from .api.mode_mesh.grpc_client import GrpcClient
+
+            return GrpcClient(inference_url, management_url)
+        elif api_type == "http":
+            from .api.mode_mesh.http_client import HttpClient
+
+            return HttpClient(inference_url, management_url)
+        elif api_type == "mock":
             from .api.model_client.mock_client import MockClient
 
-            self.model_mesh_client = MockClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-                management_url=settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
-            )
+            return MockClient(inference_url, management_url)
         else:
-            raise ValueError(
-                f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
-            )
+            raise ValueError(f"Invalid model mesh client type: {api_type}")
+
+    def ready(self):
+        # FIXME: Remove after this is moved out of settings
+        model_mesh_client = self.initialize_connection(
+            settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+            settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL,
+        )
+        self.active_models = {"default": model_mesh_client}
 
         # TODO may be we can parallelize ari and grpc client creation
         try:

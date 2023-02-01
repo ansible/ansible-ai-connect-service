@@ -58,13 +58,13 @@ class Completions(APIView):
     )
     def post(self, request) -> Response:
         """model_actual = request.query_params.get(
-            "model", request.data.get("model_name", None)
-        )"""
-        model_mesh_client = self.initialize_model_mesh_client(request.query_parameters.get("model"))
-        logger.debug(f"request payload from client: {request.data}")
+        "model", request.data.get("model_name", None)"""
+        model_mesh_client = apps.get_app_config("ai").retrieve_client(model_actual)
+        print(request.data)
+        print(model_mesh_client)
         request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        payload = APIPayload(**request_serializer.validated_data)
+        payload = APIPayload(prompt=request.data.get("prompt"), context=request.data.get("context"))
         model_name = payload.model_name
         model_mesh_payload = ModelMeshPayload(
             instances=[
@@ -106,31 +106,6 @@ class Completions(APIView):
                 }
             )
         return response
-
-    def initialize_model_mesh_client(self, modelSelector=None):
-        if modelSelector is not None:
-            model_actual = AIModel.objects.filter(name=modelSelector)
-            if model_actual.exists():
-                model_actual = model_actual[0]
-                model_api_type = model_actual.model_mesh_api_type
-                model_inference_url = model_actual.inference_url
-                model_management_url = model_actual.management_url
-            else:
-                raise ValueError(f"Invalid model name: {modelSelector}")
-        else:
-            model_api_type = settings.ANSIBLE_AI_MODEL_MESH_API_TYPE
-            model_inference_url = settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL
-            model_management_url = settings.ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL
-        if model_api_type == AIModel.ModelMeshType.GRPC:
-            model_client = GrpcClient
-        elif model_api_type == AIModel.ModelMeshType.HTTP:
-            model_client = HttpClient
-        else:
-            raise ValueError(f"Invalid model mesh client type: {model_api_type}")
-        return model_client(
-            inference_url=model_inference_url,
-            management_url=model_management_url,
-        )
 
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
@@ -232,11 +207,8 @@ class Completions(APIView):
     def get(self, request) -> Response:
         serializer = AICompletionSerializer()
         return Response({"serializer": serializer})
-        # model_mesh_client = self.initialize_model_mesh_client(
-        #     request.query_parameters.get("model"))
-        # model_name = request.query_parameters.get("model_name")
+        # NOTE: Add model status the the response headers?
         # response = model_mesh_client.status(model_name=model_name)
-        # return response
 
 
 class AIModelList(ListCreateAPIView):

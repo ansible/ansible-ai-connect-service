@@ -69,6 +69,14 @@ Note that there is no pytorch service defined in the docker-compose
 file.  You should adjust the `ANSIBLE_AI_MODEL_MESH_HOST`
 configuration key to point on an existing service.
 
+You can access the Admin detail view by browsing to
+<http://127.0.0.1:8000/admin/> and logging in with your superuser
+credentials.
+
+You can access the Completions webui by navigating to
+<http://127.0.0.1:8000/api/ai/completions/> (after logging in with
+your superuser credentials on the admin console to get a session)
+
 If you get a permission denied error when attempting to start the
 containers, you may need to set the permissions on the
 `ansible_wisdom/`, `prometheus/` and `ari/` directories:
