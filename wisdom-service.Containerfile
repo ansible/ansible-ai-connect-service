@@ -31,7 +31,7 @@ RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
       /var/log/nginx ; \
-    do mkdir -p $dir ; chown 1000 $dir ; done
+    do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 RUN /usr/bin/python3 -m venv /var/www/venv
 RUN /var/www/venv/bin/python3 -m pip install -r/var/www/ansible_wisdom/requirements.txt && rm -r /root/.cache
 WORKDIR /var/www
