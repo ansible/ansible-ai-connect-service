@@ -22,15 +22,6 @@ ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL = (
 )
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "wisdom",
-        "USER": "wisdom",
-        "PASSWORD": "wisdom",
-        "HOST": "db",
-    }
-}
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"

@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi9/ubi:9.1.0-1646.1669627755
 
-ARG DJANGO_SETTINGS_MODULE=main.settings.development
+ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 

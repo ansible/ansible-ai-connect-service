@@ -112,11 +112,13 @@ WSGI_APPLICATION = "main.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["ANSIBLE_AI_DATABASE_NAME"],
+        "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
+        "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
+        "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
     }
 }
 
