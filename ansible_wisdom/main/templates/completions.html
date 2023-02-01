@@ -8,7 +8,7 @@
 
 <h1>Completions</h1>
 
-<form action="{% url 'completions' %}" method="POST">
+<form action="{% url 'ai-completions' %}" method="POST">
     {% csrf_token %}
     {% render_form serializer template_pack='rest_framework/vertical'%}
     <input type="submit" value="Submit">

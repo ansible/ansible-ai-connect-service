@@ -204,12 +204,6 @@ class Completions(APIView):
                 event,
             )
 
-    def get(self, request) -> Response:
-        serializer = AICompletionSerializer()
-        return Response({"serializer": serializer})
-        # NOTE: Add model status the the response headers?
-        # response = model_mesh_client.status(model_name=model_name)
-
 
 class AIModelList(ListCreateAPIView):
     queryset = AIModel.objects.all()

@@ -14,6 +14,9 @@
             {% endfor %}
         </ul>
         {% endif %}
+        {% if user.is_superuser %}
+            <a href="{% url 'completions' %}">Completions Demo User Interface</a>
+        {% endif %}
         {% block content %} {% endblock content %}
     </body>
 </html>

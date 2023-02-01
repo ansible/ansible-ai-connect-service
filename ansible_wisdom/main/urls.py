@@ -22,7 +22,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from users.views import CurrentUserView, HomeView
+from users.views import CompletionsAdmin, CurrentUserView, HomeView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/', include("ai.api.urls")),
     path('api/me/', CurrentUserView.as_view(), name='me'),
     # Temp Wisdom home page to share token for pilot
+    path('completions/', CompletionsAdmin.as_view(), name='completions'),
     path(
         'login/',
         auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}),
