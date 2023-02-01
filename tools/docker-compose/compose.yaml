@@ -56,9 +56,14 @@ services:
       - 5432
   prometheus:
     image: prom/prometheus
+    command:
+    - --config.file=/opt/prometheus/prometheus.yaml
+    - --web.enable-lifecycle
     volumes:
-      - $PWD/prometheus:/opt/prometheus/
+      - $PWD/prometheus/prometheus.yaml:/opt/prometheus/prometheus.yaml
     ports:
       - "9090:9090"
+    networks:
+      - dbnet
 networks:
   dbnet:
