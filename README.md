@@ -18,7 +18,7 @@ To use pre-commit you need to first install it and it's dependencies by running:
 once installed you can run the hooks with:
 
     ```bash
-    pre-commit run --all
+    pre-commit autoupdate && pre-commit run -a
     ```
 
 ## Full Development Environment
