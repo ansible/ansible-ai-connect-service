@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 def openai_to_wisdom(payload: Payload) -> Tuple[Payload, str]:
-
     # remove extra newlines from end of context
     context_lines = payload.prompt.strip('\n').split("\n")
     context_last_line = context_lines[-1].strip()
