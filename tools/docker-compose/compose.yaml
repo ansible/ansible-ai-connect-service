@@ -1,6 +1,7 @@
 version: "3.8"
 services:
   django: &django
+    user: "1000"
     build:
       context: $PWD
       dockerfile: wisdom-service.Containerfile
