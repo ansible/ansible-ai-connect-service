@@ -57,13 +57,24 @@ services:
   prometheus:
     image: prom/prometheus
     command:
-    - --config.file=/opt/prometheus/prometheus.yaml
-    - --web.enable-lifecycle
+      - --config.file=/opt/prometheus/prometheus.yaml
+      - --web.enable-lifecycle
     volumes:
       - $PWD/prometheus/prometheus.yaml:/opt/prometheus/prometheus.yaml
+    restart: unless-stopped
     ports:
       - "9090:9090"
     networks:
       - dbnet
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - $PWD/grafana:/opt/grafana
+    restart: unless-stopped
+    networks:
+      - dbnet
+
 networks:
   dbnet:
