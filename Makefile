@@ -28,6 +28,7 @@ run-django-container:
 	${CONTAINER_RUNTIME} run -it --rm -p 8000:8000 --name ansible-wisdom localhost/ansible_wisdom
 
 docker-compose:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml build
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
 
 # Run backend services in container for running Django application from source

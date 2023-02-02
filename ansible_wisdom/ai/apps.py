@@ -6,7 +6,7 @@ from django.conf import settings
 
 from ari import postprocessing
 
-from .api.mode_mesh.base import ModelMeshClient
+from .api.model_client.base import ModelMeshClient
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +35,11 @@ class AIConfig(AppConfig):
 
     def initialize_connection(self, api_type, inference_url, management_url):
         if api_type == "grpc":
-            from .api.mode_mesh.grpc_client import GrpcClient
+            from .api.model_client.grpc_client import GrpcClient
 
             return GrpcClient(inference_url, management_url)
         elif api_type == "http":
-            from .api.mode_mesh.http_client import HttpClient
+            from .api.model_client.http_client import HttpClient
 
             return HttpClient(inference_url, management_url)
         elif api_type == "mock":
