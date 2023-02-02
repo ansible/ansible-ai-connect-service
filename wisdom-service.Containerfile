@@ -29,6 +29,7 @@ COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY requirements.txt /var/www/
+COPY requirements-dev.txt /var/www/
 COPY ari /etc/ari
 
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
@@ -42,7 +43,7 @@ RUN for dir in \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 ENV ANSIBLE_HOME=/etc/ansible
 RUN /usr/bin/python3 -m venv /var/www/venv
-RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
+RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt -r/var/www/requirements-dev.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 WORKDIR /var/www
 

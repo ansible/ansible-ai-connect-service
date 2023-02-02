@@ -57,8 +57,7 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        """model_actual = request.query_params.get(
-        "model", request.data.get("model_name", None)"""
+        model_actual = request.query_params.get("model_name", request.data.get("model_name", None))
         model_mesh_client = apps.get_app_config("ai").retrieve_client(model_actual)
         print(request.data)
         print(model_mesh_client)

@@ -48,3 +48,6 @@ docker-compose-clean:
 
 docker-create-superuser:
 	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 wisdom-manage createsuperuser
+
+test:
+	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 /var/www/venv/bin/pytest -v
