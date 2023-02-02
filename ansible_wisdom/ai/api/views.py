@@ -29,10 +29,12 @@ class Completions(APIView):
         )
         data = model_mesh_payload.dict()
         logger.debug(
-            f"input to inference for user id {payload.userId} and suggestion id {payload.suggestionId}:\n{data}"
+            f"input to inference for user id {payload.userId} "
+            f"and suggestion id {payload.suggestionId}:\n{data}"
         )
         response = model_mesh_client.infer(data, model_name=model_name)
         logger.debug(
-            f"response from inference for user id {payload.userId} and suggestion id {payload.suggestionId}:\n{response.data}"
+            f"response from inference for user id {payload.userId} "
+            f"and suggestion id {payload.suggestionId}:\n{response.data}"
         )
         return response
