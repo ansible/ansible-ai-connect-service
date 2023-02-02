@@ -5,7 +5,7 @@ from .base import *  # NOQA
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 ANSIBLE_AI_MODEL_NAME = "wisdom"
 ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(

@@ -15,6 +15,7 @@ dependencies = [
     "django",
     "djangorestframework",
     "social-auth-app-django",
+    "django_prometheus",
 ]
 dynamic = ["version"]
 

@@ -149,6 +149,12 @@ To get an authentication token without logging in via GitHub, you can navigate t
 
 To test the API with no authentication, you can empty out REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES in base.py.
 
+## Application metrics as a Prometheus-style endpoint
+
+We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Wisdom service for monitoring and measuring its availability.
+
+To provide feedback for operational needs as well as for continuous service improvement.
+
 ## Test cases
 
 Work in progress
