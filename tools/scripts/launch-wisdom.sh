@@ -1,5 +1,19 @@
 #!/bin/bash
-until echo -e 'import sys\nfrom django.db import connection\ntry:\n    connection.ensure_connection()\nexcept Exception:\n    sys.exit(1)\n' | /var/www/venv/bin/python ansible_wisdom/manage.py shell
+set -o errexit
+
+database_ready() {
+/var/www/venv/bin/python ansible_wisdom/manage.py shell <<EOF
+import sys
+from django.db import connection
+
+try:
+    connection.ensure_connection()
+except Exception:
+    sys.exit(1)
+EOF
+}
+
+until database_ready
 do
     echo "Waiting until the database is ready..."
     sleep 5
