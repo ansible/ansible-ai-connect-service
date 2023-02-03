@@ -9,13 +9,21 @@ The Django application depends on a separate model server to perform the task su
 ## Using pre-commit
 
 Pre-commit should be used before pushing a new PR.
-To use pre-commit you need to first install it and it's dependencies by running:
+To use pre-commit, you need to first install the pre-commit package and its dependencies by running:
 
     ```bash
     pip install -r requirements-dev.txt
     ```
 
-once installed you can run the hooks with:
+
+To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this repo:
+
+    ```bash
+    pre-commit install
+    ```
+
+
+To update the pre-commit config to the latest repos' versions and run the precommit check across all files, run:
 
     ```bash
     pre-commit autoupdate && pre-commit run -a
