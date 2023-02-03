@@ -1,18 +1,11 @@
-import imp
 import logging
 import pickle
 
 import grpc
-from django.conf import settings
 from rest_framework.response import Response
 
 from .base import ModelMeshClient
-from .grpc_pb import (
-    inference_pb2,
-    inference_pb2_grpc,
-    management_pb2,
-    management_pb2_grpc,
-)
+from .grpc_pb import inference_pb2, inference_pb2_grpc, management_pb2_grpc
 
 logger = logging.getLogger(__name__)
 

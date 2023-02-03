@@ -6,8 +6,6 @@ from django.conf import settings
 
 from ari import postprocessing
 
-from .api.model_client.base import ModelMeshClient
-
 logger = logging.getLogger(__name__)
 
 

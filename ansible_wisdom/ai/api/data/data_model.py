@@ -24,4 +24,4 @@ class ModelMeshData(TypedDict):
 
 
 class ModelMeshPayload(BaseModel):
-    instances: list[ModelMeshData]
+    instances: List[ModelMeshData]

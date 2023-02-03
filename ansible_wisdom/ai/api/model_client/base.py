@@ -1,7 +1,5 @@
 from abc import abstractmethod
 
-from django.conf import settings
-
 
 class ModelMeshClient:
     def __init__(self, inference_url, management_url):

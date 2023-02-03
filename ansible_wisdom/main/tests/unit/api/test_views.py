@@ -1,7 +1,6 @@
 import pytest
 from ai.apps import AIConfig
 from django.apps import apps
-from django.test import Client
 from rest_framework.response import Response
 
 
@@ -33,7 +32,7 @@ class TestAICompletions:
                 return Response(basic_prediction_reply)
 
         rclient = mocker.patch.object(AIConfig, 'retrieve_client', return_value=DummyMeshClient())
-        r = client.post(
+        client.post(
             '/api/ai/completions/?model_name=test',
             basic_infer_prompt,
             HTTP_AUTHORIZATION=f'Bearer {admin_token.key}',
