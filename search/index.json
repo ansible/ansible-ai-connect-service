@@ -1,0 +1,26 @@
+{
+    "settings": {
+      "number_of_shards": 2
+    },
+    "mappings": {
+      "properties": {
+        "id": { "type": "text" },
+        "parent_id": { "type": "text" },
+        "path": { "type": "text" },
+        "source": { "type": "text" },
+        "type": { "type": "text" },
+        "input_script": { "type": "text" },
+        "output_script": { "type": "text" },
+        "prompt": { "type": "text" },
+        "license": { "type": "text" },
+        "metadata": { "type": "text" },
+        "namespace_name": { "type": "text" },
+        "output_script_vector": {
+          "type": "dense_vector",
+          "dims": 768,
+          "index": true,
+          "similarity": "l2_norm"
+        }
+      }
+    }
+  }

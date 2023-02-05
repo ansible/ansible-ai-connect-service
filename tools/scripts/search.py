@@ -1,0 +1,49 @@
+import argparse
+import json
+import os
+
+import pandas as pd
+import tqdm
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import streaming_bulk
+from sentence_transformers import SentenceTransformer, util
+
+
+def generate_search(str):
+    model = SentenceTransformer(f'sentence-transformers/{args.model}')
+    encoded_output = model.encode(str)
+
+    return {
+        "knn": {
+            "field": "output_script_vector",
+            "query_vector": encoded_output.tolist(),
+            "k": 10,
+            "num_candidates": 100,
+        },
+        "fields": ['source', 'type', 'license', 'output_script'],
+        "_source": False,
+    }
+
+
+def main():
+    client = Elasticsearch(os.getenv('ELASTICSEARCH_URI', 'http://localhost:9200'))
+
+    # NOTE: we need to fix some of the result set data types:
+    # "license": "license (MIT)",
+    # "license": "['MIT']",
+    # "license": "license (BSD, MIT)",
+
+    query = generate_search(args.output)
+    results = client.search(index=args.index, body=query)
+    for result in results['hits']['hits']:
+        fields = result['fields']
+        print(f'{result["_score"]}, {fields["output_script"]}, {fields["license"]}')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generating bulk load file')
+    parser.add_argument('--model', default='msmarco-distilbert-base-tas-b', help='NLP model to use')
+    parser.add_argument('--index', required=True, help='Elasticsearch index')
+    parser.add_argument('--output', required=True, help='Recommendation to search for')
+    args = parser.parse_args()
+    main()

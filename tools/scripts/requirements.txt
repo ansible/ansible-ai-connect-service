@@ -1,0 +1,5 @@
+argparse
+elasticsearch
+pandas
+sentence_transformers
+tqdm
