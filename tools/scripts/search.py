@@ -3,10 +3,8 @@ import json
 import os
 
 import pandas as pd
-import tqdm
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import streaming_bulk
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
 
 def generate_search(str):
@@ -18,7 +16,7 @@ def generate_search(str):
             "field": "output_script_vector",
             "query_vector": encoded_output.tolist(),
             "k": 10,
-            "num_candidates": 100,
+            "num_candidates": 10,
         },
         "fields": ['source', 'type', 'license', 'output_script'],
         "_source": False,
@@ -34,10 +32,11 @@ def main():
     # "license": "license (BSD, MIT)",
 
     query = generate_search(args.output)
-    results = client.search(index=args.index, body=query)
-    for result in results['hits']['hits']:
-        fields = result['fields']
-        print(f'{result["_score"]}, {fields["output_script"]}, {fields["license"]}')
+    results = client.search(
+        index=args.index, knn=query["knn"], _source=False, fields=query["fields"]
+    )
+    res = json.dumps(results['hits']['hits'])
+    print(res)
 
 
 if __name__ == '__main__':

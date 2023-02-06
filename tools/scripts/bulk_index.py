@@ -1,12 +1,11 @@
 import argparse
-import json
 import os
 
 import pandas as pd
 import tqdm
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
 
 def generate_encodings(df):
@@ -26,7 +25,6 @@ def main():
     number_of_docs = len(df)
     progress = tqdm.tqdm(unit="docs", total=number_of_docs)
     successes = 0
-    print("encoding and indexing documents")
     for ok, action in streaming_bulk(
         client=client, index=args.index, actions=generate_encodings(df)
     ):
