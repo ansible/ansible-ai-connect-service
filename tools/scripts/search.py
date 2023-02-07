@@ -41,7 +41,7 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generating bulk load file')
-    parser.add_argument('--model', default='msmarco-distilbert-base-tas-b', help='NLP model to use')
+    parser.add_argument('--model', default='all-mpnet-base-v2', help='NLP model to use')
     parser.add_argument('--index', required=True, help='Elasticsearch index')
     parser.add_argument('--output', required=True, help='Recommendation to search for')
     args = parser.parse_args()
