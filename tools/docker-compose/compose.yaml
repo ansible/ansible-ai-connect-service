@@ -64,6 +64,8 @@ services:
       - dbnet
   grafana:
     image: grafana/grafana:latest
+    environment:
+      - GF_LOG_LEVEL=warn
     ports:
       - "3000:3000"
     volumes:
