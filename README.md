@@ -163,6 +163,33 @@ We enabled the Prometheus endpoint to scrape the configuration and check the ser
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
+## Swagger UI and OpenAPI 3.0 Schema
+
+### Swagger UI
+
+Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/
+
+If you want to test Wisdom APIs using Swagger UI,
+
+1. Open http://localhost:8000/ and get an authentication token by
+following the instructions described in the
+[Authenticating with the completion API](#authenticating-with-the-completion-api)
+section.
+2. Open http://localhost:8000/api/schema/swagger-ui/
+3. Click the **Authorize** button.
+4. Input the authentication token for the tokenAuth as it is.
+You do not need to add any prefixes, such as `Bearer ` or `Token `.
+5. Click **Authorize**.
+6. Click **Close** to go back to the Swagger UI page.
+7. Expand a section for the API that you want to try and click **Try it out**.
+8. Input required parameters (if any) and click **Execute**.
+
+### OpenAPI 3.0 Schema
+
+OpenAPI 3.0 Schema YAML file is obtained by executing `GET /api/schema/` API
+on the Swagger UI page.
+
+
 ## Test cases
 
 Work in progress
