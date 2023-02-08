@@ -17,6 +17,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework import routers
 from social_django import urls as social_urls
 from users import views as user_views
@@ -42,4 +43,10 @@ urlpatterns = [
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('django_prometheus.urls')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path(
+        'api/schema/swagger-ui/',
+        SpectacularSwaggerView.as_view(url_name='schema'),
+        name='swagger-ui',
+    ),
 ]
