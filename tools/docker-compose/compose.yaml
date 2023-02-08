@@ -51,7 +51,7 @@ services:
     expose:
       - 5432
   prometheus:
-    image: prom/prometheus
+    image: docker.io/library/prom/prometheus
     command:
       - --config.file=/opt/prometheus/prometheus.yaml
       - --web.enable-lifecycle
@@ -63,7 +63,7 @@ services:
     networks:
       - dbnet
   grafana:
-    image: grafana/grafana:latest
+    image: docker.io/library/grafana/grafana:latest
     ports:
       - "3000:3000"
     volumes:
