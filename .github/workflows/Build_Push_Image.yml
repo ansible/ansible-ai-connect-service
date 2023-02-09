@@ -17,16 +17,15 @@ jobs:
     - name: Tag Name
       id: tag_name
       run: |
-        echo "timestamp=$(date +'%Y%m%d-%H-%M')"
-        echo "sha_short=$(git rev-parse --short HEAD)"
-        echo "tag='${timestamp}'-'${sha_short}'"
+        echo "::set-output name=timestamp::$(date +'%Y%m%d-%H-%M')
+        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)
 
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ steps.tag_name.outputs.tag }}
+        tags: latest ${{ steps.tag_name.outputs.timestamp }}-${{ steps.tag_name.outputs.sha_short }}
         containerfiles: |
           ./wisdom-service.Containerfile
 
