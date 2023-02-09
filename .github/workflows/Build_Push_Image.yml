@@ -19,7 +19,7 @@ jobs:
       run: |
         echo "timestamp=$(date +'%Y%m%d-%H-%M')"
         echo "sha_short=$(git rev-parse --short HEAD)"
-        echo "tag='${timestamp}'-'${sha_short}'  >> $GITHUB_OUTPUT
+        echo "tag='${timestamp}'-'${sha_short}'
 
     - name: Build Image
       id: build-image
