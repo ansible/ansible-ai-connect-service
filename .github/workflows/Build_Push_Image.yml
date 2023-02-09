@@ -14,12 +14,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Timestamp
+      run: echo "TIMESTAMP=datetime.now().strftime("%Y%m%d-%H-%M")" >> $GITHUB_ENV
+
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ github.sha }}
+        tags: latest ${{ env.TIMESTAMP }}-${{ github.sha::7 }}
         containerfiles: |
           ./wisdom-service.Containerfile
 
