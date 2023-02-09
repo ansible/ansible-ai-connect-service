@@ -43,10 +43,14 @@ urlpatterns = [
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('django_prometheus.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path(
-        'api/schema/swagger-ui/',
-        SpectacularSwaggerView.as_view(url_name='schema'),
-        name='swagger-ui',
-    ),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path(
+            'api/schema/swagger-ui/',
+            SpectacularSwaggerView.as_view(url_name='schema'),
+            name='swagger-ui',
+        ),
+    ]
