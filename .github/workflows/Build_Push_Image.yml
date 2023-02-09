@@ -22,7 +22,7 @@ jobs:
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ env.TIMESTAMP }}-${{ github.sha::7 }}
+        tags: latest ${{ env.TIMESTAMP }}-${GITHUB_SHA::7}
         containerfiles: |
           ./wisdom-service.Containerfile
 
