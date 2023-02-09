@@ -3,6 +3,8 @@ from typing import Literal
 
 from .base import *  # NOQA
 
+DEBUG = False
+
 ANSIBLE_AI_MODEL_NAME = "wisdom"
 ANSIBLE_AI_MODEL_MESH_HOST = os.environ["ANSIBLE_AI_MODEL_MESH_HOST"]
 ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.environ["ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT"]

@@ -1,0 +1,26 @@
+openapi: 3.0.2
+info:
+  title: ''
+  version: ''
+paths:
+  /api/ai/completions/:
+    post:
+      operationId: createCompletions
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+          application/x-www-form-urlencoded:
+            schema: {}
+          multipart/form-data:
+            schema: {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: {}
+          description: ''
+      tags:
+      - api

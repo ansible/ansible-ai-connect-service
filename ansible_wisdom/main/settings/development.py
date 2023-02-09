@@ -3,6 +3,8 @@ from typing import Literal
 
 from .base import *  # NOQA
 
+DEBUG = DEBUG = os.getenv('DEBUG_VALUE', 'True') == 'True'
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["*"]
@@ -32,3 +34,6 @@ CACHES = {
         "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
     }
 }
+
+if DEBUG:
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'  # NOQA

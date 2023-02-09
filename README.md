@@ -167,7 +167,11 @@ To provide feedback for operational needs as well as for continuous service impr
 
 ### Swagger UI
 
+Unless the `DEBUG_VALUE` environment value is explicitly set to `False`,
 Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/
+the development environment.
+- **Note:** It is not enabled in the production environment regardless of any settings.
+
 
 If you want to test Wisdom APIs using Swagger UI,
 
@@ -186,8 +190,21 @@ You do not need to add any prefixes, such as `Bearer ` or `Token `.
 
 ### OpenAPI 3.0 Schema
 
-OpenAPI 3.0 Schema YAML file is obtained by executing `GET /api/schema/` API
-on the Swagger UI page.
+If you want to obtain the OpenAPI 3.0 schama YAML file,
+
+1. Run the Wisdom service using containers. Make sure you are not running with the development
+settings.
+2. From a terminal, execute
+    ```commandline
+   $ podman exec -w /var/www/ansible_wisdom -it docker-compose_django_1 /var/www/venv/bin/python \
+     manage.py generateschema > ansible-wisdom-service.yaml
+    ```
+3. Replace [the ansible-wisdom-service.yaml file in the repository](tools/openapi-schema/ansible-wisdom-service.yaml)
+with the generated file, if any APIs or API documentations are updated.
+
+- **Note:** OpenAPI 3.0 Schema YAML file is also obtained by executing `GET /api/schema/` API
+on the Swagger UI page. Howevner, it contains the information about `GET /api/schema/` API
+in addition to the Wisdom APIs.
 
 
 ## Test cases
