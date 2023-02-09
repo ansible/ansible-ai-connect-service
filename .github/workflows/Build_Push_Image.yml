@@ -14,15 +14,19 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Timestamp
-      run: echo "TIMESTAMP=datetime.now().strftime("%Y%m%d-%H-%M")" >> $GITHUB_ENV
+    - name: Tag Name
+      id: tag_name
+      run: |
+        echo "timestamp=datetime.now().strftime("%Y%m%d-%H-%M")" >> $GITHUB_ENV
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "tag=${{ env.timestamp }}-${{ env.sha_short }}  >> $GITHUB_OUTPUT
 
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ env.TIMESTAMP }}-${GITHUB_SHA::7}
+        tags: latest ${{ steps.tag_name.outputs.tag }}
         containerfiles: |
           ./wisdom-service.Containerfile
 
