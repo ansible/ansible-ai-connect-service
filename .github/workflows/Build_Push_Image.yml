@@ -17,9 +17,9 @@ jobs:
     - name: Tag Name
       id: tag_name
       run: |
-        echo "timestamp=datetime.now().strftime("%Y%m%d-%H-%M")" >> $GITHUB_ENV
-        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-        echo "tag='${{ env.timestamp }}'-'${{ env.sha_short }}'  >> $GITHUB_OUTPUT
+        echo "timestamp=datetime.now().strftime("%Y%m%d-%H-%M")"
+        echo "sha_short=$(git rev-parse --short HEAD)"
+        echo "tag='${timestamp}'-'${sha_short}'  >> $GITHUB_OUTPUT
 
     - name: Build Image
       id: build-image
