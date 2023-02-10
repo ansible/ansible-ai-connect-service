@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "rest_framework",
     'rest_framework.authtoken',
     "social_django",
+    "oauth2_provider",
     "users",
     "ai",
     "django_prometheus",
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "oauth2_provider.middleware.OAuth2TokenMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
@@ -60,6 +62,7 @@ MIDDLEWARE = [
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2",
     "django.contrib.auth.backends.ModelBackend",
+    "oauth2_provider.backends.OAuth2Backend",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -86,11 +89,22 @@ SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 # Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
+OAUTH2_PROVIDER = {
+    'SCOPES': {'read': "Read scope", 'write': "Write scope"},
+}
+
+# ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
+REFRESH_TOKEN_EXPIRE_SECONDS = 1_209_600  # = 2 weeks
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
     'PAGE_SIZE': 10,
-    'DEFAULT_AUTHENTICATION_CLASSES': ('users.auth.BearerTokenAuthentication',),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'users.auth.BearerTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'  # comment out for unauthenticated API access
     ],

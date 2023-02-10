@@ -37,6 +37,7 @@ urlpatterns = [
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('', include('django_prometheus.urls')),
 ]
 

@@ -140,8 +140,10 @@ model/**
 .idea/
 .idea/workspace.xml
 
-# ignore emacs backup files
+# Emacs
 *~
+\#*\#
+.\#*
 
 db_data
 # macos folder attributes
