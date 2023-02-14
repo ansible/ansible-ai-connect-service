@@ -163,12 +163,12 @@ We enabled the Prometheus endpoint to scrape the configuration and check the ser
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
-## Swagger UI and OpenAPI 3.0 Schema
+## Swagger UI, ReDoc UI and OpenAPI 3.0 Schema
 
 ### Swagger UI
 
 Unless the `DEBUG_VALUE` environment value is explicitly set to `False`,
-Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/
+Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ in
 the development environment.
 - **Note:** It is not enabled in the production environment regardless of any settings.
 
@@ -188,23 +188,17 @@ You do not need to add any prefixes, such as `Bearer ` or `Token `.
 7. Expand a section for the API that you want to try and click **Try it out**.
 8. Input required parameters (if any) and click **Execute**.
 
+### ReDoc UI
+
+Another OpenAPI UI in the ReDoc format is also available at  http://localhost:8000/api/schema/redoc/
+in the development environment unless the `DEBUG_VALUE` environment value is explicitly set to `False`.
+
 ### OpenAPI 3.0 Schema
 
-If you want to obtain the OpenAPI 3.0 schama YAML file,
+The OpenAPI 3.0 Schema YAML files can be downloaded either:
 
-1. Run the Wisdom service using containers. Make sure you are not running with the development
-settings.
-2. From a terminal, execute
-    ```commandline
-   $ podman exec -w /var/www/ansible_wisdom -it docker-compose_django_1 /var/www/venv/bin/python \
-     manage.py generateschema > ansible-wisdom-service.yaml
-    ```
-3. Replace [the ansible-wisdom-service.yaml file in the repository](tools/openapi-schema/ansible-wisdom-service.yaml)
-with the generated file, if any APIs or API documentations are updated.
-
-- **Note:** OpenAPI 3.0 Schema YAML file is also obtained by executing `GET /api/schema/` API
-on the Swagger UI page. Howevner, it contains the information about `GET /api/schema/` API
-in addition to the Wisdom APIs.
+- Click the /api/schema/ link on Swagger UI, or
+- Click the Download button on ReDoc UI
 
 
 ## Test cases

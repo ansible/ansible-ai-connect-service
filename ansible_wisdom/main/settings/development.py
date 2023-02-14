@@ -36,4 +36,11 @@ CACHES = {
 }
 
 if DEBUG:
-    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'  # NOQA
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Ansible Wisdom Service',
+        'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
+        'VERSION': '0.0.1',
+        'SERVE_INCLUDE_SCHEMA': False,
+        # OTHER SETTINGS
+        'TAGS': [{"name": "ai", "description": "AI-related operations"}],
+    }
