@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:9.1.0-1646.1669627755
+FROM registry.access.redhat.com/ubi9/ubi:latest
 
 ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
