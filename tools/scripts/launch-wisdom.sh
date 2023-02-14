@@ -2,7 +2,7 @@
 set -o errexit
 
 database_ready() {
-/var/www/venv/bin/python ansible_wisdom/manage.py shell <<EOF
+/var/www/venv/bin/python <<EOF
 import sys
 from django.db import connection
 
