@@ -33,8 +33,30 @@ class Completions(APIView):
             f"and suggestion id {payload.suggestionId}:\n{data}"
         )
         response = model_mesh_client.infer(data, model_name=model_name)
+        # TODO do we capture these in segment as well
         logger.debug(
             f"response from inference for user id {payload.userId} "
             f"and suggestion id {payload.suggestionId}:\n{response.data}"
         )
+        response.data = self.postprocess(response.data, payload.prompt, payload.context)
+        logger.debug(
+            f"response from postprocess for user id {payload.userId} "
+            f"and suggestion id {payload.suggestionId}:\n{response.data}"
+        )
         return response
+
+    def postprocess(self, recommendation, prompt, context):
+        ari_caller = apps.get_app_config("ai").ari_caller
+        try:
+            if self.ari_caller:
+                recommendation = ari_caller.postprocess(recommendation, prompt, context)
+            else:
+                logger.warn('skipped post processing because ari was not initialized')
+        except Exception:
+            # return the original recommendation if we failed to parse
+            logger.exception(
+                f'failed to postprocess recommendation with prompt {prompt} '
+                f'context {context} and model recommendation {recommendation}'
+            )
+
+        return recommendation

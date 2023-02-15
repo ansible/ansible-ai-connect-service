@@ -20,6 +20,16 @@ jobs:
         echo "timestamp=$(date +'%Y%m%d-%H-%M')" >> $GITHUB_OUTPUT
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+    - name: Retrieve ari knowledge base from s3
+      run: |
+        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.1/
+        aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
+        aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: us-east-2
+
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2

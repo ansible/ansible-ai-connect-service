@@ -5,6 +5,7 @@ ARG DJANGO_SETTINGS_MODULE=main.settings.production
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
 RUN dnf install -y \
+    git \
     python3-devel \
     gcc \
     libpq \
@@ -26,6 +27,10 @@ COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY requirements.txt /tmp
+
+#ARG KB_ARI_PATH=./ari/kb
+#ENV KB_REMOTE_ARI_PATH=/tmp/ari/kb
+#RUN if [ -z $KB_ARI_PATH ]; then echo $KB_ARI_PATH && cp --chown=1000:0 ${KB_ARI_PATH}/ $KB_REMOTE_ARI_PATH ; fi
 
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
