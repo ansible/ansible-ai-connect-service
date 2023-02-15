@@ -18,6 +18,8 @@ class APIPayload(BaseModel):
 class ModelMeshData(TypedDict):
     prompt: str
     context: str
+    userId: Union[str, None]
+    suggestionId: Union[str, None]
 
 
 class ModelMeshPayload(BaseModel):
