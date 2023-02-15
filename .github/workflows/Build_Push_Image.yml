@@ -17,7 +17,8 @@ jobs:
     - name: Tag Name
       id: tag_name
       run: |
-        echo "timestamp=$(date +'%Y%m%d-%H-%M')" >> $GITHUB_OUTPUT
+        echo "maj-min=$(cat ./.version)" >> $GITHUB_OUTPUT
+        echo "timestamp=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
         echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build Image
@@ -25,9 +26,11 @@ jobs:
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ steps.tag_name.outputs.timestamp }}-${{ steps.tag_name.outputs.sha_short }}
+        tags: latest ${{ steps.tag_name.outputs.maj-min }}.${{ steps.tag_name.outputs.timestamp }}
         containerfiles: |
           ./wisdom-service.Containerfile
+        labels: |
+          sha-short=${{ steps.tag_name.outputs.sha_short }}
 
     - name: Push To quay.io
       id: push-to-quay
