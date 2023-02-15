@@ -48,6 +48,30 @@ class CompletionRequestSerializer(serializers.Serializer):
         help_text="A UUID that identifies a suggestion.",
     )
 
+    def validate(self, data):
+        CompletionRequestSerializer.extract_prompt_from_context(data)
+        return data
+
+    @staticmethod
+    def extract_prompt_from_context(data):
+        #
+        # If prompt is not specified in the incoming data, set the last line
+        # of context to prompt and set the remaining to context. Note that
+        # usually both prompt and context end with '\n'.
+        #
+        if 'context' in data and 'prompt' not in data:
+            context = data['context']
+            length = len(context)
+            if length > 1:
+                index = context.rfind("\n", 0, length - 1)
+                if index == -1:
+                    data['prompt'] = ''
+                else:
+                    data['prompt'] = context[index + 1 :].lstrip()
+                    data['context'] = context[: index + 1]
+            else:
+                data['prompt'] = ''
+
 
 @extend_schema_serializer(
     examples=[
