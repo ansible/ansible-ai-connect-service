@@ -10,3 +10,5 @@ redis==4.4.2
 uwsgi==2.0.21
 django_prometheus==2.2.0
 drf-spectacular==0.25.1
+PyYAML==6.0
+git+https://github.com/ansible/ansible-risk-insight#egg=ansible_risk_insight==0.1.0
