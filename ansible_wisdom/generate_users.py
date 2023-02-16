@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 fake = Faker()
 
 group_name = "perf"
-requested_users = 10
+requested_users = 1000
 
 
 def get_or_create_group(group_name):

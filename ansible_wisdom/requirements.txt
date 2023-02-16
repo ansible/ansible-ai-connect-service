@@ -7,3 +7,4 @@ psycopg2-binary==2.9.5
 redis==4.4.2
 uwsgi==2.0.21
 django_prometheus==2.2.0
+factory_boy==3.2.1
