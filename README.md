@@ -167,9 +167,8 @@ To provide feedback for operational needs as well as for continuous service impr
 
 ### Swagger UI
 
-Unless the `DEBUG_VALUE` environment value is explicitly set to `False`,
-Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ in
-the development environment.
+Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ **in
+the development environment only**.
 - **Note:** It is not enabled in the production environment regardless of any settings.
 
 
@@ -191,7 +190,7 @@ You do not need to add any prefixes, such as `Bearer ` or `Token `.
 ### ReDoc UI
 
 Another OpenAPI UI in the ReDoc format is also available at  http://localhost:8000/api/schema/redoc/
-in the development environment unless the `DEBUG_VALUE` environment value is explicitly set to `False`.
+**in the development environment only**.
 
 ### OpenAPI 3.0 Schema
 

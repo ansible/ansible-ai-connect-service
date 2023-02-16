@@ -3,7 +3,7 @@ from typing import Literal
 
 from .base import *  # NOQA
 
-DEBUG = DEBUG = os.getenv('DEBUG_VALUE', 'True') == 'True'
+DEBUG = True
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
