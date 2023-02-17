@@ -4,8 +4,6 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
-from .models import CompletionRequest, CompletionResponse
-
 
 @extend_schema_serializer(
     examples=[
@@ -22,9 +20,8 @@ from .models import CompletionRequest, CompletionResponse
         ),
     ]
 )
-class CompletionRequestSerializer(serializers.ModelSerializer):
+class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        model = CompletionRequest
         fields = ['context', 'prompt', 'userId', 'suggestionId']
 
     context = serializers.CharField(
@@ -64,9 +61,8 @@ class CompletionRequestSerializer(serializers.ModelSerializer):
         ),
     ]
 )
-class CompletionResponseSerializer(serializers.ModelSerializer):
+class CompletionResponseSerializer(serializers.Serializer):
     class Meta:
-        model = CompletionResponse
         fields = ['predictions']
 
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
