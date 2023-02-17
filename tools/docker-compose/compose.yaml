@@ -32,8 +32,8 @@ services:
     restart: always
     networks:
       - dbnet
-    expose:
-      - 6379
+    ports:
+      - "6379:6379"
   db:
     image: docker.io/library/postgres:alpine
     environment:
@@ -48,8 +48,8 @@ services:
 # 2023-01-17 21:46:56.579 UTC [33] LOG:  out of file descriptors: No file descriptors available; release and retry
 #    volumes:
 #      - $PWD/db_data:/var/lib/postgresql/data
-    expose:
-      - 5432
+    ports:
+      - "5432:5432"
   prometheus:
     image: docker.io/prom/prometheus
     command:
