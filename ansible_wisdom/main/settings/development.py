@@ -3,6 +3,8 @@ from typing import Literal
 
 from .base import *  # NOQA
 
+DEBUG = True
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["*"]
@@ -32,3 +34,13 @@ CACHES = {
         "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
     }
 }
+
+if DEBUG:
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Ansible Wisdom Service',
+        'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
+        'VERSION': '0.0.1',
+        'SERVE_INCLUDE_SCHEMA': False,
+        # OTHER SETTINGS
+        'TAGS': [{"name": "ai", "description": "AI-related operations"}],
+    }

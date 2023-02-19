@@ -163,6 +163,43 @@ We enabled the Prometheus endpoint to scrape the configuration and check the ser
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
+## Swagger UI, ReDoc UI and OpenAPI 3.0 Schema
+
+### Swagger UI
+
+Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ **in
+the development environment only**.
+- **Note:** It is not enabled in the production environment regardless of any settings.
+
+
+If you want to test Wisdom APIs using Swagger UI,
+
+1. Open http://localhost:8000/ and get an authentication token by
+following the instructions described in the
+[Authenticating with the completion API](#authenticating-with-the-completion-api)
+section.
+2. Open http://localhost:8000/api/schema/swagger-ui/
+3. Click the **Authorize** button.
+4. Input the authentication token for the tokenAuth as it is.
+You do not need to add any prefixes, such as `Bearer ` or `Token `.
+5. Click **Authorize**.
+6. Click **Close** to go back to the Swagger UI page.
+7. Expand a section for the API that you want to try and click **Try it out**.
+8. Input required parameters (if any) and click **Execute**.
+
+### ReDoc UI
+
+Another OpenAPI UI in the ReDoc format is also available at  http://localhost:8000/api/schema/redoc/
+**in the development environment only**.
+
+### OpenAPI 3.0 Schema
+
+The OpenAPI 3.0 Schema YAML files can be downloaded either:
+
+- Click the /api/schema/ link on Swagger UI, or
+- Click the Download button on ReDoc UI
+
+
 ## Test cases
 
 Work in progress

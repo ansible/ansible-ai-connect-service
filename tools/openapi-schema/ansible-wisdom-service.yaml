@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: Ansible Wisdom Service
+  version: 0.0.1
+  description: Equip the automation developer with Wisdom super powers.
+paths:
+  /api/ai/completions/:
+    post:
+      operationId: ai_completions_create
+      description: Returns inline code suggestions based on a given Ansible editor
+        context.
+      summary: Inline code suggestions
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+            examples:
+              ValidExample:
+                value:
+                  context: |
+                    ---
+                    - hosts: all
+                      become: yes
+
+                      tasks:
+                  prompt: |
+                    - name: Install Apache
+                summary: Request Sample
+                description: A valid sample request.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionResponse'
+              examples:
+                ValidExample:
+                  value:
+                    predictions:
+                    - |2
+                        package:
+                          name: apache2
+                          state: present
+                  summary: Response sample
+                  description: A valid sample response.
+          description: ''
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+components:
+  schemas:
+    CompletionRequest:
+      type: object
+      properties:
+        context:
+          type: string
+          description: Editor context. This is required.
+        prompt:
+          type: string
+          description: Editor prompt.
+        userId:
+          type: string
+          format: uuid
+          title: User ID
+          description: A UUID that identifies a user.
+        suggestionId:
+          type: string
+          format: uuid
+          title: Suggestion ID
+          description: A UUID that identifies a suggestion.
+      required:
+      - context
+    CompletionResponse:
+      type: object
+      properties:
+        predictions:
+          type: array
+          items:
+            type: string
+      required:
+      - predictions
+  securitySchemes:
+    tokenAuth:
+      type: http
+      scheme: bearer
+tags:
+- name: ai
+  description: AI-related operations
