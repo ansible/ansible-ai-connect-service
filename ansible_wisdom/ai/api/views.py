@@ -42,7 +42,14 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         model_name = payload.model_name
         model_mesh_payload = ModelMeshPayload(
-            instances=[{"prompt": payload.prompt, "context": payload.context}]
+            instances=[
+                {
+                    "prompt": payload.prompt,
+                    "context": payload.context,
+                    "userId": payload.userId,
+                    "suggestionId": payload.suggestionId,
+                }
+            ]
         )
         data = model_mesh_payload.dict()
         logger.debug(
