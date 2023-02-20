@@ -11,7 +11,8 @@ RUN dnf install -y \
     libpq-devel \
     python3 \
     python3-pip \
-    nginx
+    nginx \
+    less
 
 RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf install -y inotify-tools && \
