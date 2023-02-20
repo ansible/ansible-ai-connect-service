@@ -1,4 +1,3 @@
-# Create your views here.
 import json
 import logging
 import time
@@ -7,6 +6,8 @@ import yaml
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -28,6 +29,7 @@ class Completions(APIView):
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
+    permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(
