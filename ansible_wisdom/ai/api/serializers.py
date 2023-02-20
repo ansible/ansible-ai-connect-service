@@ -49,6 +49,7 @@ class CompletionRequestSerializer(serializers.Serializer):
     )
 
     def validate(self, data):
+        data = super().validate(data)
         CompletionRequestSerializer.extract_prompt_from_context(data)
         return data
 
