@@ -46,8 +46,8 @@ class Completions(APIView):
                 {
                     "prompt": payload.prompt,
                     "context": payload.context,
-                    "userId": str(payload.userId),
-                    "suggestionId": str(payload.suggestionId),
+                    "userId": str(payload.userId) if payload.userId else None,
+                    "suggestionId": str(payload.suggestionId) if payload.suggestionId else None,
                 }
             ]
         )
