@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "ai",
     "django_prometheus",
     "drf_spectacular",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
