@@ -23,6 +23,7 @@ services:
       - SOCIAL_AUTH_GITHUB_TEAM_KEY=${SOCIAL_AUTH_GITHUB_TEAM_KEY}
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
       - SECRET_KEY=${SECRET_KEY:-somesecret}
+      - SEGMENT_WRITE_KEY=${SEGMENT_WRITE_KEY}
     command:
       - /usr/bin/launch-wisdom.sh
     networks:
