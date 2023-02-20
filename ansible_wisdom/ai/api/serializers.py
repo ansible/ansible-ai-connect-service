@@ -61,15 +61,10 @@ class CompletionRequestSerializer(serializers.Serializer):
         # usually both prompt and context end with '\n'.
         #
         if 'context' in data and 'prompt' not in data:
-            context = data['context']
-            length = len(context)
-            if length > 1:
-                index = context.rfind("\n", 0, length - 1)
-                if index == -1:
-                    data['prompt'] = ''
-                else:
-                    data['prompt'] = context[index + 1 :].lstrip()
-                    data['context'] = context[: index + 1]
+            s = data['context'][:-1].rpartition('\n')
+            if s[1] == '\n':
+                data['prompt'] = s[2].lstrip() + data['context'][-1]
+                data['context'] = s[0] + s[1]
             else:
                 data['prompt'] = ''
 
