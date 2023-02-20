@@ -124,14 +124,16 @@ services on your local machine.
     make ansible-wisdom-container
     ```
 
-2. Start backend services. This will start the Django application from container
-first, run `manage.py migrate` to set up DB, then kill the application.
+2. Start backend services.
 
     ```bash
     make run-backends
     ```
 
 For terminating backend services, run `make stop-backends`.
+
+Note that you need to run `manage.py migrate` to set up DB
+before running the Django application from source,
 
 The setup for debugging is different depending on the Python development tool.
 For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
