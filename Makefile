@@ -29,3 +29,20 @@ run-django-container:
 
 docker-compose:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
+
+# Run backend services in container for running Django application from source
+run-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans --detach
+	@until $$(curl -sfo /dev/null http://localhost:8000); do printf '.'; sleep 5; done
+	@printf '\nDjango Server is up and running.\n'
+	@sleep 3
+	@printf 'Kill Django server...\n'
+	${CONTAINER_RUNTIME} kill docker-compose_django_1
+	@sleep 3
+	${CONTAINER_RUNTIME} ps -a
+
+# Stop backend services
+stop-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml down
+	@sleep 3
+	${CONTAINER_RUNTIME} ps -a
