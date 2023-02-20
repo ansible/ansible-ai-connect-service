@@ -6,7 +6,6 @@ from rest_framework.response import Response
 
 from .base import ModelMeshClient
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

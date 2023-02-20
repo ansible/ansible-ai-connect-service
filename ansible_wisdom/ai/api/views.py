@@ -10,7 +10,6 @@ from rest_framework.views import APIView
 from .data.data_model import APIPayload, ModelMeshPayload
 from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

@@ -14,7 +14,6 @@ from .grpc_pb import (
     management_pb2_grpc,
 )
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
