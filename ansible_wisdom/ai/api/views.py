@@ -46,8 +46,8 @@ class Completions(APIView):
                 {
                     "prompt": payload.prompt,
                     "context": payload.context,
-                    "userId": payload.userId,
-                    "suggestionId": payload.suggestionId,
+                    "userId": str(payload.userId),
+                    "suggestionId": str(payload.suggestionId),
                 }
             ]
         )
