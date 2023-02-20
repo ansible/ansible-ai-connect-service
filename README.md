@@ -11,23 +11,23 @@ The Django application depends on a separate model server to perform the task su
 Pre-commit should be used before pushing a new PR.
 To use pre-commit, you need to first install the pre-commit package and its dependencies by running:
 
-    ```bash
-    pip install -r requirements-dev.txt
-    ```
+```bash
+pip install -r requirements-dev.txt
+```
 
 
 To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this repo:
 
-    ```bash
-    pre-commit install
-    ```
+```bash
+pre-commit install
+```
 
 
 To update the pre-commit config to the latest repos' versions and run the precommit check across all files, run:
 
-    ```bash
-    pre-commit autoupdate && pre-commit run -a
-    ```
+```bash
+pre-commit autoupdate && pre-commit run -a
+```
 
 ## Full Development Environment
 
@@ -81,36 +81,36 @@ chcon -t container_file_t -R ansible_wisdom/
 
 1. Build the container
 
-    ```bash
-    make ansible-wisdom-container
-    ```
+```bash
+make ansible-wisdom-container
+```
 
 2. Start the container
 
-    ```bash
-    make run-django-container
-    ```
+```bash
+make run-django-container
+```
 
 ## Running the Django application standalone (from source)
 
 1. Clone the repository and install all the dependencies
 
-    ```bash
-    pip install -r ansible_wisdom/requirements.txt
-    ```
+```bash
+pip install -r ansible_wisdom/requirements.txt
+```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
-    ```bash
-    export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-    export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
-    ```
+```bash
+export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
+export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
+```
 
 1. Start the django application
 
-    ```bash
-    make run-django
-    ```
+```bash
+make run-django
+```
 
 ## Testing the completion API
 
@@ -155,7 +155,7 @@ Once you start the app, navigate to http://localhost:8000/ to log in. Once authe
 
 To get an authentication token without logging in via GitHub, you can navigate to http://localhost:8000/admin/ and log in with your superuser credentials, then navigate back to http://localhost:8000/ (or view your token in the admin console).
 
-To test the API with no authentication, you can empty out REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES in base.py.
+To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
 
 ## Application metrics as a Prometheus-style endpoint
 
