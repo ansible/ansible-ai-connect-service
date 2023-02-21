@@ -2,6 +2,7 @@
 import logging
 
 from django.apps import apps
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompletionsUserRateThrottle(UserRateThrottle):
-    rate = '10/minute'
+    rate = settings.COMPLETION_USER_RATE_THROTTLE
 
 
 class Completions(APIView):
