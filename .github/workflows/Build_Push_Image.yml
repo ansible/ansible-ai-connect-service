@@ -17,17 +17,25 @@ jobs:
     - name: Tag Name
       id: tag_name
       run: |
-        echo "timestamp=$(date +'%Y%m%d-%H-%M')" >> $GITHUB_OUTPUT
-        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
+          echo "IMAGE_TAGS=pr-${{ github.event.pull_request.number }}.$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+        else
+          echo "IMAGE_TAGS=latest $(cat ./.version).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+        fi
+        echo "sha-short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "sha-long=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: latest ${{ steps.tag_name.outputs.timestamp }}-${{ steps.tag_name.outputs.sha_short }}
+        tags: ${{ steps.tag_name.outputs.IMAGE_TAGS }}
         containerfiles: |
           ./wisdom-service.Containerfile
+        labels: |
+          sha-short=${{ steps.tag_name.outputs.sha-short }}
+          sha-long=${{ steps.tag_name.outputs.sha-long }}
 
     - name: Push To quay.io
       id: push-to-quay
