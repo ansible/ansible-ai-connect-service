@@ -182,4 +182,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = False
 
-COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute')
+# Depending on how env var is set, can end up with extraneous quotes.
+# this is defensive, we could just let it happen and
+# leave it to the operator who set the var to fix it
+COMPLETION_USER_RATE_THROTTLE = (
+    os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
+)
