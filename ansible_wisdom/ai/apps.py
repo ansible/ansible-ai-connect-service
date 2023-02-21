@@ -1,3 +1,4 @@
+import os
 import logging
 
 from ari.postprocessing import ari
@@ -36,10 +37,14 @@ class AiConfig(AppConfig):
 
         # TODO may be we can parallelize ari and grpc client creation
         try:
-            self.ari_caller = ari.ARICaller(
-                config=ari.default_config(),
-                silent=True,
-            )
+            if ari.is_enabled():
+                self.ari_caller = ari.ARICaller(
+                    config=ari.default_config(),
+                    silent=True,
+                )
+                logger.info("Postprocessing is enabled.")
+            else:
+                logger.info("no ARI rules fonud. Postprocessing is disabled.")
         except Exception:
             logger.exception('failed to initialize ARI')
             self.ari_caller = None

@@ -64,18 +64,22 @@ class Completions(APIView):
             f"response from inference for user id {payload.userId} "
             f"and suggestion id {payload.suggestionId}:\n{response.data}"
         )
-        response.data = self.postprocess(response.data, payload.prompt, payload.context)
+        response.data = self.postprocess(response.data, payload.prompt, payload.context, payload.suggestionId)
         logger.debug(
             f"response from postprocess for user id {payload.userId} "
             f"and suggestion id {payload.suggestionId}:\n{response.data}"
         )
         return response
 
-    def postprocess(self, recommendation, prompt, context):
+    def postprocess(self, recommendation, prompt, context, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
         try:
-            if self.ari_caller:
-                recommendation = ari_caller.postprocess(recommendation, prompt, context)
+            if ari_caller:
+                for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                    logger.info(f"suggestion id: {suggestion_id}, original recommendation: {recommendation_yaml}")
+                    postprocessed_yaml = ari_caller.postprocess(recommendation_yaml, prompt, context)
+                    logger.info(f"suggestion id: {suggestion_id}, post-processed recommendation: {postprocessed_yaml}")
+                    recommendation["predictions"][i] = postprocessed_yaml
             else:
                 logger.warn('skipped post processing because ari was not initialized')
         except Exception:

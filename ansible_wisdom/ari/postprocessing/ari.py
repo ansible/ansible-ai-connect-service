@@ -22,10 +22,15 @@ def time_activity(activity_name: str):
         logger.info(f'[Timing] {activity_name} finished (Took {duration:.2f}s)')
 
 
+def is_enabled():
+    rules_dir = os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'rules')
+    return os.path.exists(rules_dir)
+
+
 def default_config():
     return Config(
-        rules_dir=os.path.join(os.getenv('KB_ARI_PATH', '/tmp/ari/kb/'), 'rules'),
-        data_dir=os.path.join(os.getenv('KB_ARI_PATH', '/tmp/ari/kb/'), 'data'),
+        rules_dir=os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'rules'),
+        data_dir=os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'data'),
         rules=[
             "P001",
             "P002",
@@ -148,11 +153,11 @@ class ARICaller:
             modified_yaml = detail.get("modified_yaml", "")
 
         # return inference_output
-        print("--before--")
-        print(inference_output)
-        print("--after--")
-        print(modified_yaml)
-        print("--detail--")
-        print(json.dumps(detail_data, indent=2))
+        logger.debug("--before--")
+        logger.debug(inference_output)
+        logger.debug("--after--")
+        logger.debug(modified_yaml)
+        logger.debug("--detail--")
+        logger.debug(json.dumps(detail_data, indent=2))
 
         return modified_yaml
