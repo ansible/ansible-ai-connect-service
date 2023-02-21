@@ -76,9 +76,15 @@ class Completions(APIView):
         try:
             if ari_caller:
                 for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-                    logger.info(f"suggestion id: {suggestion_id}, original recommendation: {recommendation_yaml}")
-                    postprocessed_yaml = ari_caller.postprocess(recommendation_yaml, prompt, context)
-                    logger.info(f"suggestion id: {suggestion_id}, post-processed recommendation: {postprocessed_yaml}")
+                    logger.info(
+                        f"suggestion id: {suggestion_id}, original recommendation: {recommendation_yaml}"
+                    )
+                    postprocessed_yaml = ari_caller.postprocess(
+                        recommendation_yaml, prompt, context
+                    )
+                    logger.info(
+                        f"suggestion id: {suggestion_id}, post-processed recommendation: {postprocessed_yaml}"
+                    )
                     recommendation["predictions"][i] = postprocessed_yaml
             else:
                 logger.warn('skipped post processing because ari was not initialized')

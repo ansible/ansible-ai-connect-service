@@ -1,4 +1,3 @@
-import os
 import logging
 
 from ari.postprocessing import ari
