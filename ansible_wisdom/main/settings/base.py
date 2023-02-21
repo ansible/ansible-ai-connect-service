@@ -96,6 +96,16 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = "main.urls"
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "root": {
+            "level": "WARNING",
+        },
+    },
+}
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
