@@ -29,3 +29,11 @@ run-django-container:
 
 docker-compose:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
+
+# Run backend services in container for running Django application from source
+run-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans
+
+# Stop backend services
+stop-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml down
