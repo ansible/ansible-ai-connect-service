@@ -1,4 +1,3 @@
-import json
 import time
 
 from django.conf import settings
@@ -12,18 +11,12 @@ class SegmentMiddleware:
     def __call__(self, request):
         start_time = time.time()
 
-        # Django does not set request.POST for data sent with application/json.
-        # Also we cannot access request.body after self.get_response() is called.
-        # So we need to get request_data here for building an event to be sent to
-        # Segment later.
-        if settings.SEGMENT_WRITE_KEY:
-            if request.path == '/api/ai/completions/' and request.method == 'POST':
-                request_data = json.loads(request.body.decode("utf-8")) if request.body else {}
-
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == '/api/ai/completions/' and request.method == 'POST':
+                request_data = response.renderer_context['request'].data
+
                 user_id = request_data.get('userId', 'unknown')
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
