@@ -186,28 +186,35 @@ To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAUL
 
 ## Enabling postprocess with ARI
 
-You can enable postprocess with [Ansible Risk Insight (ARI)](github.com/ansible/ansible-risk-insight) for improving the completion output.
+You can enable postprocess with [Ansible Risk Insight (ARI)](github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
 
-To enable it, you can prepare `rules` and `data` directory inside `ari/kb` directory.
+1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
 
-`rules` should contain mutation rules for the postprocess, you can refer to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
+    ```bash
+    $ export ENABLE_ARI_POSTPROCESS=True
+    ```
 
-`data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this file must be placed manually if you want to enable the postprocess.
 
-Once the files are ready, the `ari/kb` directory should look like this.
+2. Prepare `rules` and `data` directory inside `ari/kb` directory.
 
-```bash
-ari/kb/
-├── data
-│   ├── collections
-│   └── indices
-└── rules
-    ├── W001_module_name_metrics.py
-    ├── W002_module_key_metrics.py
-    ├── ...
-```
+    `rules` should contain mutation rules for the postprocess, you can refer to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
 
-Then you can build the image to get the django image with postprocess feature.
+    `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this file must be placed manually if you want to enable the postprocess.
+
+    Once the files are ready, the `ari/kb` directory should look like this.
+
+    ```bash
+    ari/kb/
+    ├── data
+    │   ├── collections
+    │   └── indices
+    └── rules
+        ├── W001_module_name_metrics.py
+        ├── W002_module_key_metrics.py
+        ├── ...
+    ```
+
+Then you can build the django image or just run `make docker-compose`.
 
 ## Application metrics as a Prometheus-style endpoint
 
