@@ -26,8 +26,10 @@ class CompletionRequestSerializer(serializers.Serializer):
 
     context = serializers.CharField(
         trim_whitespace=False,
+        default='',
+        allow_blank=True,
         label='Context',
-        help_text='Editor context. This is required.',
+        help_text='Editor context.',
     )
     prompt = serializers.CharField(
         trim_whitespace=False,
