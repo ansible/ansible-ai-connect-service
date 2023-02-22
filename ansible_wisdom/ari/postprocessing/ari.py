@@ -2,10 +2,10 @@ import contextlib
 import json
 import logging
 import timeit
+
 import yaml
 from ansible_risk_insight.scanner import ARIScanner
 from django.conf import settings
-
 
 logger = logging.getLogger(__name__)
 

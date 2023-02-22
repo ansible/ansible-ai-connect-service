@@ -1,7 +1,7 @@
 import logging
 
-from ari.postprocessing import ari
 from ansible_risk_insight.scanner import Config
+from ari.postprocessing import ari
 from django.apps import AppConfig
 from django.conf import settings
 
