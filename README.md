@@ -221,11 +221,22 @@ Another OpenAPI UI in the ReDoc format is also available at  http://localhost:80
 
 ### OpenAPI 3.0 Schema
 
-The OpenAPI 3.0 Schema YAML files can be downloaded either:
+The static OpenAPI Schema YAML file is stored as
+[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml) in this repository.
+
+When you make code changes, please update the static OpenAPI Schema YAML file
+with the following steps:
+
+1. Update API descriptions.  See [this doc](https://docs.google.com/document/d/1iF32yui3JTG808GhInN7CUTEn4Ocimed1szOn0N0P_E/edit#heading=h.sufj9xfpwkbn)
+to find where to update.
+2. Make sure the API version is updated in [development.yaml](https://github.com/ansible/ansible-wisdom-service/blob/7a9669be1ac5b037d1bd92793db48e6aed15bb4e/ansible_wisdom/main/settings/development.py#L38)
+3. Run `make update-openapi-schema` in the project root.
+4. Checkin the updated OpenAPI Schema YAML file with your API changes.
+
+Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded either:
 
 - Click the /api/schema/ link on Swagger UI, or
 - Click the Download button on ReDoc UI
-
 
 ## Test cases
 

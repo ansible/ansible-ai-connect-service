@@ -30,6 +30,7 @@ class Completions(APIView):
             200: CompletionResponseSerializer,
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
         },
         summary="Inline code suggestions",
     )

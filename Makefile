@@ -37,3 +37,7 @@ run-backends:
 # Stop backend services
 stop-backends:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml down
+
+# Update OpenAPI 3.0 schema while running the service in development env
+update-openapi-schema:
+	curl -X GET http://localhost:8000/api/schema/ -o tools/openapi-schema/ansible-wisdom-service.yaml

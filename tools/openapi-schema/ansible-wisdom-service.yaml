@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.1
+  version: 0.0.2
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -36,7 +36,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompletionRequest'
-        required: true
       security:
       - tokenAuth: []
       responses:
@@ -60,6 +59,8 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
+        '429':
+          description: Request was throttled
 components:
   schemas:
     CompletionRequest:
@@ -67,7 +68,8 @@ components:
       properties:
         context:
           type: string
-          description: Editor context. This is required.
+          default: ''
+          description: Editor context.
         prompt:
           type: string
           description: Editor prompt.
@@ -81,8 +83,6 @@ components:
           format: uuid
           title: Suggestion ID
           description: A UUID that identifies a suggestion.
-      required:
-      - context
     CompletionResponse:
       type: object
       properties:
