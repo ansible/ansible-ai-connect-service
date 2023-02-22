@@ -35,19 +35,13 @@ RUN mkdir /etc/ari && \
     chown 1000 /etc/ansible
 ENV ANSIBLE_HOME=/etc/ansible
 
-ARG KB_ARI_PATH=/tmp/ari_kb_src
-# copy the ARI KB files from local `./ari/kb` to the temporary dir `$KB_ARI_PATH` (even if ari/kb is empty)
-COPY ari/kb $KB_ARI_PATH
-ENV KB_REMOTE_ARI_PATH=/etc/ari/kb
-# if `rules` dir exists, then copy the ARI KB files (rules & data) to the actual dir `$KB_REMOTE_ARI_PATH`
-# otherwise, do nothing here and eventually postprocessing is disabled
-RUN if [ -d $KB_ARI_PATH/rules ]; then echo $KB_ARI_PATH && cp -r ${KB_ARI_PATH}/ $KB_REMOTE_ARI_PATH && chown -R 1000 $KB_REMOTE_ARI_PATH ; else echo "postprocessing is disabled"; fi
-
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
-      /var/log/nginx ; \
+      /var/log/nginx \
+      /etc/ari \
+      /etc/ansible ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 RUN /usr/bin/python3 -m venv /var/www/venv
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible_wisdom/requirements.txt

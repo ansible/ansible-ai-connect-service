@@ -1,11 +1,11 @@
 import contextlib
 import json
 import logging
-import os
 import timeit
-
 import yaml
-from ansible_risk_insight.scanner import ARIScanner, Config
+from ansible_risk_insight.scanner import ARIScanner
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,35 +20,6 @@ def time_activity(activity_name: str):
     finally:
         duration = timeit.default_timer() - start
         logger.info(f'[Timing] {activity_name} finished (Took {duration:.2f}s)')
-
-
-def is_enabled():
-    rules_dir = os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'rules')
-    return os.path.exists(rules_dir)
-
-
-def default_config():
-    return Config(
-        rules_dir=os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'rules'),
-        data_dir=os.path.join(os.getenv('KB_REMOTE_ARI_PATH', '/etc/ari/kb/'), 'data'),
-        rules=[
-            "P001",
-            "P002",
-            "P003",
-            "P004",
-            "W001",
-            "W003",
-            "W004",
-            "W005",
-            "W006",
-            "W007",
-            "W008",
-            "W009",
-            "W010",
-            "W012",
-            "W013",
-        ],
-    )
 
 
 class ARICaller:
@@ -147,7 +118,7 @@ class ARICaller:
         task = playbook.task(name=task_name)
         modified_yaml = inference_output
         if task:
-            rule_result = task.find_result(rule_id="W007")
+            rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
             detail = rule_result.get_detail()
             detail_data = detail.get("detail", "")
             modified_yaml = detail.get("modified_yaml", "")

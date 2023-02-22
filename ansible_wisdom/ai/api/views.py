@@ -78,14 +78,14 @@ class Completions(APIView):
         try:
             if ari_caller:
                 for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-                    logger.info(
+                    logger.debug(
                         f"suggestion id: {suggestion_id}, "
                         f"original recommendation: {recommendation_yaml}"
                     )
                     postprocessed_yaml = ari_caller.postprocess(
                         recommendation_yaml, prompt, context
                     )
-                    logger.info(
+                    logger.debug(
                         f"suggestion id: {suggestion_id}, "
                         f"post-processed recommendation: {postprocessed_yaml}"
                     )

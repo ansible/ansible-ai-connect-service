@@ -11,6 +11,7 @@ services:
     restart: always
     volumes:
       - $PWD/ansible_wisdom:/var/www/ansible_wisdom
+      - $PWD/ari/kb:/etc/ari/kb
     ports:
       - "8000:8000"
     environment:
@@ -20,6 +21,8 @@ services:
       - ANSIBLE_AI_DATABASE_PASSWORD=wisdom
       - ANSIBLE_AI_DATABASE_HOST=db
       - ANSIBLE_HOME=/etc/ansible
+      - ENABLE_ARI_POSTPROCESS=${ENABLE_ARI_POSTPROCESS}
+      - ARI_KB_PATH=/etc/ari/kb
       - DEBUG_VALUE=${DEBUG_VALUE}
       - SOCIAL_AUTH_GITHUB_TEAM_KEY=${SOCIAL_AUTH_GITHUB_TEAM_KEY}
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
