@@ -15,7 +15,7 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == '/api/ai/completions/' and request.method == 'POST':
-                request_data = response.renderer_context['request'].data
+                request_data = getattr(response.renderer_context['request'], 'data', {})
 
                 user_id = request_data.get('userId', 'unknown')
                 suggestion_id = request_data.get('suggestionId')
