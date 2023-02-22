@@ -35,29 +35,6 @@ CACHES = {
     }
 }
 
-ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
-ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
-ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, 'rules')
-ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, 'data')
-ARI_RULES = [
-    "P001",
-    "P002",
-    "P003",
-    "P004",
-    "W001",
-    "W003",
-    "W004",
-    "W005",
-    "W006",
-    "W007",
-    "W008",
-    "W009",
-    "W010",
-    "W012",
-    "W013",
-]
-ARI_RULE_FOR_OUTPUT_RESULT = "W007"
-
 if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Wisdom Service',

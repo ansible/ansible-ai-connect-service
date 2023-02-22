@@ -33,62 +33,16 @@ class ARICaller:
 
     @classmethod
     def make_playbook_yaml(cls, context, prompt, inference_output):
-        inference_output_is_playbook = False
-
-        # if prompt is at play level, the inference output will be a play instead of a task
-        # when the output contains `hosts:` and `tasks:`, it is a play
-        if "hosts:" in inference_output and "tasks:" in inference_output:
-            inference_output_is_playbook = True
-
-        if inference_output_is_playbook:
-            playbook_yaml = prompt + "\n"
-            playbook_yaml += inference_output
-            play_data = yaml.safe_load(inference_output)
-            tasks = play_data.get("tasks", [])
-            task_name = ""
-            if tasks:
-                task_name = tasks[-1].get("name", "")
-            return playbook_yaml, task_name
-
-        # if there is no contexts, use the dummy playbook as a context
-        #  since ARI assumes that an input is a playbook
-        dummy_playbook = '''- name: playbook
-  hosts: localhost
-  connection: local
-  tasks:
-'''
-
-        if not context:
-            context = dummy_playbook
-
-        lines = context.splitlines()
-        task_indent_level = 0
-        inside_tasks = False
-        insert_index = -1
-        for j, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith("tasks:"):
-                inside_tasks = True
-                if j == len(lines) - 1:
-                    task_indent_level = len(line.split("tasks:")[0]) + 2
-                else:
-                    task_indent_level = len(lines[j + 1].split("-")[0])
-            if inside_tasks:
-                if j == len(lines) - 1:
-                    insert_index = len(lines)
-                else:
-                    next_line_indent_level = len(lines[j + 1]) - len(lines[j + 1].lstrip())
-                    if next_line_indent_level < task_indent_level:
-                        insert_index = j + 1
-                if insert_index >= 0:
-                    inside_tasks = False
-                    break
-        if insert_index == -1:
-            raise ValueError("Failed to find the place where the task should be inserted")
-
-        lines.insert(insert_index, cls.indent(prompt, task_indent_level))
-        lines.insert(insert_index + 1, cls.indent(inference_output, task_indent_level))
-        playbook_yaml = "\n".join(lines)
+        playbook_yaml = context + "\n" + cls.indent(prompt, 4) + "\n" + cls.indent(inference_output, 4)
+        try:
+            # check if the playbook yaml is valid
+            _ = yaml.safe_load(playbook_yaml)
+        except Exception:
+            logger.exception(
+                f'failed to create a valid playbook YAML which can be loaded correctly: '
+                f'the created one is the following:\n{playbook_yaml}'
+            )
+            raise
         task_name = prompt.split("name:")[-1].strip()
         return playbook_yaml, task_name
 
@@ -117,6 +71,7 @@ class ARICaller:
 
         task = playbook.task(name=task_name)
         modified_yaml = inference_output
+        detail_data = {}
         if task:
             rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
             detail = rule_result.get_detail()
