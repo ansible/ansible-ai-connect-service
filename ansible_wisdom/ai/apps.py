@@ -5,7 +5,6 @@ from ari.postprocessing import ari
 from django.apps import AppConfig
 from django.conf import settings
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
