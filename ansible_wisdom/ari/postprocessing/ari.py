@@ -33,7 +33,9 @@ class ARICaller:
 
     @classmethod
     def make_playbook_yaml(cls, context, prompt, inference_output):
-        playbook_yaml = context + "\n" + cls.indent(prompt, 4) + "\n" + cls.indent(inference_output, 4)
+        playbook_yaml = (
+            context + "\n" + cls.indent(prompt, 4) + "\n" + cls.indent(inference_output, 4)
+        )
         try:
             # check if the playbook yaml is valid
             _ = yaml.safe_load(playbook_yaml)
