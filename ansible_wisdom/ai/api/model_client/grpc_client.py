@@ -8,6 +8,9 @@ from rest_framework.response import Response
 
 from .base import ModelMeshClient
 from .grpc_pb import (
+    common_service_pb2,
+    common_service_pb2_grpc,
+    data_model_pb2,
     inference_pb2,
     inference_pb2_grpc,
     management_pb2,
@@ -23,24 +26,21 @@ class GrpcClient(ModelMeshClient):
         self._inference_stub = self.get_inference_stub()
         self._management_stub = self.get_management_stub()
 
-    def get_inference_stub(self) -> inference_pb2_grpc.InferenceAPIsServiceStub:
+    def get_inference_stub(self) -> common_service_pb2_grpc.CoreAnsibleWisdomExtServiceStub:
         channel = grpc.insecure_channel(self._inference_url)
         logger.debug("Inference URL: " + self._inference_url)
-        stub = inference_pb2_grpc.InferenceAPIsServiceStub(channel)
+        stub = common_service_pb2_grpc.CoreAnsibleWisdomExtServiceStub(channel)
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
-    def get_management_stub(self) -> management_pb2_grpc.ManagementAPIsServiceStub:
-        channel = grpc.insecure_channel(self._management_url)
-        stub = management_pb2_grpc.ManagementAPIsServiceStub(channel)
-        return stub
-
-    def infer(self, model_input, model_name="wisdom") -> Response:
-        input_data = {'data': pickle.dumps(model_input)}
-        logger.debug(f"Input Data: {input_data}")
-        logger.debug(f"Model Name: {model_name}")
-        response = self._inference_stub.Predictions(
-            inference_pb2.PredictionsRequest(model_name=model_name, input=input_data)
+    def infer(self, prompt, context) -> Response:
+        logger.debug(f"Input prompt: {prompt}")
+        logger.debug(f"Input context: {context}")
+        response = self._inference_stub.AnsibleWisdomPredict(
+            common_service_pb2.AnsibleWisdomRequest(
+                prompt=prompt, input=data_model_pb2.RawDocument(text=context)
+            ),
+            metadata=(("mm-vmodel-id", "gpu-version-inference-service-v01")),
         )
 
         try:

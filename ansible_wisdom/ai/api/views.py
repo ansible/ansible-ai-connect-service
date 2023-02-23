@@ -53,15 +53,48 @@ class Completions(APIView):
             ]
         )
         data = model_mesh_payload.dict()
-        logger.debug(
-            f"input to inference for user id {payload.userId} "
-            f"and suggestion id {payload.suggestionId}:\n{data}"
-        )
+        logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
         response = model_mesh_client.infer(data, model_name=model_name)
         response_serializer = CompletionResponseSerializer(data=response.data)
         response_serializer.is_valid(raise_exception=True)
         logger.debug(
-            f"response from inference for user id {payload.userId} "
-            f"and suggestion id {payload.suggestionId}:\n{response.data}"
+            f"response from inference for "
+            f"suggestion id {payload.suggestionId}:\n{response.data}"
+        )
+        response.data = self.postprocess(
+            response.data, payload.prompt, payload.context, payload.suggestionId
+        )
+        logger.debug(
+            f"response from postprocess for "
+            f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         return response
+
+    def postprocess(self, recommendation, prompt, context, suggestion_id):
+        ari_caller = apps.get_app_config("ai").ari_caller
+
+        if ari_caller:
+            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                try:
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"original recommendation: {recommendation_yaml}"
+                    )
+                    postprocessed_yaml = ari_caller.postprocess(
+                        recommendation_yaml, prompt, context
+                    )
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"post-processed recommendation: {postprocessed_yaml}"
+                    )
+                    recommendation["predictions"][i] = postprocessed_yaml
+                except Exception:
+                    # return the original recommendation if we failed to parse
+                    logger.exception(
+                        f'failed to postprocess recommendation with prompt {prompt} '
+                        f'context {context} and model recommendation {recommendation}'
+                    )
+        else:
+            logger.warn('skipped post processing because ari was not initialized')
+
+        return recommendation
