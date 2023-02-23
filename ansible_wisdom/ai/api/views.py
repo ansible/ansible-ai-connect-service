@@ -53,9 +53,7 @@ class Completions(APIView):
             ]
         )
         data = model_mesh_payload.dict()
-        logger.debug(
-            f"input to inference for suggestion id {payload.suggestionId}:\n{data}"
-        )
+        logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
         response = model_mesh_client.infer(data, model_name=model_name)
         response_serializer = CompletionResponseSerializer(data=response.data)
         response_serializer.is_valid(raise_exception=True)
@@ -74,7 +72,7 @@ class Completions(APIView):
 
     def postprocess(self, recommendation, prompt, context, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
-        
+
         if ari_caller:
             for i, recommendation_yaml in enumerate(recommendation["predictions"]):
                 try:
