@@ -186,7 +186,7 @@ To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAUL
 
 ## Enabling postprocess with ARI
 
-You can enable postprocess with [Ansible Risk Insight (ARI)](github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
+You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
 
 1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
 

@@ -68,16 +68,17 @@ class Completions(APIView):
             response.data, payload.prompt, payload.context, payload.suggestionId
         )
         logger.debug(
-            f"response from postprocess for user id {payload.userId} "
-            f"and suggestion id {payload.suggestionId}:\n{response.data}"
+            f"response from postprocess for "
+            f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         return response
 
     def postprocess(self, recommendation, prompt, context, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
-        try:
-            if ari_caller:
-                for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+        
+        if ari_caller:
+            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                try:
                     logger.debug(
                         f"suggestion id: {suggestion_id}, "
                         f"original recommendation: {recommendation_yaml}"
@@ -90,13 +91,13 @@ class Completions(APIView):
                         f"post-processed recommendation: {postprocessed_yaml}"
                     )
                     recommendation["predictions"][i] = postprocessed_yaml
-            else:
-                logger.warn('skipped post processing because ari was not initialized')
-        except Exception:
-            # return the original recommendation if we failed to parse
-            logger.exception(
-                f'failed to postprocess recommendation with prompt {prompt} '
-                f'context {context} and model recommendation {recommendation}'
-            )
+                except Exception:
+                    # return the original recommendation if we failed to parse
+                    logger.exception(
+                        f'failed to postprocess recommendation with prompt {prompt} '
+                        f'context {context} and model recommendation {recommendation}'
+                    )
+        else:
+            logger.warn('skipped post processing because ari was not initialized')
 
         return recommendation
