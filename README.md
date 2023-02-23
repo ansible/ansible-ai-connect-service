@@ -11,23 +11,23 @@ The Django application depends on a separate model server to perform the task su
 Pre-commit should be used before pushing a new PR.
 To use pre-commit, you need to first install the pre-commit package and its dependencies by running:
 
-    ```bash
-    pip install -r requirements-dev.txt
-    ```
+```bash
+pip install -r requirements-dev.txt
+```
 
 
 To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this repo:
 
-    ```bash
-    pre-commit install
-    ```
+```bash
+pre-commit install
+```
 
 
 To update the pre-commit config to the latest repos' versions and run the precommit check across all files, run:
 
-    ```bash
-    pre-commit autoupdate && pre-commit run -a
-    ```
+```bash
+pre-commit autoupdate && pre-commit run -a
+```
 
 ## Full Development Environment
 
@@ -81,36 +81,63 @@ chcon -t container_file_t -R ansible_wisdom/
 
 1. Build the container
 
-    ```bash
-    make ansible-wisdom-container
-    ```
+```bash
+make ansible-wisdom-container
+```
 
 2. Start the container
 
-    ```bash
-    make run-django-container
-    ```
+```bash
+make run-django-container
+```
 
 ## Running the Django application standalone (from source)
 
 1. Clone the repository and install all the dependencies
 
-    ```bash
-    pip install -r ansible_wisdom/requirements.txt
-    ```
+```bash
+pip install -r ansible_wisdom/requirements.txt
+```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
-    ```bash
-    export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-    export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
-    ```
+```bash
+export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
+export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
+```
 
 1. Start the django application
 
+```bash
+make run-django
+```
+
+## Running Backend Services (from container)
+
+If you want to run backend services from container, run the following steps. This
+is convenient for debugging the Django application without installing backend
+services on your local machine.
+
+1. Build the container
+
     ```bash
-    make run-django
+    make ansible-wisdom-container
     ```
+
+2. Start backend services.
+
+    ```bash
+    make run-backends
+    ```
+
+For terminating backend services, run `make stop-backends`.
+
+Note that you need to run `manage.py migrate` to set up DB
+before running the Django application from source,
+
+The setup for debugging is different depending on the Python development tool.
+For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
+
 
 ## Testing the completion API
 
@@ -155,13 +182,61 @@ Once you start the app, navigate to http://localhost:8000/ to log in. Once authe
 
 To get an authentication token without logging in via GitHub, you can navigate to http://localhost:8000/admin/ and log in with your superuser credentials, then navigate back to http://localhost:8000/ (or view your token in the admin console).
 
-To test the API with no authentication, you can empty out REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES in base.py.
+To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
 
 ## Application metrics as a Prometheus-style endpoint
 
 We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Wisdom service for monitoring and measuring its availability.
 
 To provide feedback for operational needs as well as for continuous service improvement.
+
+## Swagger UI, ReDoc UI and OpenAPI 3.0 Schema
+
+### Swagger UI
+
+Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ **in
+the development environment only**.
+- **Note:** It is not enabled in the production environment regardless of any settings.
+
+
+If you want to test Wisdom APIs using Swagger UI,
+
+1. Open http://localhost:8000/ and get an authentication token by
+following the instructions described in the
+[Authenticating with the completion API](#authenticating-with-the-completion-api)
+section.
+2. Open http://localhost:8000/api/schema/swagger-ui/
+3. Click the **Authorize** button.
+4. Input the authentication token for the tokenAuth as it is.
+You do not need to add any prefixes, such as `Bearer ` or `Token `.
+5. Click **Authorize**.
+6. Click **Close** to go back to the Swagger UI page.
+7. Expand a section for the API that you want to try and click **Try it out**.
+8. Input required parameters (if any) and click **Execute**.
+
+### ReDoc UI
+
+Another OpenAPI UI in the ReDoc format is also available at  http://localhost:8000/api/schema/redoc/
+**in the development environment only**.
+
+### OpenAPI 3.0 Schema
+
+The static OpenAPI Schema YAML file is stored as
+[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml) in this repository.
+
+When you make code changes, please update the static OpenAPI Schema YAML file
+with the following steps:
+
+1. Update API descriptions.  See [this doc](https://docs.google.com/document/d/1iF32yui3JTG808GhInN7CUTEn4Ocimed1szOn0N0P_E/edit#heading=h.sufj9xfpwkbn)
+to find where to update.
+2. Make sure the API version is updated in [development.yaml](https://github.com/ansible/ansible-wisdom-service/blob/7a9669be1ac5b037d1bd92793db48e6aed15bb4e/ansible_wisdom/main/settings/development.py#L38)
+3. Run `make update-openapi-schema` in the project root.
+4. Checkin the updated OpenAPI Schema YAML file with your API changes.
+
+Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded either:
+
+- Click the /api/schema/ link on Swagger UI, or
+- Click the Download button on ReDoc UI
 
 ## Test cases
 

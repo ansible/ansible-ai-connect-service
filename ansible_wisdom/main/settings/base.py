@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "users",
     "ai",
     "django_prometheus",
+    "drf_spectacular",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -89,10 +91,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'  # comment out for unauthenticated API access
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
 ROOT_URLCONF = "main.urls"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "root": {
+            "level": "WARNING",
+        },
+    },
+}
 
 TEMPLATES = [
     {
@@ -169,3 +182,10 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = False
+
+# Depending on how env var is set, can end up with extraneous quotes.
+# this is defensive, we could just let it happen and
+# leave it to the operator who set the var to fix it
+COMPLETION_USER_RATE_THROTTLE = (
+    os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
+)

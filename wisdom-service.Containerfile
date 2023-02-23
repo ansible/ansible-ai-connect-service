@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:9.1.0-1646.1669627755
+FROM registry.access.redhat.com/ubi9/ubi:latest
 
 ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
@@ -11,11 +11,13 @@ RUN dnf install -y \
     libpq-devel \
     python3 \
     python3-pip \
-    nginx
+    nginx \
+    less
 
 RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf install -y inotify-tools && \
-    dnf remove -y epel-release
+    dnf remove -y epel-release && \
+    dnf clean all
 
 COPY ansible_wisdom /var/www/ansible_wisdom
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
@@ -26,14 +28,14 @@ COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY requirements.txt /tmp
 
-RUN /usr/bin/python3 -m pip install supervisor
+RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
       /var/log/nginx ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 RUN /usr/bin/python3 -m venv /var/www/venv
-RUN /var/www/venv/bin/python3 -m pip install -r/var/www/ansible_wisdom/requirements.txt && rm -r /root/.cache
+RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible_wisdom/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 WORKDIR /var/www
 
