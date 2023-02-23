@@ -5,6 +5,7 @@ ARG DJANGO_SETTINGS_MODULE=main.settings.production
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
 RUN dnf install -y \
+    git \
     python3-devel \
     gcc \
     libpq \
@@ -32,8 +33,11 @@ RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
-      /var/log/nginx ; \
+      /var/log/nginx \
+      /etc/ari \
+      /etc/ansible ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
+ENV ANSIBLE_HOME=/etc/ansible
 RUN /usr/bin/python3 -m venv /var/www/venv
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible_wisdom/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth

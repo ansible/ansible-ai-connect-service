@@ -184,6 +184,38 @@ To get an authentication token without logging in via GitHub, you can navigate t
 
 To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
 
+## Enabling postprocess with ARI
+
+You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
+
+1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
+
+    ```bash
+    $ export ENABLE_ARI_POSTPROCESS=True
+    ```
+
+
+2. Prepare `rules` and `data` directory inside `ari/kb` directory.
+
+    `rules` should contain mutation rules for the postprocess, you can refer to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
+
+    `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this file must be placed manually if you want to enable the postprocess.
+
+    Once the files are ready, the `ari/kb` directory should look like this.
+
+    ```bash
+    ari/kb/
+    ├── data
+    │   ├── collections
+    │   └── indices
+    └── rules
+        ├── W001_module_name_metrics.py
+        ├── W002_module_key_metrics.py
+        ├── ...
+    ```
+
+Then you can build the django image or just run `make docker-compose`.
+
 ## Application metrics as a Prometheus-style endpoint
 
 We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Wisdom service for monitoring and measuring its availability.
