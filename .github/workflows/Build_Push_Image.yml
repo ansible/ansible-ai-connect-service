@@ -49,3 +49,9 @@ jobs:
 
     - name: Print image url
       run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+    - name: Sleep 5 minutes to make sure deployment to stage finished
+      run: sleep 5m
+
+    - name: Run integration tests
+      run: docker run -it quay.io/ansible/wisdom-tests
