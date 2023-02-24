@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.2
+  version: 0.0.3
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -61,6 +61,8 @@ paths:
           description: Unauthorized
         '429':
           description: Request was throttled
+        '500':
+          description: Internal Server Error
 components:
   schemas:
     CompletionRequest:

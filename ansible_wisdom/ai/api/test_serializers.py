@@ -3,7 +3,9 @@ Test serializers
 """
 from unittest.case import TestCase
 
-from .serializers import CompletionRequestSerializer
+from rest_framework.exceptions import APIException
+
+from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
 
 
 class CompletionRequestSerializerTest(TestCase):
@@ -27,3 +29,20 @@ class CompletionRequestSerializerTest(TestCase):
         self.run_a_test('', '', '', '')
         self.run_a_test('', None, '', '')
         self.run_a_test('---\n', None, '---\n', '')
+
+    def test_is_valid_response(self):
+        VALID_DATA = {
+            'predictions': ['  ansible.builtin.yum:\n    name: httpd\n    state: present\n']
+        }
+        serializer = CompletionResponseSerializer(data=VALID_DATA)
+        serializer.is_valid()  # raise_exception=False
+        serializer.is_valid(raise_exception=True)
+
+        INVALID_DATA = {}
+        serializer = CompletionResponseSerializer(data=INVALID_DATA)
+        serializer.is_valid()  # raise_exception=False
+
+        # Expect an APIException that will return a 500 will be raised
+        # for an invalid data.
+        with self.assertRaises(APIException):
+            serializer.is_valid(raise_exception=True)

@@ -32,6 +32,7 @@ class Completions(APIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             429: OpenApiResponse(description='Request was throttled'),
+            500: OpenApiResponse(description='Internal Server Error'),
         },
         summary="Inline code suggestions",
     )

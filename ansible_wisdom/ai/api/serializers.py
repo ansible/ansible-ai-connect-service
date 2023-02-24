@@ -3,6 +3,7 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 """
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
+from rest_framework.exceptions import APIException, ValidationError
 
 
 @extend_schema_serializer(
@@ -88,3 +89,10 @@ class CompletionResponseSerializer(serializers.Serializer):
         fields = ['predictions']
 
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+
+    def is_valid(self, raise_exception=False):
+        # Replace the default 400 status code for invalid data with a 500 server error
+        try:
+            return super().is_valid(raise_exception=raise_exception)
+        except ValidationError:
+            raise APIException()
