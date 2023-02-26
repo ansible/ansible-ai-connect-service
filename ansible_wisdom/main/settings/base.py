@@ -219,4 +219,6 @@ ARI_RULES = [
     "W012",
     "W013",
 ]
-ARI_RULE_FOR_OUTPUT_RESULT = "W007"
+if 'ARI_RULES' in os.environ:
+    ARI_RULES = os.environ['ARI_RULES'].split(',')
+ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
