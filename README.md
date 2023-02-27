@@ -71,10 +71,17 @@ configuration key to point on an existing service.
 
 If you get a permission denied error when attempting to start the
 containers, you may need to set the permissions on the
-`ansible_wisdom/` directory:
+`ansible_wisdom/`, `prometheus/` and `ari/` directories:
 
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
+chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R ari/
+```
+Also run `chmod` against the `ari/` directory so that ARI can
+write temporary data in it:
+```bash
+chmod -R 777 ari/
 ```
 
 ## Running the Django application standalone (from container)
