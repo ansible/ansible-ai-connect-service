@@ -69,7 +69,6 @@ requirements-parser==0.5.0
 resolvelib==0.8.1
 responses==0.18.0
 rich==12.5.1
-segment-analytics-python==2.2.2
 six==1.16.0
 sqlparse==0.4.3
 starlette==0.14.2
