@@ -33,9 +33,32 @@ class ARICaller:
 
     @classmethod
     def make_playbook_yaml(cls, context, prompt, inference_output):
-        playbook_yaml = (
-            context + "\n" + cls.indent(prompt, 4) + "\n" + cls.indent(inference_output, 4)
-        )
+        # align prompt and suggestion to make a valid playbook yaml
+        #
+        # e.g.)
+        #
+        # - hosts: all
+        #   tasks:
+        # **- name: sample propmt   <-- prompt_indent should be 2 (or 4 is ok too)
+        # ****ansible.builtin.debug:   <-- suggestion_indent should be prompt_indent + 2
+        #       msg: "test"
+
+        m_prompt = prompt
+        prompt_indent = 0
+        if m_prompt:
+            prompt_indent = len(m_prompt) - len(m_prompt.lstrip())
+            if prompt_indent == 0:
+                m_prompt = cls.indent(m_prompt, 2)
+                prompt_indent = 2
+        suggestion = inference_output
+        if suggestion:
+            lines = suggestion.splitlines()
+            first_line = lines[0]
+            suggestion_indent = len(first_line) - len(first_line.lstrip())
+            if suggestion_indent < prompt_indent + 2:
+                padding_level = (prompt_indent + 2) - suggestion_indent
+                suggestion = cls.indent(suggestion, padding_level)
+        playbook_yaml = context + "\n" + m_prompt + "\n" + suggestion
         try:
             # check if the playbook yaml is valid
             _ = yaml.safe_load(playbook_yaml)
@@ -49,8 +72,7 @@ class ARICaller:
         return playbook_yaml, task_name
 
     def postprocess(self, inference_output, prompt, context):
-        sprompt = prompt.lstrip()
-        playbook_yaml, task_name = self.make_playbook_yaml(context, sprompt, inference_output)
+        playbook_yaml, task_name = self.make_playbook_yaml(context, prompt, inference_output)
 
         # print("---context---")
         # print(context)
