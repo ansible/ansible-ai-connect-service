@@ -27,7 +27,6 @@ COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
-COPY requirements.txt /tmp
 COPY ari /etc/ari
 
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
