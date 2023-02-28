@@ -54,6 +54,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "main.middleware.SegmentMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -82,6 +83,9 @@ SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 718889
 SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 # Wisdom Eng Team:
 # gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
+
+# Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
+SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -215,4 +219,6 @@ ARI_RULES = [
     "W012",
     "W013",
 ]
-ARI_RULE_FOR_OUTPUT_RESULT = "W007"
+if 'ARI_RULES' in os.environ:
+    ARI_RULES = os.environ['ARI_RULES'].split(',')
+ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
