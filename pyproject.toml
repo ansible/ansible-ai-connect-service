@@ -11,12 +11,6 @@ classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",
 ]
-dependencies = [
-    "django",
-    "djangorestframework",
-    "social-auth-app-django",
-    "django_prometheus",
-]
 dynamic = ["version"]
 
 [tool]
