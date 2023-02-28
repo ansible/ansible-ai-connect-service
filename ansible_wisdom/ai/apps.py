@@ -1,9 +1,10 @@
 import logging
 
 from ansible_risk_insight.scanner import Config
-from ari.postprocessing import ari
 from django.apps import AppConfig
 from django.conf import settings
+
+from ari import postprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class AiConfig(AppConfig):
         # TODO may be we can parallelize ari and grpc client creation
         try:
             if settings.ENABLE_ARI_POSTPROCESS:
-                self.ari_caller = ari.ARICaller(
+                self.ari_caller = postprocessing.ARICaller(
                     config=Config(
                         rules_dir=settings.ARI_RULES_DIR,
                         data_dir=settings.ARI_DATA_DIR,
@@ -49,7 +50,7 @@ class AiConfig(AppConfig):
             else:
                 logger.info("Postprocessing is disabled.")
         except Exception:
-            logger.exception('failed to initialize ARI')
+            logger.exception("Failed to initialize ARI.")
             self.ari_caller = None
 
         return super().ready()
