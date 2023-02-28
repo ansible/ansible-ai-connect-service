@@ -1,7 +1,10 @@
 # Create your views here.
 import logging
 import time
+<<<<<<< HEAD
 import yaml
+=======
+>>>>>>> 8e14866 (Send postprocessing info to Segment)
 
 import yaml
 from django.apps import apps
