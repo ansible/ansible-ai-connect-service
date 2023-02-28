@@ -103,7 +103,7 @@ make run-django-container
 1. Clone the repository and install all the dependencies
 
 ```bash
-pip install -r ansible_wisdom/requirements.txt
+pip install -r requirements.txt
 ```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
