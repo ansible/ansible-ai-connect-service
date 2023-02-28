@@ -22,15 +22,15 @@ class AIConfig(AppConfig):
         if model_name is None or model_name.strip() == "":
             model_name = "default"
         if model_name not in self.active_models:
-            model_actual = AIModel.objects.filter(name=model_name)
-            if not model_actual.exists():
-                raise ValueError("Unknown model name: {}".format(model_name))
-            model_actual = model_actual[0]
-            self.active_models[model_name] = self.initialize_connection(
-                model_actual.model_mesh_api_type,
-                model_actual.inference_url,
-                model_actual.management_url,
-            )
+            model_actual = AIModel.objects.filter(name=model_name).first()
+            if model_actual:
+                self.active_models[model_name] = self.initialize_connection(
+                    model_actual.model_mesh_api_type,
+                    model_actual.inference_url,
+                    model_actual.management_url,
+                )
+            else:
+                model_name = "default"
         return self.active_models[model_name]
 
     def initialize_connection(self, api_type, inference_url, management_url):
