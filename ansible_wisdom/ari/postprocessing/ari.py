@@ -32,25 +32,14 @@ class ARICaller:
         return "\n".join(lines)
 
     @classmethod
-    def make_playbook_yaml(cls, context, prompt, inference_output):
-        # align prompt and suggestion to make a valid playbook yaml
-        #
-        # e.g.)
-        #
-        # - hosts: all
-        #   tasks:
-        # **- name: sample propmt   <-- prompt_indent should be 2 (or 4 is ok too)
-        # ****ansible.builtin.debug:   <-- suggestion_indent should be prompt_indent + 2
-        #       msg: "test"
-
-        m_prompt = prompt
+    def get_indent_size(cls, prompt):
         prompt_indent = 0
-        if m_prompt:
-            prompt_indent = len(m_prompt) - len(m_prompt.lstrip())
-            if prompt_indent == 0:
-                m_prompt = cls.indent(m_prompt, 2)
-                prompt_indent = 2
-        suggestion = inference_output
+        if prompt:
+            prompt_indent = len(prompt) - len(prompt.lstrip())
+        return prompt_indent
+
+    @classmethod
+    def indent_suggestion(cls, suggestion, prompt_indent):
         if suggestion:
             lines = suggestion.splitlines()
             first_line = lines[0]
@@ -58,7 +47,24 @@ class ARICaller:
             if suggestion_indent < prompt_indent + 2:
                 padding_level = (prompt_indent + 2) - suggestion_indent
                 suggestion = cls.indent(suggestion, padding_level)
-        playbook_yaml = context + "\n" + m_prompt + "\n" + suggestion
+        return suggestion
+
+    @classmethod
+    def make_playbook_yaml(cls, context, prompt, inference_output):
+        # align prompt and suggestion to make a valid playbook yaml
+        #
+        # e.g.)
+        #
+        # - hosts: all
+        #   tasks:
+        # **- name: sample propmt   <-- prompt_indent could be 0 for roles or any number
+        #                               of spaces for playbook
+        # ****ansible.builtin.debug:   <-- suggestion_indent should be prompt_indent + 2
+        #       msg: "test"
+
+        prompt_indent = cls.get_indent_size(prompt)
+        suggestion = cls.indent_suggestion(inference_output, prompt_indent)
+        playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
             # check if the playbook yaml is valid
             _ = yaml.safe_load(playbook_yaml)
@@ -69,6 +75,7 @@ class ARICaller:
             )
             raise
         task_name = prompt.split("name:")[-1].strip()
+        logger.debug(f"generated playbook yaml: \n{playbook_yaml}")
         return playbook_yaml, task_name
 
     def postprocess(self, inference_output, prompt, context):
@@ -100,7 +107,8 @@ class ARICaller:
             rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
             detail = rule_result.get_detail()
             detail_data = detail.get("detail", "")
-            modified_yaml = detail.get("modified_yaml", "")
+            prompt_indent = self.get_indent_size(prompt)
+            modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
 
         # return inference_output
         logger.debug("--before--")

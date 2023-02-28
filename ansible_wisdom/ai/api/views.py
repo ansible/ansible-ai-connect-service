@@ -84,14 +84,14 @@ class Completions(APIView):
                 try:
                     logger.debug(
                         f"suggestion id: {suggestion_id}, "
-                        f"original recommendation: {recommendation_yaml}"
+                        f"original recommendation: \n{recommendation_yaml}"
                     )
                     postprocessed_yaml = ari_caller.postprocess(
                         recommendation_yaml, prompt, context
                     )
                     logger.debug(
                         f"suggestion id: {suggestion_id}, "
-                        f"post-processed recommendation: {postprocessed_yaml}"
+                        f"post-processed recommendation: \n{postprocessed_yaml}"
                     )
                     recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
