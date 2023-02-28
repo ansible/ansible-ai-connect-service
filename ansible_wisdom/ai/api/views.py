@@ -1,5 +1,6 @@
 # Create your views here.
 import logging
+import time
 
 from django.apps import apps
 from django.conf import settings
@@ -7,6 +8,8 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
+from segment import analytics
+from yaml.error import MarkedYAMLError
 
 from .data.data_model import APIPayload, ModelMeshPayload
 from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
@@ -62,7 +65,7 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         response.data = self.postprocess(
-            response.data, payload.prompt, payload.context, payload.suggestionId
+            response.data, payload.prompt, payload.context, payload.userId, payload.suggestionId
         )
         logger.debug(
             f"response from postprocess for "
@@ -70,11 +73,14 @@ class Completions(APIView):
         )
         return response
 
-    def postprocess(self, recommendation, prompt, context, suggestion_id):
+    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
 
         if ari_caller:
             for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                start_time = time.time()
+                exception = None
+                postprocessed_yaml = None
                 try:
                     logger.debug(
                         f"suggestion id: {suggestion_id}, "
@@ -88,13 +94,49 @@ class Completions(APIView):
                         f"post-processed recommendation: {postprocessed_yaml}"
                     )
                     recommendation["predictions"][i] = postprocessed_yaml
-                except Exception:
+                except Exception as exc:
+                    exception = exc
                     # return the original recommendation if we failed to parse
                     logger.exception(
                         f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
                     )
+                finally:
+                    self.write_to_segment(
+                        user_id,
+                        suggestion_id,
+                        recommendation_yaml,
+                        postprocessed_yaml,
+                        exception,
+                        start_time,
+                    )
+                    continue
         else:
             logger.warn('skipped post processing because ari was not initialized')
 
         return recommendation
+
+    def write_to_segment(
+        self, user_id, suggestion_id, recommendation_yaml, postprocessed_yaml, exception, start_time
+    ):
+        if settings.SEGMENT_WRITE_KEY:
+            duration = round((time.time() - start_time) * 1000, 2)
+            problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "postprocessed": postprocessed_yaml,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+
+            analytics.write_key = settings.SEGMENT_WRITE_KEY
+            analytics.debug = settings.DEBUG
+            # analytics.send = False  # for code development only
+
+            analytics.track(
+                str(user_id) if user_id else 'unknown',
+                "wisdomServicePostprocessingEvent",
+                event,
+            )
