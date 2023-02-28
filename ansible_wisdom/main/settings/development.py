@@ -24,7 +24,6 @@ ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL = (
 )
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
-SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"

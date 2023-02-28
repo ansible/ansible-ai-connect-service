@@ -58,9 +58,7 @@ MIDDLEWARE = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    # "social_core.backends.github.GithubOrganizationOAuth2",
     "social_core.backends.github.GithubTeamOAuth2",
-    # "social_core.backends.github.GithubOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -77,6 +75,7 @@ PILOT_DOCS_URL = os.environ.get(
 )
 PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Internal Red Hat Slack')
 
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
 SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
 SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
 SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
