@@ -84,6 +84,21 @@ write temporary data in it:
 chmod -R 777 ari/
 ```
 
+Recreating the dev containers might be useful:
+``` bash
+$ make docker-compose-clean
+```
+
+It may be necessary to recreate the dev image if anything has changed in the nginx settings:
+``` bash
+$ docker rmi docker-compose_django_1
+```
+
+Create a local admin user:
+``` bash
+$ make docker-create-superuser
+```
+
 ## Running the Django application standalone (from container)
 
 1. Build the container
