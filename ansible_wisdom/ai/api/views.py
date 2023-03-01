@@ -1,10 +1,8 @@
 # Create your views here.
 import logging
 import time
-<<<<<<< HEAD
 import yaml
-=======
->>>>>>> 8e14866 (Send postprocessing info to Segment)
+import json
 
 import yaml
 from django.apps import apps
@@ -96,6 +94,7 @@ class Completions(APIView):
 
                 exception = None
                 postprocessed_yaml = None
+                postprocess_detail = None
                 try:
                     # if the recommentation is not a valid yaml, record it as an exception
                     if recommendation_problem:
@@ -106,12 +105,16 @@ class Completions(APIView):
                             f"suggestion id: {suggestion_id}, "
                             f"original recommendation: \n{recommendation_yaml}"
                         )
-                        postprocessed_yaml = ari_caller.postprocess(
+                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
                             recommendation_yaml, prompt, context
                         )
                         logger.debug(
                             f"suggestion id: {suggestion_id}, "
                             f"post-processed recommendation: \n{postprocessed_yaml}"
+                        )
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"post-process detail: \n{json.dumps(postprocess_detail)}"
                         )
                         recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
@@ -127,6 +130,7 @@ class Completions(APIView):
                         suggestion_id,
                         recommendation_yaml,
                         postprocessed_yaml,
+                        postprocess_detail,
                         exception,
                         start_time,
                     )
@@ -142,6 +146,7 @@ class Completions(APIView):
         suggestion_id,
         recommendation_yaml,
         postprocessed_yaml,
+        postprocess_detail,
         exception,
         start_time,
     ):
@@ -154,6 +159,7 @@ class Completions(APIView):
                 "duration": duration,
                 "recommendation": recommendation_yaml,
                 "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
 

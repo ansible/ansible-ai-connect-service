@@ -118,16 +118,28 @@ class ARICaller:
         if task:
             rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
             detail = rule_result.get_detail()
-            detail_data = detail.get("detail", "")
+            aggregated_detail = detail.get("detail", {})
             prompt_indent = self.get_indent_size(prompt)
             modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
+            mutation_result = aggregated_detail.get("mutation_result", {})
+            for rule_id in mutation_result:
+                rule_detail = mutation_result[rule_id]
+                if not rule_detail:
+                    rule_detail = {}
+                _result = task.find_result(rule_id=rule_id)
+                if _result:
+                    if "description" not in rule_detail:
+                        rule_detail["description"] = _result.description
+                    rule_detail["duration"] = _result.duration
+                    rule_detail["matched"] = _result.matched
+                detail_data[rule_id] = rule_detail
 
         # return inference_output
-        logger.debug("--before--")
-        logger.debug(inference_output)
-        logger.debug("--after--")
-        logger.debug(modified_yaml)
-        logger.debug("--detail--")
-        logger.debug(json.dumps(detail_data, indent=2))
+        print("--before--")
+        print(inference_output)
+        print("--after--")
+        print(modified_yaml)
+        print("--detail--")
+        print(json.dumps(detail_data, indent=2))
 
-        return modified_yaml
+        return modified_yaml, detail_data

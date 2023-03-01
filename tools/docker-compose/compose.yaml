@@ -11,7 +11,7 @@ services:
     restart: always
     volumes:
       - $PWD/ansible_wisdom:/var/www/ansible_wisdom
-      - $PWD/ari/kb:/etc/ari/kb
+      - $PWD/ari_bak/kb:/etc/ari/kb
     ports:
       - "8000:8000"
     environment:
