@@ -35,6 +35,7 @@ RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
+      /var/www/wisdom \
       /var/log/nginx \
       /etc/ari \
       /etc/ansible ; \
