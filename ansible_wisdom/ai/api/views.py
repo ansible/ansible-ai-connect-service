@@ -2,8 +2,8 @@
 import json
 import logging
 import time
-import yaml
 
+import yaml
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -90,7 +90,7 @@ class Completions(APIView):
                         f'the recommendation_yaml is not a valid YAML: ' f'\n{recommendation_yaml}'
                     )
                     recommendation_problem = exc
-                
+
                 exception = None
                 postprocessed_yaml = None
                 postprocess_detail = None
@@ -140,7 +140,14 @@ class Completions(APIView):
         return recommendation
 
     def write_to_segment(
-        self, user_id, suggestion_id, recommendation_yaml, postprocessed_yaml, postprocess_detail, exception, start_time
+        self,
+        user_id,
+        suggestion_id,
+        recommendation_yaml,
+        postprocessed_yaml,
+        postprocess_detail,
+        exception,
+        start_time,
     ):
         if settings.SEGMENT_WRITE_KEY:
             duration = round((time.time() - start_time) * 1000, 2)
