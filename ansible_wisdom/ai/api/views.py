@@ -2,8 +2,6 @@
 import json
 import logging
 import time
-import yaml
-import json
 
 import yaml
 from django.apps import apps
