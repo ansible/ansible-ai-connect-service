@@ -63,8 +63,14 @@ class ARICaller:
         #       msg: "test"
 
         prompt_indent = cls.get_indent_size(prompt)
-        # TODO: update the way to judge whether it is a playbook or not, if needed
-        is_playbook = prompt_indent == 0
+        is_playbook = False
+        if context:
+            try:
+                context_dict = yaml.safe_load(context)
+                if "tasks" in context_dict:
+                    is_playbook = True
+            except Exception:
+                logger.exception(f'the received context could not be loaded as a YAML')
         suggestion = cls.indent_suggestion(inference_output, prompt_indent)
         playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
