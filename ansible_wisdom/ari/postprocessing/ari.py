@@ -66,8 +66,8 @@ class ARICaller:
         is_playbook = False
         if context:
             try:
-                context_dict = yaml.safe_load(context)
-                if "tasks" in context_dict:
+                context_data = yaml.safe_load(context)
+                if isinstance(context_data, list) and "tasks" in context_data[0]:
                     is_playbook = True
             except Exception:
                 logger.exception('the received context could not be loaded as a YAML')
