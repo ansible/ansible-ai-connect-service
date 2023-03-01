@@ -5,6 +5,7 @@ import yaml
 import json
 
 import yaml
+import json
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -114,7 +115,7 @@ class Completions(APIView):
                         )
                         logger.debug(
                             f"suggestion id: {suggestion_id}, "
-                            f"post-process detail: \n{json.dumps(postprocess_detail)}"
+                            f"post-process detail: {json.dumps(postprocess_detail)}"
                         )
                         recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
