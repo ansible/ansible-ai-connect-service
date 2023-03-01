@@ -70,7 +70,7 @@ class ARICaller:
                 if "tasks" in context_dict:
                     is_playbook = True
             except Exception:
-                logger.exception(f'the received context could not be loaded as a YAML')
+                logger.exception('the received context could not be loaded as a YAML')
         suggestion = cls.indent_suggestion(inference_output, prompt_indent)
         playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
