@@ -1,3 +1,4 @@
+import json
 import time
 
 from django.conf import settings
@@ -11,28 +12,39 @@ class SegmentMiddleware:
     def __call__(self, request):
         start_time = time.time()
 
+        if settings.SEGMENT_WRITE_KEY:
+            if request.path == '/api/ai/completions/' and request.method == 'POST':
+                if request.content_type == 'application/json':
+                    try:
+                        request_data = (
+                            json.loads(request.body.decode("utf-8")) if request.body else {}
+                        )
+                    except Exception:  # when an invalid json or an invalid encoding is detected
+                        request_data = {}
+                else:
+                    request_data = request.POST
+
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == '/api/ai/completions/' and request.method == 'POST':
-                request_data = getattr(response.renderer_context['request'], 'data', {})
-
                 user_id = request_data.get('userId', 'unknown')
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
 
-                predictions = response.data.get('predictions', [])
+                response_data = getattr(response, 'data', {})
+                predictions = response_data.get('predictions')
 
                 duration = round((time.time() - start_time) * 1000, 2)
                 event = {
                     "duration": duration,
                     "request": {"context": context, "prompt": prompt},
                     "response": {
-                        "exception": response.exception,
+                        "exception": getattr(response, 'exception', None),
                         "predictions": predictions,
                         "status_code": response.status_code,
-                        "status_text": response.status_text,
+                        "status_text": getattr(response, 'status_text', None),
                     },
                     "suggestionId": suggestion_id,
                 }
