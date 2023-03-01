@@ -26,7 +26,6 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = [ANSIBLE_WISDOM_DOMAIN]
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
-SOCIAL_AUTH_JSONFIELD_ENABLED = True
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"

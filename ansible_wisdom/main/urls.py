@@ -22,18 +22,9 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework import routers
-from social_django import urls as social_urls
 from users import views as user_views
 
-from .api import views as main_views
-
-# router = routers.DefaultRouter()
-# router.register(r'users', main_views.UserViewSet)
-# router.register(r'groups', main_views.GroupViewSet)
-
 urlpatterns = [
-    # path('', include(router.urls)),
     path("admin/", admin.site.urls),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
