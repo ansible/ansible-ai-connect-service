@@ -1,6 +1,8 @@
 # Create your views here.
+import json
 import logging
 import time
+import yaml
 
 from django.apps import apps
 from django.conf import settings
@@ -79,24 +81,44 @@ class Completions(APIView):
         if ari_caller:
             for i, recommendation_yaml in enumerate(recommendation["predictions"]):
                 start_time = time.time()
+                recommendation_problem = None
+                # check if the recommendation_yaml is a valid YAML
+                try:
+                    _ = yaml.safe_load(recommendation_yaml)
+                except Exception as exc:
+                    logger.exception(
+                        f'the recommendation_yaml is not a valid YAML: ' f'\n{recommendation_yaml}'
+                    )
+                    recommendation_problem = exc
+                
                 exception = None
                 postprocessed_yaml = None
+                postprocess_detail = None
                 try:
-                    logger.debug(
-                        f"suggestion id: {suggestion_id}, "
-                        f"original recommendation: \n{recommendation_yaml}"
-                    )
-                    postprocessed_yaml = ari_caller.postprocess(
-                        recommendation_yaml, prompt, context
-                    )
-                    logger.debug(
-                        f"suggestion id: {suggestion_id}, "
-                        f"post-processed recommendation: \n{postprocessed_yaml}"
-                    )
-                    recommendation["predictions"][i] = postprocessed_yaml
+                    # if the recommentation is not a valid yaml, record it as an exception
+                    if recommendation_problem:
+                        exception = recommendation_problem
+                    else:
+                        # otherwise, do postprocess here
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"original recommendation: \n{recommendation_yaml}"
+                        )
+                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                            recommendation_yaml, prompt, context
+                        )
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"post-processed recommendation: \n{postprocessed_yaml}"
+                        )
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"post-process detail: {json.dumps(postprocess_detail)}"
+                        )
+                        recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
                     exception = exc
-                    # return the original recommendation if we failed to parse
+                    # return the original recommendation if we failed to postprocess
                     logger.exception(
                         f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
@@ -107,6 +129,7 @@ class Completions(APIView):
                         suggestion_id,
                         recommendation_yaml,
                         postprocessed_yaml,
+                        postprocess_detail,
                         exception,
                         start_time,
                     )
@@ -117,7 +140,7 @@ class Completions(APIView):
         return recommendation
 
     def write_to_segment(
-        self, user_id, suggestion_id, recommendation_yaml, postprocessed_yaml, exception, start_time
+        self, user_id, suggestion_id, recommendation_yaml, postprocessed_yaml, postprocess_detail, exception, start_time
     ):
         if settings.SEGMENT_WRITE_KEY:
             duration = round((time.time() - start_time) * 1000, 2)
@@ -128,6 +151,7 @@ class Completions(APIView):
                 "duration": duration,
                 "recommendation": recommendation_yaml,
                 "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
 
