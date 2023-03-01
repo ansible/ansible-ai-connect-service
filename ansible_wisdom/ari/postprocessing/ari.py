@@ -64,7 +64,7 @@ class ARICaller:
 
         prompt_indent = cls.get_indent_size(prompt)
         # TODO: update the way to judge whether it is a playbook or not, if needed
-        is_playbook = (prompt_indent == 0)
+        is_playbook = prompt_indent == 0
         suggestion = cls.indent_suggestion(inference_output, prompt_indent)
         playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
