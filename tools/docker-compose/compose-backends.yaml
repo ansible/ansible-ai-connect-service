@@ -1,37 +1,5 @@
 version: "3.8"
 services:
-  django: &django
-    user: "1000"
-    build:
-      context: $PWD
-      dockerfile: wisdom-service.Containerfile
-    depends_on:
-      - redis
-      - db
-    restart: always
-    volumes:
-      - $PWD/ansible_wisdom:/var/www/ansible_wisdom
-      - $PWD/ari/kb:/etc/ari/kb
-    ports:
-      - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=main.settings.development
-      - ANSIBLE_AI_DATABASE_NAME=wisdom
-      - ANSIBLE_AI_DATABASE_USER=wisdom
-      - ANSIBLE_AI_DATABASE_PASSWORD=wisdom
-      - ANSIBLE_AI_DATABASE_HOST=db
-      - ANSIBLE_HOME=/etc/ansible
-      - ENABLE_ARI_POSTPROCESS=${ENABLE_ARI_POSTPROCESS}
-      - ARI_KB_PATH=/etc/ari/kb
-      - DEBUG_VALUE=${DEBUG_VALUE}
-      - SOCIAL_AUTH_GITHUB_TEAM_KEY=${SOCIAL_AUTH_GITHUB_TEAM_KEY}
-      - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
-      - SECRET_KEY=${SECRET_KEY:-somesecret}
-      - SEGMENT_WRITE_KEY=${SEGMENT_WRITE_KEY}
-    command:
-      - /usr/bin/launch-wisdom.sh
-    networks:
-      - dbnet
   redis:
     image: docker.io/library/redis:alpine
     restart: always

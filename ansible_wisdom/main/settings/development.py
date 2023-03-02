@@ -3,6 +3,8 @@ from typing import Literal
 
 from .base import *  # NOQA
 
+DEBUG = True
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["*"]
@@ -22,7 +24,6 @@ ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL = (
 )
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
-SOCIAL_AUTH_JSONFIELD_ENABLED = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
@@ -32,3 +33,13 @@ CACHES = {
         "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
     }
 }
+
+if DEBUG:
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Ansible Wisdom Service',
+        'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
+        'VERSION': '0.0.2',
+        'SERVE_INCLUDE_SCHEMA': False,
+        # OTHER SETTINGS
+        'TAGS': [{"name": "ai", "description": "AI-related operations"}],
+    }

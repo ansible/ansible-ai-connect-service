@@ -1,11 +1,19 @@
+import logging
+
+from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
+
+from ari import postprocessing
+
+logger = logging.getLogger(__name__)
 
 
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
     model_mesh_client = None
+    ari_caller = None
 
     def ready(self) -> None:
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
@@ -26,4 +34,23 @@ class AiConfig(AppConfig):
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
             )
+
+        # TODO may be we can parallelize ari and grpc client creation
+        try:
+            if settings.ENABLE_ARI_POSTPROCESS:
+                self.ari_caller = postprocessing.ARICaller(
+                    config=Config(
+                        rules_dir=settings.ARI_RULES_DIR,
+                        data_dir=settings.ARI_DATA_DIR,
+                        rules=settings.ARI_RULES,
+                    ),
+                    silent=True,
+                )
+                logger.info("Postprocessing is enabled.")
+            else:
+                logger.info("Postprocessing is disabled.")
+        except Exception:
+            logger.exception("Failed to initialize ARI.")
+            self.ari_caller = None
+
         return super().ready()

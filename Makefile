@@ -29,3 +29,21 @@ run-django-container:
 
 docker-compose:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
+
+# Run backend services in container for running Django application from source
+run-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans
+
+# Stop backend services
+stop-backends:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml down
+
+# Update OpenAPI 3.0 schema while running the service in development env
+update-openapi-schema:
+	curl -X GET http://localhost:8000/api/schema/ -o tools/openapi-schema/ansible-wisdom-service.yaml
+
+docker-compose-clean:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml down
+
+docker-create-superuser:
+	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 wisdom-manage createsuperuser

@@ -17,18 +17,14 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
-from rest_framework import routers
-from social_django import urls as social_urls
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from users import views as user_views
 
-from .api import views as main_views
-
-# router = routers.DefaultRouter()
-# router.register(r'users', main_views.UserViewSet)
-# router.register(r'groups', main_views.GroupViewSet)
-
 urlpatterns = [
-    # path('', include(router.urls)),
     path("admin/", admin.site.urls),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
@@ -43,3 +39,18 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('django_prometheus.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path(
+            'api/schema/swagger-ui/',
+            SpectacularSwaggerView.as_view(url_name='schema'),
+            name='swagger-ui',
+        ),
+        path(
+            'api/schema/redoc/',
+            SpectacularRedocView.as_view(url_name='schema'),
+            name='redoc',
+        ),
+    ]
