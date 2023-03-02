@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+
+import formatter as fmtr
+
+from django.test import TestCase
+
+
+class AnsibleDumperTestCase(TestCase):
+    def test_extra_empty_lines(self):
+        extra_empty_lines = """---
+- name: test empty lines
+
+  copy:
+    src: a
+    dest: b
+
+
+
+
+
+
+
+
+"""
+        expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
+        self.assertEqual(fmtr.normalize_yaml(extra_empty_lines), expected)
+
+    def test_extra_empty_spaces(self):
+        """
+        extra spaces after values, do not remove them
+        """
+        extra_empty_spaces = """---
+- name: test empty lines
+
+  copy:
+    src: a
+    dest: b
+
+"""
+        expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
+        self.assertEqual(fmtr.normalize_yaml(extra_empty_spaces), expected)
+
+    def test_incorrect_indent_name(self):
+        """
+        extra spaces after values, do not remove them
+        """
+        incorrect_indent_name = """---
+
+- name: playbook with tasks indented incorrectly
+
+  tasks:
+  - name: copy tasks
+    copy:
+        src: a
+        dest: b
+
+"""
+
+        expected = """- name: playbook with tasks indented incorrectly\n  tasks:\n    - name: copy tasks\n      copy:\n        src: a\n        dest: b\n"""  # noqa: E501
+        self.assertEqual(fmtr.normalize_yaml(incorrect_indent_name), expected)
+
+    def test_comments(self):
+        """
+        extra spaces after values, do not remove them
+        """
+        comments = """---
+- name: test empty lines
+# I am comment 0
+  copy:
+    src: a        # I am comment 1
+    # I am comment 2
+    dest: b
+
+"""
+        expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
+        self.assertEqual(fmtr.normalize_yaml(comments), expected)
+
+
+if __name__ == "__main__":
+    import yaml
+
+    tests = AnsibleDumperTestCase()
+    tests.test_extra_empty_lines()
+    tests.test_extra_empty_spaces()
+    tests.test_incorrect_indent_name()
+    tests.test_comments()
