@@ -54,12 +54,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "main.middleware.SegmentMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
-    # "social_core.backends.github.GithubOrganizationOAuth2",
     "social_core.backends.github.GithubTeamOAuth2",
-    # "social_core.backends.github.GithubOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -76,12 +75,16 @@ PILOT_DOCS_URL = os.environ.get(
 )
 PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Internal Red Hat Slack')
 
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
 SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
 SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
 SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
 SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 # Wisdom Eng Team:
 # gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
+
+# Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
+SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -100,10 +103,14 @@ ROOT_URLCONF = "main.urls"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "loggers": {
-        "root": {
-            "level": "WARNING",
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
         },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
     },
 }
 
@@ -176,6 +183,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Absolute filesystem path to the directory where static file are collected via
+# the collectstatic command.
+STATIC_ROOT = '/var/www/wisdom/public/static'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
@@ -189,3 +200,28 @@ APPEND_SLASH = False
 COMPLETION_USER_RATE_THROTTLE = (
     os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
 )
+
+ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
+ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
+ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, 'rules')
+ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, 'data')
+ARI_RULES = [
+    "P001",
+    "P002",
+    "P003",
+    "P004",
+    "W001",
+    "W003",
+    "W004",
+    "W005",
+    "W006",
+    "W007",
+    "W008",
+    "W009",
+    "W010",
+    "W012",
+    "W013",
+]
+if 'ARI_RULES' in os.environ:
+    ARI_RULES = os.environ['ARI_RULES'].split(',')
+ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")

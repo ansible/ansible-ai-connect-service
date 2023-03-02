@@ -5,6 +5,7 @@ ARG DJANGO_SETTINGS_MODULE=main.settings.production
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
 RUN dnf install -y \
+    git \
     python3-devel \
     gcc \
     libpq \
@@ -24,18 +25,24 @@ COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
+COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
-COPY requirements.txt /tmp
+COPY requirements.txt /var/www/
+COPY ari /etc/ari
 
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
-      /var/log/nginx ; \
+      /var/www/wisdom \
+      /var/log/nginx \
+      /etc/ari \
+      /etc/ansible ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
+ENV ANSIBLE_HOME=/etc/ansible
 RUN /usr/bin/python3 -m venv /var/www/venv
-RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible_wisdom/requirements.txt
+RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 WORKDIR /var/www
 

@@ -71,10 +71,32 @@ configuration key to point on an existing service.
 
 If you get a permission denied error when attempting to start the
 containers, you may need to set the permissions on the
-`ansible_wisdom/` directory:
+`ansible_wisdom/`, `prometheus/` and `ari/` directories:
 
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
+chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R ari/
+```
+Also run `chmod` against the `ari/` directory so that ARI can
+write temporary data in it:
+```bash
+chmod -R 777 ari/
+```
+
+Recreating the dev containers might be useful:
+``` bash
+$ make docker-compose-clean
+```
+
+It may be necessary to recreate the dev image if anything has changed in the nginx settings:
+``` bash
+$ docker rmi docker-compose_django_1
+```
+
+Create a local admin user:
+``` bash
+$ make docker-create-superuser
 ```
 
 ## Running the Django application standalone (from container)
@@ -96,7 +118,7 @@ make run-django-container
 1. Clone the repository and install all the dependencies
 
 ```bash
-pip install -r ansible_wisdom/requirements.txt
+pip install -r requirements.txt
 ```
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
@@ -183,6 +205,38 @@ Once you start the app, navigate to http://localhost:8000/ to log in. Once authe
 To get an authentication token without logging in via GitHub, you can navigate to http://localhost:8000/admin/ and log in with your superuser credentials, then navigate back to http://localhost:8000/ (or view your token in the admin console).
 
 To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
+
+## Enabling postprocess with ARI
+
+You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
+
+1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
+
+    ```bash
+    $ export ENABLE_ARI_POSTPROCESS=True
+    ```
+
+
+2. Prepare `rules` and `data` directory inside `ari/kb` directory.
+
+    `rules` should contain mutation rules for the postprocess, you can refer to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
+
+    `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this file must be placed manually if you want to enable the postprocess.
+
+    Once the files are ready, the `ari/kb` directory should look like this.
+
+    ```bash
+    ari/kb/
+    ├── data
+    │   ├── collections
+    │   └── indices
+    └── rules
+        ├── W001_module_name_metrics.py
+        ├── W002_module_key_metrics.py
+        ├── ...
+    ```
+
+Then you can build the django image or just run `make docker-compose`.
 
 ## Application metrics as a Prometheus-style endpoint
 

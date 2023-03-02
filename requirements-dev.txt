@@ -1,2 +1,6 @@
 torch-model-archiver
 pre-commit
+black==22.10.0
+flake8==6.0.0
+isort==5.10.1
+yamllint==1.29.0
