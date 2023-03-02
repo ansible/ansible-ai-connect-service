@@ -23,7 +23,8 @@ class AnsibleDumperTestCase(TestCase):
 
 """
         expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
-        self.assertEqual(fmtr.normalize_yaml(extra_empty_lines), expected)
+        output = fmtr.normalize_yaml(extra_empty_lines)
+        self.assertEqual(output, expected)
 
     def test_extra_empty_spaces(self):
         """
@@ -39,6 +40,26 @@ class AnsibleDumperTestCase(TestCase):
 """
         expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
         self.assertEqual(fmtr.normalize_yaml(extra_empty_spaces), expected)
+
+    def test_prompt_and_context(self):
+        prompt_and_context = """---
+- name: test empty lines
+
+  copy:
+    src: a
+    dest: b
+
+
+
+- name: here is the new prompt
+
+
+
+
+"""
+        expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n\n- name: here is the new prompt\n"""  # noqa: E501
+        self.assertEqual(fmtr.normalize_yaml(prompt_and_context), expected)
+        # a, b, _ = fmtr.normalize_yaml(prompt_and_context).rsplit('\n', 2)
 
     def test_incorrect_indent_name(self):
         """
@@ -84,3 +105,4 @@ if __name__ == "__main__":
     tests.test_extra_empty_spaces()
     tests.test_incorrect_indent_name()
     tests.test_comments()
+    tests.test_prompt_and_context()
