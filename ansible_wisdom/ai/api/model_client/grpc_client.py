@@ -6,25 +6,20 @@ import grpc
 from django.conf import settings
 from rest_framework.response import Response
 
-from .base import ModelMeshClient
-from .grpc_pb import (
+import base
+from grpc_pb import (
     common_service_pb2,
     common_service_pb2_grpc,
     data_model_pb2,
-    inference_pb2,
-    inference_pb2_grpc,
-    management_pb2,
-    management_pb2_grpc,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class GrpcClient(ModelMeshClient):
+class GrpcClient(base.ModelMeshClient):
     def __init__(self, inference_url, management_url):
         super().__init__(inference_url=inference_url, management_url=management_url)
         self._inference_stub = self.get_inference_stub()
-        self._management_stub = self.get_management_stub()
 
     def get_inference_stub(self) -> common_service_pb2_grpc.CoreAnsibleWisdomExtServiceStub:
         channel = grpc.insecure_channel(self._inference_url)
@@ -37,14 +32,19 @@ class GrpcClient(ModelMeshClient):
         logger.debug(f"Input prompt: {prompt}")
         logger.debug(f"Input context: {context}")
         response = self._inference_stub.AnsibleWisdomPredict(
-            common_service_pb2.AnsibleWisdomRequest(
-                prompt=prompt, input=data_model_pb2.RawDocument(text=context)
+            request=common_service_pb2.AnsibleWisdomRequest(
+                prompt=prompt, input=data_model_pb2.RawDocument(text=context),
             ),
-            metadata=(("mm-vmodel-id", "gpu-version-inference-service-v01")),
+            metadata=[("mm-vmodel-id", "gpu-version-inference-service")],
         )
 
         try:
-            result = response.prediction.decode('utf-8')
+            # TODO(rg): remove these debug statements
+            print(type(response))
+            print(response.label)
+            # TODO(rg): this should be formatted properly
+            result = response.label
+            #result = response.prediction.decode('utf-8')
             return Response(result, status=200)
         except grpc.RpcError as exc:
             return Response(exc.details(), status=400)
