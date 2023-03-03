@@ -22,3 +22,4 @@ git+https://github.com/ansible/ansible-risk-insight#egg=ansible_risk_insight==0.
 uwsgi-readiness-check==0.2.0
 segment-analytics-python==2.2.2
 pytz
+django-health-check==3.17.0

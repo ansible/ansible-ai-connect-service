@@ -23,15 +23,18 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from users.views import CurrentUserView, HomeView, UnauthorizedView
+from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
     path('admin/', admin.site.urls),
-    path('api/', include("ai.api.urls")),
+    path('api/ai/', include("ai.api.urls")),
     path('api/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
+    path('healthz/status/', WisdomServiceHealthView.as_view(), name='health_check'),
+    path('healthz/', WisdomServiceLivenessProbeView.as_view(), name='liveness_prove'),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',
