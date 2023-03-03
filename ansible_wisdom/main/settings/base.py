@@ -233,6 +233,17 @@ APPEND_SLASH = False
 COMPLETION_USER_RATE_THROTTLE = (
     os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
 )
+MOCK_MODEL_RESPONSE_BODY = os.environ.get(
+    'MOCK_MODEL_RESPONSE_BODY',
+    (
+        '{"predictions":["  ansible.builtin.apt:\\n    name: nginx\\n'
+        'update_cache: true\\n    state: present\\n"]}'
+    ),
+)
+MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_MSEC', 3000))
+MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
+    os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
+)
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
 ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')

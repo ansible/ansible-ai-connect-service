@@ -23,7 +23,9 @@ ANSIBLE_AI_MODEL_MESH_MANAGEMENT_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_MANAGEMENT_PORT}"
 )
 
-ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http"] = "http"
+ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock"] = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
+)
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
