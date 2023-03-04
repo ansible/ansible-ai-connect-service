@@ -11,73 +11,20 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from . import data_model_pb2 as data__model__pb2
 from . import producer_types_pb2 as producer__types__pb2
-from . import category_types_pb2 as category__types__pb2
-from . import classification_types_pb2 as classification__types__pb2
-from . import clustering_types_pb2 as clustering__types__pb2
-from . import concept_types_pb2 as concept__types__pb2
-from . import embedding_types_pb2 as embedding__types__pb2
-from . import emotion_types_pb2 as emotion__types__pb2
-from . import entity_types_pb2 as entity__types__pb2
-from . import keyword_types_pb2 as keyword__types__pb2
-from . import lang_detect_types_pb2 as lang__detect__types__pb2
-from . import language_types_pb2 as language__types__pb2
-from . import matrix_types_pb2 as matrix__types__pb2
-from . import nounphrases_types_pb2 as nounphrases__types__pb2
-from . import relation_types_pb2 as relation__types__pb2
-from . import rules_types_pb2 as rules__types__pb2
-from . import sentiment_types_pb2 as sentiment__types__pb2
-from . import syntax_types_pb2 as syntax__types__pb2
-from . import target_mention_types_pb2 as target__mention__types__pb2
-from . import text_primitive_types_pb2 as text__primitive__types__pb2
-from . import text_similarity_types_pb2 as text__similarity__types__pb2
-from . import topic_types_pb2 as topic__types__pb2
-from . import vectorization_types_pb2 as vectorization__types__pb2
+from . import generation_pb2 as generation__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x63ommon-service.proto\x12)watson.runtime.core_ansible_wisdom_ext.v0\x1a\x10\x64\x61ta_model.proto\x1a\x14producer-types.proto\x1a\x14\x63\x61tegory-types.proto\x1a\x1a\x63lassification-types.proto\x1a\x16\x63lustering-types.proto\x1a\x13\x63oncept-types.proto\x1a\x15\x65mbedding-types.proto\x1a\x13\x65motion-types.proto\x1a\x12\x65ntity-types.proto\x1a\x13keyword-types.proto\x1a\x17lang-detect-types.proto\x1a\x14language-types.proto\x1a\x12matrix-types.proto\x1a\x17nounphrases-types.proto\x1a\x14relation-types.proto\x1a\x11rules-types.proto\x1a\x15sentiment-types.proto\x1a\x12syntax-types.proto\x1a\x1atarget-mention-types.proto\x1a\x1atext-primitive-types.proto\x1a\x1btext-similarity-types.proto\x1a\x11topic-types.proto\x1a\x19vectorization-types.proto\"\xb7\x01\n\x15\x43lassificationRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x1b\n\x0eif_multithread\x18\x02 \x01(\x08H\x01\x88\x01\x01\x42\x0f\n\r_raw_documentB\x11\n\x0f_if_multithread\"\x90\x01\n\rSyntaxRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x0f\n\x07parsers\x18\x02 \x03(\tB\x0f\n\r_raw_document\"\xb5\x01\n\x15\x45ntityMentionsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x1a\n\rlanguage_code\x18\x02 \x01(\tH\x01\x88\x01\x01\x42\x0f\n\r_raw_documentB\x10\n\x0e_language_code\"\x83\x01\n\x11LangDetectRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\x84\x01\n\x12NounPhrasesRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\x98\x01\n\x15TargetMentionsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x0f\n\x07targets\x18\x02 \x03(\tB\x0f\n\r_raw_document\"~\n\x0c\x44\x65tagRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"~\n\x0cRulesRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\xcb\x01\n\x11\x43\x61tegoriesRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x18\n\x0b\x65xplanation\x18\x02 \x01(\x08H\x01\x88\x01\x01\x12\x12\n\x05limit\x18\x03 \x01(\x05H\x02\x88\x01\x01\x42\x0f\n\r_raw_documentB\x0e\n\x0c_explanationB\x08\n\x06_limit\"\x9f\x01\n\x0f\x43onceptsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x12\n\x05limit\x18\x02 \x01(\x05H\x01\x88\x01\x01\x42\x0f\n\r_raw_documentB\x08\n\x06_limit\"\x81\x01\n\x0f\x45ntitiesRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\xcc\x01\n\x0e\x45motionRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x1d\n\x10\x64ocument_emotion\x18\x02 \x01(\x08H\x01\x88\x01\x01\x12\x16\n\x0etarget_phrases\x18\x03 \x03(\tB\x0f\n\r_raw_documentB\x13\n\x11_document_emotion\"\x9f\x01\n\x0fKeywordsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x12\n\x05limit\x18\x02 \x01(\x05H\x01\x88\x01\x01\x42\x0f\n\r_raw_documentB\x08\n\x06_limit\"\x82\x01\n\x10RelationsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\xba\x02\n\x10SentimentRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x12\x1a\n\rlanguage_code\x18\x02 \x01(\tH\x01\x88\x01\x01\x12\x1f\n\x12\x64ocument_sentiment\x18\x03 \x01(\x08H\x02\x88\x01\x01\x12\x16\n\x0etarget_phrases\x18\x04 \x03(\t\x12 \n\x13show_neutral_scores\x18\x05 \x01(\x08H\x03\x88\x01\x01\x42\x0f\n\r_raw_documentB\x10\n\x0e_language_codeB\x15\n\x13_document_sentimentB\x16\n\x14_show_neutral_scores\"\x7f\n\rTopicsRequest\x12]\n\x0craw_document\x18\x01 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x00\x88\x01\x01\x42\x0f\n\r_raw_document\"\x98\x01\n\x14\x41nsibleWisdomRequest\x12\x13\n\x06prompt\x18\x01 \x01(\tH\x00\x88\x01\x01\x12V\n\x05input\x18\x02 \x01(\x0b\x32\x42.watson_core_data_model.watson_core_ansible_wisdom_ext.RawDocumentH\x01\x88\x01\x01\x42\t\n\x07_promptB\x08\n\x06_input2\x96\x12\n\x1b\x43oreAnsibleWisdomExtService\x12\x91\x01\n\x15\x43lassificationPredict\x12@.watson.runtime.core_ansible_wisdom_ext.v0.ClassificationRequest\x1a\x34.watson_core_data_model.nlp.ClassificationPrediction\"\x00\x12y\n\rSyntaxPredict\x12\x38.watson.runtime.core_ansible_wisdom_ext.v0.SyntaxRequest\x1a,.watson_core_data_model.nlp.SyntaxPrediction\"\x00\x12\x91\x01\n\x15\x45ntityMentionsPredict\x12@.watson.runtime.core_ansible_wisdom_ext.v0.EntityMentionsRequest\x1a\x34.watson_core_data_model.nlp.EntityMentionsPrediction\"\x00\x12\x85\x01\n\x11LangDetectPredict\x12<.watson.runtime.core_ansible_wisdom_ext.v0.LangDetectRequest\x1a\x30.watson_core_data_model.nlp.LangDetectPrediction\"\x00\x12\x88\x01\n\x12NounPhrasesPredict\x12=.watson.runtime.core_ansible_wisdom_ext.v0.NounPhrasesRequest\x1a\x31.watson_core_data_model.nlp.NounPhrasesPrediction\"\x00\x12\x91\x01\n\x15TargetMentionsPredict\x12@.watson.runtime.core_ansible_wisdom_ext.v0.TargetMentionsRequest\x1a\x34.watson_core_data_model.nlp.TargetMentionsPrediction\"\x00\x12v\n\x0c\x44\x65tagPredict\x12\x37.watson.runtime.core_ansible_wisdom_ext.v0.DetagRequest\x1a+.watson_core_data_model.nlp.DetagPrediction\"\x00\x12v\n\x0cRulesPredict\x12\x37.watson.runtime.core_ansible_wisdom_ext.v0.RulesRequest\x1a+.watson_core_data_model.nlp.RulesPrediction\"\x00\x12\x85\x01\n\x11\x43\x61tegoriesPredict\x12<.watson.runtime.core_ansible_wisdom_ext.v0.CategoriesRequest\x1a\x30.watson_core_data_model.nlp.CategoriesPrediction\"\x00\x12\x7f\n\x0f\x43onceptsPredict\x12:.watson.runtime.core_ansible_wisdom_ext.v0.ConceptsRequest\x1a..watson_core_data_model.nlp.ConceptsPrediction\"\x00\x12\x7f\n\x0f\x45ntitiesPredict\x12:.watson.runtime.core_ansible_wisdom_ext.v0.EntitiesRequest\x1a..watson_core_data_model.nlp.EntitiesPrediction\"\x00\x12|\n\x0e\x45motionPredict\x12\x39.watson.runtime.core_ansible_wisdom_ext.v0.EmotionRequest\x1a-.watson_core_data_model.nlp.EmotionPrediction\"\x00\x12\x7f\n\x0fKeywordsPredict\x12:.watson.runtime.core_ansible_wisdom_ext.v0.KeywordsRequest\x1a..watson_core_data_model.nlp.KeywordsPrediction\"\x00\x12\x82\x01\n\x10RelationsPredict\x12;.watson.runtime.core_ansible_wisdom_ext.v0.RelationsRequest\x1a/.watson_core_data_model.nlp.RelationsPrediction\"\x00\x12\x82\x01\n\x10SentimentPredict\x12;.watson.runtime.core_ansible_wisdom_ext.v0.SentimentRequest\x1a/.watson_core_data_model.nlp.SentimentPrediction\"\x00\x12y\n\rTopicsPredict\x12\x38.watson.runtime.core_ansible_wisdom_ext.v0.TopicsRequest\x1a,.watson_core_data_model.nlp.TopicsPrediction\"\x00\x12\xae\x01\n\x14\x41nsibleWisdomPredict\x12?.watson.runtime.core_ansible_wisdom_ext.v0.AnsibleWisdomRequest\x1aS.watson_core_data_model.watson_core_ansible_wisdom_ext.AnsibleWisdomModelPrediction\"\x00\x42Q\n\x17\x63om.ibm.watson.runtime.P\x01Z4github.ibm.com/ai-foundation/_runtime_client/runtimeb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14\x63ommon-service.proto\x12\x1cwatson.runtime.wisdom_ext.v0\x1a\x14producer-types.proto\x1a\x10generation.proto\"R\n\x0e\x41nsibleRequest\x12\x13\n\x06prompt\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x14\n\x07\x63ontext\x18\x02 \x01(\tH\x01\x88\x01\x01\x42\t\n\x07_promptB\n\n\x08_context2\x88\x01\n\x10WisdomExtService\x12t\n\x0e\x41nsiblePredict\x12,.watson.runtime.wisdom_ext.v0.AnsibleRequest\x1a\x32.watson_core_data_model.watson_nlp.GeneratedResult\"\x00\x42\x65\n!com.ibm.watson.runtime.wisdom_extP\x01Z>github.ibm.com/ai-foundation/wisdom_ext_runtime_client/runtimeb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'common_service_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  DESCRIPTOR._serialized_options = b'\n\027com.ibm.watson.runtime.P\001Z4github.ibm.com/ai-foundation/_runtime_client/runtime'
-  _CLASSIFICATIONREQUEST._serialized_start=595
-  _CLASSIFICATIONREQUEST._serialized_end=778
-  _SYNTAXREQUEST._serialized_start=781
-  _SYNTAXREQUEST._serialized_end=925
-  _ENTITYMENTIONSREQUEST._serialized_start=928
-  _ENTITYMENTIONSREQUEST._serialized_end=1109
-  _LANGDETECTREQUEST._serialized_start=1112
-  _LANGDETECTREQUEST._serialized_end=1243
-  _NOUNPHRASESREQUEST._serialized_start=1246
-  _NOUNPHRASESREQUEST._serialized_end=1378
-  _TARGETMENTIONSREQUEST._serialized_start=1381
-  _TARGETMENTIONSREQUEST._serialized_end=1533
-  _DETAGREQUEST._serialized_start=1535
-  _DETAGREQUEST._serialized_end=1661
-  _RULESREQUEST._serialized_start=1663
-  _RULESREQUEST._serialized_end=1789
-  _CATEGORIESREQUEST._serialized_start=1792
-  _CATEGORIESREQUEST._serialized_end=1995
-  _CONCEPTSREQUEST._serialized_start=1998
-  _CONCEPTSREQUEST._serialized_end=2157
-  _ENTITIESREQUEST._serialized_start=2160
-  _ENTITIESREQUEST._serialized_end=2289
-  _EMOTIONREQUEST._serialized_start=2292
-  _EMOTIONREQUEST._serialized_end=2496
-  _KEYWORDSREQUEST._serialized_start=2499
-  _KEYWORDSREQUEST._serialized_end=2658
-  _RELATIONSREQUEST._serialized_start=2661
-  _RELATIONSREQUEST._serialized_end=2791
-  _SENTIMENTREQUEST._serialized_start=2794
-  _SENTIMENTREQUEST._serialized_end=3108
-  _TOPICSREQUEST._serialized_start=3110
-  _TOPICSREQUEST._serialized_end=3237
-  _ANSIBLEWISDOMREQUEST._serialized_start=3240
-  _ANSIBLEWISDOMREQUEST._serialized_end=3392
-  _COREANSIBLEWISDOMEXTSERVICE._serialized_start=3395
-  _COREANSIBLEWISDOMEXTSERVICE._serialized_end=5721
+  DESCRIPTOR._serialized_options = b'\n!com.ibm.watson.runtime.wisdom_extP\001Z>github.ibm.com/ai-foundation/wisdom_ext_runtime_client/runtime'
+  _ANSIBLEREQUEST._serialized_start=94
+  _ANSIBLEREQUEST._serialized_end=176
+  _WISDOMEXTSERVICE._serialized_start=179
+  _WISDOMEXTSERVICE._serialized_end=315
 # @@protoc_insertion_point(module_scope)

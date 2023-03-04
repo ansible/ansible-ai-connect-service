@@ -10,7 +10,6 @@ import base
 from grpc_pb import (
     common_service_pb2,
     common_service_pb2_grpc,
-    data_model_pb2,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,19 +20,19 @@ class GrpcClient(base.ModelMeshClient):
         super().__init__(inference_url=inference_url, management_url=management_url)
         self._inference_stub = self.get_inference_stub()
 
-    def get_inference_stub(self) -> common_service_pb2_grpc.CoreAnsibleWisdomExtServiceStub:
+    def get_inference_stub(self) -> common_service_pb2_grpc.WisdomExtServiceStub:
         channel = grpc.insecure_channel(self._inference_url)
         logger.debug("Inference URL: " + self._inference_url)
-        stub = common_service_pb2_grpc.CoreAnsibleWisdomExtServiceStub(channel)
+        stub = common_service_pb2_grpc.WisdomExtServiceStub(channel)
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
     def infer(self, prompt, context) -> Response:
         logger.debug(f"Input prompt: {prompt}")
         logger.debug(f"Input context: {context}")
-        response = self._inference_stub.AnsibleWisdomPredict(
-            request=common_service_pb2.AnsibleWisdomRequest(
-                prompt=prompt, input=data_model_pb2.RawDocument(text=context),
+        response = self._inference_stub.AnsiblePredict(
+            request=common_service_pb2.AnsibleRequest(
+                prompt=prompt, context=context
             ),
             metadata=[("mm-vmodel-id", "gpu-version-inference-service")],
         )
@@ -43,7 +42,7 @@ class GrpcClient(base.ModelMeshClient):
             print(type(response))
             print(response.label)
             # TODO(rg): this should be formatted properly
-            result = response.label
+            result = { "predictions": [response.label] }
             #result = response.prediction.decode('utf-8')
             return Response(result, status=200)
         except grpc.RpcError as exc:

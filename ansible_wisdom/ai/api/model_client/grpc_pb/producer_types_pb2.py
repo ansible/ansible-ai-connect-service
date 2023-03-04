@@ -13,14 +13,14 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14producer-types.proto\x12\x1dwatson_core_data_model.common\"+\n\nProducerId\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"P\n\x10ProducerPriority\x12<\n\tproducers\x18\x01 \x03(\x0b\x32).watson_core_data_model.common.ProducerIdBg\n\x17\x63om.ibm.watson.runtime.P\x01ZJgithub.ibm.com/ai-foundation/_runtime_client/watson_core_data_model/commonb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14producer-types.proto\x12\x1dwatson_core_data_model.common\"+\n\nProducerId\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"P\n\x10ProducerPriority\x12<\n\tproducers\x18\x01 \x03(\x0b\x32).watson_core_data_model.common.ProducerIdB{\n!com.ibm.watson.runtime.wisdom_extP\x01ZTgithub.ibm.com/ai-foundation/wisdom_ext_runtime_client/watson_core_data_model/commonb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'producer_types_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  DESCRIPTOR._serialized_options = b'\n\027com.ibm.watson.runtime.P\001ZJgithub.ibm.com/ai-foundation/_runtime_client/watson_core_data_model/common'
+  DESCRIPTOR._serialized_options = b'\n!com.ibm.watson.runtime.wisdom_extP\001ZTgithub.ibm.com/ai-foundation/wisdom_ext_runtime_client/watson_core_data_model/common'
   _PRODUCERID._serialized_start=55
   _PRODUCERID._serialized_end=98
   _PRODUCERPRIORITY._serialized_start=100

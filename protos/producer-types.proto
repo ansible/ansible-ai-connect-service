@@ -1,0 +1,75 @@
+/* ***************************************************************** */
+
+/*                                                                   */
+
+/* Licensed Materials - Property of IBM                              */
+
+/*                                                                   */
+
+/* (C) Copyright IBM Corp. 2019                                      */
+
+/*                                                                   */
+
+/* US Government Users Restricted Rights - Use, duplication or       */
+
+/* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. */
+
+/*                                                                   */
+
+/* ***************************************************************** */
+
+
+
+syntax = "proto3";
+
+package watson_core_data_model.common;
+
+option go_package = "github.ibm.com/ai-foundation/wisdom_ext_runtime_client/watson_core_data_model/common";
+
+option java_package = "com.ibm.watson.runtime.wisdom_ext";
+
+option java_multiple_files = true;
+
+
+
+/*******************************************************************************
+
+ * This file houses protobuf interface definitions for common primitive types. *
+
+ ******************************************************************************/
+
+
+
+/*-- Primitives -------------------------------------------------------------*/
+
+
+
+/**
+
+ * Information about a data structure and the block and version that produced it.
+
+ */
+
+message ProducerId {
+
+    string name    = 1; // (required) Name of the producing block
+
+    string version = 2; // (required) Version of the producing block
+
+}
+
+
+
+/**
+
+ * An ordered list of ProducerIds which indicates a priority order for multiple
+
+ * producers of the same data structure.
+
+ */
+
+message ProducerPriority {
+
+    repeated ProducerId producers = 1; // (required) The ordered list of producers
+
+}
