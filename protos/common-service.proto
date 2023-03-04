@@ -34,7 +34,7 @@ service WisdomExtService {
 
      * This rpc supports 1 Modules: ['AnsibleCodegen']
 
-     * 
+     *
 
      * AnsibleCodegen docstring:
 
@@ -42,7 +42,7 @@ service WisdomExtService {
 
      *     Run hugging face text generation using prompt and input context
 
-     *     
+     *
 
      *     Args:
 
