@@ -59,3 +59,26 @@ jobs:
 
     - name: Print image url
       run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+      
+    - name: Report to slack
+      id: slack
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        # For posting a rich message using Block Kit
+        payload: |
+          {
+            "text": "wisdom service image build result: ${{ job.status }}\n${{ github.server_url }}/n${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "wisdom service image build result: ${{ job.status }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      if: ${{ always() }}
