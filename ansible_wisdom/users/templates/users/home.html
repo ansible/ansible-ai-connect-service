@@ -6,7 +6,7 @@
     <h1>Ansible Wisdom</h1>
     <p>Thank you for participating in the Ansible Wisdom pilot.</p>
     {% if user.is_authenticated %}
-    <p>You are signed in as {{user.username}} ({{user.email}}).</p>
+    <p>You are signed in as {{user.username}}{% if user.email %} ({{user.email}}){% endif %}.</p>
     <p>Access the <a href={{pilot_docs_url}} target="_blank">pilot test plan</a> to begin.</p>
     <p><b>Authentication Token:</b> {{drf_token}}</p>
     <br><br>

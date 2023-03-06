@@ -1,4 +1,3 @@
-# Create your views here.
 import json
 import logging
 import time
@@ -29,6 +28,12 @@ class Completions(APIView):
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
+    # OAUTH: remove the conditional
+    if settings.OAUTH2_ENABLE:
+        from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+        from rest_framework import permissions
+
+        permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(
@@ -48,7 +53,7 @@ class Completions(APIView):
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
         model_name = payload.model_name
-        payload.prompt, payload.context = self.preprocess(payload.prompt, payload.context)
+        payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
@@ -79,28 +84,12 @@ class Completions(APIView):
 
     def preprocess(self, prompt, context):
         try:
-            fmtd_input = fmtr.normalize_yaml(f'{context}{prompt}')
-            m_context, m_prompt, _ = fmtd_input.rsplit('\n', 2)
-            # assumes that there is always a \n at the end and that's why need to ignore last \n
-            # and use second last
-            logger.debug(
-                f'initial user input {context}{prompt}'
-                f'fmtd user input {fmtd_input}'
-                f'after preprocess user input {context}{prompt}'
-            )
-            # since m_prompt is a cleaned up version of prompt, it should be a substring,
-            # if not, raise an error
-            # this is more of a sanity check to ensure nothing was broken
-            if m_prompt in prompt:
-                prompt, context = m_prompt, m_context
-            else:
-                logger.warn(f'failed to preprocess {context}{prompt}')
-
+            context, prompt = fmtr.preprocess(context, prompt)
         except Exception:
             # return the original prompt, context
             logger.exception(f'failed to preprocess {context}{prompt}')
 
-        return prompt, context
+        return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
         ari_caller = apps.get_app_config("ai").ari_caller
