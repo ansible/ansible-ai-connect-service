@@ -63,7 +63,9 @@ class Completions(APIView):
         print(model_mesh_client)
         request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        payload = APIPayload(prompt=request.data.get("prompt"), context=request.data.get("context"))
+        payload = APIPayload(
+            prompt=request.data.get("prompt", ''), context=request.data.get("context", '')
+        )
         model_name = payload.model_name
         model_mesh_payload = ModelMeshPayload(
             instances=[
