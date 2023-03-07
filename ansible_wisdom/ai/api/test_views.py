@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import modify_settings
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
@@ -45,6 +46,9 @@ class TestCompletionView(APITestCase):
             password='secret',
         )
         cls.user_id = str(uuid.uuid4())
+
+    def setUp(self):
+        cache.clear()
 
     def test_full_payload(self):
         payload = {
