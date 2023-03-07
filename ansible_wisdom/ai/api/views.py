@@ -59,8 +59,6 @@ class Completions(APIView):
     def post(self, request) -> Response:
         model_actual = request.query_params.get("model_name", request.data.get("model_name", None))
         model_mesh_client = apps.get_app_config("ai").retrieve_client(model_actual)
-        print(request.data)
-        print(model_mesh_client)
         request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(

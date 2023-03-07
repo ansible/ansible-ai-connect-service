@@ -98,7 +98,9 @@ class AIModelSerializer(serializers.ModelSerializer):
 class AICompletionSerializer(serializers.Serializer):
     prompt = serializers.CharField(style={'base_template': 'textarea.html', 'rows': 10})
     context = serializers.CharField(style={'base_template': 'textarea.html', 'rows': 10})
-    model_name = serializers.CharField()
+    model_name = serializers.SlugRelatedField(
+        slug_field='name', queryset=AIModel.objects.all(), allow_null=True
+    )
     response_data = serializers.CharField(
         style={'base_template': 'textarea.html', 'rows': 10}
     )  # , read_only=True)
