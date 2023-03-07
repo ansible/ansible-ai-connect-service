@@ -6,6 +6,7 @@ djangorestframework==3.14.0
 grpcio==1.51.1
 social-auth-app-django==5.0.0
 social-auth-core==4.3.0
+protobuf==4.22.0
 pydantic==1.10.2
 psycopg2-binary==2.9.5
 redis==4.4.2
