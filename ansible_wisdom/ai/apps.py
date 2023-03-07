@@ -32,20 +32,11 @@ class AIConfig(AppConfig):
         return self.active_models[model_name]
 
     def initialize_connection(self, api_type, inference_url, management_url):
-        if api_type == "grpc":
-            from .api.model_client.grpc_client import GrpcClient
+        from .models import ModelMeshType
 
-            return GrpcClient(inference_url, management_url)
-        elif api_type == "http":
-            from .api.model_client.http_client import HttpClient
-
-            return HttpClient(inference_url, management_url)
-        elif api_type == "mock":
-            from .api.model_client.mock_client import MockClient
-
-            return MockClient(inference_url, management_url)
-        else:
-            raise ValueError(f"Invalid model mesh client type: {api_type}")
+        # May raise a ValueError; gets the client class annotated on the enum variant
+        Client = ModelMeshType(api_type).client
+        return Client(inference_url, management_url)
 
     def ready(self):
         # FIXME: Remove after this is moved out of settings
