@@ -16,6 +16,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+OAUTH2_ENABLE = bool(os.getenv('OAUTH2_ENABLE'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -34,7 +35,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    'rest_framework.authtoken',
     "social_django",
     "users",
     "ai",
@@ -42,6 +42,11 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_extensions",
 ]
+# OAUTH: fold directly into INSTALLED_APPS when fully switched over
+if OAUTH2_ENABLE:
+    INSTALLED_APPS.append("oauth2_provider")
+else:
+    INSTALLED_APPS.append("rest_framework.authtoken")
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -50,17 +55,27 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "social_django.middleware.SocialAuthExceptionMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
-    "main.middleware.SegmentMiddleware",
 ]
+# OAUTH: fold directly into MIDDLEWARE when switched over
+if OAUTH2_ENABLE:
+    MIDDLEWARE.append("oauth2_provider.middleware.OAuth2TokenMiddleware")
+MIDDLEWARE.extend(
+    [
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        "social_django.middleware.SocialAuthExceptionMiddleware",
+        "django_prometheus.middleware.PrometheusAfterMiddleware",
+        "main.middleware.SegmentMiddleware",
+    ]
+)
 
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 ]
+# OAUTH: fold into above
+if OAUTH2_ENABLE:
+    AUTHENTICATION_BACKENDS.append("oauth2_provider.backends.OAuth2Backend")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -86,17 +101,35 @@ SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 # Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
+OAUTH2_PROVIDER = {
+    'SCOPES': {'read': "Read scope", 'write': "Write scope"},
+    'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https', 'vscode'],
+}
+
+# ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
+REFRESH_TOKEN_EXPIRE_SECONDS = 1_209_600  # = 2 weeks
+
+# OAUTH: todo
+# - remove ansible_wisdom/users/auth.py module
+# - remove ansible_wisdom/users/views.py module
+# - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
     'PAGE_SIZE': 10,
-    'DEFAULT_AUTHENTICATION_CLASSES': ('users.auth.BearerTokenAuthentication',),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated'  # comment out for unauthenticated API access
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
-
+# OAUTH: fold into above
+REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'][:0] = [
+    'oauth2_provider.contrib.rest_framework.OAuth2Authentication'
+    if OAUTH2_ENABLE
+    else 'users.auth.BearerTokenAuthentication'
+]
 
 ROOT_URLCONF = "main.urls"
 
@@ -199,6 +232,17 @@ APPEND_SLASH = False
 # leave it to the operator who set the var to fix it
 COMPLETION_USER_RATE_THROTTLE = (
     os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
+)
+MOCK_MODEL_RESPONSE_BODY = os.environ.get(
+    'MOCK_MODEL_RESPONSE_BODY',
+    (
+        '{"predictions":["  ansible.builtin.apt:\\n    name: nginx\\n'
+        'update_cache: true\\n    state: present\\n"]}'
+    ),
+)
+MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_MSEC', 3000))
+MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
+    os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
 )
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'

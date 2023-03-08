@@ -1,4 +1,3 @@
-# Create your views here.
 import json
 import logging
 import time
@@ -28,6 +27,12 @@ class Completions(APIView):
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
+    # OAUTH: remove the conditional
+    if settings.OAUTH2_ENABLE:
+        from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+        from rest_framework import permissions
+
+        permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(

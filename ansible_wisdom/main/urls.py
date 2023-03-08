@@ -22,15 +22,15 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from users import views as user_views
+from users.views import UserTemplateView
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path('', UserTemplateView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-    path("api/", include("ai.api.urls")),
+    path('admin/', admin.site.urls),
+    path('api/', include("ai.api.urls")),
     # Temp Wisdom home page to share token for pilot
-    path('', user_views.home, name='home'),
     path(
         'login/',
         auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}),
@@ -39,6 +39,10 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('django_prometheus.urls')),
 ]
+
+# OAUTH: merge above
+if settings.OAUTH2_ENABLE:
+    urlpatterns.append(path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')))
 
 if settings.DEBUG:
     urlpatterns += [
