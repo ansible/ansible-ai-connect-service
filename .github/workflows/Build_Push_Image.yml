@@ -29,7 +29,7 @@ jobs:
       run: |
         KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.1
         aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
-        aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules/20230308-b24942f
+        aws s3 cp --recursive ${KB_ARI_PATH}/rules/20230308-b24942f ari/kb/rules
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
