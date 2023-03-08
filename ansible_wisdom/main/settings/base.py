@@ -176,6 +176,7 @@ DATABASES = {
         "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
         "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
         "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
+        "PORT": os.getenv("ANSIBLE_AI_DATABASE_PORT", 5432),
     }
 }
 
