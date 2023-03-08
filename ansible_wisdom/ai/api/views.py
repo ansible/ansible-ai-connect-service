@@ -12,8 +12,8 @@ from rest_framework.views import APIView
 from segment import analytics
 from yaml.error import MarkedYAMLError
 
+from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
-from .formatter import formatter as fmtr
 from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,11 @@ class Completions(APIView):
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
         model_name = payload.model_name
+        original_indent = payload.prompt.find("name")
+        if (
+            original_indent == -1
+        ):  # if someone sent a prompt without "- name:" which is deprecated/unsupported
+            original_indent = 0
         payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         model_mesh_payload = ModelMeshPayload(
             instances=[
@@ -74,7 +79,12 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         response.data = self.postprocess(
-            response.data, payload.prompt, payload.context, payload.userId, payload.suggestionId
+            response.data,
+            payload.prompt,
+            payload.context,
+            payload.userId,
+            payload.suggestionId,
+            indent=original_indent,
         )
         logger.debug(
             f"response from postprocess for "
@@ -82,7 +92,7 @@ class Completions(APIView):
         )
         return response
 
-    def preprocess(self, prompt, context):
+    def preprocess(self, context, prompt):
         try:
             context, prompt = fmtr.preprocess(context, prompt)
         except Exception:
@@ -91,11 +101,13 @@ class Completions(APIView):
 
         return context, prompt
 
-    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
+    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").ari_caller
+        if not ari_caller:
+            logger.warn('skipped ari post processing because ari was not initialized')
 
-        if ari_caller:
-            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+            if ari_caller:
                 start_time = time.time()
                 recommendation_problem = None
                 # check if the recommendation_yaml is a valid YAML
@@ -149,10 +161,17 @@ class Completions(APIView):
                         exception,
                         start_time,
                     )
-                    continue
-        else:
-            logger.warn('skipped post processing because ari was not initialized')
-
+            # restore original indentation
+            final_yaml = recommendation["predictions"][i]
+            if final_yaml:
+                lines = final_yaml.splitlines()
+                first_line = lines[0]
+                current_indent = len(first_line) - len(first_line.lstrip())
+                if current_indent < indent:
+                    padding_level = indent - current_indent
+                    padded_lines = [" " * padding_level + line for line in lines]
+                    recommendation["predictions"][i] = "\n".join(padded_lines)
+            continue
         return recommendation
 
     def write_to_segment(

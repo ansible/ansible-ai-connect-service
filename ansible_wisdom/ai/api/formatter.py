@@ -82,9 +82,9 @@ def preprocess(context, prompt):
             prompt = segs[1]
         elif len(segs) == 2:  # Context is empty
             context = ""
-            prompt = segs[1]
+            prompt = segs[0]
         else:
-            logger.warn(f"preprocess failed - too few new-lines in: {context}{prompt}")
+            logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
 
         logger.debug(f'preprocessed user input {context}\n{prompt}')
     except Exception:

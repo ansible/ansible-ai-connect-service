@@ -119,8 +119,9 @@ class ARICaller:
             rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
             detail = rule_result.get_detail()
             aggregated_detail = detail.get("detail", {})
-            prompt_indent = self.get_indent_size(prompt)
-            modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
+            # prompt_indent = self.get_indent_size(prompt)
+            # modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
+            modified_yaml = detail.get("modified_yaml", "")
             mutation_result = aggregated_detail.get("mutation_result", {})
             for rule_id in mutation_result:
                 rule_detail = mutation_result[rule_id]
