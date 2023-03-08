@@ -34,7 +34,7 @@ urlpatterns = [
     path('api/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
-    path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_prove'),
+    path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',

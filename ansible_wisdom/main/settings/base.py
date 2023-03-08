@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "health_check.db",
     "health_check.cache",
     "health_check.contrib.redis",
-    "healthcheck.model_server",
+    "healthcheck",
 ]
 # OAUTH: fold directly into INSTALLED_APPS when fully switched over
 if OAUTH2_ENABLE:

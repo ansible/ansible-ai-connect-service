@@ -2,8 +2,8 @@ from django.apps import AppConfig
 from health_check.plugins import plugin_dir
 
 
-class ModelServerAppConfig(AppConfig):
-    name = 'healthcheck.model_server'
+class HealthCheckAppConfig(AppConfig):
+    name = 'healthcheck'
 
     def ready(self):
         from .backends import ModelServerHealthCheck
