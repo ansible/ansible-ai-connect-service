@@ -2,16 +2,17 @@ import imp
 import logging
 import pickle
 
-import base
 import grpc
 from django.conf import settings
 from grpc_pb import common_service_pb2, common_service_pb2_grpc
 from rest_framework.response import Response
 
+from .base import ModelMeshClient
+
 logger = logging.getLogger(__name__)
 
 
-class GrpcClient(base.ModelMeshClient):
+class GrpcClient(ModelMeshClient):
     def __init__(self, inference_url, management_url):
         super().__init__(inference_url=inference_url, management_url=management_url)
         self._inference_stub = self.get_inference_stub()
@@ -32,10 +33,7 @@ class GrpcClient(base.ModelMeshClient):
         )
 
         try:
-            # TODO(rg): remove these debug statements
-            print(type(response))
-            print(response.text)
-            # TODO(rg): this should be formatted properly
+            # TODO(rg): ensure this is formatted properly
             result = {"predictions": [response.text]}
             # result = response.prediction.decode('utf-8')
             return Response(result, status=200)
