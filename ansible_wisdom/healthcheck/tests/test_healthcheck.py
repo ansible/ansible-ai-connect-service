@@ -16,12 +16,12 @@ class TestHealthCheck(APITestCase):
         return r
 
     def test_liveness_probe(self):
-        r = self.client.get('/healthz/')
+        r = self.client.get('/check/')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.content, b'ok')
 
     def test_health_check(self):
-        r = self.client.get('/healthz/status/')
+        r = self.client.get('/check/status/')
         self.assertEqual(r.status_code, 200)
         expected = {
             "Cache backend: default": "working",
@@ -33,7 +33,7 @@ class TestHealthCheck(APITestCase):
 
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_health_check_error(self, _):
-        r = self.client.get('/healthz/status/')
+        r = self.client.get('/check/status/')
         self.assertEqual(r.status_code, 500)
         expected = {
             "Cache backend: default": "working",
@@ -46,7 +46,7 @@ class TestHealthCheck(APITestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     @mock.patch('requests.get', side_effect=mocked_requests_get)
     def test_health_check_grpc(self, _):
-        r = self.client.get('/healthz/status/')
+        r = self.client.get('/check/status/')
         self.assertEqual(r.status_code, 200)
         expected = {
             "Cache backend: default": "working",

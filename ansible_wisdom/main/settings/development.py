@@ -42,7 +42,7 @@ if DEBUG:
         'TAGS': [
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
-            {"name": "healthz", "description": "Health check"},
+            {"name": "check", "description": "Health check"},
         ],
         'SCHEMA_PATH_PREFIX': r'/api',
     }

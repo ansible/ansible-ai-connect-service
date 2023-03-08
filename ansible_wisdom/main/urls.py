@@ -33,8 +33,8 @@ urlpatterns = [
     path('api/ai/', include("ai.api.urls")),
     path('api/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
-    path('healthz/status/', WisdomServiceHealthView.as_view(), name='health_check'),
-    path('healthz/', WisdomServiceLivenessProbeView.as_view(), name='liveness_prove'),
+    path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
+    path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_prove'),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',
