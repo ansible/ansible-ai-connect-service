@@ -29,7 +29,12 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        # In production, we use a Redis in Cluster mode. The consequence is that
+        # we cannot use the standard driver and we need instead to use Redis-Py's
+        # new RedisCluster client. This is what main.redis.CustomRedisCluster is
+        # for.
+        "BACKEND": "main.redis.CustomRedisCluster",
+        # NOTE: Use ',' to seperate the different servers
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
 }
