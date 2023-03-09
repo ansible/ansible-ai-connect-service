@@ -1,5 +1,8 @@
 FROM registry.access.redhat.com/ubi9/ubi:latest
 
+ARG IMAGE_TAGS=image-tags-not-defined
+RUN echo "IMAGE_TAGS:${IMAGE_TAGS}"
+
 ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
@@ -21,6 +24,11 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf clean all
 
 COPY ansible_wisdom /var/www/ansible_wisdom
+RUN echo -e "\
+def get_image_tags():\n\
+    return '$IMAGE_TAGS'\n\
+" > /var/www/ansible_wisdom/main/image_tags.py
+
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf

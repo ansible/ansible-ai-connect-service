@@ -46,7 +46,8 @@ jobs:
         labels: |
           sha-short=${{ steps.tag_name.outputs.sha-short }}
           sha-long=${{ steps.tag_name.outputs.sha-long }}
-
+        build-args: |
+          IMAGE_TAGS=${{ steps.tag_name.outputs.IMAGE_TAGS }}
     - name: Push To quay.io
       id: push-to-quay
       uses: redhat-actions/push-to-registry@v2
