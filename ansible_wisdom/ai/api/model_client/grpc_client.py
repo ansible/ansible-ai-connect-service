@@ -5,10 +5,10 @@ from urllib.parse import urlparse
 
 import grpc
 from django.conf import settings
-from .grpc_pb import common_service_pb2, common_service_pb2_grpc
 from rest_framework.response import Response
 
 from .base import ModelMeshClient
+from .grpc_pb import common_service_pb2, common_service_pb2_grpc
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,8 @@ class GrpcClient(ModelMeshClient):
 
         try:
             logger.debug(f"inference response: {response}")
-            # TODO(rg): ensure this is formatted properly
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
-            # result = response.prediction.decode('utf-8')
             return Response(result, status=200)
         except grpc.RpcError as exc:
             return Response(exc.details(), status=400)
