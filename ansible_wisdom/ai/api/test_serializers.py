@@ -17,7 +17,7 @@ class CompletionRequestSerializerTest(TestCase):
     def test_get_instances_from_payload(self):
         PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n'
         CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
-        PROMPT_OUT = "- name: Install Apache"
+        PROMPT_OUT = "- name: Install Apache\n"
 
         self.run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
         self.run_a_test('', '', '')
