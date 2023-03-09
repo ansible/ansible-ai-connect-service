@@ -12,7 +12,7 @@ from rest_framework import serializers
             summary='Request Sample',
             description='A valid sample request.',
             value={
-                'prompt': '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n',
+                'prompt': '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n',
             },
             request_only=True,
             response_only=False,
@@ -67,6 +67,7 @@ class CompletionRequestSerializer(serializers.Serializer):
 
         data['prompt'] = extracted_prompt
         data['context'] = extracted_context
+
 
 @extend_schema_serializer(
     examples=[
