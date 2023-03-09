@@ -19,7 +19,6 @@ class DummyMeshClient:
             "instances": [
                 {
                     "prompt": payload.get("prompt"),
-                    "context": payload.get("context"),
                     "userId": payload.get("userId"),
                     "suggestionId": payload.get("suggestionId"),
                 }
@@ -52,8 +51,7 @@ class TestCompletionView(APITestCase):
 
     def test_full_payload(self):
         payload = {
-            "prompt": "    - name: Install Apache\n",
-            "context": "---\n- hosts: all\n  become: yes\n\n  tasks:\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
@@ -70,8 +68,7 @@ class TestCompletionView(APITestCase):
 
     def test_rate_limit(self):
         payload = {
-            "prompt": "    - name: Install Apache\n",
-            "context": "---\n- hosts: all\n  become: yes\n\n  tasks:\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
