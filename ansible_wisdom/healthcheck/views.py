@@ -1,3 +1,5 @@
+import json
+
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -65,4 +67,6 @@ class WisdomServiceLivenessProbeView(APIView):
         summary="Liveness probe",
     )
     def get(self, request, *args, **kwargs):
-        return HttpResponse('ok')
+        data = {'status': 'ok'}
+        data_json = json.dumps(data)
+        return HttpResponse(data_json, content_type='application/json')

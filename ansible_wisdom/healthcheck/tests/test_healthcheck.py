@@ -18,9 +18,9 @@ class TestHealthCheck(APITestCase):
         return r
 
     def test_liveness_probe(self):
-        r = self.client.get(reverse('liveness_probe'))
+        r = self.client.get(reverse('liveness_probe'), format='json')
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(r.content, b'ok')
+        self.assertJSONEqual(r.content, {"status": "ok"})
 
     def test_health_check(self):
         r = self.client.get(reverse('health_check'))
