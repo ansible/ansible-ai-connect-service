@@ -29,8 +29,8 @@ class GrpcClient(ModelMeshClient):
 
     def infer(self, data, model_name) -> Response:
         logger.debug(f"Input prompt: {data}")
-        prompt = data["instances"][0]["prompt"]
-        context = data["instances"][0]["context"]
+        prompt = data.get("instances", [{}])[0].get("prompt", "")
+        context = data.get("instances", [{}])[0].get("context", "")
         logger.debug(f"Input prompt: {prompt}")
         logger.debug(f"Input context: {context}")
         response = self._inference_stub.AnsiblePredict(

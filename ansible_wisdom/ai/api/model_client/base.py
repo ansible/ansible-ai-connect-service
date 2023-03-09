@@ -9,5 +9,5 @@ class ModelMeshClient:
         self._management_url = management_url
 
     @abstractmethod
-    def infer(self, prompt, context):
+    def infer(self, model_input, model_name="wisdom"):
         pass
