@@ -88,6 +88,3 @@ class TestCompletionView(APITestCase):
             for _ in range(10):
                 r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 429)
-
-    def test_fail(self):
-        assert false
