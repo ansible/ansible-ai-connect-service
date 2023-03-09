@@ -2,7 +2,7 @@ import json
 
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_page, never_cache
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiResponse,
@@ -48,7 +48,8 @@ class WisdomServiceHealthView(APIView):
     @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
         # Force to return JSON data
-        request.META['HTTP_ACCEPT'] = 'application/json'
+        # request.META['HTTP_ACCEPT'] = 'application/json'
+        self.mainView.request = request
         return self.mainView.get(request, *args, **kwargs)
 
 
@@ -66,6 +67,7 @@ class WisdomServiceLivenessProbeView(APIView):
         },
         summary="Liveness probe",
     )
+    @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
         data = {'status': 'ok'}
         data_json = json.dumps(data)
