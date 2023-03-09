@@ -1,5 +1,8 @@
 FROM registry.access.redhat.com/ubi9/ubi:latest
 
+ARG IMAGE_TAGS=image-tags-not-defined
+ARG GIT_COMMIT=git-commit-not-defined
+
 ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
@@ -22,6 +25,12 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf clean all
 
 COPY ansible_wisdom /var/www/ansible_wisdom
+RUN echo -e "\
+[ansible-wisdom-service]\n\
+IMAGE_TAGS = ${IMAGE_TAGS}\n\
+GIT_COMMIT = ${GIT_COMMIT}\n\
+" > /var/www/ansible_wisdom/version_info.ini
+
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
