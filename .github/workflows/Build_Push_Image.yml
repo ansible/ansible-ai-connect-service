@@ -67,7 +67,7 @@ jobs:
         # For posting a rich message using Block Kit
         payload: |
           {
-            "text": "wisdom service image build result: ${{ job.status }}\nimage tag: ${{ steps.build-image.outputs.tags }}\nlink to image: ${{ steps.push-to-quay.outputs.registry-paths }}\nlink to action: ${{ github.server_url }}${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            "text": "wisdom service image build result: ${{ job.status }}\nimage tag: ${{ steps.build-image.outputs.tags }}\nlink to action: ${{ github.server_url }}${{ github.repository }}/actions/runs/${{ github.run_id }}"
           }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
