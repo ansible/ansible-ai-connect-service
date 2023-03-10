@@ -59,11 +59,11 @@ class CompletionRequestSerializer(serializers.Serializer):
         if prompt_in_request:
             s = prompt_in_request[:-1].rpartition('\n')
             if s[1] == '\n':
-                extracted_prompt = s[2].lstrip() + prompt_in_request[-1]
+                extracted_prompt = s[2] + prompt_in_request[-1]
                 extracted_context = s[0] + s[1]
             else:
-                extracted_prompt = ''
-                extracted_context = prompt_in_request
+                extracted_prompt = prompt_in_request
+                extracted_context = ''
 
         data['prompt'] = extracted_prompt
         data['context'] = extracted_context
