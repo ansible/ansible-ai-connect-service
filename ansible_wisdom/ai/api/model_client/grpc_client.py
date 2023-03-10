@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class GrpcClient(ModelMeshClient):
-    def __init__(self, inference_url, management_url):
-        super().__init__(inference_url=inference_url, management_url=management_url)
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
     def get_inference_stub(self) -> common_service_pb2_grpc.WisdomExtServiceStub:
