@@ -59,7 +59,12 @@ class Completions(APIView):
         ):  # if someone sent a prompt without "- name:" which is deprecated/unsupported
             logger.warn(f"received prompt with no 'name' param: {payload.prompt}")
             original_indent = 0
-        payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+        try:
+            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+        except Exception:
+            # return the original prompt, context
+            logger.exception(f'failed to preprocess {payload.context}{payload.prompt}')
+            return Response({'message': 'Request contains invalid yaml'}, status=400)
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
@@ -94,11 +99,7 @@ class Completions(APIView):
         return response
 
     def preprocess(self, context, prompt):
-        try:
-            context, prompt = fmtr.preprocess(context, prompt)
-        except Exception:
-            # return the original prompt, context
-            logger.exception(f'failed to preprocess {context}{prompt}')
+        context, prompt = fmtr.preprocess(context, prompt)
 
         return context, prompt
 
