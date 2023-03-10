@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package watson.runtime.wisdom_ext.v0;
+
+option go_package = "github.ibm.com/ai-foundation/wisdom_ext_runtime_client/runtime";
+
+option java_package = "com.ibm.watson.runtime.wisdom_ext";
+
+option java_multiple_files = true;
+
+
+
+import "producer-types.proto";
+
+import "generation.proto";
+
+
+
+message AnsibleRequest {
+
+    optional string prompt = 1;
+
+    optional string context = 2;
+
+}
+
+
+
+service WisdomExtService {
+
+
+
+    /**
+
+     * This rpc supports 1 Modules: ['AnsibleCodegen']
+
+     *
+
+     * AnsibleCodegen docstring:
+
+     * ----------------------------
+
+     *     Run hugging face text generation using prompt and input context
+
+     *
+
+     *     Args:
+
+     *         prompt: str
+
+     *             Prompt for task to be performed
+
+     *         context: str
+
+     *             The input context
+
+     *     Returns:
+
+     *         GeneratedResult
+
+     * ----------------------------
+
+     **/
+
+    rpc AnsiblePredict (AnsibleRequest) returns (watson_core_data_model.watson_nlp.GeneratedResult) {}
+
+
+
+}
