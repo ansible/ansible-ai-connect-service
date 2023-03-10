@@ -1,6 +1,8 @@
 """
 DRF Serializer classes for input/output validations and OpenAPI document generation.
 """
+import re
+
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
@@ -64,6 +66,11 @@ class CompletionRequestSerializer(serializers.Serializer):
             else:
                 extracted_prompt = prompt_in_request
                 extracted_context = ''
+
+        # Confirm the prompt contains some flavor of '- name:'
+        match = re.search(r"^[\s]*-[\s]+name[\s]*:", extracted_prompt)
+        if not match:
+            raise serializers.ValidationError("prompt does not contain the name parameter")
 
         data['prompt'] = extracted_prompt
         data['context'] = extracted_context

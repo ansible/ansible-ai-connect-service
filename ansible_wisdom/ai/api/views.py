@@ -54,11 +54,7 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         model_name = payload.model_name
         original_indent = payload.prompt.find("name")
-        if (
-            original_indent == -1
-        ):  # if someone sent a prompt without "- name:" which is deprecated/unsupported
-            logger.warn(f"received prompt with no 'name' param: {payload.prompt}")
-            original_indent = 0
+
         try:
             payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         except Exception:
