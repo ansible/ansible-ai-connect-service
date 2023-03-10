@@ -22,14 +22,15 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from users.views import UserTemplateView
+from users.views import CurrentUserView, HomeView
 
 urlpatterns = [
-    path('', UserTemplateView.as_view(), name='home'),
+    path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
     path('admin/', admin.site.urls),
     path('api/', include("ai.api.urls")),
+    path('api/me/', CurrentUserView.as_view(), name='me'),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',

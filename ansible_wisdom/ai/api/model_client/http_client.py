@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class HttpClient(ModelMeshClient):
-    def __init__(self, inference_url, management_url):
-        super().__init__(inference_url=inference_url, management_url=management_url)
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 

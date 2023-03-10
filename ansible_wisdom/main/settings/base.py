@@ -21,6 +21,8 @@ OAUTH2_ENABLE = bool(os.getenv('OAUTH2_ENABLE'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
+ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
+
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["localhost"]
@@ -103,6 +105,7 @@ SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
 OAUTH2_PROVIDER = {
     'SCOPES': {'read': "Read scope", 'write': "Write scope"},
+    'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https', 'vscode'],
 }
 
 # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
@@ -175,6 +178,7 @@ DATABASES = {
         "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
         "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
         "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
+        "PORT": os.getenv("ANSIBLE_AI_DATABASE_PORT", 5432),
     }
 }
 
@@ -232,6 +236,17 @@ APPEND_SLASH = False
 COMPLETION_USER_RATE_THROTTLE = (
     os.environ.get('COMPLETION_USER_RATE_THROTTLE', '10/minute').strip('"').strip("'")
 )
+MOCK_MODEL_RESPONSE_BODY = os.environ.get(
+    'MOCK_MODEL_RESPONSE_BODY',
+    (
+        '{"predictions":["  ansible.builtin.apt:\\n    name: nginx\\n'
+        'update_cache: true\\n    state: present\\n"]}'
+    ),
+)
+MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_MSEC', 3000))
+MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
+    os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
+)
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
 ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
@@ -253,6 +268,7 @@ ARI_RULES = [
     "W010",
     "W012",
     "W013",
+    "W014",
 ]
 if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')

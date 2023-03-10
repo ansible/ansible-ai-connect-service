@@ -174,7 +174,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-    "context": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n", "prompt": "Install nginx and nodejs 12 Packages"
+    "prompt": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n"
     }'
 ```
 
@@ -294,4 +294,78 @@ Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded eith
 
 ## Test cases
 
-Work in progress
+_** Work in progress **_
+
+### Execute Unit Tests
+
+For running Unit Tests in this repository, you need to
+have backend services (Postgres DB and Redis) running.
+[Running them from container](#running-backend-services--from-container-)
+is one handy way for that requirement.
+
+You also need to set some environment variables
+that are read by Wisdom Service. If you are using PyCharm
+for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
+ with the following `.env` file:
+
+```commandline
+ANSIBLE_AI_CACHE_URI=redis://localhost:6379
+ANSIBLE_AI_DATABASE_HOST=localhost
+ANSIBLE_AI_DATABASE_NAME=wisdom
+ANSIBLE_AI_DATABASE_PASSWORD=wisdom
+ANSIBLE_AI_DATABASE_USER=wisdom
+ARI_KB_PATH=../ari/kb/
+DJANGO_SETTINGS_MODULE=main.settings.development
+ENABLE_ARI_POSTPROCESS=True
+PYTHONUNBUFFERED=1
+SECRET_KEY=somesecret
+```
+Note that this `.env` file assumes that the Django
+service is executed in the `ansible_wisdom` subdirectory
+as `ARI_KB_PATH` is defined as `../ari/kb`.
+
+If you want to run unit tests from command line,
+export those variables as environment variables.
+If variables are defined in `.env` file,
+it can be done with following commands:
+
+```commandline
+set -o allexport
+source .env
+set +o allexport
+```
+
+After environment variables are set, you can issue following commands
+
+```commandline
+cd ansible_wisdom
+python3 manage.py test
+```
+to run unit tests.
+
+### Code Coverage
+
+You can get code coverage with the `coverage` module.
+Install the `coverage` module, which is included
+in `requirements-dev.txt` with the instructions in the
+[Using pre-commit](#using-pre-commit) section.
+
+If you want to get code coverage by
+running unit tests from command line,
+set environment variables listed in the [Execute Unit Tests](#execute-unit-tests)
+section and run following commands:
+
+```commandline
+cd ansible_wisdom
+coverage run --rcfile=../setup.cfg manage.py test
+```
+
+After tests completed, run
+```commandline
+coverage report
+```
+for showing results on console, or
+```commandline
+coverage html
+```
+to generate HTML reports under `htmlcov` directory.

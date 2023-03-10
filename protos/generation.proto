@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package watson_core_data_model.watson_nlp;
+
+option go_package = "github.ibm.com/ai-foundation/wisdom_ext_runtime_client/watson_core_data_model/watson_nlp";
+
+option java_package = "com.ibm.watson.runtime.wisdom_ext";
+
+option java_multiple_files = true;
+
+import "producer-types.proto";
+
+
+
+
+
+enum StopReason {
+
+    // Possibly more tokens to be streamed
+
+    NOT_FINISHED = 0;
+
+    // Maximum requested tokens reached
+
+    MAX_TOKENS = 1;
+
+    // End-of-sentence token encountered
+
+    EOS_TOKEN = 2;
+
+    // Request cancelled by client
+
+    CANCELLED = 3;
+
+    // Time limit reached
+
+    TIME_LIMIT = 4;
+
+    // Stop sequence encountered
+
+    STOP_SEQUENCE = 5;
+
+}
+
+
+
+message GeneratedResult {
+
+    uint32 generated_token_count = 1;
+
+    string text = 2;
+
+    StopReason stop_reason = 3;
+
+    watson_core_data_model.common.ProducerId producer_id = 4; // (optional) Id of the producer of this output
+
+}
