@@ -75,7 +75,11 @@ class CompletionRequestSerializer(serializers.Serializer):
             'Valid example',
             summary='Response sample',
             description='A valid sample response.',
-            value={'predictions': ['  package:\n    name: apache2\n    state: present\n']},
+            value={
+                'predictions': [
+                    '    ansible.builtin.package:\n      name: openssh-server\n      state: present'
+                ]
+            },
             request_only=False,
             response_only=True,
         ),
