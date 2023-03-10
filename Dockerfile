@@ -1,1 +1,0 @@
-wisdom-service.Containerfile

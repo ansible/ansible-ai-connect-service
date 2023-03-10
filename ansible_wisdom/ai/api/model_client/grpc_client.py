@@ -1,4 +1,3 @@
-import json
 import logging
 
 import grpc
@@ -39,7 +38,7 @@ class GrpcClient(ModelMeshClient):
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
-            return Response(json.dumps(result), status=200)
+            return Response(result, status=200)
         except grpc.RpcError as exc:
             logger.error(f"gRPC client error: {exc.details()}")
             return Response("Invalid request", status=400)
