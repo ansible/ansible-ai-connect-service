@@ -12,8 +12,7 @@ from rest_framework import serializers
             summary='Request Sample',
             description='A valid sample request.',
             value={
-                'context': '---\n- hosts: all\n  become: yes\n\n  tasks:\n',
-                'prompt': '- name: Install Apache\n',
+                'prompt': '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n',
             },
             request_only=True,
             response_only=False,
@@ -22,18 +21,11 @@ from rest_framework import serializers
 )
 class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['context', 'prompt', 'userId', 'suggestionId']
+        fields = ['prompt', 'userId', 'suggestionId']
 
-    context = serializers.CharField(
-        trim_whitespace=False,
-        default='',
-        allow_blank=True,
-        label='Context',
-        help_text='Editor context.',
-    )
     prompt = serializers.CharField(
         trim_whitespace=False,
-        required=False,
+        required=True,
         label='Prompt',
         help_text='Editor prompt.',
     )
@@ -52,23 +44,29 @@ class CompletionRequestSerializer(serializers.Serializer):
 
     def validate(self, data):
         data = super().validate(data)
-        CompletionRequestSerializer.extract_prompt_from_context(data)
+        CompletionRequestSerializer.extract_prompt_and_context(data)
         return data
 
     @staticmethod
-    def extract_prompt_from_context(data):
+    def extract_prompt_and_context(data):
         #
-        # If prompt is not specified in the incoming data, set the last line
-        # of context to prompt and set the remaining to context. Note that
-        # usually both prompt and context end with '\n'.
+        # Set the last line as prompt and the rest as context.
+        # Note that usually both prompt and context end with '\n'.
         #
-        if 'context' in data and 'prompt' not in data:
-            s = data['context'][:-1].rpartition('\n')
+        extracted_prompt = ''
+        extracted_context = ''
+        prompt_in_request = data['prompt']
+        if prompt_in_request:
+            s = prompt_in_request[:-1].rpartition('\n')
             if s[1] == '\n':
-                data['prompt'] = s[2].lstrip() + data['context'][-1]
-                data['context'] = s[0] + s[1]
+                extracted_prompt = s[2].lstrip() + prompt_in_request[-1]
+                extracted_context = s[0] + s[1]
             else:
-                data['prompt'] = ''
+                extracted_prompt = ''
+                extracted_context = prompt_in_request
+
+        data['prompt'] = extracted_prompt
+        data['context'] = extracted_context
 
 
 @extend_schema_serializer(

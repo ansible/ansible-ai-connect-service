@@ -4,6 +4,7 @@ import time
 import uuid
 from unittest.mock import patch
 
+from ai.api.serializers import CompletionRequestSerializer
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -15,16 +16,22 @@ from rest_framework.test import APITestCase
 class DummyMeshClient:
     def __init__(self, test, payload, response_data):
         self.test = test
-        self.expects = {
-            "instances": [
-                {
-                    "prompt": payload.get("prompt"),
-                    "context": payload.get("context"),
-                    "userId": payload.get("userId"),
-                    "suggestionId": payload.get("suggestionId"),
-                }
-            ]
-        }
+
+        if "prompt" in payload:
+            serializer = CompletionRequestSerializer()
+            data = serializer.validate(payload.copy())
+
+            self.expects = {
+                "instances": [
+                    {
+                        "context": data.get("context"),
+                        "prompt": data.get("prompt"),
+                        "userId": payload.get("userId"),
+                        "suggestionId": payload.get("suggestionId"),
+                    }
+                ]
+            }
+
         self.response_data = response_data
 
     def infer(self, data, model_name=None):
@@ -52,8 +59,7 @@ class TestCompletionView(APITestCase):
 
     def test_full_payload(self):
         payload = {
-            "prompt": "    - name: Install Apache\n",
-            "context": "---\n- hosts: all\n  become: yes\n\n  tasks:\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
@@ -63,6 +69,10 @@ class TestCompletionView(APITestCase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
+        ), patch.object(
+            apps.get_app_config('ai'),
+            'ari_caller',
+            None,
         ):
             r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 200)
@@ -70,8 +80,7 @@ class TestCompletionView(APITestCase):
 
     def test_rate_limit(self):
         payload = {
-            "prompt": "    - name: Install Apache\n",
-            "context": "---\n- hosts: all\n  become: yes\n\n  tasks:\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
@@ -81,6 +90,10 @@ class TestCompletionView(APITestCase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
+        ), patch.object(
+            apps.get_app_config('ai'),
+            'ari_caller',
+            None,
         ):
             r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 200)
@@ -88,3 +101,22 @@ class TestCompletionView(APITestCase):
             for _ in range(10):
                 r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 429)
+
+    def test_missing_prompt(self):
+        payload = {
+            "userId": self.user_id,
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ), patch.object(
+            apps.get_app_config('ai'),
+            'ari_caller',
+            None,
+        ):
+            r = self.client.post('/api/ai/completions/', payload)
+            self.assertEqual(r.status_code, 400)
