@@ -294,7 +294,16 @@ Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded eith
 
 ## Test cases
 
-_** Work in progress **_
+Unit-tests are based on Python's [unittest library](https://docs.python.org/3/library/unittest.html#module-unittest) and rely on [Django REST framework APIClient](https://www.django-rest-framework.org/api-guide/testing/#apiclient).
+
+### Unit-test Guidelines
+
+-  Use `reverse()`:
+
+    Please make use of Django's [reverse() function](https://docs.djangoproject.com/en/4.1/ref/urlresolvers/#reverse) to specify which view you are hitting.
+    If and when we change the path some endpoint is at, the person making the change will appreciate not having to search and replace all of those strings.
+
+    Additionally if you are hitting the same endpoint over a bunch of methods on the same test class, you can always store the results of `reverse()` in an attribute and make use of that, to reduce the repetition.
 
 ### Execute Unit Tests
 
