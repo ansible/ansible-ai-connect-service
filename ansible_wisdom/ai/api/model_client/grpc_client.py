@@ -1,7 +1,5 @@
-import imp
+import json
 import logging
-import pickle
-from urllib.parse import urlparse
 
 import grpc
 from django.conf import settings
@@ -19,10 +17,8 @@ class GrpcClient(ModelMeshClient):
         self._inference_stub = self.get_inference_stub()
 
     def get_inference_stub(self) -> common_service_pb2_grpc.WisdomExtServiceStub:
-        inference_host = urlparse(self._inference_url).netloc
-        channel = grpc.insecure_channel(inference_host)
         logger.debug("Inference URL: " + self._inference_url)
-        logger.debug("Inference host: " + inference_host)
+        channel = grpc.insecure_channel(self._inference_url)
         stub = common_service_pb2_grpc.WisdomExtServiceStub(channel)
         logger.debug("Inference Stub: " + str(stub))
         return stub
@@ -33,15 +29,20 @@ class GrpcClient(ModelMeshClient):
         context = data.get("instances", [{}])[0].get("context", "")
         logger.debug(f"Input prompt: {prompt}")
         logger.debug(f"Input context: {context}")
-        response = self._inference_stub.AnsiblePredict(
-            request=common_service_pb2.AnsibleRequest(prompt=prompt, context=context),
-            metadata=[("mm-vmodel-id", model_name)],
-        )
 
         try:
+            response = self._inference_stub.AnsiblePredict(
+                request=common_service_pb2.AnsibleRequest(prompt=prompt, context=context),
+                metadata=[("mm-vmodel-id", model_name)],
+            )
+
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
-            return Response(result, status=200)
+            return Response(json.dumps(result), status=200)
         except grpc.RpcError as exc:
-            return Response(exc.details(), status=400)
+            logger.error(f"gRPC client error: {exc.details()}")
+            return Response("Invalid request", status=400)
+        except Exception as exc:
+            logger.error(f"gRPC client error: {exc.details()}")
+            return Response("Malformed response from server", status=500)
