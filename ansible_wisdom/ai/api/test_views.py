@@ -5,6 +5,7 @@ import uuid
 from unittest.mock import patch
 
 from ai.api.serializers import CompletionRequestSerializer
+from ai.api.views import Completions
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -20,6 +21,11 @@ class DummyMeshClient:
         if "prompt" in payload:
             serializer = CompletionRequestSerializer()
             data = serializer.validate(payload.copy())
+
+            view = Completions()
+            data["context"], data["prompt"] = view.preprocess(
+                data.get("context"), data.get("prompt")
+            )
 
             self.expects = {
                 "instances": [
