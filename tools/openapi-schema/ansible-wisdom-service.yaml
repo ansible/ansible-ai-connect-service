@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.2
+  version: 0.0.3
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -128,3 +128,5 @@ components:
 tags:
 - name: ai
   description: AI-related operations
+- name: me
+  description: Authenticated user information
