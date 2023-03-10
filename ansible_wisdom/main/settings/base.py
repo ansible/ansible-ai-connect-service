@@ -228,7 +228,7 @@ STATIC_ROOT = '/var/www/wisdom/public/static'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-APPEND_SLASH = False
+APPEND_SLASH = True
 
 # Depending on how env var is set, can end up with extraneous quotes.
 # this is defensive, we could just let it happen and
