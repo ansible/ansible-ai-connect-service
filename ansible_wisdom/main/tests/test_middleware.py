@@ -1,12 +1,12 @@
-import json
-import sys
 import uuid
+from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
 
 from ai.api.tests.test_views import DummyMeshClient, WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
+from django.urls import reverse
 from segment import analytics
 
 
@@ -31,8 +31,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post('/api/ai/completions/', payload)
-                self.assertEqual(r.status_code, 200)
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
@@ -40,11 +40,11 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
-                    '/api/ai/completions/',
+                    reverse('completions'),
                     urlencode(payload),
                     content_type='application/x-www-form-urlencoded',
                 )
-                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
@@ -52,9 +52,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
-                    '/api/ai/completions/', urlencode(payload), content_type='application/json'
+                    reverse('completions'), urlencode(payload), content_type='application/json'
                 )
-                self.assertEqual(r.status_code, 400)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
                 self.assertNotInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)

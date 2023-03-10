@@ -47,3 +47,23 @@ docker-compose-clean:
 
 docker-create-superuser:
 	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 wisdom-manage createsuperuser
+
+# Run unit tests, calculate code coverage and display results in chrome
+# - target specific variables:
+code-coverage: export ANSIBLE_AI_CACHE_URI=redis://localhost:6379
+code-coverage: export ANSIBLE_AI_DATABASE_HOST=localhost
+code-coverage: export ANSIBLE_AI_DATABASE_NAME=wisdom
+code-coverage: export ANSIBLE_AI_DATABASE_PASSWORD=wisdom
+code-coverage: export ANSIBLE_AI_DATABASE_USER=wisdom
+code-coverage: export ARI_KB_PATH=../ari/kb/
+code-coverage: export DJANGO_SETTINGS_MODULE=main.settings.development
+code-coverage: export ENABLE_ARI_POSTPROCESS=True
+code-coverage: export PYTHONUNBUFFERED=1
+code-coverage: export SECRET_KEY=somesecret
+# - target:
+code-coverage:
+	cd ansible_wisdom && \
+	coverage erase && \
+	coverage run --rcfile=../setup.cfg manage.py test && \
+	coverage html && \
+	google-chrome htmlcov/index.html
