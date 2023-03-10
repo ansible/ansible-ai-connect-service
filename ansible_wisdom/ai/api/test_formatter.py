@@ -96,6 +96,30 @@ class AnsibleDumperTestCase(TestCase):
         expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
         self.assertEqual(fmtr.normalize_yaml(comments), expected)
 
+    def test_restore_indentation(self):
+        """
+        adds necessary extra spaces if original indent > received indent
+        """
+        original_yaml = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
+        expected = "      ansible.builtin.yum:\n        name: '{{ name }}'\n        state: present"
+        self.assertEqual(fmtr.restore_indentation(original_yaml, 6), expected)
+
+    def test_restore_indentation_two_spaces(self):
+        """
+        no modifications when original indent == received indent
+        """
+        original_yaml = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
+        expected = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
+        self.assertEqual(fmtr.restore_indentation(original_yaml, 2), expected)
+
+    def test_restore_indentation_zero(self):
+        """
+        no modifications when original indent < received indent
+        """
+        original_yaml = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
+        expected = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
+        self.assertEqual(fmtr.restore_indentation(original_yaml, 0), expected)
+
 
 if __name__ == "__main__":
     import yaml
@@ -106,3 +130,4 @@ if __name__ == "__main__":
     tests.test_incorrect_indent_name()
     tests.test_comments()
     tests.test_prompt_and_context()
+    tests.test_restore_indentation()
