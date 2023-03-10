@@ -92,3 +92,15 @@ def preprocess(context, prompt):
         logger.exception(f'failed to preprocess {context}{prompt}')
 
     return context, prompt
+
+
+def restore_indentation(yaml, original_indent):
+    if yaml:
+        lines = yaml.splitlines()
+        first_line = lines[0]
+        current_indent = len(first_line) - len(first_line.lstrip())
+        if current_indent < original_indent:
+            padding_level = original_indent - current_indent
+            padded_lines = [" " * padding_level + line for line in lines]
+            return "\n".join(padded_lines)
+    return yaml

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import formatter as fmtr
-
 from django.test import TestCase
+
+from . import formatter as fmtr
 
 
 class AnsibleDumperTestCase(TestCase):

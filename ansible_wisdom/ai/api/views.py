@@ -57,6 +57,7 @@ class Completions(APIView):
         if (
             original_indent == -1
         ):  # if someone sent a prompt without "- name:" which is deprecated/unsupported
+            logger.warn(f"received prompt with no 'name' param: {payload.prompt}")
             original_indent = 0
         payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         model_mesh_payload = ModelMeshPayload(
@@ -162,15 +163,9 @@ class Completions(APIView):
                         start_time,
                     )
             # restore original indentation
-            final_yaml = recommendation["predictions"][i]
-            if final_yaml:
-                lines = final_yaml.splitlines()
-                first_line = lines[0]
-                current_indent = len(first_line) - len(first_line.lstrip())
-                if current_indent < indent:
-                    padding_level = indent - current_indent
-                    padded_lines = [" " * padding_level + line for line in lines]
-                    recommendation["predictions"][i] = "\n".join(padded_lines)
+            recommendation["predictions"][i] = fmtr.restore_indentation(
+                recommendation["predictions"][i], indent
+            )
             continue
         return recommendation
 
