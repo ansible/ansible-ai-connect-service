@@ -3,7 +3,7 @@ Test serializers
 """
 from unittest.case import TestCase
 
-from .serializers import CompletionRequestSerializer
+from ai.api.serializers import CompletionRequestSerializer
 
 
 class CompletionRequestSerializerTest(TestCase):

@@ -47,8 +47,7 @@ class DummyMeshClient:
         return Response(self.response_data)
 
 
-@modify_settings()
-class TestCompletionView(APITestCase):
+class WisdomServiceAPITestCaseBase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -63,6 +62,21 @@ class TestCompletionView(APITestCase):
     def setUp(self):
         cache.clear()
 
+    def searchInLogOutput(self, s, logs):
+        for log in logs:
+            if s in log:
+                return True
+        return False
+
+    def assertInLog(self, s, logs):
+        self.assertTrue(self.searchInLogOutput(s, logs))
+
+    def assertNotInLog(self, s, logs):
+        self.assertFalse(self.searchInLogOutput(s, logs))
+
+
+@modify_settings()
+class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -75,10 +89,6 @@ class TestCompletionView(APITestCase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
-        ), patch.object(
-            apps.get_app_config('ai'),
-            'ari_caller',
-            None,
         ):
             r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 200)
@@ -96,10 +106,6 @@ class TestCompletionView(APITestCase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
-        ), patch.object(
-            apps.get_app_config('ai'),
-            'ari_caller',
-            None,
         ):
             r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 200)
@@ -119,10 +125,22 @@ class TestCompletionView(APITestCase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
-        ), patch.object(
-            apps.get_app_config('ai'),
-            'ari_caller',
-            None,
         ):
             r = self.client.post('/api/ai/completions/', payload)
             self.assertEqual(r.status_code, 400)
+
+    def test_authentication_error(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "userId": self.user_id,
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        # self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            r = self.client.post('/api/ai/completions/', payload)
+            self.assertEqual(r.status_code, 401)
