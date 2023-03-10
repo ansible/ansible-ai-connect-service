@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.2
+  version: 0.0.3
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -26,7 +26,7 @@ paths:
                       become: yes
 
                       tasks:
-                      - name: Install Apache
+                      - name: Install ssh
                 summary: Request Sample
                 description: A valid sample request.
           application/x-www-form-urlencoded:
@@ -38,6 +38,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -48,10 +49,10 @@ paths:
                 ValidExample:
                   value:
                     predictions:
-                    - |2
-                        package:
-                          name: apache2
-                          state: present
+                    - |2-
+                          ansible.builtin.package:
+                            name: openssh-server
+                            state: present
                   summary: Response sample
                   description: A valid sample response.
           description: ''
@@ -61,6 +62,21 @@ paths:
           description: Unauthorized
         '429':
           description: Request was throttled
+  /api/me/:
+    get:
+      operationId: me_retrieve
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
 components:
   schemas:
     CompletionRequest:
@@ -90,10 +106,27 @@ components:
             type: string
       required:
       - predictions
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - username
   securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
     tokenAuth:
       type: http
       scheme: bearer
 tags:
 - name: ai
   description: AI-related operations
+- name: me
+  description: Authenticated user information

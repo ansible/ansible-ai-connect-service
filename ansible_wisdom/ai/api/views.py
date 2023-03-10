@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from segment import analytics
 from yaml.error import MarkedYAMLError
 
+from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
 
@@ -52,6 +53,14 @@ class Completions(APIView):
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
         model_name = payload.model_name
+        original_indent = payload.prompt.find("name")
+
+        try:
+            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+        except Exception:
+            # return the original prompt, context
+            logger.exception(f'failed to preprocess {payload.context}{payload.prompt}')
+            return Response({'message': 'Request contains invalid yaml'}, status=400)
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
@@ -72,7 +81,12 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{response.data}"
         )
         response.data = self.postprocess(
-            response.data, payload.prompt, payload.context, payload.userId, payload.suggestionId
+            response.data,
+            payload.prompt,
+            payload.context,
+            payload.userId,
+            payload.suggestionId,
+            indent=original_indent,
         )
         logger.debug(
             f"response from postprocess for "
@@ -80,11 +94,18 @@ class Completions(APIView):
         )
         return response
 
-    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id):
-        ari_caller = apps.get_app_config("ai").ari_caller
+    def preprocess(self, context, prompt):
+        context, prompt = fmtr.preprocess(context, prompt)
 
-        if ari_caller:
-            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+        return context, prompt
+
+    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id, indent):
+        ari_caller = apps.get_app_config("ai").ari_caller
+        if not ari_caller:
+            logger.warn('skipped ari post processing because ari was not initialized')
+
+        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+            if ari_caller:
                 start_time = time.time()
                 recommendation_problem = None
                 # check if the recommendation_yaml is a valid YAML
@@ -138,10 +159,11 @@ class Completions(APIView):
                         exception,
                         start_time,
                     )
-                    continue
-        else:
-            logger.warn('skipped post processing because ari was not initialized')
-
+            # restore original indentation
+            recommendation["predictions"][i] = fmtr.restore_indentation(
+                recommendation["predictions"][i], indent
+            )
+            continue
         return recommendation
 
     def write_to_segment(

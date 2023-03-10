@@ -1,6 +1,8 @@
 """
 DRF Serializer classes for input/output validations and OpenAPI document generation.
 """
+import re
+
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
@@ -62,8 +64,13 @@ class CompletionRequestSerializer(serializers.Serializer):
                 extracted_prompt = s[2] + prompt_in_request[-1]
                 extracted_context = s[0] + s[1]
             else:
-                extracted_prompt = ''
-                extracted_context = prompt_in_request
+                extracted_prompt = prompt_in_request
+                extracted_context = ''
+
+        # Confirm the prompt contains some flavor of '- name:'
+        match = re.search(r"^[\s]*-[\s]+name[\s]*:", extracted_prompt)
+        if not match:
+            raise serializers.ValidationError("prompt does not contain the name parameter")
 
         data['prompt'] = extracted_prompt
         data['context'] = extracted_context
@@ -75,7 +82,11 @@ class CompletionRequestSerializer(serializers.Serializer):
             'Valid example',
             summary='Response sample',
             description='A valid sample response.',
-            value={'predictions': ['  package:\n    name: apache2\n    state: present\n']},
+            value={
+                'predictions': [
+                    '    ansible.builtin.package:\n      name: openssh-server\n      state: present'
+                ]
+            },
             request_only=False,
             response_only=True,
         ),

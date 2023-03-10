@@ -35,8 +35,11 @@ if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Wisdom Service',
         'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
-        'VERSION': '0.0.2',
+        'VERSION': '0.0.3',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
-        'TAGS': [{"name": "ai", "description": "AI-related operations"}],
+        'TAGS': [
+            {"name": "ai", "description": "AI-related operations"},
+            {"name": "me", "description": "Authenticated user information"},
+        ],
     }
