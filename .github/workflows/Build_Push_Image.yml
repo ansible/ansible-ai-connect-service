@@ -29,7 +29,7 @@ jobs:
       run: |
         KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.1
         aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
-        aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
+        aws s3 cp --recursive ${KB_ARI_PATH}/rules/20230308-b24942f ari/kb/rules
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -59,3 +59,17 @@ jobs:
 
     - name: Print image url
       run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+    - name: Report to slack
+      id: slack
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        # For posting a rich message using Block Kit
+        payload: |
+          {
+            "text": "wisdom service image build result: ${{ job.status }}\nimage tag: ${{ steps.build-image.outputs.tags }}\nlink to action: ${{ github.server_url }}${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      if: ${{ always() }}

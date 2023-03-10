@@ -1,12 +1,16 @@
 from django.conf import settings
 from django.views.generic import TemplateView
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import UserSerializer
 
 # OAUTH: remove when switched
 if not settings.OAUTH2_ENABLE:
     from rest_framework.authtoken.models import Token
 
 
-class UserTemplateView(TemplateView):
+class HomeView(TemplateView):
     template_name = 'users/home.html'
     extra_context = {'pilot_docs_url': settings.PILOT_DOCS_URL}
 
@@ -19,3 +23,11 @@ class UserTemplateView(TemplateView):
             if user.is_authenticated:
                 kwargs['drf_token'] = Token.objects.get(user=user).key
             return kwargs
+
+
+class CurrentUserView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user

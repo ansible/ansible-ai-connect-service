@@ -178,6 +178,7 @@ DATABASES = {
         "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
         "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
         "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
+        "PORT": os.getenv("ANSIBLE_AI_DATABASE_PORT", 5432),
     }
 }
 
@@ -267,6 +268,7 @@ ARI_RULES = [
     "W010",
     "W012",
     "W013",
+    "W014",
 ]
 if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
