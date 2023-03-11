@@ -43,6 +43,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Set up python3
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-dev.txt') }}
+
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
