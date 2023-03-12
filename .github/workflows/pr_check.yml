@@ -56,5 +56,6 @@ jobs:
     - name: Run Coverage
       run: |
         pip install coverage
+        cd ansible_wisdom
         coverage run --rcfile=../setup.cfg manage.py test
         coverage report
