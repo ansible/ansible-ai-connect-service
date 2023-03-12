@@ -55,5 +55,6 @@ jobs:
 
     - name: Run Coverage
       run: |
+        pip install coverage
         coverage run --rcfile=../setup.cfg manage.py test
         coverage report
