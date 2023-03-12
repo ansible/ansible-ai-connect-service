@@ -56,7 +56,6 @@ jobs:
         coverage report > code-coverage-results.md
 
     - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: thollander/actions-comment-pull-request@v2
       with:
-        recreate: true
-        path: ansible_wisdom/code-coverage-results.md
+        filePath: ansible_wisdom/code-coverage-results.md
