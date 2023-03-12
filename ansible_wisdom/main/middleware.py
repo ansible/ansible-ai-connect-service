@@ -29,7 +29,7 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
-                user_id = request_data.get('userId', 'unknown')
+                user_id = str(getattr(request.user, 'uuid', 'unknown'))
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')

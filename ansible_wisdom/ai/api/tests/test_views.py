@@ -34,7 +34,7 @@ class DummyMeshClient:
                     {
                         "context": data.get("context"),
                         "prompt": data.get("prompt"),
-                        "userId": payload.get("userId"),
+                        "userId": str(test.user.uuid),
                         "suggestionId": payload.get("suggestionId"),
                     }
                 ]
@@ -87,7 +87,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
@@ -104,7 +103,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_rate_limit(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
@@ -123,7 +121,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
     def test_missing_prompt(self):
         payload = {
-            "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
@@ -139,7 +136,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_authentication_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
