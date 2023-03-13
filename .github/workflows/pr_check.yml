@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      pull-requests: write
+      pull-requests: read|write
 
     env:
       ANSIBLE_AI_CACHE_URI: redis://localhost:6379
