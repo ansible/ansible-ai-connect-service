@@ -20,17 +20,6 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf remove -y epel-release && \
     dnf clean all
 
-COPY ansible_wisdom /var/www/ansible_wisdom
-COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
-COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
-COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
-COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
-COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
-COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
-COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
-COPY requirements.txt /var/www/
-COPY ari /etc/ari
-
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN for dir in \
       /var/log/supervisor \
@@ -42,9 +31,20 @@ RUN for dir in \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
 ENV ANSIBLE_HOME=/etc/ansible
 RUN /usr/bin/python3 -m venv /var/www/venv
+COPY requirements.txt /var/www/
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 WORKDIR /var/www
+
+COPY ansible_wisdom /var/www/ansible_wisdom
+COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
+COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
+COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
+COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
+COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
+COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
+COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
+COPY ari /etc/ari
 
 USER 1000
 EXPOSE 8000

@@ -1,18 +1,28 @@
 {% extends 'main/base.html' %}
 
-{% block title %}Ansible Wisdom{% endblock title %}
-
 {% block content %}
-    <h1>Ansible Wisdom</h1>
-    <p>Thank you for participating in the Ansible Wisdom pilot.</p>
-    {% if user.is_authenticated %}
-    <p>You are signed in as {{user.username}}{% if user.email %} ({{user.email}}){% endif %}.</p>
-    <p>Access the <a href={{pilot_docs_url}} target="_blank">pilot test plan</a> to begin.</p>
-    <p><b>Authentication Token:</b> {{drf_token}}</p>
-    <br><br>
-    <a href="{% url 'logout' %}">Logout</a>
-    {% else %}
-    <p>You are not signed in.</p>
-    <a href="{% url 'login' %}">Login</a>
-    {% endif %}
+<section class="pf-c-page__main-section pf-m-light">
+  <div class="pf-l-bullseye">
+    <div class="pf-l-bullseye__item">
+      <div class="pf-c-empty-state">
+        <div class="pf-c-empty-state__content">
+          <h1 class="pf-c-title pf-m-lg">Ansible Wisdom</h1>
+          <div class="pf-c-empty-state__body">Thank you for participating in the Ansible Wisdom pilot.</div>
+          {% if user.is_authenticated %}
+            <div class="pf-c-empty-state__body">
+              <p>You are signed in as {{user.username}}{% if user.email %} ({{user.email}}){% endif %}.</p>
+              <p>Access the <a href={{pilot_docs_url}} target="_blank">pilot test plan</a> to begin.</p>
+              <p><b>Authentication Token:</b> {{drf_token}}</p>
+              <br><br>
+            </div>
+            <a class="pf-c-button pf-m-primary" type="button" href="{% url 'logout' %}">Logout</a>
+          {% else %}
+            <div class="pf-c-empty-state__body">You are not signed in.</div>
+            <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock content %}

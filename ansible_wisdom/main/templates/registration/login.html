@@ -1,9 +1,20 @@
 {% extends 'main/base.html' %}
 
-{% block title %}Ansible Wisdom - Login{% endblock title %}
-
 {% block content %}
-    <h1>Ansible Wisdom - Login</h1>
-    <p>Access to the Ansible Wisdom pilot is restricted. For access issues, contact {{ pilot_contact }}.</p>
-    <p><a href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Login with GitHub</a></p>
+<section class="pf-c-page__main-section pf-m-light">
+    <div class="pf-l-bullseye">
+        <div class="pf-l-bullseye__item">
+            <div class="pf-c-empty-state">
+                <div class="pf-c-empty-state__content">
+                    <h1 class="pf-c-title pf-m-lg">Ansible Wisdom</h1>
+                    <div class="pf-c-empty-state__body">Access to the Ansible Wisdom pilot is restricted.</div>
+                    <div class="pf-c-empty-state__body">For access issues, contact {{ pilot_contact }}.</div>
+                    <a class="pf-c-button pf-m-primary"
+                        href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Login
+                        with GitHub</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock content %}

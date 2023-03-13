@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>{% block title %}{% endblock title %}</title>
-    </head>
-    <body>
-        {% if messages %}
+
+<head>
+    <title>Ansible Wisdom</title>
+    <link rel="stylesheet" href="/static/patternfly.css">
+</head>
+
+<body>
+    {% if messages %}
         <ul class="messages">
             {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-                {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}ERROR: {% endif %}
-                {{ message }}
-            </li>
+                <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                    {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}ERROR: {% endif %}
+                    {{ message }}
+                </li>
             {% endfor %}
         </ul>
-        {% endif %}
-        {% block content %} {% endblock content %}
-    </body>
+    {% endif %}
+    <div class="pf-c-page">
+        <main class="pf-c-page__main" tabindex="-1">
+            {% block content %} {% endblock content %}
+        </main>
+    </div>
+</body>
+
 </html>
