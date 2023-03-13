@@ -24,8 +24,10 @@ class HomeView(TemplateView):
                 kwargs['drf_token'] = Token.objects.get(user=user).key
             return kwargs
 
+
 class UnauthorizedView(TemplateView):
     template_name = 'users/unauthorized.html'
+
 
 class CurrentUserView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
