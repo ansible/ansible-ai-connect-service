@@ -11,6 +11,9 @@ jobs:
     name: PR-Check
 
     runs-on: ubuntu-latest
+    
+    permissions:
+      pull-requests: write
 
     env:
       ANSIBLE_AI_CACHE_URI: redis://localhost:6379
@@ -53,4 +56,9 @@ jobs:
       run: |
         cd ansible_wisdom
         coverage run --rcfile=../setup.cfg manage.py test
-        coverage report
+        coverage report> code-coverage-results.md
+    
+    - name: Add Coverage PR Comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: ansible_wisdom/code-coverage-results.md
