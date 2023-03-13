@@ -13,6 +13,7 @@ RUN dnf install -y \
     python3 \
     python3-pip \
     nginx \
+    postgresql \
     less
 
 RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
@@ -39,7 +40,8 @@ RUN for dir in \
       /var/log/nginx \
       /etc/ari \
       /etc/ansible ; \
-    do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done
+    do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
+    echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
 ENV ANSIBLE_HOME=/etc/ansible
 RUN /usr/bin/python3 -m venv /var/www/venv
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
