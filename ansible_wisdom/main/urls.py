@@ -22,8 +22,8 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from users.views import CurrentUserView, HomeView, UnauthorizedView
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
+from users.views import CurrentUserView, HomeView, UnauthorizedView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
