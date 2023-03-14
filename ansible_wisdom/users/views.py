@@ -25,6 +25,10 @@ class HomeView(TemplateView):
             return kwargs
 
 
+class UnauthorizedView(TemplateView):
+    template_name = 'users/unauthorized.html'
+
+
 class CurrentUserView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer

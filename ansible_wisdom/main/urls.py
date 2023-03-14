@@ -22,7 +22,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from users.views import CurrentUserView, HomeView
+from users.views import CurrentUserView, HomeView, UnauthorizedView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -31,6 +31,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include("ai.api.urls")),
     path('api/me/', CurrentUserView.as_view(), name='me'),
+    path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',

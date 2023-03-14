@@ -1,0 +1,48 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="pf-c-backdrop">
+    <div class="pf-l-bullseye">
+        <div class="pf-l-bullseye__item">
+            {% if not error %}
+                <div class="pf-c-modal-box pf-m-sm" role="dialog" aria-modal="true" aria-labelledby="modal-sm-title"
+                    aria-describedby="modal-sm-description">
+                    <form id="authorizationForm" method="post">
+                        <header class="pf-c-modal-box__header">
+                            <h1 class="pf-c-modal-box__title" id="modal-sm-title">Authorize {{ application.name }}</h1>
+                        </header>
+                        <div class="pf-c-modal-box__body" id="modal-sm-description">
+                            {% for field in form %}
+                                {% if field.is_hidden %}
+                                    {{ field }}
+                                {% endif %}
+                            {% endfor %}
+                            <div class="pf-l-stack pf-m-gutter">
+                                <p>This application requires the following permissions:</p>
+                                <ul class="pf-c-list pf-m-plain pf-m-bordered">
+                                    {% for scope in scopes_descriptions %}
+                                        <li><b>{{ scope }}</b></li>
+                                    {% endfor %}
+                                </ul>
+                                {{ form.errors }}
+                                {{ form.non_field_errors }}
+                            </div>
+                        </div>
+                        <footer class="pf-c-modal-box__footer">
+                            <div class="control-group">
+                                <div class="controls">
+                                    <input type="submit" class="pf-c-button pf-m-primary" name="allow" value="Authorize" />
+                                    <input type="submit" class="pf-c-button pf-m-link" value="Cancel" />
+                                </div>
+                            </div>
+                        </footer>
+                    </form>
+                </div>
+            {% else %}
+                <h2>Error: {{ error.error }}</h2>
+                <p>{{ error.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
