@@ -27,6 +27,7 @@ class HomeView(TemplateView):
 
 class UnauthorizedView(TemplateView):
     template_name = 'users/unauthorized.html'
+    extra_context = {'signup_url': settings.SIGNUP_URL}
 
 
 class CurrentUserView(RetrieveAPIView):

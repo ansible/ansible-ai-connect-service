@@ -92,11 +92,16 @@ PILOT_DOCS_URL = os.environ.get(
 )
 PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Internal Red Hat Slack')
 
+SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
+
+
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
 SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
 SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
 SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
+
 # Wisdom Eng Team:
 # gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
 
@@ -104,7 +109,10 @@ SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 
 OAUTH2_PROVIDER = {
-    'SCOPES': {'read': "Read scope", 'write': "Write scope"},
+    'SCOPES': {
+        'read': "Read basic user information",
+        'write': "Request ansible content suggestions",
+    },
     'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https', 'vscode'],
 }
 
