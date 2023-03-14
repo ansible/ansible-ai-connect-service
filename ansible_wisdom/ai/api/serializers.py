@@ -205,3 +205,25 @@ class FeedbackRequestSerializer(serializers.Serializer):
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     ansibleContent = AnsibleContentFeedback(required=False)
+
+
+class AttributionSerializer(serializers.Serializer):
+    repo_name = serializers.CharField()
+    repo_link = serializers.URLField()
+    file_path = serializers.CharField()
+    source_license = serializers.CharField()
+    confidence = serializers.FloatField()
+
+
+class AttributionRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['prediction']
+
+    prediction = serializers.CharField(trim_whitespace=False)
+
+
+class AttributionResponseSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['attributions']
+
+    attributions = serializers.ListField(child=AttributionSerializer())

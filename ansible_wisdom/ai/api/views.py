@@ -9,6 +9,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -19,6 +20,8 @@ from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
 from .serializers import (
     AnsibleContentFeedback,
+    AttributionRequestSerializer,
+    AttributionResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     FeedbackRequestSerializer,
@@ -376,3 +379,57 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
 
     truncated_yaml = "\n".join(lines[:-1])
     return True, truncated_yaml
+
+
+class Attributions(GenericAPIView):
+    """
+    Returns attributions that were the highest likelihood sources for a given code suggestion.
+    """
+
+    serializer_class = AttributionRequestSerializer
+
+    # OAUTH: remove the conditional
+    if settings.OAUTH2_ENABLE:
+        from oauth2_provider.contrib.rest_framework import (
+            IsAuthenticatedOrTokenHasScope,
+        )
+        from rest_framework import permissions
+
+        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
+        required_scopes = ['read', 'write']
+
+    throttle_classes = [CompletionsUserRateThrottle]
+
+    @extend_schema(
+        request=AttributionRequestSerializer,
+        responses={
+            200: AttributionResponseSerializer,
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+        },
+        summary="Code suggestion attributions",
+    )
+    def post(self, request) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resp_serializer = self.perform_search(serializer)
+        return Response(resp_serializer.validated_data, status=rest_framework_status.HTTP_200_OK)
+
+    def perform_search(self, serializer):
+        # TODO: hook in OpenSearch call
+        resp_serializer = AttributionResponseSerializer(
+            data={
+                'attributions': [
+                    {
+                        'repo_name': 'foo',
+                        'repo_link': 'https://example.com/foo/foo',
+                        'file_path': '/foo/bar/baz.yaml',
+                        'source_license': 'MIT',
+                        'confidence': 99.44,
+                    },
+                ],
+            }
+        )
+        resp_serializer.is_valid()  # TODO: distinguish invalid output data from invalid input
+        return resp_serializer
