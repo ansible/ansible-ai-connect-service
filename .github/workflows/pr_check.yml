@@ -59,3 +59,4 @@ jobs:
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: ansible_wisdom/code-coverage-results.md
+      if: ${{ !github.event.pull_request.head.repo.fork }}
