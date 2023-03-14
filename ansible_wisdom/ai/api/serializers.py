@@ -132,8 +132,11 @@ class AnsibleContentFeedback(serializers.Serializer):
     examples=[
         OpenApiExample(
             'Valid inline suggestion feedback example',
-            summary='Feedback Request sample for inline suggestion to identify if the suggestion is accepted or ignored',
-            description='A valid inle suggestion feedback sample request to get details about the suggestion like latency time, user decision time, user action and suggestion id.',
+            summary='Feedback Request sample for inline suggestion \
+              to identify if the suggestion is accepted or ignored',
+            description='A valid inle suggestion feedback sample \
+            request to get details about the suggestion like latency time, \
+            user decision time, user action and suggestion id.',
             value={
                 "inlineSuggestion": {
                     "latency": 1000.2,
@@ -151,7 +154,8 @@ class AnsibleContentFeedback(serializers.Serializer):
             description='A valid sample request to get ansible content as feedback.',
             value={
                 "ansibleContent": {
-                    "content": "---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n",
+                    "content": "---\n- hosts: all\n  become: yes\n\n  \
+                    tasks:\n  - name: Install ssh\n",
                     "documentUri": "file:///home/user/ansible/test.yaml",
                     "trigger": "0",
                 }
