@@ -222,7 +222,7 @@ class Feedback(APIView):
     )
     def post(self, request) -> Response:
         exception = None
-        user_id = None
+        user_id = request.user.uuid
         inline_suggestion_data = {}
         ansible_content_data = {}
         logger.info(f"feedback request payload from client: {request.data}")
@@ -232,10 +232,6 @@ class Feedback(APIView):
             validated_data = request_serializer.validated_data
             inline_suggestion_data = validated_data.get("inlineSuggestion")
             ansible_content_data = validated_data.get("ansibleContent")
-
-            # TODO: refactor to use user uuid from DB
-            user_id = validated_data.get("userId")
-
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
         except serializers.ValidationError as exc:
             exception = exc
