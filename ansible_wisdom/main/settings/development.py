@@ -42,4 +42,17 @@ if DEBUG:
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
         ],
+        "OAUTH2_FLOWS": ["authorizationCode"],
+        "OAUTH2_AUTHORIZATION_URL": '/o/authorize/',
+        "OAUTH2_TOKEN_URL": '/o/token/',
+        'OAUTH2_SCOPES': {
+            'read': 'Read scope',
+            'write': 'Write scope',
+        },
+        "SWAGGER_UI_OAUTH2_CONFIG": {
+            "clientId": os.getenv('SOCIAL_AUTH_GITHUB_TEAM_KEY'),
+            "clientSecret": os.getenv('SOCIAL_AUTH_GITHUB_TEAM_SECRET'),
+            "appName": "Test",
+            "usePkceWithAuthorizationCodeGrant": True,
+        },
     }

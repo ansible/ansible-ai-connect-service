@@ -60,3 +60,12 @@ if settings.DEBUG:
             name='redoc',
         ),
     ]
+    # for loading oauth2_redirect.html from api/schema/swagger-ui/
+    import drf_spectacular_sidecar
+    from django.conf.urls.static import static
+
+    urlpatterns += static(
+        'api/schema/swagger-ui/',
+        document_root=drf_spectacular_sidecar.__path__[0]
+        + '/static/drf_spectacular_sidecar/swagger-ui-dist',
+    )
