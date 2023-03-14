@@ -47,8 +47,16 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install coverage
 
     - name: Running Unit Tests
       run: |
         cd ansible_wisdom
-        python3 manage.py test
+        coverage run --rcfile=../setup.cfg manage.py test
+        coverage report > code-coverage-results.md
+
+    - name: Add Coverage PR Comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: ansible_wisdom/code-coverage-results.md
+      if: ${{ !github.event.pull_request.head.repo.fork }}
