@@ -4,12 +4,12 @@ from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.urls import reverse
 
 
-class TestMiddleware(WisdomServiceAPITestCaseBase):
+class TestUsers(WisdomServiceAPITestCaseBase):
     def test_users(self):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue('username' in r.data)
+        self.assertEqual(self.username, r.data.get('username'))
 
     def test_home_view(self):
         self.login()
