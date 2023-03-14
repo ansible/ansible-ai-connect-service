@@ -8,6 +8,7 @@
                 <div class="pf-c-modal-box pf-m-sm" role="dialog" aria-modal="true" aria-labelledby="modal-sm-title"
                     aria-describedby="modal-sm-description">
                     <form id="authorizationForm" method="post">
+                        {% csrf_token %}
                         <header class="pf-c-modal-box__header">
                             <h1 class="pf-c-modal-box__title" id="modal-sm-title">Authorize {{ application.name }}</h1>
                         </header>
