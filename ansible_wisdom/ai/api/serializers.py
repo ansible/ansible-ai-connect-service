@@ -134,7 +134,7 @@ class AnsibleContentFeedback(serializers.Serializer):
             'Valid inline suggestion feedback example',
             summary='Feedback Request sample for inline suggestion '
             'to identify if the suggestion is accepted or ignored.',
-            description='A valid inle suggestion feedback sample '
+            description='A valid inline suggestion feedback sample '
             'request to get details about the suggestion like latency time, '
             'user decision time, user action and suggestion id.',
             value={

@@ -7,12 +7,12 @@ from segment import analytics
 logger = logging.getLogger(__name__)
 
 
-def send_segement_event(event: Dict[str, Any], event_name: str, user_id: Union[str, None]) -> None:
+def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[str, None]) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
         return
 
-    analytics.write_key = "5r1FsJAkhB1ZWnxxaMRPDav5RdVnyMLr"
+    analytics.write_key = settings.SEGMENT_WRITE_KEY
     analytics.debug = settings.DEBUG
     analytics.send = True
     analytics.track(

@@ -6,6 +6,7 @@ import yaml
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
@@ -21,7 +22,7 @@ from .serializers import (
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
 )
-from .utils.segment import send_segement_event
+from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +196,7 @@ class Completions(APIView):
             "detail": postprocess_detail,
             "suggestionId": str(suggestion_id) if suggestion_id else None,
         }
-        send_segement_event(event, "wisdomServicePostprocessingEvent", user_id)
+        send_segment_event(event, "wisdomServicePostprocessingEvent", user_id)
 
 
 class Feedback(APIView):
@@ -220,34 +221,40 @@ class Feedback(APIView):
         summary="Feedback API for the AI service",
     )
     def post(self, request) -> Response:
+        exception = None
+        user_id = None
+        inline_suggestion_data = {}
+        ansible_content_data = {}
+        logger.info(f"feedback request payload from client: {request.data}")
         try:
-            logger.info(f"feedback request payload from client: {request.data}")
             request_serializer = FeedbackRequestSerializer(data=request.data)
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
-            inline_suggestion_data = (
-                validated_data["inlineSuggestion"] if "inlineSuggestion" in validated_data else None
-            )
-            ansible_content_data = (
-                validated_data["ansibleContent"] if "ansibleContent" in validated_data else None
-            )
+            inline_suggestion_data = validated_data.get("inlineSuggestion")
+            ansible_content_data = validated_data.get("ansibleContent")
 
             # TODO: refactor to use user uuid from DB
             user_id = validated_data.get("userId")
-            self.write_to_segment(user_id, inline_suggestion_data, ansible_content_data)
+
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
+        except serializers.ValidationError as exc:
+            exception = exc
+            return Response({"message": str(exc)}, status=exc.status_code)
         except Exception as exc:
-            logger.exception(f"failed to send feedback: {exc}")
+            exception = exc
             return Response(
                 {"message": "Failed to send feedback"},
                 status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        finally:
+            self.write_to_segment(user_id, inline_suggestion_data, ansible_content_data, exception)
 
     def write_to_segment(
         self,
         user_id: str,
         inline_suggestion_data: InlineSuggestionFeedback,
         ansible_content_data: AnsibleContentFeedback,
+        exception: Exception = None,
     ) -> None:
         if inline_suggestion_data:
             event = {
@@ -255,12 +262,14 @@ class Feedback(APIView):
                 "userActionTime": inline_suggestion_data.get('userActionTime'),
                 "action": inline_suggestion_data.get('action'),
                 "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+                "exception": exception is not None,
             }
-            send_segement_event(event, "wisdomServiceInlineSuggestionFeedbackEvent", user_id)
+            send_segment_event(event, "wisdomServiceInlineSuggestionFeedbackEvent", user_id)
         if ansible_content_data:
             event = {
                 "content": ansible_content_data.get('content'),
                 "documentUri": ansible_content_data.get('documentUri'),
                 "trigger": ansible_content_data.get('trigger'),
+                exception: exception is not None,
             }
-            send_segement_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
+            send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)

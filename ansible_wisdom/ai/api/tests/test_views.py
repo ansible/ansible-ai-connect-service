@@ -147,3 +147,47 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+
+@modify_settings()
+class TestFeedbackView(WisdomServiceAPITestCaseBase):
+    def test_feedback_full_payload(self):
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "trigger": "0",
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format='json')
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    def test_missing_content(self):
+        payload = {
+            "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
+        }
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_authentication_error(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "trigger": "0",
+            }
+        }
+        # self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
