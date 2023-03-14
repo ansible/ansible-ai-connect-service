@@ -20,7 +20,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "userId": self.user_id,
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}

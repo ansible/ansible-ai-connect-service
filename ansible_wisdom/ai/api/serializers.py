@@ -23,19 +23,13 @@ from rest_framework import serializers
 )
 class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['prompt', 'userId', 'suggestionId']
+        fields = ['prompt', 'suggestionId']
 
     prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Prompt',
         help_text='Editor prompt.',
-    )
-    userId = serializers.UUIDField(
-        format='hex_verbose',
-        required=False,
-        label="User ID",
-        help_text="A UUID that identifies a user.",
     )
     suggestionId = serializers.UUIDField(
         format='hex_verbose',

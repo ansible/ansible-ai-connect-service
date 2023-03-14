@@ -52,6 +52,7 @@ class Completions(APIView):
         request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
+        payload.userId = request.user.uuid
         model_name = payload.model_name
         original_indent = payload.prompt.find("name")
 

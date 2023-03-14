@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.3
+  version: 0.0.4
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -85,11 +85,6 @@ components:
         prompt:
           type: string
           description: Editor prompt.
-        userId:
-          type: string
-          format: uuid
-          title: User ID
-          description: A UUID that identifies a user.
         suggestionId:
           type: string
           format: uuid
