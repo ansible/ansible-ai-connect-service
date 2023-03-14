@@ -91,3 +91,79 @@ class CompletionResponseSerializer(serializers.Serializer):
         fields = ['predictions']
 
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+
+
+class InlineSuggestionFeedback(serializers.Serializer):
+    USER_ACTION_CHOICES = (('0', 'ACCEPT'), ('1', 'IGNORE'))
+
+    class Meta:
+        fields = ['latency', 'userActionTime', 'documentUri', 'action', 'error', 'suggestionId']
+
+    latency = serializers.FloatField(required=False)
+    userActionTime = serializers.FloatField(required=False)
+    documentUri = serializers.CharField(required=False)
+    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES)
+    error = serializers.CharField(required=False)
+    suggestionId = serializers.UUIDField(
+        format='hex_verbose',
+        required=True,
+        label="Suggestion ID",
+        help_text="A UUID that identifies a suggestion.",
+    )
+
+
+class AnsibleContentFeedback(serializers.Serializer):
+    CONTENT_UPLOAD_TRIGGER = (('0', 'FILE_OPEN'), ('1', 'FILE_CLOSE'), ('2', 'TAB_CHANGE'))
+
+    class Meta:
+        fields = ['content', 'documentUri', 'trigger']
+
+    content = serializers.CharField(
+        trim_whitespace=False,
+        required=True,
+        label='Ansible Content',
+        help_text='Ansible file content.',
+    )
+    documentUri = serializers.CharField()
+    trigger = serializers.ChoiceField(choices=CONTENT_UPLOAD_TRIGGER)
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Valid inline suggestion feedback example',
+            summary='Feedback Request sample for inline suggestion to identify if the suggestion is accepted or ignored',
+            description='A valid inle suggestion feedback sample request to get details about the suggestion like latency time, user decision time, user action and suggestion id.',
+            value={
+                "inlineSuggestion": {
+                    "latency": 1000.2,
+                    "userActionTime": 5155.2,
+                    "action": "0",
+                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+                }
+            },
+            request_only=True,
+            response_only=False,
+        ),
+        OpenApiExample(
+            'Valid ansible content feedback example',
+            summary='Feedback Request sample for Ansible content upload',
+            description='A valid sample request to get ansible content as feedback.',
+            value={
+                "ansibleContent": {
+                    "content": "---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n",
+                    "documentUri": "file:///home/user/ansible/test.yaml",
+                    "trigger": "0",
+                }
+            },
+            request_only=True,
+            response_only=False,
+        ),
+    ]
+)
+class FeedbackRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['inlineSuggestion', 'ansibleContent']
+
+    inlineSuggestion = InlineSuggestionFeedback(required=False)
+    ansibleContent = AnsibleContentFeedback(required=False)

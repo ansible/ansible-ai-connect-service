@@ -6,15 +6,22 @@ import yaml
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import status as rest_framework_status
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
-from segment import analytics
 from yaml.error import MarkedYAMLError
 
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
-from .serializers import CompletionRequestSerializer, CompletionResponseSerializer
+from .serializers import (
+    AnsibleContentFeedback,
+    CompletionRequestSerializer,
+    CompletionResponseSerializer,
+    FeedbackRequestSerializer,
+    InlineSuggestionFeedback,
+)
+from .utils.segment import send_segement_event
 
 logger = logging.getLogger(__name__)
 
@@ -177,25 +184,83 @@ class Completions(APIView):
         exception,
         start_time,
     ):
-        if settings.SEGMENT_WRITE_KEY:
-            duration = round((time.time() - start_time) * 1000, 2)
-            problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
-            event = {
-                "exception": exception is not None,
-                "problem": problem,
-                "duration": duration,
-                "recommendation": recommendation_yaml,
-                "postprocessed": postprocessed_yaml,
-                "detail": postprocess_detail,
-                "suggestionId": str(suggestion_id) if suggestion_id else None,
-            }
+        duration = round((time.time() - start_time) * 1000, 2)
+        problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
+        event = {
+            "exception": exception is not None,
+            "problem": problem,
+            "duration": duration,
+            "recommendation": recommendation_yaml,
+            "postprocessed": postprocessed_yaml,
+            "detail": postprocess_detail,
+            "suggestionId": str(suggestion_id) if suggestion_id else None,
+        }
+        send_segement_event(event, "wisdomServicePostprocessingEvent", user_id)
 
-            analytics.write_key = settings.SEGMENT_WRITE_KEY
-            analytics.debug = settings.DEBUG
-            # analytics.send = False  # for code development only
 
-            analytics.track(
-                str(user_id) if user_id else 'unknown',
-                "wisdomServicePostprocessingEvent",
-                event,
+class Feedback(APIView):
+    """
+    Feedback API for the AI service
+    """
+
+    # OAUTH: remove the conditional
+    if settings.OAUTH2_ENABLE:
+        from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+        from rest_framework import permissions
+
+        permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
+
+    @extend_schema(
+        request=FeedbackRequestSerializer,
+        responses={
+            200: OpenApiResponse(description='Success'),
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+        },
+        summary="Feedback API for the AI service",
+    )
+    def post(self, request) -> Response:
+        try:
+            logger.info(f"feedback request payload from client: {request.data}")
+            request_serializer = FeedbackRequestSerializer(data=request.data)
+            request_serializer.is_valid(raise_exception=True)
+            validated_data = request_serializer.validated_data
+            inline_suggestion_data = (
+                validated_data["inlineSuggestion"] if "inlineSuggestion" in validated_data else None
             )
+            ansible_content_data = (
+                validated_data["ansibleContent"] if "ansibleContent" in validated_data else None
+            )
+
+            # TODO: refactor to use user uuid from DB
+            user_id = validated_data.get("userId")
+            self.write_to_segment(user_id, inline_suggestion_data, ansible_content_data)
+            return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
+        except Exception as exc:
+            logger.exception(f"failed to send feedback: {exc}")
+            return Response(
+                {"message": "Failed to send feedback"},
+                status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def write_to_segment(
+        self,
+        user_id: str,
+        inline_suggestion_data: InlineSuggestionFeedback,
+        ansible_content_data: AnsibleContentFeedback,
+    ) -> None:
+        if inline_suggestion_data:
+            event = {
+                "latency": inline_suggestion_data.get('latency'),
+                "userActionTime": inline_suggestion_data.get('userActionTime'),
+                "action": inline_suggestion_data.get('action'),
+                "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+            }
+            send_segement_event(event, "wisdomServiceInlineSuggestionFeedbackEvent", user_id)
+        if ansible_content_data:
+            event = {
+                "content": ansible_content_data.get('content'),
+                "documentUri": ansible_content_data.get('documentUri'),
+                "trigger": ansible_content_data.get('trigger'),
+            }
+            send_segement_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
