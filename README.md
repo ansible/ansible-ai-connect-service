@@ -305,15 +305,34 @@ Unit-tests are based on Python's [unittest library](https://docs.python.org/3/li
 
     Additionally if you are hitting the same endpoint over a bunch of methods on the same test class, you can always store the results of `reverse()` in an attribute and make use of that, to reduce the repetition.
 
-### Execute Unit Tests
+### Execute Unit Tests and Measure Code Coverage
+
+#### Preparation
 
 For running Unit Tests in this repository, you need to
 have backend services (Postgres DB and Redis) running.
 [Running them from container](#running-backend-services--from-container-)
 is one handy way for that requirement.
 
-You also need to set some environment variables
-that are read by Wisdom Service. If you are using PyCharm
+For getting the unit test code coverage,
+install the `coverage` module, which is included
+in `requirements-dev.txt` with the instructions in the
+[Using pre-commit](#using-pre-commit) section.
+
+#### Use make
+
+The easiest way to run unit tests and measure code coverage report is to run
+```commandline
+make code-coverage
+```
+If the execution was successful, results in HTML are showin in Chrome.
+
+#### Running Unit Tests from Command Line or PyCharm
+
+For executing unit tests from command lline,
+You need to set some environment variables
+that are read by Wisdom Service.
+If you are using PyCharm
 for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
  with the following `.env` file:
 
@@ -352,17 +371,12 @@ python3 manage.py test
 ```
 to run unit tests.
 
-### Code Coverage
-
-You can get code coverage with the `coverage` module.
-Install the `coverage` module, which is included
-in `requirements-dev.txt` with the instructions in the
-[Using pre-commit](#using-pre-commit) section.
+#### Measuring Code Coverage from Command Line
 
 If you want to get code coverage by
 running unit tests from command line,
-set environment variables listed in the [Execute Unit Tests](#execute-unit-tests)
-section and run following commands:
+set environment variables listed in the section above
+and run following commands:
 
 ```commandline
 cd ansible_wisdom

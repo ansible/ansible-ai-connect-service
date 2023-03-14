@@ -2,6 +2,7 @@ import json
 import time
 
 from django.conf import settings
+from django.urls import reverse
 from segment import analytics
 
 
@@ -13,7 +14,7 @@ class SegmentMiddleware:
         start_time = time.time()
 
         if settings.SEGMENT_WRITE_KEY:
-            if request.path == '/api/ai/completions/' and request.method == 'POST':
+            if request.path == reverse('completions') and request.method == 'POST':
                 if request.content_type == 'application/json':
                     try:
                         request_data = (
@@ -27,7 +28,7 @@ class SegmentMiddleware:
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
-            if request.path == '/api/ai/completions/' and request.method == 'POST':
+            if request.path == reverse('completions') and request.method == 'POST':
                 user_id = request_data.get('userId', 'unknown')
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')

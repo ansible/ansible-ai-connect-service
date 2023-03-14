@@ -2,6 +2,7 @@
 
 import time
 import uuid
+from http import HTTPStatus
 from unittest.mock import patch
 
 from ai.api.serializers import CompletionRequestSerializer
@@ -9,7 +10,8 @@ from ai.api.views import Completions
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import modify_settings
+from django.test import modify_settings, override_settings
+from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
@@ -52,10 +54,12 @@ class WisdomServiceAPITestCaseBase(APITestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.username = 'u' + str(int(time.time()))
+        cls.password = 'secret'
+        cls.email = 'user@example.com'
         cls.user = get_user_model().objects.create_user(
             username=cls.username,
-            email='user@example.com',
-            password='secret',
+            email=cls.email,
+            password=cls.password,
         )
         cls.user_id = str(uuid.uuid4())
 
@@ -74,6 +78,9 @@ class WisdomServiceAPITestCaseBase(APITestCase):
     def assertNotInLog(self, s, logs):
         self.assertFalse(self.searchInLogOutput(s, logs))
 
+    def login(self):
+        self.client.login(username=self.username, password=self.password)
+
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):
@@ -90,8 +97,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post('/api/ai/completions/', payload)
-            self.assertEqual(r.status_code, 200)
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
 
     def test_rate_limit(self):
@@ -107,12 +114,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post('/api/ai/completions/', payload)
-            self.assertEqual(r.status_code, 200)
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
             for _ in range(10):
-                r = self.client.post('/api/ai/completions/', payload)
-            self.assertEqual(r.status_code, 429)
+                r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
 
     def test_missing_prompt(self):
         payload = {
@@ -126,8 +133,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post('/api/ai/completions/', payload)
-            self.assertEqual(r.status_code, 400)
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_authentication_error(self):
         payload = {
@@ -142,5 +149,5 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post('/api/ai/completions/', payload)
-            self.assertEqual(r.status_code, 401)
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
