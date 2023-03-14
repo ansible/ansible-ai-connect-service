@@ -222,7 +222,7 @@ class Feedback(APIView):
     )
     def post(self, request) -> Response:
         exception = None
-        user_id = request.user.uuid
+        user_id = str(request.user.uuid)
         inline_suggestion_data = {}
         ansible_content_data = {}
         logger.info(f"feedback request payload from client: {request.data}")
