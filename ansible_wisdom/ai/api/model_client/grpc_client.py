@@ -33,6 +33,7 @@ class GrpcClient(ModelMeshClient):
             response = self._inference_stub.AnsiblePredict(
                 request=common_service_pb2.AnsibleRequest(prompt=prompt, context=context),
                 metadata=[("mm-vmodel-id", model_name)],
+                timeout=self.timeout,
             )
 
             logger.debug(f"inference response: {response}")

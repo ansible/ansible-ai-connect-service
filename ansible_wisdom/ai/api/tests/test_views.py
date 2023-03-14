@@ -5,6 +5,7 @@ import uuid
 from http import HTTPStatus
 from unittest.mock import patch
 
+from ai.api.model_client.base import ModelMeshClient
 from ai.api.serializers import CompletionRequestSerializer
 from ai.api.views import Completions
 from django.apps import apps
@@ -16,8 +17,9 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
 
-class DummyMeshClient:
+class DummyMeshClient(ModelMeshClient):
     def __init__(self, test, payload, response_data):
+        super().__init__(inference_url='dummy inference url')
         self.test = test
 
         if "prompt" in payload:
