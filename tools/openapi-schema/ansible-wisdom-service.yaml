@@ -62,6 +62,62 @@ paths:
           description: Unauthorized
         '429':
           description: Request was throttled
+  /api/ai/feedback/:
+    post:
+      operationId: ai_feedback_create
+      description: Feedback API for the AI service
+      summary: Feedback API for the AI service
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+            examples:
+              ValidInlineSuggestionFeedbackExample:
+                value:
+                  inlineSuggestion:
+                    latency: 1000
+                    userActionTime: 5155
+                    action: '0'
+                    suggestionId: a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6
+                summary: Feedback Request sample for inline suggestion to identify
+                  if the suggestion is accepted or ignored.
+                description: A valid inle suggestion feedback sample request to get
+                  details about the suggestion like latency time, user decision time,
+                  user action and suggestion id.
+              ValidAnsibleContentFeedbackExample:
+                value:
+                  ansibleContent:
+                    content: |
+                      ---
+                      - hosts: all
+                        become: yes
+
+                        tasks:
+                        - name: Install ssh
+                    documentUri: file:///home/user/ansible/test.yaml
+                    trigger: '0'
+                summary: Feedback Request sample for Ansible content upload
+                description: A valid sample request to get ansible content as feedback.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      security:
+      - oauth2:
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
   /api/me/:
     get:
       operationId: me_retrieve
@@ -79,6 +135,26 @@ paths:
           description: ''
 components:
   schemas:
+    ActionEnum:
+      enum:
+      - '0'
+      - '1'
+      type: string
+    AnsibleContentFeedback:
+      type: object
+      properties:
+        content:
+          type: string
+          title: Ansible Content
+          description: Ansible file content.
+        documentUri:
+          type: string
+        trigger:
+          $ref: '#/components/schemas/TriggerEnum'
+      required:
+      - content
+      - documentUri
+      - trigger
     CompletionRequest:
       type: object
       properties:
@@ -101,6 +177,42 @@ components:
             type: string
       required:
       - predictions
+    FeedbackRequest:
+      type: object
+      properties:
+        inlineSuggestion:
+          $ref: '#/components/schemas/InlineSuggestionFeedback'
+        ansibleContent:
+          $ref: '#/components/schemas/AnsibleContentFeedback'
+    InlineSuggestionFeedback:
+      type: object
+      properties:
+        latency:
+          type: number
+          format: double
+        userActionTime:
+          type: number
+          format: double
+        documentUri:
+          type: string
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        error:
+          type: string
+        suggestionId:
+          type: string
+          format: uuid
+          title: Suggestion ID
+          description: A UUID that identifies a suggestion.
+      required:
+      - action
+      - suggestionId
+    TriggerEnum:
+      enum:
+      - '0'
+      - '1'
+      - '2'
+      type: string
     User:
       type: object
       properties:
