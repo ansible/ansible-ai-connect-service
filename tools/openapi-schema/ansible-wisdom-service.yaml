@@ -84,9 +84,9 @@ paths:
                     suggestionId: a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6
                 summary: Feedback Request sample for inline suggestion to identify
                   if the suggestion is accepted or ignored.
-                description: A valid inle suggestion feedback sample request to get
-                  details about the suggestion like latency time, user decision time,
-                  user action and suggestion id.
+                description: A valid inline suggestion feedback sample request to
+                  get details about the suggestion like latency time, user decision
+                  time, user action and suggestion id.
               ValidAnsibleContentFeedbackExample:
                 value:
                   ansibleContent:
@@ -151,6 +151,12 @@ components:
           type: string
         trigger:
           $ref: '#/components/schemas/TriggerEnum'
+        activityId:
+          type: string
+          format: uuid
+          title: Activity ID
+          description: A UUID that identifies a user activity session to the document
+            uploaded.
       required:
       - content
       - documentUri
@@ -166,6 +172,8 @@ components:
           format: uuid
           title: Suggestion ID
           description: A UUID that identifies a suggestion.
+        metadata:
+          $ref: '#/components/schemas/Metadata'
       required:
       - prompt
     CompletionResponse:
@@ -204,9 +212,26 @@ components:
           format: uuid
           title: Suggestion ID
           description: A UUID that identifies a suggestion.
+        activityId:
+          type: string
+          format: uuid
+          title: Activity ID
+          description: A UUID that identifies a user activity session to the document
+            uploaded.
       required:
       - action
       - suggestionId
+    Metadata:
+      type: object
+      properties:
+        documentUri:
+          type: string
+        activityId:
+          type: string
+          format: uuid
+          title: Activity ID
+          description: A UUID that identifies a user activity session within a given
+            document.
     TriggerEnum:
       enum:
       - '0'
