@@ -38,10 +38,14 @@ class Completions(APIView):
 
     # OAUTH: remove the conditional
     if settings.OAUTH2_ENABLE:
-        from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+        from oauth2_provider.contrib.rest_framework import (
+            IsAuthenticatedOrTokenHasScope,
+        )
         from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
+        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
+        required_scopes = ['read', 'write']
+
     throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(
@@ -206,10 +210,13 @@ class Feedback(APIView):
 
     # OAUTH: remove the conditional
     if settings.OAUTH2_ENABLE:
-        from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
+        from oauth2_provider.contrib.rest_framework import (
+            IsAuthenticatedOrTokenHasScope,
+        )
         from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
+        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
+        required_scopes = ['read', 'write']
 
     @extend_schema(
         request=FeedbackRequestSerializer,
