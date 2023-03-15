@@ -21,6 +21,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
+            "metadata": {
+                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
+                "activityId": str(uuid.uuid4()),
+            },
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
@@ -30,7 +34,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse('completions'), payload, format='json')
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)

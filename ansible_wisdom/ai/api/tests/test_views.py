@@ -164,6 +164,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
                 "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": str(uuid.uuid4()),
                 "trigger": "0",
             },
         }

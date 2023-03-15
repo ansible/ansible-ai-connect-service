@@ -7,6 +7,19 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
 
+class Metadata(serializers.Serializer):
+    class Meta:
+        fields = ['documentUri', 'activityId']
+
+    documentUri = serializers.CharField(required=False)
+    activityId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Activity ID",
+        help_text="A UUID that identifies a user activity " "session within a given document.",
+    )
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -23,7 +36,7 @@ from rest_framework import serializers
 )
 class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['prompt', 'suggestionId']
+        fields = ['prompt', 'suggestionId', 'metadata']
 
     prompt = serializers.CharField(
         trim_whitespace=False,
@@ -37,6 +50,7 @@ class CompletionRequestSerializer(serializers.Serializer):
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
     )
+    metadata = Metadata(required=False)
 
     def validate(self, data):
         data = super().validate(data)
@@ -97,7 +111,15 @@ class InlineSuggestionFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (('0', 'ACCEPT'), ('1', 'IGNORE'))
 
     class Meta:
-        fields = ['latency', 'userActionTime', 'documentUri', 'action', 'error', 'suggestionId']
+        fields = [
+            'latency',
+            'userActionTime',
+            'documentUri',
+            'action',
+            'error',
+            'suggestionId',
+            'activityId',
+        ]
 
     latency = serializers.FloatField(required=False)
     userActionTime = serializers.FloatField(required=False)
@@ -110,13 +132,19 @@ class InlineSuggestionFeedback(serializers.Serializer):
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
     )
+    activityId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Activity ID",
+        help_text="A UUID that identifies a user activity " "session to the document uploaded.",
+    )
 
 
 class AnsibleContentFeedback(serializers.Serializer):
     CONTENT_UPLOAD_TRIGGER = (('0', 'FILE_OPEN'), ('1', 'FILE_CLOSE'), ('2', 'TAB_CHANGE'))
 
     class Meta:
-        fields = ['content', 'documentUri', 'trigger']
+        fields = ['content', 'documentUri', 'trigger', 'activityId']
 
     content = serializers.CharField(
         trim_whitespace=False,
@@ -126,6 +154,12 @@ class AnsibleContentFeedback(serializers.Serializer):
     )
     documentUri = serializers.CharField()
     trigger = serializers.ChoiceField(choices=CONTENT_UPLOAD_TRIGGER)
+    activityId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Activity ID",
+        help_text="A UUID that identifies a user activity " "session to the document uploaded.",
+    )
 
 
 @extend_schema_serializer(

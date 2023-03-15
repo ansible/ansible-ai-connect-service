@@ -258,6 +258,7 @@ class Feedback(APIView):
                 "userActionTime": inline_suggestion_data.get('userActionTime'),
                 "action": inline_suggestion_data.get('action'),
                 "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+                "activityId": inline_suggestion_data.get('activityId'),
                 "exception": exception is not None,
             }
             send_segment_event(event, "wisdomServiceInlineSuggestionFeedbackEvent", user_id)
@@ -266,6 +267,7 @@ class Feedback(APIView):
                 "content": ansible_content_data.get('content'),
                 "documentUri": ansible_content_data.get('documentUri'),
                 "trigger": ansible_content_data.get('trigger'),
+                "activityId": ansible_content_data.get('activityId'),
                 exception: exception is not None,
             }
             send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)

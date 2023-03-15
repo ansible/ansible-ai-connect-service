@@ -33,6 +33,7 @@ class SegmentMiddleware:
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
+                metadata = request_data.get('metadata', {})
 
                 response_data = getattr(response, 'data', {})
                 predictions = response_data.get('predictions')
@@ -48,6 +49,7 @@ class SegmentMiddleware:
                         "status_text": getattr(response, 'status_text', None),
                     },
                     "suggestionId": suggestion_id,
+                    "metadata": metadata,
                 }
 
                 analytics.write_key = settings.SEGMENT_WRITE_KEY
