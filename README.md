@@ -160,6 +160,12 @@ before running the Django application from source,
 The setup for debugging is different depending on the Python development tool.
 For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
+## Deploy the service via OpenShift S2I
+```
+oc new-build --strategy=docker --binary --name wisdom-service
+oc start-build wisdom-service --from-dir . --exclude='(^|\/)(.git|.venv|.tox|model)(\/|$)' --wait=true
+oc new-app wisdom-service
+```
 
 ## Testing the completion API
 
