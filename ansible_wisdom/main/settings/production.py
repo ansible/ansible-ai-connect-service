@@ -17,7 +17,7 @@ ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-ALLOWED_HOSTS = os.getenv("ANSIBLE_WISDOM_DOMAIN", "").split(",")
+ALLOWED_HOSTS = list(filter(len, os.getenv("ANSIBLE_WISDOM_DOMAIN", "").split(",")))
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock"] = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
@@ -32,3 +32,5 @@ CACHES = {
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
 }
+
+CSRF_TRUSTED_ORIGINS = list(map(lambda x: f"https://{x}", ALLOWED_HOSTS))
