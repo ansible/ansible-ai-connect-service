@@ -135,7 +135,8 @@ class Completions(APIView):
                         recommendation_problem = exc
                     if recommendation_problem:
                         logger.exception(
-                            f'the recommendation_yaml is not a valid YAML: ' f'\n{recommendation_yaml}'
+                            f'the recommendation_yaml is not a valid YAML: '
+                            f'\n{recommendation_yaml}'
                         )
 
                 exception = None
@@ -299,6 +300,6 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> str:
     # process the input only when it has multiple lines
     if len(lines) < 2:
         return False, recommendation_yaml
-    
+
     truncated_yaml = "\n".join(lines[:-1])
     return True, truncated_yaml
