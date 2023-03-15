@@ -6,12 +6,12 @@
     <div class="pf-l-bullseye__item">
       <div class="pf-c-empty-state">
         <div class="pf-c-empty-state__content">
-          <h1 class="pf-c-title pf-m-lg">Thank you for participating in the Ansible Wisdom pilot.</h1>
+          <h1 class="pf-c-title pf-m-lg">Thank you for participating in the Project Wisdom closed beta.</h1>
           {% if user.is_authenticated %}
             <div class="pf-c-empty-state__body">
               <p>You are signed in as {{user.username}}{% if user.email %} ({{user.email}}){% endif %}.</p>
-              <p>Access the <a href={{pilot_docs_url}} target="_blank">pilot test plan</a> to begin.</p>
-              <p><b>Authentication Token:</b> {{drf_token}}</p>
+              <p>Access the <a href={{pilot_docs_url}} target="_blank">documentation</a> to begin.</p>
+              <!-- <p><b>Authentication Token:</b> {{drf_token}}</p> -->
               <br><br>
             </div>
             <a class="pf-c-button pf-m-primary" type="button" href="{% url 'logout' %}">Logout</a>
