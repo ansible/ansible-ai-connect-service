@@ -1,7 +1,6 @@
-from ai.api.views import Completions, Feedback
 from django.urls import path
 
-from .views import Completions
+from .views import Completions, Feedback
 
 urlpatterns = [
     path('completions/', Completions.as_view(), name='completions'),
