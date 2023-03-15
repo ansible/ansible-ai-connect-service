@@ -301,5 +301,17 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
     if len(lines) < 2:
         return False, recommendation_yaml
 
+    # if the last line can be parsed as YAML successfully,
+    # we do not need to try truncating.
+    last_line = lines[-1]
+    is_last_line_valid = False
+    try:
+        _ = yaml.safe_load(last_line)
+        is_last_line_valid = True
+    except Exception:
+        pass
+    if is_last_line_valid:
+        return False, recommendation_yaml
+
     truncated_yaml = "\n".join(lines[:-1])
     return True, truncated_yaml
