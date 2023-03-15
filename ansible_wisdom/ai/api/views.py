@@ -293,7 +293,7 @@ class Feedback(APIView):
             send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
 
 
-def truncate_recommendation_yaml(recommendation_yaml: str) -> str:
+def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
     lines = recommendation_yaml.splitlines()
     lines = [line for line in lines if line.strip() != ""]
 
