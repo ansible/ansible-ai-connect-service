@@ -173,8 +173,10 @@ class Completions(APIView):
                         start_time,
                     )
             # restore original indentation
-            recommendation["predictions"][i] = fmtr.restore_indentation(
-                recommendation["predictions"][i], indent
+            indented_yaml = fmtr.restore_indentation(recommendation["predictions"][i], indent)
+            recommendation["predictions"][i] = indented_yaml
+            logger.debug(
+                f"suggestion id: {suggestion_id}, " f"indented recommendation: \n{indented_yaml}"
             )
             continue
         return recommendation
