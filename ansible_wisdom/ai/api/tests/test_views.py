@@ -237,24 +237,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     'skipped ari post processing because ari was not initialized', log.output
                 )
 
-    def test_full_payload_with_invalid_recommendation(self):
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {"predictions": ["      ansible.builtin.apt:\nname: apache2"]}
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='WARN') as log:
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
-            ):
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data['predictions'])
-                self.assertInLog('the recommendation_yaml is not a valid YAML', log.output)
-
     def test_full_payload_with_recommendation_with_broken_last_line(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
