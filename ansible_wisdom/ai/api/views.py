@@ -72,7 +72,7 @@ class Completions(APIView):
             payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         except Exception:
             # return the original prompt, context
-            logger.exception(f'failed to preprocess {payload.context}{payload.prompt}')
+            logger.info(f'failed to preprocess {payload.context}{payload.prompt}')
             return Response({'message': 'Request contains invalid yaml'}, status=400)
         model_mesh_payload = ModelMeshPayload(
             instances=[
@@ -138,7 +138,7 @@ class Completions(APIView):
                     else:
                         recommendation_problem = exc
                     if recommendation_problem:
-                        logger.exception(
+                        logger.error(
                             f'the recommendation_yaml is not a valid YAML: '
                             f'\n{recommendation_yaml}'
                         )
@@ -177,7 +177,7 @@ class Completions(APIView):
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
-                    logger.exception(
+                    logger.error(
                         f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
                     )
