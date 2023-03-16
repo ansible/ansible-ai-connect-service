@@ -235,6 +235,10 @@ STATIC_URL = "static/"
 # the collectstatic command.
 STATIC_ROOT = '/var/www/wisdom/public/static'
 
+# Paths to where static files that are not explicitly part of a
+# particular Django app should be collected from.
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
