@@ -309,3 +309,13 @@ ARI_RULES = [
 if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
 ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
+
+ANSIBLE_AI_SEARCH = {
+    'HOST': os.getenv('ANSIBLE_AI_SEARCH_HOST', ''),
+    'PORT': int(os.getenv('ANSIBLE_AI_SEARCH_PORT', '443')),
+    'USE_SSL': True,
+    'VERIFY_CERTS': True,
+    'MODEL': os.getenv('ANSIBLE_AI_SEARCH_MODEL', 'all-mpnet-base-v2'),
+    'DIMENSION': int(os.getenv('ANSIBLE_AI_SEARCH_DIMENSION', '384')),
+    'INDEX': os.getenv('ANSIBLE_AI_SEARCH_INDEX', 'attributions'),
+}
