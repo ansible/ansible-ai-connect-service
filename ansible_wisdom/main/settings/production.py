@@ -32,5 +32,3 @@ CACHES = {
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
 }
-
-CSRF_TRUSTED_ORIGINS = list(map(lambda x: f"https://{x}", ALLOWED_HOSTS))
