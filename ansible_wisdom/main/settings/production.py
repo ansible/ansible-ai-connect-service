@@ -32,6 +32,5 @@ CACHES = {
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
 }
-REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
 
-CSRF_TRUSTED_ORIGINS = list(map(lambda x: f"https://{x}", ALLOWED_HOSTS))
+REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check

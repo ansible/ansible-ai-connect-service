@@ -164,6 +164,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
                 "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": str(uuid.uuid4()),
                 "trigger": "0",
             },
         }
@@ -191,3 +192,26 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         # self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_full_payload_with_recommendation_with_broken_last_line(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        # quotation in the last line is not closed, but the truncate function can handle this.
+        response_data = {
+            "predictions": [
+                "      ansible.builtin.apt:\n        name: apache2\n      register: \"test"
+            ]
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO') as log:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
