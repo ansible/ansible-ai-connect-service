@@ -302,7 +302,7 @@ class Feedback(APIView):
                 "content": ansible_content_data.get('content'),
                 "documentUri": ansible_content_data.get('documentUri'),
                 "trigger": ansible_content_data.get('trigger'),
-                "activityId": str(inline_suggestion_data.get('suggestionId', '')),
+                "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
             send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
