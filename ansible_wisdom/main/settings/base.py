@@ -278,6 +278,7 @@ ARI_RULES = [
     "W008",
     "W009",
     "W010",
+    "W011",  # replace with_* loop with the modern loop:
     "W012",
     "W013",
     "W014",
