@@ -3,6 +3,7 @@ import logging
 import time
 
 import yaml
+from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -84,8 +85,9 @@ class Completions(APIView):
     )
     def post(self, request) -> Response:
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        logger.debug(f"request payload from client: {request.data}")
-        request_serializer = CompletionRequestSerializer(data=request.data)
+        data = anonymizer.anonymize_struct(request.data)
+        logger.debug(f"request payload from client: {data}")
+        request_serializer = CompletionRequestSerializer(data=data)
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
@@ -306,9 +308,10 @@ class Feedback(APIView):
         user_id = str(request.user.uuid)
         inline_suggestion_data = {}
         ansible_content_data = {}
-        logger.info(f"feedback request payload from client: {request.data}")
+        data = anonymizer.anonymize_struct(request.data)
+        logger.info(f"feedback request payload from client: {data}")
         try:
-            request_serializer = FeedbackRequestSerializer(data=request.data)
+            request_serializer = FeedbackRequestSerializer(data=data)
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             inline_suggestion_data = validated_data.get("inlineSuggestion")

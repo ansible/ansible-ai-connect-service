@@ -19,7 +19,9 @@ django_prometheus==2.2.0
 drf-spectacular==0.25.1
 PyYAML==6.0
 ansible-risk-insight==0.1.0
+# NOTE: To remove once ARI ruleset v0.0.4 is released
 git+https://github.com/goneri/ansible-wisdom-anonymizor#egg=ansible-wisdom-anonymisor==0.1.0
+ansible_anonymizer==1.0.0
 uwsgi-readiness-check==0.2.0
 segment-analytics-python==2.2.2
 pytz
