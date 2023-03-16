@@ -120,15 +120,28 @@ class Completions(APIView):
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
             if ari_caller:
                 start_time = time.time()
+                truncated_yaml = None
                 recommendation_problem = None
                 # check if the recommendation_yaml is a valid YAML
                 try:
                     _ = yaml.safe_load(recommendation_yaml)
                 except Exception as exc:
-                    logger.exception(
-                        f'the recommendation_yaml is not a valid YAML: ' f'\n{recommendation_yaml}'
-                    )
-                    recommendation_problem = exc
+                    # the recommendation YAML can have a broken line at the bottom
+                    # because the token size of the wisdom model is limited.
+                    # so we try truncating the last line of the recommendation here.
+                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+                    if truncated:
+                        try:
+                            _ = yaml.safe_load(truncated_yaml)
+                        except Exception as exc:
+                            recommendation_problem = exc
+                    else:
+                        recommendation_problem = exc
+                    if recommendation_problem:
+                        logger.exception(
+                            f'the recommendation_yaml is not a valid YAML: '
+                            f'\n{recommendation_yaml}'
+                        )
 
                 exception = None
                 postprocessed_yaml = None
@@ -143,6 +156,12 @@ class Completions(APIView):
                             f"suggestion id: {suggestion_id}, "
                             f"original recommendation: \n{recommendation_yaml}"
                         )
+                        if truncated_yaml:
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"truncated recommendation: \n{truncated_yaml}"
+                            )
+                            recommendation_yaml = truncated_yaml
                         postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
                             recommendation_yaml, prompt, context
                         )
@@ -167,6 +186,7 @@ class Completions(APIView):
                         user_id,
                         suggestion_id,
                         recommendation_yaml,
+                        truncated_yaml,
                         postprocessed_yaml,
                         postprocess_detail,
                         exception,
@@ -186,6 +206,7 @@ class Completions(APIView):
         user_id,
         suggestion_id,
         recommendation_yaml,
+        truncated_yaml,
         postprocessed_yaml,
         postprocess_detail,
         exception,
@@ -198,6 +219,7 @@ class Completions(APIView):
             "problem": problem,
             "duration": duration,
             "recommendation": recommendation_yaml,
+            "truncated": truncated_yaml,
             "postprocessed": postprocessed_yaml,
             "detail": postprocess_detail,
             "suggestionId": str(suggestion_id) if suggestion_id else None,
@@ -280,3 +302,27 @@ class Feedback(APIView):
                 exception: exception is not None,
             }
             send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
+
+
+def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
+    lines = recommendation_yaml.splitlines()
+    lines = [line for line in lines if line.strip() != ""]
+
+    # process the input only when it has multiple lines
+    if len(lines) < 2:
+        return False, recommendation_yaml
+
+    # if the last line can be parsed as YAML successfully,
+    # we do not need to try truncating.
+    last_line = lines[-1]
+    is_last_line_valid = False
+    try:
+        _ = yaml.safe_load(last_line)
+        is_last_line_valid = True
+    except Exception:
+        pass
+    if is_last_line_valid:
+        return False, recommendation_yaml
+
+    truncated_yaml = "\n".join(lines[:-1])
+    return True, truncated_yaml
