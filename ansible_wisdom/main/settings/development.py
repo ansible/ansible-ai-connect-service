@@ -30,6 +30,7 @@ CACHES = {
         "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
     }
 }
+REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
@@ -41,5 +42,7 @@ if DEBUG:
         'TAGS': [
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
+            {"name": "check", "description": "Health check"},
         ],
+        'SCHEMA_PATH_PREFIX': r'/api',
     }

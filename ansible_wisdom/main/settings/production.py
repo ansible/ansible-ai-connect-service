@@ -32,3 +32,5 @@ CACHES = {
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
 }
+
+REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check

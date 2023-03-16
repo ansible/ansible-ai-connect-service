@@ -133,6 +133,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /check/:
+    get:
+      operationId: check_retrieve
+      description: Wisdom Service Liveness Probe View
+      summary: Liveness probe
+      tags:
+      - check
+      security:
+      - {}
+      responses:
+        '200':
+          description: OK
+  /check/status/:
+    get:
+      operationId: check_status_retrieve
+      description: Wisdom Service Health Check
+      summary: Health check with backend server status
+      tags:
+      - check
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ExampleOutput:
+                  value:
+                    status: ok
+                    timestamp: '2023-03-13T17:25:17.240683'
+                    version: latest 0.1.202303131417
+                    git_commit: b987bc43b90f8aca2deaf3bda85596f4b95a10a0
+                    dependencies:
+                    - name: cache
+                      status: ok
+                      time_taken: 2.032
+                    - name: db
+                      status: ok
+                      time_taken: 233.538
+                    - name: model-server
+                      status: ok
+                      time_taken: 0.001
+                  summary: Example output
+          description: ''
+        '500':
+          description: One or more backend services are unavailable.
 components:
   schemas:
     ActionEnum:
@@ -262,3 +311,5 @@ tags:
   description: AI-related operations
 - name: me
   description: Authenticated user information
+- name: check
+  description: Health check

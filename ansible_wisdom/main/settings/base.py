@@ -43,6 +43,10 @@ INSTALLED_APPS = [
     "django_prometheus",
     "drf_spectacular",
     "django_extensions",
+    "health_check",
+    "health_check.db",
+    "health_check.cache",
+    "healthcheck",
 ]
 # OAUTH: fold directly into INSTALLED_APPS when fully switched over
 if OAUTH2_ENABLE:
