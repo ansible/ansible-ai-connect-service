@@ -49,20 +49,9 @@ docker-create-superuser:
 	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 wisdom-manage createsuperuser
 
 # Run unit tests, calculate code coverage and display results in chrome
-# - target specific variables:
-code-coverage: export ANSIBLE_AI_CACHE_URI=redis://localhost:6379
-code-coverage: export ANSIBLE_AI_DATABASE_HOST=localhost
-code-coverage: export ANSIBLE_AI_DATABASE_NAME=wisdom
-code-coverage: export ANSIBLE_AI_DATABASE_PASSWORD=wisdom
-code-coverage: export ANSIBLE_AI_DATABASE_USER=wisdom
-code-coverage: export ARI_KB_PATH=../ari/kb/
-code-coverage: export DJANGO_SETTINGS_MODULE=main.settings.development
-code-coverage: export ENABLE_ARI_POSTPROCESS=True
-code-coverage: export PYTHONUNBUFFERED=1
-code-coverage: export SECRET_KEY=somesecret
-code-coverage: export OAUTH2_ENABLE=True
-# - target:
+code-coverage: export SHELL=/bin/bash # for using source
 code-coverage:
+	set -o allexport && source _env &&\
 	cd ansible_wisdom && \
 	coverage erase && \
 	coverage run --rcfile=../setup.cfg manage.py test && \
@@ -70,17 +59,10 @@ code-coverage:
 	google-chrome htmlcov/index.html
 
 # Initialize local Django DB by running migration and creating a superuser
-# - target specific variables:
-init-db: export ANSIBLE_AI_DATABASE_HOST=localhost
-init-db: export ANSIBLE_AI_DATABASE_NAME=wisdom
-init-db: export ANSIBLE_AI_DATABASE_PASSWORD=wisdom
-init-db: export ANSIBLE_AI_DATABASE_USER=wisdom
-init-db: export SECRET_KEY=somesecret
-init-db: export OAUTH2_ENABLE=True
-# - target:
+init-db: export SHELL=/bin/bash # for using source
 init-db:
-	venv/bin/python ansible_wisdom/manage.py migrate
-	echo "from django.contrib.auth import get_user_model;"\
+	set -o allexport && source _env && venv/bin/python ansible_wisdom/manage.py migrate
+	set -o allexport && source _env && echo "from django.contrib.auth import get_user_model;"\
 	"User = get_user_model();"\
-	"User.objects.create_superuser('admin', 'admin@example.com', '${SECRET_KEY}')"\
+	"User.objects.create_superuser('admin', 'admin@example.com', '$${SECRET_KEY}')"\
 	| venv/bin/python3 ansible_wisdom/manage.py shell
