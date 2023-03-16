@@ -60,6 +60,7 @@ code-coverage: export DJANGO_SETTINGS_MODULE=main.settings.development
 code-coverage: export ENABLE_ARI_POSTPROCESS=True
 code-coverage: export PYTHONUNBUFFERED=1
 code-coverage: export SECRET_KEY=somesecret
+code-coverage: export OAUTH2_ENABLE=True
 # - target:
 code-coverage:
 	cd ansible_wisdom && \
@@ -67,3 +68,19 @@ code-coverage:
 	coverage run --rcfile=../setup.cfg manage.py test && \
 	coverage html && \
 	google-chrome htmlcov/index.html
+
+# Initialize local Django DB by running migration and creating a superuser
+# - target specific variables:
+init-db: export ANSIBLE_AI_DATABASE_HOST=localhost
+init-db: export ANSIBLE_AI_DATABASE_NAME=wisdom
+init-db: export ANSIBLE_AI_DATABASE_PASSWORD=wisdom
+init-db: export ANSIBLE_AI_DATABASE_USER=wisdom
+init-db: export SECRET_KEY=somesecret
+init-db: export OAUTH2_ENABLE=True
+# - target:
+init-db:
+	venv/bin/python ansible_wisdom/manage.py migrate
+	echo "from django.contrib.auth import get_user_model;"\
+	"User = get_user_model();"\
+	"User.objects.create_superuser('admin', 'admin@example.com', '${SECRET_KEY}')"\
+	| venv/bin/python3 ansible_wisdom/manage.py shell
