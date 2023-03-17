@@ -14,6 +14,7 @@ from django.test import modify_settings, override_settings
 from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+from yaml.parser import ParserError
 
 
 class DummyMeshClient:
@@ -21,24 +22,27 @@ class DummyMeshClient:
         self.test = test
 
         if "prompt" in payload:
-            serializer = CompletionRequestSerializer()
-            data = serializer.validate(payload.copy())
+            try:
+                serializer = CompletionRequestSerializer()
+                data = serializer.validate(payload.copy())
 
-            view = Completions()
-            data["context"], data["prompt"] = view.preprocess(
-                data.get("context"), data.get("prompt")
-            )
+                view = Completions()
+                data["context"], data["prompt"] = view.preprocess(
+                    data.get("context"), data.get("prompt")
+                )
 
-            self.expects = {
-                "instances": [
-                    {
-                        "context": data.get("context"),
-                        "prompt": data.get("prompt"),
-                        "userId": str(test.user.uuid),
-                        "suggestionId": payload.get("suggestionId"),
-                    }
-                ]
-            }
+                self.expects = {
+                    "instances": [
+                        {
+                            "context": data.get("context"),
+                            "prompt": data.get("prompt"),
+                            "userId": str(test.user.uuid),
+                            "suggestionId": payload.get("suggestionId"),
+                        }
+                    ]
+                }
+            except ParserError:  # ignore YAML parser errors thrown here
+                pass
 
         self.response_data = response_data
 
@@ -192,6 +196,46 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         # self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_completions_preprocessing_error(self):
+        payload = {
+            "prompt": "---\n- hosts: all\nbecome: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_full_payload_without_ARI(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='WARN') as log:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ), patch.object(
+                apps.get_app_config('ai'),
+                'ari_caller',
+                None,
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertInLog(
+                    'skipped ari post processing because ari was not initialized', log.output
+                )
 
     def test_full_payload_with_recommendation_with_broken_last_line(self):
         payload = {
