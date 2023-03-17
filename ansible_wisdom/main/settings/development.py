@@ -22,6 +22,14 @@ ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock"] = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
 )
 
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
+    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
+    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+    else None
+)
+
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHES = {
