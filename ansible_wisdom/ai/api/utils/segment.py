@@ -12,9 +12,6 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
         logger.info("segment write key not set, skipping event")
         return
 
-    analytics.write_key = settings.SEGMENT_WRITE_KEY
-    analytics.debug = settings.DEBUG
-    analytics.send = True
     analytics.track(
         str(user_id) if user_id else 'unknown',
         event_name,

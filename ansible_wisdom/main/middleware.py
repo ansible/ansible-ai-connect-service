@@ -1,9 +1,16 @@
 import json
+import logging
 import time
 
 from django.conf import settings
 from django.urls import reverse
 from segment import analytics
+
+logger = logging.getLogger(__name__)
+
+
+def on_segment_error(error, _):
+    logger.error(f'An error occurred in sending data to Segment: {error}')
 
 
 class SegmentMiddleware:
@@ -14,6 +21,12 @@ class SegmentMiddleware:
         start_time = time.time()
 
         if settings.SEGMENT_WRITE_KEY:
+            if not analytics.write_key:
+                analytics.write_key = settings.SEGMENT_WRITE_KEY
+                analytics.debug = settings.DEBUG
+                # analytics.send = False # for code development only
+                analytics.on_error = on_segment_error
+
             if request.path == reverse('completions') and request.method == 'POST':
                 if request.content_type == 'application/json':
                     try:
@@ -51,10 +64,6 @@ class SegmentMiddleware:
                     "suggestionId": suggestion_id,
                     "metadata": metadata,
                 }
-
-                analytics.write_key = settings.SEGMENT_WRITE_KEY
-                analytics.debug = settings.DEBUG
-                # analytics.send = False # for code development only
 
                 analytics.track(
                     user_id,
