@@ -14,10 +14,18 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
         self.api_type = settings.ANSIBLE_AI_MODEL_MESH_API_TYPE
         if self.api_type == 'http':
             self.url = f'{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping'
+        elif self.api_type == 'grpc':
+            self.url = (
+                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL}://'
+                f'{settings.ANSIBLE_AI_MODEL_MESH_HOST}:'
+                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz'
+            )
+        else:  # 'mock'
+            self.url = None
 
     def check_status(self):
         try:
-            if self.api_type == 'http':
+            if self.url:
                 res = requests.get(self.url)
                 if res.status_code != 200:
                     raise Exception()
