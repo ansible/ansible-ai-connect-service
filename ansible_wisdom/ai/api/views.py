@@ -186,10 +186,9 @@ class Completions(APIView):
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
-                    logger.error(
+                    logger.exception(
                         f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
-                        f'\nException:\n{exception}'
                     )
                 finally:
                     self.write_to_segment(
