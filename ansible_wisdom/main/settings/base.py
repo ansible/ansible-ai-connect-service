@@ -288,6 +288,11 @@ ARI_RULES = [
     "W012",
     "W013",
     "W014",
+    "W015",
+    "W016",
+    "W017",
+    "W018",
+    "W019",
 ]
 if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')

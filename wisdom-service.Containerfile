@@ -44,6 +44,7 @@ COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
+COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
 COPY ari /etc/ari
 
 RUN for dir in \
@@ -55,6 +56,7 @@ RUN for dir in \
       /etc/ansible ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
+RUN /usr/bin/install-ari-rule-requirements.sh
 ENV ANSIBLE_HOME=/etc/ansible
 WORKDIR /var/www
 
