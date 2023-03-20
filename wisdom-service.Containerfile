@@ -56,6 +56,7 @@ RUN for dir in \
       /etc/ansible ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
+RUN /usr/bin/install-ari-rule-requirements.sh
 ENV ANSIBLE_HOME=/etc/ansible
 WORKDIR /var/www
 

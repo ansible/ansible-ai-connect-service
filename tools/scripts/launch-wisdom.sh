@@ -22,9 +22,5 @@ done
 /var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
 /var/www/venv/bin/python ansible_wisdom/manage.py collectstatic --noinput
 
-if [ $ENABLE_ARI_POSTPROCESS == "True" ]; then
-    /usr/bin/install-ari-rule-requirements.sh
-fi
-
 cd ansible_wisdom/
 /usr/local/bin/supervisord -n

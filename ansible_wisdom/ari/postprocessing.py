@@ -133,6 +133,7 @@ class ARICaller:
                         rule_detail["description"] = _result.description
                     rule_detail["duration"] = _result.duration
                     rule_detail["matched"] = _result.matched
+                    rule_detail["error"] = _result.error
                 detail_data[rule_id] = rule_detail
 
         # return inference_output
