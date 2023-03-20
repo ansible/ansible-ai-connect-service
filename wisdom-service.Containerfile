@@ -51,6 +51,7 @@ RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
       /var/www/wisdom \
+      /var/www/model-cache \
       /var/log/nginx \
       /etc/ari \
       /etc/ansible ; \
