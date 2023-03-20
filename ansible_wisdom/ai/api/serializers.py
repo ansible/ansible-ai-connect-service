@@ -3,6 +3,8 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 """
 import re
 
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
@@ -16,7 +18,7 @@ class Metadata(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Activity ID",
-        help_text="A UUID that identifies a user activity " "session within a given document.",
+        help_text="A UUID that identifies a user activity session within a given document.",
     )
 
 
@@ -207,19 +209,51 @@ class FeedbackRequestSerializer(serializers.Serializer):
     ansibleContent = AnsibleContentFeedback(required=False)
 
 
-class AttributionSerializer(serializers.Serializer):
-    repo_name = serializers.CharField()
-    repo_link = serializers.URLField()
-    file_path = serializers.CharField()
-    source_license = serializers.CharField()
-    confidence = serializers.FloatField()
-
-
 class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['prediction']
 
     prediction = serializers.CharField(trim_whitespace=False)
+
+
+class DataSource(models.IntegerChoices):
+    GALAXY = 0, "Ansible Galaxy"
+
+
+class AnsibleType(models.IntegerChoices):
+    TASK = 0, "Task"
+    PLAYBOOK = 1, "Playbook"
+
+
+class EnumField(serializers.Field):
+    default_error_messages = {
+        'invalid_choice': _('"{input}" is not a valid choice.')
+    }
+
+    def __init__(self, choices, **kwargs):
+        self.choices = choices
+        self.allow_blank = kwargs.pop('allow_blank', False)
+
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        try:
+            return self.choices(self.choices._member_type_(data))
+        except ValueError:
+            self.fail('invalid_choice', input=data)
+
+    def to_representation(self, value):
+        return value.label
+
+
+class AttributionSerializer(serializers.Serializer):
+    repo_name = serializers.CharField()
+    repo_url = serializers.URLField()
+    path = serializers.CharField()
+    license = serializers.CharField()
+    data_source = EnumField(choices=DataSource)
+    ansible_type = EnumField(choices=AnsibleType)
+    score = serializers.FloatField()
 
 
 class AttributionResponseSerializer(serializers.Serializer):

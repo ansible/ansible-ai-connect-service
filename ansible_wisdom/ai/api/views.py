@@ -15,6 +15,7 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from yaml.error import MarkedYAMLError
 
+from .. import search as ai_search
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -417,19 +418,7 @@ class Attributions(GenericAPIView):
         return Response(resp_serializer.validated_data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_search(self, serializer):
-        # TODO: hook in OpenSearch call
-        resp_serializer = AttributionResponseSerializer(
-            data={
-                'attributions': [
-                    {
-                        'repo_name': 'foo',
-                        'repo_link': 'https://example.com/foo/foo',
-                        'file_path': '/foo/bar/baz.yaml',
-                        'source_license': 'MIT',
-                        'confidence': 99.44,
-                    },
-                ],
-            }
-        )
+        data = ai_search.search(serializer.validated_data['prediction'])
+        resp_serializer = AttributionResponseSerializer(data=data)
         resp_serializer.is_valid()  # TODO: distinguish invalid output data from invalid input
         return resp_serializer
