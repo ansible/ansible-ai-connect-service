@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.4
+  version: 0.0.5
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -37,7 +37,9 @@ paths:
               $ref: '#/components/schemas/CompletionRequest'
         required: true
       security:
-      - tokenAuth: []
+      - oauth2:
+        - read
+        - write
       - cookieAuth: []
       responses:
         '200':
@@ -62,6 +64,8 @@ paths:
           description: Unauthorized
         '429':
           description: Request was throttled
+        '503':
+          description: Service Unavailable
   /api/ai/feedback/:
     post:
       operationId: ai_feedback_create
@@ -109,6 +113,7 @@ paths:
               $ref: '#/components/schemas/FeedbackRequest'
       security:
       - oauth2:
+        - read
         - write
       - cookieAuth: []
       responses:
@@ -124,7 +129,6 @@ paths:
       tags:
       - me
       security:
-      - tokenAuth: []
       - cookieAuth: []
       responses:
         '200':
@@ -303,9 +307,9 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
-    tokenAuth:
-      type: http
-      scheme: bearer
+    oauth2:
+      type: oauth2
+      flows: {}
 tags:
 - name: ai
   description: AI-related operations

@@ -55,6 +55,7 @@ class Completions(APIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
         },
         summary="Inline code suggestions",
     )
@@ -88,9 +89,14 @@ class Completions(APIView):
         )
         data = model_mesh_payload.dict()
         logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
-        response = model_mesh_client.infer(data, model_name=model_name)
-        response_serializer = CompletionResponseSerializer(data=response.data)
-        response_serializer.is_valid(raise_exception=True)
+
+        try:
+            response = model_mesh_client.infer(data, model_name=model_name)
+            response_serializer = CompletionResponseSerializer(data=response.data)
+            response_serializer.is_valid(raise_exception=True)
+        except Exception:
+            return Response("Unable to complete the request", status=503)
+
         logger.debug(
             f"response from inference for "
             f"suggestion id {payload.suggestionId}:\n{response.data}"

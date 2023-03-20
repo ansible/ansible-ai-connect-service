@@ -194,6 +194,8 @@ DATABASES = {
     }
 }
 
+# Model API Timeout (in seconds). Default is None.
+ANSIBLE_AI_MODEL_MESH_API_TIMEOUT = os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT")
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
