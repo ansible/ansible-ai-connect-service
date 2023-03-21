@@ -415,10 +415,11 @@ class Attributions(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         resp_serializer = self.perform_search(serializer)
-        return Response(resp_serializer.validated_data, status=rest_framework_status.HTTP_200_OK)
+        return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_search(self, serializer):
         data = ai_search.search(serializer.validated_data['prediction'])
         resp_serializer = AttributionResponseSerializer(data=data)
-        resp_serializer.is_valid()  # TODO: distinguish invalid output data from invalid input
+        if not resp_serializer.is_valid():
+            logging.error(resp_serializer.errors)
         return resp_serializer
