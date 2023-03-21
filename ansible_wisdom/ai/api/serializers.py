@@ -217,18 +217,18 @@ class AttributionRequestSerializer(serializers.Serializer):
 
 
 class DataSource(models.IntegerChoices):
+    UNKNOWN = -1, "Unknown Source"
     GALAXY = 0, "Ansible Galaxy"
 
 
 class AnsibleType(models.IntegerChoices):
+    UNKNOWN = -1, "Unknown Ansible Type"
     TASK = 0, "Task"
     PLAYBOOK = 1, "Playbook"
 
 
 class EnumField(serializers.Field):
-    default_error_messages = {
-        'invalid_choice': _('"{input}" is not a valid choice.')
-    }
+    default_error_messages = {'invalid_choice': _('"{input}" is not a valid choice.')}
 
     def __init__(self, choices, **kwargs):
         self.choices = choices
@@ -240,6 +240,11 @@ class EnumField(serializers.Field):
         try:
             return self.choices(self.choices._member_type_(data))
         except ValueError:
+            pass
+
+        try:
+            return self.choices['UNKNOWN']
+        except KeyError:
             self.fail('invalid_choice', input=data)
 
     def to_representation(self, value):
