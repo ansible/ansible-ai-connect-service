@@ -414,12 +414,25 @@ class Attributions(GenericAPIView):
     def post(self, request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        user_id = str(request.user.uuid)
+        suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
+        start_time = time.time()
         resp_serializer = self.perform_search(serializer)
+        duration = round((time.time() - start_time) * 1000, 2)
+
+        self.write_to_segment(user_id, suggestion_id, duration, resp_serializer.validated_data)
+
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_search(self, serializer):
-        data = ai_search.search(serializer.validated_data['prediction'])
+        data = ai_search.search(serializer.validated_data['suggestion'])
         resp_serializer = AttributionResponseSerializer(data=data)
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
         return resp_serializer
+
+    def write_to_segment(self, user_id, suggestion_id, duration, attribution_data):
+        for attribution in attribution_data.get('attributions', []):
+            event = {'suggestionId': suggestion_id, 'duration': duration, **attribution}
+            send_segment_event(event, "wisdomServiceAttributionEvent", user_id)

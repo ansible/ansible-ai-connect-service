@@ -138,7 +138,7 @@ class InlineSuggestionFeedback(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Activity ID",
-        help_text="A UUID that identifies a user activity " "session to the document uploaded.",
+        help_text="A UUID that identifies a user activity session to the document uploaded.",
     )
 
 
@@ -160,7 +160,7 @@ class AnsibleContentFeedback(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Activity ID",
-        help_text="A UUID that identifies a user activity " "session to the document uploaded.",
+        help_text="A UUID that identifies a user activity session to the document uploaded.",
     )
 
 
@@ -211,9 +211,18 @@ class FeedbackRequestSerializer(serializers.Serializer):
 
 class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['prediction']
+        fields = ['suggestion', 'suggestionId']
 
-    prediction = serializers.CharField(trim_whitespace=False)
+    suggestion = serializers.CharField(trim_whitespace=False)
+    suggestionId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Suggestion ID",
+        help_text=(
+            "A UUID that identifies the particular suggestion"
+            " attribution data is being requested for."
+        ),
+    )
 
 
 class DataSource(models.IntegerChoices):
