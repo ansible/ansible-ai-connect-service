@@ -34,6 +34,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = MockClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "aws":
+            from .api.model_client.aws_client import AWSClient
+
+            self.model_mesh_client = AWSClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
         else:
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"

@@ -8,11 +8,12 @@ grpcio==1.51.1
 social-auth-app-django==5.0.0
 social-auth-core==4.3.0
 opensearch-py==2.1.1
-protobuf==4.22.1
+#protobuf==4.22.1
 pydantic==1.10.2
 psycopg2-binary==2.9.5
 redis==4.4.2
 requests==2.28.1
+sagemaker==2.139.0
 sentence-transformers==2.2.2
 uwsgi==2.0.21
 django_prometheus==2.2.0
