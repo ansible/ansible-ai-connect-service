@@ -408,6 +408,7 @@ class Attributions(GenericAPIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
         },
         summary="Code suggestion attributions",
     )
@@ -418,7 +419,11 @@ class Attributions(GenericAPIView):
         user_id = str(request.user.uuid)
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
-        resp_serializer = self.perform_search(serializer)
+        try:
+            resp_serializer = self.perform_search(serializer)
+        except Exception as exc:
+            logger.error(f"Failed to search for attributions\nException:\n{exc}")
+            return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
 
         self.write_to_segment(user_id, suggestion_id, duration, resp_serializer.validated_data)
