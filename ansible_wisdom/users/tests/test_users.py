@@ -30,17 +30,6 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.assertIn('You are not signed in.', str(r.content))
 
 
-def my_partial_step(save_to_session):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(strategy, details, user=None, is_new=False, *args, **kwargs):
-            return func(strategy, details, user, is_new, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 class TestTermsAndConditions(TestCase):
     def setUp(self) -> None:
         class MockSession(dict):
