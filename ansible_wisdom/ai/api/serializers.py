@@ -5,7 +5,11 @@ import re
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+from drf_spectacular.utils import (
+    OpenApiExample,
+    extend_schema_field,
+    extend_schema_serializer,
+)
 from rest_framework import serializers
 
 
@@ -236,6 +240,7 @@ class AnsibleType(models.IntegerChoices):
     PLAYBOOK = 1, "Playbook"
 
 
+@extend_schema_field(str)
 class EnumField(serializers.Field):
     default_error_messages = {'invalid_choice': _('"{input}" is not a valid choice.')}
 
