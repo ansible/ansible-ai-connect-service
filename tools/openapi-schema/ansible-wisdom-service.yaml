@@ -4,6 +4,46 @@ info:
   version: 0.0.6
   description: Equip the automation developer with Wisdom super powers.
 paths:
+  /api/ai/attributions/:
+    post:
+      operationId: ai_attributions_create
+      description: Returns attributions that were the highest likelihood sources for
+        a given code suggestion.
+      summary: Code suggestion attributions
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttributionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AttributionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttributionRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttributionResponse'
+          description: ''
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
   /api/ai/completions/:
     post:
       operationId: ai_completions_create
@@ -216,6 +256,55 @@ components:
       - content
       - documentUri
       - trigger
+    Attribution:
+      type: object
+      properties:
+        repo_name:
+          type: string
+        repo_url:
+          type: string
+          format: uri
+        path:
+          type: string
+        license:
+          type: string
+        data_source:
+          type: string
+        ansible_type:
+          type: string
+        score:
+          type: number
+          format: double
+      required:
+      - ansible_type
+      - data_source
+      - license
+      - path
+      - repo_name
+      - repo_url
+      - score
+    AttributionRequest:
+      type: object
+      properties:
+        suggestion:
+          type: string
+        suggestionId:
+          type: string
+          format: uuid
+          title: Suggestion ID
+          description: A UUID that identifies the particular suggestion attribution
+            data is being requested for.
+      required:
+      - suggestion
+    AttributionResponse:
+      type: object
+      properties:
+        attributions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribution'
+      required:
+      - attributions
     CompletionRequest:
       type: object
       properties:
