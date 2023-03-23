@@ -51,7 +51,7 @@ class SegmentMiddleware:
                 predictions = None
                 message = None
                 response_data = getattr(response, 'data', {})
-                if type(response_data) == dict:
+                if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
 
