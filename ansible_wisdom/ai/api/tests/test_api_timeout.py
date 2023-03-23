@@ -8,7 +8,7 @@ from ai.api.model_client.http_client import HttpClient
 from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse
-from requests.exceptions import Timeout
+from requests.exceptions import ReadTimeout
 
 from .test_views import WisdomServiceAPITestCaseBase
 
@@ -34,7 +34,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         model_client = GrpcClient(inference_url='http://example.com/')
         self.assertEqual(123, model_client.timeout)
 
-    @patch("ai.api.model_client.http_client.HttpClient.infer", side_effect=Timeout())
+    @patch("requests.Session.post", side_effect=ReadTimeout())
     def test_timeout_http_timeout(self, _):
         self.client.force_authenticate(user=self.user)
         payload = {
@@ -42,10 +42,15 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         r = self.client.post(reverse('completions'), payload)
-        self.assertEqual(HTTPStatus.SERVICE_UNAVAILABLE, r.status_code)
-        self.assertEqual("Unable to complete the request", r.data)
+        self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
+        self.assertEqual(None, r.data)
 
-    @patch("grpc.UnaryUnaryMultiCallable.__call__", side_effect=grpc.RpcError())
+    def mock_timeout_error():
+        e = grpc.RpcError(grpc.StatusCode.DEADLINE_EXCEEDED, 'Deadline exceeded')
+        e.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
+        return e
+
+    @patch("grpc._channel._UnaryUnaryMultiCallable.__call__", side_effect=mock_timeout_error())
     def test_timeout_grpc_timeout(self, _):
         self.client.force_authenticate(user=self.user)
         payload = {
@@ -58,5 +63,5 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             GrpcClient(inference_url='http://example.com/'),
         ):
             r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(HTTPStatus.SERVICE_UNAVAILABLE, r.status_code)
-            self.assertEqual("Unable to complete the request", r.data)
+            self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
+            self.assertEqual(None, r.data)

@@ -8,6 +8,7 @@ from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -15,6 +16,7 @@ from yaml.error import MarkedYAMLError
 
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
+from .model_client.exceptions import ModelTimeoutError
 from .serializers import (
     AnsibleContentFeedback,
     CompletionRequestSerializer,
@@ -29,6 +31,26 @@ logger = logging.getLogger(__name__)
 
 class CompletionsUserRateThrottle(UserRateThrottle):
     rate = settings.COMPLETION_USER_RATE_THROTTLE
+
+
+class PostprocessException(APIException):
+    status_code = 204
+    error_type = 'postprocess_error'
+
+
+class ModelTimeoutException(APIException):
+    status_code = 204
+    error_type = 'model_timeout'
+
+
+class ServiceUnavailable(APIException):
+    status_code = 503
+    default_detail = {"message": "An error occurred attempting to complete the request"}
+
+
+class InternalServerError(APIException):
+    status_code = 500
+    default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
 class Completions(APIView):
@@ -52,6 +74,7 @@ class Completions(APIView):
         request=CompletionRequestSerializer,
         responses={
             200: CompletionResponseSerializer,
+            204: OpenApiResponse(description='Empty response'),
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             429: OpenApiResponse(description='Request was throttled'),
@@ -91,29 +114,45 @@ class Completions(APIView):
         logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
 
         try:
-            response = model_mesh_client.infer(data, model_name=model_name)
-            response_serializer = CompletionResponseSerializer(data=response.data)
-            response_serializer.is_valid(raise_exception=True)
+            predictions = model_mesh_client.infer(data, model_name=model_name)
+        except ModelTimeoutError:
+            raise ModelTimeoutException
         except Exception:
-            return Response("Unable to complete the request", status=503)
+            logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
+            raise ServiceUnavailable
 
         logger.debug(
-            f"response from inference for "
-            f"suggestion id {payload.suggestionId}:\n{response.data}"
+            f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
         )
-        response.data = self.postprocess(
-            response.data,
-            payload.prompt,
-            payload.context,
-            payload.userId,
-            payload.suggestionId,
-            indent=original_indent,
-        )
+        postprocessed_predictions = None
+        try:
+            postprocessed_predictions = self.postprocess(
+                predictions,
+                payload.prompt,
+                payload.context,
+                payload.userId,
+                payload.suggestionId,
+                indent=original_indent,
+            )
+        except Exception:
+            logger.exception(
+                f"error postprocessing prediction for suggestion {payload.suggestionId}"
+            )
+            raise PostprocessException
+
         logger.debug(
             f"response from postprocess for "
-            f"suggestion id {payload.suggestionId}:\n{response.data}"
+            f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
         )
-        return response
+        try:
+            response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
+            response_serializer.is_valid(raise_exception=True)
+        except Exception:
+            logger.exception(
+                f"error serializing final response for suggestion {payload.suggestionId}"
+            )
+            raise InternalServerError
+        return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
         context, prompt = fmtr.preprocess(context, prompt)
@@ -201,6 +240,8 @@ class Completions(APIView):
                         exception,
                         start_time,
                     )
+                    if exception:
+                        raise exception
             # restore original indentation
             indented_yaml = fmtr.restore_indentation(recommendation["predictions"][i], indent)
             recommendation["predictions"][i] = indented_yaml

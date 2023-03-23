@@ -48,8 +48,12 @@ class SegmentMiddleware:
                 prompt = request_data.get('prompt')
                 metadata = request_data.get('metadata', {})
 
+                predictions = None
+                message = None
                 response_data = getattr(response, 'data', {})
-                predictions = response_data.get('predictions')
+                if type(response_data) == dict:
+                    predictions = response_data.get('predictions')
+                    message = response_data.get('message')
 
                 duration = round((time.time() - start_time) * 1000, 2)
                 event = {
@@ -57,6 +61,8 @@ class SegmentMiddleware:
                     "request": {"context": context, "prompt": prompt},
                     "response": {
                         "exception": getattr(response, 'exception', None),
+                        "error_type": getattr(response, 'error_type', None),
+                        "message": message,
                         "predictions": predictions,
                         "status_code": response.status_code,
                         "status_text": getattr(response, 'status_text', None),

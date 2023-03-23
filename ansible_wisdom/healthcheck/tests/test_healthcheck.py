@@ -24,6 +24,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertJSONEqual(r.content, {"status": "ok"})
 
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
