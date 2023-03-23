@@ -17,6 +17,7 @@ from yaml.error import MarkedYAMLError
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
+from .permissions import AcceptedTermsPermission
 from .serializers import (
     AnsibleContentFeedback,
     CompletionRequestSerializer,
@@ -65,7 +66,11 @@ class Completions(APIView):
         )
         from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
+        permission_classes = [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            AcceptedTermsPermission,
+        ]
         required_scopes = ['read', 'write']
 
     throttle_classes = [CompletionsUserRateThrottle]
@@ -289,7 +294,11 @@ class Feedback(APIView):
         )
         from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
+        permission_classes = [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            AcceptedTermsPermission,
+        ]
         required_scopes = ['read', 'write']
 
     @extend_schema(

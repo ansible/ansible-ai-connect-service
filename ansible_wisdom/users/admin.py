@@ -3,4 +3,10 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import User
 
-admin.site.register(User, UserAdmin)
+
+class WisdomUserAdmin(UserAdmin):
+    # add any additional fields you want to display in the User page
+    list_display = ('username', 'is_staff', 'date_terms_accepted')
+
+
+admin.site.register(User, WisdomUserAdmin)
