@@ -25,13 +25,15 @@ from drf_spectacular.views import (
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
+WISDOM_API_VERSION = "v0"
+
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
     path('admin/', admin.site.urls),
-    path('api/ai/', include("ai.api.urls")),
-    path('api/me/', CurrentUserView.as_view(), name='me'),
+    path(f'api/{WISDOM_API_VERSION}/ai/', include("ai.api.urls")),
+    path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
@@ -49,14 +51,14 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += [
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path(f'api/{WISDOM_API_VERSION}/schema/', SpectacularAPIView.as_view(), name='schema'),
         path(
-            'api/schema/swagger-ui/',
+            f'api/{WISDOM_API_VERSION}/schema/swagger-ui/',
             SpectacularSwaggerView.as_view(url_name='schema'),
             name='swagger-ui',
         ),
         path(
-            'api/schema/redoc/',
+            f'api/{WISDOM_API_VERSION}/schema/redoc/',
             SpectacularRedocView.as_view(url_name='schema'),
             name='redoc',
         ),

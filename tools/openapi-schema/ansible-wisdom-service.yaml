@@ -44,7 +44,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/ai/completions/:
+  /api/v0/ai/completions/:
     post:
       operationId: ai_completions_create
       description: Returns inline code suggestions based on a given Ansible editor
@@ -108,7 +108,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/ai/feedback/:
+  /api/v0/ai/feedback/:
     post:
       operationId: ai_feedback_create
       description: Feedback API for the AI service

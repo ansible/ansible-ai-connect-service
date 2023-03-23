@@ -12,6 +12,7 @@ ALLOWED_HOSTS = ["*"]
 ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
     'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
 )
+# https://pilot.wisdom.testing.ansible.com/
 ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
 
 ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
