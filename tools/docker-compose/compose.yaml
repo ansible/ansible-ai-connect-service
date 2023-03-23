@@ -28,7 +28,6 @@ services:
       - SOCIAL_AUTH_GITHUB_TEAM_SECRET=${SOCIAL_AUTH_GITHUB_TEAM_SECRET}
       - SECRET_KEY=${SECRET_KEY:-somesecret}
       - SEGMENT_WRITE_KEY=${SEGMENT_WRITE_KEY}
-      - OAUTH2_ENABLE=${OAUTH2_ENABLE}
     command:
       - /usr/bin/launch-wisdom.sh
     networks:
