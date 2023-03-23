@@ -15,7 +15,7 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.login()
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn(f'You are signed in as {self.username} ({self.email}).', str(r.content))
+        self.assertIn(f'You are signed in as {self.username}.', str(r.content))
 
     def test_home_view_without_login(self):
         r = self.client.get(reverse('home'))
