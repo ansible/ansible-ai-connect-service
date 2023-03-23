@@ -10,6 +10,9 @@
                     <div class="pf-c-empty-state__body">Please accept your Wisdom invite if you have not or sign up for
                         Wisdom by using the button below.</div>
                     <a class="pf-c-button pf-m-primary" href={{signup_url}} target="_blank">Sign up</a>
+                    {% if user.is_authenticated %}
+                       <a class="pf-c-button pf-m-primary" type="button" href="{% url 'logout' %}">Logout</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
