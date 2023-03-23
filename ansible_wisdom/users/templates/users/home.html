@@ -9,7 +9,7 @@
           <h1 class="pf-c-title pf-m-lg">Thank you for participating in the Project Wisdom closed beta.</h1>
           {% if user.is_authenticated %}
             <div class="pf-c-empty-state__body">
-              <p>You are signed in as {{user.username}}{% if user.email %} ({{user.email}}){% endif %}.</p>
+              <p>You are signed in as {{user.username}}.</p>
               <p>Access the <a href={{pilot_docs_url}} target="_blank">documentation</a> to begin.</p>
               <!-- <p><b>Authentication Token:</b> {{drf_token}}</p> -->
               <br><br>
