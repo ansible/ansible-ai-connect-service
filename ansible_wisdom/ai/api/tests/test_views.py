@@ -52,7 +52,7 @@ class DummyMeshClient(ModelMeshClient):
         self.test.assertEqual(data, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
         # i.e., still receives 200 after 10 API calls...
-        return Response(self.response_data)
+        return self.response_data
 
 
 class WisdomServiceAPITestCaseBase(APITestCase):
@@ -261,3 +261,23 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
+
+    def test_completions_postprocessing_error(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"]
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='ERROR') as log:  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
+                self.assertEqual(None, r.data)
+                self.assertInLog('error postprocessing prediction for suggestion', log.output)

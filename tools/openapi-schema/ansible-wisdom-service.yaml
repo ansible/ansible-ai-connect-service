@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Wisdom Service
-  version: 0.0.5
+  version: 0.0.6
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/completions/:
@@ -58,6 +58,8 @@ paths:
                   summary: Response sample
                   description: A valid sample response.
           description: ''
+        '204':
+          description: Empty response
         '400':
           description: Bad Request
         '401':

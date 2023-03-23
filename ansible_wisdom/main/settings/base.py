@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
 }
 # OAUTH: fold into above
 REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'][:0] = [

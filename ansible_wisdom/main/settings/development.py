@@ -36,7 +36,7 @@ if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Wisdom Service',
         'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
-        'VERSION': '0.0.5',
+        'VERSION': '0.0.6',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
         'TAGS': [

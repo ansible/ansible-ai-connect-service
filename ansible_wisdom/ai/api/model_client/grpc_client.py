@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework.response import Response
 
 from .base import ModelMeshClient
+from .exceptions import ModelTimeoutError
 from .grpc_pb import common_service_pb2, common_service_pb2_grpc
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class GrpcClient(ModelMeshClient):
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
-    def infer(self, data, model_name) -> Response:
+    def infer(self, data, model_name):
         logger.debug(f"Input prompt: {data}")
         prompt = data.get("instances", [{}])[0].get("prompt", "")
         context = data.get("instances", [{}])[0].get("context", "")
@@ -39,10 +40,10 @@ class GrpcClient(ModelMeshClient):
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
-            return Response(result, status=200)
+            return result
         except grpc.RpcError as exc:
-            logger.error(f"gRPC client error: {exc.details()}")
-            return Response("Invalid request", status=400)
-        except Exception as exc:
-            logger.error(f"gRPC client error: {exc.details()}")
-            return Response("Malformed response from server", status=500)
+            if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                raise ModelTimeoutError
+            else:
+                logger.error(f"gRPC client error: {exc.details()}")
+                raise
