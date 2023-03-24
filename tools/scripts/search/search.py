@@ -29,7 +29,7 @@ def generate_search(encoded_output):
         "query": {
             "knn": {"output_body_vector": {"vector": encoded_output.tolist(), "k": 1}},
         },
-        "fields": ['source', 'type', 'license', 'output_body', 'repo_url'],
+        "fields": ['repo_name', 'repo_url', 'path', 'license', 'data_source', 'type'],
         "_source": False,
     }
 

@@ -9,17 +9,21 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from yaml.error import MarkedYAMLError
 
+from .. import search as ai_search
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
 from .serializers import (
     AnsibleContentFeedback,
+    AttributionRequestSerializer,
+    AttributionResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     FeedbackRequestSerializer,
@@ -377,3 +381,64 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
 
     truncated_yaml = "\n".join(lines[:-1])
     return True, truncated_yaml
+
+
+class Attributions(GenericAPIView):
+    """
+    Returns attributions that were the highest likelihood sources for a given code suggestion.
+    """
+
+    serializer_class = AttributionRequestSerializer
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_classes = [CompletionsUserRateThrottle]
+
+    @extend_schema(
+        request=AttributionRequestSerializer,
+        responses={
+            200: AttributionResponseSerializer,
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Code suggestion attributions",
+    )
+    def post(self, request) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_id = str(request.user.uuid)
+        suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
+        start_time = time.time()
+        try:
+            resp_serializer = self.perform_search(serializer)
+        except Exception as exc:
+            logger.error(f"Failed to search for attributions\nException:\n{exc}")
+            return Response({'message': "Unable to complete the request"}, status=503)
+        duration = round((time.time() - start_time) * 1000, 2)
+
+        self.write_to_segment(user_id, suggestion_id, duration, resp_serializer.validated_data)
+
+        return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
+
+    def perform_search(self, serializer):
+        data = ai_search.search(serializer.validated_data['suggestion'])
+        resp_serializer = AttributionResponseSerializer(data=data)
+        if not resp_serializer.is_valid():
+            logging.error(resp_serializer.errors)
+        return resp_serializer
+
+    def write_to_segment(self, user_id, suggestion_id, duration, attribution_data):
+        for attribution in attribution_data.get('attributions', []):
+            event = {'suggestionId': suggestion_id, 'duration': duration, **attribution}
+            send_segment_event(event, "wisdomServiceAttributionEvent", user_id)
