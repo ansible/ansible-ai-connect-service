@@ -390,15 +390,15 @@ class Attributions(GenericAPIView):
 
     serializer_class = AttributionRequestSerializer
 
-    # OAUTH: remove the conditional
-    if settings.OAUTH2_ENABLE:
-        from oauth2_provider.contrib.rest_framework import (
-            IsAuthenticatedOrTokenHasScope,
-        )
-        from rest_framework import permissions
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
-        required_scopes = ['read', 'write']
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+    required_scopes = ['read', 'write']
 
     throttle_classes = [CompletionsUserRateThrottle]
 
