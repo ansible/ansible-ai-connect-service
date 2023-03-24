@@ -9,8 +9,6 @@ from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
 
-WISDOM_API_VERSION = "v0"
-
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
     @classmethod

@@ -10,8 +10,6 @@ from django.urls import reverse
 from social_core.exceptions import AuthCanceled
 from users.views import TermsOfService, _add_date_accepted, _terms_of_service
 
-WISDOM_API_VERSION = "v0"
-
 
 class TestUsers(WisdomServiceAPITestCaseBase):
     def test_users(self):

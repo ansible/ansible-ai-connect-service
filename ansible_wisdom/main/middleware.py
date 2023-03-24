@@ -9,8 +9,6 @@ from social_django.middleware import SocialAuthExceptionMiddleware
 
 logger = logging.getLogger(__name__)
 
-WISDOM_API_VERSION = "v0"
-
 
 def on_segment_error(error, _):
     logger.error(f'An error occurred in sending data to Segment: {error}')

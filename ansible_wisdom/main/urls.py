@@ -25,8 +25,6 @@ from drf_spectacular.views import (
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
-WISDOM_API_VERSION = "v0"
-
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
