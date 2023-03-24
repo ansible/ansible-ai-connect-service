@@ -34,9 +34,9 @@ REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
-        'TITLE': 'Ansible Wisdom Service',
+        'TITLE': 'Project Wisdom Service',
         'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
-        'VERSION': '0.0.6',
+        'VERSION': '0.0.7',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
         'TAGS': [
@@ -46,3 +46,12 @@ if DEBUG:
         ],
         'SCHEMA_PATH_PREFIX': r'/api',
     }
+
+    # social_django does not process auth exceptions when DEBUG=True by default.
+    # Following is for overriding the social_django middleware so that auth exceptions
+    # are processed by middleware even when DEBUG=True.
+    if "social_django.middleware.SocialAuthExceptionMiddleware" in MIDDLEWARE:  # noqa: F405
+        index = MIDDLEWARE.index(  # noqa: F405
+            "social_django.middleware.SocialAuthExceptionMiddleware"
+        )
+        MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405

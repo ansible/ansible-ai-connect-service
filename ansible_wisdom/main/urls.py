@@ -23,7 +23,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
-from users.views import CurrentUserView, HomeView, UnauthorizedView
+from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -35,6 +35,8 @@ urlpatterns = [
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
+    path('terms_of_service/', TermsOfService.as_view(), name='terms_of_service'),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     # Temp Wisdom home page to share token for pilot
     path(
         'login/',
@@ -44,10 +46,6 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('django_prometheus.urls')),
 ]
-
-# OAUTH: merge above
-if settings.OAUTH2_ENABLE:
-    urlpatterns.append(path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')))
 
 if settings.DEBUG:
     urlpatterns += [

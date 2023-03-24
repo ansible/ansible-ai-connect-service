@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import random
+import string
 import time
 import uuid
+from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -14,7 +17,7 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from rest_framework.response import Response
-from rest_framework.test import APITestCase
+from rest_framework.test import APITransactionTestCase
 from yaml.parser import ParserError
 
 
@@ -55,11 +58,11 @@ class DummyMeshClient(ModelMeshClient):
         return self.response_data
 
 
-class WisdomServiceAPITestCaseBase(APITestCase):
+class WisdomServiceAPITestCaseBase(APITransactionTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.username = 'u' + str(int(time.time()))
+        cls.username = 'u' + "".join(random.choices(string.digits, k=5))
         cls.password = 'secret'
         cls.email = 'user@example.com'
         cls.user = get_user_model().objects.create_user(
@@ -67,7 +70,8 @@ class WisdomServiceAPITestCaseBase(APITestCase):
             email=cls.email,
             password=cls.password,
         )
-        cls.user_id = str(uuid.uuid4())
+        cls.user.user_id = str(uuid.uuid4())
+        cls.user.date_terms_accepted = datetime.now()
 
     def setUp(self):
         cache.clear()
@@ -152,7 +156,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
 @modify_settings()
@@ -197,7 +201,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         # self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     def test_completions_preprocessing_error(self):
         payload = {

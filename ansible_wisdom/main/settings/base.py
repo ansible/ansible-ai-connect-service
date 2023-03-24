@@ -16,8 +16,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-OAUTH2_ENABLE = bool(os.getenv('OAUTH2_ENABLE'))
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -47,12 +45,9 @@ INSTALLED_APPS = [
     "health_check.db",
     "health_check.cache",
     "healthcheck",
+    "oauth2_provider",
 ]
-# OAUTH: fold directly into INSTALLED_APPS when fully switched over
-if OAUTH2_ENABLE:
-    INSTALLED_APPS.append("oauth2_provider")
-else:
-    INSTALLED_APPS.append("rest_framework.authtoken")
+
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -61,27 +56,19 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "oauth2_provider.middleware.OAuth2TokenMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "main.middleware.SegmentMiddleware",
 ]
-# OAUTH: fold directly into MIDDLEWARE when switched over
-if OAUTH2_ENABLE:
-    MIDDLEWARE.append("oauth2_provider.middleware.OAuth2TokenMiddleware")
-MIDDLEWARE.extend(
-    [
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "social_django.middleware.SocialAuthExceptionMiddleware",
-        "django_prometheus.middleware.PrometheusAfterMiddleware",
-        "main.middleware.SegmentMiddleware",
-    ]
-)
 
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2",
     "django.contrib.auth.backends.ModelBackend",
+    "oauth2_provider.backends.OAuth2Backend",
 ]
-# OAUTH: fold into above
-if OAUTH2_ENABLE:
-    AUTHENTICATION_BACKENDS.append("oauth2_provider.backends.OAuth2Backend")
 
 AUTH_USER_MODEL = "users.User"
 
@@ -105,17 +92,20 @@ SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET'
 SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
 SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
-SOCIAL_AUTH_PIPELINE = [
+
+SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
-    'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.social_auth.social_user',
     'main.pipeline.remove_pii',
+    'users.views.terms_of_service',
+    'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-]
+    'users.views.add_date_accepted',
+)
 
 # Wisdom Eng Team:
 # gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
@@ -145,17 +135,12 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
 }
-# OAUTH: fold into above
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'][:0] = [
-    'oauth2_provider.contrib.rest_framework.OAuth2Authentication'
-    if OAUTH2_ENABLE
-    else 'users.auth.BearerTokenAuthentication'
-]
 
 ROOT_URLCONF = "main.urls"
 

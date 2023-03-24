@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Ansible Wisdom Service
-  version: 0.0.6
+  title: Project Wisdom Service
+  version: 0.0.7
   description: Equip the automation developer with Wisdom super powers.
 paths:
   /api/ai/attributions/:
@@ -77,10 +77,10 @@ paths:
               $ref: '#/components/schemas/CompletionRequest'
         required: true
       security:
+      - cookieAuth: []
       - oauth2:
         - read
         - write
-      - cookieAuth: []
       responses:
         '200':
           content:
@@ -154,10 +154,10 @@ paths:
             schema:
               $ref: '#/components/schemas/FeedbackRequest'
       security:
+      - cookieAuth: []
       - oauth2:
         - read
         - write
-      - cookieAuth: []
       responses:
         '200':
           description: Success
