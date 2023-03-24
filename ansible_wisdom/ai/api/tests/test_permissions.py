@@ -9,7 +9,7 @@ from requests.exceptions import ReadTimeout
 from .test_views import WisdomServiceAPITestCaseBase
 
 
-class AcceptedTermsPermission(WisdomServiceAPITestCaseBase):
+class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
     def test_user_has_not_accepted(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
