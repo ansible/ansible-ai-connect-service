@@ -165,7 +165,7 @@ class Completions(APIView):
         return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id, indent):
-        ari_caller = apps.get_app_config("ai").ari_caller
+        ari_caller = apps.get_app_config("ai").get_ari_caller()
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
 

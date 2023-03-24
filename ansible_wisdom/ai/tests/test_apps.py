@@ -29,10 +29,10 @@ class TestAiApp(APITestCase):
     def test_enable_ari(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        self.assertIsNotNone(app_config.ari_caller)
+        self.assertIsNotNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_disable_ari(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        self.assertIsNone(app_config.ari_caller)
+        self.assertIsNone(app_config.get_ari_caller())

@@ -39,22 +39,26 @@ class AiConfig(AppConfig):
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
             )
 
+        return super().ready()
+
+    def get_ari_caller(self):
         # TODO may be we can parallelize ari and grpc client creation
+        if not settings.ENABLE_ARI_POSTPROCESS:
+            logger.info("Postprocessing is disabled.")
+            return
+        if settings.ENABLE_ARI_POSTPROCESS and self.ari_caller:
+            return self._ari_caller
         try:
-            if settings.ENABLE_ARI_POSTPROCESS:
-                self.ari_caller = postprocessing.ARICaller(
-                    config=Config(
-                        rules_dir=settings.ARI_RULES_DIR,
-                        data_dir=settings.ARI_DATA_DIR,
-                        rules=settings.ARI_RULES,
-                    ),
-                    silent=True,
-                )
-                logger.info("Postprocessing is enabled.")
-            else:
-                logger.info("Postprocessing is disabled.")
+            self._ari_caller = postprocessing.ARICaller(
+                config=Config(
+                    rules_dir=settings.ARI_RULES_DIR,
+                    data_dir=settings.ARI_DATA_DIR,
+                    rules=settings.ARI_RULES,
+                ),
+                silent=True,
+            )
+            logger.info("Postprocessing is enabled.")
         except Exception:
             logger.exception("Failed to initialize ARI.")
-            self.ari_caller = None
-
-        return super().ready()
+            self._ari_caller = None
+        return self._ari_caller

@@ -266,6 +266,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
 
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
     def test_completions_postprocessing_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
