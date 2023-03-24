@@ -156,7 +156,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
 
 @modify_settings()
@@ -201,7 +201,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         # self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_completions_preprocessing_error(self):
         payload = {
