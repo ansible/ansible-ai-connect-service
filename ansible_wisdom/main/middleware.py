@@ -5,6 +5,7 @@ import time
 from django.conf import settings
 from django.urls import reverse
 from segment import analytics
+from social_django.middleware import SocialAuthExceptionMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -78,3 +79,10 @@ class SegmentMiddleware:
                 )
 
         return response
+
+
+class WisdomSocialAuthExceptionMiddleware(SocialAuthExceptionMiddleware):
+    def raise_exception(self, request, exception):
+        strategy = getattr(request, 'social_strategy', None)
+        if strategy is not None:
+            return strategy.setting('RAISE_EXCEPTIONS')  # or settings.DEBUG

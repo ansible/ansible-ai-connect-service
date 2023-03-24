@@ -17,6 +17,7 @@ from yaml.error import MarkedYAMLError
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
+from .permissions import AcceptedTermsPermission
 from .serializers import (
     AnsibleContentFeedback,
     CompletionRequestSerializer,
@@ -58,15 +59,15 @@ class Completions(APIView):
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
-    # OAUTH: remove the conditional
-    if settings.OAUTH2_ENABLE:
-        from oauth2_provider.contrib.rest_framework import (
-            IsAuthenticatedOrTokenHasScope,
-        )
-        from rest_framework import permissions
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
-        required_scopes = ['read', 'write']
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+    required_scopes = ['read', 'write']
 
     throttle_classes = [CompletionsUserRateThrottle]
 
@@ -282,15 +283,15 @@ class Feedback(APIView):
     Feedback API for the AI service
     """
 
-    # OAUTH: remove the conditional
-    if settings.OAUTH2_ENABLE:
-        from oauth2_provider.contrib.rest_framework import (
-            IsAuthenticatedOrTokenHasScope,
-        )
-        from rest_framework import permissions
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
 
-        permission_classes = [permissions.IsAuthenticated, IsAuthenticatedOrTokenHasScope]
-        required_scopes = ['read', 'write']
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+    required_scopes = ['read', 'write']
 
     @extend_schema(
         request=FeedbackRequestSerializer,
