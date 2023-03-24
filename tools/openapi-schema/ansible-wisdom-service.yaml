@@ -165,7 +165,7 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
-  /api/v0/me/:
+  /api/me/:
     get:
       operationId: me_retrieve
       tags:

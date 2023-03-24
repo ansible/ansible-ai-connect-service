@@ -32,8 +32,8 @@ urlpatterns = [
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
     path('admin/', admin.site.urls),
-    path(f'api/{WISDOM_API_VERSION}/ai/', include("ai.api.urls")),
-    path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
+    path(f'api/{WISDOM_API_VERSION}/ai/', include("ai.api.urls", namespace="v0")),
+    path(f'api/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),

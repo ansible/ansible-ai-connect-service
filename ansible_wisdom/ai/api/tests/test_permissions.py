@@ -8,6 +8,7 @@ from requests.exceptions import ReadTimeout
 
 from .test_views import WisdomServiceAPITestCaseBase
 
+WISDOM_API_VERSION="v0"
 
 class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
     def test_user_has_not_accepted(self):
@@ -20,5 +21,5 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             None,
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

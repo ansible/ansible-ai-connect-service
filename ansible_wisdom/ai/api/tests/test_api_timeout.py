@@ -12,6 +12,8 @@ from requests.exceptions import ReadTimeout
 
 from .test_views import WisdomServiceAPITestCaseBase
 
+WISDOM_API_VERSION = "v0"
+
 
 class TestApiTimeout(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
@@ -41,7 +43,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        r = self.client.post(reverse('completions'), payload)
+        r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
         self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
         self.assertEqual(None, r.data)
 
@@ -62,6 +64,6 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             GrpcClient(inference_url='http://example.com/'),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assertEqual(None, r.data)

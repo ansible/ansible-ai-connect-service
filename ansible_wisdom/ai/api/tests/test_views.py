@@ -20,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework.test import APITransactionTestCase
 from yaml.parser import ParserError
 
+WISDOM_API_VERSION = "v0"
+
 
 class DummyMeshClient(ModelMeshClient):
     def __init__(self, test, payload, response_data):
@@ -106,7 +108,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
 
@@ -122,11 +124,11 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
             for _ in range(10):
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
 
     def test_missing_prompt(self):
@@ -140,7 +142,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_authentication_error(self):
@@ -155,7 +157,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
 
@@ -179,7 +181,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             },
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format='json')
+        r = self.client.post(reverse(f'{WISDOM_API_VERSION}:feedback'), payload, format='json')
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
     def test_missing_content(self):
@@ -187,7 +189,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
+        r = self.client.post(reverse(f'{WISDOM_API_VERSION}:feedback'), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_authentication_error(self):
@@ -200,7 +202,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             }
         }
         # self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
+        r = self.client.post(reverse(f'{WISDOM_API_VERSION}:feedback'), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_completions_preprocessing_error(self):
@@ -216,7 +218,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 'model_mesh_client',
                 DummyMeshClient(self, payload, response_data),
             ):
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_full_payload_without_ARI(self):
@@ -236,7 +238,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 'ari_caller',
                 None,
             ):
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog(
@@ -261,7 +263,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 'model_mesh_client',
                 DummyMeshClient(self, payload, response_data),
             ):
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
@@ -281,7 +283,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 'model_mesh_client',
                 DummyMeshClient(self, payload, response_data),
             ):
-                r = self.client.post(reverse('completions'), payload)
+                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
