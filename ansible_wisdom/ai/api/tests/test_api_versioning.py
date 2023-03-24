@@ -1,8 +1,6 @@
 from django.shortcuts import reverse
 from django.test import TestCase
 from rest_framework.test import APIClient
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 WISDOM_API_VERSION = "v0"
 
