@@ -63,7 +63,7 @@ jobs:
       run: |
         cd ansible_wisdom
         coverage run --rcfile=../setup.cfg manage.py test
-        coverage report > code-coverage-results.md
+        coverage report --format=markdown > code-coverage-results.md
 
     - name: Add Coverage PR Comment
       uses: thollander/actions-comment-pull-request@v2
