@@ -13,7 +13,7 @@ class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
     model_mesh_client = None
-    ari_caller = None
+    _ari_caller = None
 
     def ready(self) -> None:
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
@@ -39,22 +39,30 @@ class AiConfig(AppConfig):
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
             )
 
-        # TODO may be we can parallelize ari and grpc client creation
+        return super().ready()
+
+    def get_ari_caller(self):
+        FAILED = False
+        UNINITIALIZED = None
+        if not settings.ENABLE_ARI_POSTPROCESS:
+            logger.info("Postprocessing is disabled.")
+            self._ari_caller = UNINITIALIZED
+            return None
+        if self._ari_caller is FAILED:
+            return None
+        if self._ari_caller:
+            return self._ari_caller
         try:
-            if settings.ENABLE_ARI_POSTPROCESS:
-                self.ari_caller = postprocessing.ARICaller(
-                    config=Config(
-                        rules_dir=settings.ARI_RULES_DIR,
-                        data_dir=settings.ARI_DATA_DIR,
-                        rules=settings.ARI_RULES,
-                    ),
-                    silent=True,
-                )
-                logger.info("Postprocessing is enabled.")
-            else:
-                logger.info("Postprocessing is disabled.")
+            self._ari_caller = postprocessing.ARICaller(
+                config=Config(
+                    rules_dir=settings.ARI_RULES_DIR,
+                    data_dir=settings.ARI_DATA_DIR,
+                    rules=settings.ARI_RULES,
+                ),
+                silent=True,
+            )
+            logger.info("Postprocessing is enabled.")
         except Exception:
             logger.exception("Failed to initialize ARI.")
-            self.ari_caller = None
-
-        return super().ready()
+            self._ari_caller = FAILED
+        return self._ari_caller
