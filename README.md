@@ -1,4 +1,4 @@
-# Ansible Wisdom service
+# Project Wisdom service
 
 Note: This repository is under active development and is not yet ready for production use.
 

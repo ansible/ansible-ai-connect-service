@@ -6,9 +6,10 @@
         <div class="pf-l-bullseye__item">
             <div class="pf-c-empty-state">
                 <div class="pf-c-empty-state__content">
-                    <h1 class="pf-c-title pf-m-lg">You currently do not have access to Wisdom.</h1>
-                    <div class="pf-c-empty-state__body">Please accept your Wisdom invite if you have not or sign up for
-                        Wisdom by using the button below.</div>
+                    <h1 class="pf-c-title pf-m-lg">You currently do not have access to Project Wisdom.</h1>
+                    <div class="pf-c-empty-state__body"><p>If you have been notified that you have access to the closed beta,
+                        reach out on Matrix for assistance.</p><p>If you are not currently part of the closed beta,
+                            you can submit your interest using the Sign up button below.</p></div>
                     <a class="pf-c-button pf-m-primary" href={{signup_url}} target="_blank">Sign up</a>
                     {% if user.is_authenticated %}
                        <a class="pf-c-button pf-m-primary" type="button" href="{% url 'logout' %}">Logout</a>

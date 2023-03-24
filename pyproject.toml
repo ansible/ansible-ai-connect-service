@@ -3,8 +3,8 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ansible-wisdom"
-description = "Ansible Wisdom Service"
+name = "project-wisdom"
+description = "Project Wisdom Service"
 readme = "README.rst"
 requires-python = ">=3.9"
 classifiers = [
