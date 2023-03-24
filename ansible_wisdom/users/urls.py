@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import CurrentUserView
 
 WISDOM_API_VERSION = "v0"

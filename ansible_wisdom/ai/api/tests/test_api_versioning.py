@@ -1,6 +1,8 @@
 from http import HTTPStatus
 from unittest.mock import patch
+
 from django.shortcuts import reverse
+
 from .test_views import WisdomServiceAPITestCaseBase
 
 WISDOM_API_VERSION = "v0"
