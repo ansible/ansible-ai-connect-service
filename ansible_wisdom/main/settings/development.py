@@ -34,9 +34,9 @@ REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
-        'TITLE': 'Ansible Wisdom Service',
+        'TITLE': 'Project Wisdom Service',
         'DESCRIPTION': 'Equip the automation developer with Wisdom super powers.',
-        'VERSION': '0.0.6',
+        'VERSION': '0.0.7',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
         'TAGS': [
