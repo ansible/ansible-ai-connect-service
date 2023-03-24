@@ -243,6 +243,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ARI(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -255,10 +256,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 apps.get_app_config('ai'),
                 'model_mesh_client',
                 DummyMeshClient(self, payload, response_data),
-            ), patch.object(
-                apps.get_app_config('ai'),
-                'ari_caller',
-                None,
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -290,6 +287,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
 
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
     def test_completions_postprocessing_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
