@@ -12,8 +12,6 @@ from requests.exceptions import ReadTimeout
 
 from .test_views import WisdomServiceAPITestCaseBase
 
-WISDOM_API_VERSION = "v0"
-
 
 class TestApiTimeout(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)

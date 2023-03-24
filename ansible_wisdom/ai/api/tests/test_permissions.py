@@ -8,8 +8,6 @@ from requests.exceptions import ReadTimeout
 
 from .test_views import WisdomServiceAPITestCaseBase
 
-WISDOM_API_VERSION = "v0"
-
 
 class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
     def test_user_has_not_accepted(self):

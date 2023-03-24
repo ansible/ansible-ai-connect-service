@@ -20,8 +20,6 @@ from rest_framework.response import Response
 from rest_framework.test import APITransactionTestCase
 from yaml.parser import ParserError
 
-WISDOM_API_VERSION = "v0"
-
 
 class DummyMeshClient(ModelMeshClient):
     def __init__(self, test, payload, response_data):
