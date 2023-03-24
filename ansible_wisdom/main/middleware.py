@@ -9,7 +9,8 @@ from social_django.middleware import SocialAuthExceptionMiddleware
 
 logger = logging.getLogger(__name__)
 
-WISDOM_API_VERSION="v0"
+WISDOM_API_VERSION = "v0"
+
 
 def on_segment_error(error, _):
     logger.error(f'An error occurred in sending data to Segment: {error}')
@@ -29,7 +30,10 @@ class SegmentMiddleware:
                 # analytics.send = False # for code development only
                 analytics.on_error = on_segment_error
 
-            if request.path == reverse(f'{WISDOM_API_VERSION}:completions') and request.method == 'POST':
+            if (
+                request.path == reverse(f'{WISDOM_API_VERSION}:completions')
+                and request.method == 'POST'
+            ):
                 if request.content_type == 'application/json':
                     try:
                         request_data = (
@@ -43,7 +47,10 @@ class SegmentMiddleware:
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
-            if request.path == reverse(f'{WISDOM_API_VERSION}:completions') and request.method == 'POST':
+            if (
+                request.path == reverse(f'{WISDOM_API_VERSION}:completions')
+                and request.method == 'POST'
+            ):
                 user_id = str(getattr(request.user, 'uuid', 'unknown'))
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')

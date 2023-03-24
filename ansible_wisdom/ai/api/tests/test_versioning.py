@@ -6,14 +6,15 @@ from rest_framework.response import Response
 
 WISDOM_API_VERSION = "v0"
 
+
 class TestAPIVersioning(TestCase):
     def setUp(self) -> None:
         self.api_url = reverse(f'{WISDOM_API_VERSION}:completions')
         self.client = APIClient()
-    
+
     def test_ansible_wisdom_completion_url(self):
         print("** TEST versioning: test_ansible_wisdom_completion_url ** ", self.api_url)
-    
+
     def test_completion_request(self):
         response = self.client.get(self.api_url)
         print("** TEST versioning: test_completion_request ** ", response.content)

@@ -11,6 +11,7 @@ from segment import analytics
 
 WISDOM_API_VERSION = "v0"
 
+
 class TestMiddleware(WisdomServiceAPITestCaseBase):
     @classmethod
     def setUpClass(cls):
@@ -35,7 +36,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json')
+                r = self.client.post(
+                    reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json'
+                )
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
@@ -56,7 +59,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
-                    reverse(f'{WISDOM_API_VERSION}:completions'), urlencode(payload), content_type='application/json'
+                    reverse(f'{WISDOM_API_VERSION}:completions'),
+                    urlencode(payload),
+                    content_type='application/json',
                 )
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
@@ -91,7 +96,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 DummyMeshClient(self, payload, response_data),
             ):
                 with self.assertLogs(logger='root', level='ERROR') as log:
-                    r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json')
+                    r = self.client.post(
+                        reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json'
+                    )
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.OK)
                     self.assertIsNotNone(r.data['predictions'])
