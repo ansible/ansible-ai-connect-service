@@ -1,23 +1,39 @@
+from http import HTTPStatus
+from unittest.mock import patch
 from django.shortcuts import reverse
-from django.test import TestCase
-from rest_framework.test import APIClient
+from .test_views import WisdomServiceAPITestCaseBase
 
 WISDOM_API_VERSION = "v0"
 
 
-class TestAPIVersioning(TestCase):
-    def setUp(self) -> None:
-        self.api_url = reverse(f'{WISDOM_API_VERSION}:completions')
-        self.client = APIClient()
-
-    def test_ansible_wisdom_completion_url(self):
-        print("** TEST versioning: test_ansible_wisdom_completion_url ** ", self.api_url)
+class TestAPIVersioning(WisdomServiceAPITestCaseBase):
+    def test_users(self):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wisdom_api:completions'))
+        print("** TEST versioning: test_users ** ", r.content)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(self.username, r.data.get('username'))
 
     def test_completion_request(self):
-        response = self.client.get(self.api_url)
-        print("** TEST versioning: test_completion_request ** ", response.content)
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            self.user,
+            'date_terms_accepted',
+            None,
+        ):
+            response = self.client.get(reverse('wisdom_api:completions'))
+            print("** TEST versioning: test_completion_request ** ", response.content)
 
     def test_api_v0_test_endpoint(self):
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            self.user,
+            'date_terms_accepted',
+            None,
+        ):
+            response = self.client.get(reverse('wisdom_api:completions'))
+            self.assertEqual(response.status_code, 200)
+
         # Make a GET request to the v1 test endpoint
         response = self.client.get(f'/api/{WISDOM_API_VERSION}/ai/completions/')
 

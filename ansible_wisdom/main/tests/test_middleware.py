@@ -36,9 +36,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(
-                    reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json'
-                )
+                r = self.client.post(reverse('wisdom_api:completions'), payload, format='json')
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
@@ -47,7 +45,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
-                    reverse(f'{WISDOM_API_VERSION}:completions'),
+                    reverse('wisdom_api:completions'),
                     urlencode(payload),
                     content_type='application/x-www-form-urlencoded',
                 )
@@ -59,7 +57,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
-                    reverse(f'{WISDOM_API_VERSION}:completions'),
+                    reverse('wisdom_api:completions'),
                     urlencode(payload),
                     content_type='application/json',
                 )
@@ -96,9 +94,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 DummyMeshClient(self, payload, response_data),
             ):
                 with self.assertLogs(logger='root', level='ERROR') as log:
-                    r = self.client.post(
-                        reverse(f'{WISDOM_API_VERSION}:completions'), payload, format='json'
-                    )
+                    r = self.client.post(reverse('wisdom_api:completions'), payload, format='json')
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.OK)
                     self.assertIsNotNone(r.data['predictions'])

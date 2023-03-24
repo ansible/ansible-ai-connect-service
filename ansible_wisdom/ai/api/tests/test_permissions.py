@@ -22,5 +22,5 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             None,
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
+            r = self.client.post(reverse('wisdom_api:completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

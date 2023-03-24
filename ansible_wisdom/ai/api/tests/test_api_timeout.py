@@ -43,7 +43,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
+        r = self.client.post(reverse('wisdom_api:completions'), payload)
         self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
         self.assertEqual(None, r.data)
 
@@ -64,6 +64,6 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             GrpcClient(inference_url='http://example.com/'),
         ):
-            r = self.client.post(reverse(f'{WISDOM_API_VERSION}:completions'), payload)
+            r = self.client.post(reverse('wisdom_api:completions'), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assertEqual(None, r.data)
