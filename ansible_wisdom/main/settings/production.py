@@ -22,6 +22,19 @@ ALLOWED_HOSTS = list(filter(len, os.getenv("ANSIBLE_WISDOM_DOMAIN", "").split(",
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock"] = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
 )
+
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL", "https"
+)
+
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
+    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
+    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+    else None
+)
+
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
