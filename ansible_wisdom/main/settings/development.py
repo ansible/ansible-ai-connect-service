@@ -44,7 +44,7 @@ if DEBUG:
             {"name": "me", "description": "Authenticated user information"},
             {"name": "check", "description": "Health check"},
         ],
-        'SCHEMA_PATH_PREFIX': r'/api',
+        'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     }
 
     # social_django does not process auth exceptions when DEBUG=True by default.
