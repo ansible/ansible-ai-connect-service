@@ -63,7 +63,7 @@ Normalize by loading and re-serializing
 
 def normalize_yaml(yaml_str):
     data = yaml.load(yaml_str, Loader=yaml.SafeLoader)
-    return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False)
+    return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
 def preprocess(context, prompt):
