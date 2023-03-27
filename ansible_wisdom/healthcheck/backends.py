@@ -30,7 +30,7 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
                 # the gRPC model server in the Staging environment.  The verify
                 # option in the following line is just TEMPORARY and will be removed
                 # as soon as the certificate is replaced with a valid one.
-                res = requests.get(self.url, verify=(self.api_type != 'grpc')) # !!!!! TODO !!!!!
+                res = requests.get(self.url, verify=(self.api_type != 'grpc'))  # !!!!! TODO !!!!!
                 if res.status_code != 200:
                     raise Exception()
             else:
