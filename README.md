@@ -176,7 +176,7 @@ Request:
 ```bash
 # Post a request using curl
 curl -X 'POST' \
-  'http://127.0.0.1:8000/api/ai/completions/' \
+  'http://127.0.0.1:8000/api/v0/ai/completions/' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{

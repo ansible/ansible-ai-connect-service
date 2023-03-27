@@ -4,7 +4,7 @@ info:
   version: 0.0.7
   description: Equip the automation developer with Wisdom super powers.
 paths:
-  /api/ai/attributions/:
+  /api/v0/ai/attributions/:
     post:
       operationId: ai_attributions_create
       description: Returns attributions that were the highest likelihood sources for
@@ -44,7 +44,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/ai/completions/:
+  /api/v0/ai/completions/:
     post:
       operationId: ai_completions_create
       description: Returns inline code suggestions based on a given Ansible editor
@@ -108,7 +108,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/ai/feedback/:
+  /api/v0/ai/feedback/:
     post:
       operationId: ai_feedback_create
       description: Feedback API for the AI service
@@ -165,7 +165,7 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
-  /api/me/:
+  /api/v0/me/:
     get:
       operationId: me_retrieve
       tags:
