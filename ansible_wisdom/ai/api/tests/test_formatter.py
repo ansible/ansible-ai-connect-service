@@ -40,6 +40,17 @@ class AnsibleDumperTestCase(TestCase):
         expected = """- name: test empty lines\n  copy:\n    src: a\n    dest: b\n"""
         self.assertEqual(fmtr.normalize_yaml(extra_empty_spaces), expected)
 
+    def test_long_prompt(self):
+        """
+        long prompt should not be split across lines
+        """
+        extra_empty_spaces = """---
+- name: Download https://mybackupserver.localdomain/backup.zip and extract to /tmp directory
+
+"""
+        expected = """- name: Download https://mybackupserver.localdomain/backup.zip and extract to /tmp directory\n"""  # noqa: E501
+        self.assertEqual(fmtr.normalize_yaml(extra_empty_spaces), expected)
+
     def test_prompt_and_context(self):
         prompt_and_context = """---
 - name: test empty lines
