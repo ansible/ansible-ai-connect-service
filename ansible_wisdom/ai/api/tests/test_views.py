@@ -190,6 +190,21 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         r = self.client.post(reverse('feedback'), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    def test_anonymize(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/jean-pierre/ansible.yaml",
+                "trigger": "0",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format="json")
+            self.assertNotInLog('file:///home/user/ansible.yaml', log.output)
+            self.assertInLog('file:///home/ano-user/ansible.yaml', log.output)
+
     def test_authentication_error(self):
         payload = {
             "ansibleContent": {
@@ -285,3 +300,19 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
+
+    def test_completions_pii_clean_up(self):
+        payload = {
+            "prompt": "- name: Create an account for foo@ansible.com \n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": [""]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertInLog('Create an account for james8@example.com', log.output)
