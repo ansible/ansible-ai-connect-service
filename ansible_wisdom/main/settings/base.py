@@ -178,6 +178,76 @@ TEMPLATES = [
 WSGI_APPLICATION = "main.wsgi.application"
 
 
+# PROMETHEUS SETTINGS
+
+# def static_vars(**kwargs):
+#     def decorate(func):
+#         for k in kwargs:
+#             setattr(func, k, kwargs[k])
+#         return func
+#     return decorate
+
+
+# def port():
+#     port.counter += 1
+#     return port.counter
+# port.counter = 8001
+
+PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8050, 8150)
+PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
+# import uwsgi
+# print("*** THIS IS UWSGI WORKER ***", uwsgi.worker_id())
+
+# try:
+#     from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+#     from prometheus_client import multiprocess
+#     from prometheus_client.exposition import start_http_server
+#     # import multiprocessing
+#     # pool = multiprocessing.Pool()
+#     # print("** NO OF PROCESSESS: ", pool._processes)
+#     print("**** From BASE PY ****")
+#     registry = CollectorRegistry()
+#     print("1")
+#     # Set up the multiprocess mode and specify the port number
+#     multiprocess.MultiProcessCollector(registry)
+#     print("2")
+#     start_http_server(port(), addr='0.0.0.0', registry=registry)
+#     print("3")
+#     from prometheus_client import Gauge
+#     requests_gauge = Gauge('django_requests_total', 'Number of requests handled by Django app', registry=registry)
+#     print("4")
+#     # #import prometheus_client
+
+#     # # prometheus_client.values.ValueClass = prometheus_client.values.MultiProcessValue(
+#     # #     process_identifier=uwsgi.worker_id)
+#     # # print("**** THIS IS BASE PY ****", uwsgi.worker_id)
+#     # registry = CollectorRegistry()
+#     # requests_gauge = Gauge('django_requests_total', 'Number of requests handled by Django app', registry=registry)
+#     # requests_gauge.set_to_current_time()
+#     requests_gauge.inc()
+#     print("5")
+#     # print("**** THIS IS REQUEST GAUGE ****", requests_gauge)
+#     push_to_gateway('172.21.0.6:9091', job="django", registry=registry)
+#     print("6")
+# except ImportError as ex:
+#     print("**** ImportError ****", ex)
+#     pass
+# except Exception as ex:
+#     print("**** GENERIC EXCEPTION ****", ex)
+#     pass
+# from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+# registry = CollectorRegistry()
+# requests_gauge = Gauge('django_requests_total', 'Number of requests handled by Django app', registry=registry)
+# requests_gauge.inc()
+# push_to_gateway('pushgateway.example.com:9091', job='django', registry=registry)
+# try:
+#     import prometheus_client
+#     import uwsgi
+#     prometheus_client.values.ValueClass = prometheus_client.values.MultiProcessValue(
+#         process_identifier=uwsgi.worker_id)
+# except ImportError:
+#     pass  # not running in uwsgi
+
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASES = {

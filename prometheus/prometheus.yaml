@@ -4,8 +4,15 @@ global:
   evaluation_interval: "60s"
 
 scrape_configs:
-  - job_name: monitoring
+  - job_name: 'django'
     metrics_path: /metrics
     static_configs:
       - targets:
           - django:8000
+  - job_name: 'pushgateway'
+    honor_labels: true
+    honor_timestamps: true
+    static_configs:
+      - targets: ['localhost:8051']
+        labels:
+          instance: 'pushgateway'

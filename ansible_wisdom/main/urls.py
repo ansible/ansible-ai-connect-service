@@ -24,6 +24,7 @@ from drf_spectacular.views import (
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
+from ai.api.views import metrics_view
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -44,7 +45,8 @@ urlpatterns = [
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('', include('django_prometheus.urls')),
+    path("metrics/", metrics_view, name="metrics_view"),
+    #path('', include('django_prometheus.urls')),
 ]
 
 if settings.DEBUG:

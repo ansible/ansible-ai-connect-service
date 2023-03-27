@@ -33,6 +33,25 @@ from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from django.http import HttpResponse
+
+
+def metrics_view(request):
+    return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
+
+
+# from .prometheus import collect_metrics
+# from prometheus_client import push_to_gateway
+
+# def my_view(request):
+#     # Your view logic here
+
+#     # Collect and push metrics
+#     collect_metrics()
+#     push_to_gateway('localhost:9091', job='django')
+
 
 class CompletionsUserRateThrottle(UserRateThrottle):
     rate = settings.COMPLETION_USER_RATE_THROTTLE
@@ -157,6 +176,7 @@ class Completions(APIView):
                 f"error serializing final response for suggestion {payload.suggestionId}"
             )
             raise InternalServerError
+        
         return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
