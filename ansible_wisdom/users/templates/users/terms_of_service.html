@@ -6,8 +6,7 @@
         <div class="pf-l-bullseye__item">
             <div class="pf-c-empty-state" style="text-align: left;">
                 <div class="pf-c-empty-state__content">
-                    <form action={% url
-                    'terms_of_service' %} method="post">{% csrf_token %}
+                    <form action={% url 'terms_of_service' %} method="post">{% csrf_token %}
                     <input type="hidden" name="partial_token" value={{partial_token}}>
                     <h1 class="pf-c-title pf-m-xl">Red Hat Ansible with IBM’s Project Wisdom Service Private Preview
                         Program Terms </h1>
