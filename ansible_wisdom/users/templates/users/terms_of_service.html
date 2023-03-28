@@ -6,47 +6,87 @@
         <div class="pf-l-bullseye__item">
             <div class="pf-c-empty-state" style="text-align: left;">
                 <div class="pf-c-empty-state__content">
-                    <form action={% url 'terms_of_service' %} method="post">{% csrf_token %}
-                        <input type="hidden" name="partial_token" value={{partial_token}}>
-                        <h1 class="pf-c-title pf-m-lg">Terms of Service</h1>
-                        <div class="pf-c-empty-state__body">
+                    <form action={% url
+                    'terms_of_service' %} method="post">{% csrf_token %}
+                    <input type="hidden" name="partial_token" value={{partial_token}}>
+                    <h1 class="pf-c-title pf-m-xl">Red Hat Ansible with IBM’s Project Wisdom Service Private Preview
+                        Program Terms </h1>
+                    <div class="pf-c-content">
+                        <p></p>
+                        <p>
+                            We are excited that you are interested in participating in this Private Preview Program
+                            (<strong>“Program”</strong>) and as a benefit, receiving access to Project Wisdom Service
+                            (the <strong>“Service”</strong>).
+                            The Program allows you to use the Service at no cost subject to these terms. This Service
+                            includes International Business Machines Corporation’s (<strong>“IBM”</strong>) AI models
+                            and software.
+                        </p>
+                        <p>
+                            These Program Terms govern your use of the Services and are subject to the Red Hat
+                            Enterprise Agreement available at <a href="http://www.redhat.com/agreements">http://www.redhat.com/agreements</a>
+                            (collectively the
+                            <strong>"Agreement"</strong>). When we use a capitalized term without defining it in these
+                            Program Terms, the
+                            term has the meaning defined in the Red Hat Enterprise Agreement. If there is a conflict
+                            between these Program Terms and the Red Hat Enterprise Agreement, the Program Terms will
+                            take precedence.
+                        </p>
+                        <p>
+                            The Program gives access to a preview version of the Service. The Service uses an AI model
+                            to create Ansible tasks, playbooks and other Ansible related content, and shares that data
+                            and related information regarding such usage to train and improve the Service. The Service
+                            is not supported for or intended for any other purpose.
+                        </p>
+                        <p>
+                            To use the Service, you need to install the Ansible Visual Studio Code extension and
+                            authenticate via your GitHub account that you have been authorized to use with the Service.
+                            Based on your request, the Service will provide suggested tasks, playbooks or other Ansible
+                            related materials (<strong>"Suggestions"</strong>). By using the Service, you agree that any
+                            and all
+                            Suggestions and any data associated with the Service, may be used by Red Hat and Red Hat’s
+                            affiliated companies, including IBM, for any purpose including to further improve and train
+                            the Service. Additional details related to the type of information collected are provided in
+                            the Service documentation.
+                        </p>
+                        <p>
+                            Suggestions may be similar to material used to train the machine learning model used to
+                            provide the Service. The Suggestions will likely require additional modifications by you to
+                            be useful. Suggestions are not considered Red Hat Software and Red Hat does not claim any
+                            intellectual property rights with respect to any Suggestions. Your use of Suggestions is at
+                            your discretion and risk. Any requests or input into the Service will not be treated as
+                            confidential information. The Service is not intended to process personal information, so do
+                            not provide personal information as part of the Service except for business contact type
+                            information (name, work email address, etc.) associated with this Program. For information
+                            on how Red Hat processes your personal information, see the Red Hat Privacy Statement.
+                        </p>
+                        <p>
+                            Red Hat makes no warranties or guarantees with respect to the Service including Suggestions,
+                            except those explicitly required by law, and you should confirm that use of the Service or
+                            any Suggestions is appropriate for your environment. If you believe the Service, Red Hat or
+                            its affiliates are using your material in a non-compliant manner, you agree to provide Red
+                            Hat with written notice and allow Red Hat ninety days to address your issue.
+                        </p>
+                        <p>
+                            Red Hat intends to offer the Program through July, 2023 and reserves the right to
+                            periodically update, improve or discontinue the Service or any component or functionality of
+                            the Service. Red Hat may terminate your use of the Service at any time for any reason.
+                        </p>
+                        <p>
+                            This Agreement establishes the rights and obligations associated with the Service and is not
+                            intended to limit your rights to software code under the terms of an open source license.
+                        </p>
+                        <p>
+                            PLEASE READ THE AGREEMENT CAREFULLY BEFORE USING THE SERVICE. BY USING THE SERVICE, YOU
+                            SIGNIFY YOUR ACCEPTANCE OF THE AGREEMENT AND ACKNOWLEDGE YOU HAVE READ AND UNDERSTAND THE
+                            PROGRAM TERMS. IF YOU DO NOT ACCEPT THE PROGRAM TERMS, THEN DO NOT USE THE SERVICE.
+                        </p>
+                        <p>
+                            March, 2023
+                        </p>
 
-                            <!-- From https://www.gutenberg.org/files/16780/16780-0.txt -->
-The unanimous Declaration of the thirteen united States of America
+                    </div>
 
-When in the Course of human events, it becomes necessary for one people to
-dissolve the political bands which have connected them with another, and
-to assume, among the Powers of the earth, the separate and equal station
-to which the Laws of Nature and of Nature’s God entitle them, a decent
-respect to the opinions of mankind requires that they should declare the
-causes which impel them to the separation.
-
-We hold these truths to be self-evident, that all men are created equal,
-that they are endowed by their Creator with certain unalienable Rights,
-that among these are Life, Liberty, and the pursuit of Happiness.—That to
-secure these rights, Governments are instituted among Men, deriving their
-just powers from the consent of the governed,—That whenever any Form of
-Government becomes destructive of these ends, it is the Right of the
-People to alter or to abolish it, and to institute new Government, laying
-its foundation on such principles and organizing its powers in such form,
-as to them shall seem most likely to effect their Safety and Happiness.
-Prudence, indeed, will dictate that Governments long established should
-not be changed for light and transient causes; and accordingly all
-experience hath shown, that mankind are more disposed to suffer, while
-evils are sufferable, than to right themselves by abolishing the forms to
-which they are accustomed. But when a long train of abuses and
-usurpations, pursuing invariably the same Object evinces a design to
-reduce them under absolute Despotism, it is their right, it is their duty,
-to throw off such Government, and to provide new Guards for their future
-security.—Such has been the patient sufferance of these Colonies; and such
-is now the necessity which constrains them to alter their former Systems
-of Government. The history of the present King of Great Britain is a
-history of repeated injuries and usurpations, all having in direct object
-the establishment of an absolute Tyranny over these States. To prove this,
-let Facts be submitted to a candid world.
-                        </div>
-
-                        <div class="pf-c-empty-state__content">
+                    <div class="pf-c-empty-state__content">
                         <button class="pf-c-button pf-m-primary" type="submit" name="accepted" value="True">
                             <span class="pf-c-button__icon"><i class="fa fa-check-circle"></i></span>
                             Agree
@@ -54,7 +94,7 @@ let Facts be submitted to a candid world.
                         <button class="pf-c-button pf-m-secondary" type="submit" name="accepted" value="False">
                             Disagree
                         </button>
-                        </div>
+                    </div>
                     </form>
                 </div>
             </div>
