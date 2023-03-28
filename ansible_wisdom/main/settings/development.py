@@ -38,7 +38,9 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": os.getenv(
+            "ANSIBLE_AI_CACHE_BACKEND", "django.core.cache.backends.redis.RedisCache"
+        ),
         "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
     }
 }
