@@ -38,6 +38,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
+                self.assertInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
 
@@ -50,6 +51,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
+                self.assertInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
 
@@ -59,6 +61,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 )
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("DEBUG:segment:queueing:", log.output)
+                self.assertNotInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertNotInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
 
