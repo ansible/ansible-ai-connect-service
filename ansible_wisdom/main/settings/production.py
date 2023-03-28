@@ -45,7 +45,7 @@ CACHES = {
         # we cannot use the standard driver and we need instead to use Redis-Py's
         # new RedisCluster client. This is what main.redis.CustomRedisCluster is
         # for.
-        "BACKEND": "main.redis.CustomRedisCluster",
+        "BACKEND": os.getenv("ANSIBLE_AI_CACHE_BACKEND", "main.redis.CustomRedisCluster"),
         # NOTE: Use ',' to seperate the different servers
         "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
     }
