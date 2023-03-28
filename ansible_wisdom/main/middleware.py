@@ -25,6 +25,7 @@ class SegmentMiddleware:
             if not analytics.write_key:
                 analytics.write_key = settings.SEGMENT_WRITE_KEY
                 analytics.debug = settings.DEBUG
+                analytics.gzip = True  # Enable gzip compression
                 # analytics.send = False # for code development only
                 analytics.on_error = on_segment_error
 

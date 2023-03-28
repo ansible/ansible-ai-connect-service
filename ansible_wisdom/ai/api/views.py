@@ -130,13 +130,28 @@ class Completions(APIView):
         data = model_mesh_payload.dict()
         logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
 
+        predictions = None
+        exception = None
+        start_time = time.time()
         try:
             predictions = model_mesh_client.infer(data, model_name=model_name)
-        except ModelTimeoutError:
+        except ModelTimeoutError as exc:
+            exception = exc
             raise ModelTimeoutException
-        except Exception:
+        except Exception as exc:
+            exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
             raise ServiceUnavailable
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            event = {
+                "duration": duration,
+                "exception": exception is not None,
+                "problem": None if exception is None else exception.__class__.__name__,
+                "request": data,
+                "response": predictions,
+            }
+            send_segment_event(event, "wisdomServicePredictionsEvent", payload.userId)
 
         logger.debug(
             f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
