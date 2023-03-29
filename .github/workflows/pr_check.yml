@@ -75,7 +75,6 @@ jobs:
         containerfiles: |
           ./wisdom-service.Containerfile
         labels: |
-          quay.expires-after=14d
           sha-short=${{ steps.tag_name.outputs.sha-short }}
           sha-long=${{ steps.tag_name.outputs.sha-long }}
         build-args: |
