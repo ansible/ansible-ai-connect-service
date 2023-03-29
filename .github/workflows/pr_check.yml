@@ -61,19 +61,26 @@ jobs:
 
     - name: Tag Name
       id: tag_name
-      run: echo "IMAGE_TAG=pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
+      run: |
+        echo "IMAGE_TAGS=pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
+        echo "sha-short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "sha-long=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
       with:
         image: wisdom-service
-        tags: ${{ steps.tag_name.outputs.IMAGE_TAG }}
+        tags: ${{ steps.tag_name.outputs.IMAGE_TAGS }}
         containerfiles: |
           ./wisdom-service.Containerfile
-        labels: quay.expires-after=14d
+        labels: |
+          quay.expires-after=14d
+          sha-short=${{ steps.tag_name.outputs.sha-short }}
+          sha-long=${{ steps.tag_name.outputs.sha-long }}
         build-args: |
-          IMAGE_TAG=${{ steps.tag_name.outputs.IMAGE_TAG }}
+          IMAGE_TAGS=${{ steps.tag_name.outputs.IMAGE_TAGS }}
+          GIT_COMMIT=${{ steps.tag_name.outputs.sha-long }}
 
     - name: Push To quay.io
       id: push-to-quay
