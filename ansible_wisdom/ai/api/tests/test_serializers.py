@@ -2,6 +2,7 @@
 Test serializers
 """
 from unittest.case import TestCase
+from uuid import UUID
 
 from ai.api.serializers import CompletionRequestSerializer
 from rest_framework import serializers
@@ -33,3 +34,12 @@ class CompletionRequestSerializerTest(TestCase):
             CompletionRequestSerializer.extract_prompt_and_context({'prompt': "---\n"})
         with self.assertRaises(serializers.ValidationError):
             CompletionRequestSerializer.extract_prompt_and_context({'prompt': "#Install Apache\n"})
+
+    def test_validate(self):
+        serializer = CompletionRequestSerializer()
+        data = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+        }
+        serializer.validate(data)
+        self.assertIsNotNone(data['suggestionId'])
+        self.assertTrue(isinstance(data['suggestionId'], UUID))
