@@ -2,6 +2,7 @@
 DRF Serializer classes for input/output validations and OpenAPI document generation.
 """
 import re
+import uuid
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -61,6 +62,9 @@ class CompletionRequestSerializer(serializers.Serializer):
     def validate(self, data):
         data = super().validate(data)
         CompletionRequestSerializer.extract_prompt_and_context(data)
+        # If suggestion ID was not included in the request, set a random UUID to it.
+        if data.get('suggestionId') is None:
+            data['suggestionId'] = uuid.uuid4()
         return data
 
     @staticmethod

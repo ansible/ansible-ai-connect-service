@@ -123,7 +123,7 @@ class Completions(APIView):
                     "prompt": payload.prompt,
                     "context": payload.context,
                     "userId": str(payload.userId) if payload.userId else None,
-                    "suggestionId": str(payload.suggestionId) if payload.suggestionId else None,
+                    "suggestionId": str(payload.suggestionId),
                 }
             ]
         )
@@ -147,9 +147,11 @@ class Completions(APIView):
             event = {
                 "duration": duration,
                 "exception": exception is not None,
+                "modelName": settings.ANSIBLE_AI_MODEL_NAME,
                 "problem": None if exception is None else exception.__class__.__name__,
                 "request": data,
                 "response": predictions,
+                "suggestionId": str(payload.suggestionId),
             }
             send_segment_event(event, "wisdomServicePredictionsEvent", payload.userId)
 
