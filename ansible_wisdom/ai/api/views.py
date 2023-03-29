@@ -8,6 +8,7 @@ from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from healthcheck.version_info import VersionInfo
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -34,6 +35,7 @@ from .serializers import (
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
+version_info = VersionInfo()
 
 
 class CompletionsUserRateThrottle(UserRateThrottle):
@@ -152,6 +154,7 @@ class Completions(APIView):
                 "request": data,
                 "response": predictions,
                 "suggestionId": str(payload.suggestionId),
+                "imageTags": version_info.image_tags,
             }
             send_segment_event(event, "wisdomServicePredictionsEvent", payload.userId)
 
