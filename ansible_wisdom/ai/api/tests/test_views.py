@@ -4,6 +4,7 @@ import random
 import string
 import time
 import uuid
+from ast import literal_eval
 from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
@@ -81,6 +82,14 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
             if s in log:
                 return True
         return False
+
+    def extractSegmentEventsFromLog(self, logs):
+        events = []
+        for log in logs:
+            if log.startswith('DEBUG:segment:queueing: '):
+                obj = literal_eval(log.replace('DEBUG:segment:queueing: ', '').replace('\n', ''))
+                events.append(obj['properties'])
+        return events
 
     def assertInLog(self, s, logs):
         self.assertTrue(self.searchInLogOutput(s, logs))

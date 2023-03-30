@@ -4,10 +4,12 @@ import time
 
 from django.conf import settings
 from django.urls import reverse
+from healthcheck.version_info import VersionInfo
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
 logger = logging.getLogger(__name__)
+version_info = VersionInfo()
 
 
 def on_segment_error(error, _):
@@ -71,6 +73,8 @@ class SegmentMiddleware:
                     },
                     "suggestionId": suggestion_id,
                     "metadata": metadata,
+                    "modelName": settings.ANSIBLE_AI_MODEL_NAME,
+                    "imageTags": version_info.image_tags,
                 }
 
                 analytics.track(
