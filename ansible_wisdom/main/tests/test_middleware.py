@@ -41,6 +41,12 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
 
+                segment_events = self.extractSegmentEventsFromLog(log.output)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    self.assertTrue('modelName' in event)
+                    self.assertTrue('imageTags' in event)
+
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('completions'),
