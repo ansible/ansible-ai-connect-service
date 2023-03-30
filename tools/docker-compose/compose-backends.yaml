@@ -2,7 +2,6 @@ version: "3.8"
 services:
   redis:
     image: docker.io/library/redis:alpine
-    restart: always
     networks:
       - dbnet
     ports:
@@ -13,7 +12,6 @@ services:
       - POSTGRES_PASSWORD=wisdom
       - POSTGRES_DB=wisdom
       - POSTGRES_USER=wisdom
-    restart: always
     networks:
       - dbnet
 # Disabled because this doesn't work properly on MacOS.
@@ -30,7 +28,6 @@ services:
       - --web.enable-lifecycle
     volumes:
       - $PWD/prometheus/prometheus.yaml:/opt/prometheus/prometheus.yaml
-    restart: unless-stopped
     ports:
       - "9090:9090"
     networks:
@@ -43,7 +40,6 @@ services:
       - "3000:3000"
     volumes:
       - $PWD/grafana:/opt/grafana
-    restart: unless-stopped
     networks:
       - dbnet
 
