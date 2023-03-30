@@ -284,7 +284,7 @@ ARI_RULES = [
     "W011",  # replace with_* loop with the modern loop:
     "W012",
     "W013",
-    "W014",
+    # "W014",  # anonymizer: already done by the ansible_wisdom app
     "W015",
     "W016",
     "W017",
