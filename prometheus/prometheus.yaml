@@ -5,7 +5,18 @@ global:
 
 scrape_configs:
   - job_name: monitoring
-    metrics_path: /metrics
+    metrics_path: /ansible_wisdom_app/metrics
     static_configs:
       - targets:
           - django:8000
+
+  - job_name: uwsgi-workers
+    file_sd_configs:
+      - files:
+          - workers.yaml
+        refresh_interval: 10s
+
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
