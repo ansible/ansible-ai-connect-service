@@ -1,6 +1,6 @@
+from django.apps import apps
 from django.conf import settings
 from opensearchpy import OpenSearch, RequestsHttpConnection
-from sentence_transformers import SentenceTransformer
 
 if settings.ANSIBLE_AI_SEARCH['REGION']:
     import boto3
@@ -28,9 +28,6 @@ client = OpenSearch(
 )
 
 
-model = SentenceTransformer(f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}")
-
-
 def generate_query(encoded):
     return {
         'size': 3,
@@ -42,6 +39,7 @@ def generate_query(encoded):
 
 
 def search(suggestion):
+    model = apps.get_app_config('ai').sentence_model
     encoded = model.encode(suggestion)
     query = generate_query(encoded)
     results = client.search(index=settings.ANSIBLE_AI_SEARCH['INDEX'], body=query, _source=False)

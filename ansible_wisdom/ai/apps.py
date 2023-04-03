@@ -3,6 +3,7 @@ import logging
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
+from sentence_transformers import SentenceTransformer
 
 from ari import postprocessing
 
@@ -38,6 +39,10 @@ class AiConfig(AppConfig):
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
             )
+
+        self.sentence_model = SentenceTransformer(
+            f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}"
+        )
 
         return super().ready()
 
