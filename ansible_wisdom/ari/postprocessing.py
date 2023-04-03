@@ -131,6 +131,9 @@ class ARICaller:
                 if _result:
                     if "description" not in rule_detail:
                         rule_detail["description"] = _result.description
+                    if _result.rule:
+                        rule_detail["version"] = _result.rule.version
+                        rule_detail["commit_id"] = _result.rule.commit_id
                     rule_detail["duration"] = _result.duration
                     rule_detail["matched"] = _result.matched
                     rule_detail["error"] = _result.error
