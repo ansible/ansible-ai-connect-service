@@ -41,8 +41,10 @@ class Command(BaseCommand):
             u = User.objects.get(username=username)
 
         if not u.date_terms_accepted:
-            self.stdout.write(f"Token {token_name} already exists")
-            return
+            raise CommandError(
+                f"User {username} already exists but the user "
+                "didn't accept the terms and conditions"
+            )
 
         if AccessToken.objects.filter(token=token_name).exists():
             self.stdout.write(f"Token {token_name} already exists")
