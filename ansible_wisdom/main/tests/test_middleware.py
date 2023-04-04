@@ -117,9 +117,29 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error_with_data_exceeding_limit(self):
-        sample_yaml = os.path.join(os.path.split(__file__)[0], 'sample.yaml')
-        with open(sample_yaml) as f:
-            prompt = f.read()
+        prompt = '''---
+- hosts: localhost
+  connection: local
+
+  tasks:
+'''
+        for i in range(100):
+            prompt += f'''
+    - name: Create {i}
+
+      amazon.aws.ec2_vpc_net:
+        state: present
+        name: "{{ vpc_name }}"
+        cidr_block: "{{ cidr_block }}"
+        region: "{{ region }}"
+        access_key: "{{ access_key }}"
+        secret_key: "{{ secret_key }}"
+        tags:
+          tag-name: tag-value
+      register: ec2_vpc_net
+'''
+
+        prompt += f'\n    - name: Create {i + 1}\n'
 
         payload = {
             "prompt": prompt,

@@ -33,7 +33,11 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
         )
         args = getattr(ex, 'args')
         # Log RuntimeError and send the error to Segment if it is for an event exceeding size limit
-        if args[0] == 'Message exceeds %skb limit. (%s)' and len(args) == 3:
+        if (
+            isinstance(args, tuple)
+            and args[0] == 'Message exceeds %skb limit. (%s)'
+            and len(args) == 3
+        ):
             msg_len = len(args[2])
             logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
 
