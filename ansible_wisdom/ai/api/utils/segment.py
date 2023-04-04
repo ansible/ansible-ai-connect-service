@@ -28,7 +28,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
         )
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
-        logger.error(
+        logger.exception(
             f"An exception {ex.__class__} occurred in sending event to segment: %s", event_name
         )
         args = getattr(ex, 'args')

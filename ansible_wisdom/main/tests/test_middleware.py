@@ -123,9 +123,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
   tasks:
 '''
-        for i in range(100):
-            prompt += f'''
-    - name: Create {i}
+        prompt += (
+            '''
+    - name: Create x
 
       amazon.aws.ec2_vpc_net:
         state: present
@@ -138,8 +138,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
           tag-name: tag-value
       register: ec2_vpc_net
 '''
+            * 100
+        )
 
-        prompt += f'\n    - name: Create {i + 1}\n'
+        prompt += '\n    - name: Create x\n'
 
         payload = {
             "prompt": prompt,
