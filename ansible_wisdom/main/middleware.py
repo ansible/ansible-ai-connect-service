@@ -2,6 +2,7 @@ import json
 import logging
 import time
 
+from ai.api.utils.segment import send_segment_event
 from django.conf import settings
 from django.urls import reverse
 from healthcheck.version_info import VersionInfo
@@ -46,7 +47,7 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
-                user_id = str(getattr(request.user, 'uuid', 'unknown'))
+                user_id = getattr(request.user, 'uuid', None)
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
@@ -77,11 +78,7 @@ class SegmentMiddleware:
                     "imageTags": version_info.image_tags,
                 }
 
-                analytics.track(
-                    user_id,
-                    "wisdomServiceCompletionEvent",
-                    event,
-                )
+                send_segment_event(event, "wisdomServiceCompletionEvent", user_id)
 
         return response
 

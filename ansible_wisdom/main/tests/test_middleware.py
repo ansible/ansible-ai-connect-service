@@ -1,3 +1,4 @@
+import os.path
 import uuid
 from http import HTTPStatus
 from unittest.mock import patch
@@ -113,3 +114,59 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.host = analytics.Client.DefaultConfig.host
             analytics.max_retries = analytics.Client.DefaultConfig.max_retries
             analytics.send = False
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_segment_error_with_data_exceeding_limit(self):
+        prompt = '''---
+- hosts: localhost
+  connection: local
+
+  tasks:
+'''
+        prompt += (
+            '''
+    - name: Create x
+
+      amazon.aws.ec2_vpc_net:
+        state: present
+        name: "{{ vpc_name }}"
+        cidr_block: "{{ cidr_block }}"
+        region: "{{ region }}"
+        access_key: "{{ access_key }}"
+        secret_key: "{{ secret_key }}"
+        tags:
+          tag-name: tag-value
+      register: ec2_vpc_net
+'''
+            * 100
+        )
+
+        prompt += '\n    - name: Create x\n'
+
+        payload = {
+            "prompt": prompt,
+            "suggestionId": str(uuid.uuid4()),
+            "metadata": {
+                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
+                "activityId": str(uuid.uuid4()),
+            },
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload, format='json')
+                analytics.flush()
+                self.assertInLog("Message exceeds 32kb limit. msg_len=", log.output)
+                self.assertInLog("sent segment event: wisdomServiceSegmentErrorEvent", log.output)
+                events = self.extractSegmentEventsFromLog(log.output)
+                n = len(events)
+                self.assertTrue(n > 0)
+                self.assertEqual(events[n - 1]['error_type'], 'event_exceeds_limit')
+                self.assertIsNotNone(events[n - 1]['details']['event_name'])
+                self.assertIsNotNone(events[n - 1]['details']['msg_len'] > 32 * 1024)
