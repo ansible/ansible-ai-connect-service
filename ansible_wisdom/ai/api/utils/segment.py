@@ -20,9 +20,30 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
     if 'imageTags' not in event:
         event['imageTags'] = version_info.image_tags
 
-    analytics.track(
-        str(user_id) if user_id else 'unknown',
-        event_name,
-        event,
-    )
-    logger.info("sent segment event: %s", event_name)
+    try:
+        analytics.track(
+            str(user_id) if user_id else 'unknown',
+            event_name,
+            event,
+        )
+        logger.info("sent segment event: %s", event_name)
+    except Exception as ex:
+        logger.error(
+            f"An exception {ex.__class__} occurred in sending event to segment: %s", event_name
+        )
+        args = getattr(ex, 'args')
+        # Log RuntimeError and send the error to Segment if it is for an event exceeding size limit
+        if args[0] == 'Message exceeds %skb limit. (%s)' and len(args) == 3:
+            msg_len = len(args[2])
+            logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
+
+            event = {
+                "error_type": "event_exceeds_limit",
+                "details": {
+                    "event_name": event_name,
+                    "msg_len": msg_len,
+                },
+            }
+            send_segment_event(
+                event, "wisdomServiceSegmentErrorEvent", str(user_id) if user_id else 'unknown'
+            )
