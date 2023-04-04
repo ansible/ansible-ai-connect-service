@@ -89,6 +89,7 @@ def preprocess(context, prompt):
         logger.debug(f'preprocessed user input {context}\n{prompt}')
 
     prompt = prompt.lower()  # lowercasing the prompt always to ensure consistent results
+    prompt = " ".join(prompt.split())  # remove additional spaces in the prompt
     return context, prompt
 
 
