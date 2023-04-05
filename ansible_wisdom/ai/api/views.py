@@ -144,12 +144,13 @@ class Completions(APIView):
             raise ServiceUnavailable
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
+            ano_predictions = anonymizer.anonymize_struct(predictions)
             event = {
                 "duration": duration,
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
                 "request": data,
-                "response": predictions,
+                "response": ano_predictions,
                 "suggestionId": str(payload.suggestionId),
             }
             send_segment_event(event, "wisdomServicePredictionsEvent", payload.userId)
@@ -160,7 +161,7 @@ class Completions(APIView):
         postprocessed_predictions = None
         try:
             postprocessed_predictions = self.postprocess(
-                predictions,
+                ano_predictions,
                 payload.prompt,
                 payload.context,
                 payload.userId,
