@@ -21,7 +21,7 @@ django_prometheus==2.2.0
 drf-spectacular==0.25.1
 PyYAML==6.0
 ansible-risk-insight==0.1.1
-ansible_anonymizer==1.1.1
+ansible_anonymizer==1.1.2
 uwsgi-readiness-check==0.2.0
 segment-analytics-python==2.2.2
 pytz
