@@ -1,0 +1,18 @@
+[
+    {
+        "targets": [
+            "django:8001",
+            "django:8002",
+            "django:8003",
+            "django:8004",
+            "django:8005",
+            "django:8006",
+            "django:8007",
+            "django:8008"
+        ],
+        "labels": {
+            "env": "prod",
+            "job": "uwsgi-workers"
+        }
+    }
+]
