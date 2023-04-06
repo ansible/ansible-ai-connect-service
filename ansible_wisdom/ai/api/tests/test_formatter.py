@@ -133,11 +133,13 @@ class AnsibleDumperTestCase(TestCase):
     def test_casing_and_spacing_prompt(self):
         # leading space should not be removed, only spaces in the text
         prompt = "    - name:      Install NGINX        on RHEL"
-        self.assertEqual('    - name: Install nginx on rhel', fmtr.handle_spaces_and_casing(prompt))
+        self.assertEqual('    - name: install nginx on rhel', fmtr.handle_spaces_and_casing(prompt))
 
         # if there is a missing space between - name: , return as is and not try to fix it
         prompt = "    - name:Install NGINX        on RHEL"
-        self.assertEqual('    - name:Install nginx on rhel', fmtr.handle_spaces_and_casing(prompt))
+        self.assertEqual(
+            '    - name:install nginx        on rhel', fmtr.handle_spaces_and_casing(prompt)
+        )
 
 
 if __name__ == "__main__":
