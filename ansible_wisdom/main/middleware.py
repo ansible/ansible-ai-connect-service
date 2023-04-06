@@ -80,6 +80,10 @@ class SegmentMiddleware:
 
                 send_segment_event(event, "wisdomServiceCompletionEvent", user_id)
 
+            # If there are events on the client queue, flush & send them to Segment
+            if analytics.default_client is not None and analytics.default_client.queue.qsize() > 0:
+                analytics.flush()
+
         return response
 
 
