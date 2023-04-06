@@ -196,8 +196,32 @@ Response:
 
 ## Using the VSCode extension
 
-Access the updated Ansible VSCode extension here: https://drive.google.com/drive/u/1/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg
-Review the screen recording for instruction on configuring the extension to access your running wisdom service.
+Access the updated Ansible VSCode extension here:
+https://drive.google.com/drive/u/1/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg
+
+In order to successfully connect to your local dev environment using
+the plugin, you need to create the OAuth2 application in Django.  Open
+a shell session in the Django container using
+
+```bash
+docker exec -it docker-compose_django_1 bash
+```
+
+and then run the Django command to create the application:
+
+```bash
+  wisdom-manage createapplication \
+    --name "Project Wisdom for VSCode" \
+    --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
+    --redirect-uris "vscode://redhat.ansible" \
+    public authorization-code
+```
+
+This sets up a matching client ID to the one that is coded directly
+into the VSCode extension.
+
+Review the screen recording for instruction on configuring the VSCode
+extension to access your running wisdom service.
 
 ## Authenticating with the completion API
 
@@ -208,7 +232,22 @@ To test GitHub authentication locally, you will need to create a new OAuth App a
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
 
-To get an authentication token without logging in via GitHub, you can navigate to http://localhost:8000/admin/ and log in with your superuser credentials, then navigate back to http://localhost:8000/ (or view your token in the admin console).
+To get an authentication token, you can run the following command:
+
+```bash
+podman exec -it docker-compose_django_1 wisdom-manage createtoken --create-user
+```
+
+- `my-test-user` will be create for you
+- `my-token` is the name of the token
+
+To get an authentication token without logging in via GitHub, you also:
+
+1. create an admin user
+2. navigate to http://localhost:8000/admin/
+3. and log in with your superuser credentials
+4. then navigate to http://localhost:8000/admin/oauth2_provider/accesstoken/
+5. create a new token.
 
 To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
 
