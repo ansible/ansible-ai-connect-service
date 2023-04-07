@@ -88,8 +88,24 @@ def preprocess(context, prompt):
 
         logger.debug(f'preprocessed user input {context}\n{prompt}')
 
-    prompt = prompt.lower()  # lowercasing the prompt always to ensure consistent results
+    prompt = handle_spaces_and_casing(prompt)
+
     return context, prompt
+
+
+def handle_spaces_and_casing(prompt):
+    try:
+        prompt = prompt.lower()  # lowercasing the prompt always to ensure consistent results
+
+        # before can be any leading space that might be present in `- name:` eg `      - name: `
+        before, sep, after = prompt.partition('- name: ')  # keep the space at the end
+        text = " ".join(after.split())  # remove additional spaces in the prompt
+        prompt = f'{before}{sep}{text}'
+    except Exception:
+        logger.exception(f'failed to handle spacing and casing for prompt {prompt}')
+        # return the prompt as is if failed to process
+
+    return prompt
 
 
 def restore_indentation(yaml, original_indent):

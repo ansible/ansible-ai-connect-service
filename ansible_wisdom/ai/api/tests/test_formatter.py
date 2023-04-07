@@ -130,6 +130,17 @@ class AnsibleDumperTestCase(TestCase):
         expected = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
         self.assertEqual(fmtr.restore_indentation(original_yaml, 0), expected)
 
+    def test_casing_and_spacing_prompt(self):
+        # leading space should not be removed, only spaces in the text
+        prompt = "    - name:      Install NGINX        on RHEL"
+        self.assertEqual('    - name: install nginx on rhel', fmtr.handle_spaces_and_casing(prompt))
+
+        # if there is a missing space between - name: , return as is and not try to fix it
+        prompt = "    - name:Install NGINX        on RHEL"
+        self.assertEqual(
+            '    - name:install nginx        on rhel', fmtr.handle_spaces_and_casing(prompt)
+        )
+
 
 if __name__ == "__main__":
     import yaml
@@ -141,3 +152,4 @@ if __name__ == "__main__":
     tests.test_comments()
     tests.test_prompt_and_context()
     tests.test_restore_indentation()
+    tests.test_casing_and_spacing_prompt()
