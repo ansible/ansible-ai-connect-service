@@ -125,4 +125,4 @@ class PrometheusMiddleware(PrometheusBeforeMiddleware, PrometheusAfterMiddleware
         try:
             push_to_gateway('prom-pushgateway:9091', job='django_app', registry=registry)
         except Exception as e:
-            logger.error(f'Failed to push metrics to Pushgateway: {e}')
+            logger.info(f'Failed to push metrics to Pushgateway: {e}')
