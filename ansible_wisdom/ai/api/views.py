@@ -258,7 +258,6 @@ class Completions(APIView):
                         recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
                     exception = exc
-                    # return the original recommendation if we failed to postprocess
                     logger.exception(
                         f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
@@ -274,8 +273,8 @@ class Completions(APIView):
                         exception,
                         start_time,
                     )
-                    if exception:
-                        raise exception
+                    # return the original recommendation if it failed to postprocess
+                    # so we do not raise exception here
             # restore original indentation
             indented_yaml = fmtr.restore_indentation(recommendation["predictions"][i], indent)
             recommendation["predictions"][i] = indented_yaml
