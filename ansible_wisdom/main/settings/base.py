@@ -50,7 +50,6 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -60,8 +59,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
     "main.middleware.SegmentMiddleware",
+    "main.middleware.PrometheusMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -76,8 +75,6 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
-
-PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8100)
 
 # To be updated with URL to pilot test plan
 PILOT_DOCS_URL = os.environ.get(

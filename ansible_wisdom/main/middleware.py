@@ -5,7 +5,12 @@ import time
 from ai.api.utils.segment import send_segment_event
 from django.conf import settings
 from django.urls import reverse
+from django_prometheus.middleware import (
+    PrometheusBeforeMiddleware,
+    PrometheusAfterMiddleware,
+)
 from healthcheck.version_info import VersionInfo
+from prometheus_client import CollectorRegistry, push_to_gateway, Gauge, Summary
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
@@ -88,3 +93,36 @@ class WisdomSocialAuthExceptionMiddleware(SocialAuthExceptionMiddleware):
         strategy = getattr(request, 'social_strategy', None)
         if strategy is not None:
             return strategy.setting('RAISE_EXCEPTIONS')  # or settings.DEBUG
+
+
+class PrometheusMiddleware(PrometheusBeforeMiddleware, PrometheusAfterMiddleware):
+    def process_response(self, request, response):
+        # Call parent process_response to increment counters
+        response = super().process_response(request, response)
+
+        # Collect the metrics from the registry
+        registry = CollectorRegistry()
+        self.export_to_prometheus(registry, request)
+
+        return response
+
+    def export_to_prometheus(self, registry, request):
+        # Define your custom metrics and export them to Prometheus here
+
+        duration_summary = Summary(
+            'request_duration_seconds', 'Time spent processing request', registry=registry
+        )
+
+        response = None
+
+        start_time = time.time()
+        try:
+            response = self.get_response(request)
+        finally:
+            duration_summary.observe(time.time() - start_time)
+
+        # Push the metrics to the Pushgateway
+        try:
+            push_to_gateway('prom-pushgateway:9091', job='django_app', registry=registry)
+        except Exception as e:
+            logger.error(f'Failed to push metrics to Pushgateway: {e}')

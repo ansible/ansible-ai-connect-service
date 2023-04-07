@@ -4,17 +4,14 @@ global:
   evaluation_interval: "60s"
 
 scrape_configs:
-  - job_name: monitoring
-    metrics_path: /ansible_wisdom_app/metrics
+  - job_name: dev-push-gateway
+    metrics_path: /metrics
+    scheme: http
+    honor_labels: true
     static_configs:
-      - targets:
-          - django:8000
-
-  - job_name: uwsgi-workers
-    file_sd_configs:
-      - files:
-          - uwsgi_target_workers.json
-        refresh_interval: 5s
+    - targets: ['prom-pushgateway:9091']
+      labels:
+        service: 'prom-pushgateway'
 
   - job_name: prometheus
     static_configs:
