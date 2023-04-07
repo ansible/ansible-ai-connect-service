@@ -6,11 +6,11 @@ from ai.api.utils.segment import send_segment_event
 from django.conf import settings
 from django.urls import reverse
 from django_prometheus.middleware import (
-    PrometheusBeforeMiddleware,
     PrometheusAfterMiddleware,
+    PrometheusBeforeMiddleware,
 )
 from healthcheck.version_info import VersionInfo
-from prometheus_client import CollectorRegistry, push_to_gateway, Gauge, Summary
+from prometheus_client import CollectorRegistry, Gauge, Summary, push_to_gateway
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
