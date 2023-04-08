@@ -97,7 +97,7 @@ class WisdomSocialAuthExceptionMiddleware(SocialAuthExceptionMiddleware):
 
 class PrometheusMiddleware(PrometheusBeforeMiddleware, PrometheusAfterMiddleware):
     def process_response(self, request, response):
-        # Call parent process_response to increment counters
+        # Calling parent process_response to increment counters
         response = super().process_response(request, response)
 
         # Collect the metrics from the registry
@@ -107,19 +107,19 @@ class PrometheusMiddleware(PrometheusBeforeMiddleware, PrometheusAfterMiddleware
         return response
 
     def export_to_prometheus(self, registry, request):
-        # Define your custom metrics and export them to Prometheus here
+        # Defining custom metrics and exporting them to Prometheus here
 
         duration_summary = Summary(
             'request_duration_seconds', 'Time spent processing request', registry=registry
         )
 
-        response = None
+        # response = None
 
-        start_time = time.time()
-        try:
-            response = self.get_response(request)
-        finally:
-            duration_summary.observe(time.time() - start_time)
+        # start_time = time.time()
+        # try:
+        #     response = self.get_response(request)
+        # finally:
+        #     duration_summary.observe(time.time() - start_time)
 
         # Push the metrics to the Pushgateway
         try:
