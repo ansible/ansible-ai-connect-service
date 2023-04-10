@@ -4,8 +4,16 @@ global:
   evaluation_interval: "60s"
 
 scrape_configs:
-  - job_name: monitoring
+  - job_name: dev-push-gateway
     metrics_path: /metrics
+    scheme: http
+    honor_labels: true
+    static_configs:
+    - targets: ['prom-pushgateway:9091']
+      labels:
+        service: 'prom-pushgateway'
+
+  - job_name: prometheus
     static_configs:
       - targets:
-          - django:8000
+          - prometheus:9090

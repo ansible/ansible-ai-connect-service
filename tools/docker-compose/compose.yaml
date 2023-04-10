@@ -13,6 +13,9 @@ services:
       - $PWD/ari/kb:/etc/ari/kb
     ports:
       - "8000:8000"
+    expose:
+      - "8000"
+      - "8001-8050" # django-prometheus
     environment:
       - DJANGO_SETTINGS_MODULE=main.settings.development
       - ANSIBLE_AI_DATABASE_NAME=wisdom
@@ -65,19 +68,15 @@ services:
       - --config.file=/opt/prometheus/prometheus.yaml
       - --web.enable-lifecycle
     volumes:
-      - $PWD/prometheus/prometheus.yaml:/opt/prometheus/prometheus.yaml
+      - $PWD/prometheus/:/opt/prometheus/
     ports:
       - "9090:9090"
     networks:
       - dbnet
-  grafana:
-    image: docker.io/grafana/grafana:latest
-    environment:
-      - GF_LOG_LEVEL=warn
+  prom-pushgateway:
+    image: docker.io/prom/pushgateway
     ports:
-      - "3000:3000"
-    volumes:
-      - $PWD/grafana:/opt/grafana
+      - "9091:9091"
     networks:
       - dbnet
 
