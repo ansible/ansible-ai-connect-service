@@ -24,7 +24,12 @@ def time_activity(activity_name: str):
 
 class ARICaller:
     def __init__(self, config, silent) -> None:
-        self.ari_scanner = ARIScanner(config=config, silent=silent)
+        self.ari_scanner = ARIScanner(
+            config=config,
+            silent=silent,
+            write_ram=False,
+            read_ram=False,
+        )
 
     @classmethod
     def indent(cls, text, level):
