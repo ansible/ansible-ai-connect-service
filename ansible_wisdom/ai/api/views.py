@@ -60,16 +60,6 @@ class InternalServerError(APIException):
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
-def anonymize_request_data(data):
-    if isinstance(data, QueryDict):
-        # See: https://github.com/ansible/ansible-wisdom-service/pull/201#issuecomment-1483015431  # noqa: E501
-        new_data = data.copy()
-        new_data.update(anonymizer.anonymize_struct(data.dict()))
-    else:
-        new_data = anonymizer.anonymize_struct(data)
-    return new_data
-
-
 class Completions(APIView):
     """
     Returns inline code suggestions based on a given Ansible editor context.
@@ -101,8 +91,7 @@ class Completions(APIView):
     )
     def post(self, request) -> Response:
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        data = anonymize_request_data(request.data)
-        request_serializer = CompletionRequestSerializer(data=data)
+        request_serializer = CompletionRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
@@ -340,12 +329,11 @@ class Feedback(APIView):
         user_id = str(request.user.uuid)
         inline_suggestion_data = {}
         ansible_content_data = {}
-        data = anonymize_request_data(request.data)
-        logger.info(f"feedback request payload from client: {data}")
         try:
-            request_serializer = FeedbackRequestSerializer(data=data)
+            request_serializer = FeedbackRequestSerializer(data=request.data)
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
+            logger.info(f"feedback request payload from client: {validated_data}")
             inline_suggestion_data = validated_data.get("inlineSuggestion")
             ansible_content_data = validated_data.get("ansibleContent")
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
@@ -457,6 +445,8 @@ class Attributions(GenericAPIView):
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
 
+        # Currently the only thing from Attributions that is going to Segment is the
+        # inferred sources, which do not seem to need anonymizing.
         self.write_to_segment(user_id, suggestion_id, duration, resp_serializer.validated_data)
 
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
