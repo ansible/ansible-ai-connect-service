@@ -20,12 +20,25 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):
+        suggestionId = str(uuid.uuid4())
+        activityId = str(uuid.uuid4())
+
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+            "    - name: Install Apache for foo@ansible.com\n",
+            "suggestionId": suggestionId,
             "metadata": {
                 "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
-                "activityId": str(uuid.uuid4()),
+                "activityId": activityId,
+            },
+        }
+        expected = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+            "    - name: Install Apache for james8@example.com\n",
+            "suggestionId": suggestionId,
+            "metadata": {
+                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
+                "activityId": activityId,
             },
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
@@ -33,7 +46,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            DummyMeshClient(self, expected, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload, format='json')
@@ -43,6 +56,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
+                self.assertNotInLog("foo@ansible.com", log.output)
+                self.assertInLog("james8@example.com", log.output)
 
                 segment_events = self.extractSegmentEventsFromLog(log.output)
                 self.assertTrue(len(segment_events) > 0)
@@ -62,6 +77,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
+                self.assertNotInLog("foo@ansible.com", log.output)
+                self.assertInLog("james8@example.com", log.output)
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -72,6 +89,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("'event': 'wisdomServicePredictionsEvent',", log.output)
                 self.assertNotInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
+                self.assertNotInLog("foo@ansible.com", log.output)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
