@@ -27,9 +27,15 @@ services:
       - --config.file=/opt/prometheus/prometheus.yaml
       - --web.enable-lifecycle
     volumes:
-      - $PWD/prometheus/prometheus.yaml:/opt/prometheus/prometheus.yaml
+      - $PWD/prometheus/:/opt/prometheus/
     ports:
       - "9090:9090"
+    networks:
+      - dbnet
+  prom-pushgateway:
+    image: docker.io/prom/pushgateway
+    ports:
+      - "9091:9091"
     networks:
       - dbnet
 
