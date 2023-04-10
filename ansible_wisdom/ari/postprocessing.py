@@ -2,6 +2,7 @@ import contextlib
 import json
 import logging
 import timeit
+import uuid
 
 import yaml
 from ansible_risk_insight.scanner import ARIScanner
@@ -105,6 +106,7 @@ class ARICaller:
             target_type = "taskfile"
 
         result = self.ari_scanner.evaluate(
+            name=str(uuid.uuid4()),
             type=target_type,
             raw_yaml=input_yaml,
         )
