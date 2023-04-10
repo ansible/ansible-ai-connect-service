@@ -110,16 +110,15 @@ class PrometheusMiddleware(PrometheusBeforeMiddleware, PrometheusAfterMiddleware
         # Defining custom metrics and exporting them to Prometheus here
 
         duration_summary = Summary(
-            'request_duration_seconds', 'Time spent processing request', registry=registry
+            'request_latency_seconds', 'Description of summary', registry=registry
         )
-
-        # response = None
-
-        # start_time = time.time()
-        # try:
-        #     response = self.get_response(request)
-        # finally:
-        #     duration_summary.observe(time.time() - start_time)
+        duration_summary.observe(time.time())
+        gauge_details = Gauge(
+            'job_last_success_unixtime',
+            'Last time a batch job successfully finished',
+            registry=registry,
+        )
+        gauge_details.set_to_current_time()
 
         # Push the metrics to the Pushgateway
         try:
