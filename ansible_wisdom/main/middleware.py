@@ -3,7 +3,9 @@ import logging
 import time
 
 from ai.api.utils.segment import send_segment_event
+from ansible_anonymizer import anonymizer
 from django.conf import settings
+from django.http import QueryDict
 from django.urls import reverse
 from django_prometheus.middleware import (
     PrometheusAfterMiddleware,
@@ -20,6 +22,16 @@ version_info = VersionInfo()
 
 def on_segment_error(error, _):
     logger.error(f'An error occurred in sending data to Segment: {error}')
+
+
+def anonymize_request_data(data):
+    if isinstance(data, QueryDict):
+        # See: https://github.com/ansible/ansible-wisdom-service/pull/201#issuecomment-1483015431  # noqa: E501
+        new_data = data.copy()
+        new_data.update(anonymizer.anonymize_struct(data.dict()))
+    else:
+        new_data = anonymizer.anonymize_struct(data)
+    return new_data
 
 
 class SegmentMiddleware:
@@ -43,10 +55,11 @@ class SegmentMiddleware:
                         request_data = (
                             json.loads(request.body.decode("utf-8")) if request.body else {}
                         )
+                        request_data = anonymize_request_data(request_data)
                     except Exception:  # when an invalid json or an invalid encoding is detected
                         request_data = {}
                 else:
-                    request_data = request.POST
+                    request_data = anonymize_request_data(request.POST)
 
         response = self.get_response(request)
 
