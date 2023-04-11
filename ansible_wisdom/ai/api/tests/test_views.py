@@ -92,10 +92,10 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
         return events
 
     def assertInLog(self, s, logs):
-        self.assertTrue(self.searchInLogOutput(s, logs))
+        self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def assertNotInLog(self, s, logs):
-        self.assertFalse(self.searchInLogOutput(s, logs))
+        self.assertFalse(self.searchInLogOutput(s, logs), logs)
 
     def login(self):
         self.client.login(username=self.username, password=self.password)

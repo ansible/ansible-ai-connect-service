@@ -13,12 +13,14 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers
 
+from .fields import AnonymizedCharField
+
 
 class Metadata(serializers.Serializer):
     class Meta:
         fields = ['documentUri', 'activityId']
 
-    documentUri = serializers.CharField(required=False)
+    documentUri = AnonymizedCharField(required=False)
     activityId = serializers.UUIDField(
         format='hex_verbose',
         required=False,
@@ -45,7 +47,7 @@ class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'suggestionId', 'metadata']
 
-    prompt = serializers.CharField(
+    prompt = AnonymizedCharField(
         trim_whitespace=False,
         required=True,
         label='Prompt',
@@ -133,9 +135,9 @@ class InlineSuggestionFeedback(serializers.Serializer):
 
     latency = serializers.FloatField(required=False)
     userActionTime = serializers.FloatField(required=False)
-    documentUri = serializers.CharField(required=False)
+    documentUri = AnonymizedCharField(required=False)
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES)
-    error = serializers.CharField(required=False)
+    error = AnonymizedCharField(required=False)
     suggestionId = serializers.UUIDField(
         format='hex_verbose',
         required=True,
@@ -156,13 +158,13 @@ class AnsibleContentFeedback(serializers.Serializer):
     class Meta:
         fields = ['content', 'documentUri', 'trigger', 'activityId']
 
-    content = serializers.CharField(
+    content = AnonymizedCharField(
         trim_whitespace=False,
         required=True,
         label='Ansible Content',
         help_text='Ansible file content.',
     )
-    documentUri = serializers.CharField()
+    documentUri = AnonymizedCharField()
     trigger = serializers.ChoiceField(choices=CONTENT_UPLOAD_TRIGGER)
     activityId = serializers.UUIDField(
         format='hex_verbose',
