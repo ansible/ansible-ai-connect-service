@@ -211,6 +211,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8011)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
