@@ -37,7 +37,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             "    - name: Install Apache for james8@example.com\n",
             "suggestionId": suggestionId,
             "metadata": {
-                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
+                "documentUri": "file:///Users/ano-user/ansible/roles/apache/tasks/main.yml",
                 "activityId": activityId,
             },
         }
@@ -57,7 +57,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
                 self.assertNotInLog("foo@ansible.com", log.output)
+                self.assertNotInLog("username", log.output)
                 self.assertInLog("james8@example.com", log.output)
+                self.assertInLog("ano-user", log.output)
 
                 segment_events = self.extractSegmentEventsFromLog(log.output)
                 self.assertTrue(len(segment_events) > 0)
@@ -78,7 +80,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
                 self.assertNotInLog("foo@ansible.com", log.output)
+                self.assertNotInLog("username", log.output)
                 self.assertInLog("james8@example.com", log.output)
+                self.assertInLog("ano-user", log.output)
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -90,6 +94,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("'event': 'wisdomServicePostprocessingEvent',", log.output)
                 self.assertInLog("'event': 'wisdomServiceCompletionEvent',", log.output)
                 self.assertNotInLog("foo@ansible.com", log.output)
+                self.assertNotInLog("username", log.output)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
