@@ -43,6 +43,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(timestamp)
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
+        self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(3, len(dependencies))
         for dependency in dependencies:
@@ -68,6 +69,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['timestamp'])
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
+        self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(3, len(dependencies))
         for dependency in dependencies:
@@ -89,6 +91,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['timestamp'])
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
+        self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(3, len(dependencies))
         for dependency in dependencies:
@@ -107,6 +110,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['timestamp'])
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
+        self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(3, len(dependencies))
         for dependency in dependencies:
@@ -128,6 +132,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['timestamp'])
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
+        self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(3, len(dependencies))
         for dependency in dependencies:

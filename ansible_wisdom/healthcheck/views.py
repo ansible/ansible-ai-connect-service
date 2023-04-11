@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page, never_cache
@@ -36,6 +37,7 @@ class HealthCheckCustomView(MainView):
             'timestamp': str(datetime.now().isoformat()),
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
+            'model_name': settings.ANSIBLE_AI_MODEL_NAME,
         }
         dependencies = []
         for p in plugins:
@@ -76,6 +78,7 @@ class WisdomServiceHealthView(APIView):
                     "timestamp": "2023-03-13T17:25:17.240683",
                     "version": "latest 0.1.202303131417",
                     "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
+                    "model_name": "ansible-wisdom-v09",
                     "dependencies": [
                         {"name": "cache", "status": "ok", "time_taken": 2.032},
                         {"name": "db", "status": "ok", "time_taken": 233.538},
