@@ -78,6 +78,7 @@ class WisdomServiceHealthView(APIView):
                     "timestamp": "2023-03-13T17:25:17.240683",
                     "version": "latest 0.1.202303131417",
                     "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
+                    "model_name": "ansible-wisdom-v09",
                     "dependencies": [
                         {"name": "cache", "status": "ok", "time_taken": 2.032},
                         {"name": "db", "status": "ok", "time_taken": 233.538},
