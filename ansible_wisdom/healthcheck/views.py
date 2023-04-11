@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page, never_cache
@@ -36,6 +37,7 @@ class HealthCheckCustomView(MainView):
             'timestamp': str(datetime.now().isoformat()),
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
+            'model_name': settings.ANSIBLE_AI_MODEL_NAME,
         }
         dependencies = []
         for p in plugins:
