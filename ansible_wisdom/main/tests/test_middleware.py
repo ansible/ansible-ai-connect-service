@@ -63,7 +63,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
                 segment_events = self.extractSegmentEventsFromLog(log.output)
                 self.assertTrue(len(segment_events) > 0)
-                hostname = os.getenv('HOSTNAME', 'HOSTNAME_is_not_set')
+                hostname = os.getenv('HOSTNAME', '')
                 for event in segment_events:
                     self.assertTrue('modelName' in event)
                     self.assertTrue('imageTags' in event)

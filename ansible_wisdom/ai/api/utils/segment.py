@@ -22,7 +22,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
         event['imageTags'] = version_info.image_tags
 
     if 'hostname' not in event:
-        event['hostname'] = os.getenv('HOSTNAME', 'HOSTNAME_is_not_set')
+        event['hostname'] = os.getenv('HOSTNAME', '')
 
     try:
         analytics.track(
