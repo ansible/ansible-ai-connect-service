@@ -43,8 +43,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: |
+    - name: Setup Python and install dependencies
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip' # caching pip dependencies
+    - run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install coverage
