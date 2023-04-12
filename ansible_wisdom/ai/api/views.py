@@ -103,7 +103,7 @@ class Completions(APIView):
         except Exception as exc:
             # return the original prompt, context
             logger.error(
-                f'VIEWS COMPLETIONS POST: request failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
+                f'VIEWS COMPLETIONS POST: failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
             return Response({'message': 'Request contains invalid yaml'}, status=400)
         model_mesh_payload = ModelMeshPayload(
