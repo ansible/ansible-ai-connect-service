@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from django.conf import settings
+from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page, never_cache
@@ -16,6 +17,9 @@ from rest_framework import permissions
 from rest_framework.views import APIView
 
 from .version_info import VersionInfo
+
+NON_200_CACHE_TIMEOUT = 30  # Timeout for "manual" cache for non-200 response
+NON_200_CACHE_KEY = 'healthcheck.views.WisdomServiceHealthView.get'
 
 
 class HealthCheckCustomView(MainView):
@@ -93,7 +97,14 @@ class WisdomServiceHealthView(APIView):
     )
     @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
-        return self.customView.get(request, *args, **kwargs)
+        ret = cache.get(NON_200_CACHE_KEY)
+
+        if ret is None:
+            ret = self.customView.get(request, *args, **kwargs)
+            if ret.status_code != 200:
+                cache.set(NON_200_CACHE_KEY, ret, NON_200_CACHE_TIMEOUT)
+
+        return ret
 
 
 class WisdomServiceLivenessProbeView(APIView):
