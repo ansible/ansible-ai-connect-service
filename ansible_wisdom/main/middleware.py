@@ -21,7 +21,9 @@ version_info = VersionInfo()
 
 
 def on_segment_error(error, _):
-    logger.error(f'An error occurred in sending data to Segment: {error}')
+    logger.error(
+        f'MIDDLEWARE ON_SEGMENT_ERROR: An error occurred in sending data to Segment: {error}'
+    )
 
 
 def anonymize_request_data(data):

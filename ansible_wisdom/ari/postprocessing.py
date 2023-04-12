@@ -73,7 +73,9 @@ class ARICaller:
                 ):
                     is_playbook = True
             except Exception:
-                logger.exception('the received context could not be loaded as a YAML')
+                logger.exception(
+                    'ARI POSTPROCESSING MAKE_INPUT_YAML: the received context could not be loaded as a YAML'
+                )
         suggestion = cls.indent_suggestion(inference_output, prompt_indent)
         playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
@@ -81,7 +83,7 @@ class ARICaller:
             _ = yaml.safe_load(playbook_yaml)
         except Exception:
             logger.exception(
-                f'failed to create a valid playbook YAML which can be loaded correctly: '
+                f'ARI POSTPROCESSING MAKE_INPUT_YAML: failed to create a valid playbook YAML which can be loaded correctly: '
                 f'the created one is the following:\n{playbook_yaml}'
             )
             raise

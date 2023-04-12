@@ -45,5 +45,5 @@ class GrpcClient(ModelMeshClient):
             if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
                 raise ModelTimeoutError
             else:
-                logger.error(f"gRPC client error: {exc.details()}")
+                logger.error(f"GRPCCLIENT INFER: gRPC client error: {exc.details()}")
                 raise
