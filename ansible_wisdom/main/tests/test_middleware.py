@@ -1,4 +1,5 @@
 import os.path
+import platform
 import uuid
 from http import HTTPStatus
 from unittest.mock import patch
@@ -63,7 +64,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
                 segment_events = self.extractSegmentEventsFromLog(log.output)
                 self.assertTrue(len(segment_events) > 0)
-                hostname = os.getenv('HOSTNAME', '')
+                hostname = platform.node()
                 for event in segment_events:
                     self.assertTrue('modelName' in event)
                     self.assertTrue('imageTags' in event)
