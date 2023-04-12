@@ -1,0 +1,29 @@
+name: pip-audit
+
+on:
+  push:
+    # tags:
+    #   - v*
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install
+        run: |
+          python -m venv env/
+          source env/bin/activate
+          python -m pip install . -rrequirements.txt
+          # See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
+          pip install --upgrade setuptools
+      - uses: pypa/gh-action-pip-audit@v1.0.6
+        with:
+          virtual-environment: env/
