@@ -147,15 +147,16 @@ ROOT_URLCONF = "main.urls"
 FORMATTERS = (
     {
         "verbose": {
-            "format": "{levelname} {asctime} {name} {module} {filename} {lineno:d} {funcName} {message:} ",
+            "format": \
+            "{levelname} {asctime} {name} {module} {filename} {lineno:d} {funcName} {message:}",
             "style": "{",
         },
     },
 )
 
 HANDLERS = {
-    "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "DEBUG"},
-    "error_handler": {"class": "logging.StreamHandler", "formatter": "simple", "level": "DEBUG"},
+    "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
+    "error_handler": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
 }
 
 LOGGERS = (
