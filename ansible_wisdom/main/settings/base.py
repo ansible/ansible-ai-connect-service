@@ -144,14 +144,50 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = "main.urls"
 
+FORMATTERS = (
+    {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {module} {filename} {lineno:d} {funcName} {message:} ",
+            "style": "{",
+        },
+    },
+)
+
+HANDLERS = {
+    "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "DEBUG"},
+    "error_handler": {"class": "logging.StreamHandler", "formatter": "simple", "level": "DEBUG"},
+}
+
+LOGGERS = (
+    {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "django.request": {
+            "handlers": ["error_handler"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "django.template": {
+            "handlers": ["error_handler"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "django.server": {
+            "handlers": ["error_handler"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
+    "formatters": FORMATTERS[0],
+    "handlers": HANDLERS,
+    "loggers": LOGGERS[0],
     "root": {
         "handlers": ["console"],
         "level": "WARNING",

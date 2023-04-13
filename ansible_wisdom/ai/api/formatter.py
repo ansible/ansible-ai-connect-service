@@ -84,7 +84,7 @@ def preprocess(context, prompt):
         context = ""
         prompt = segs[0]
     else:
-        logger.warn(f"FORMATTER: preprocess failed - too few new-lines in: {formatted}")
+        logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
 
         logger.debug(f'preprocessed user input {context}\n{prompt}')
 
@@ -102,7 +102,7 @@ def handle_spaces_and_casing(prompt):
         text = " ".join(after.split())  # remove additional spaces in the prompt
         prompt = f'{before}{sep}{text}'
     except Exception:
-        logger.exception(f'FORMATTER: failed to handle spacing and casing for prompt {prompt}')
+        logger.exception(f'failed to handle spacing and casing for prompt {prompt}')
         # return the prompt as is if failed to process
 
     return prompt

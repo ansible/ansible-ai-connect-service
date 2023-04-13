@@ -33,7 +33,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
         logger.exception(
-            f"UTILS SEGMENT SEND_SEGMENT_EVENT: An exception {ex.__class__} occurred in sending event to segment: %s",
+            f"An exception {ex.__class__} occurred in sending event to segment: %s",
             event_name,
         )
         args = getattr(ex, 'args')
@@ -44,9 +44,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
             and len(args) == 3
         ):
             msg_len = len(args[2])
-            logger.error(
-                f"UTILS SEGMENT SEND_SEGMENT_EVENT: Message exceeds {args[1]}kb limit. msg_len={msg_len}"
-            )
+            logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
 
             event = {
                 "error_type": "event_exceeds_limit",

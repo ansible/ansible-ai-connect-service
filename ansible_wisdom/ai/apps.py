@@ -63,6 +63,6 @@ class AiConfig(AppConfig):
             )
             logger.info("Postprocessing is enabled.")
         except Exception:
-            logger.exception("APPS AICONFIG GET_ARI_CALLER: Failed to initialize ARI.")
+            logger.exception("Failed to initialize ARI.")
             self._ari_caller = FAILED
         return self._ari_caller

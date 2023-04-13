@@ -103,7 +103,7 @@ class Completions(APIView):
         except Exception as exc:
             # return the original prompt, context
             logger.error(
-                f'VIEWS COMPLETIONS POST: failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
+                f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
             return Response({'message': 'Request contains invalid yaml'}, status=400)
         model_mesh_payload = ModelMeshPayload(
@@ -129,9 +129,7 @@ class Completions(APIView):
             raise ModelTimeoutException
         except Exception as exc:
             exception = exc
-            logger.exception(
-                f"VIEWS COMPLETIONS POST: error requesting completion for suggestion {payload.suggestionId}"
-            )
+            logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
             raise ServiceUnavailable
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
@@ -161,7 +159,7 @@ class Completions(APIView):
             )
         except Exception:
             logger.exception(
-                f"VIEWS COMPLETIONS POST: error postprocessing prediction for suggestion {payload.suggestionId}"
+                f"error postprocessing prediction for suggestion {payload.suggestionId}"
             )
             raise PostprocessException
 
@@ -174,7 +172,7 @@ class Completions(APIView):
             response_serializer.is_valid(raise_exception=True)
         except Exception:
             logger.exception(
-                f"VIEWS COMPLETIONS POST: error serializing final response for suggestion {payload.suggestionId}"
+                f"error serializing final response for suggestion {payload.suggestionId}"
             )
             raise InternalServerError
         return Response(postprocessed_predictions, status=200)
@@ -187,9 +185,7 @@ class Completions(APIView):
     def postprocess(self, recommendation, prompt, context, user_id, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
         if not ari_caller:
-            logger.warn(
-                'VIEWS COMPLETIONS POSTPROCESS: skipped ari post processing because ari was not initialized'
-            )
+            logger.warn('skipped ari post processing because ari was not initialized')
 
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
             if ari_caller:
@@ -213,7 +209,7 @@ class Completions(APIView):
                         recommendation_problem = exc
                     if recommendation_problem:
                         logger.error(
-                            f'VIEWS COMPLETIONS POSTPROCESS: recommendation_yaml is not a valid YAML: '
+                            f'recommendation_yaml is not a valid YAML: '
                             f'\n{recommendation_yaml}'
                             f'\nException:\n{recommendation_problem}'
                         )
@@ -253,7 +249,7 @@ class Completions(APIView):
                     exception = exc
                     # return the original recommendation if we failed to postprocess
                     logger.exception(
-                        f'VIEWS COMPLETIONS POSTPROCESS: failed to postprocess recommendation with prompt {prompt} '
+                        f'failed to postprocess recommendation with prompt {prompt} '
                         f'context {context} and model recommendation {recommendation}'
                     )
                 finally:
@@ -445,9 +441,7 @@ class Attributions(GenericAPIView):
         try:
             resp_serializer = self.perform_search(serializer)
         except Exception as exc:
-            logger.error(
-                f"VIEWS ATTRIBUTIONS POST: Failed to search for attributions\nException:\n{exc}"
-            )
+            logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
 
@@ -461,7 +455,7 @@ class Attributions(GenericAPIView):
         data = ai_search.search(serializer.validated_data['suggestion'])
         resp_serializer = AttributionResponseSerializer(data=data)
         if not resp_serializer.is_valid():
-            logging.error(f"VIEWS ATTRIBUTIONS PERFORM_SEARCH: {resp_serializer.errors}")
+            logging.error(resp_serializer.errors)
         return resp_serializer
 
     def write_to_segment(self, user_id, suggestion_id, duration, attribution_data):
