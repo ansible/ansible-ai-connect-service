@@ -1,4 +1,5 @@
 import logging
+import platform
 from typing import Any, Dict, Union
 
 from django.conf import settings
@@ -19,6 +20,9 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
 
     if 'imageTags' not in event:
         event['imageTags'] = version_info.image_tags
+
+    if 'hostname' not in event:
+        event['hostname'] = platform.node()
 
     try:
         analytics.track(
