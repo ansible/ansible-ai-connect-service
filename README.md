@@ -1,4 +1,4 @@
-# Project Wisdom service
+# Ansible Lightspeed with Watson Code Assistant service
 
 Note: This repository is under active development and is not yet ready for production use.
 
@@ -211,7 +211,7 @@ and then run the Django command to create the application:
 
 ```bash
   wisdom-manage createapplication \
-    --name "Project Wisdom for VSCode" \
+    --name "Ansible Lightspeed for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
     --redirect-uris "vscode://redhat.ansible" \
     public authorization-code

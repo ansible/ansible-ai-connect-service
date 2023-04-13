@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Project Wisdom Service
+  title: Ansible Lightspeed with Watson Code Assistant Service
   version: 0.0.7
   description: Equip the automation developer with Wisdom super powers.
 paths:
