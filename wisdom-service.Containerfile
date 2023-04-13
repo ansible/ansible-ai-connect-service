@@ -27,6 +27,8 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
 COPY requirements.txt /var/www/
+# See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
+RUN /var/www/venv/bin/pip install --upgrade 'setuptools>=65.5.1'
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
 
