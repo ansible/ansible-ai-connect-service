@@ -39,7 +39,6 @@ urlpatterns = [
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
     path('terms_of_service/', TermsOfService.as_view(), name='terms_of_service'),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    # Temp Wisdom home page to share token for pilot
     path(
         'login/',
         auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}),

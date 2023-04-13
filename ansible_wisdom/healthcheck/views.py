@@ -55,7 +55,7 @@ class HealthCheckCustomView(MainView):
 
 class WisdomServiceHealthView(APIView):
     """
-    Wisdom Service Health Check
+    Lightspeed Service Health Check
     """
 
     permission_classes = [permissions.AllowAny]
@@ -98,7 +98,7 @@ class WisdomServiceHealthView(APIView):
 
 class WisdomServiceLivenessProbeView(APIView):
     """
-    Wisdom Service Liveness Probe View
+    Lightspeed Service Liveness Probe View
     """
 
     permission_classes = [permissions.AllowAny]
