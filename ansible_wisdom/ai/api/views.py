@@ -142,7 +142,7 @@ class Completions(APIView):
                 "response": ano_predictions,
                 "suggestionId": str(payload.suggestionId),
             }
-            send_segment_event(event, "wisdomServicePredictionsEvent", payload.userId)
+            send_segment_event(event, "lightspeedServicePredictionsEvent", payload.userId)
 
         logger.debug(
             f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
@@ -297,7 +297,7 @@ class Completions(APIView):
             "detail": postprocess_detail,
             "suggestionId": str(suggestion_id) if suggestion_id else None,
         }
-        send_segment_event(event, "wisdomServicePostprocessingEvent", user_id)
+        send_segment_event(event, "lightspeedServicePostprocessingEvent", user_id)
 
 
 class Feedback(APIView):
@@ -365,7 +365,7 @@ class Feedback(APIView):
                 "activityId": str(inline_suggestion_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "wisdomServiceInlineSuggestionFeedbackEvent", user_id)
+            send_segment_event(event, "lightspeedServiceInlineSuggestionFeedbackEvent", user_id)
         if ansible_content_data:
             event = {
                 "content": ansible_content_data.get('content'),
@@ -374,7 +374,7 @@ class Feedback(APIView):
                 "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "wisdomServiceAnsibleContentFedbackEvent", user_id)
+            send_segment_event(event, "lightspeedServiceAnsibleContentFedbackEvent", user_id)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
