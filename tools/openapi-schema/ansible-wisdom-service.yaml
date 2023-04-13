@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Project Wisdom Service
+  title: Ansible Lightspeed with Watson Code Assistant Service
   version: 0.0.7
-  description: Equip the automation developer with Wisdom super powers.
+  description: Equip the automation developer at Lightspeed.
 paths:
   /api/v0/ai/attributions/:
     post:
@@ -77,10 +77,10 @@ paths:
               $ref: '#/components/schemas/CompletionRequest'
         required: true
       security:
-      - cookieAuth: []
       - oauth2:
         - read
         - write
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -154,10 +154,10 @@ paths:
             schema:
               $ref: '#/components/schemas/FeedbackRequest'
       security:
-      - cookieAuth: []
       - oauth2:
         - read
         - write
+      - cookieAuth: []
       responses:
         '200':
           description: Success
@@ -182,7 +182,7 @@ paths:
   /check/:
     get:
       operationId: check_retrieve
-      description: Wisdom Service Liveness Probe View
+      description: Lightspeed Service Liveness Probe View
       summary: Liveness probe
       tags:
       - check
@@ -194,7 +194,7 @@ paths:
   /check/status/:
     get:
       operationId: check_status_retrieve
-      description: Wisdom Service Health Check
+      description: Lightspeed Service Health Check
       summary: Health check with backend server status
       tags:
       - check
@@ -214,6 +214,7 @@ paths:
                     timestamp: '2023-03-13T17:25:17.240683'
                     version: latest 0.1.202303131417
                     git_commit: b987bc43b90f8aca2deaf3bda85596f4b95a10a0
+                    model_name: ansible-wisdom-v09
                     dependencies:
                     - name: cache
                       status: ok

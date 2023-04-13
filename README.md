@@ -1,4 +1,4 @@
-# Project Wisdom service
+# Ansible Lightspeed with Watson Code Assistant service
 
 Note: This repository is under active development and is not yet ready for production use.
 
@@ -211,7 +211,7 @@ and then run the Django command to create the application:
 
 ```bash
   wisdom-manage createapplication \
-    --name "Project Wisdom for VSCode" \
+    --name "Ansible Lightspeed for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
     --redirect-uris "vscode://redhat.ansible" \
     public authorization-code
@@ -285,7 +285,7 @@ Then you can build the django image or just run `make docker-compose`.
 
 ## Application metrics as a Prometheus-style endpoint
 
-We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Wisdom service for monitoring and measuring its availability.
+We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Lightspeed service for monitoring and measuring its availability.
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
@@ -298,7 +298,7 @@ the development environment only**.
 - **Note:** It is not enabled in the production environment regardless of any settings.
 
 
-If you want to test Wisdom APIs using Swagger UI,
+If you want to test Lightspeed APIs using Swagger UI,
 
 1. Open http://localhost:8000/ and get an authentication token by
 following the instructions described in the
@@ -376,7 +376,7 @@ If the execution was successful, results in HTML are showin in Chrome.
 
 For executing unit tests from command lline,
 You need to set some environment variables
-that are read by Wisdom Service.
+that are read by Lightspeed Service.
 If you are using PyCharm
 for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
  with the following `.env` file:
