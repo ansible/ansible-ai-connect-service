@@ -147,8 +147,7 @@ ROOT_URLCONF = "main.urls"
 FORMATTERS = (
     {
         "verbose": {
-            "format": \
-            "{levelname} {asctime} {name} {module} {filename} {lineno:d} {funcName} {message:}",
+            "format": "{levelname} {name} {filename} {funcName} {message:}",
             "style": "{",
         },
     },
