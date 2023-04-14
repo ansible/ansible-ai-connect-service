@@ -96,7 +96,7 @@ class SegmentMiddleware:
                     "imageTags": version_info.image_tags,
                 }
 
-                send_segment_event(event, "lightspeedServiceCompletionEvent", user_id)
+                send_segment_event(event, "completion", user_id)
 
         return response
 
