@@ -178,7 +178,7 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "INFO"},
     },
     "loggers": LOGGERS[0],
     "root": {
