@@ -144,19 +144,6 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = "main.urls"
 
-FORMATTERS = (
-    {
-        "verbose": {
-            "format": "{levelname}:{name}:{filename}:{funcName}:{message}:",
-            "style": "{",
-        },
-    },
-)
-
-HANDLERS = {
-    "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
-}
-
 LOGGERS = (
     {
         "django": {
@@ -184,8 +171,15 @@ LOGGERS = (
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": FORMATTERS[0],
-    "handlers": HANDLERS,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {funcName} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
+    },
     "loggers": LOGGERS[0],
     "root": {
         "handlers": ["console"],
