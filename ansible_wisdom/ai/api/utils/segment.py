@@ -52,6 +52,4 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user_id: Union[st
                     "msg_len": msg_len,
                 },
             }
-            send_segment_event(
-                event, "wisdomServiceSegmentErrorEvent", str(user_id) if user_id else 'unknown'
-            )
+            send_segment_event(event, "segmentError", str(user_id) if user_id else 'unknown')
