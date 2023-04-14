@@ -147,7 +147,7 @@ ROOT_URLCONF = "main.urls"
 FORMATTERS = (
     {
         "verbose": {
-            "format": "{levelname} {name} {filename} {funcName} {message:}",
+            "format": "{levelname}:{name}:{filename}:{funcName}:{message}:",
             "style": "{",
         },
     },
@@ -155,7 +155,6 @@ FORMATTERS = (
 
 HANDLERS = {
     "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
-    "error_handler": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "DEBUG"},
 }
 
 LOGGERS = (
@@ -165,17 +164,17 @@ LOGGERS = (
             "level": "INFO",
         },
         "django.request": {
-            "handlers": ["error_handler"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,
         },
         "django.template": {
-            "handlers": ["error_handler"],
-            "level": "DEBUG",
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": True,
         },
         "django.server": {
-            "handlers": ["error_handler"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,
         },
