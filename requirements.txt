@@ -4,6 +4,7 @@ datasets==2.10.1
 tqdm==4.64.1
 Django==4.1.7
 django-extensions==3.2.1
+django-import-export==3.2.0
 django-oauth-toolkit==2.2.0
 djangorestframework==3.14.0
 grpcio==1.51.1
