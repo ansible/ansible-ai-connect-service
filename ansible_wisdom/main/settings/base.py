@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "health_check.cache",
     "healthcheck",
     "oauth2_provider",
+    'import_export',
 ]
 
 
