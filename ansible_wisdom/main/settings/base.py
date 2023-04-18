@@ -118,10 +118,10 @@ OAUTH2_PROVIDER = {
         'write': "Request ansible content suggestions",
     },
     'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https', 'vscode'],
+    # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 1_209_600,  # = 2 weeks
 }
 
-# ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
-REFRESH_TOKEN_EXPIRE_SECONDS = 1_209_600  # = 2 weeks
 
 # OAUTH: todo
 # - remove ansible_wisdom/users/auth.py module
