@@ -144,43 +144,18 @@ REST_FRAMEWORK = {
 
 ROOT_URLCONF = "main.urls"
 
-LOGGERS = (
-    {
-        "django": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "django.request": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": True,
-        },
-        "django.template": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": True,
-        },
-        "django.server": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": True,
-        },
-    },
-)
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {funcName} {process:d} {thread:d} {message}",
+            "format": "{levelname} {name} {filename} {funcName} {message}",
             "style": "{",
         },
     },
     "handlers": {
         "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "INFO"},
     },
-    "loggers": LOGGERS[0],
     "root": {
         "handlers": ["console"],
         "level": "WARNING",
