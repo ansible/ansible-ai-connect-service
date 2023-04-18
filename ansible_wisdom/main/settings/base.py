@@ -116,7 +116,7 @@ SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 OAUTH2_PROVIDER = {
     'SCOPES': {
         'read': "Read basic user information",
-        'write': "Request ansible content suggestions",
+        'write': "Request Ansible content suggestions",
     },
     'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https', 'vscode'],
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
