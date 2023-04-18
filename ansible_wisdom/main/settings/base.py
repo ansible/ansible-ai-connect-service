@@ -149,12 +149,27 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {name} {filename} {funcName} {message}",
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {asctime} {filename}:{funcName} {message}",
             "style": "{",
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "verbose", "level": "INFO"},
+        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     "root": {
         "handlers": ["console"],
