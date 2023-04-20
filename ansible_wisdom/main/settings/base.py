@@ -169,7 +169,7 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": "WARNING",
+        "level": os.getenv("DJANGO_LOG_LEVEL", "WARNING"),
     },
 }
 
