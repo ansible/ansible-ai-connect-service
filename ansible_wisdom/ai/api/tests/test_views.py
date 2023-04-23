@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 
+import platform
 import random
 import string
 import time
 import uuid
 from ast import literal_eval
-from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
 from ai.api.model_client.base import ModelMeshClient
-from ai.api.serializers import CompletionRequestSerializer
+from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import Completions
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.test import APITransactionTestCase
 from yaml.parser import ParserError
@@ -60,21 +62,23 @@ class DummyMeshClient(ModelMeshClient):
 
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.username = 'u' + "".join(random.choices(string.digits, k=5))
-        cls.password = 'secret'
-        cls.email = 'user@example.com'
-        cls.user = get_user_model().objects.create_user(
-            username=cls.username,
-            email=cls.email,
-            password=cls.password,
-        )
-        cls.user.user_id = str(uuid.uuid4())
-        cls.user.date_terms_accepted = datetime.now()
-
     def setUp(self):
+        self.username = 'u' + "".join(random.choices(string.digits, k=5))
+        self.password = 'secret'
+        email = 'user@example.com'
+        self.user = get_user_model().objects.create_user(
+            username=self.username,
+            email=email,
+            password=self.password,
+        )
+        self.user.user_id = str(uuid.uuid4())
+        self.user.date_terms_accepted = timezone.now()
+        self.user.save()
+
+        group_1, _ = Group.objects.get_or_create(name='Group 1')
+        group_2, _ = Group.objects.get_or_create(name='Group 2')
+        group_1.user_set.add(self.user)
+        group_2.user_set.add(self.user)
         cache.clear()
 
     def searchInLogOutput(self, s, logs):
@@ -87,7 +91,12 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
         events = []
         for log in logs:
             if log.startswith('DEBUG:segment:queueing: '):
-                obj = literal_eval(log.replace('DEBUG:segment:queueing: ', '').replace('\n', ''))
+                obj = literal_eval(
+                    log.replace('DEBUG:segment:queueing: ', '')
+                    .replace('\n', '')
+                    .replace('DataSource.UNKNOWN', '0')
+                    .replace('AnsibleType.UNKNOWN', '0')
+                )
                 events.append(obj['properties'])
         return events
 
@@ -166,66 +175,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
-
-
-@modify_settings()
-class TestFeedbackView(WisdomServiceAPITestCaseBase):
-    def test_feedback_full_payload(self):
-        payload = {
-            "inlineSuggestion": {
-                "latency": 1000,
-                "userActionTime": 3500,
-                "documentUri": "file:///home/user/ansible.yaml",
-                "action": "0",
-                "suggestionId": str(uuid.uuid4()),
-            },
-            "ansibleContent": {
-                "content": "---\n- hosts: all\n  become: yes\n\n  "
-                "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/user/ansible.yaml",
-                "activityId": str(uuid.uuid4()),
-                "trigger": "0",
-            },
-        }
-        self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format='json')
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
-    def test_missing_content(self):
-        payload = {
-            "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
-        }
-        self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    def test_anonymize(self):
-        payload = {
-            "ansibleContent": {
-                "content": "---\n- hosts: all\n  become: yes\n\n  "
-                "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/jean-pierre/ansible.yaml",
-                "trigger": "0",
-            }
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='DEBUG') as log:
-            r = self.client.post(reverse('feedback'), payload, format="json")
-            self.assertNotInLog('file:///home/user/ansible.yaml', log.output)
-            self.assertInLog('file:///home/ano-user/ansible.yaml', log.output)
-
-    def test_authentication_error(self):
-        payload = {
-            "ansibleContent": {
-                "content": "---\n- hosts: all\n  become: yes\n\n  "
-                "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/user/ansible.yaml",
-                "trigger": "0",
-            }
-        }
-        # self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_completions_preprocessing_error(self):
         payload = {
@@ -323,3 +272,154 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertInLog('Create an account for james8@example.com', log.output)
+
+
+@modify_settings()
+class TestFeedbackView(WisdomServiceAPITestCaseBase):
+    def test_feedback_full_payload(self):
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": str(uuid.uuid4()),
+                "trigger": "0",
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format='json')
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    def test_missing_content(self):
+        payload = {
+            "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
+        }
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_anonymize(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/jean-pierre/ansible.yaml",
+                "trigger": "0",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format="json")
+            self.assertNotInLog('file:///home/user/ansible.yaml', log.output)
+            self.assertInLog('file:///home/ano-user/ansible.yaml', log.output)
+
+    def test_authentication_error(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "trigger": "0",
+            }
+        }
+        # self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('feedback'), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_events(self):
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": str(uuid.uuid4()),
+                "trigger": "0",
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            hostname = platform.node()
+            for event in segment_events:
+                self.assertTrue('modelName' in event)
+                self.assertTrue('imageTags' in event)
+                self.assertTrue('groups' in event)
+                self.assertTrue('Group 1' in event['groups'])
+                self.assertTrue('Group 2' in event['groups'])
+                self.assertEqual(hostname, event['hostname'])
+
+
+class TestAttributionsView(WisdomServiceAPITestCaseBase):
+    @patch('ai.search.search')
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_segment_events(self, mock_search):
+        mock_search.return_value = {
+            'attributions': [
+                {
+                    'repo_name': 'repo_name',
+                    'repo_url': 'http://example.com',
+                    'path': '/path',
+                    'license': 'license',
+                    'data_source': DataSource.UNKNOWN,
+                    'ansible_type': AnsibleType.UNKNOWN,
+                    'score': 0.0,
+                },
+            ]
+        }
+        payload = {
+            'suggestion': 'suggestion',
+            'suggestionId': str(uuid.uuid4()),
+        }
+
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('attributions'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            hostname = platform.node()
+            for event in segment_events:
+                self.assertTrue('modelName' in event)
+                self.assertTrue('imageTags' in event)
+                self.assertTrue('groups' in event)
+                self.assertTrue('Group 1' in event['groups'])
+                self.assertTrue('Group 2' in event['groups'])
+                self.assertEqual(hostname, event['hostname'])
+
+    @patch('ai.search.search')
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_segment_events_with_exception(self, mock_search):
+        mock_search.side_effect = Exception('Search Exception')
+        payload = {
+            'suggestion': 'suggestion',
+            'suggestionId': str(uuid.uuid4()),
+        }
+
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('attributions'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertEqual(len(segment_events), 0)
+            self.assertInLog('Failed to search for attributions', log.output)

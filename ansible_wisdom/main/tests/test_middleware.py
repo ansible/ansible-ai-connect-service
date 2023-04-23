@@ -68,6 +68,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     self.assertTrue('modelName' in event)
                     self.assertTrue('imageTags' in event)
+                    self.assertTrue('groups' in event)
+                    self.assertTrue('Group 1' in event['groups'])
+                    self.assertTrue('Group 2' in event['groups'])
                     self.assertEqual(hostname, event['hostname'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
