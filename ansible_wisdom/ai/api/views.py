@@ -15,6 +15,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
+from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
@@ -142,7 +143,7 @@ class Completions(APIView):
                 "response": ano_predictions,
                 "suggestionId": str(payload.suggestionId),
             }
-            send_segment_event(event, "prediction", payload.userId)
+            send_segment_event(event, "prediction", request.user)
 
         logger.debug(
             f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
@@ -153,7 +154,7 @@ class Completions(APIView):
                 ano_predictions,
                 payload.prompt,
                 payload.context,
-                payload.userId,
+                request.user,
                 payload.suggestionId,
                 indent=original_indent,
             )
@@ -182,7 +183,7 @@ class Completions(APIView):
 
         return context, prompt
 
-    def postprocess(self, recommendation, prompt, context, user_id, suggestion_id, indent):
+    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
@@ -254,7 +255,7 @@ class Completions(APIView):
                     )
                 finally:
                     self.write_to_segment(
-                        user_id,
+                        user,
                         suggestion_id,
                         recommendation_yaml,
                         truncated_yaml,
@@ -276,7 +277,7 @@ class Completions(APIView):
 
     def write_to_segment(
         self,
-        user_id,
+        user,
         suggestion_id,
         recommendation_yaml,
         truncated_yaml,
@@ -297,7 +298,7 @@ class Completions(APIView):
             "detail": postprocess_detail,
             "suggestionId": str(suggestion_id) if suggestion_id else None,
         }
-        send_segment_event(event, "postprocess", user_id)
+        send_segment_event(event, "postprocess", user)
 
 
 class Feedback(APIView):
@@ -326,7 +327,6 @@ class Feedback(APIView):
     )
     def post(self, request) -> Response:
         exception = None
-        user_id = str(request.user.uuid)
         inline_suggestion_data = {}
         ansible_content_data = {}
         try:
@@ -347,11 +347,13 @@ class Feedback(APIView):
                 status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         finally:
-            self.write_to_segment(user_id, inline_suggestion_data, ansible_content_data, exception)
+            self.write_to_segment(
+                request.user, inline_suggestion_data, ansible_content_data, exception
+            )
 
     def write_to_segment(
         self,
-        user_id: str,
+        user: User,
         inline_suggestion_data: InlineSuggestionFeedback,
         ansible_content_data: AnsibleContentFeedback,
         exception: Exception = None,
@@ -365,7 +367,7 @@ class Feedback(APIView):
                 "activityId": str(inline_suggestion_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "inlineSuggestionFeedback", user_id)
+            send_segment_event(event, "inlineSuggestionFeedback", user)
         if ansible_content_data:
             event = {
                 "content": ansible_content_data.get('content'),
@@ -374,7 +376,7 @@ class Feedback(APIView):
                 "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "ansibleContentFedback", user_id)
+            send_segment_event(event, "ansibleContentFedback", user)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
@@ -435,7 +437,6 @@ class Attributions(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user_id = str(request.user.uuid)
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
         try:
@@ -447,7 +448,7 @@ class Attributions(GenericAPIView):
 
         # Currently the only thing from Attributions that is going to Segment is the
         # inferred sources, which do not seem to need anonymizing.
-        self.write_to_segment(user_id, suggestion_id, duration, resp_serializer.validated_data)
+        self.write_to_segment(request.user, suggestion_id, duration, resp_serializer.validated_data)
 
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
@@ -458,7 +459,7 @@ class Attributions(GenericAPIView):
             logging.error(resp_serializer.errors)
         return resp_serializer
 
-    def write_to_segment(self, user_id, suggestion_id, duration, attribution_data):
+    def write_to_segment(self, user, suggestion_id, duration, attribution_data):
         for attribution in attribution_data.get('attributions', []):
             event = {'suggestionId': suggestion_id, 'duration': duration, **attribution}
-            send_segment_event(event, "attribution", user_id)
+            send_segment_event(event, "attribution", user)

@@ -65,7 +65,6 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
-                user_id = getattr(request.user, 'uuid', None)
                 suggestion_id = request_data.get('suggestionId')
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
@@ -96,7 +95,7 @@ class SegmentMiddleware:
                     "imageTags": version_info.image_tags,
                 }
 
-                send_segment_event(event, "completion", user_id)
+                send_segment_event(event, "completion", request.user)
 
         return response
 
