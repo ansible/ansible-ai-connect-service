@@ -147,14 +147,29 @@ ROOT_URLCONF = "main.urls"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{levelname} {asctime} {filename}:{funcName} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
+        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
     "root": {
         "handlers": ["console"],
-        "level": "WARNING",
+        "level": os.getenv("DJANGO_LOG_LEVEL", "WARNING"),
     },
 }
 

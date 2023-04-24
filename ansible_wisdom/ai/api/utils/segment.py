@@ -37,7 +37,8 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
         logger.exception(
-            f"An exception {ex.__class__} occurred in sending event to segment: %s", event_name
+            f"An exception {ex.__class__} occurred in sending event to segment: %s",
+            event_name,
         )
         args = getattr(ex, 'args')
         # Log RuntimeError and send the error to Segment if it is for an event exceeding size limit
