@@ -237,7 +237,18 @@ class AttributionRequestSerializer(serializers.Serializer):
 
 class DataSource(models.IntegerChoices):
     UNKNOWN = -1, "Unknown Source"
-    GALAXY = 0, "Ansible Galaxy"
+    GBQ = (
+        0,
+        "GBQ",
+    )
+    GITHUB = (
+        1,
+        "GitHub",
+    )
+    GALAXY = (
+        2,
+        "Ansible Galaxy",
+    )
 
 
 class AnsibleType(models.IntegerChoices):
