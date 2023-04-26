@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    # "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -61,7 +62,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "main.middleware.SegmentMiddleware",
-    "main.middleware.PrometheusMiddleware",
+    # "django_prometheus.middleware.PrometheusAfterMiddleware"
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -234,7 +235,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8011)
+PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8021)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
