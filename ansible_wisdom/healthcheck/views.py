@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 
 from django.conf import settings
-from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page, never_cache
@@ -18,8 +17,7 @@ from rest_framework.views import APIView
 
 from .version_info import VersionInfo
 
-NON_200_CACHE_TIMEOUT = 30  # Timeout for "manual" cache for non-200 response
-NON_200_CACHE_KEY = 'healthcheck.views.WisdomServiceHealthView.get'
+CACHE_TIMEOUT = 30
 
 
 class HealthCheckCustomView(MainView):
@@ -31,13 +29,14 @@ class HealthCheckCustomView(MainView):
 
     _version_info = VersionInfo()
 
+    @method_decorator(cache_page(CACHE_TIMEOUT))
     def get(self, request, *args, **kwargs):
-        status_code = 500 if self.errors else 200
+        status_code = 200  # Set status code to 200 for letting the output be cached
         return self.render_to_response_json(self.plugins, status_code)
 
     def render_to_response_json(self, plugins, status):  # customize JSON output
         data = {
-            'status': 'ok' if status == 200 else 'error',
+            'status': 'error' if self.errors else 'ok',
             'timestamp': str(datetime.now().isoformat()),
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
@@ -95,16 +94,14 @@ class WisdomServiceHealthView(APIView):
         methods=['GET'],
         summary="Health check with backend server status",
     )
-    @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
-        ret = cache.get(NON_200_CACHE_KEY)
-
-        if ret is None:
-            ret = self.customView.get(request, *args, **kwargs)
-            if ret.status_code != 200:
-                cache.set(NON_200_CACHE_KEY, ret, NON_200_CACHE_TIMEOUT)
-
-        return ret
+        res = self.customView.get(request, *args, **kwargs)
+        # res contains status_code = 200 for utilizing view cache.  We need to set the correct
+        # status code based on the status attribute stored in the JSON content
+        data = json.loads(res.content)
+        if data['status'] != 'ok':
+            res.status_code = 500
+        return res
 
 
 class WisdomServiceLivenessProbeView(APIView):
