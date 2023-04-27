@@ -100,7 +100,6 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
-        model_version = self._version_info.image_tags
         original_indent = payload.prompt.find("name")
 
         try:
@@ -175,7 +174,7 @@ class Completions(APIView):
         try:
             postprocessed_predictions.update(
                 {
-                    "modelVersion": model_version,
+                    "modelName": model_name,
                     "suggestionId": payload.suggestionId,
                 }
             )
