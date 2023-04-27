@@ -8,6 +8,7 @@ from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from healthcheck.version_info import VersionInfo
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -78,6 +79,8 @@ class Completions(APIView):
 
     throttle_classes = [CompletionsUserRateThrottle]
 
+    _version_info = VersionInfo()
+
     @extend_schema(
         request=CompletionRequestSerializer,
         responses={
@@ -97,6 +100,7 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
+        model_version = self._version_info.image_tags
         original_indent = payload.prompt.find("name")
 
         try:
@@ -169,6 +173,12 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
         )
         try:
+            postprocessed_predictions.update(
+                {
+                    "modelVersion": model_version,
+                    "suggestionId": payload.suggestionId,
+                }
+            )
             response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
             response_serializer.is_valid(raise_exception=True)
         except Exception:

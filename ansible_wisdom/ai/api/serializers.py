@@ -114,8 +114,10 @@ class CompletionRequestSerializer(serializers.Serializer):
 )
 class CompletionResponseSerializer(serializers.Serializer):
     class Meta:
-        fields = ['predictions']
+        fields = ['predictions', 'suggestionId', 'modelVersion']
 
+    modelVersion = serializers.StringRelatedField()
+    suggestionId = serializers.StringRelatedField()
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
 
 
