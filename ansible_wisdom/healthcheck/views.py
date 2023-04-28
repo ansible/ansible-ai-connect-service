@@ -17,6 +17,8 @@ from rest_framework.views import APIView
 
 from .version_info import VersionInfo
 
+CACHE_TIMEOUT = 30
+
 
 class HealthCheckCustomView(MainView):
     _plugin_name_map = {
@@ -27,13 +29,14 @@ class HealthCheckCustomView(MainView):
 
     _version_info = VersionInfo()
 
+    @method_decorator(cache_page(CACHE_TIMEOUT))
     def get(self, request, *args, **kwargs):
-        status_code = 500 if self.errors else 200
+        status_code = 200  # Set status code to 200 for letting the output be cached
         return self.render_to_response_json(self.plugins, status_code)
 
     def render_to_response_json(self, plugins, status):  # customize JSON output
         data = {
-            'status': 'ok' if status == 200 else 'error',
+            'status': 'error' if self.errors else 'ok',
             'timestamp': str(datetime.now().isoformat()),
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
@@ -91,9 +94,14 @@ class WisdomServiceHealthView(APIView):
         methods=['GET'],
         summary="Health check with backend server status",
     )
-    @method_decorator(cache_page(60))
     def get(self, request, *args, **kwargs):
-        return self.customView.get(request, *args, **kwargs)
+        res = self.customView.get(request, *args, **kwargs)
+        # res contains status_code = 200 for utilizing view cache.  We need to set the correct
+        # status code based on the status attribute stored in the JSON content
+        data = json.loads(res.content)
+        if data['status'] != 'ok':
+            res.status_code = 500
+        return res
 
 
 class WisdomServiceLivenessProbeView(APIView):

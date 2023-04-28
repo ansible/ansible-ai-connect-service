@@ -66,7 +66,8 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
         data = json.loads(r.content)
         self.assertEqual('error', data['status'])
-        self.assertIsNotNone(data['timestamp'])
+        timestamp = data['timestamp']
+        self.assertIsNotNone(timestamp)
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
@@ -79,6 +80,16 @@ class TestHealthCheck(APITestCase):
             else:
                 self.assertEqual('ok', dependency['status'])
             self.assertGreaterEqual(dependency['time_taken'], 0)
+        print(data['timestamp'])
+
+        time.sleep(1)
+
+        # Make sure the cached data is returned in the second call after 1 sec
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        data = json.loads(r.content)
+        self.assertEqual(timestamp, data['timestamp'])
+        print(data['timestamp'])
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     @mock.patch('requests.get', side_effect=mocked_requests_get)
