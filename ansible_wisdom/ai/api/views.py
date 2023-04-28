@@ -8,7 +8,6 @@ from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from healthcheck.version_info import VersionInfo
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -78,8 +77,6 @@ class Completions(APIView):
     required_scopes = ['read', 'write']
 
     throttle_classes = [CompletionsUserRateThrottle]
-
-    _version_info = VersionInfo()
 
     @extend_schema(
         request=CompletionRequestSerializer,
