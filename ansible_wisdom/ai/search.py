@@ -16,19 +16,33 @@ elif settings.ANSIBLE_AI_SEARCH['KEY']:
 else:
     auth = None
 
-client = OpenSearch(
-    hosts=[
-        {'host': settings.ANSIBLE_AI_SEARCH['HOST'], 'port': settings.ANSIBLE_AI_SEARCH['PORT']}
-    ],
-    http_auth=auth,
-    use_ssl=settings.ANSIBLE_AI_SEARCH['USE_SSL'],
-    verify_certs=settings.ANSIBLE_AI_SEARCH['VERIFY_CERTS'],
-    connection_class=RequestsHttpConnection,
-    pool_maxsize=20,
-)
+
+def initialize_OpenSearch():
+    # Initialize AI Search only when settings.ANSIBLE_AI_SEARCH['HOST'] has a non-empty hostname.
+    if settings.ANSIBLE_AI_SEARCH['HOST']:
+        client = OpenSearch(
+            hosts=[
+                {
+                    'host': settings.ANSIBLE_AI_SEARCH['HOST'],
+                    'port': settings.ANSIBLE_AI_SEARCH['PORT'],
+                }
+            ],
+            http_auth=auth,
+            use_ssl=settings.ANSIBLE_AI_SEARCH['USE_SSL'],
+            verify_certs=settings.ANSIBLE_AI_SEARCH['VERIFY_CERTS'],
+            connection_class=RequestsHttpConnection,
+            pool_maxsize=20,
+        )
+
+        model = SentenceTransformer(f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}")
+    else:
+        client = None
+        model = None
+
+    return client, model
 
 
-model = SentenceTransformer(f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}")
+client, model = initialize_OpenSearch()
 
 
 def generate_query(encoded):
@@ -42,6 +56,9 @@ def generate_query(encoded):
 
 
 def search(suggestion):
+    if client is None:
+        raise Exception('AI Search is not initialized.')
+
     encoded = model.encode(suggestion)
     query = generate_query(encoded)
     results = client.search(index=settings.ANSIBLE_AI_SEARCH['INDEX'], body=query, _source=False)
