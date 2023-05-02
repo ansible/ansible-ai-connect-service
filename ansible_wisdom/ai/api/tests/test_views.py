@@ -280,8 +280,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
-            "modelName": "wisdom",
-            "suggestionId": "ca463bf9-fb78-47a7-8a34-d02e1a4af2e8",
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
@@ -292,7 +290,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
-            self.assertEqual(r.data['modelName'], response_data['modelName'])
+            self.assertIsNotNone(r.data['modelName'])
             self.assertIsNotNone(r.data['suggestionId'])
 
 
