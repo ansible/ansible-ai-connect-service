@@ -376,7 +376,7 @@ class Feedback(APIView):
                 "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "ansibleContentFedback", user)
+            send_segment_event(event, "ansibleContentFeedback", user)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
