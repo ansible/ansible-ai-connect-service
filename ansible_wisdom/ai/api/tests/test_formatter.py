@@ -122,13 +122,13 @@ class AnsibleDumperTestCase(TestCase):
         expected = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
         self.assertEqual(fmtr.restore_indentation(original_yaml, 2), expected)
 
-    def test_restore_indentation_zero(self):
+    def test_restore_indentation_overindented(self):
         """
-        no modifications when original indent < received indent
+        removes extra spaces when original indent < received indent
         """
-        original_yaml = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
-        expected = "  ansible.builtin.yum:\n    name: '{{ name }}'\n    state: present"
-        self.assertEqual(fmtr.restore_indentation(original_yaml, 0), expected)
+        original_yaml = "      ansible.builtin.dnf:\n        name: go\n        state: present\n      when: ansible_distribution == 'Fedora'"  # noqa: E501
+        expected = "    ansible.builtin.dnf:\n      name: go\n      state: present\n    when: ansible_distribution == 'Fedora'"  # noqa: E501
+        self.assertEqual(fmtr.restore_indentation(original_yaml, 4), expected)
 
     def test_casing_and_spacing_prompt(self):
         # leading space should not be removed, only spaces in the text

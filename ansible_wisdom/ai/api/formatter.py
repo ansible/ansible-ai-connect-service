@@ -117,4 +117,8 @@ def restore_indentation(yaml, original_indent):
             padding_level = original_indent - current_indent
             padded_lines = [" " * padding_level + line for line in lines]
             return "\n".join(padded_lines)
+        elif current_indent > original_indent:
+            extra_indent = current_indent - original_indent
+            corrected_lines = [line[extra_indent:] for line in lines]
+            return "\n".join(corrected_lines)
     return yaml
