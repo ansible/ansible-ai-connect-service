@@ -236,8 +236,19 @@ class AttributionRequestSerializer(serializers.Serializer):
 
 
 class DataSource(models.IntegerChoices):
-    UNKNOWN = -1, "Unknown Source"
-    GALAXY = 0, "Ansible Galaxy"
+    UNKNOWN = (-1, "Unknown Source")
+    GALAXY_C = (
+        0,
+        "Ansible Galaxy collections",
+    )
+    GALAXY_ME = (
+        5,
+        "Ansible Galaxy documentation",
+    )
+    GALAXY_R = (
+        10,
+        "Ansible Galaxy roles",
+    )
 
 
 class AnsibleType(models.IntegerChoices):
