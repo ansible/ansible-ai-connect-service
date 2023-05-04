@@ -273,6 +273,26 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertInLog('Create an account for james8@example.com', log.output)
 
+    def test_full_completion_post_response(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data['predictions'])
+            self.assertIsNotNone(r.data['modelName'])
+            self.assertIsNotNone(r.data['suggestionId'])
+
 
 @modify_settings()
 class TestFeedbackView(WisdomServiceAPITestCaseBase):

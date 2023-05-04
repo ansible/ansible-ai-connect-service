@@ -169,6 +169,12 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
         )
         try:
+            postprocessed_predictions.update(
+                {
+                    "modelName": model_name,
+                    "suggestionId": payload.suggestionId,
+                }
+            )
             response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
