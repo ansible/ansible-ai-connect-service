@@ -13,6 +13,9 @@ class ModelMeshClient:
     def infer(self, model_input, model_name="wisdom"):  # pragma: no cover
         pass
 
+    def set_inference_url(self, inference_url):
+        self._inference_url = inference_url
+
     @property
     def timeout(self):
         return self._timeout

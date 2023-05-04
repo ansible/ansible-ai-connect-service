@@ -19,6 +19,7 @@ from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
+from ..feature_flags import FeatureFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -35,6 +36,8 @@ from .serializers import (
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
+
+feature_flags = FeatureFlags()
 
 
 class CompletionsUserRateThrottle(UserRateThrottle):
@@ -97,6 +100,11 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
+        model_tuple = feature_flags.get("model_name", request.user, False)
+        logger.info(f"flag model_name has value {model_tuple}")
+        server, port, model_name, index = model_tuple.split(":")
+        logger.info(f"selecting model '{model_name}@{server}:{port}', and using index '{index}'")
+        model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
 
         try:
@@ -446,7 +454,7 @@ class Attributions(GenericAPIView):
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
         try:
-            resp_serializer = self.perform_search(serializer)
+            resp_serializer = self.perform_search(serializer, request.user)
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
@@ -458,11 +466,14 @@ class Attributions(GenericAPIView):
 
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
-    def perform_search(self, serializer):
-        data = ai_search.search(serializer.validated_data['suggestion'])
+    def perform_search(self, serializer, user: User):
+        model_tuple = feature_flags.get("model_name", user, False)
+        logger.info(f"flag model_name has value {model_tuple}")
+        server, port, model_name, index = model_tuple.split(":")
+        data = ai_search.search(serializer.validated_data['suggestion'], index)
         resp_serializer = AttributionResponseSerializer(data=data)
         if not resp_serializer.is_valid():
-            logging.error(resp_serializer.errors)
+            logger.error(resp_serializer.errors)
         return resp_serializer
 
     def write_to_segment(self, user, suggestion_id, duration, attribution_data):

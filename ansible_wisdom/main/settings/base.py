@@ -314,6 +314,8 @@ if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
 ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
 
+FEATURE_FLAG_KEY = os.getenv('FEATURE_FLAG_KEY', '')
+
 ANSIBLE_AI_SEARCH = {
     'HOST': os.getenv('ANSIBLE_AI_SEARCH_HOST', ''),
     'PORT': int(os.getenv('ANSIBLE_AI_SEARCH_PORT') or '443'),
