@@ -328,6 +328,12 @@ components:
           type: array
           items:
             type: string
+        modelVersion:
+          type: string
+          readOnly: true
+        suggestionId:
+          type: string
+          readOnly: true
       required:
       - predictions
     FeedbackRequest:
