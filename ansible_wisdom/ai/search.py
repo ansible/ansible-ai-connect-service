@@ -55,7 +55,7 @@ def generate_query(encoded):
     }
 
 
-def search(suggestion, index):
+def search(suggestion, index=None):
     if client is None:
         raise Exception('AI Search is not initialized.')
 

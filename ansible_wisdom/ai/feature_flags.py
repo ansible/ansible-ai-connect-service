@@ -19,12 +19,9 @@ class FeatureFlags:
         groups = list(user.groups.values_list("name", flat=True))
         userId = str(user.uuid)
 
-        logger.info(f"creating user context for {userId}")
+        logger.debug(f"constructing user context for {userId}")
         user_context = (
             Context.builder(userId).set("username", user.username).set("groups", groups).build()
         )
-        logger.info(f"retrieving feature flag {name}")
-        flag = self.client.variation(name, user_context, default)
-        logger.info(f"feature flag {name} has value {flag}")
-
-        return flag
+        logger.debug(f"retrieving feature flag {name}")
+        return self.client.variation(name, user_context, default)
