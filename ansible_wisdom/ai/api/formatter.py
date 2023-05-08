@@ -1,7 +1,8 @@
 import logging
-import sys
+from io import StringIO
 
 import yaml
+from ruamel.yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,18 @@ def handle_spaces_and_casing(prompt):
         # return the prompt as is if failed to process
 
     return prompt
+
+
+def adjust_indentation(yaml):
+    output = yaml
+    stream = StringIO()
+    with stream as fp:
+        yaml_obj = YAML()
+        yaml_obj.indent(offset=2, sequence=4)
+        loaded_data = yaml_obj.load(output)
+        yaml_obj.dump(loaded_data, fp)
+        output = fp.getvalue()
+    return output.rstrip()
 
 
 def restore_indentation(yaml, original_indent):
