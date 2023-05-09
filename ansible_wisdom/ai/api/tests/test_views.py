@@ -19,9 +19,7 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework.response import Response
 from rest_framework.test import APITransactionTestCase
-from yaml.parser import ParserError
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -49,7 +47,7 @@ class DummyMeshClient(ModelMeshClient):
                         }
                     ]
                 }
-            except ParserError:  # ignore YAML parser errors thrown here
+            except Exception:  # ignore exception thrown here
                 pass
 
         self.response_data = response_data
@@ -191,6 +189,41 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(r.data['message'], 'Request contains invalid yaml')
+
+    def test_completions_preprocessing_error_with_invalid_prompt(self):
+        payload = {
+            "prompt": "---\n  - name: [Setup]",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(r.data['message'], 'Request contains invalid prompt')
+
+    def test_completions_preprocessing_error_without_name_prompt(self):
+        payload = {
+            "prompt": "---\n  - Name: [Setup]",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(r.data['message'], 'Request contains invalid data')
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ARI(self):
