@@ -59,6 +59,29 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
 
+    - name: Free space on build machine
+      run: |
+        rm -rf /opt/hostedtoolcache/Java*
+        rm -rf /opt/hostedtoolcache/Ruby*
+        rm -rf /opt/hostedtoolcache/Go*
+        rm -rf /opt/hostedtoolcache/node*
+
+    - name: Build container image
+      id: build-image
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: wisdom-service
+        tags: "run-${{ github.run_id }}"
+        containerfiles: |
+          ./wisdom-service.Containerfile
+        build-args: |
+          IMAGE_TAGS=run-${GITHUB_RUN_ID}
+          GIT_COMMIT=${GITHUB_SHA}
+
+    - name: Run container image
+      run: |
+        docker run wisdom-service:test-${GITHUB_RUN_ID}
+
     - name: Running Unit Tests
       run: |
         cd ansible_wisdom
