@@ -87,7 +87,10 @@ class Completions(APIView):
     def post(self, request) -> Response:
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         request_serializer = CompletionRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
+        try:
+            request_serializer.is_valid(raise_exception=True)
+        except Exception:
+            return Response({'message': 'Request contains invalid data'}, status=400)
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
@@ -100,7 +103,12 @@ class Completions(APIView):
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
-            return Response({'message': 'Request contains invalid yaml'}, status=400)
+            message = (
+                'Request contains invalid prompt'
+                if isinstance(exc, fmtr.InvalidPromptException)
+                else 'Request contains invalid yaml'
+            )
+            return Response({'message': message}, status=400)
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
