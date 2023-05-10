@@ -360,7 +360,7 @@ class Feedback(APIView):
             )
         finally:
             self.write_to_segment(
-                request.user, inline_suggestion_data, ansible_content_data, exception
+                request.user, inline_suggestion_data, ansible_content_data, exception, request.data
             )
 
     def write_to_segment(
@@ -369,6 +369,7 @@ class Feedback(APIView):
         inline_suggestion_data: InlineSuggestionFeedback,
         ansible_content_data: AnsibleContentFeedback,
         exception: Exception = None,
+        request_data=None,
     ) -> None:
         if inline_suggestion_data:
             event = {
@@ -389,6 +390,17 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "ansibleContentFeedback", user)
+        if exception and not inline_suggestion_data and not ansible_content_data:
+            event_type = (
+                "inlineSuggestionFeedback"
+                if ("inlineSuggestion" in request_data)
+                else "inlineSuggestionFeedback"
+            )
+            event = {
+                "data": request_data,
+                "exception": str(exception),
+            }
+            send_segment_event(event, event_type, user)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
