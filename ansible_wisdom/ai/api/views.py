@@ -266,8 +266,12 @@ class Completions(APIView):
                     )
                     if exception:
                         raise exception
+
+            # adjust indentation as per default ansible-lint configuration
+            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
+
             # restore original indentation
-            indented_yaml = fmtr.restore_indentation(recommendation["predictions"][i], indent)
+            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
             recommendation["predictions"][i] = indented_yaml
             logger.debug(
                 f"suggestion id: {suggestion_id}, " f"indented recommendation: \n{indented_yaml}"

@@ -141,6 +141,14 @@ class AnsibleDumperTestCase(TestCase):
             '    - name:install nginx        on rhel', fmtr.handle_spaces_and_casing(prompt)
         )
 
+    def test_adjust_indentation(self):
+        """
+        adjust list indentation as per ansible-lint default configuration
+        """
+        original_yaml = "loop:\n- ssh\n- nginx"
+        expected = "loop:\n  - ssh\n  - nginx"
+        self.assertEqual(fmtr.adjust_indentation(original_yaml), expected)
+
 
 if __name__ == "__main__":
     import yaml
@@ -153,3 +161,4 @@ if __name__ == "__main__":
     tests.test_prompt_and_context()
     tests.test_restore_indentation()
     tests.test_casing_and_spacing_prompt()
+    tests.test_adjust_indentation()
