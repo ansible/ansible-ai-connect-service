@@ -420,6 +420,28 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('Group 2' in event['groups'])
                 self.assertEqual(hostname, event['hostname'])
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_events_error(self):
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "2",  # invalid choice for action
+                "suggestionId": str(uuid.uuid4()),
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('data' in event)
+                self.assertTrue('exception' in event)
+
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
     @patch('ai.search.search')
