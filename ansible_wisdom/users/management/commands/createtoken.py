@@ -3,6 +3,7 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.timezone import now
 from oauth2_provider.models import AccessToken
@@ -21,10 +22,13 @@ class Command(BaseCommand):
             '--create-user', action='store_true', help="Also create the user.", default=False
         )
         parser.add_argument(
+            '--groups', type=str, nargs='*', help="Names of the groups to assign the user to"
+        )
+        parser.add_argument(
             '--duration', type=int, help="How long the token is valid (minute)", default=60
         )
 
-    def handle(self, username, token_name, duration, create_user, *args, **options):
+    def handle(self, username, token_name, duration, create_user, groups, *args, **options):
         u = None
         if not token_name:
             raise CommandError("token_name cannot be empty")
@@ -45,6 +49,14 @@ class Command(BaseCommand):
                 f"User {username} already exists but the user "
                 "didn't accept the terms and conditions"
             )
+
+        group_objs = []
+        for g in groups:
+            group_obj, created = Group.objects.get_or_create(name=g)
+            group_objs.append(group_obj)
+
+        if group_objs:
+            u.groups.add(*(set(group_objs) - set(u.groups.values_list('name', flat=True))))
 
         if AccessToken.objects.filter(token=token_name).exists():
             self.stdout.write(f"Token {token_name} already exists")

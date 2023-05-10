@@ -129,9 +129,16 @@ OAUTH2_PROVIDER = {
 # - remove ansible_wisdom/users/views.py module
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
+COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
+SPECIAL_THROTTLING_GROUPS = ['test']
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
+    'DEFAULT_THROTTLE_CLASSES': ['users.throttling.GroupSpecificThrottle'],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': COMPLETION_USER_RATE_THROTTLE,
+        'test': "100000/minute",
+    },
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
@@ -260,8 +267,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = True
-
-COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
 
 MOCK_MODEL_RESPONSE_BODY = os.environ.get(
     'MOCK_MODEL_RESPONSE_BODY',

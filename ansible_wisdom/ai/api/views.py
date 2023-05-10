@@ -37,10 +37,6 @@ from .utils.segment import send_segment_event
 logger = logging.getLogger(__name__)
 
 
-class CompletionsUserRateThrottle(UserRateThrottle):
-    rate = settings.COMPLETION_USER_RATE_THROTTLE
-
-
 class PostprocessException(APIException):
     status_code = 204
     error_type = 'postprocess_error'
@@ -75,8 +71,6 @@ class Completions(APIView):
         AcceptedTermsPermission,
     ]
     required_scopes = ['read', 'write']
-
-    throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(
         request=CompletionRequestSerializer,
@@ -425,8 +419,6 @@ class Attributions(GenericAPIView):
         AcceptedTermsPermission,
     ]
     required_scopes = ['read', 'write']
-
-    throttle_classes = [CompletionsUserRateThrottle]
 
     @extend_schema(
         request=AttributionRequestSerializer,
