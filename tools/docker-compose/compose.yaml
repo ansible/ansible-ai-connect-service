@@ -15,7 +15,7 @@ services:
       - "8000:8000"
     expose:
       - "8000"
-      - "8001-8021" # django-prometheus
+      - "8001-8011" # django-prometheus
     environment:
       - DJANGO_SETTINGS_MODULE=main.settings.development
       - ANSIBLE_AI_DATABASE_NAME=wisdom
