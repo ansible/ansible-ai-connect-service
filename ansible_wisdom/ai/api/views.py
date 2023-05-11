@@ -7,8 +7,9 @@ from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
+from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from prometheus_client import Histogram
+from prometheus_client import Counter, Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -37,7 +38,8 @@ from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
-prediction_hist = Histogram('model_prediction_latency_seconds', "Histogram of model prediction processing time")
+prediction_hist = Histogram('model_prediction_latency_seconds', "Histogram of model prediction processing time", namespace=NAMESPACE)
+prediction_count = Counter('model_prediction_count', "")
 
 
 class PostprocessException(APIException):

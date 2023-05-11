@@ -4,13 +4,17 @@ from django.conf import settings
 from django.forms import Form
 from django.urls import reverse
 from django.views.generic import TemplateView
+from prometheus_client import Counter, REGISTRY
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from social_core.exceptions import AuthCanceled
+from django_prometheus.conf import NAMESPACE
 from social_core.pipeline.partial import partial
 from social_django.utils import load_strategy
 
 from .serializers import UserSerializer
+
+me_count = Counter('me_count', "", registry=REGISTRY)
 
 
 class HomeView(TemplateView):
@@ -28,6 +32,7 @@ class CurrentUserView(RetrieveAPIView):
     serializer_class = UserSerializer
 
     def get_object(self):
+        me_count.inc()
         return self.request.user
 
 
