@@ -8,6 +8,7 @@ from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from prometheus_client import Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -35,6 +36,8 @@ from .serializers import (
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
+
+prediction_hist = Histogram('model_prediction_latency_seconds', "Histogram of model prediction processing time")
 
 
 class PostprocessException(APIException):
@@ -136,6 +139,7 @@ class Completions(APIView):
             raise ServiceUnavailable
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
+            prediction_hist.observe(duration / 1000)  # millisec back to seconds
             ano_predictions = anonymizer.anonymize_struct(predictions)
             event = {
                 "duration": duration,
