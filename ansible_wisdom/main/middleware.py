@@ -76,6 +76,8 @@ class SegmentMiddleware:
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
+                elif response.status_code >= 400 and getattr(response, 'content', None):
+                    message = str(response.content)
 
                 duration = round((time.time() - start_time) * 1000, 2)
                 event = {
