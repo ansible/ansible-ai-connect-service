@@ -33,6 +33,7 @@ COPY model-cache /var/www/model-cache
 RUN /var/www/venv/bin/pip install --upgrade 'setuptools>=65.5.1'
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
 RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
+RUN mkdir /var/run/uwsgi
 
 COPY ansible_wisdom /var/www/ansible_wisdom
 RUN echo -e "\
@@ -54,6 +55,7 @@ COPY ari /etc/ari
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
+      /var/run/uwsgi \
       /var/www/wisdom \
       /var/www/model-cache \
       /var/log/nginx \
