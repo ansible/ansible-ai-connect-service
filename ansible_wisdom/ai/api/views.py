@@ -89,8 +89,9 @@ class Completions(APIView):
         request_serializer = CompletionRequestSerializer(data=request.data)
         try:
             request_serializer.is_valid(raise_exception=True)
-        except Exception:
-            return Response({'message': 'Request contains invalid data'}, status=400)
+        except Exception as exc:
+            logger.error(f'failed to validate request:\nException:\n{exc}')
+            raise exc
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name

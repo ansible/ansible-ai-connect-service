@@ -215,7 +215,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
+        with self.assertLogs(logger='root', level='INFO') as log:  # Suppress debug output
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
@@ -223,7 +223,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                self.assertEqual(r.data['message'], 'Request contains invalid data')
+                self.assertInLog("failed to validate request", log.output)
+                self.assertTrue("prompt does not contain the name parameter" in str(r.content))
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ARI(self):
