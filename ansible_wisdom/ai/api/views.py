@@ -44,7 +44,6 @@ completions_hist = Histogram(
     "Histogram of model prediction processing time",
     namespace=NAMESPACE,
 )
-completions_count = Counter('model_prediction_count', "")
 completions_return_code = Counter(
     'model_prediction_return_code', 'The return code of model prediction requests', ['code']
 )
@@ -160,7 +159,6 @@ class Completions(APIView):
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
-            completions_count.inc()
             ano_predictions = anonymizer.anonymize_struct(predictions)
             event = {
                 "duration": duration,
