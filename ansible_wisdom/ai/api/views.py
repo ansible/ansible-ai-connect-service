@@ -7,7 +7,9 @@ from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
+from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from prometheus_client import Counter, Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -37,23 +39,42 @@ from .utils.segment import send_segment_event
 logger = logging.getLogger(__name__)
 
 
+completions_hist = Histogram(
+    'model_prediction_latency_seconds',
+    "Histogram of model prediction processing time",
+    namespace=NAMESPACE,
+)
+completions_return_code = Counter(
+    'model_prediction_return_code', 'The return code of model prediction requests', ['code']
+)
+attribution_hist = Histogram(
+    'model_attribution_latency_seconds',
+    "Histogram of model attribution processing time",
+    namespace=NAMESPACE,
+)
+
+
 class PostprocessException(APIException):
     status_code = 204
+    completions_return_code.labels(code=status_code).inc()
     error_type = 'postprocess_error'
 
 
 class ModelTimeoutException(APIException):
     status_code = 204
+    completions_return_code.labels(code=status_code).inc()
     error_type = 'model_timeout'
 
 
 class ServiceUnavailable(APIException):
     status_code = 503
+    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
 class InternalServerError(APIException):
     status_code = 500
+    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
@@ -141,6 +162,7 @@ class Completions(APIView):
             raise ServiceUnavailable
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
+            completions_hist.observe(duration / 1000)  # millisec back to seconds
             ano_predictions = anonymizer.anonymize_struct(predictions)
             event = {
                 "duration": duration,
@@ -189,6 +211,7 @@ class Completions(APIView):
                 f"error serializing final response for suggestion {payload.suggestionId}"
             )
             raise InternalServerError
+        completions_return_code.labels(code=200).inc()
         return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
@@ -472,7 +495,7 @@ class Attributions(GenericAPIView):
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
-
+        attribution_hist.observe(duration / 1000)  # millisec back to seconds
         # Currently the only thing from Attributions that is going to Segment is the
         # inferred sources, which do not seem to need anonymizing.
         self.write_to_segment(request.user, suggestion_id, duration, resp_serializer.validated_data)
