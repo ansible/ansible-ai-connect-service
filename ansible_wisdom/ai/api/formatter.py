@@ -2,7 +2,7 @@ import logging
 from io import StringIO
 
 import yaml
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +128,20 @@ def handle_spaces_and_casing(prompt):
     return prompt
 
 
+# Recursively replace Jinja2 variables with string
+# values enclosed in double quotes
+def handle_jinja2_variable_quotes(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = handle_jinja2_variable_quotes(value)
+    elif isinstance(obj, list):
+        for key, value in enumerate(obj):
+            obj[key] = handle_jinja2_variable_quotes(value)
+    elif isinstance(obj, str) and obj.startswith('{{') and obj.endswith('}}'):
+        obj = scalarstring.DoubleQuotedScalarString(obj)
+    return obj
+
+
 def adjust_indentation(yaml):
     output = yaml
     stream = StringIO()
@@ -135,6 +149,7 @@ def adjust_indentation(yaml):
         yaml_obj = YAML()
         yaml_obj.indent(offset=2, sequence=4)
         loaded_data = yaml_obj.load(output)
+        loaded_data = handle_jinja2_variable_quotes(loaded_data)
         yaml_obj.dump(loaded_data, fp)
         output = fp.getvalue()
     return output.rstrip()
