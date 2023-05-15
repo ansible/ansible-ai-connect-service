@@ -39,10 +39,20 @@ from .utils.segment import send_segment_event
 logger = logging.getLogger(__name__)
 
 
-completions_hist = Histogram('model_prediction_latency_seconds', "Histogram of model prediction processing time", namespace=NAMESPACE)
+completions_hist = Histogram(
+    'model_prediction_latency_seconds',
+    "Histogram of model prediction processing time",
+    namespace=NAMESPACE,
+)
 completions_count = Counter('model_prediction_count', "")
-completions_return_code= Counter('model_prediction_return_code', 'The return code of model prediction requests', ['code'])
-attribution_hist = Histogram('model_attribution_latency_seconds', "Histogram of model attribution processing time", namespace=NAMESPACE)
+completions_return_code = Counter(
+    'model_prediction_return_code', 'The return code of model prediction requests', ['code']
+)
+attribution_hist = Histogram(
+    'model_attribution_latency_seconds',
+    "Histogram of model attribution processing time",
+    namespace=NAMESPACE,
+)
 
 
 class PostprocessException(APIException):
