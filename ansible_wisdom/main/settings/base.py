@@ -61,7 +61,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "main.middleware.SegmentMiddleware",
-    "main.middleware.PrometheusMiddleware",
 ]
 
 AUTHENTICATION_BACKENDS = [
