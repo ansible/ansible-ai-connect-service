@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
   # have the ability to trigger this workflow manually
   workflow_dispatch:
 
@@ -19,6 +23,7 @@ jobs:
       run: |
         if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
           echo "IMAGE_TAGS=pr-${{ github.event.pull_request.number }}.$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+          echo "LABEL quay.expires-after=3d" >> ./wisdom-service.Containerfile # tag expires in 3 days
         else
           echo "IMAGE_TAGS=latest $(cat ./.version).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
         fi
