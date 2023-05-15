@@ -90,7 +90,7 @@ class Completions(APIView):
         try:
             request_serializer.is_valid(raise_exception=True)
         except Exception as exc:
-            logger.error(f'failed to validate request:\nException:\n{exc}')
+            logger.warn(f'failed to validate request:\nException:\n{exc}')
             raise exc
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
@@ -130,6 +130,10 @@ class Completions(APIView):
             predictions = model_mesh_client.infer(data, model_name=model_name)
         except ModelTimeoutError as exc:
             exception = exc
+            logger.warn(
+                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                f" for suggestion {payload.suggestionId}"
+            )
             raise ModelTimeoutException
         except Exception as exc:
             exception = exc
