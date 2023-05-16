@@ -328,13 +328,13 @@ components:
           type: array
           items:
             type: string
-        # modelVersion:
-        #   type: string
-        #   readOnly: true
-        # suggestionId:
-        #   type: string
-        #   format: uuid
-        #   readOnly: true
+        modelVersion:
+          type: string
+          readOnly: true
+        suggestionId:
+          type: string
+          format: uuid
+          readOnly: true
       required:
       - predictions
     FeedbackRequest:
