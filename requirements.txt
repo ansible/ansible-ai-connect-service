@@ -27,3 +27,4 @@ uwsgi-readiness-check==0.2.0
 segment-analytics-python==2.2.2
 pytz
 django-health-check==3.17.0
+torch==2.0.1
