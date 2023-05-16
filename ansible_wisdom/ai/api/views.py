@@ -52,7 +52,30 @@ attribution_hist = Histogram(
     "Histogram of model attribution processing time",
     namespace=NAMESPACE,
 )
-
+attribution_encoding_hist = Histogram(
+    'model_attribution_encoding_latency_seconds',
+    "Histogram of model attribution encoding processing time",
+    namespace=NAMESPACE,
+)
+attribution_search_hist = Histogram(
+    'model_attribution_search_latency_seconds',
+    "Histogram of model attribution search processing time",
+    namespace=NAMESPACE,
+)
+preprocess_hist = Histogram(
+    'preprocessing_latency_seconds',
+    "Histogram of pre-processing time",
+    namespace=NAMESPACE,
+)
+postprocess_hist = Histogram(
+    'postprocessing_latency_seconds',
+    "Histogram of post-processing time",
+    namespace=NAMESPACE,
+)
+process_error_count = Counter(
+    'process_error',
+    "Error counts at pre-process/prediction/post-process stages"
+)
 
 class PostprocessException(APIException):
     status_code = 204
@@ -111,6 +134,7 @@ class Completions(APIView):
         try:
             request_serializer.is_valid(raise_exception=True)
         except Exception as exc:
+            process_error_count.labels(stage='request_serialization_validation').inc()
             logger.warn(f'failed to validate request:\nException:\n{exc}')
             raise exc
         payload = APIPayload(**request_serializer.validated_data)
@@ -119,8 +143,10 @@ class Completions(APIView):
         original_indent = payload.prompt.find("name")
 
         try:
+            start_time = time.time()
             payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         except Exception as exc:
+            process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
@@ -131,6 +157,10 @@ class Completions(APIView):
                 else 'Request contains invalid yaml'
             )
             return Response({'message': message}, status=400)
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            preprocess_hist.observe(duration / 1000)  # millisec to seconds
+
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
@@ -161,6 +191,7 @@ class Completions(APIView):
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
             raise ServiceUnavailable
         finally:
+            process_error_count.labels(stage='prediction').inc()
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
             ano_predictions = anonymizer.anonymize_struct(predictions)
@@ -179,6 +210,7 @@ class Completions(APIView):
         )
         postprocessed_predictions = None
         try:
+            start_time = time.time()
             postprocessed_predictions = self.postprocess(
                 ano_predictions,
                 payload.prompt,
@@ -188,10 +220,14 @@ class Completions(APIView):
                 indent=original_indent,
             )
         except Exception:
+            process_error_count.labels(stage='post-processing').inc()
             logger.exception(
                 f"error postprocessing prediction for suggestion {payload.suggestionId}"
             )
             raise PostprocessException
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            postprocess_hist.observe(duration / 1000)  # millisec to seconds
 
         logger.debug(
             f"response from postprocess for "
@@ -207,6 +243,7 @@ class Completions(APIView):
             response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
+            process_error_count.labels(stage='response_serialization_validation').inc()
             logger.exception(
                 f"error serializing final response for suggestion {payload.suggestionId}"
             )
@@ -496,6 +533,8 @@ class Attributions(GenericAPIView):
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
         attribution_hist.observe(duration / 1000)  # millisec back to seconds
+        attribution_encoding_hist.observe(encode_duration / 1000)
+        attribution_search_hist.observe(search_duration / 1000)
         # Currently the only thing from Attributions that is going to Segment is the
         # inferred sources, which do not seem to need anonymizing.
         self.write_to_segment(
