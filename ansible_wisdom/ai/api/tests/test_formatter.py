@@ -145,8 +145,8 @@ class AnsibleDumperTestCase(TestCase):
         """
         adjust list indentation as per ansible-lint default configuration
         """
-        original_yaml = "loop:\n- ssh\n- nginx"
-        expected = "loop:\n  - ssh\n  - nginx"
+        original_yaml = "loop:\n- 'ssh'\n- nginx\n- '{{ name }}'"
+        expected = "loop:\n  - ssh\n  - nginx\n  - \"{{ name }}\""
         self.assertEqual(fmtr.adjust_indentation(original_yaml), expected)
 
     def test_empty_yaml(self):
