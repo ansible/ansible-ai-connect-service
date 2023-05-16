@@ -47,11 +47,6 @@ completions_hist = Histogram(
 completions_return_code = Counter(
     'model_prediction_return_code', 'The return code of model prediction requests', ['code']
 )
-attribution_hist = Histogram(
-    'model_attribution_latency_seconds',
-    "Histogram of model attribution processing time",
-    namespace=NAMESPACE,
-)
 attribution_encoding_hist = Histogram(
     'model_attribution_encoding_latency_seconds',
     "Histogram of model attribution encoding processing time",
@@ -73,9 +68,9 @@ postprocess_hist = Histogram(
     namespace=NAMESPACE,
 )
 process_error_count = Counter(
-    'process_error',
-    "Error counts at pre-process/prediction/post-process stages"
+    'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
 )
+
 
 class PostprocessException(APIException):
     status_code = 204
@@ -532,7 +527,6 @@ class Attributions(GenericAPIView):
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
-        attribution_hist.observe(duration / 1000)  # millisec back to seconds
         attribution_encoding_hist.observe(encode_duration / 1000)
         attribution_search_hist.observe(search_duration / 1000)
         # Currently the only thing from Attributions that is going to Segment is the
