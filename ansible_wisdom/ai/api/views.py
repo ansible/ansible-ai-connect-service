@@ -467,7 +467,7 @@ class Attributions(GenericAPIView):
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
         try:
-            resp_serializer = self.perform_search(serializer)
+            encode_duration, search_duration, resp_serializer = self.perform_search(serializer)
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
@@ -475,18 +475,33 @@ class Attributions(GenericAPIView):
 
         # Currently the only thing from Attributions that is going to Segment is the
         # inferred sources, which do not seem to need anonymizing.
-        self.write_to_segment(request.user, suggestion_id, duration, resp_serializer.validated_data)
+        self.write_to_segment(
+            request.user,
+            suggestion_id,
+            duration,
+            encode_duration,
+            search_duration,
+            resp_serializer.validated_data,
+        )
 
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_search(self, serializer):
         data = ai_search.search(serializer.validated_data['suggestion'])
-        resp_serializer = AttributionResponseSerializer(data=data)
+        resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
-        return resp_serializer
+        return data['meta']['encode_duration'], data['meta']['search_duration'], resp_serializer
 
-    def write_to_segment(self, user, suggestion_id, duration, attribution_data):
-        for attribution in attribution_data.get('attributions', []):
-            event = {'suggestionId': suggestion_id, 'duration': duration, **attribution}
-            send_segment_event(event, "attribution", user)
+    def write_to_segment(
+        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
+    ):
+        attributions = attribution_data.get('attributions', [])
+        event = {
+            'suggestionId': suggestion_id,
+            'duration': duration,
+            'encode_duration': encode_duration,
+            'search_duration': search_duration,
+            'attributions': attributions,
+        }
+        send_segment_event(event, "attribution", user)
