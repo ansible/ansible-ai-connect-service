@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM docker.io/nvidia/cuda:12.1.0-base-ubi9
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
