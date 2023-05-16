@@ -459,7 +459,11 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
                     'ansible_type': AnsibleType.UNKNOWN,
                     'score': 0.0,
                 },
-            ]
+            ],
+            'meta': {
+                'encode_duration': 1000,
+                'search_duration': 2000,
+            },
         }
         payload = {
             'suggestion': 'suggestion',
