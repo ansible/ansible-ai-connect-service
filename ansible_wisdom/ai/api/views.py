@@ -454,7 +454,7 @@ class Feedback(APIView):
             event_type = (
                 "inlineSuggestionFeedback"
                 if ("inlineSuggestion" in request_data)
-                else "inlineSuggestionFeedback"
+                else "ansibleContentFeedback"
             )
             event = {
                 "data": request_data,
