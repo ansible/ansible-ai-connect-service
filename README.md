@@ -223,7 +223,7 @@ into the VSCode extension.
 Review the screen recording for instruction on configuring the VSCode
 extension to access your running wisdom service.
 
-Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, add `--noreload` to the end of the command: ```python manage.py runserver --noreload```.
+Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```.
 
 ## Authenticating with the completion API
 
