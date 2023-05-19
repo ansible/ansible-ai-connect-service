@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.forms import Form
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.urls import reverse
@@ -11,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from social_core.exceptions import AuthCanceled
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
+from social_django.models import UserSocialAuth
 from social_django.utils import load_strategy
 
 from .serializers import UserSerializer
@@ -125,13 +127,35 @@ def add_date_accepted(strategy, details, user=None, is_new=False, *args, **kwarg
 # Replace original get_username function to avoid a random hash at the end if
 # user authenticates with more than one github provider. This needs to be revisited
 # when we add additional providers like Red Hat SSO.
-def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
+def github_get_username(uid, strategy, details, backend, user=None, *args, **kwargs):
     if user:
         return {'username': user.username}
 
     if backend.name == 'github' or backend.name == 'github-team':
-        return {'username': details.get('username')}
-
-    logger.warn(f"Unexpected auth backend {backend.name} - falling back to default get_username")
+        github_username = details.get('username')
+        User = get_user_model()
+        if User.objects.filter(username=github_username).exists():
+            # Get the existing django user with the same github username
+            existing_user = User.objects.get(username=github_username)
+            # Now get a social auth user associated with that django user (there may be multiple)
+            social_auth_users = UserSocialAuth.objects.filter(user=existing_user.id)
+            if social_auth_users.exists():
+                # Take the first one and check the uid
+                social_user = social_auth_users.first()
+                if social_user.uid == str(uid):
+                    # Awesome! All is as expected. Allow the username to pass through.
+                    return {'username': github_username}
+                else:
+                    logger.warn(f"Unexpected: mismatch in uid for username {github_username}")
+            else:
+                logger.warn(
+                    f"Unexpected: django user found with no social auth - username {github_username}"  # noqa: E501
+                )
+        else:
+            # No django user with this username yet
+            return {'username': github_username}
+    else:
+        logger.warn(f"Unexpected: auth backend {backend.name}")
+    logger.warn("falling back to default get_username")
     # Fallback to default behavior
     return get_username(strategy, details, backend, user, *args, **kwargs)
