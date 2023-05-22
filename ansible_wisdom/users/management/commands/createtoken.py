@@ -51,7 +51,7 @@ class Command(BaseCommand):
             )
 
         group_objs = []
-        for g in groups:
+        for g in groups or ():
             group_obj, created = Group.objects.get_or_create(name=g)
             group_objs.append(group_obj)
 
