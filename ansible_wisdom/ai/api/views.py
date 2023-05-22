@@ -72,27 +72,29 @@ process_error_count = Counter(
 )
 
 
-class PostprocessException(APIException):
+class BaseWisdomAPIException(APIException):
+    def __init__(self, *args, **kwargs):
+        completions_return_code.labels(code=self.status_code).inc()
+        super().__init__(*args, **kwargs)
+
+
+class PostprocessException(BaseWisdomAPIException):
     status_code = 204
-    completions_return_code.labels(code=status_code).inc()
     error_type = 'postprocess_error'
 
 
-class ModelTimeoutException(APIException):
+class ModelTimeoutException(BaseWisdomAPIException):
     status_code = 204
-    completions_return_code.labels(code=status_code).inc()
     error_type = 'model_timeout'
 
 
-class ServiceUnavailable(APIException):
+class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
-    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
-class InternalServerError(APIException):
+class InternalServerError(BaseWisdomAPIException):
     status_code = 500
-    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
