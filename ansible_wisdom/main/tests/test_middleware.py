@@ -66,12 +66,13 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertTrue(len(segment_events) > 0)
                 hostname = platform.node()
                 for event in segment_events:
-                    self.assertTrue('modelName' in event)
-                    self.assertTrue('imageTags' in event)
-                    self.assertTrue('groups' in event)
-                    self.assertTrue('Group 1' in event['groups'])
-                    self.assertTrue('Group 2' in event['groups'])
-                    self.assertEqual(hostname, event['hostname'])
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertTrue('imageTags' in properties)
+                    self.assertTrue('groups' in properties)
+                    self.assertTrue('Group 1' in properties['groups'])
+                    self.assertTrue('Group 2' in properties['groups'])
+                    self.assertEqual(hostname, properties['hostname'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -196,6 +197,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 events = self.extractSegmentEventsFromLog(log.output)
                 n = len(events)
                 self.assertTrue(n > 0)
-                self.assertEqual(events[n - 1]['error_type'], 'event_exceeds_limit')
-                self.assertIsNotNone(events[n - 1]['details']['event_name'])
-                self.assertIsNotNone(events[n - 1]['details']['msg_len'] > 32 * 1024)
+                self.assertEqual(events[n - 1]['properties']['error_type'], 'event_exceeds_limit')
+                self.assertIsNotNone(events[n - 1]['properties']['details']['event_name'])
+                self.assertIsNotNone(events[n - 1]['properties']['details']['msg_len'] > 32 * 1024)

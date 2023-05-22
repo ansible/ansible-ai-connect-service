@@ -95,7 +95,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
                     .replace('DataSource.UNKNOWN', '0')
                     .replace('AnsibleType.UNKNOWN', '0')
                 )
-                events.append(obj['properties'])
+                events.append(obj)
         return events
 
     def assertInLog(self, s, logs):
@@ -414,15 +414,16 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
-                self.assertTrue('modelName' in event)
-                self.assertTrue('imageTags' in event)
-                self.assertTrue('groups' in event)
-                self.assertTrue('Group 1' in event['groups'])
-                self.assertTrue('Group 2' in event['groups'])
-                self.assertEqual(hostname, event['hostname'])
+                properties = event['properties']
+                self.assertTrue('modelName' in properties)
+                self.assertTrue('imageTags' in properties)
+                self.assertTrue('groups' in properties)
+                self.assertTrue('Group 1' in properties['groups'])
+                self.assertTrue('Group 2' in properties['groups'])
+                self.assertEqual(hostname, properties['hostname'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_feedback_segment_events_error(self):
+    def test_feedback_segment_inline_suggestion_feedback_error(self):
         payload = {
             "inlineSuggestion": {
                 "latency": 1000,
@@ -440,8 +441,34 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             segment_events = self.extractSegmentEventsFromLog(log.output)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
-                self.assertTrue('data' in event)
-                self.assertTrue('exception' in event)
+                self.assertTrue('inlineSuggestionFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_ansible_content_feedback_error(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": "123456",  # an invalid UUID
+                "trigger": "0",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('ansibleContentFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
 
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
@@ -479,12 +506,13 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
-                self.assertTrue('modelName' in event)
-                self.assertTrue('imageTags' in event)
-                self.assertTrue('groups' in event)
-                self.assertTrue('Group 1' in event['groups'])
-                self.assertTrue('Group 2' in event['groups'])
-                self.assertEqual(hostname, event['hostname'])
+                properties = event['properties']
+                self.assertTrue('modelName' in properties)
+                self.assertTrue('imageTags' in properties)
+                self.assertTrue('groups' in properties)
+                self.assertTrue('Group 1' in properties['groups'])
+                self.assertTrue('Group 2' in properties['groups'])
+                self.assertEqual(hostname, properties['hostname'])
 
     @patch('ai.search.search')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
