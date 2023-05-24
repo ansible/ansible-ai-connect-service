@@ -542,7 +542,9 @@ class Attributions(GenericAPIView):
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
         try:
-            encode_duration, search_duration, resp_serializer = self.perform_search(serializer, request.user)
+            encode_duration, search_duration, resp_serializer = self.perform_search(
+                serializer, request.user
+            )
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
