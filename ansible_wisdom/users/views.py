@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from django.conf import settings
@@ -8,9 +9,12 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from social_core.exceptions import AuthCanceled
 from social_core.pipeline.partial import partial
+from social_core.pipeline.user import get_username
 from social_django.utils import load_strategy
 
 from .serializers import UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class HomeView(TemplateView):
@@ -106,3 +110,18 @@ def _add_date_accepted(strategy, user, **kwargs):
 @partial
 def add_date_accepted(strategy, details, user=None, is_new=False, *args, **kwargs):
     return _add_date_accepted(strategy, user, **kwargs)
+
+
+# Replace original get_username function to avoid a random hash at the end if
+# user authenticates with more than one github provider. This needs to be revisited
+# when we add additional providers like Red Hat SSO.
+def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
+    if user:
+        return {'username': user.username}
+
+    if backend.name == 'github' or backend.name == 'github-team':
+        return {'username': details.get('username')}
+
+    logger.warn(f"Unexpected auth backend {backend.name} - falling back to default get_username")
+    # Fallback to default behavior
+    return get_username(strategy, details, backend, user, *args, **kwargs)

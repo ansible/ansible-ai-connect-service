@@ -19,9 +19,7 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework.response import Response
 from rest_framework.test import APITransactionTestCase
-from yaml.parser import ParserError
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -49,7 +47,7 @@ class DummyMeshClient(ModelMeshClient):
                         }
                     ]
                 }
-            except ParserError:  # ignore YAML parser errors thrown here
+            except Exception:  # ignore exception thrown here
                 pass
 
         self.response_data = response_data
@@ -97,7 +95,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
                     .replace('DataSource.UNKNOWN', '0')
                     .replace('AnsibleType.UNKNOWN', '0')
                 )
-                events.append(obj['properties'])
+                events.append(obj)
         return events
 
     def assertInLog(self, s, logs):
@@ -191,6 +189,42 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(r.data['message'], 'Request contains invalid yaml')
+
+    def test_completions_preprocessing_error_with_invalid_prompt(self):
+        payload = {
+            "prompt": "---\n  - name: [Setup]",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertEqual(r.data['message'], 'Request contains invalid prompt')
+
+    def test_completions_preprocessing_error_without_name_prompt(self):
+        payload = {
+            "prompt": "---\n  - Name: [Setup]",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='INFO') as log:  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertInLog("failed to validate request", log.output)
+                self.assertTrue("prompt does not contain the name parameter" in str(r.content))
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ARI(self):
@@ -380,12 +414,61 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
-                self.assertTrue('modelName' in event)
-                self.assertTrue('imageTags' in event)
-                self.assertTrue('groups' in event)
-                self.assertTrue('Group 1' in event['groups'])
-                self.assertTrue('Group 2' in event['groups'])
-                self.assertEqual(hostname, event['hostname'])
+                properties = event['properties']
+                self.assertTrue('modelName' in properties)
+                self.assertTrue('imageTags' in properties)
+                self.assertTrue('groups' in properties)
+                self.assertTrue('Group 1' in properties['groups'])
+                self.assertTrue('Group 2' in properties['groups'])
+                self.assertEqual(hostname, properties['hostname'])
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_inline_suggestion_feedback_error(self):
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "2",  # invalid choice for action
+                "suggestionId": str(uuid.uuid4()),
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('inlineSuggestionFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_ansible_content_feedback_error(self):
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/user/ansible.yaml",
+                "activityId": "123456",  # an invalid UUID
+                "trigger": "0",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('ansibleContentFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
 
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
@@ -403,7 +486,11 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
                     'ansible_type': AnsibleType.UNKNOWN,
                     'score': 0.0,
                 },
-            ]
+            ],
+            'meta': {
+                'encode_duration': 1000,
+                'search_duration': 2000,
+            },
         }
         payload = {
             'suggestion': 'suggestion',
@@ -419,12 +506,13 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
-                self.assertTrue('modelName' in event)
-                self.assertTrue('imageTags' in event)
-                self.assertTrue('groups' in event)
-                self.assertTrue('Group 1' in event['groups'])
-                self.assertTrue('Group 2' in event['groups'])
-                self.assertEqual(hostname, event['hostname'])
+                properties = event['properties']
+                self.assertTrue('modelName' in properties)
+                self.assertTrue('imageTags' in properties)
+                self.assertTrue('groups' in properties)
+                self.assertTrue('Group 1' in properties['groups'])
+                self.assertTrue('Group 2' in properties['groups'])
+                self.assertEqual(hostname, properties['hostname'])
 
     @patch('ai.search.search')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -61,13 +62,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "main.middleware.SegmentMiddleware",
-    "main.middleware.PrometheusMiddleware",
-]
-
-AUTHENTICATION_BACKENDS = [
-    "social_core.backends.github.GithubTeamOAuth2",
-    "django.contrib.auth.backends.ModelBackend",
-    "oauth2_provider.backends.OAuth2Backend",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -87,11 +82,28 @@ SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/proj
 
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
-SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
-SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
-SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
-SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
+    USE_GITHUB_TEAM = True
+    SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
+    SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
+    SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
+    SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+else:
+    USE_GITHUB_TEAM = False
+    SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
+    SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
+    SOCIAL_AUTH_GITHUB_SCOPE = ["read:org"]
+
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
+
+AUTHENTICATION_BACKENDS = [
+    "social_core.backends.github.GithubTeamOAuth2"
+    if USE_GITHUB_TEAM
+    else "social_core.backends.github.GithubOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+    "oauth2_provider.backends.OAuth2Backend",
+]
+
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
@@ -100,7 +112,8 @@ SOCIAL_AUTH_PIPELINE = (
     'main.pipeline.remove_pii',
     'users.views.terms_of_service',
     'social_core.pipeline.social_auth.auth_allowed',
-    'social_core.pipeline.user.get_username',
+    'users.views.github_get_username',
+    # 'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
@@ -129,9 +142,16 @@ OAUTH2_PROVIDER = {
 # - remove ansible_wisdom/users/views.py module
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
+COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
+SPECIAL_THROTTLING_GROUPS = ['test']
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
+    'DEFAULT_THROTTLE_CLASSES': ['users.throttling.GroupSpecificThrottle'],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': COMPLETION_USER_RATE_THROTTLE,
+        'test': "100000/minute",
+    },
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
@@ -260,8 +280,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = True
-
-COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
 
 MOCK_MODEL_RESPONSE_BODY = os.environ.get(
     'MOCK_MODEL_RESPONSE_BODY',

@@ -1,7 +1,8 @@
 import logging
-import sys
+from io import StringIO
 
 import yaml
+from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,10 @@ class AnsibleDumper(yaml.Dumper):
         return self.preferred_quote_
 
 
+class InvalidPromptException(Exception):
+    pass
+
+
 """
 Normalize by loading and re-serializing
 """
@@ -63,6 +68,8 @@ Normalize by loading and re-serializing
 
 def normalize_yaml(yaml_str):
     data = yaml.load(yaml_str, Loader=yaml.SafeLoader)
+    if data is None:
+        return None
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
@@ -72,23 +79,36 @@ def preprocess(context, prompt):
     Format and split off the last line as the prompt
     Append a newline to both context and prompt (as the model expects)
     """
-
     formatted = normalize_yaml(f'{context}\n{prompt}')
-    logger.debug(f'initial user input {context}\n{prompt}')
 
-    segs = formatted.rsplit('\n', 2)  # Last will be the final newline
-    if len(segs) == 3:
-        context = segs[0] + '\n'
-        prompt = segs[1]
-    elif len(segs) == 2:  # Context is empty
-        context = ""
-        prompt = segs[0]
-    else:
-        logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
+    if formatted is not None:
+        logger.debug(f'initial user input {context}\n{prompt}')
 
-        logger.debug(f'preprocessed user input {context}\n{prompt}')
+        segs = formatted.rsplit('\n', 2)  # Last will be the final newline
+        if len(segs) == 3:
+            context = segs[0] + '\n'
+            prompt = segs[1]
+        elif len(segs) == 2:  # Context is empty
+            context = ""
+            prompt = segs[0]
+        else:
+            logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
 
-    prompt = handle_spaces_and_casing(prompt)
+            logger.debug(f'preprocessed user input {context}\n{prompt}')
+
+        prompt = handle_spaces_and_casing(prompt)
+
+        # Make sure the prompt is in the form "  - name: a string description."
+        prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
+        if (
+            not isinstance(prompt_list, list)
+            or len(prompt_list) != 1
+            or not isinstance(prompt_list[0], dict)
+            or len(prompt_list[0]) != 1
+            or 'name' not in prompt_list[0]
+            or not isinstance(prompt_list[0]['name'], str)
+        ):
+            raise InvalidPromptException()
 
     return context, prompt
 
@@ -106,6 +126,33 @@ def handle_spaces_and_casing(prompt):
         # return the prompt as is if failed to process
 
     return prompt
+
+
+# Recursively replace Jinja2 variables with string
+# values enclosed in double quotes
+def handle_jinja2_variable_quotes(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = handle_jinja2_variable_quotes(value)
+    elif isinstance(obj, list):
+        for key, value in enumerate(obj):
+            obj[key] = handle_jinja2_variable_quotes(value)
+    elif isinstance(obj, str) and obj.startswith('{{') and obj.endswith('}}'):
+        obj = scalarstring.DoubleQuotedScalarString(obj)
+    return obj
+
+
+def adjust_indentation(yaml):
+    output = yaml
+    stream = StringIO()
+    with stream as fp:
+        yaml_obj = YAML()
+        yaml_obj.indent(offset=2, sequence=4)
+        loaded_data = yaml_obj.load(output)
+        loaded_data = handle_jinja2_variable_quotes(loaded_data)
+        yaml_obj.dump(loaded_data, fp)
+        output = fp.getvalue()
+    return output.rstrip()
 
 
 def restore_indentation(yaml, original_indent):

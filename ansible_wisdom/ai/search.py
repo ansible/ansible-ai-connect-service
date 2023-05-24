@@ -1,3 +1,5 @@
+import time
+
 from django.conf import settings
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from sentence_transformers import SentenceTransformer
@@ -59,11 +61,17 @@ def search(suggestion, index=None):
     if client is None:
         raise Exception('AI Search is not initialized.')
 
+    start_time = time.time()
     encoded = model.encode(suggestion)
+    encode_duration = round((time.time() - start_time) * 1000, 2)
+
     query = generate_query(encoded)
+
+    start_time = time.time()
     results = client.search(
         index=index or settings.ANSIBLE_AI_SEARCH['INDEX'], body=query, _source=False
     )
+    search_duration = round((time.time() - start_time) * 1000, 2)
     return {
         'attributions': [
             {
@@ -76,5 +84,9 @@ def search(suggestion, index=None):
                 'score': result['_score'],
             }
             for result in results['hits']['hits']
-        ]
+        ],
+        'meta': {
+            'encode_duration': encode_duration,
+            'search_duration': search_duration,
+        },
     }

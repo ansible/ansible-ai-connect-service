@@ -8,7 +8,9 @@ from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from django.http import QueryDict
+from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from prometheus_client import Counter, Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
@@ -41,26 +43,61 @@ logger = logging.getLogger(__name__)
 feature_flags = FeatureFlags()
 
 
-class CompletionsUserRateThrottle(UserRateThrottle):
-    rate = settings.COMPLETION_USER_RATE_THROTTLE
+completions_hist = Histogram(
+    'model_prediction_latency_seconds',
+    "Histogram of model prediction processing time",
+    namespace=NAMESPACE,
+)
+completions_return_code = Counter(
+    'model_prediction_return_code', 'The return code of model prediction requests', ['code']
+)
+attribution_encoding_hist = Histogram(
+    'model_attribution_encoding_latency_seconds',
+    "Histogram of model attribution encoding processing time",
+    namespace=NAMESPACE,
+)
+attribution_search_hist = Histogram(
+    'model_attribution_search_latency_seconds',
+    "Histogram of model attribution search processing time",
+    namespace=NAMESPACE,
+)
+preprocess_hist = Histogram(
+    'preprocessing_latency_seconds',
+    "Histogram of pre-processing time",
+    namespace=NAMESPACE,
+)
+postprocess_hist = Histogram(
+    'postprocessing_latency_seconds',
+    "Histogram of post-processing time",
+    namespace=NAMESPACE,
+)
+process_error_count = Counter(
+    'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
+)
 
 
-class PostprocessException(APIException):
+class BaseWisdomAPIException(APIException):
+    def __init__(self, *args, **kwargs):
+        completions_return_code.labels(code=self.status_code).inc()
+        super().__init__(*args, **kwargs)
+
+
+class PostprocessException(BaseWisdomAPIException):
     status_code = 204
     error_type = 'postprocess_error'
 
 
-class ModelTimeoutException(APIException):
+class ModelTimeoutException(BaseWisdomAPIException):
     status_code = 204
     error_type = 'model_timeout'
 
 
-class ServiceUnavailable(APIException):
+class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
-class InternalServerError(APIException):
+class InternalServerError(BaseWisdomAPIException):
     status_code = 500
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
@@ -80,8 +117,6 @@ class Completions(APIView):
     ]
     required_scopes = ['read', 'write']
 
-    throttle_classes = [CompletionsUserRateThrottle]
-
     @extend_schema(
         request=CompletionRequestSerializer,
         responses={
@@ -95,9 +130,21 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        # Here `request` is a DRF wrapper around Django's original
+        # WSGIRequest object.  It holds the original as
+        # `self._request`, and that's the one we need to modify to
+        # make this available to the middleware.
+        request._request._suggestion_id = request.data.get('suggestionId')
+
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         request_serializer = CompletionRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
+        try:
+            request_serializer.is_valid(raise_exception=True)
+            request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
+        except Exception as exc:
+            process_error_count.labels(stage='request_serialization_validation').inc()
+            logger.warn(f'failed to validate request:\nException:\n{exc}')
+            raise exc
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
@@ -111,13 +158,24 @@ class Completions(APIView):
         original_indent = payload.prompt.find("name")
 
         try:
+            start_time = time.time()
             payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
         except Exception as exc:
+            process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
-            return Response({'message': 'Request contains invalid yaml'}, status=400)
+            message = (
+                'Request contains invalid prompt'
+                if isinstance(exc, fmtr.InvalidPromptException)
+                else 'Request contains invalid yaml'
+            )
+            return Response({'message': message}, status=400)
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            preprocess_hist.observe(duration / 1000)  # millisec to seconds
+
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
@@ -138,13 +196,19 @@ class Completions(APIView):
             predictions = model_mesh_client.infer(data, model_name=model_name)
         except ModelTimeoutError as exc:
             exception = exc
+            logger.warn(
+                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                f" for suggestion {payload.suggestionId}"
+            )
             raise ModelTimeoutException
         except Exception as exc:
             exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
             raise ServiceUnavailable
         finally:
+            process_error_count.labels(stage='prediction').inc()
             duration = round((time.time() - start_time) * 1000, 2)
+            completions_hist.observe(duration / 1000)  # millisec back to seconds
             ano_predictions = anonymizer.anonymize_struct(predictions)
             event = {
                 "duration": duration,
@@ -157,10 +221,11 @@ class Completions(APIView):
             send_segment_event(event, "prediction", request.user)
 
         logger.debug(
-            f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
+            f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
         )
         postprocessed_predictions = None
         try:
+            start_time = time.time()
             postprocessed_predictions = self.postprocess(
                 ano_predictions,
                 payload.prompt,
@@ -170,10 +235,14 @@ class Completions(APIView):
                 indent=original_indent,
             )
         except Exception:
+            process_error_count.labels(stage='post-processing').inc()
             logger.exception(
                 f"error postprocessing prediction for suggestion {payload.suggestionId}"
             )
             raise PostprocessException
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            postprocess_hist.observe(duration / 1000)  # millisec to seconds
 
         logger.debug(
             f"response from postprocess for "
@@ -189,10 +258,12 @@ class Completions(APIView):
             response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
+            process_error_count.labels(stage='response_serialization_validation').inc()
             logger.exception(
                 f"error serializing final response for suggestion {payload.suggestionId}"
             )
             raise InternalServerError
+        completions_return_code.labels(code=200).inc()
         return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
@@ -283,11 +354,15 @@ class Completions(APIView):
                     )
                     if exception:
                         raise exception
+
+            # adjust indentation as per default ansible-lint configuration
+            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
+
             # restore original indentation
-            indented_yaml = fmtr.restore_indentation(recommendation["predictions"][i], indent)
+            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
             recommendation["predictions"][i] = indented_yaml
             logger.debug(
-                f"suggestion id: {suggestion_id}, " f"indented recommendation: \n{indented_yaml}"
+                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
             )
             continue
         return recommendation
@@ -365,7 +440,7 @@ class Feedback(APIView):
             )
         finally:
             self.write_to_segment(
-                request.user, inline_suggestion_data, ansible_content_data, exception
+                request.user, inline_suggestion_data, ansible_content_data, exception, request.data
             )
 
     def write_to_segment(
@@ -374,6 +449,7 @@ class Feedback(APIView):
         inline_suggestion_data: InlineSuggestionFeedback,
         ansible_content_data: AnsibleContentFeedback,
         exception: Exception = None,
+        request_data=None,
     ) -> None:
         if inline_suggestion_data:
             event = {
@@ -394,6 +470,17 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "ansibleContentFeedback", user)
+        if exception and not inline_suggestion_data and not ansible_content_data:
+            event_type = (
+                "inlineSuggestionFeedback"
+                if ("inlineSuggestion" in request_data)
+                else "ansibleContentFeedback"
+            )
+            event = {
+                "data": request_data,
+                "exception": str(exception),
+            }
+            send_segment_event(event, event_type, user)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
@@ -437,8 +524,6 @@ class Attributions(GenericAPIView):
     ]
     required_scopes = ['read', 'write']
 
-    throttle_classes = [CompletionsUserRateThrottle]
-
     @extend_schema(
         request=AttributionRequestSerializer,
         responses={
@@ -457,15 +542,23 @@ class Attributions(GenericAPIView):
         suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
         start_time = time.time()
         try:
-            resp_serializer = self.perform_search(serializer, request.user)
+            encode_duration, search_duration, resp_serializer = self.perform_search(serializer, request.user)
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
             return Response({'message': "Unable to complete the request"}, status=503)
         duration = round((time.time() - start_time) * 1000, 2)
-
+        attribution_encoding_hist.observe(encode_duration / 1000)
+        attribution_search_hist.observe(search_duration / 1000)
         # Currently the only thing from Attributions that is going to Segment is the
         # inferred sources, which do not seem to need anonymizing.
-        self.write_to_segment(request.user, suggestion_id, duration, resp_serializer.validated_data)
+        self.write_to_segment(
+            request.user,
+            suggestion_id,
+            duration,
+            encode_duration,
+            search_duration,
+            resp_serializer.validated_data,
+        )
 
         return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
@@ -478,12 +571,20 @@ class Attributions(GenericAPIView):
             *_, index = match.groups()
             logger.info(f"using index '{index}' for content matchin")
         data = ai_search.search(serializer.validated_data['suggestion'], index)
-        resp_serializer = AttributionResponseSerializer(data=data)
+        resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
-            logger.error(resp_serializer.errors)
-        return resp_serializer
+            logging.error(resp_serializer.errors)
+        return data['meta']['encode_duration'], data['meta']['search_duration'], resp_serializer
 
-    def write_to_segment(self, user, suggestion_id, duration, attribution_data):
-        for attribution in attribution_data.get('attributions', []):
-            event = {'suggestionId': suggestion_id, 'duration': duration, **attribution}
-            send_segment_event(event, "attribution", user)
+    def write_to_segment(
+        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
+    ):
+        attributions = attribution_data.get('attributions', [])
+        event = {
+            'suggestionId': suggestion_id,
+            'duration': duration,
+            'encode_duration': encode_duration,
+            'search_duration': search_duration,
+            'attributions': attributions,
+        }
+        send_segment_event(event, "attribution", user)

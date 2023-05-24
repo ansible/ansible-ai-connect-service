@@ -141,6 +141,42 @@ class AnsibleDumperTestCase(TestCase):
             '    - name:install nginx        on rhel', fmtr.handle_spaces_and_casing(prompt)
         )
 
+    def test_adjust_indentation(self):
+        """
+        adjust list indentation as per ansible-lint default configuration
+        """
+        original_yaml = "loop:\n- 'ssh'\n- nginx\n- '{{ name }}'"
+        expected = "loop:\n  - ssh\n  - nginx\n  - \"{{ name }}\""
+        self.assertEqual(fmtr.adjust_indentation(original_yaml), expected)
+
+    def test_empty_yaml(self):
+        # make sure no preprocessing is performed against an empty input
+        context = "---"
+        prompt = ""
+        context_out, prompt_out = fmtr.preprocess(context, prompt)
+        self.assertEqual(context, context_out)
+        self.assertEqual(prompt, prompt_out)
+
+    def test_valid_prompt(self):
+        # make sure that no exception is thrown when the prompt contains a string as the name
+        context = "---"
+        prompt = "  - name: This is a string"
+        fmtr.preprocess(context, prompt)
+
+    def test_list_as_name(self):
+        # make sure that an exception is thrown when the prompt contains a list as the name
+        context = "---"
+        prompt = "  - name: [This is a list]"
+        with self.assertRaises(Exception) as cm:
+            fmtr.preprocess(context, prompt)
+
+    def test_dict_as_name(self):
+        # make sure that an exception is thrown when the prompt contains a dictionary as the name
+        context = "---"
+        prompt = "  - name: {This is a dict}"
+        with self.assertRaises(Exception) as cm:
+            fmtr.preprocess(context, prompt)
+
 
 if __name__ == "__main__":
     import yaml
@@ -153,3 +189,8 @@ if __name__ == "__main__":
     tests.test_prompt_and_context()
     tests.test_restore_indentation()
     tests.test_casing_and_spacing_prompt()
+    tests.test_adjust_indentation()
+    tests.test_empty_yaml()
+    tests.test_valid_prompt()
+    tests.test_list_as_name()
+    tests.test_dict_as_name()

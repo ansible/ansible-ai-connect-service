@@ -10,15 +10,6 @@ scrape_configs:
           - uwsgi_target_workers.json
         refresh_interval: 5s
 
-  - job_name: dev-push-gateway
-    metrics_path: /metrics
-    scheme: http
-    honor_labels: true
-    static_configs:
-    - targets: ['prom-pushgateway:9091']
-      labels:
-        service: 'prom-pushgateway'
-
   - job_name: prometheus
     static_configs:
       - targets:

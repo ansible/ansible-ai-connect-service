@@ -9,8 +9,13 @@
                     <h1 class="pf-c-title pf-m-lg">Ansible Lightspeed with Watson Code Assistant is available as a closed beta.</h1>
                     <div class="pf-c-empty-state__body">Ensure you have accepted your GitHub team invitation for access.</div>
                     <a class="pf-c-button pf-m-primary"
+                    {% if use_github_team %}
                         href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Login
                         with GitHub</a>
+                    {% else %}
+                        href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Login
+                        with GitHub</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
