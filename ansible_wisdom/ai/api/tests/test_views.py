@@ -428,7 +428,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "inlineSuggestion": {
                 "latency": 1000,
                 "userActionTime": 3500,
-                "documentUri": "file:///home/user/ansible.yaml",
+                "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "action": "2",  # invalid choice for action
                 "suggestionId": str(uuid.uuid4()),
             }
@@ -445,6 +445,10 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 properties = event['properties']
                 self.assertTrue('data' in properties)
                 self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "file:///home/ano-user/ansible.yaml",
+                    properties['data']['inlineSuggestion']['documentUri'],
+                )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_ansible_content_feedback_error(self):
@@ -452,7 +456,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
                 "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/user/ansible.yaml",
+                "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "activityId": "123456",  # an invalid UUID
                 "trigger": "0",
             }
@@ -469,6 +473,10 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 properties = event['properties']
                 self.assertTrue('data' in properties)
                 self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "file:///home/ano-user/ansible.yaml",
+                    properties['data']['ansibleContent']['documentUri'],
+                )
 
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
