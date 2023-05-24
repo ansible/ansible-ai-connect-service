@@ -104,6 +104,21 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("username", log.output)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.views.fmtr.preprocess', side_effect=Exception)
+    @patch('main.middleware.send_segment_event', return_value=None)
+    def test_preprocess_error(self, segment, preprocess):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+            "    - name: Install Apache for foo@ansible.com\n",
+        }
+
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('completions'), payload, format='json')
+        self.assertIsNotNone(segment.call_args)
+        self.assertIn('suggestionId', segment.call_args.args[0], segment.call_args)
+        self.assertTrue(segment.call_args.args[0]['suggestionId'], segment.call_args)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
