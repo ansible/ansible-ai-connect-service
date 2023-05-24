@@ -41,7 +41,12 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path(
         'login/',
-        auth_views.LoginView.as_view(extra_context={'pilot_contact': settings.PILOT_CONTACT}),
+        auth_views.LoginView.as_view(
+            extra_context={
+                'pilot_contact': settings.PILOT_CONTACT,
+                'use_github_team': settings.USE_GITHUB_TEAM,
+            }
+        ),
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

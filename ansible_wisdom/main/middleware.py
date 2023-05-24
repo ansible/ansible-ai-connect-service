@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import uuid
 
 from ai.api.utils.segment import send_segment_event
 from ansible_anonymizer import anonymizer
@@ -60,7 +61,9 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
-                suggestion_id = request_data.get('suggestionId')
+                suggestion_id = getattr(request, '_suggestion_id', request_data.get('suggestionId'))
+                if not suggestion_id:
+                    suggestion_id = str(uuid.uuid4())
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
                 metadata = request_data.get('metadata', {})

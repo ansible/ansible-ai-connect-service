@@ -62,7 +62,6 @@ class WisdomServiceHealthView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def __init__(self):
         super().__init__()
@@ -110,7 +109,6 @@ class WisdomServiceLivenessProbeView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     @extend_schema(
         responses={

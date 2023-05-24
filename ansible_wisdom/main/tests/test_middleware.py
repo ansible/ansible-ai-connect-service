@@ -66,12 +66,13 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertTrue(len(segment_events) > 0)
                 hostname = platform.node()
                 for event in segment_events:
-                    self.assertTrue('modelName' in event)
-                    self.assertTrue('imageTags' in event)
-                    self.assertTrue('groups' in event)
-                    self.assertTrue('Group 1' in event['groups'])
-                    self.assertTrue('Group 2' in event['groups'])
-                    self.assertEqual(hostname, event['hostname'])
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertTrue('imageTags' in properties)
+                    self.assertTrue('groups' in properties)
+                    self.assertTrue('Group 1' in properties['groups'])
+                    self.assertTrue('Group 2' in properties['groups'])
+                    self.assertEqual(hostname, properties['hostname'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -101,6 +102,21 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'completion',", log.output)
                 self.assertNotInLog("foo@ansible.com", log.output)
                 self.assertNotInLog("username", log.output)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.views.fmtr.preprocess', side_effect=Exception)
+    @patch('main.middleware.send_segment_event', return_value=None)
+    def test_preprocess_error(self, segment, preprocess):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+            "    - name: Install Apache for foo@ansible.com\n",
+        }
+
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('completions'), payload, format='json')
+        self.assertIsNotNone(segment.call_args)
+        self.assertIn('suggestionId', segment.call_args.args[0], segment.call_args)
+        self.assertTrue(segment.call_args.args[0]['suggestionId'], segment.call_args)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
@@ -196,6 +212,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 events = self.extractSegmentEventsFromLog(log.output)
                 n = len(events)
                 self.assertTrue(n > 0)
-                self.assertEqual(events[n - 1]['error_type'], 'event_exceeds_limit')
-                self.assertIsNotNone(events[n - 1]['details']['event_name'])
-                self.assertIsNotNone(events[n - 1]['details']['msg_len'] > 32 * 1024)
+                self.assertEqual(events[n - 1]['properties']['error_type'], 'event_exceeds_limit')
+                self.assertIsNotNone(events[n - 1]['properties']['details']['event_name'])
+                self.assertIsNotNone(events[n - 1]['properties']['details']['msg_len'] > 32 * 1024)

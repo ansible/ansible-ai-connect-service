@@ -72,27 +72,29 @@ process_error_count = Counter(
 )
 
 
-class PostprocessException(APIException):
+class BaseWisdomAPIException(APIException):
+    def __init__(self, *args, **kwargs):
+        completions_return_code.labels(code=self.status_code).inc()
+        super().__init__(*args, **kwargs)
+
+
+class PostprocessException(BaseWisdomAPIException):
     status_code = 204
-    completions_return_code.labels(code=status_code).inc()
     error_type = 'postprocess_error'
 
 
-class ModelTimeoutException(APIException):
+class ModelTimeoutException(BaseWisdomAPIException):
     status_code = 204
-    completions_return_code.labels(code=status_code).inc()
     error_type = 'model_timeout'
 
 
-class ServiceUnavailable(APIException):
+class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
-    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
-class InternalServerError(APIException):
+class InternalServerError(BaseWisdomAPIException):
     status_code = 500
-    completions_return_code.labels(code=status_code).inc()
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
@@ -124,10 +126,17 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        # Here `request` is a DRF wrapper around Django's original
+        # WSGIRequest object.  It holds the original as
+        # `self._request`, and that's the one we need to modify to
+        # make this available to the middleware.
+        request._request._suggestion_id = request.data.get('suggestionId')
+
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         request_serializer = CompletionRequestSerializer(data=request.data)
         try:
             request_serializer.is_valid(raise_exception=True)
+            request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
         except Exception as exc:
             process_error_count.labels(stage='request_serialization_validation').inc()
             logger.warn(f'failed to validate request:\nException:\n{exc}')
@@ -201,7 +210,7 @@ class Completions(APIView):
             send_segment_event(event, "prediction", request.user)
 
         logger.debug(
-            f"response from inference for " f"suggestion id {payload.suggestionId}:\n{predictions}"
+            f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
         )
         postprocessed_predictions = None
         try:
@@ -342,7 +351,7 @@ class Completions(APIView):
             indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
             recommendation["predictions"][i] = indented_yaml
             logger.debug(
-                f"suggestion id: {suggestion_id}, " f"indented recommendation: \n{indented_yaml}"
+                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
             )
             continue
         return recommendation
@@ -454,7 +463,7 @@ class Feedback(APIView):
             event_type = (
                 "inlineSuggestionFeedback"
                 if ("inlineSuggestion" in request_data)
-                else "inlineSuggestionFeedback"
+                else "ansibleContentFeedback"
             )
             event = {
                 "data": request_data,
