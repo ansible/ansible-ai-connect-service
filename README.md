@@ -239,7 +239,7 @@ To get an authentication token, you can run the following command:
 ```bash
 podman exec -it docker-compose_django_1 wisdom-manage createtoken --create-user
 ```
-Note: If using `docker compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
+Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
 ```bash
 podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
