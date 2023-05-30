@@ -76,6 +76,7 @@ containers, you may need to set the permissions on the
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
 chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R grafana/
 chcon -t container_file_t -R ari/
 ```
 Also run `chmod` against the `ari/` directory so that ARI can
