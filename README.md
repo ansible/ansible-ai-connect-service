@@ -214,7 +214,7 @@ and then run the Django command to create the application:
   wisdom-manage createapplication \
     --name "Ansible Lightspeed for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
-    --redirect-uris "vscode://redhat.ansible" \
+    --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible" \
     public authorization-code
 ```
 
