@@ -29,6 +29,30 @@ To update the pre-commit config to the latest repos' versions and run the precom
 pre-commit autoupdate && pre-commit run -a
 ```
 
+## Updating the Python dependencies
+
+We are now using the pip-compile command in order to manage our Python
+dependencies.  In order to use it, install pip-tools and its
+dependencies by running:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+The specification of what packages we need now live in the
+requirements.in and requirements-dev.in files.  Use your preferred
+editor to make the needed changes in those files, then run
+
+```bash
+pip-compile
+pip-compile requirements-dev.in
+```
+
+These commands will produce fully populated and pinned requirements.txt and
+requirements-dev.txt files, containing all of the dependencies of
+our dependencies involved.
+
+
 ## Full Development Environment
 
 You can deploy a development environment using `docker-compose` or
