@@ -30,7 +30,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
 
     try:
         analytics.track(
-            str(user.uuid) if (user and user.uuid) else 'unknown',
+            str(user.uuid) if (user and getattr(user, 'uuid', None)) else 'unknown',
             event_name,
             event,
         )
