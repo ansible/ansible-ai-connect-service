@@ -147,6 +147,7 @@ def adjust_indentation(yaml):
     stream = StringIO()
     with stream as fp:
         yaml_obj = YAML()
+        yaml_obj.allow_duplicate_keys = True
         yaml_obj.indent(offset=2, sequence=4)
         loaded_data = yaml_obj.load(output)
         loaded_data = handle_jinja2_variable_quotes(loaded_data)
