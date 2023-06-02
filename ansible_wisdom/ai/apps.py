@@ -1,5 +1,6 @@
 import logging
 
+import torch
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
@@ -16,6 +17,10 @@ class AiConfig(AppConfig):
     _ari_caller = None
 
     def ready(self) -> None:
+        if torch.cuda.is_available():
+            logger.info('GPU is available')
+        else:
+            logger.error('GPU is not available')
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
             from .api.model_client.grpc_client import GrpcClient
 

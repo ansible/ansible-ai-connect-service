@@ -20,6 +20,7 @@ from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITransactionTestCase
+from segment import analytics
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -60,6 +61,11 @@ class DummyMeshClient(ModelMeshClient):
 
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        analytics.send = False  # do not send data to segment from unit tests
+
     def setUp(self):
         self.username = 'u' + "".join(random.choices(string.digits, k=5))
         self.password = 'secret'
@@ -159,6 +165,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_authentication_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -171,8 +178,18 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+                segment_events = self.extractSegmentEventsFromLog(log.output)
+                self.assertTrue(len(segment_events) > 0)
+                hostname = platform.node()
+                for event in segment_events:
+                    self.assertEqual(event['userId'], 'unknown')
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertTrue('imageTags' in properties)
+                    self.assertEqual(properties['response']['status_code'], 401)
 
     def test_completions_preprocessing_error(self):
         payload = {
@@ -428,7 +445,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "inlineSuggestion": {
                 "latency": 1000,
                 "userActionTime": 3500,
-                "documentUri": "file:///home/user/ansible.yaml",
+                "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "action": "2",  # invalid choice for action
                 "suggestionId": str(uuid.uuid4()),
             }
@@ -445,6 +462,10 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 properties = event['properties']
                 self.assertTrue('data' in properties)
                 self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "file:///home/ano-user/ansible.yaml",
+                    properties['data']['inlineSuggestion']['documentUri'],
+                )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_ansible_content_feedback_error(self):
@@ -452,7 +473,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
                 "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/user/ansible.yaml",
+                "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "activityId": "123456",  # an invalid UUID
                 "trigger": "0",
             }
@@ -469,6 +490,10 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 properties = event['properties']
                 self.assertTrue('data' in properties)
                 self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "file:///home/ano-user/ansible.yaml",
+                    properties['data']['ansibleContent']['documentUri'],
+                )
 
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):

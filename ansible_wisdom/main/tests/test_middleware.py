@@ -13,11 +13,6 @@ from segment import analytics
 
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        analytics.send = False  # do not send data to segment from unit tests
-
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):

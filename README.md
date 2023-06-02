@@ -29,6 +29,30 @@ To update the pre-commit config to the latest repos' versions and run the precom
 pre-commit autoupdate && pre-commit run -a
 ```
 
+## Updating the Python dependencies
+
+We are now using the pip-compile command in order to manage our Python
+dependencies.  In order to use it, install pip-tools and its
+dependencies by running:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+The specification of what packages we need now live in the
+requirements.in and requirements-dev.in files.  Use your preferred
+editor to make the needed changes in those files, then run
+
+```bash
+pip-compile
+pip-compile requirements-dev.in
+```
+
+These commands will produce fully populated and pinned requirements.txt and
+requirements-dev.txt files, containing all of the dependencies of
+our dependencies involved.
+
+
 ## Full Development Environment
 
 You can deploy a development environment using `docker-compose` or
@@ -76,6 +100,7 @@ containers, you may need to set the permissions on the
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
 chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R grafana/
 chcon -t container_file_t -R ari/
 ```
 Also run `chmod` against the `ari/` directory so that ARI can
@@ -213,7 +238,7 @@ and then run the Django command to create the application:
   wisdom-manage createapplication \
     --name "Ansible Lightspeed for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
-    --redirect-uris "vscode://redhat.ansible" \
+    --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible" \
     public authorization-code
 ```
 
@@ -224,6 +249,7 @@ Review the screen recording for instruction on configuring the VSCode
 extension to access your running wisdom service.
 
 Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```. You can also disable it by adding `INSTALLED_APPS = [i for i in INSTALLED_APPS if i not in ["django_prometheus"]]` to the `ansible_wisdom/main/settings/development.py` file.
+
 
 ## Authenticating with the completion API
 
@@ -237,7 +263,7 @@ Once you start the app, navigate to http://localhost:8000/ to log in. Once authe
 To get an authentication token, you can run the following command:
 
 ```bash
-podman exec -it docker-compose_django_1 wisdom-manage createtoken --create-user
+podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
 Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
 ```bash

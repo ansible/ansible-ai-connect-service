@@ -460,13 +460,16 @@ class Feedback(APIView):
             }
             send_segment_event(event, "ansibleContentFeedback", user)
         if exception and not inline_suggestion_data and not ansible_content_data:
+            # When an exception is thrown before inline_suggestion_data or ansible_content_data
+            # is set, we send request_data to Segment after having anonymized it.
+            ano_request_data = anonymizer.anonymize_struct(request_data)
             event_type = (
                 "inlineSuggestionFeedback"
                 if ("inlineSuggestion" in request_data)
                 else "ansibleContentFeedback"
             )
             event = {
-                "data": request_data,
+                "data": ano_request_data,
                 "exception": str(exception),
             }
             send_segment_event(event, event_type, user)
