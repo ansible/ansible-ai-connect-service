@@ -495,6 +495,39 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     properties['data']['ansibleContent']['documentUri'],
                 )
 
+    @patch('ai.api.serializers.FeedbackRequestSerializer.is_valid')
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_ansible_content_500_error(self, is_valid):
+        is_valid.side_effect = Exception('Dummy Exception')
+        payload = {
+            "ansibleContent": {
+                "content": "---\n- hosts: all\n  become: yes\n\n  "
+                "tasks:\n    - name: Install Apache\n",
+                "documentUri": "file:///home/rbobbitt/ansible.yaml",
+                "activityId": str(uuid.uuid4()),
+                "trigger": "0",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assertInLog(
+                "An exception <class 'Exception'> occurred in sending a feedback", log.output
+            )
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('ansibleContentFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
+                self.assertEqual('Dummy Exception', properties['exception'])
+                self.assertEqual(
+                    "file:///home/ano-user/ansible.yaml",
+                    properties['data']['ansibleContent']['documentUri'],
+                )
+
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
     @patch('ai.search.search')
