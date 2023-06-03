@@ -115,8 +115,6 @@ def preprocess(context, prompt):
 
 def handle_spaces_and_casing(prompt):
     try:
-        prompt = prompt.lower()  # lowercasing the prompt always to ensure consistent results
-
         # before can be any leading space that might be present in `- name:` eg `      - name: `
         before, sep, after = prompt.partition('- name: ')  # keep the space at the end
         text = " ".join(after.split())  # remove additional spaces in the prompt
