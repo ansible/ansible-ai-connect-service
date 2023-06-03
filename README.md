@@ -248,7 +248,8 @@ into the VSCode extension.
 Review the screen recording for instruction on configuring the VSCode
 extension to access your running wisdom service.
 
-Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```.
+Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```. You can also disable it by adding `INSTALLED_APPS = [i for i in INSTALLED_APPS if i not in ["django_prometheus"]]` to the `ansible_wisdom/main/settings/development.py` file.
+
 
 ## Authenticating with the completion API
 
@@ -264,6 +265,11 @@ To get an authentication token, you can run the following command:
 ```bash
 podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
+Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
+```bash
+podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
+```
+
 
 - `my-test-user` will be create for you
 - `my-token` is the name of the token
