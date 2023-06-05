@@ -50,7 +50,6 @@ docker-create-superuser:
 
 # Run unit tests, calculate code coverage and display results in chrome
 # - target specific variables:
-code-coverage: export ANSIBLE_AI_CACHE_URI=redis://localhost:6379
 code-coverage: export ANSIBLE_AI_DATABASE_HOST=localhost
 code-coverage: export ANSIBLE_AI_DATABASE_NAME=wisdom
 code-coverage: export ANSIBLE_AI_DATABASE_PASSWORD=wisdom
