@@ -40,6 +40,13 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
 
+    - name: Free space on build machine
+      run: |
+        rm -rf /opt/hostedtoolcache/Java*
+        rm -rf /opt/hostedtoolcache/Ruby*
+        rm -rf /opt/hostedtoolcache/Go*
+        rm -rf /opt/hostedtoolcache/node*
+
     - name: Build Image
       id: build-image
       uses: redhat-actions/buildah-build@v2
