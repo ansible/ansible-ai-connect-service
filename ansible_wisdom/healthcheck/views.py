@@ -22,7 +22,6 @@ CACHE_TIMEOUT = 30
 
 class HealthCheckCustomView(MainView):
     _plugin_name_map = {
-        'Cache backend: default': 'cache',
         'DatabaseBackend': 'db',
         'ModelServerHealthCheck': 'model-server',
     }
@@ -82,7 +81,6 @@ class WisdomServiceHealthView(APIView):
                     "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
                     "model_name": "ansible-wisdom-v09",
                     "dependencies": [
-                        {"name": "cache", "status": "ok", "time_taken": 2.032},
                         {"name": "db", "status": "ok", "time_taken": 233.538},
                         {"name": "model-server", "status": "ok", "time_taken": 0.001},
                     ],

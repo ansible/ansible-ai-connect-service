@@ -179,7 +179,7 @@ services on your local machine.
 
 For terminating backend services, run `make stop-backends`.
 
-Note that you need to run `manage.py migrate` to set up DB
+Note that you need to run `manage.py migrate` and `manage.py createcachetable` to set up DB
 before running the Django application from source,
 
 The setup for debugging is different depending on the Python development tool.
@@ -415,7 +415,6 @@ for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/
  with the following `.env` file:
 
 ```commandline
-ANSIBLE_AI_CACHE_URI=redis://localhost:6379
 ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
