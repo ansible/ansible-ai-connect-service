@@ -20,6 +20,7 @@ do
 done
 
 /var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
+/var/www/venv/bin/python ansible_wisdom/manage.py createcachetable
 /var/www/venv/bin/python ansible_wisdom/manage.py collectstatic --noinput
 
 cd ansible_wisdom/

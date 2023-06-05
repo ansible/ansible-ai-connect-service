@@ -34,18 +34,6 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     else None
 )
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
-CACHES = {
-    "default": {
-        "BACKEND": os.getenv(
-            "ANSIBLE_AI_CACHE_BACKEND", "django.core.cache.backends.redis.RedisCache"
-        ),
-        "LOCATION": os.getenv("ANSIBLE_AI_CACHE_URI", "redis://redis:6379"),
-    }
-}
-REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
-
 if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Lightspeed with Watson Code Assistant Service',

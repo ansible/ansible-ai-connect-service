@@ -39,16 +39,3 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-CACHES = {
-    "default": {
-        # In production, we use a Redis in Cluster mode. The consequence is that
-        # we cannot use the standard driver and we need instead to use Redis-Py's
-        # new RedisCluster client. This is what main.redis.CustomRedisCluster is
-        # for.
-        "BACKEND": os.getenv("ANSIBLE_AI_CACHE_BACKEND", "main.redis.CustomRedisCluster"),
-        # NOTE: Use ',' to seperate the different servers
-        "LOCATION": os.environ["ANSIBLE_AI_CACHE_URI"],
-    }
-}
-
-REDIS_URL = CACHES["default"]["LOCATION"]  # for Redis health-check
