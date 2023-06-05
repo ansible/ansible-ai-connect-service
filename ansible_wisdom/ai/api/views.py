@@ -10,6 +10,11 @@ from django.conf import settings
 from django.http import QueryDict
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from opentelemetry import trace
+from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_client import Counter, Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
@@ -37,6 +42,29 @@ from .serializers import (
     InlineSuggestionFeedback,
 )
 from .utils.segment import send_segment_event
+
+trace.set_tracer_provider(TracerProvider(resource=Resource.create({SERVICE_NAME: "test"})))
+print("name: ", __name__)
+tracer = trace.get_tracer(__name__)
+
+# create a JaegerExporter
+jaeger_exporter = JaegerExporter(
+    # configure agent
+    agent_host_name='localhost',
+    agent_port=6831,
+    # optional: configure also collector
+    # collector_endpoint='http://localhost:14268/api/traces?format=jaeger.thrift',
+    # username=xxxx, # optional
+    # password=xxxx, # optional
+    # max_tag_value_length=None # optional
+)
+
+# # Create a BatchSpanProcessor and add the exporter to it
+span_processor = BatchSpanProcessor(jaeger_exporter)
+#
+# # add to the tracer
+trace.get_tracer_provider().add_span_processor(span_processor)
+
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +162,12 @@ class Completions(APIView):
         # WSGIRequest object.  It holds the original as
         # `self._request`, and that's the one we need to modify to
         # make this available to the middleware.
+
+        with tracer.start_as_current_span('Completions: post') as span:
+            span.set_attribute('Method', 'post')
+            span.set_attribute('Class', 'Completions')
+            print('Class: Completions; Method: post')
+
         request._request._suggestion_id = request.data.get('suggestionId')
 
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
@@ -268,105 +302,117 @@ class Completions(APIView):
         return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
+        with tracer.start_as_current_span('Completions: preprocess') as span:
+            span.set_attribute('Class', 'Completions')
+            span.set_attribute('Method', 'preprocess')
+            print('Class: Completions; Method: preprocess')
+
         context, prompt = fmtr.preprocess(context, prompt)
 
         return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        ari_caller = apps.get_app_config("ai").get_ari_caller()
-        if not ari_caller:
-            logger.warn('skipped ari post processing because ari was not initialized')
+        with tracer.start_as_current_span('Completions: postprocess') as span:
+            span.set_attribute('Class', 'Completions')
+            span.set_attribute('Method', 'postprocess')
+            print('Class: Completions; Method: postprocess')
 
-        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-            if ari_caller:
-                start_time = time.time()
-                truncated_yaml = None
-                recommendation_problem = None
-                # check if the recommendation_yaml is a valid YAML
-                try:
-                    _ = yaml.safe_load(recommendation_yaml)
-                except Exception as exc:
-                    # the recommendation YAML can have a broken line at the bottom
-                    # because the token size of the wisdom model is limited.
-                    # so we try truncating the last line of the recommendation here.
-                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
-                    if truncated:
-                        try:
-                            _ = yaml.safe_load(truncated_yaml)
-                        except Exception as exc:
+            ari_caller = apps.get_app_config("ai").get_ari_caller()
+            if not ari_caller:
+                logger.warn('skipped ari post processing because ari was not initialized')
+
+            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                if ari_caller:
+                    start_time = time.time()
+                    truncated_yaml = None
+                    recommendation_problem = None
+                    # check if the recommendation_yaml is a valid YAML
+                    try:
+                        _ = yaml.safe_load(recommendation_yaml)
+                    except Exception as exc:
+                        # the recommendation YAML can have a broken line at the bottom
+                        # because the token size of the wisdom model is limited.
+                        # so we try truncating the last line of the recommendation here.
+                        truncated, truncated_yaml = truncate_recommendation_yaml(
+                            recommendation_yaml
+                        )
+                        if truncated:
+                            try:
+                                _ = yaml.safe_load(truncated_yaml)
+                            except Exception as exc:
+                                recommendation_problem = exc
+                        else:
                             recommendation_problem = exc
-                    else:
-                        recommendation_problem = exc
-                    if recommendation_problem:
-                        logger.error(
-                            f'recommendation_yaml is not a valid YAML: '
-                            f'\n{recommendation_yaml}'
-                            f'\nException:\n{recommendation_problem}'
-                        )
+                        if recommendation_problem:
+                            logger.error(
+                                f'recommendation_yaml is not a valid YAML: '
+                                f'\n{recommendation_yaml}'
+                                f'\nException:\n{recommendation_problem}'
+                            )
 
-                exception = None
-                postprocessed_yaml = None
-                postprocess_detail = None
-                try:
-                    # if the recommentation is not a valid yaml, record it as an exception
-                    if recommendation_problem:
-                        exception = recommendation_problem
-                    else:
-                        # otherwise, do postprocess here
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"original recommendation: \n{recommendation_yaml}"
-                        )
-                        if truncated_yaml:
+                    exception = None
+                    postprocessed_yaml = None
+                    postprocess_detail = None
+                    try:
+                        # if the recommentation is not a valid yaml, record it as an exception
+                        if recommendation_problem:
+                            exception = recommendation_problem
+                        else:
+                            # otherwise, do postprocess here
                             logger.debug(
                                 f"suggestion id: {suggestion_id}, "
-                                f"truncated recommendation: \n{truncated_yaml}"
+                                f"original recommendation: \n{recommendation_yaml}"
                             )
-                            recommendation_yaml = truncated_yaml
-                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                            recommendation_yaml, prompt, context
+                            if truncated_yaml:
+                                logger.debug(
+                                    f"suggestion id: {suggestion_id}, "
+                                    f"truncated recommendation: \n{truncated_yaml}"
+                                )
+                                recommendation_yaml = truncated_yaml
+                            postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                                recommendation_yaml, prompt, context
+                            )
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"post-processed recommendation: \n{postprocessed_yaml}"
+                            )
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"post-process detail: {json.dumps(postprocess_detail)}"
+                            )
+                            recommendation["predictions"][i] = postprocessed_yaml
+                    except Exception as exc:
+                        exception = exc
+                        # return the original recommendation if we failed to postprocess
+                        logger.exception(
+                            f'failed to postprocess recommendation with prompt {prompt} '
+                            f'context {context} and model recommendation {recommendation}'
                         )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-processed recommendation: \n{postprocessed_yaml}"
+                    finally:
+                        self.write_to_segment(
+                            user,
+                            suggestion_id,
+                            recommendation_yaml,
+                            truncated_yaml,
+                            postprocessed_yaml,
+                            postprocess_detail,
+                            exception,
+                            start_time,
                         )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-process detail: {json.dumps(postprocess_detail)}"
-                        )
-                        recommendation["predictions"][i] = postprocessed_yaml
-                except Exception as exc:
-                    exception = exc
-                    # return the original recommendation if we failed to postprocess
-                    logger.exception(
-                        f'failed to postprocess recommendation with prompt {prompt} '
-                        f'context {context} and model recommendation {recommendation}'
-                    )
-                finally:
-                    self.write_to_segment(
-                        user,
-                        suggestion_id,
-                        recommendation_yaml,
-                        truncated_yaml,
-                        postprocessed_yaml,
-                        postprocess_detail,
-                        exception,
-                        start_time,
-                    )
-                    if exception:
-                        raise exception
+                        if exception:
+                            raise exception
 
-            # adjust indentation as per default ansible-lint configuration
-            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
+                # adjust indentation as per default ansible-lint configuration
+                indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
 
-            # restore original indentation
-            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
-            recommendation["predictions"][i] = indented_yaml
-            logger.debug(
-                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
-            )
-            continue
-        return recommendation
+                # restore original indentation
+                indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
+                recommendation["predictions"][i] = indented_yaml
+                logger.debug(
+                    f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
+                )
+                continue
+            return recommendation
 
     def write_to_segment(
         self,
