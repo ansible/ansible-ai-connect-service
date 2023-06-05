@@ -264,6 +264,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     'skipped ari post processing because ari was not initialized', log.output
                 )
 
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
     def test_full_payload_with_recommendation_with_broken_last_line(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",

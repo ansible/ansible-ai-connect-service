@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "health_check",
     "health_check.db",
-    "health_check.cache",
     "healthcheck",
     "oauth2_provider",
     'import_export',
@@ -357,4 +356,11 @@ ANSIBLE_AI_SEARCH = {
             'ANSIBLE_AI_SEARCH_METHOD', 'name:hnsw,space_type:innerproduct,engine:nmslib'
         ).split(',')
     ),
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache",
+    }
 }
