@@ -12,13 +12,14 @@ djangorestframework==3.14.0
 drf-spectacular==0.25.1
 grpcio==1.51.1
 ipython==8.10.0
+launchdarkly-server-sdk==8.1.1
 opensearch-py==2.1.1
 protobuf==4.22.1
 psycopg[binary]==3.1.8
 pydantic==1.10.2
 pytz
 PyYAML==6.0
-redis==4.5.4
+redis==4.5.5
 requests==2.28.1
 segment-analytics-python==2.2.2
 sentence-transformers==2.2.2
