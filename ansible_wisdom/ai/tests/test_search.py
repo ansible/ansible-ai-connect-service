@@ -60,8 +60,8 @@ class TestSearch(APITestCase):
             }
 
     class DummySentenceTransformer:
-        def encode(self, input):
-            return input
+        def encode(self, sentences=None, batch_size=None):
+            return sentences
 
     @override_settings(ANSIBLE_AI_SEARCH=DUMMY_AI_SEARCH_SETTINGS)
     def test_initialize_OpenSearch(self):

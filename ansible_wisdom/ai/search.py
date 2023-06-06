@@ -62,7 +62,7 @@ def search(suggestion):
         raise Exception('AI Search is not initialized.')
 
     start_time = time.time()
-    encoded = model.encode(suggestion)
+    encoded = model.encode(sentences=suggestion, batch_size=16)
     encode_duration = round((time.time() - start_time) * 1000, 2)
 
     query = generate_query(encoded)
