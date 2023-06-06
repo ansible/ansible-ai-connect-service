@@ -48,7 +48,7 @@ from sentence_transformers import SentenceTransformer
 sentences = ["This is an example sentence", "Each sentence is converted"]
 
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-embeddings = model.encode(sentences)
+embeddings = model.encode(sentences=sentences, batch_size=16)
 print(embeddings)
 ```
 

@@ -29,6 +29,30 @@ To update the pre-commit config to the latest repos' versions and run the precom
 pre-commit autoupdate && pre-commit run -a
 ```
 
+## Updating the Python dependencies
+
+We are now using the pip-compile command in order to manage our Python
+dependencies.  In order to use it, install pip-tools and its
+dependencies by running:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+The specification of what packages we need now live in the
+requirements.in and requirements-dev.in files.  Use your preferred
+editor to make the needed changes in those files, then run
+
+```bash
+pip-compile
+pip-compile requirements-dev.in
+```
+
+These commands will produce fully populated and pinned requirements.txt and
+requirements-dev.txt files, containing all of the dependencies of
+our dependencies involved.
+
+
 ## Full Development Environment
 
 You can deploy a development environment using `docker-compose` or
@@ -76,6 +100,7 @@ containers, you may need to set the permissions on the
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
 chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R grafana/
 chcon -t container_file_t -R ari/
 ```
 Also run `chmod` against the `ari/` directory so that ARI can
@@ -213,7 +238,7 @@ and then run the Django command to create the application:
   wisdom-manage createapplication \
     --name "Ansible Lightspeed for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
-    --redirect-uris "vscode://redhat.ansible" \
+    --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible" \
     public authorization-code
 ```
 
@@ -223,11 +248,14 @@ into the VSCode extension.
 Review the screen recording for instruction on configuring the VSCode
 extension to access your running wisdom service.
 
+Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```. You can also disable it by adding `INSTALLED_APPS = [i for i in INSTALLED_APPS if i not in ["django_prometheus"]]` to the `ansible_wisdom/main/settings/development.py` file.
+
+
 ## Authenticating with the completion API
 
 GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
 
-To test GitHub authentication locally, you will need to create a new OAuth App at https://github.com/settings/developers. Provide an Authorization callback URL of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. If you are running with the compose [development environment](#development-environment) described below, put these env vars in a .env file in the `tools/docker-compose` directory.
+To test GitHub authentication locally, you will need to create a new OAuth App at https://github.com/settings/developers. Provide an Authorization callback URL of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` correspond to the Client ID and Client Secret respectively, both of which are provided after creating a new OAuth App. If you are running with the compose [development environment](#development-environment) described below, put these env vars in a .env file in the `tools/docker-compose` directory.
 
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
@@ -235,8 +263,13 @@ Once you start the app, navigate to http://localhost:8000/ to log in. Once authe
 To get an authentication token, you can run the following command:
 
 ```bash
-podman exec -it docker-compose_django_1 wisdom-manage createtoken --create-user
+podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
+Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
+```bash
+podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
+```
+
 
 - `my-test-user` will be create for you
 - `my-token` is the name of the token

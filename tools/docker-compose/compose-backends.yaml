@@ -32,10 +32,14 @@ services:
       - "9090:9090"
     networks:
       - dbnet
-  prom-pushgateway:
-    image: docker.io/prom/pushgateway
+  grafana:
+    image: docker.io/grafana/grafana:7.5.17
+    environment:
+      - GF_LOG_LEVEL=warn
     ports:
-      - "9091:9091"
+      - "3000:3000"
+    volumes:
+      - $PWD/grafana:/var/lib/grafana
     networks:
       - dbnet
 
