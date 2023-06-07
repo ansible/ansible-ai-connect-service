@@ -1,7 +1,11 @@
-from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
-from django.dispatch import receiver
 import logging
 
+from django.contrib.auth.signals import (
+    user_logged_in,
+    user_logged_out,
+    user_login_failed,
+)
+from django.dispatch import receiver
 
 user_access_logger = logging.getLogger("user")
 
