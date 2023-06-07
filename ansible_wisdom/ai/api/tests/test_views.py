@@ -363,6 +363,21 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "activityId": str(uuid.uuid4()),
                 "trigger": "0",
             },
+            "sentimentFeedback": {
+                "value": 4,
+                "feedback": "This is a test feedback",
+            },
+            "suggestionQualityFeedback": {
+                "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+                " - name: Install Apache\n",
+                "providedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
+                "ansible.builtin.package:\n      name: apache2\n"
+                "      state: present",
+                "expectedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
+                "ansible.builtin.package:\n      name: apache\n"
+                "      state: present",
+                "additionalComment": "Package name is changed",
+            },
         }
         self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format='json')
@@ -493,6 +508,62 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(
                     "file:///home/ano-user/ansible.yaml",
                     properties['data']['ansibleContent']['documentUri'],
+                )
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_suggestion_quality_feedback_error(self):
+        payload = {
+            "suggestionQualityFeedback": {
+                # required key "prompt" is missing
+                "providedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
+                "ansible.builtin.package:\n      name: apache2\n      "
+                "state: present",
+                "expectedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
+                "ansible.builtin.package:\n      name: apache\n      "
+                "state: present",
+                "additionalComment": "Package name is changed",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('suggestionQualityFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "Package name is changed",
+                    properties['data']['suggestionQualityFeedback']['additionalComment'],
+                )
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_feedback_segment_sentiment_feedback_error(self):
+        payload = {
+            "sentimentFeedback": {
+                # missing required key "value"
+                "feedback": "This is a test feedback",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                self.assertTrue('suggestionQualityFeedback', event['event'])
+                properties = event['properties']
+                self.assertTrue('data' in properties)
+                self.assertTrue('exception' in properties)
+                self.assertEqual(
+                    "This is a test feedback",
+                    properties['data']['sentimentFeedback']['feedback'],
                 )
 
 

@@ -176,6 +176,51 @@ class AnsibleContentFeedback(serializers.Serializer):
     )
 
 
+class SuggestionQualityFeedback(serializers.Serializer):
+    class Meta:
+        fields = ['prompt', 'providedSuggestion', 'expectedSuggestion']
+
+    prompt = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='File Content used as context',
+        help_text='File Content till end of task name description before cursor position.',
+    )
+    providedSuggestion = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Provided Model suggestion',
+        help_text='Inline suggestion from model as shared by user for given prompt.',
+    )
+    expectedSuggestion = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Expected Model suggestion',
+        help_text='Suggestion expected by the user.',
+    )
+    additionalComment = AnonymizedCharField(
+        trim_whitespace=False,
+        required=False,
+        label='Additional Comment',
+        help_text='Additional comment describing why the \
+                   change was required in Lightspeed suggestion.',
+    )
+
+
+class SentimentFeedback(serializers.Serializer):
+    class Meta:
+        fields = ['value', 'feedback']
+
+    value = serializers.IntegerField(required=True)
+
+    feedback = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Free form text feedback',
+        help_text='Free form text feedback describing the reason for sentiment value.',
+    )
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -215,10 +260,17 @@ class AnsibleContentFeedback(serializers.Serializer):
 )
 class FeedbackRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['inlineSuggestion', 'ansibleContent']
+        fields = [
+            'inlineSuggestion',
+            'ansibleContent',
+            'suggestionQualityFeedback',
+            'sentimentFeedback',
+        ]
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     ansibleContent = AnsibleContentFeedback(required=False)
+    suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
+    sentimentFeedback = SentimentFeedback(required=False)
 
 
 class AttributionRequestSerializer(serializers.Serializer):
