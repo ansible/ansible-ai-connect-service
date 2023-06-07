@@ -46,6 +46,11 @@ jobs:
         rm -rf /opt/hostedtoolcache/Ruby*
         rm -rf /opt/hostedtoolcache/Go*
         rm -rf /opt/hostedtoolcache/node*
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /usr/share/dotnet
+
+    - name: Remove the pre-cached Dockeri mages
+      run: docker image prune --all --force
 
     - name: Build Image
       id: build-image
