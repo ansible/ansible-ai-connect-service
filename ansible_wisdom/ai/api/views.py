@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import os.path
 import time
 
 import yaml
@@ -11,10 +12,6 @@ from django.http import QueryDict
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from opentelemetry import trace
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_client import Counter, Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
@@ -25,6 +22,8 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
+
+from tools.jaeger import tracer
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags
@@ -42,29 +41,6 @@ from .serializers import (
     InlineSuggestionFeedback,
 )
 from .utils.segment import send_segment_event
-
-trace.set_tracer_provider(TracerProvider(resource=Resource.create({SERVICE_NAME: "test"})))
-print("name: ", __name__)
-tracer = trace.get_tracer(__name__)
-
-# create a JaegerExporter
-jaeger_exporter = JaegerExporter(
-    # configure agent
-    agent_host_name='localhost',
-    agent_port=6831,
-    # optional: configure also collector
-    # collector_endpoint='http://localhost:14268/api/traces?format=jaeger.thrift',
-    # username=xxxx, # optional
-    # password=xxxx, # optional
-    # max_tag_value_length=None # optional
-)
-
-# # Create a BatchSpanProcessor and add the exporter to it
-span_processor = BatchSpanProcessor(jaeger_exporter)
-#
-# # add to the tracer
-trace.get_tracer_provider().add_span_processor(span_processor)
-
 
 logger = logging.getLogger(__name__)
 
@@ -163,12 +139,16 @@ class Completions(APIView):
         # `self._request`, and that's the one we need to modify to
         # make this available to the middleware.
 
-        with tracer.start_as_current_span('Completions: post') as span:
-            span.set_attribute('Method', 'post')
+        with tracer.start_as_current_span('post ' + __file__) as span:
+            span.set_attribute('file', __file__)
+            span.set_attribute('Method', "post")
             span.set_attribute('Class', 'Completions')
-            print('Class: Completions; Method: post')
+            span.set_attribute(
+                'Description',
+                'Responsible for processing request and sending/receiving request to/from model',
+            )
 
-        request._request._suggestion_id = request.data.get('suggestionId')
+            request._request._suggestion_id = request.data.get('suggestionId')
 
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         request_serializer = CompletionRequestSerializer(data=request.data)
@@ -192,132 +172,171 @@ class Completions(APIView):
                 model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
 
-        try:
-            start_time = time.time()
-            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
-        except Exception as exc:
-            process_error_count.labels(stage='pre-processing').inc()
-            # return the original prompt, context
-            logger.error(
-                f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
-            )
-            message = (
-                'Request contains invalid prompt'
-                if isinstance(exc, fmtr.InvalidPromptException)
-                else 'Request contains invalid yaml'
-            )
-            return Response({'message': message}, status=400)
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            preprocess_hist.observe(duration / 1000)  # millisec to seconds
+            request_serializer = CompletionRequestSerializer(data=request.data)
 
-        model_mesh_payload = ModelMeshPayload(
-            instances=[
-                {
-                    "prompt": payload.prompt,
-                    "context": payload.context,
-                    "userId": str(payload.userId) if payload.userId else None,
+            try:
+                request_serializer.is_valid(raise_exception=True)
+                request._request._suggestion_id = str(
+                    request_serializer.validated_data['suggestionId']
+                )
+
+            except Exception as exc:
+                process_error_count.labels(stage='request_serialization_validation').inc()
+                logger.warn(f'failed to validate request:\nException:\n{exc}')
+                raise exc
+            payload = APIPayload(**request_serializer.validated_data)
+            payload.userId = request.user.uuid
+            model_name = payload.model_name
+            original_indent = payload.prompt.find("name")
+
+            try:
+                start_time = time.time()
+                payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+            except Exception as exc:
+                process_error_count.labels(stage='pre-processing').inc()
+                # return the original prompt, context
+                logger.error(
+                    f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
+                )
+                message = (
+                    'Request contains invalid prompt'
+                    if isinstance(exc, fmtr.InvalidPromptException)
+                    else 'Request contains invalid yaml'
+                )
+                return Response({'message': message}, status=400)
+            finally:
+                duration = round((time.time() - start_time) * 1000, 2)
+                preprocess_hist.observe(duration / 1000)  # millisec to seconds
+
+            model_mesh_payload = ModelMeshPayload(
+                instances=[
+                    {
+                        "prompt": payload.prompt,
+                        "context": payload.context,
+                        "userId": str(payload.userId) if payload.userId else None,
+                        "suggestionId": str(payload.suggestionId),
+                    }
+                ]
+            )
+            data = model_mesh_payload.dict()
+
+            span.set_attribute('suggestionId', data['instances'][0]['suggestionId'])
+
+            logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
+
+            predictions = None
+            exception = None
+            start_time = time.time()
+            try:
+                predictions = model_mesh_client.infer(
+                    data, model_name=model_name
+                )  # jaeger tracing enabled
+            except ModelTimeoutError as exc:
+                exception = exc
+                logger.warn(
+                    f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                    f" for suggestion {payload.suggestionId}"
+                )
+                raise ModelTimeoutException
+            except Exception as exc:
+                exception = exc
+                logger.exception(
+                    f"error requesting completion for suggestion {payload.suggestionId}"
+                )
+                raise ServiceUnavailable
+            finally:
+                process_error_count.labels(stage='prediction').inc()
+                duration = round((time.time() - start_time) * 1000, 2)
+                completions_hist.observe(duration / 1000)  # millisec back to seconds
+                ano_predictions = anonymizer.anonymize_struct(predictions)
+
+                event = {
+                    "duration": duration,
+                    "exception": exception is not None,
+                    "problem": None if exception is None else exception.__class__.__name__,
+                    "request": data,
+                    "response": ano_predictions,
                     "suggestionId": str(payload.suggestionId),
                 }
-            ]
-        )
-        data = model_mesh_payload.dict()
-        logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
+                send_segment_event(event, "prediction", request.user)  # jaeger tracing enabled
 
-        predictions = None
-        exception = None
-        start_time = time.time()
-        try:
-            predictions = model_mesh_client.infer(data, model_name=model_name)
-        except ModelTimeoutError as exc:
-            exception = exc
-            logger.warn(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
-                f" for suggestion {payload.suggestionId}"
+            logger.debug(
+                f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
             )
-            raise ModelTimeoutException
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
-            raise ServiceUnavailable
-        finally:
-            process_error_count.labels(stage='prediction').inc()
-            duration = round((time.time() - start_time) * 1000, 2)
-            completions_hist.observe(duration / 1000)  # millisec back to seconds
-            ano_predictions = anonymizer.anonymize_struct(predictions)
-            event = {
-                "duration": duration,
-                "exception": exception is not None,
-                "problem": None if exception is None else exception.__class__.__name__,
-                "request": data,
-                "response": ano_predictions,
-                "suggestionId": str(payload.suggestionId),
-            }
-            send_segment_event(event, "prediction", request.user)
+            postprocessed_predictions = None
+            try:
+                start_time = time.time()
+                postprocessed_predictions = self.postprocess(
+                    ano_predictions,
+                    payload.prompt,
+                    payload.context,
+                    request.user,
+                    payload.suggestionId,
+                    indent=original_indent,
+                )
+            except Exception:
+                process_error_count.labels(stage='post-processing').inc()
+                logger.exception(
+                    f"error postprocessing prediction for suggestion {payload.suggestionId}"
+                )
+                raise PostprocessException
+            finally:
+                duration = round((time.time() - start_time) * 1000, 2)
+                postprocess_hist.observe(duration / 1000)  # millisec to seconds
 
-        logger.debug(
-            f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
-        )
-        postprocessed_predictions = None
-        try:
-            start_time = time.time()
-            postprocessed_predictions = self.postprocess(
-                ano_predictions,
-                payload.prompt,
-                payload.context,
-                request.user,
-                payload.suggestionId,
-                indent=original_indent,
+            logger.debug(
+                f"response from postprocess for "
+                f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
             )
-        except Exception:
-            process_error_count.labels(stage='post-processing').inc()
-            logger.exception(
-                f"error postprocessing prediction for suggestion {payload.suggestionId}"
-            )
-            raise PostprocessException
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            postprocess_hist.observe(duration / 1000)  # millisec to seconds
-
-        logger.debug(
-            f"response from postprocess for "
-            f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
-        )
-        try:
-            postprocessed_predictions.update(
-                {
-                    "modelName": model_name,
-                    "suggestionId": payload.suggestionId,
-                }
-            )
-            response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
-            response_serializer.is_valid(raise_exception=True)
-        except Exception:
-            process_error_count.labels(stage='response_serialization_validation').inc()
-            logger.exception(
-                f"error serializing final response for suggestion {payload.suggestionId}"
-            )
-            raise InternalServerError
-        completions_return_code.labels(code=200).inc()
-        return Response(postprocessed_predictions, status=200)
+            try:
+                postprocessed_predictions.update(
+                    {
+                        "modelName": model_name,
+                        "suggestionId": payload.suggestionId,
+                    }
+                )
+                response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(stage='response_serialization_validation').inc()
+                logger.exception(
+                    f"error serializing final response for suggestion {payload.suggestionId}"
+                )
+                raise InternalServerError
+            completions_return_code.labels(code=200).inc()
+            return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
-        with tracer.start_as_current_span('Completions: preprocess') as span:
-            span.set_attribute('Class', 'Completions')
+        with tracer.start_as_current_span(
+            'preprocess ' + __file__, kind=trace.SpanKind.CLIENT
+        ) as span:
+            span.set_attribute('Class', __class__.__name__)
             span.set_attribute('Method', 'preprocess')
-            print('Class: Completions; Method: preprocess')
+            span.set_attribute('file', __file__)
+            span.set_attribute(
+                'Description',
+                'Parent method responsible for processing context (play configs) '
+                'and prompt (task name) to model expectations',
+            )
 
-        context, prompt = fmtr.preprocess(context, prompt)
+            context, prompt = fmtr.preprocess(context, prompt)  # has jaeger tracing
 
-        return context, prompt
+            return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        with tracer.start_as_current_span('Completions: postprocess') as span:
-            span.set_attribute('Class', 'Completions')
+        with tracer.start_as_current_span('postprocess ' + __file__) as span:
+            span.set_attribute('Class', __class__.__name__)
             span.set_attribute('Method', 'postprocess')
-            print('Class: Completions; Method: postprocess')
+            span.set_attribute('file', __file__)
+            span.set_attribute('suggestionId', suggestion_id)
+            span.set_attribute(
+                'Description', 'writes recommendation yaml to segment, formats recommendation'
+            )
 
-            ari_caller = apps.get_app_config("ai").get_ari_caller()
+            ari_caller = apps.get_app_config(
+                "ai"
+            ).get_ari_caller()  # initializes ari -> has jaeger tracing
+
             if not ari_caller:
                 logger.warn('skipped ari post processing because ari was not initialized')
 
@@ -389,7 +408,7 @@ class Completions(APIView):
                             f'context {context} and model recommendation {recommendation}'
                         )
                     finally:
-                        self.write_to_segment(
+                        self.write_to_segment(  # jaeger tracing enabled
                             user,
                             suggestion_id,
                             recommendation_yaml,
@@ -412,6 +431,7 @@ class Completions(APIView):
                     f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
                 )
                 continue
+
             return recommendation
 
     def write_to_segment(
@@ -425,19 +445,27 @@ class Completions(APIView):
         exception,
         start_time,
     ):
-        duration = round((time.time() - start_time) * 1000, 2)
-        problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "detail": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
-        send_segment_event(event, "postprocess", user)
+        with tracer.start_as_current_span('write_to_segment ' + __file__) as span:
+            span.set_attribute('Class', __class__.__name__)
+            span.set_attribute('file', __file__)
+            span.set_attribute('Method', "write_to_segment")
+            span.set_attribute(
+                'Description', 'Creates event to be sent to Amplitude/S3 through Segment'
+            )
+
+            duration = round((time.time() - start_time) * 1000, 2)
+            problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "truncated": truncated_yaml,
+                "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocess", user)  # jaeger tracing enabled
 
 
 class Feedback(APIView):
