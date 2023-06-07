@@ -1,0 +1,21 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.ext;
+import "producerid.proto";
+import "stopreason.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message GeneratedResult {
+
+  /*-- fields --*/
+  int64 generated_token_count = 1;
+  string text = 2;
+  caikit_data_model.ext.StopReason stop_reason = 3;
+  caikit_data_model.common.ProducerId producer_id = 4;
+}

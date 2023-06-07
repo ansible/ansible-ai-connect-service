@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
-from .grpc_pb import common_service_pb2, common_service_pb2_grpc
+from .grpc_pb import ansiblerequest_pb2, wisdomextservice_pb2_grpc
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +16,10 @@ class GrpcClient(ModelMeshClient):
         super().__init__(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def get_inference_stub(self) -> common_service_pb2_grpc.WisdomExtServiceStub:
+    def get_inference_stub(self) -> wisdomextservice_pb2_grpc.WisdomExtServiceStub:
         logger.debug("Inference URL: " + self._inference_url)
         channel = grpc.insecure_channel(self._inference_url)
-        stub = common_service_pb2_grpc.WisdomExtServiceStub(channel)
+        stub = wisdomextservice_pb2_grpc.WisdomExtServiceStub(channel)
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
@@ -32,7 +32,7 @@ class GrpcClient(ModelMeshClient):
 
         try:
             response = self._inference_stub.AnsiblePredict(
-                request=common_service_pb2.AnsibleRequest(prompt=prompt, context=context),
+                request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
                 metadata=[("mm-vmodel-id", model_name)],
                 timeout=self.timeout,
             )
