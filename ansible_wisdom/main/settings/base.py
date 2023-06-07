@@ -186,7 +186,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "user": {
+        "users.signals": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
