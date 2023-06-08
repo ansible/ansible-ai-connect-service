@@ -127,7 +127,7 @@ fsspec[http]==2023.5.0
     #   huggingface-hub
 gitdb==4.0.10
     # via ansible-risk-insight
-grpcio==1.51.1
+grpcio==1.54.2
     # via -r requirements.in
 huggingface-hub==0.14.1
     # via
@@ -277,13 +277,13 @@ pyyaml==6.0
     #   huggingface-hub
     #   tablib
     #   transformers
-redis==4.5.5
+redis==4.5.4
     # via -r requirements.in
 regex==2023.5.5
     # via
     #   nltk
     #   transformers
-requests==2.28.1
+requests==2.28.2
     # via
     #   -r requirements.in
     #   ansible-risk-insight
