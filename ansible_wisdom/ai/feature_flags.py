@@ -11,7 +11,7 @@ class FeatureFlags:
     import ldclient
     from ldclient.config import Config
 
-    ldclient.set_config(Config(settings.FEATURE_FLAG_KEY))
+    ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
     client = ldclient.get()
     logger.info("feature flag client initialized")
 
