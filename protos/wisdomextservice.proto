@@ -1,0 +1,16 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.WisdomExt;
+import "ansiblerequest.proto";
+import "generatedresult.proto";
+
+
+/*-- SERVICES ----------------------------------------------------------------*/
+
+service WisdomExtService {
+  rpc AnsiblePredict(caikit.runtime.WisdomExt.AnsibleRequest) returns (caikit_data_model.ext.GeneratedResult);
+}
