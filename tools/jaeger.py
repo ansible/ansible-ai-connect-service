@@ -25,8 +25,3 @@ span_processor = BatchSpanProcessor(jaeger_exporter)
 #
 # # add to the tracer
 trace.get_tracer_provider().add_span_processor(span_processor)
-
-
-def start_first_span():
-    parent_span = tracer.start_span("Request")
-    return parent_span

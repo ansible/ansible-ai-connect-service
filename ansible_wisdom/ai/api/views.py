@@ -23,7 +23,7 @@ from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
 
-from tools.jaeger import set_span_in_context, start_first_span, tracer
+from tools.jaeger import tracer
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags
@@ -251,7 +251,20 @@ class Completions(APIView):
                 process_error_count.labels(stage='prediction').inc()
                 duration = round((time.time() - start_time) * 1000, 2)
                 completions_hist.observe(duration / 1000)  # millisec back to seconds
-                ano_predictions = anonymizer.anonymize_struct(predictions)
+
+                with tracer.start_as_current_span('PII removal (anonymizer)') as innerSpan:
+                    try:
+                        innerSpan.set_attribute('Class', __class__.__name__)
+                    except NameError:
+                        innerSpan.set_attribute('Class', "none")
+                    innerSpan.set_attribute('Method', "anonymize_struct")
+                    innerSpan.set_attribute('file', __file__)
+                    innerSpan.set_attribute(
+                        'Description',
+                        'Responsible for removing '
+                        'Personally Identifiable Information (PII) from ansible task',
+                    )
+                    ano_predictions = anonymizer.anonymize_struct(predictions)
 
                 event = {
                     "duration": duration,
@@ -307,7 +320,21 @@ class Completions(APIView):
                 )
                 raise InternalServerError
             completions_return_code.labels(code=200).inc()
-            return Response(postprocessed_predictions, status=200)
+
+            with tracer.start_as_current_span(
+                'Returning Recommendation for VSCode Extension'
+            ) as span:
+                try:
+                    span.set_attribute('Class', __class__.__name__)
+                except NameError:
+                    span.set_attribute('Class', "none")
+                span.set_attribute('Method', '---')
+                span.set_attribute('file', __file__)
+                span.set_attribute(
+                    'Description',
+                    'Creates and returns "Response" Object to be retrieved by VSCode Extension',
+                )
+                return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
         with tracer.start_as_current_span('Recommendation Pre-processing ') as span:
