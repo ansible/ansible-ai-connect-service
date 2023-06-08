@@ -148,13 +148,14 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_name = payload.model_name
-        model_tuple = feature_flags.get("model_name", request.user, "")
-        logger.debug(f"flag model_name has value {model_tuple}")
-        match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-        if match:
-            server, port, model_name, index = match.groups()
-            logger.info(f"selecting model '{model_name}@{server}:{port}'")
-            model_mesh_client.set_inference_url(f"{server}:{port}")
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            model_tuple = feature_flags.get("model_name", request.user, "")
+            logger.debug(f"flag model_name has value {model_tuple}")
+            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+            if match:
+                server, port, model_name, index = match.groups()
+                logger.info(f"selecting model '{model_name}@{server}:{port}'")
+                model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
 
         try:
@@ -569,12 +570,13 @@ class Attributions(GenericAPIView):
 
     def perform_search(self, serializer, user: User):
         index = None
-        model_tuple = feature_flags.get("model_name", user, "")
-        logger.debug(f"flag model_name has value {model_tuple}")
-        match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-        if match:
-            *_, index = match.groups()
-            logger.info(f"using index '{index}' for content matchin")
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            model_tuple = feature_flags.get("model_name", user, "")
+            logger.debug(f"flag model_name has value {model_tuple}")
+            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+            if match:
+                *_, index = match.groups()
+                logger.info(f"using index '{index}' for content matchin")
         data = ai_search.search(serializer.validated_data['suggestion'], index)
         resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
