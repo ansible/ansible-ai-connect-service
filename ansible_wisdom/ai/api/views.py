@@ -223,8 +223,6 @@ class Completions(APIView):
             )
             data = model_mesh_payload.dict()
 
-            span.set_attribute('suggestionId', data['instances'][0]['suggestionId'])
-
             logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
 
             predictions = None
@@ -362,7 +360,6 @@ class Completions(APIView):
                 span.set_attribute('Class', "none")
             span.set_attribute('Method', 'postprocess')
             span.set_attribute('file', __file__)
-            span.set_attribute('suggestionId', suggestion_id)
             span.set_attribute(
                 'Description', 'writes recommendation yaml to segment, formats recommendation'
             )
