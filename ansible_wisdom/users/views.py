@@ -128,34 +128,56 @@ def add_date_accepted(strategy, details, user=None, is_new=False, *args, **kwarg
 # user authenticates with more than one github provider. This needs to be revisited
 # when we add additional providers like Red Hat SSO.
 def github_get_username(uid, strategy, details, backend, user=None, *args, **kwargs):
-    if user:
-        return {'username': user.username}
-
-    if backend.name == 'github' or backend.name == 'github-team':
-        github_username = details.get('username')
-        User = get_user_model()
-        if User.objects.filter(username=github_username).exists():
-            # Get the existing django user with the same github username
-            existing_user = User.objects.get(username=github_username)
-            # Now get a social auth user associated with that django user (there may be multiple)
-            social_auth_users = UserSocialAuth.objects.filter(user=existing_user.id)
-            if social_auth_users.exists():
-                # Take the first one and check the uid
-                social_user = social_auth_users.first()
-                if social_user.uid == str(uid):
-                    # Awesome! All is as expected. Allow the username to pass through.
-                    return {'username': github_username}
-                else:
-                    logger.warn(f"Unexpected: mismatch in uid for username {github_username}")
-            else:
-                logger.warn(
-                    f"Unexpected: django user found with no social auth - username {github_username}"  # noqa: E501
-                )
-        else:
-            # No django user with this username yet
-            return {'username': github_username}
-    else:
+    if backend.name not in ['github', 'github-team']:
         logger.warn(f"Unexpected: auth backend {backend.name}")
-    logger.warn("falling back to default get_username")
-    # Fallback to default behavior
-    return get_username(strategy, details, backend, user, *args, **kwargs)
+        return get_username(strategy, details, backend, user, *args, **kwargs)
+
+    # If django user is already known, fall back to default behavior
+    if user:
+        # Fallback to default behavior
+        return get_username(strategy, details, backend, user, *args, **kwargs)
+
+    github_username = details.get('username')
+    User = get_user_model()
+
+    # If there's no django user with this username yet, we can use it
+    if not User.objects.filter(username=github_username).exists():
+        # No django user with this username yet
+        return {'username': github_username}
+
+    # There is an existing django user with this username. We need to determine if he
+    # is the same as the user logging in now. Ensure he only has github social auth users associated
+    # and that they have the same uid as him.
+
+    existing_user = User.objects.get(username=github_username)
+    # Get the social auth users associated with this django user (there may be multiple)
+    social_auth_users = UserSocialAuth.objects.filter(user=existing_user.id)
+    if not social_auth_users.exists():
+        logger.warn(
+            f"Unexpected: django user found with no social auth - username {github_username}"  # noqa: E501
+        )
+        # Fallback to default behavior
+        return get_username(strategy, details, backend, user, *args, **kwargs)
+
+    # Loop through the social users and confirm they are github users with same uid
+    same_user = True
+    for social_user in social_auth_users:
+        if social_user.uid != str(uid):
+            same_user = False
+            break
+        if social_user.provider not in ['github', 'github-team']:
+            same_user = False
+            break
+
+    if same_user:
+        # Allow the username to pass through.
+        return {'username': github_username}
+
+    else:
+        # This doesn't really need to be a warn. This can happen in acceptable scenarios, like a
+        # userchanges his GitHub ID and somebody then adopts it, or a Red Hat SSO user collides
+        # with a GitHub user.But I think it might be worth calling out in case of questions from
+        # users and my own curiosity.
+        logger.warn(f"GitHub user {github_username} collides with an existing django user")
+        # Fallback to default behavior
+        return get_username(strategy, details, backend, user, *args, **kwargs)
