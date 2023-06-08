@@ -23,7 +23,7 @@ from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
 
-from tools.jaeger import tracer
+from tools.jaeger import set_span_in_context, start_first_span, tracer
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags
@@ -139,7 +139,7 @@ class Completions(APIView):
         # `self._request`, and that's the one we need to modify to
         # make this available to the middleware.
 
-        with tracer.start_as_current_span('post ' + __file__) as span:
+        with tracer.start_as_current_span('Recommendation') as span:
             span.set_attribute('file', __file__)
             span.set_attribute('Method', "post")
             span.set_attribute('Class', 'Completions')
@@ -307,9 +307,7 @@ class Completions(APIView):
             return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
-        with tracer.start_as_current_span(
-            'preprocess ' + __file__, kind=trace.SpanKind.CLIENT
-        ) as span:
+        with tracer.start_as_current_span('Recommendation Pre-processing ') as span:
             span.set_attribute('Class', __class__.__name__)
             span.set_attribute('Method', 'preprocess')
             span.set_attribute('file', __file__)
@@ -324,7 +322,7 @@ class Completions(APIView):
             return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        with tracer.start_as_current_span('postprocess ' + __file__) as span:
+        with tracer.start_as_current_span('Recommendation Post-processing') as span:
             span.set_attribute('Class', __class__.__name__)
             span.set_attribute('Method', 'postprocess')
             span.set_attribute('file', __file__)
@@ -445,7 +443,7 @@ class Completions(APIView):
         exception,
         start_time,
     ):
-        with tracer.start_as_current_span('write_to_segment ' + __file__) as span:
+        with tracer.start_as_current_span('write_to_segment') as span:
             span.set_attribute('Class', __class__.__name__)
             span.set_attribute('file', __file__)
             span.set_attribute('Method', "write_to_segment")

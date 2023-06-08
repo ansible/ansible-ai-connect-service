@@ -3,6 +3,7 @@ from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import set_span_in_context
 
 trace.set_tracer_provider(TracerProvider(resource=Resource.create({SERVICE_NAME: "request"})))
 tracer = trace.get_tracer(__name__)
@@ -24,3 +25,8 @@ span_processor = BatchSpanProcessor(jaeger_exporter)
 #
 # # add to the tracer
 trace.get_tracer_provider().add_span_processor(span_processor)
+
+
+def start_first_span():
+    parent_span = tracer.start_span("Request")
+    return parent_span

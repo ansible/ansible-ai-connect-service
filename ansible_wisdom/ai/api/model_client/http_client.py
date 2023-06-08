@@ -20,7 +20,7 @@ class HttpClient(ModelMeshClient):
         self.headers = {"Content-Type": "application/json"}
 
     def infer(self, model_input, model_name="wisdom"):
-        with tracer.start_span('infer ' + __file__) as span:
+        with tracer.start_span('Model Server (HTTP Client)') as span:
             span.set_attribute('Class', __class__.__name__)
             span.set_attribute('file', __file__)
             span.set_attribute('Method', 'infer')

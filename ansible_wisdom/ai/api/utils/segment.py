@@ -14,7 +14,7 @@ version_info = VersionInfo()
 
 
 def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User, None]) -> None:
-    with tracer.start_span('send_segment_event ' + __file__) as span:
+    with tracer.start_span('Content Matching (send event to Segment)') as span:
         span.set_attribute('Class', "none")
         span.set_attribute('file', __file__)
         span.set_attribute('Method', "send_segment_event")

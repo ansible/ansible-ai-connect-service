@@ -82,7 +82,7 @@ def preprocess(context, prompt):
     Append a newline to both context and prompt (as the model expects)
     """
 
-    with tracer.start_span('preprocess formatter' + __file__) as span:
+    with tracer.start_span('preprocess formatter') as span:
         span.set_attribute('Class', "none")
         span.set_attribute('file', __file__)
         span.set_attribute('Method', "preprocess")
