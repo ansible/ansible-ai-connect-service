@@ -47,8 +47,11 @@ class TestTermsAndConditions(TestCase):
             def redirect(self, redirect_url):
                 self.redirect_url = redirect_url
 
-            def partial_load(self, parial_token):
-                return SimpleNamespace(backend='backend', token='token')
+            def partial_load(self, partial_token):
+                if partial_token == 'invalid_token':
+                    return None
+                else:
+                    return SimpleNamespace(backend='backend', token=partial_token)
 
         class MockUser:
             date_terms_accepted = None
@@ -61,6 +64,15 @@ class TestTermsAndConditions(TestCase):
         self.strategy = MockStrategy()
         self.partial = SimpleNamespace(token='token')
         self.user = MockUser()
+
+    def searchInLogOutput(self, s, logs):
+        for log in logs:
+            if s in log:
+                return True
+        return False
+
+    def assertInLog(self, s, logs):
+        self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def test_terms_of_service_first_call(self):
         _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
@@ -94,6 +106,7 @@ class TestTermsAndConditions(TestCase):
     def test_post_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
         self.request.session['date_terms_accepted'] = datetime.max
+        self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'True'
         view = TermsOfService()
         view.post(self.request)
@@ -104,17 +117,55 @@ class TestTermsAndConditions(TestCase):
     def test_post_not_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
         self.request.session['date_terms_accepted'] = datetime.max
+        self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'False'
         view = TermsOfService()
         view.post(self.request)
         self.assertEqual(datetime.max, self.request.session['date_terms_accepted'])
         self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
 
+    @patch('social_django.utils.get_strategy')
+    def test_post_without_partial_token(self, get_strategy):
+        get_strategy.return_value = self.strategy
+        self.request.session['date_terms_accepted'] = datetime.max
+        # self.request.POST['partial_token'] = 'token'
+        self.request.POST['accepted'] = 'False'
+        view = TermsOfService()
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            res = view.post(self.request)
+            self.assertEqual(400, res.status_code)
+            self.assertInLog(
+                'POST /terms_of_service/ was invoked without partial_token', log.output
+            )
+
+    @patch('social_django.utils.get_strategy')
+    def test_post_with_invalid_partial_token(self, get_strategy):
+        get_strategy.return_value = self.strategy
+        self.request.session['date_terms_accepted'] = datetime.max
+        self.request.POST['partial_token'] = 'invalid_token'
+        self.request.POST['accepted'] = 'False'
+        view = TermsOfService()
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            res = view.post(self.request)
+            self.assertEqual(400, res.status_code)
+            self.assertInLog('strategy.partial_load(partial_token) returned None', log.output)
+
     def test_get(self):
         self.request.session['date_terms_accepted'] = datetime.max
         view = TermsOfService()
         setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
+        self.request.GET['partial_token'] = 'token'
         res = view.get(self.request)
         self.assertEqual(200, res.status_code)
         self.assertIn('form', res.context_data)
         self.assertIn('partial_token', res.context_data)
+
+    def test_get_without_partial_token(self):
+        self.request.session['date_terms_accepted'] = datetime.max
+        view = TermsOfService()
+        setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
+        # self.request.GET['partial_token'] = 'token'
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            res = view.get(self.request)
+            self.assertEqual(403, res.status_code)
+            self.assertInLog('GET /terms_of_service/ was invoked without partial_token', log.output)
