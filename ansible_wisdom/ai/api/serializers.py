@@ -244,11 +244,11 @@ class DataSource(models.IntegerChoices):
         "Ansible Galaxy collections",
     )
     GALAXY_ME = (
-        5,
+        7,
         "Ansible Galaxy documentation",
     )
     GALAXY_R = (
-        10,
+        14,
         "Ansible Galaxy roles",
     )
 
