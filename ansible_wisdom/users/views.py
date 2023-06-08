@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -70,7 +70,7 @@ class TermsOfService(TemplateView):
         backend = partial.backend
 
         if accepted:
-            request.session['date_terms_accepted'] = datetime.now()
+            request.session['ts_date_terms_accepted'] = datetime.utcnow().timestamp()
             request.session.save()
 
         complete = reverse("social:complete", kwargs={"backend": backend})
@@ -79,21 +79,21 @@ class TermsOfService(TemplateView):
 
 def _terms_of_service(strategy, **kwargs):
     request = kwargs['request']
-    date_terms_accepted = request.session.get('date_terms_accepted')
-    if date_terms_accepted is not None:
+    ts_date_terms_accepted = request.session.get('ts_date_terms_accepted')
+    if ts_date_terms_accepted is not None:
         # if date_terms_accepted is a dummy value (== datetime.max), it indicates the
         # user did not accept our terms and conditions. Raise an AuthCanceled
         # in such a case.
-        if date_terms_accepted == datetime.max:
-            del request.session['date_terms_accepted']
+        if ts_date_terms_accepted == datetime.max.timestamp():
+            del request.session['ts_date_terms_accepted']
             request.session.save()
             raise AuthCanceled('Terms and conditions were not accepted.')
 
         # if a non-dummy value is set in term_accepted, it means that the user
         # accepted our terms and conditions. Return to the original auth flow.
         return
-    # insert a dummy value to 'date_terms_accepted' date in session
-    request.session['date_terms_accepted'] = datetime.max
+    # insert a dummy value to 'ts_date_terms_accepted' date in session
+    request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
 
     current_partial = kwargs.get('current_partial')
     terms_of_service = reverse('terms_of_service')
@@ -107,14 +107,14 @@ def terms_of_service(strategy, details, user=None, is_new=False, *args, **kwargs
 
 def _add_date_accepted(strategy, user, **kwargs):
     request = kwargs['request']
-    date_terms_accepted = request.session.get('date_terms_accepted')
+    ts_date_terms_accepted = request.session.get('ts_date_terms_accepted')
     if (
         user
         and user.date_terms_accepted is None
-        and date_terms_accepted is not None
-        and date_terms_accepted != datetime.max
+        and ts_date_terms_accepted is not None
+        and ts_date_terms_accepted != datetime.max.timestamp()
     ):
-        user.date_terms_accepted = date_terms_accepted
+        user.date_terms_accepted = datetime.fromtimestamp(ts_date_terms_accepted, timezone.utc)
         user.save()
     return
 
