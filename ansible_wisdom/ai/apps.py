@@ -60,7 +60,10 @@ class AiConfig(AppConfig):
 
     def get_ari_caller(self):
         with tracer.start_span('get_ari_caller ') as span:
-            span.set_attribute('Class', __class__.__name__)
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('file', __file__)
             span.set_attribute('Method', "write_to_segment")
             span.set_attribute('Description', 'initializes ari object')

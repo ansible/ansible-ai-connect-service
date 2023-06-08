@@ -83,7 +83,10 @@ def preprocess(context, prompt):
     """
 
     with tracer.start_span('preprocess formatter') as span:
-        span.set_attribute('Class', "none")
+        try:
+            span.set_attribute('Class', __class__.__name__)
+        except NameError:
+            span.set_attribute('Class', "none")
         span.set_attribute('file', __file__)
         span.set_attribute('Method', "preprocess")
         span.set_attribute(

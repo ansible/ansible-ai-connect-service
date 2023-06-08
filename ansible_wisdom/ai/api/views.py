@@ -140,9 +140,12 @@ class Completions(APIView):
         # make this available to the middleware.
 
         with tracer.start_as_current_span('Recommendation') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('file', __file__)
             span.set_attribute('Method', "post")
-            span.set_attribute('Class', 'Completions')
             span.set_attribute(
                 'Description',
                 'Responsible for processing request and sending/receiving request to/from model',
@@ -308,7 +311,10 @@ class Completions(APIView):
 
     def preprocess(self, context, prompt):
         with tracer.start_as_current_span('Recommendation Pre-processing ') as span:
-            span.set_attribute('Class', __class__.__name__)
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('Method', 'preprocess')
             span.set_attribute('file', __file__)
             span.set_attribute(
@@ -323,7 +329,10 @@ class Completions(APIView):
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
         with tracer.start_as_current_span('Recommendation Post-processing') as span:
-            span.set_attribute('Class', __class__.__name__)
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('Method', 'postprocess')
             span.set_attribute('file', __file__)
             span.set_attribute('suggestionId', suggestion_id)
@@ -444,7 +453,10 @@ class Completions(APIView):
         start_time,
     ):
         with tracer.start_as_current_span('write_to_segment') as span:
-            span.set_attribute('Class', __class__.__name__)
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('file', __file__)
             span.set_attribute('Method', "write_to_segment")
             span.set_attribute(

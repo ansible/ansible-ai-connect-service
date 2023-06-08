@@ -21,7 +21,10 @@ class HttpClient(ModelMeshClient):
 
     def infer(self, model_input, model_name="wisdom"):
         with tracer.start_span('Model Server (HTTP Client)') as span:
-            span.set_attribute('Class', __class__.__name__)
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
             span.set_attribute('file', __file__)
             span.set_attribute('Method', 'infer')
             span.set_attribute(
