@@ -1,0 +1,29 @@
+name: pip-compile
+
+on:
+  push:
+    # tags:
+    #   - v*
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: install
+      run: |
+        pip install pip-tools
+        pip-compile --quiet requirements.in
+        pip-compile --quiet requirements-dev.in
+        git diff --exit-code -- requirements.txt requirements-dev.txt
