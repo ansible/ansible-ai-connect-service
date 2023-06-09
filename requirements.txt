@@ -46,6 +46,7 @@ botocore==1.29.143
     #   s3transfer
 certifi==2023.5.7
     # via
+    #   launchdarkly-server-sdk
     #   opensearch-py
     #   requests
 cffi==1.15.1
@@ -109,6 +110,8 @@ et-xmlfile==1.1.0
     # via openpyxl
 executing==1.2.0
     # via stack-data
+expiringdict==1.2.2
+    # via launchdarkly-server-sdk
 filelock==3.12.0
     # via
     #   huggingface-hub
@@ -162,6 +165,8 @@ jsonschema==4.17.3
     # via drf-spectacular
 jwcrypto==1.5.0
     # via django-oauth-toolkit
+launchdarkly-server-sdk==8.1.1
+    # via -r requirements.in
 markuppy==1.14
     # via tablib
 markupsafe==2.1.2
@@ -245,6 +250,8 @@ pygments==2.15.1
     # via ipython
 pyjwt==2.7.0
     # via social-auth-core
+pyrfc3339==1.1
+    # via launchdarkly-server-sdk
 pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.2
@@ -259,6 +266,7 @@ pytz==2023.3
     #   -r requirements.in
     #   djangorestframework
     #   pandas
+    #   pyrfc3339
 pyyaml==6.0
     # via
     #   -r requirements.in
@@ -311,6 +319,8 @@ scipy==1.10.1
     #   sentence-transformers
 segment-analytics-python==2.2.2
     # via -r requirements.in
+semver==2.13.0
+    # via launchdarkly-server-sdk
 sentence-transformers==2.2.2
     # via -r requirements.in
 sentencepiece==0.1.99
@@ -377,6 +387,7 @@ uritemplate==4.1.1
 urllib3==1.26.16
     # via
     #   botocore
+    #   launchdarkly-server-sdk
     #   opensearch-py
     #   requests
     #   responses

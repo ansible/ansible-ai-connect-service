@@ -23,6 +23,10 @@ class GrpcClient(ModelMeshClient):
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
+    def set_inference_url(self, inference_url):
+        super().set_inference_url(inference_url=inference_url)
+        self._inference_stub = self.get_inference_stub()
+
     def infer(self, data, model_name):
         logger.debug(f"Input prompt: {data}")
         prompt = data.get("instances", [{}])[0].get("prompt", "")

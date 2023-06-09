@@ -57,7 +57,7 @@ def generate_query(encoded):
     }
 
 
-def search(suggestion):
+def search(suggestion, index=None):
     if client is None:
         raise Exception('AI Search is not initialized.')
 
@@ -68,7 +68,9 @@ def search(suggestion):
     query = generate_query(encoded)
 
     start_time = time.time()
-    results = client.search(index=settings.ANSIBLE_AI_SEARCH['INDEX'], body=query, _source=False)
+    results = client.search(
+        index=index or settings.ANSIBLE_AI_SEARCH['INDEX'], body=query, _source=False
+    )
     search_duration = round((time.time() - start_time) * 1000, 2)
     return {
         'attributions': [
