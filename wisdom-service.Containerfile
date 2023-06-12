@@ -7,6 +7,8 @@ ARG DJANGO_SETTINGS_MODULE=main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
+ENV PROMETHEUS_MULTIPROC_DIR=/var/run/django_metrics
+
 RUN dnf install -y \
     git \
     python3-devel \
@@ -60,7 +62,8 @@ RUN for dir in \
       /var/www/model-cache \
       /var/log/nginx \
       /etc/ari \
-      /etc/ansible ; \
+      /etc/ansible \
+      /var/run/django_metrics ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
 RUN /usr/bin/install-ari-rule-requirements.sh
