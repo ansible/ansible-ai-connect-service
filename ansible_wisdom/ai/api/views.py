@@ -435,6 +435,7 @@ class Feedback(APIView):
             return Response({"message": str(exc)}, status=exc.status_code)
         except Exception as exc:
             exception = exc
+            logger.exception(f"An exception {exc.__class__} occurred in sending a feedback")
             return Response(
                 {"message": "Failed to send feedback"},
                 status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
