@@ -1,12 +1,15 @@
+import random
+import string
 from datetime import datetime
-from functools import wraps
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from django.contrib.auth import get_user_model
 from django.urls import reverse
+from prometheus_client import REGISTRY
 from social_core.exceptions import AuthCanceled
 from users.views import TermsOfService, _add_date_accepted, _terms_of_service
 
@@ -169,3 +172,23 @@ class TestTermsAndConditions(TestCase):
             res = view.get(self.request)
             self.assertEqual(403, res.status_code)
             self.assertInLog('GET /terms_of_service/ was invoked without partial_token', log.output)
+
+    def test_user_model_metrics(self):
+        def get_user_count():
+            return REGISTRY.get_sample_value('django_model_inserts_total', {'model': 'user'})
+
+        # Obtain the user count before creating a dummy user
+        before = get_user_count()
+
+        # Create a dummy user
+        username = 'u' + "".join(random.choices(string.digits, k=5))
+        password = 'secret'
+        email = username + '@example.com'
+        get_user_model().objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+        )
+
+        # Make sure that the user count incremented
+        self.assertEqual(1, get_user_count() - before)
