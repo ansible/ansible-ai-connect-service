@@ -443,12 +443,5 @@ xxhash==3.2.0
     # via datasets
 yarl==1.9.2
     # via aiohttp
-
-#for jaeger tracing
-opentelemetry-api==1.18.0
-opentelemetry-sdk==1.18.0
-opentelemetry-exporter-jaeger==1.18.0
-
-
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
