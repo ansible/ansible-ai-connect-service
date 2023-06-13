@@ -2,10 +2,8 @@ import json
 import logging
 
 import requests
-from rest_framework import status
-from rest_framework.response import Response
 
-from tools.jaeger import tracer
+from ansible_wisdom.ai.api.utils.jaeger import tracer
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError

@@ -5,8 +5,8 @@ from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
+from ansible_wisdom.ai.api.utils.jaeger import tracer
 from ari import postprocessing
-from tools.jaeger import tracer
 
 logger = logging.getLogger(__name__)
 
