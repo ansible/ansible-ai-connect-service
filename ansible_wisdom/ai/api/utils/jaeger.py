@@ -19,7 +19,7 @@ jaeger_exporter = JaegerExporter(
     # max_tag_value_length=None # optional
 )
 
-# # Create a BatchSpanProcessor and add the exporter to it
+# Create a BatchSpanProcessor and add the exporter to it
 span_processor = BatchSpanProcessor(jaeger_exporter)
 #
 # # add to the tracer
