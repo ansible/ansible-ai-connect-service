@@ -16,7 +16,7 @@ ansible-anonymizer==1.3.0
     # via -r requirements.in
 ansible-core==2.15.0
     # via ansible
-ansible-risk-insight==0.1.6
+ansible-risk-insight==0.1.7
     # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
@@ -114,6 +114,7 @@ expiringdict==1.2.2
     # via launchdarkly-server-sdk
 filelock==3.12.0
     # via
+    #   ansible-risk-insight
     #   huggingface-hub
     #   torch
     #   transformers
