@@ -4,7 +4,7 @@ from io import StringIO
 import yaml
 from ruamel.yaml import YAML, scalarstring
 
-from ansible_wisdom.ai.api.utils.jaeger import tracer
+from .utils.jaeger import tracer
 
 logger = logging.getLogger(__name__)
 

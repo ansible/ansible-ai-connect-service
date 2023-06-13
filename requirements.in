@@ -27,3 +27,6 @@ social-auth-core==4.3.0
 tqdm==4.64.1
 uwsgi==2.0.21
 uwsgi-readiness-check==0.2.0
+opentelemetry-api==1.18.0
+opentelemetry-sdk==1.18.0
+opentelemetry-exporter-jaeger-thrift==1.18.0

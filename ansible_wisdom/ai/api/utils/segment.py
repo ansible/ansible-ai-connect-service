@@ -7,7 +7,7 @@ from healthcheck.version_info import VersionInfo
 from segment import analytics
 from users.models import User
 
-from ansible_wisdom.ai.api.utils.jaeger import tracer
+from .jaeger import tracer
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()

@@ -1,7 +1,7 @@
 import json
 import logging
-import re
 import os.path
+import re
 import time
 
 import yaml
@@ -20,8 +20,6 @@ from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
 
-from ansible_wisdom.ai.api.utils.jaeger import tracer
-
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags
 from . import formatter as fmtr
@@ -37,6 +35,7 @@ from .serializers import (
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
 )
+from .utils.jaeger import tracer
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
@@ -150,36 +149,13 @@ class Completions(APIView):
 
             request._request._suggestion_id = request.data.get('suggestionId')
 
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        request_serializer = CompletionRequestSerializer(data=request.data)
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
-        except Exception as exc:
-            process_error_count.labels(stage='request_serialization_validation').inc()
-            logger.warn(f'failed to validate request:\nException:\n{exc}')
-            raise exc
-        payload = APIPayload(**request_serializer.validated_data)
-        payload.userId = request.user.uuid
-        model_name = payload.model_name
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", request.user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                server, port, model_name, index = match.groups()
-                logger.info(f"selecting model '{model_name}@{server}:{port}'")
-                model_mesh_client.set_inference_url(f"{server}:{port}")
-        original_indent = payload.prompt.find("name")
-
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
             request_serializer = CompletionRequestSerializer(data=request.data)
-
             try:
                 request_serializer.is_valid(raise_exception=True)
                 request._request._suggestion_id = str(
                     request_serializer.validated_data['suggestionId']
                 )
-
             except Exception as exc:
                 process_error_count.labels(stage='request_serialization_validation').inc()
                 logger.warn(f'failed to validate request:\nException:\n{exc}')
@@ -187,6 +163,14 @@ class Completions(APIView):
             payload = APIPayload(**request_serializer.validated_data)
             payload.userId = request.user.uuid
             model_name = payload.model_name
+            if settings.LAUNCHDARKLY_SDK_KEY:
+                model_tuple = feature_flags.get("model_name", request.user, "")
+                logger.debug(f"flag model_name has value {model_tuple}")
+                match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+                if match:
+                    server, port, model_name, index = match.groups()
+                    logger.info(f"selecting model '{model_name}@{server}:{port}'")
+                    model_mesh_client.set_inference_url(f"{server}:{port}")
             original_indent = payload.prompt.find("name")
 
             try:
@@ -219,16 +203,13 @@ class Completions(APIView):
                 ]
             )
             data = model_mesh_payload.dict()
-
             logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
 
             predictions = None
             exception = None
             start_time = time.time()
             try:
-                predictions = model_mesh_client.infer(
-                    data, model_name=model_name
-                )  # jaeger tracing enabled
+                predictions = model_mesh_client.infer(data, model_name=model_name)
             except ModelTimeoutError as exc:
                 exception = exc
                 logger.warn(
@@ -259,8 +240,8 @@ class Completions(APIView):
                         'Responsible for removing '
                         'Personally Identifiable Information (PII) from ansible task',
                     )
-                    ano_predictions = anonymizer.anonymize_struct(predictions)
 
+                    ano_predictions = anonymizer.anonymize_struct(predictions)
                 event = {
                     "duration": duration,
                     "exception": exception is not None,
@@ -269,7 +250,7 @@ class Completions(APIView):
                     "response": ano_predictions,
                     "suggestionId": str(payload.suggestionId),
                 }
-                send_segment_event(event, "prediction", request.user)  # jaeger tracing enabled
+                send_segment_event(event, "prediction", request.user)
 
             logger.debug(
                 f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
@@ -315,7 +296,6 @@ class Completions(APIView):
                 )
                 raise InternalServerError
             completions_return_code.labels(code=200).inc()
-
             with tracer.start_as_current_span(
                 'Returning Recommendation for VSCode Extension'
             ) as span:
