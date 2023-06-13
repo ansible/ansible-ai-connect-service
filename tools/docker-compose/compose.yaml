@@ -6,7 +6,6 @@ services:
       context: $PWD
       dockerfile: wisdom-service.Containerfile
     depends_on:
-      - redis
       - db
     volumes:
       - $PWD/ansible_wisdom:/var/www/ansible_wisdom
@@ -46,12 +45,6 @@ services:
       - /usr/bin/launch-wisdom.sh
     networks:
       - dbnet
-  redis:
-    image: docker.io/library/redis:alpine
-    networks:
-      - dbnet
-    ports:
-      - "6379:6379"
   db:
     image: docker.io/library/postgres:alpine
     environment:

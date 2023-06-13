@@ -1,11 +1,5 @@
 version: "3.8"
 services:
-  redis:
-    image: docker.io/library/redis:alpine
-    networks:
-      - dbnet
-    ports:
-      - "6379:6379"
   db:
     image: docker.io/library/postgres:alpine
     environment:

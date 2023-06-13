@@ -45,7 +45,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(3, len(dependencies))
+        self.assertEqual(2, len(dependencies))
         for dependency in dependencies:
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             self.assertEqual('ok', dependency['status'])
@@ -72,7 +72,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(3, len(dependencies))
+        self.assertEqual(2, len(dependencies))
         for dependency in dependencies:
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             if dependency['name'] == 'model-server':
@@ -104,7 +104,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(3, len(dependencies))
+        self.assertEqual(2, len(dependencies))
         for dependency in dependencies:
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             self.assertEqual('ok', dependency['status'])
@@ -123,7 +123,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(3, len(dependencies))
+        self.assertEqual(2, len(dependencies))
         for dependency in dependencies:
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             if dependency['name'] == 'model-server':
@@ -145,7 +145,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(3, len(dependencies))
+        self.assertEqual(2, len(dependencies))
         for dependency in dependencies:
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             self.assertEqual('ok', dependency['status'])
