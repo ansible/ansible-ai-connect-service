@@ -4,6 +4,8 @@ from io import StringIO
 import yaml
 from ruamel.yaml import YAML, scalarstring
 
+from .utils.jaeger import tracer
+
 logger = logging.getLogger(__name__)
 
 
@@ -79,6 +81,18 @@ def preprocess(context, prompt):
     Format and split off the last line as the prompt
     Append a newline to both context and prompt (as the model expects)
     """
+
+    with tracer.start_span('preprocess formatter') as span:
+        try:
+            span.set_attribute('Class', __class__.__name__)
+        except NameError:
+            span.set_attribute('Class', "none")
+        span.set_attribute('file', __file__)
+        span.set_attribute('Method', "preprocess")
+        span.set_attribute(
+            'Description', 'formats context and prompt in accordance with model expectations'
+        )
+
     formatted = normalize_yaml(f'{context}\n{prompt}')
 
     if formatted is not None:

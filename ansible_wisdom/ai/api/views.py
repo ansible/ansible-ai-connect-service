@@ -36,6 +36,7 @@ from .serializers import (
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
 )
+from .utils.jaeger import tracer
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
@@ -134,239 +135,303 @@ class Completions(APIView):
         # WSGIRequest object.  It holds the original as
         # `self._request`, and that's the one we need to modify to
         # make this available to the middleware.
-        request._request._suggestion_id = request.data.get('suggestionId')
+        with tracer.start_as_current_span('Recommendation') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
+            span.set_attribute('file', __file__)
+            span.set_attribute('Method', "post")
+            span.set_attribute(
+                'Description',
+                'Responsible for processing request and sending/receiving request to/from model',
+            )
+            request._request._suggestion_id = request.data.get('suggestionId')
 
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        request_serializer = CompletionRequestSerializer(data=request.data)
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
-        except Exception as exc:
-            process_error_count.labels(stage='request_serialization_validation').inc()
-            logger.warn(f'failed to validate request:\nException:\n{exc}')
-            raise exc
-        payload = APIPayload(**request_serializer.validated_data)
-        payload.userId = request.user.uuid
-        model_name = payload.model_name
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", request.user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                server, port, model_name, index = match.groups()
-                logger.info(f"selecting model '{model_name}@{server}:{port}'")
-                model_mesh_client.set_inference_url(f"{server}:{port}")
-        original_indent = payload.prompt.find("name")
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            request_serializer = CompletionRequestSerializer(data=request.data)
+            try:
+                request_serializer.is_valid(raise_exception=True)
+                request._request._suggestion_id = str(
+                    request_serializer.validated_data['suggestionId']
+                )
+            except Exception as exc:
+                process_error_count.labels(stage='request_serialization_validation').inc()
+                logger.warn(f'failed to validate request:\nException:\n{exc}')
+                raise exc
+            payload = APIPayload(**request_serializer.validated_data)
+            payload.userId = request.user.uuid
+            model_name = payload.model_name
+            if settings.LAUNCHDARKLY_SDK_KEY:
+                model_tuple = feature_flags.get("model_name", request.user, "")
+                logger.debug(f"flag model_name has value {model_tuple}")
+                match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+                if match:
+                    server, port, model_name, index = match.groups()
+                    logger.info(f"selecting model '{model_name}@{server}:{port}'")
+                    model_mesh_client.set_inference_url(f"{server}:{port}")
+            original_indent = payload.prompt.find("name")
 
-        try:
+            try:
+                start_time = time.time()
+                payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+            except Exception as exc:
+                process_error_count.labels(stage='pre-processing').inc()
+                # return the original prompt, context
+                logger.error(
+                    f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
+                )
+                message = (
+                    'Request contains invalid prompt'
+                    if isinstance(exc, fmtr.InvalidPromptException)
+                    else 'Request contains invalid yaml'
+                )
+                return Response({'message': message}, status=400)
+            finally:
+                duration = round((time.time() - start_time) * 1000, 2)
+                preprocess_hist.observe(duration / 1000)  # millisec to seconds
+
+            model_mesh_payload = ModelMeshPayload(
+                instances=[
+                    {
+                        "prompt": payload.prompt,
+                        "context": payload.context,
+                        "userId": str(payload.userId) if payload.userId else None,
+                        "suggestionId": str(payload.suggestionId),
+                    }
+                ]
+            )
+            data = model_mesh_payload.dict()
+            logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
+
+            predictions = None
+            exception = None
             start_time = time.time()
-            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
-        except Exception as exc:
-            process_error_count.labels(stage='pre-processing').inc()
-            # return the original prompt, context
-            logger.error(
-                f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
-            )
-            message = (
-                'Request contains invalid prompt'
-                if isinstance(exc, fmtr.InvalidPromptException)
-                else 'Request contains invalid yaml'
-            )
-            return Response({'message': message}, status=400)
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            preprocess_hist.observe(duration / 1000)  # millisec to seconds
-
-        model_mesh_payload = ModelMeshPayload(
-            instances=[
-                {
-                    "prompt": payload.prompt,
-                    "context": payload.context,
-                    "userId": str(payload.userId) if payload.userId else None,
+            try:
+                predictions = model_mesh_client.infer(data, model_name=model_name)
+            except ModelTimeoutError as exc:
+                exception = exc
+                logger.warn(
+                    f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                    f" for suggestion {payload.suggestionId}"
+                )
+                raise ModelTimeoutException
+            except Exception as exc:
+                exception = exc
+                logger.exception(
+                    f"error requesting completion for suggestion {payload.suggestionId}"
+                )
+                raise ServiceUnavailable
+            finally:
+                process_error_count.labels(stage='prediction').inc()
+                duration = round((time.time() - start_time) * 1000, 2)
+                completions_hist.observe(duration / 1000)  # millisec back to seconds
+                with tracer.start_as_current_span('PII removal (anonymizer)') as innerSpan:
+                    try:
+                        innerSpan.set_attribute('Class', __class__.__name__)
+                    except NameError:
+                        innerSpan.set_attribute('Class', "none")
+                    innerSpan.set_attribute('Method', "anonymize_struct")
+                    innerSpan.set_attribute('file', __file__)
+                    innerSpan.set_attribute(
+                        'Description',
+                        'Responsible for removing '
+                        'Personally Identifiable Information (PII) from ansible task',
+                    )
+                    ano_predictions = anonymizer.anonymize_struct(predictions)
+                event = {
+                    "duration": duration,
+                    "exception": exception is not None,
+                    "problem": None if exception is None else exception.__class__.__name__,
+                    "request": data,
+                    "response": ano_predictions,
                     "suggestionId": str(payload.suggestionId),
                 }
-            ]
-        )
-        data = model_mesh_payload.dict()
-        logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
+                send_segment_event(event, "prediction", request.user)
 
-        predictions = None
-        exception = None
-        start_time = time.time()
-        try:
-            predictions = model_mesh_client.infer(data, model_name=model_name)
-        except ModelTimeoutError as exc:
-            exception = exc
-            logger.warn(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
-                f" for suggestion {payload.suggestionId}"
+            logger.debug(
+                f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
             )
-            raise ModelTimeoutException
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
-            raise ServiceUnavailable
-        finally:
-            process_error_count.labels(stage='prediction').inc()
-            duration = round((time.time() - start_time) * 1000, 2)
-            completions_hist.observe(duration / 1000)  # millisec back to seconds
-            ano_predictions = anonymizer.anonymize_struct(predictions)
-            event = {
-                "duration": duration,
-                "exception": exception is not None,
-                "problem": None if exception is None else exception.__class__.__name__,
-                "request": data,
-                "response": ano_predictions,
-                "suggestionId": str(payload.suggestionId),
-            }
-            send_segment_event(event, "prediction", request.user)
+            postprocessed_predictions = None
+            try:
+                start_time = time.time()
+                postprocessed_predictions = self.postprocess(
+                    ano_predictions,
+                    payload.prompt,
+                    payload.context,
+                    request.user,
+                    payload.suggestionId,
+                    indent=original_indent,
+                )
+            except Exception:
+                process_error_count.labels(stage='post-processing').inc()
+                logger.exception(
+                    f"error postprocessing prediction for suggestion {payload.suggestionId}"
+                )
+                raise PostprocessException
+            finally:
+                duration = round((time.time() - start_time) * 1000, 2)
+                postprocess_hist.observe(duration / 1000)  # millisec to seconds
 
-        logger.debug(
-            f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
-        )
-        postprocessed_predictions = None
-        try:
-            start_time = time.time()
-            postprocessed_predictions = self.postprocess(
-                ano_predictions,
-                payload.prompt,
-                payload.context,
-                request.user,
-                payload.suggestionId,
-                indent=original_indent,
+            logger.debug(
+                f"response from postprocess for "
+                f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
             )
-        except Exception:
-            process_error_count.labels(stage='post-processing').inc()
-            logger.exception(
-                f"error postprocessing prediction for suggestion {payload.suggestionId}"
-            )
-            raise PostprocessException
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            postprocess_hist.observe(duration / 1000)  # millisec to seconds
-
-        logger.debug(
-            f"response from postprocess for "
-            f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
-        )
-        try:
-            postprocessed_predictions.update(
-                {
-                    "modelName": model_name,
-                    "suggestionId": payload.suggestionId,
-                }
-            )
-            response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
-            response_serializer.is_valid(raise_exception=True)
-        except Exception:
-            process_error_count.labels(stage='response_serialization_validation').inc()
-            logger.exception(
-                f"error serializing final response for suggestion {payload.suggestionId}"
-            )
-            raise InternalServerError
-        completions_return_code.labels(code=200).inc()
-        return Response(postprocessed_predictions, status=200)
+            try:
+                postprocessed_predictions.update(
+                    {
+                        "modelName": model_name,
+                        "suggestionId": payload.suggestionId,
+                    }
+                )
+                response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(stage='response_serialization_validation').inc()
+                logger.exception(
+                    f"error serializing final response for suggestion {payload.suggestionId}"
+                )
+                raise InternalServerError
+            completions_return_code.labels(code=200).inc()
+            with tracer.start_as_current_span(
+                'Returning Recommendation for VSCode Extension'
+            ) as innerSpan:
+                try:
+                    innerSpan.set_attribute('Class', __class__.__name__)
+                except NameError:
+                    innerSpan.set_attribute('Class', "none")
+                innerSpan.set_attribute('Method', '---')
+                innerSpan.set_attribute('file', __file__)
+                innerSpan.set_attribute(
+                    'Description',
+                    'Creates and returns "Response" Object to be retrieved by VSCode Extension',
+                )
+                return Response(postprocessed_predictions, status=200)
 
     def preprocess(self, context, prompt):
-        context, prompt = fmtr.preprocess(context, prompt)
+        with tracer.start_as_current_span('Recommendation Pre-processing ') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
+            span.set_attribute('Method', 'preprocess')
+            span.set_attribute('file', __file__)
+            span.set_attribute(
+                'Description',
+                'Parent method responsible for processing context (play configs) '
+                'and prompt (task name) to model expectations',
+            )
+            context, prompt = fmtr.preprocess(context, prompt)
 
-        return context, prompt
+            return context, prompt
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        ari_caller = apps.get_app_config("ai").get_ari_caller()
-        if not ari_caller:
-            logger.warn('skipped ari post processing because ari was not initialized')
+        with tracer.start_as_current_span('Recommendation Post-processing') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
+            span.set_attribute('Method', 'postprocess')
+            span.set_attribute('file', __file__)
+            span.set_attribute(
+                'Description', 'writes recommendation yaml to segment, formats recommendation'
+            )
+            ari_caller = apps.get_app_config("ai").get_ari_caller()
+            if not ari_caller:
+                logger.warn('skipped ari post processing because ari was not initialized')
 
-        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-            if ari_caller:
-                start_time = time.time()
-                truncated_yaml = None
-                recommendation_problem = None
-                # check if the recommendation_yaml is a valid YAML
-                try:
-                    _ = yaml.safe_load(recommendation_yaml)
-                except Exception as exc:
-                    # the recommendation YAML can have a broken line at the bottom
-                    # because the token size of the wisdom model is limited.
-                    # so we try truncating the last line of the recommendation here.
-                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
-                    if truncated:
-                        try:
-                            _ = yaml.safe_load(truncated_yaml)
-                        except Exception as exc:
+            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+                if ari_caller:
+                    start_time = time.time()
+                    truncated_yaml = None
+                    recommendation_problem = None
+                    # check if the recommendation_yaml is a valid YAML
+                    try:
+                        _ = yaml.safe_load(recommendation_yaml)
+                    except Exception as exc:
+                        # the recommendation YAML can have a broken line at the bottom
+                        # because the token size of the wisdom model is limited.
+                        # so we try truncating the last line of the recommendation here.
+                        truncated, truncated_yaml = truncate_recommendation_yaml(
+                            recommendation_yaml
+                        )
+                        if truncated:
+                            try:
+                                _ = yaml.safe_load(truncated_yaml)
+                            except Exception as exc:
+                                recommendation_problem = exc
+                        else:
                             recommendation_problem = exc
-                    else:
-                        recommendation_problem = exc
-                    if recommendation_problem:
-                        logger.error(
-                            f'recommendation_yaml is not a valid YAML: '
-                            f'\n{recommendation_yaml}'
-                            f'\nException:\n{recommendation_problem}'
-                        )
+                        if recommendation_problem:
+                            logger.error(
+                                f'recommendation_yaml is not a valid YAML: '
+                                f'\n{recommendation_yaml}'
+                                f'\nException:\n{recommendation_problem}'
+                            )
 
-                exception = None
-                postprocessed_yaml = None
-                postprocess_detail = None
-                try:
-                    # if the recommentation is not a valid yaml, record it as an exception
-                    if recommendation_problem:
-                        exception = recommendation_problem
-                    else:
-                        # otherwise, do postprocess here
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"original recommendation: \n{recommendation_yaml}"
-                        )
-                        if truncated_yaml:
+                    exception = None
+                    postprocessed_yaml = None
+                    postprocess_detail = None
+                    try:
+                        # if the recommentation is not a valid yaml, record it as an exception
+                        if recommendation_problem:
+                            exception = recommendation_problem
+                        else:
+                            # otherwise, do postprocess here
                             logger.debug(
                                 f"suggestion id: {suggestion_id}, "
-                                f"truncated recommendation: \n{truncated_yaml}"
+                                f"original recommendation: \n{recommendation_yaml}"
                             )
-                            recommendation_yaml = truncated_yaml
-                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                            recommendation_yaml, prompt, context
+                            if truncated_yaml:
+                                logger.debug(
+                                    f"suggestion id: {suggestion_id}, "
+                                    f"truncated recommendation: \n{truncated_yaml}"
+                                )
+                                recommendation_yaml = truncated_yaml
+                            postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                                recommendation_yaml, prompt, context
+                            )
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"post-processed recommendation: \n{postprocessed_yaml}"
+                            )
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"post-process detail: {json.dumps(postprocess_detail)}"
+                            )
+                            recommendation["predictions"][i] = postprocessed_yaml
+                    except Exception as exc:
+                        exception = exc
+                        # return the original recommendation if we failed to postprocess
+                        logger.exception(
+                            f'failed to postprocess recommendation with prompt {prompt} '
+                            f'context {context} and model recommendation {recommendation}'
                         )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-processed recommendation: \n{postprocessed_yaml}"
+                    finally:
+                        self.write_to_segment(
+                            user,
+                            suggestion_id,
+                            recommendation_yaml,
+                            truncated_yaml,
+                            postprocessed_yaml,
+                            postprocess_detail,
+                            exception,
+                            start_time,
                         )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-process detail: {json.dumps(postprocess_detail)}"
-                        )
-                        recommendation["predictions"][i] = postprocessed_yaml
-                except Exception as exc:
-                    exception = exc
-                    # return the original recommendation if we failed to postprocess
-                    logger.exception(
-                        f'failed to postprocess recommendation with prompt {prompt} '
-                        f'context {context} and model recommendation {recommendation}'
-                    )
-                finally:
-                    self.write_to_segment(
-                        user,
-                        suggestion_id,
-                        recommendation_yaml,
-                        truncated_yaml,
-                        postprocessed_yaml,
-                        postprocess_detail,
-                        exception,
-                        start_time,
-                    )
-                    if exception:
-                        raise exception
+                        if exception:
+                            raise exception
 
-            # adjust indentation as per default ansible-lint configuration
-            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
+                # adjust indentation as per default ansible-lint configuration
+                indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
 
-            # restore original indentation
-            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
-            recommendation["predictions"][i] = indented_yaml
-            logger.debug(
-                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
-            )
-            continue
-        return recommendation
+                # restore original indentation
+                indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
+                recommendation["predictions"][i] = indented_yaml
+                logger.debug(
+                    f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
+                )
+                continue
+            return recommendation
 
     def write_to_segment(
         self,
@@ -379,19 +444,29 @@ class Completions(APIView):
         exception,
         start_time,
     ):
-        duration = round((time.time() - start_time) * 1000, 2)
-        problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "detail": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
-        send_segment_event(event, "postprocess", user)
+        with tracer.start_as_current_span('write_to_segment') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
+            span.set_attribute('file', __file__)
+            span.set_attribute('Method', "write_to_segment")
+            span.set_attribute(
+                'Description', 'Creates event to be sent to Amplitude/S3 through Segment'
+            )
+            duration = round((time.time() - start_time) * 1000, 2)
+            problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "truncated": truncated_yaml,
+                "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocess", user)
 
 
 class Feedback(APIView):
