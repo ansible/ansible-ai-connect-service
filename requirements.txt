@@ -217,16 +217,6 @@ opensearch-py==2.1.1
 opentelemetry-api==1.18.0
     # via
     #   -r requirements.in
-    #   opentelemetry-exporter-otlp-proto-http
-    #   opentelemetry-sdk
-opentelemetry-exporter-otlp-proto-common==1.18.0
-    # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.18.0
-    # via -r requirements.in
-opentelemetry-proto==1.18.0
-    # via
-    #   opentelemetry-exporter-otlp-proto-common
-    #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-sdk==1.18.0
     # via
     #   -r requirements.in
