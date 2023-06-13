@@ -1,4 +1,4 @@
-ansible_anonymizer==1.3.0
+ansible_anonymizer==1.4.1
 ansible-risk-insight==0.1.7
 boto3==1.26.84
 datasets==2.10.1
