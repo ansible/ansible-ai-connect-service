@@ -78,10 +78,7 @@ wheel==0.40.0
     # via pip-tools
 yamllint==1.29.0
     # via -r requirements-dev.in
-#for jaeger tracing
-opentelemetry-api==1.18.0
-opentelemetry-sdk==1.18.0
-opentelemetry-exporter-jaeger==1.18.0
+
 # The following packages are considered to be unsafe in a requirements file:
 # pip
 # setuptools
