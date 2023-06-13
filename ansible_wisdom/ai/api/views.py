@@ -20,8 +20,6 @@ from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
 
-from ansible_wisdom.ai.api.utils.jaeger import tracer
-
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags
 from . import formatter as fmtr
@@ -37,6 +35,7 @@ from .serializers import (
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
 )
+from .utils.jaeger import tracer
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)

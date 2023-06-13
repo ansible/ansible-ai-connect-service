@@ -3,8 +3,7 @@ import logging
 
 import requests
 
-from ansible_wisdom.ai.api.utils.jaeger import tracer
-
+from ..utils.jaeger import tracer
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
 
