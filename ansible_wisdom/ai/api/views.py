@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from string import Template
 
 import yaml
 from ansible_anonymizer import anonymizer
@@ -210,7 +211,10 @@ class Completions(APIView):
             process_error_count.labels(stage='prediction').inc()
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
-            ano_predictions = anonymizer.anonymize_struct(predictions)
+            value_template = Template("{{ _${variable_name}_ }}")
+            ano_predictions = anonymizer.anonymize_struct(
+                predictions, value_template=value_template
+            )
             event = {
                 "duration": duration,
                 "exception": exception is not None,
