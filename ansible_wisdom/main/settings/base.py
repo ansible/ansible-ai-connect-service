@@ -66,7 +66,7 @@ MIDDLEWARE = [
 ]
 
 # Allow Prometheus to scrape metrics
-ALLOWED_CIDR_NETS = ["10.0.0.0/8"]
+ALLOWED_CIDR_NETS = [os.environ.get('ALLOWED_CIDR_NETS', '10.0.0.0/8')]
 
 AUTH_USER_MODEL = "users.User"
 
