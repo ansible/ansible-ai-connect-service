@@ -15,7 +15,7 @@ else
 	COMPOSE_RUNTIME ?= podman-compose
 endif
 
-.PHONY: ansible-wisdom-container run-django run-django-container docker-compose
+.PHONY: ansible-wisdom-container run-django run-django-container docker-compose pip-compile
 
 ansible-wisdom-container:
 	${CONTAINER_RUNTIME} build -f wisdom-service.Containerfile -t ansible_wisdom .
@@ -44,6 +44,9 @@ update-openapi-schema:
 
 docker-compose-clean:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml down
+
+pip-compile:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/pip-compile.yaml up --remove-orphans
 
 docker-create-superuser:
 	${CONTAINER_RUNTIME} exec -it docker-compose_django_1 wisdom-manage createsuperuser
