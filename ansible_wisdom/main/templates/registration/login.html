@@ -4,9 +4,11 @@
 {% block content %}
 <section class="pf-c-page__main-section pf-m-light">
     <div class="pf-l-bullseye">
+
         <div class="pf-l-bullseye__item">
             <div class="pf-c-empty-state">
                 <div class="pf-c-empty-state__content">
+
                     <div class="pf-l-bullseye pf-u-p-xl" style="padding: 20px">
                         <img src="{% static 'users/lightspeed.png' %}" width="95px" />
                     </div>
@@ -22,9 +24,17 @@
                         href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in
                         with GitHub</a>
                     {% endif %}
+
+          <div class="pf-l-level" style="margin-top: 60px">
+            <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
+            <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+            <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+          </div>
+
                 </div>
             </div>
         </div>
+
     </div>
 </section>
 {% endblock content %}
