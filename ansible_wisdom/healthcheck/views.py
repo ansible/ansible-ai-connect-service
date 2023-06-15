@@ -1,6 +1,8 @@
 import json
+import re
 from datetime import datetime
 
+from ai.api.views import feature_flags
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
@@ -20,6 +22,10 @@ from .version_info import VersionInfo
 CACHE_TIMEOUT = 30
 
 
+def get_feature_flags():
+    return feature_flags
+
+
 class HealthCheckCustomView(MainView):
     _plugin_name_map = {
         'DatabaseBackend': 'db',
@@ -31,15 +37,23 @@ class HealthCheckCustomView(MainView):
     @method_decorator(cache_page(CACHE_TIMEOUT))
     def get(self, request, *args, **kwargs):
         status_code = 200  # Set status code to 200 for letting the output be cached
-        return self.render_to_response_json(self.plugins, status_code)
+        return self.render_to_response_json(self.plugins, status_code, request.user)
 
-    def render_to_response_json(self, plugins, status):  # customize JSON output
+    def render_to_response_json(self, plugins, status, user):  # customize JSON output
+        model_name = settings.ANSIBLE_AI_MODEL_NAME
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            feature_flags = get_feature_flags()
+            model_tuple = feature_flags.get("model_name", user, f".:.:{model_name}:.")
+            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+            if match:
+                _, _, model_name, _ = match.groups()
+
         data = {
             'status': 'error' if self.errors else 'ok',
             'timestamp': str(datetime.now().isoformat()),
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
-            'model_name': settings.ANSIBLE_AI_MODEL_NAME,
+            'model_name': model_name,
         }
         dependencies = []
         for p in plugins:
