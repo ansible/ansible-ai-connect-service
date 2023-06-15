@@ -5,6 +5,7 @@ from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
+from ansible_wisdom.ai.api.utils.jaeger import tracer
 from ari import postprocessing
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,18 @@ class AiConfig(AppConfig):
     model_mesh_client = None
     _ari_caller = None
 
-    def ready(self) -> None:
+    def ready(self):
+        # print("inside ready function")
+        #
+        # with tracer.start_as_current_span(__file__ + ' ready') as span:
+        #     span.set_attribute('Class', __class__.__name__)
+        #     span.set_attribute('file', __file__)
+        #     span.set_attribute('Method', "ready")
+        #     span.set_attribute(
+        #         'Description',
+        #         'initializes model mesh client based on backend server (HTTP, gRPC, mock)',
+        #     )
+
         if torch.cuda.is_available():
             logger.info('GPU is available')
         else:
@@ -47,27 +59,35 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_ari_caller(self):
-        FAILED = False
-        UNINITIALIZED = None
-        if not settings.ENABLE_ARI_POSTPROCESS:
-            logger.info("Postprocessing is disabled.")
-            self._ari_caller = UNINITIALIZED
-            return None
-        if self._ari_caller is FAILED:
-            return None
-        if self._ari_caller:
+        with tracer.start_span('get_ari_caller ') as span:
+            try:
+                span.set_attribute('Class', __class__.__name__)
+            except NameError:
+                span.set_attribute('Class', "none")
+            span.set_attribute('file', __file__)
+            span.set_attribute('Method', "write_to_segment")
+            span.set_attribute('Description', 'initializes ari object')
+            FAILED = False
+            UNINITIALIZED = None
+            if not settings.ENABLE_ARI_POSTPROCESS:
+                logger.info("Postprocessing is disabled.")
+                self._ari_caller = UNINITIALIZED
+                return None
+            if self._ari_caller is FAILED:
+                return None
+            if self._ari_caller:
+                return self._ari_caller
+            try:
+                self._ari_caller = postprocessing.ARICaller(
+                    config=Config(
+                        rules_dir=settings.ARI_RULES_DIR,
+                        data_dir=settings.ARI_DATA_DIR,
+                        rules=settings.ARI_RULES,
+                    ),
+                    silent=True,
+                )
+                logger.info("Postprocessing is enabled.")
+            except Exception:
+                logger.exception("Failed to initialize ARI.")
+                self._ari_caller = FAILED
             return self._ari_caller
-        try:
-            self._ari_caller = postprocessing.ARICaller(
-                config=Config(
-                    rules_dir=settings.ARI_RULES_DIR,
-                    data_dir=settings.ARI_DATA_DIR,
-                    rules=settings.ARI_RULES,
-                ),
-                silent=True,
-            )
-            logger.info("Postprocessing is enabled.")
-        except Exception:
-            logger.exception("Failed to initialize ARI.")
-            self._ari_caller = FAILED
-        return self._ari_caller
