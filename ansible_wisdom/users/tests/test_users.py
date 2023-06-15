@@ -25,12 +25,12 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.login()
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn(f'You are signed in as {self.username}.', str(r.content))
+        self.assertIn(self.username, str(r.content))
 
     def test_home_view_without_login(self):
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn('You are not signed in.', str(r.content))
+        self.assertIn('You are currently not logged in.', str(r.content))
 
 
 class TestTermsAndConditions(TestCase):
