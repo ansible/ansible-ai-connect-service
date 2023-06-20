@@ -220,8 +220,10 @@ class SentimentFeedback(serializers.Serializer):
         help_text='Free form text feedback describing the reason for sentiment value.',
     )
 
+
 class IssueFeedback(serializers.Serializer):
     ISSUE_TYPE = (('bug-report', 'Bug Report'), ('feature-request', 'Feature Request'))
+
     class Meta:
         fields = ['type', 'title', 'description']
 
@@ -238,6 +240,7 @@ class IssueFeedback(serializers.Serializer):
         label='Issue description',
         help_text='The description of the issue.',
     )
+
 
 @extend_schema_serializer(
     examples=[
@@ -283,7 +286,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
             'ansibleContent',
             'suggestionQualityFeedback',
             'sentimentFeedback',
-            'issueFeedback'
+            'issueFeedback',
         ]
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)

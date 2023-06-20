@@ -383,7 +383,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "type": "bug-report",
                 "title": "This is a test issue",
                 "description": "This is a test issue description",
-            }
+            },
         }
         self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse('feedback'), payload, format='json')
@@ -630,6 +630,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "This is a test description",
                     properties['data']['issueFeedback']['description'],
                 )
+
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
     @patch('ai.search.search')

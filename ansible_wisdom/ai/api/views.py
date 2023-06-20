@@ -35,9 +35,9 @@ from .serializers import (
     CompletionResponseSerializer,
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
+    IssueFeedback,
     SentimentFeedback,
     SuggestionQualityFeedback,
-    IssueFeedback
 )
 from .utils.segment import send_segment_event
 
@@ -506,7 +506,7 @@ class Feedback(APIView):
             ansible_content_data,
             suggestion_quality_data,
             sentiment_feedback_data,
-            issue_feedback_data
+            issue_feedback_data,
         ]
         if exception and all(not data for data in feedback_events):
             # When an exception is thrown before inline_suggestion_data or ansible_content_data
