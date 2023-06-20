@@ -125,16 +125,13 @@ def add_date_accepted(strategy, details, user=None, is_new=False, *args, **kwarg
 
 
 # Replace original get_username function to avoid a random hash at the end if
-# user authenticates with more than one github provider. This needs to be revisited
-# when we add additional providers like Red Hat SSO.
+# user authenticates with more than one github provider.
 def github_get_username(uid, strategy, details, backend, user=None, *args, **kwargs):
     if backend.name not in ['github', 'github-team']:
-        logger.warn(f"Unexpected: auth backend {backend.name}")
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
     # If django user is already known, fall back to default behavior
     if user:
-        # Fallback to default behavior
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
     github_username = details.get('username')
