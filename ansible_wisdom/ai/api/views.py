@@ -3,6 +3,7 @@ import logging
 import os.path
 import re
 import time
+from string import Template
 
 import yaml
 from ansible_anonymizer import anonymizer
@@ -34,6 +35,9 @@ from .serializers import (
     CompletionResponseSerializer,
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
+    IssueFeedback,
+    SentimentFeedback,
+    SuggestionQualityFeedback,
 )
 from .utils.jaeger import tracer
 from .utils.segment import send_segment_event
@@ -227,7 +231,7 @@ class Completions(APIView):
                 process_error_count.labels(stage='prediction').inc()
                 duration = round((time.time() - start_time) * 1000, 2)
                 completions_hist.observe(duration / 1000)  # millisec back to seconds
-
+                value_template = Template("{{ _${variable_name}_ }}")
                 with tracer.start_as_current_span('PII removal (anonymizer)') as innerSpan:
                     try:
                         innerSpan.set_attribute('Class', __class__.__name__)
@@ -240,8 +244,9 @@ class Completions(APIView):
                         'Responsible for removing '
                         'Personally Identifiable Information (PII) from ansible task',
                     )
-
-                    ano_predictions = anonymizer.anonymize_struct(predictions)
+                ano_predictions = anonymizer.anonymize_struct(
+                    predictions, value_template=value_template
+                )
                 event = {
                     "duration": duration,
                     "exception": exception is not None,
@@ -255,6 +260,7 @@ class Completions(APIView):
             logger.debug(
                 f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
             )
+
             postprocessed_predictions = None
             try:
                 start_time = time.time()
@@ -505,15 +511,12 @@ class Feedback(APIView):
     )
     def post(self, request) -> Response:
         exception = None
-        inline_suggestion_data = {}
-        ansible_content_data = {}
+        validated_data = {}
         try:
             request_serializer = FeedbackRequestSerializer(data=request.data)
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             logger.info(f"feedback request payload from client: {validated_data}")
-            inline_suggestion_data = validated_data.get("inlineSuggestion")
-            ansible_content_data = validated_data.get("ansibleContent")
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
         except serializers.ValidationError as exc:
             exception = exc
@@ -526,18 +529,22 @@ class Feedback(APIView):
                 status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         finally:
-            self.write_to_segment(
-                request.user, inline_suggestion_data, ansible_content_data, exception, request.data
-            )
+            self.write_to_segment(request.user, validated_data, exception, request.data)
 
     def write_to_segment(
         self,
         user: User,
-        inline_suggestion_data: InlineSuggestionFeedback,
-        ansible_content_data: AnsibleContentFeedback,
+        validated_data: dict,
         exception: Exception = None,
         request_data=None,
     ) -> None:
+        inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
+        ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
+        suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
+            "suggestionQualityFeedback"
+        )
+        sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
+        issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
         if inline_suggestion_data:
             event = {
                 "latency": inline_suggestion_data.get('latency'),
@@ -557,15 +564,53 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "ansibleContentFeedback", user)
-        if exception and not inline_suggestion_data and not ansible_content_data:
+        if suggestion_quality_data:
+            event = {
+                "prompt": suggestion_quality_data.get('prompt'),
+                "providedSuggestion": suggestion_quality_data.get('providedSuggestion'),
+                "expectedSuggestion": suggestion_quality_data.get('expectedSuggestion'),
+                "additionalComment": suggestion_quality_data.get('additionalComment'),
+                "exception": exception is not None,
+            }
+            send_segment_event(event, "suggestionQualityFeedback", user)
+        if sentiment_feedback_data:
+            event = {
+                "value": sentiment_feedback_data.get('value'),
+                "feedback": sentiment_feedback_data.get('feedback'),
+                "exception": exception is not None,
+            }
+            send_segment_event(event, "sentimentFeedback", user)
+        if issue_feedback_data:
+            event = {
+                "type": issue_feedback_data.get('type'),
+                "title": issue_feedback_data.get('title'),
+                "description": issue_feedback_data.get('description'),
+                "exception": exception is not None,
+            }
+            send_segment_event(event, "issueFeedback", user)
+
+        feedback_events = [
+            inline_suggestion_data,
+            ansible_content_data,
+            suggestion_quality_data,
+            sentiment_feedback_data,
+            issue_feedback_data,
+        ]
+        if exception and all(not data for data in feedback_events):
             # When an exception is thrown before inline_suggestion_data or ansible_content_data
             # is set, we send request_data to Segment after having anonymized it.
             ano_request_data = anonymizer.anonymize_struct(request_data)
-            event_type = (
-                "inlineSuggestionFeedback"
-                if ("inlineSuggestion" in request_data)
-                else "ansibleContentFeedback"
-            )
+            if "inlineSuggestion" in request_data:
+                event_type = "inlineSuggestionFeedback"
+            elif "suggestionQualityFeedback" in request_data:
+                event_type = "suggestionQualityFeedback"
+            elif "sentimentFeedback" in request_data:
+                event_type = "sentimentFeedback"
+            elif "issueFeedback" in request_data:
+                event_type = "issueFeedback"
+            else:
+                event_type = "ansibleContentFeedback"
+
             event = {
                 "data": ano_request_data,
                 "exception": str(exception),

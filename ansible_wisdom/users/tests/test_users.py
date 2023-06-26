@@ -6,10 +6,10 @@ from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from prometheus_client import REGISTRY
+from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from users.views import TermsOfService, _add_date_accepted, _terms_of_service
 
@@ -25,12 +25,12 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.login()
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn(f'You are signed in as {self.username}.', str(r.content))
+        self.assertIn(self.username, str(r.content))
 
     def test_home_view_without_login(self):
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn('You are not signed in.', str(r.content))
+        self.assertIn('You are currently not logged in.', str(r.content))
 
 
 class TestTermsAndConditions(TestCase):
@@ -175,9 +175,15 @@ class TestTermsAndConditions(TestCase):
             self.assertEqual(403, res.status_code)
             self.assertInLog('GET /terms_of_service/ was invoked without partial_token', log.output)
 
+
+class TestUserModelMetrics(APITransactionTestCase):
     def test_user_model_metrics(self):
         def get_user_count():
-            return REGISTRY.get_sample_value('django_model_inserts_total', {'model': 'user'})
+            r = self.client.get(reverse('prometheus-django-metrics'))
+            for family in text_string_to_metric_families(r.content.decode()):
+                for sample in family.samples:
+                    if sample[0] == 'django_model_inserts_total' and sample[1] == {'model': 'user'}:
+                        return sample[2]
 
         # Obtain the user count before creating a dummy user
         before = get_user_count()

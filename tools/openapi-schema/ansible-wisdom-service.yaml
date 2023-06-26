@@ -344,6 +344,12 @@ components:
           $ref: '#/components/schemas/InlineSuggestionFeedback'
         ansibleContent:
           $ref: '#/components/schemas/AnsibleContentFeedback'
+        suggestionQualityFeedback:
+          $ref: '#/components/schemas/SuggestionQualityFeedback'
+        sentimentFeedback:
+          $ref: '#/components/schemas/SentimentFeedback'
+        issueFeedback:
+          $ref: '#/components/schemas/IssueFeedback'
     InlineSuggestionFeedback:
       type: object
       properties:
@@ -373,6 +379,23 @@ components:
       required:
       - action
       - suggestionId
+    IssueFeedback:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        title:
+          type: string
+          title: Issue title
+          description: The title of the issue.
+        description:
+          type: string
+          title: Issue description
+          description: The description of the issue.
+      required:
+      - description
+      - title
+      - type
     Metadata:
       type: object
       properties:
@@ -384,11 +407,56 @@ components:
           title: Activity ID
           description: A UUID that identifies a user activity session within a given
             document.
+    SentimentFeedback:
+      type: object
+      properties:
+        value:
+          type: integer
+          maximum: 5
+          minimum: 1
+        feedback:
+          type: string
+          title: Free form text feedback
+          description: Free form text feedback describing the reason for sentiment
+            value.
+      required:
+      - feedback
+      - value
+    SuggestionQualityFeedback:
+      type: object
+      properties:
+        prompt:
+          type: string
+          title: File Content used as context
+          description: File Content till end of task name description before cursor
+            position.
+        providedSuggestion:
+          type: string
+          title: Provided Model suggestion
+          description: Inline suggestion from model as shared by user for given prompt.
+        expectedSuggestion:
+          type: string
+          title: Expected Model suggestion
+          description: Suggestion expected by the user.
+        additionalComment:
+          type: string
+          title: Additional Comment
+          description: Additional comment describing why the                    change
+            was required in Lightspeed suggestion.
+      required:
+      - expectedSuggestion
+      - prompt
+      - providedSuggestion
     TriggerEnum:
       enum:
       - '0'
       - '1'
       - '2'
+      type: string
+    TypeEnum:
+      enum:
+      - bug-report
+      - feature-request
       type: string
     User:
       type: object

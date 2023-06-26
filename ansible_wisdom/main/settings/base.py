@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "allow_cidr.middleware.AllowCIDRMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -63,6 +64,9 @@ MIDDLEWARE = [
     "main.middleware.SegmentMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
+
+# Allow Prometheus to scrape metrics
+ALLOWED_CIDR_NETS = [os.environ.get('ALLOWED_CIDR_NETS', '10.0.0.0/8')]
 
 AUTH_USER_MODEL = "users.User"
 
@@ -95,10 +99,15 @@ else:
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
+SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
+SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
+SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
+
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
     else "social_core.backends.github.GithubOAuth2",
+    "social_core.backends.open_id_connect.OpenIdConnectAuth",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
@@ -250,8 +259,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-PROMETHEUS_METRICS_EXPORT_PORT_RANGE = range(8001, 8011)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

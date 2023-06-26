@@ -176,6 +176,72 @@ class AnsibleContentFeedback(serializers.Serializer):
     )
 
 
+class SuggestionQualityFeedback(serializers.Serializer):
+    class Meta:
+        fields = ['prompt', 'providedSuggestion', 'expectedSuggestion', 'additionalComment']
+
+    prompt = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='File Content used as context',
+        help_text='File Content till end of task name description before cursor position.',
+    )
+    providedSuggestion = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Provided Model suggestion',
+        help_text='Inline suggestion from model as shared by user for given prompt.',
+    )
+    expectedSuggestion = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Expected Model suggestion',
+        help_text='Suggestion expected by the user.',
+    )
+    additionalComment = AnonymizedCharField(
+        trim_whitespace=False,
+        required=False,
+        label='Additional Comment',
+        help_text='Additional comment describing why the \
+                   change was required in Lightspeed suggestion.',
+    )
+
+
+class SentimentFeedback(serializers.Serializer):
+    class Meta:
+        fields = ['value', 'feedback']
+
+    value = serializers.IntegerField(required=True, min_value=1, max_value=5)
+
+    feedback = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Free form text feedback',
+        help_text='Free form text feedback describing the reason for sentiment value.',
+    )
+
+
+class IssueFeedback(serializers.Serializer):
+    ISSUE_TYPE = (('bug-report', 'Bug Report'), ('feature-request', 'Feature Request'))
+
+    class Meta:
+        fields = ['type', 'title', 'description']
+
+    type = serializers.ChoiceField(choices=ISSUE_TYPE, required=True)
+    title = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Issue title',
+        help_text='The title of the issue.',
+    )
+    description = AnonymizedCharField(
+        trim_whitespace=False,
+        required=True,
+        label='Issue description',
+        help_text='The description of the issue.',
+    )
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -215,10 +281,19 @@ class AnsibleContentFeedback(serializers.Serializer):
 )
 class FeedbackRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['inlineSuggestion', 'ansibleContent']
+        fields = [
+            'inlineSuggestion',
+            'ansibleContent',
+            'suggestionQualityFeedback',
+            'sentimentFeedback',
+            'issueFeedback',
+        ]
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     ansibleContent = AnsibleContentFeedback(required=False)
+    suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
+    sentimentFeedback = SentimentFeedback(required=False)
+    issueFeedback = IssueFeedback(required=False)
 
 
 class AttributionRequestSerializer(serializers.Serializer):
