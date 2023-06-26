@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  pip-compile:
+    platform: linux/x86_64
+    image: registry.access.redhat.com/ubi9/ubi:latest
+    volumes:
+      - $PWD:/var/www/wisdom
+    command:
+      - /var/www/wisdom/tools/scripts/pip-compile.sh
