@@ -31,26 +31,30 @@ pre-commit autoupdate && pre-commit run -a
 
 ## Updating the Python dependencies
 
-We are now using the pip-compile command in order to manage our Python
-dependencies.  In order to use it, install pip-tools and its
-dependencies by running:
-
-```bash
-pip install -r requirements-dev.txt
-```
+We are now using pip-compile in order to manage our Python
+dependencies.
 
 The specification of what packages we need now live in the
 requirements.in and requirements-dev.in files.  Use your preferred
 editor to make the needed changes in those files, then run
 
 ```bash
-pip-compile
+make pip-compile
+```
+
+This will spin up a container and run the equivalent of these commands
+to generate the updated files:
+
+```bash
+pip-compile requirements.in
 pip-compile requirements-dev.in
 ```
 
 These commands will produce fully populated and pinned requirements.txt and
 requirements-dev.txt files, containing all of the dependencies of
-our dependencies involved.
+our dependencies involved.  Due to differences in architecture and
+version of Python between developers' machines, we do not recommend
+running the pip-compile commands directly.
 
 
 ## Full Development Environment
@@ -145,6 +149,15 @@ make run-django-container
 ```bash
 pip install -r requirements.txt
 ```
+
+If you are attempting to do this on a Mac, do instead:
+
+```bash
+pip install -r requirements.in
+```
+
+This will avoid problems with the Python Nvidia CUDA libraries which are
+unavailable on Mac.
 
 1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
