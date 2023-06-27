@@ -384,7 +384,7 @@ Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded eith
 - Click the Download button on ReDoc UI
 
 ### JaegerUI
-Jaeger UI is a distributed tracing system used for monitoring systems and services. It has been intergrated with the Lightspeed Service to detect errors and exceptions, as well as visualize the general service pipeline. See [this doc](https://docs.google.com/document/d/1nwwJc7oXlY96QlfRIu896LXTnYCZ8vzGdm9iOs684xM/edit?usp=sharing) for steps to access Jaeger. Incldued are instructions for adding tracing to new methods and editing existing traces. 
+Jaeger UI is a distributed tracing system for monitoring systems and services. It has been intergrated with the Lightspeed Service to detect errors and exceptions, as well as visualize the general service pipeline. See [this doc](https://docs.google.com/document/d/1nwwJc7oXlY96QlfRIu896LXTnYCZ8vzGdm9iOs684xM/edit?usp=sharing) for steps to access Jaeger. Incldued are instructions for adding tracing to new methods and editing existing traces.
 
 ## Test cases
 
