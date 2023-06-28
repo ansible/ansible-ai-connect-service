@@ -95,7 +95,7 @@ else:
     USE_GITHUB_TEAM = False
     SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
     SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
-    SOCIAL_AUTH_GITHUB_SCOPE = ["read:org"]
+    SOCIAL_AUTH_GITHUB_SCOPE = [""]
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
