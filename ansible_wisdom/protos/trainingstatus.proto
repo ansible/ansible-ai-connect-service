@@ -4,16 +4,17 @@
  *----------------------------------------------------------------------------*/
 
 syntax = "proto3";
-package caikit_data_model.ext;
+package caikit_data_model.runtime;
 
 
 /*-- ENUMS -------------------------------------------------------------------*/
 
-enum StopReason {
-  NOT_FINISHED = 0;
-  MAX_TOKENS = 1;
-  EOS_TOKEN = 2;
-  CANCELLED = 3;
-  TIME_LIMIT = 4;
-  STOP_SEQUENCE = 5;
+enum TrainingStatus {
+  NOT_STARTED = 0;
+  HALTED = 1;
+  FAILED = 2;
+  DOWNLOADING = 3;
+  PROCESSING = 4;
+  STORING = 5;
+  COMPLETED = 6;
 }

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
-from .grpc_pb import ansiblerequest_pb2, wisdomextservice_pb2_grpc
+from .grpc_pb import codegenerationtaskrequest_pb2, wisdomextservice_pb2_grpc
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ class GrpcClient(ModelMeshClient):
         logger.debug(f"Input context: {context}")
 
         try:
-            response = self._inference_stub.AnsiblePredict(
-                request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
+            response = self._inference_stub.CodeGenerationTaskPredict(
+                request=codegenerationtaskrequest_pb2.CodeGenerationTaskPredict(prompt=prompt, context=context),
                 metadata=[("mm-vmodel-id", model_name)],
                 timeout=self.timeout,
             )

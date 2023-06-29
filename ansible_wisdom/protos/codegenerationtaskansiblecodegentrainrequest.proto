@@ -1,0 +1,16 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.WisdomExt;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message CodeGenerationTaskAnsibleCodegenTrainRequest {
+
+  /*-- fields --*/
+  string model_name = 1;
+}
