@@ -33,3 +33,11 @@ class GroupSpecificThrottle(UserRateThrottle):
         self.num_requests, self.duration = self.parse_rate(self.rate)
 
         return super().allow_request(request, view)
+
+    def get_cache_key(self, request, view):
+        cache_key = super().get_cache_key(request, view)
+        # Append request.method and request.path to cache_key
+        # so that a separate throttle is given per endpoint
+        if request.method and request.path:
+            cache_key += f'_{request.method}_{request.path}'
+        return cache_key
