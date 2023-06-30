@@ -36,7 +36,7 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
-        'TITLE': 'Ansible Lightspeed with Watson Code Assistant Service',
+        'TITLE': 'Ansible Lightspeed with IBM Watson Code Assistant Service',
         'DESCRIPTION': 'Equip the automation developer at Lightspeed.',
         'VERSION': '0.0.7',
         'SERVE_INCLUDE_SCHEMA': False,
