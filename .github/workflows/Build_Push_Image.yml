@@ -49,7 +49,7 @@ jobs:
         sudo rm -rf /usr/local/lib/android
         sudo rm -rf /usr/share/dotnet
 
-    - name: Remove the pre-cached Dockeri mages
+    - name: Remove the pre-cached Docker images
       run: docker image prune --all --force
 
     - name: Build Image
@@ -66,6 +66,30 @@ jobs:
         build-args: |
           IMAGE_TAGS=${{ steps.tag_name.outputs.IMAGE_TAGS }}
           GIT_COMMIT=${{ steps.tag_name.outputs.sha-long }}
+
+    - name: Scan Malware
+      # Do not scan malware in PR builds
+      # if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'pull_request' }} # DEBUG
+      run: |
+        id=$(podman create $CLAMAV_DB_IMAGE)
+        podman cp $id:$CLAMAV_DB_DIR clamav-db
+        podman rm -v $id
+        podman build -f ./wisdom-service-clamav.Containerfile -t wisdom-service-clamav .
+        echo '```'                                      > clamav.md
+        podman run -t wisdom-service-clamav      | tee -a clamav.md
+        echo '```'                                     >> clamav.md
+      env:
+        CLAMAV_DB_IMAGE: quay.io/redhat-appstudio/clamav-db:latest
+        CLAMAV_DB_DIR: /var/lib/clamav
+
+    - name: Add Malware Scanning PR Comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: ./clamav.md
+      # if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'pull_request' }} # DEBUG
+
     - name: Push To quay.io
       id: push-to-quay
       uses: redhat-actions/push-to-registry@v2
