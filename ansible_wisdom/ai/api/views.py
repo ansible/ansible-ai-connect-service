@@ -121,6 +121,8 @@ class Completions(APIView):
     ]
     required_scopes = ['read', 'write']
 
+    throttle_cache_key_suffix = '_completions'
+
     @extend_schema(
         request=CompletionRequestSerializer,
         responses={
@@ -416,6 +418,8 @@ class Feedback(APIView):
     ]
     required_scopes = ['read', 'write']
 
+    throttle_cache_key_suffix = '_feedback'
+
     @extend_schema(
         request=FeedbackRequestSerializer,
         responses={
@@ -574,6 +578,8 @@ class Attributions(GenericAPIView):
         AcceptedTermsPermission,
     ]
     required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_attributions'
 
     @extend_schema(
         request=AttributionRequestSerializer,

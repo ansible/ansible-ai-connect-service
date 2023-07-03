@@ -13,6 +13,9 @@ class GroupSpecificThrottle(UserRateThrottle):
 
     GROUPS = settings.SPECIAL_THROTTLING_GROUPS
 
+    # The attribute name that may be defined in views to add a suffix to cache keys
+    cache_key_suffix_attr = 'throttle_cache_key_suffix'
+
     def __init__(self):
         # Override, since we can't decide what the scope and rate are
         # until we see the request.
@@ -36,8 +39,8 @@ class GroupSpecificThrottle(UserRateThrottle):
 
     def get_cache_key(self, request, view):
         cache_key = super().get_cache_key(request, view)
-        # Append request.method and request.path to cache_key
-        # so that a separate throttle is given per endpoint
-        if request.method and request.path:
-            cache_key += f'_{request.method}_{request.path}'
+        # If a cache key suffix is defined in the view, append it to the key
+        cache_key_suffix = getattr(view, self.cache_key_suffix_attr, None)
+        if cache_key_suffix:
+            cache_key += cache_key_suffix
         return cache_key
