@@ -25,7 +25,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["localhost"]
 
-ENABLE_DISTRIBUTED_TRACING = os.environ["ENABLE_DISTRIBUTED_TRACING"]
+ENABLE_DISTRIBUTED_TRACING = os.environ.get("ENABLE_DISTRIBUTED_TRACING", False)
 
 # Application definition
 
