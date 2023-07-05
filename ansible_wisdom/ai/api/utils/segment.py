@@ -7,21 +7,23 @@ from healthcheck.version_info import VersionInfo
 from segment import analytics
 from users.models import User
 
-from .jaeger import tracer
+from .jaeger import enable_tracing, tracer
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
-def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User, None]) -> None:
-    with tracer.start_span('Content Matching (send event to Segment)') as span:
-        try:
-            span.set_attribute('Class', __class__.__name__)
-        except NameError:
-            span.set_attribute('Class', "none")
-        span.set_attribute('file', __file__)
-        span.set_attribute('Method', "send_segment_event")
-        span.set_attribute('Description', 'formats event (dictionary) and forwards to Segment')
+def send_segment_event(
+    event: Dict[str, Any], event_name: str, user: Union[User, None], span_ctx
+) -> None:
+    if settings.ENABLE_DISTRIBUTED_TRACING:
+        enable_tracing(
+            'Content Matching (send event to Segment)',
+            __file__,
+            'send_segment_event',
+            'Formats event (dictionary) and forwards to Segment',
+            span_ctx,
+        )
 
         if not settings.SEGMENT_WRITE_KEY:
             logger.info("segment write key not set, skipping event")

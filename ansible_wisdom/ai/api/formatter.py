@@ -2,9 +2,10 @@ import logging
 from io import StringIO
 
 import yaml
+from django.conf import settings
 from ruamel.yaml import YAML, scalarstring
 
-from .utils.jaeger import tracer
+from .utils.jaeger import enable_tracing, tracer
 
 logger = logging.getLogger(__name__)
 
@@ -75,56 +76,53 @@ def normalize_yaml(yaml_str):
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
-def preprocess(context, prompt):
+def preprocess(context, prompt, span_ctx):
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     Format and split off the last line as the prompt
     Append a newline to both context and prompt (as the model expects)
     """
-
-    with tracer.start_span('preprocess formatter') as span:
-        try:
-            span.set_attribute('Class', __class__.__name__)
-        except NameError:
-            span.set_attribute('Class', "none")
-        span.set_attribute('file', __file__)
-        span.set_attribute('Method', "preprocess")
-        span.set_attribute(
-            'Description', 'formats context and prompt in accordance with model expectations'
+    if settings.ENABLE_DISTRIBUTED_TRACING:
+        enable_tracing(
+            'preprocess formatter',
+            __file__,
+            'preprocess',
+            'formats context and prompt in accordance with model expectations',
+            span_ctx,
         )
 
-        formatted = normalize_yaml(f'{context}\n{prompt}')
+    formatted = normalize_yaml(f'{context}\n{prompt}')
 
-        if formatted is not None:
-            logger.debug(f'initial user input {context}\n{prompt}')
+    if formatted is not None:
+        logger.debug(f'initial user input {context}\n{prompt}')
 
-            segs = formatted.rsplit('\n', 2)  # Last will be the final newline
-            if len(segs) == 3:
-                context = segs[0] + '\n'
-                prompt = segs[1]
-            elif len(segs) == 2:  # Context is empty
-                context = ""
-                prompt = segs[0]
-            else:
-                logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
+        segs = formatted.rsplit('\n', 2)  # Last will be the final newline
+        if len(segs) == 3:
+            context = segs[0] + '\n'
+            prompt = segs[1]
+        elif len(segs) == 2:  # Context is empty
+            context = ""
+            prompt = segs[0]
+        else:
+            logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
 
-                logger.debug(f'preprocessed user input {context}\n{prompt}')
+            logger.debug(f'preprocessed user input {context}\n{prompt}')
 
-            prompt = handle_spaces_and_casing(prompt)
+        prompt = handle_spaces_and_casing(prompt)
 
-            # Make sure the prompt is in the form "  - name: a string description."
-            prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
-            if (
-                not isinstance(prompt_list, list)
-                or len(prompt_list) != 1
-                or not isinstance(prompt_list[0], dict)
-                or len(prompt_list[0]) != 1
-                or 'name' not in prompt_list[0]
-                or not isinstance(prompt_list[0]['name'], str)
-            ):
-                raise InvalidPromptException()
+        # Make sure the prompt is in the form "  - name: a string description."
+        prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
+        if (
+            not isinstance(prompt_list, list)
+            or len(prompt_list) != 1
+            or not isinstance(prompt_list[0], dict)
+            or len(prompt_list[0]) != 1
+            or 'name' not in prompt_list[0]
+            or not isinstance(prompt_list[0]['name'], str)
+        ):
+            raise InvalidPromptException()
 
-        return context, prompt
+    return context, prompt
 
 
 def handle_spaces_and_casing(prompt):

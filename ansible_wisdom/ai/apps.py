@@ -7,7 +7,7 @@ from django.conf import settings
 
 from ari import postprocessing
 
-from .api.utils.jaeger import tracer
+from .api.utils.jaeger import enable_tracing, tracer
 
 logger = logging.getLogger(__name__)
 
@@ -59,36 +59,33 @@ class AiConfig(AppConfig):
 
         return super().ready()
 
-    def get_ari_caller(self):
-        with tracer.start_span('get_ari_caller ') as span:
-            try:
-                span.set_attribute('Class', __class__.__name__)
-            except NameError:
-                span.set_attribute('Class', "none")
-            span.set_attribute('file', __file__)
-            span.set_attribute('Method', "write_to_segment")
-            span.set_attribute('Description', 'initializes ari object')
-            FAILED = False
-            UNINITIALIZED = None
-            if not settings.ENABLE_ARI_POSTPROCESS:
-                logger.info("Postprocessing is disabled.")
-                self._ari_caller = UNINITIALIZED
-                return None
-            if self._ari_caller is FAILED:
-                return None
-            if self._ari_caller:
-                return self._ari_caller
-            try:
-                self._ari_caller = postprocessing.ARICaller(
-                    config=Config(
-                        rules_dir=settings.ARI_RULES_DIR,
-                        data_dir=settings.ARI_DATA_DIR,
-                        rules=settings.ARI_RULES,
-                    ),
-                    silent=True,
-                )
-                logger.info("Postprocessing is enabled.")
-            except Exception:
-                logger.exception("Failed to initialize ARI.")
-                self._ari_caller = FAILED
+    def get_ari_caller(self, span_ctx):
+        if settings.ENABLE_DISTRIBUTED_TRACING:
+            enable_tracing(
+                'Get Ari Caller', __file__, 'get_ari_caller', 'initializes ari object', span_ctx
+            )
+
+        FAILED = False
+        UNINITIALIZED = None
+        if not settings.ENABLE_ARI_POSTPROCESS:
+            logger.info("Postprocessing is disabled.")
+            self._ari_caller = UNINITIALIZED
+            return None
+        if self._ari_caller is FAILED:
+            return None
+        if self._ari_caller:
             return self._ari_caller
+        try:
+            self._ari_caller = postprocessing.ARICaller(
+                config=Config(
+                    rules_dir=settings.ARI_RULES_DIR,
+                    data_dir=settings.ARI_DATA_DIR,
+                    rules=settings.ARI_RULES,
+                ),
+                silent=True,
+            )
+            logger.info("Postprocessing is enabled.")
+        except Exception:
+            logger.exception("Failed to initialize ARI.")
+            self._ari_caller = FAILED
+        return self._ari_caller

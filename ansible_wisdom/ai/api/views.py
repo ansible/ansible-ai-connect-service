@@ -39,7 +39,7 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
-from .utils.jaeger import tracer
+from .utils.jaeger import enable_tracing, trace, tracer
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
@@ -138,19 +138,21 @@ class Completions(APIView):
         # WSGIRequest object.  It holds the original as
         # `self._request`, and that's the one we need to modify to
         # make this available to the middleware.
-
-        with tracer.start_as_current_span('Recommendation') as span:
-            try:
-                span.set_attribute('Class', __class__.__name__)
-            except NameError:
-                span.set_attribute('Class', "none")
-            span.set_attribute('file', __file__)
-            span.set_attribute('Method', "post")
-            span.set_attribute(
-                'Description',
-                'Responsible for processing request and sending/receiving request to/from model',
-            )
-
+        span_ctx = None
+        if settings.ENABLE_DISTRIBUTED_TRACING:
+            with tracer.start_as_current_span('Recommendation') as span:
+                try:
+                    span.set_attribute('Class', __class__.__name__)
+                except NameError:
+                    span.set_attribute('Class', "none")
+                span.set_attribute('file', __file__)
+                span.set_attribute('Method', "post")
+                span.set_attribute(
+                    'Description',
+                    'Responsible for processing '
+                    'request and sending/receiving request to/from model',
+                )
+                span_ctx = trace.set_span_in_context(trace.get_current_span())
             request._request._suggestion_id = request.data.get('suggestionId')
 
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
@@ -179,7 +181,9 @@ class Completions(APIView):
 
             try:
                 start_time = time.time()
-                payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+                payload.context, payload.prompt = self.preprocess(
+                    payload.context, payload.prompt, span_ctx
+                )
             except Exception as exc:
                 process_error_count.labels(stage='pre-processing').inc()
                 # return the original prompt, context
@@ -213,7 +217,9 @@ class Completions(APIView):
             exception = None
             start_time = time.time()
             try:
-                predictions = model_mesh_client.infer(data, model_name=model_name)
+                predictions = model_mesh_client.infer(
+                    data, span_ctx, model_name=model_name
+                )  # Jaeger Tracing enabled
             except ModelTimeoutError as exc:
                 exception = exc
                 logger.warn(
@@ -232,18 +238,21 @@ class Completions(APIView):
                 duration = round((time.time() - start_time) * 1000, 2)
                 completions_hist.observe(duration / 1000)  # millisec back to seconds
                 value_template = Template("{{ _${variable_name}_ }}")
-                with tracer.start_as_current_span('PII removal (anonymizer)') as innerSpan:
-                    try:
-                        innerSpan.set_attribute('Class', __class__.__name__)
-                    except NameError:
-                        innerSpan.set_attribute('Class', "none")
-                    innerSpan.set_attribute('Method', "anonymize_struct")
-                    innerSpan.set_attribute('file', __file__)
-                    innerSpan.set_attribute(
-                        'Description',
-                        'Responsible for removing '
-                        'Personally Identifiable Information (PII) from ansible task',
-                    )
+                if settings.ENABLE_DISTRIBUTED_TRACING:
+                    with tracer.start_as_current_span(
+                        'PII removal (anonymizer)', context=span_ctx
+                    ) as innerSpan:
+                        try:
+                            innerSpan.set_attribute('Class', __class__.__name__)
+                        except NameError:
+                            innerSpan.set_attribute('Class', "none")
+                        innerSpan.set_attribute('Method', "anonymize_struct")
+                        innerSpan.set_attribute('file', __file__)
+                        innerSpan.set_attribute(
+                            'Description',
+                            'Responsible for removing '
+                            'Personally Identifiable Information (PII) from ansible task',
+                        )
                 ano_predictions = anonymizer.anonymize_struct(
                     predictions, value_template=value_template
                 )
@@ -255,7 +264,7 @@ class Completions(APIView):
                     "response": ano_predictions,
                     "suggestionId": str(payload.suggestionId),
                 }
-                send_segment_event(event, "prediction", request.user)
+                send_segment_event(event, "prediction", request.user, span_ctx)
 
             logger.debug(
                 f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
@@ -270,6 +279,7 @@ class Completions(APIView):
                     payload.context,
                     request.user,
                     payload.suggestionId,
+                    span_ctx,
                     indent=original_indent,
                 )
             except Exception:
@@ -302,151 +312,149 @@ class Completions(APIView):
                 )
                 raise InternalServerError
             completions_return_code.labels(code=200).inc()
-            with tracer.start_as_current_span(
-                'Returning Recommendation for VSCode Extension'
-            ) as span:
-                try:
-                    span.set_attribute('Class', __class__.__name__)
-                except NameError:
-                    span.set_attribute('Class', "none")
-                span.set_attribute('Method', '---')
-                span.set_attribute('file', __file__)
-                span.set_attribute(
-                    'Description',
-                    'Creates and returns "Response" Object to be retrieved by VSCode Extension',
-                )
-                return Response(postprocessed_predictions, status=200)
+            if settings.ENABLE_DISTRIBUTED_TRACING:
+                with tracer.start_as_current_span(
+                    'Returning Recommendation for VSCode Extension', context=span_ctx
+                ) as span:
+                    try:
+                        span.set_attribute('Class', __class__.__name__)
+                    except NameError:
+                        span.set_attribute('Class', "none")
+                    span.set_attribute('Method', '---')
+                    span.set_attribute('file', __file__)
+                    span.set_attribute(
+                        'Description',
+                        'Creates and returns "Response" Object to be retrieved by VSCode Extension',
+                    )
+            return Response(postprocessed_predictions, status=200)
 
-    def preprocess(self, context, prompt):
-        with tracer.start_as_current_span('Recommendation Pre-processing ') as span:
-            try:
-                span.set_attribute('Class', __class__.__name__)
-            except NameError:
-                span.set_attribute('Class', "none")
-            span.set_attribute('Method', 'preprocess')
-            span.set_attribute('file', __file__)
-            span.set_attribute(
-                'Description',
+    def preprocess(self, context, prompt, span_ctx):
+        inner_span_ctx = None
+
+        if settings.ENABLE_DISTRIBUTED_TRACING:
+            inner_span_ctx = enable_tracing(
+                "preprocessing_test",
+                __file__,
+                "preprocess",
                 'Parent method responsible for processing context (play configs) '
                 'and prompt (task name) to model expectations',
+                span_ctx,
             )
 
-            context, prompt = fmtr.preprocess(context, prompt)  # has jaeger tracing
+        context, prompt = fmtr.preprocess(context, prompt, inner_span_ctx)  # has jaeger tracing
 
-            return context, prompt
+        return context, prompt
 
-    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        with tracer.start_as_current_span('Recommendation Post-processing') as span:
-            try:
-                span.set_attribute('Class', __class__.__name__)
-            except NameError:
-                span.set_attribute('Class', "none")
-            span.set_attribute('Method', 'postprocess')
-            span.set_attribute('file', __file__)
-            span.set_attribute(
-                'Description', 'writes recommendation yaml to segment, formats recommendation'
+    def postprocess(self, recommendation, prompt, context, user, suggestion_id, span_ctx, indent):
+        inner_span_ctx = None
+        if settings.ENABLE_DISTRIBUTED_TRACING:
+            inner_span_ctx = enable_tracing(
+                "Recommendation Post-processing",
+                __file__,
+                'postprocess',
+                'Writes recommendation yaml to segment, formats recommendation',
+                span_ctx,
             )
 
-            ari_caller = apps.get_app_config(
-                "ai"
-            ).get_ari_caller()  # initializes ari -> has jaeger tracing
+        ari_caller = apps.get_app_config("ai").get_ari_caller(
+            inner_span_ctx
+        )  # initializes ari -> has jaeger tracing
 
-            if not ari_caller:
-                logger.warn('skipped ari post processing because ari was not initialized')
+        if not ari_caller:
+            logger.warn('skipped ari post processing because ari was not initialized')
 
-            for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-                if ari_caller:
-                    start_time = time.time()
-                    truncated_yaml = None
-                    recommendation_problem = None
-                    # check if the recommendation_yaml is a valid YAML
-                    try:
-                        _ = yaml.safe_load(recommendation_yaml)
-                    except Exception as exc:
-                        # the recommendation YAML can have a broken line at the bottom
-                        # because the token size of the wisdom model is limited.
-                        # so we try truncating the last line of the recommendation here.
-                        truncated, truncated_yaml = truncate_recommendation_yaml(
-                            recommendation_yaml
-                        )
-                        if truncated:
-                            try:
-                                _ = yaml.safe_load(truncated_yaml)
-                            except Exception as exc:
-                                recommendation_problem = exc
-                        else:
+        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+            if ari_caller:
+                start_time = time.time()
+                truncated_yaml = None
+                recommendation_problem = None
+                # check if the recommendation_yaml is a valid YAML
+                try:
+                    _ = yaml.safe_load(recommendation_yaml)
+                except Exception as exc:
+                    # the recommendation YAML can have a broken line at the bottom
+                    # because the token size of the wisdom model is limited.
+                    # so we try truncating the last line of the recommendation here.
+                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+                    if truncated:
+                        try:
+                            _ = yaml.safe_load(truncated_yaml)
+                        except Exception as exc:
                             recommendation_problem = exc
-                        if recommendation_problem:
-                            logger.error(
-                                f'recommendation_yaml is not a valid YAML: '
-                                f'\n{recommendation_yaml}'
-                                f'\nException:\n{recommendation_problem}'
-                            )
-
-                    exception = None
-                    postprocessed_yaml = None
-                    postprocess_detail = None
-                    try:
-                        # if the recommentation is not a valid yaml, record it as an exception
-                        if recommendation_problem:
-                            exception = recommendation_problem
-                        else:
-                            # otherwise, do postprocess here
-                            logger.debug(
-                                f"suggestion id: {suggestion_id}, "
-                                f"original recommendation: \n{recommendation_yaml}"
-                            )
-                            if truncated_yaml:
-                                logger.debug(
-                                    f"suggestion id: {suggestion_id}, "
-                                    f"truncated recommendation: \n{truncated_yaml}"
-                                )
-                                recommendation_yaml = truncated_yaml
-                            postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                                recommendation_yaml, prompt, context
-                            )
-                            logger.debug(
-                                f"suggestion id: {suggestion_id}, "
-                                f"post-processed recommendation: \n{postprocessed_yaml}"
-                            )
-                            logger.debug(
-                                f"suggestion id: {suggestion_id}, "
-                                f"post-process detail: {json.dumps(postprocess_detail)}"
-                            )
-                            recommendation["predictions"][i] = postprocessed_yaml
-                    except Exception as exc:
-                        exception = exc
-                        # return the original recommendation if we failed to postprocess
-                        logger.exception(
-                            f'failed to postprocess recommendation with prompt {prompt} '
-                            f'context {context} and model recommendation {recommendation}'
+                    else:
+                        recommendation_problem = exc
+                    if recommendation_problem:
+                        logger.error(
+                            f'recommendation_yaml is not a valid YAML: '
+                            f'\n{recommendation_yaml}'
+                            f'\nException:\n{recommendation_problem}'
                         )
-                    finally:
-                        self.write_to_segment(  # jaeger tracing enabled
-                            user,
-                            suggestion_id,
-                            recommendation_yaml,
-                            truncated_yaml,
-                            postprocessed_yaml,
-                            postprocess_detail,
-                            exception,
-                            start_time,
+
+                exception = None
+                postprocessed_yaml = None
+                postprocess_detail = None
+                try:
+                    # if the recommentation is not a valid yaml, record it as an exception
+                    if recommendation_problem:
+                        exception = recommendation_problem
+                    else:
+                        # otherwise, do postprocess here
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"original recommendation: \n{recommendation_yaml}"
                         )
-                        if exception:
-                            raise exception
+                        if truncated_yaml:
+                            logger.debug(
+                                f"suggestion id: {suggestion_id}, "
+                                f"truncated recommendation: \n{truncated_yaml}"
+                            )
+                            recommendation_yaml = truncated_yaml
+                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                            recommendation_yaml, prompt, context
+                        )
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"post-processed recommendation: \n{postprocessed_yaml}"
+                        )
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"post-process detail: {json.dumps(postprocess_detail)}"
+                        )
+                        recommendation["predictions"][i] = postprocessed_yaml
+                except Exception as exc:
+                    exception = exc
+                    # return the original recommendation if we failed to postprocess
+                    logger.exception(
+                        f'failed to postprocess recommendation with prompt {prompt} '
+                        f'context {context} and model recommendation {recommendation}'
+                    )
+                finally:
+                    self.write_to_segment(  # jaeger tracing enabled
+                        user,
+                        suggestion_id,
+                        recommendation_yaml,
+                        truncated_yaml,
+                        postprocessed_yaml,
+                        postprocess_detail,
+                        exception,
+                        start_time,
+                        inner_span_ctx,
+                    )
+                    if exception:
+                        raise exception
 
-                # adjust indentation as per default ansible-lint configuration
-                indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
+            # adjust indentation as per default ansible-lint configuration
+            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
 
-                # restore original indentation
-                indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
-                recommendation["predictions"][i] = indented_yaml
-                logger.debug(
-                    f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
-                )
-                continue
+            # restore original indentation
+            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
+            recommendation["predictions"][i] = indented_yaml
+            logger.debug(
+                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
+            )
+            continue
 
-            return recommendation
+        return recommendation
 
     def write_to_segment(
         self,
@@ -458,31 +466,31 @@ class Completions(APIView):
         postprocess_detail,
         exception,
         start_time,
+        span_ctx,
     ):
-        with tracer.start_as_current_span('write_to_segment') as span:
-            try:
-                span.set_attribute('Class', __class__.__name__)
-            except NameError:
-                span.set_attribute('Class', "none")
-            span.set_attribute('file', __file__)
-            span.set_attribute('Method', "write_to_segment")
-            span.set_attribute(
-                'Description', 'Creates event to be sent to Amplitude/S3 through Segment'
+        inner_span_ctx = None
+        if settings.ENABLE_DISTRIBUTED_TRACING:
+            inner_span_ctx = enable_tracing(
+                'Write to Segment',
+                __file__,
+                'write_to_segment',
+                'Creates event to be sent to Amplitude/S3 through Segment',
+                span_ctx,
             )
 
-            duration = round((time.time() - start_time) * 1000, 2)
-            problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
-            event = {
-                "exception": exception is not None,
-                "problem": problem,
-                "duration": duration,
-                "recommendation": recommendation_yaml,
-                "truncated": truncated_yaml,
-                "postprocessed": postprocessed_yaml,
-                "detail": postprocess_detail,
-                "suggestionId": str(suggestion_id) if suggestion_id else None,
-            }
-            send_segment_event(event, "postprocess", user)  # jaeger tracing enabled
+        duration = round((time.time() - start_time) * 1000, 2)
+        problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
+        event = {
+            "exception": exception is not None,
+            "problem": problem,
+            "duration": duration,
+            "recommendation": recommendation_yaml,
+            "truncated": truncated_yaml,
+            "postprocessed": postprocessed_yaml,
+            "detail": postprocess_detail,
+            "suggestionId": str(suggestion_id) if suggestion_id else None,
+        }
+        send_segment_event(event, "postprocess", user, inner_span_ctx)  # jaeger tracing enabled
 
 
 class Feedback(APIView):

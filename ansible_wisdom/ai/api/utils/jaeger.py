@@ -24,3 +24,11 @@ span_processor = BatchSpanProcessor(jaeger_exporter)
 # # add to the tracer
 trace.get_tracer_provider().add_span_processor(span_processor)
 tracer = trace.get_tracer(__name__)
+
+
+def enable_tracing(name, file, method, description, span_ctx):
+    with tracer.start_as_current_span(name, context=span_ctx) as span:
+        span.set_attribute('File', file)
+        span.set_attribute('Method', method)
+        span.set_attribute('Description', description)
+        return trace.set_span_in_context(trace.get_current_span())
