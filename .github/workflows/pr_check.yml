@@ -67,6 +67,7 @@ jobs:
       run: |
         cd ansible_wisdom
         coverage run --rcfile=../setup.cfg manage.py test
+        coverage xml
         coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
 
     # - name: Add Coverage PR Comment
