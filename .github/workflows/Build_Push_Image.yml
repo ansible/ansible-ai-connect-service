@@ -69,8 +69,7 @@ jobs:
 
     - name: Scan Malware
       # Do not scan malware in PR builds
-      # if: ${{ github.event_name == 'push' }}
-      if: ${{ github.event_name == 'pull_request' }} # DEBUG
+      if: ${{ github.event_name == 'push' }}
       run: |
         id=$(podman create $CLAMAV_DB_IMAGE)
         podman cp $id:$CLAMAV_DB_DIR clamav-db
@@ -87,8 +86,7 @@ jobs:
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: ./clamav.md
-      # if: ${{ github.event_name == 'push' }}
-      if: ${{ github.event_name == 'pull_request' }} # DEBUG
+      if: ${{ github.event_name == 'push' }}
 
     - name: Push To quay.io
       id: push-to-quay
