@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-wisdom"
-description = "Ansible Lightspeed with IBM Watson Code Assistant Service"
+description = "Ansible Lightspeed with Watson Code Assistant Service"
 readme = "README.rst"
 requires-python = ">=3.9"
 classifiers = [

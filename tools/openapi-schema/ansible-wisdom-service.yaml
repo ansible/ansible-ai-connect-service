@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Ansible Lightspeed with IBM Watson Code Assistant Service
+  title: Ansible Lightspeed with Watson Code Assistant Service
   version: 0.0.7
   description: Equip the automation developer at Lightspeed.
 paths:
