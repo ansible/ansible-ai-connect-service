@@ -69,11 +69,11 @@ jobs:
         coverage run --rcfile=../setup.cfg manage.py test
         coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
 
-    - name: Add Coverage PR Comment
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: ansible_wisdom/code-coverage-results.md
-      if: ${{ !github.event.pull_request.head.repo.fork }}
+    # - name: Add Coverage PR Comment
+    #   uses: thollander/actions-comment-pull-request@v2
+    #   with:
+    #     filePath: ansible_wisdom/code-coverage-results.md
+    #   if: ${{ !github.event.pull_request.head.repo.fork }}
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
