@@ -1,5 +1,8 @@
 name: PR Check
 on:
+  push:
+    branches:
+      - ryb/sonarcloud
   pull_request:
     branches:
       - main
@@ -41,6 +44,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
     - name: Install dependencies
       run: |
@@ -69,3 +74,9 @@ jobs:
       with:
         filePath: ansible_wisdom/code-coverage-results.md
       if: ${{ !github.event.pull_request.head.repo.fork }}
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
