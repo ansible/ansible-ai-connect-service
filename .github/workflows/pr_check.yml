@@ -77,6 +77,10 @@ jobs:
     #     filePath: ansible_wisdom/code-coverage-results.md
     #   if: ${{ !github.event.pull_request.head.repo.fork }}
 
+    # See https://sonarsource.atlassian.net/browse/SONARPY-1203
+    - name: Fix paths in coverage file
+      run: sed -i 's/\/home\/runner\/work\/aoc-metrics-collector\/aoc-metrics-collector\//\/github\/workspace\//g' ansible_wisdom/coverage.xml
+
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
