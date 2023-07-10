@@ -80,7 +80,7 @@ jobs:
     # See https://sonarsource.atlassian.net/browse/SONARPY-1203
     - name: Fix paths in coverage file
       run: |
-        sed -i 's/\/home\/runner\/work\/ansible-wisdom-service\/ansible-wisdom-service\/ansible_wisdom\//\/github\/workspace\//g' ansible_wisdom/coverage.xml
+        sed -i 's/\/home\/runner\/work\/ansible-wisdom-service\/ansible-wisdom-service\/ansible_wisdom/\/github\/workspace\//g' ansible_wisdom/coverage.xml
         cat ansible_wisdom/coverage.xml
 
     - name: SonarCloud Scan
