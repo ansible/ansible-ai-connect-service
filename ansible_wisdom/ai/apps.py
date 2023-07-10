@@ -7,6 +7,8 @@ from django.conf import settings
 
 from ari import postprocessing
 
+from .api.utils.jaeger import with_distributed_tracing
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +48,13 @@ class AiConfig(AppConfig):
 
         return super().ready()
 
-    def get_ari_caller(self):
+    @with_distributed_tracing(
+        name="Get Ari Caller",
+        description='Initializes ARI object',
+        file=__file__,
+        method='get_ari_caller',
+    )
+    def get_ari_caller(self, span_ctx):
         FAILED = False
         UNINITIALIZED = None
         if not settings.ENABLE_ARI_POSTPROCESS:

@@ -4,6 +4,7 @@ import grpc
 from django.conf import settings
 from rest_framework.response import Response
 
+from ..utils.jaeger import with_distributed_tracing
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
 from .grpc_pb import ansiblerequest_pb2, wisdomextservice_pb2_grpc
@@ -27,7 +28,13 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, data, model_name):
+    @with_distributed_tracing(
+        name="inference through gRPC client",
+        description='Responsible for obtaining prediction based on context and prompt',
+        file=__file__,
+        method='infer',
+    )
+    def infer(self, data, model_name, span_ctx):
         logger.debug(f"Input prompt: {data}")
         prompt = data.get("instances", [{}])[0].get("prompt", "")
         context = data.get("instances", [{}])[0].get("context", "")
