@@ -20,7 +20,7 @@ version_info = VersionInfo()
     method='send_segment_event',
 )
 def send_segment_event(
-    event: Dict[str, Any], event_name: str, user: Union[User, None], span_ctx
+    event: Dict[str, Any], event_name: str, user: Union[User, None], span_ctx=None
 ) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")

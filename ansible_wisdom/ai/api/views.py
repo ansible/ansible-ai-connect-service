@@ -527,7 +527,7 @@ class Feedback(APIView):
                 "activityId": str(inline_suggestion_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "inlineSuggestionFeedback", user, span_ctx=None)
+            send_segment_event(event, "inlineSuggestionFeedback", user)
         if ansible_content_data:
             event = {
                 "content": ansible_content_data.get('content'),
@@ -536,7 +536,7 @@ class Feedback(APIView):
                 "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "ansibleContentFeedback", user, span_ctx=None)
+            send_segment_event(event, "ansibleContentFeedback", user)
         if suggestion_quality_data:
             event = {
                 "prompt": suggestion_quality_data.get('prompt'),
@@ -545,14 +545,14 @@ class Feedback(APIView):
                 "additionalComment": suggestion_quality_data.get('additionalComment'),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "suggestionQualityFeedback", user, span_ctx=None)
+            send_segment_event(event, "suggestionQualityFeedback", user)
         if sentiment_feedback_data:
             event = {
                 "value": sentiment_feedback_data.get('value'),
                 "feedback": sentiment_feedback_data.get('feedback'),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "sentimentFeedback", user, span_ctx=None)
+            send_segment_event(event, "sentimentFeedback", user)
         if issue_feedback_data:
             event = {
                 "type": issue_feedback_data.get('type'),
@@ -560,7 +560,7 @@ class Feedback(APIView):
                 "description": issue_feedback_data.get('description'),
                 "exception": exception is not None,
             }
-            send_segment_event(event, "issueFeedback", user, span_ctx=None)
+            send_segment_event(event, "issueFeedback", user)
 
         feedback_events = [
             inline_suggestion_data,
@@ -588,7 +588,7 @@ class Feedback(APIView):
                 "data": ano_request_data,
                 "exception": str(exception),
             }
-            send_segment_event(event, event_type, user, span_ctx=None)
+            send_segment_event(event, event_type, user)
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
@@ -700,4 +700,4 @@ class Attributions(GenericAPIView):
             'search_duration': search_duration,
             'attributions': attributions,
         }
-        send_segment_event(event, "attribution", user, span_ctx=None)
+        send_segment_event(event, "attribution", user)
