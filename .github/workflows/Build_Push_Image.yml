@@ -15,6 +15,9 @@ jobs:
     name: Build and push image
     runs-on: ubuntu-20.04
 
+    permissions:
+      contents: write
+
     steps:
     - uses: actions/checkout@v3
 
@@ -82,11 +85,22 @@ jobs:
         CLAMAV_DB_IMAGE: quay.io/redhat-appstudio/clamav-db:latest
         CLAMAV_DB_DIR: /var/lib/clamav
 
-    - name: Add Malware Scanning PR Comment
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: ./clamav.md
+    - name: Get Comment Body
+      id: get-comment-body
+      # https://github.com/marketplace/actions/commit-comment#setting-the-comment-body-from-a-file
       if: ${{ github.event_name == 'push' }}
+      run: |
+        body="$(cat clamav.md)"
+        delimiter="$(openssl rand -hex 8)"
+        echo "body<<$delimiter" >> $GITHUB_OUTPUT
+        echo "$body" >> $GITHUB_OUTPUT
+        echo "$delimiter" >> $GITHUB_OUTPUT
+
+    - name: Add Malware Scanning Commit Comment
+      if: ${{ github.event_name == 'push' }}
+      uses: peter-evans/commit-comment@v2
+      with:
+        body: ${{ steps.get-comment-body.outputs.body }}
 
     - name: Push To quay.io
       id: push-to-quay
