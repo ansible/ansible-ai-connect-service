@@ -20,6 +20,7 @@ tracer = trace.get_tracer(__name__)
 
 
 def distributed_tracing_method(name, description, file, method, span_ctx):
+    inner_span_ctx = None
     if settings.ENABLE_DISTRIBUTED_TRACING:
         with tracer.start_as_current_span(name=name, context=span_ctx) as span:
             span.set_attribute('File', file)
