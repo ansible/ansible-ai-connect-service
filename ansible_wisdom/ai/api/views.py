@@ -39,7 +39,7 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
-from .utils.jaeger import enable_tracing, trace, tracer
+from .utils.jaeger import enable_tracing, trace, tracer, with_distributed_tracing
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
@@ -328,18 +328,11 @@ class Completions(APIView):
                     )
             return Response(postprocessed_predictions, status=200)
 
-    def preprocess(self, context, prompt, span_ctx):
-        inner_span_ctx = None
-
-        if settings.ENABLE_DISTRIBUTED_TRACING:
-            inner_span_ctx = enable_tracing(
-                "preprocessing_test",
-                __file__,
-                "preprocess",
-                'Parent method responsible for processing context (play configs) '
-                'and prompt (task name) to model expectations',
-                span_ctx,
-            )
+    @with_distributed_tracing(
+        name="preprocess testing", description="dafsd", file=__file__, method="method"
+    )
+    def preprocess(self, context, prompt, inner_span_ctx):
+        print("span_ctx:", inner_span_ctx)
 
         context, prompt = fmtr.preprocess(context, prompt, inner_span_ctx)  # has jaeger tracing
 

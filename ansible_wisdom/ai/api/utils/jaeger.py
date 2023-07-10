@@ -1,3 +1,4 @@
+from django.conf import settings
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -32,3 +33,24 @@ def enable_tracing(name, file, method, description, span_ctx):
         span.set_attribute('Method', method)
         span.set_attribute('Description', description)
         return trace.set_span_in_context(trace.get_current_span())
+
+
+def with_distributed_tracing(name, description, file, method):
+    def distributed_tracing_decorator(func):
+        def distributed_tracing_wrapper(self, context, prompt, span_ctx):
+            inner_span_ctx = None
+
+            if settings.ENABLE_DISTRIBUTED_TRACING:
+                with tracer.start_as_current_span(name=name, context=span_ctx) as span:
+                    span.set_attribute('File', file)
+                    span.set_attribute('Method', method)
+                    span.set_attribute('Description', description)
+                    inner_span_ctx = trace.set_span_in_context(trace.get_current_span())
+                print("inner_span_ctx: ", inner_span_ctx)
+            return func(self, context, prompt, inner_span_ctx)
+
+        # You can copy more attributes if needed
+
+        return distributed_tracing_wrapper
+
+    return distributed_tracing_decorator
