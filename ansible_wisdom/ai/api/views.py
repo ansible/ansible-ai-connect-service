@@ -248,7 +248,7 @@ class Completions(APIView):
                 "response": ano_predictions,
                 "suggestionId": str(payload.suggestionId),
             }
-            send_segment_event(event, "prediction", request.user, span_ctx=inner_span_ctx)
+            send_segment_event(event, "prediction", request.user)
 
         logger.debug(
             f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
