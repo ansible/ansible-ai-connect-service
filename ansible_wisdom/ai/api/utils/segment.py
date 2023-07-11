@@ -7,21 +7,19 @@ from healthcheck.version_info import VersionInfo
 from segment import analytics
 from users.models import User
 
-from .jaeger import with_distributed_tracing
+# from .jaeger import with_distributed_tracing
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
-@with_distributed_tracing(
-    name="Content Matching (send event to Segment)",
-    description='Formats event (dictionary) and forwards to Segment',
-    file=__file__,
-    method='send_segment_event',
-)
-def send_segment_event(
-    event: Dict[str, Any], event_name: str, user: Union[User, None], span_ctx=None
-) -> None:
+# @with_distributed_tracing(
+#     name="Content Matching (send event to Segment)",
+#     description='Formats event (dictionary) and forwards to Segment',
+#     file=__file__,
+#     method='send_segment_event',
+# )
+def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User, None]) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
         return

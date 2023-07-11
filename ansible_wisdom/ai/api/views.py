@@ -453,7 +453,7 @@ class Completions(APIView):
             "detail": postprocess_detail,
             "suggestionId": str(suggestion_id) if suggestion_id else None,
         }
-        send_segment_event(event, "postprocess", user, span_ctx=inner_span_ctx)
+        send_segment_event(event, "postprocess", user)
 
 
 class Feedback(APIView):
