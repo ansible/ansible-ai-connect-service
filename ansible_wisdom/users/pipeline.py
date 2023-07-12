@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from social_core.exceptions import AuthCanceled
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
@@ -67,47 +68,26 @@ def github_get_username(uid, strategy, details, backend, user=None, *args, **kwa
 
 
 def _terms_of_service(strategy, user, **kwargs):
-    request = kwargs['request']
-    ts_date_terms_accepted = request.session.get('ts_date_terms_accepted')
-    if ts_date_terms_accepted is not None:
-        # if date_terms_accepted is a dummy value (== datetime.max), it indicates the
-        # user did not accept our terms and conditions. Raise an AuthCanceled
-        # in such a case.
-        if ts_date_terms_accepted == datetime.max.timestamp():
-            del request.session['ts_date_terms_accepted']
-            request.session.save()
-            raise AuthCanceled('Terms and conditions were not accepted.')
+    terms_accepted = strategy.session_get('terms_accepted', None)
+    if user.date_terms_accepted is None:
+        if terms_accepted is None:
+            # We haven't gone through the flow yet -- go to the T&C page
+            current_partial = kwargs.get('current_partial')
+            terms_of_service = reverse('terms_of_service')
+            return strategy.redirect(f'{terms_of_service}?partial_token={current_partial.token}')
 
-        # if a non-dummy value is set in term_accepted, it means that the user
-        # accepted our terms and conditions. Return to the original auth flow.
-        return
-    # insert a dummy value to 'ts_date_terms_accepted' date in session
-    request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
+        if not terms_accepted:
+            raise AuthCanceled("Terms and conditions were not accepted.")
 
-    current_partial = kwargs.get('current_partial')
-    terms_of_service = reverse('terms_of_service')
-    return strategy.redirect(f'{terms_of_service}?partial_token={current_partial.token}')
+        # We've accepted the T&C, set the field on the user.
+        user.date_terms_accepted = timezone.now()
+        user.save()
+        return {'terms_accepted': terms_accepted}
+
+    # User had previously accepted, so short-circuit the T&C page.
+    return {'terms_accepted': True}
 
 
 @partial
 def terms_of_service(strategy, details, user=None, is_new=False, *args, **kwargs):
     return _terms_of_service(strategy, user, **kwargs)
-
-
-def _add_date_accepted(strategy, user, **kwargs):
-    request = kwargs['request']
-    ts_date_terms_accepted = request.session.get('ts_date_terms_accepted')
-    if (
-        user
-        and user.date_terms_accepted is None
-        and ts_date_terms_accepted is not None
-        and ts_date_terms_accepted != datetime.max.timestamp()
-    ):
-        user.date_terms_accepted = datetime.fromtimestamp(ts_date_terms_accepted, timezone.utc)
-        user.save()
-    return
-
-
-@partial
-def add_date_accepted(strategy, details, user=None, is_new=False, *args, **kwargs):
-    return _add_date_accepted(strategy, user, **kwargs)

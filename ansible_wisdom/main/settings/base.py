@@ -113,6 +113,9 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
+SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
+    'terms_accepted',
+]
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
@@ -125,7 +128,6 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
     'users.pipeline.terms_of_service',
-    'users.pipeline.add_date_accepted',
 )
 
 # Wisdom Eng Team:

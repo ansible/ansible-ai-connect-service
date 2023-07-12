@@ -55,18 +55,16 @@ class TermsOfService(TemplateView):
             logger.error('POST /terms_of_service/ was invoked without partial_token')
             return HttpResponseBadRequest()
 
-        accepted = request.POST.get('accepted') == 'True'
-
         strategy = load_strategy()
         partial = strategy.partial_load(partial_token)
         if partial is None:
             logger.error('strategy.partial_load(partial_token) returned None')
             return HttpResponseBadRequest()
+
+        accepted = request.POST.get('accepted') == 'True'
+        request.session['terms_accepted'] = accepted
+        request.session.save()
+
         backend = partial.backend
-
-        if accepted:
-            request.session['ts_date_terms_accepted'] = datetime.utcnow().timestamp()
-            request.session.save()
-
         complete = reverse("social:complete", kwargs={"backend": backend})
         return strategy.redirect(complete + f"?partial_token={partial.token}")
