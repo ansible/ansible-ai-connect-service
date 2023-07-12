@@ -1,8 +1,8 @@
-name: PR Check
+name: Code Coverage
 on:
   push:
     branches:
-      - ryb/sonarcloud
+      - main
   pull_request:
     branches:
       - main
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: PR-Check
+    name: Unit Test and SonarCloud Scan
 
     runs-on: ubuntu-latest
 
@@ -71,11 +71,11 @@ jobs:
         cat coverage.xml
         coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
 
-    # - name: Add Coverage PR Comment
-    #   uses: thollander/actions-comment-pull-request@v2
-    #   with:
-    #     filePath: ansible_wisdom/code-coverage-results.md
-    #   if: ${{ !github.event.pull_request.head.repo.fork }}
+    - name: Add Coverage PR Comment
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: ansible_wisdom/code-coverage-results.md
+      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
 
     # See https://sonarsource.atlassian.net/browse/SONARPY-1203
     - name: Fix paths in coverage file
@@ -86,5 +86,5 @@ jobs:
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
