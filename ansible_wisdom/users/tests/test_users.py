@@ -79,20 +79,26 @@ class TestTermsAndConditions(TestCase):
         self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def test_terms_of_service_first_call(self):
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
+        _terms_of_service(
+            self.strategy, self.user, request=self.request, current_partial=self.partial
+        )
         self.assertEqual(datetime.max.timestamp(), self.request.session['ts_date_terms_accepted'])
         self.assertEqual('/terms_of_service/?partial_token=token', self.strategy.redirect_url)
 
     def test_terms_of_service_with_acceptance(self):
         now = datetime.utcnow().timestamp()
         self.request.session['ts_date_terms_accepted'] = now
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
+        _terms_of_service(
+            self.strategy, self.user, request=self.request, current_partial=self.partial
+        )
         self.assertEqual(now, self.request.session['ts_date_terms_accepted'])
 
     def test_terms_of_service_without_acceptance(self):
         self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         with self.assertRaises(AuthCanceled):
-            _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
+            _terms_of_service(
+                self.strategy, self.user, request=self.request, current_partial=self.partial
+            )
 
     def test_add_date_accepted_with_date_accepted(self):
         now = datetime.utcnow().timestamp()

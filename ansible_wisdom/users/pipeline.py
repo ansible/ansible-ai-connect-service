@@ -66,7 +66,7 @@ def github_get_username(uid, strategy, details, backend, user=None, *args, **kwa
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
 
-def _terms_of_service(strategy, **kwargs):
+def _terms_of_service(strategy, user, **kwargs):
     request = kwargs['request']
     ts_date_terms_accepted = request.session.get('ts_date_terms_accepted')
     if ts_date_terms_accepted is not None:
@@ -91,7 +91,7 @@ def _terms_of_service(strategy, **kwargs):
 
 @partial
 def terms_of_service(strategy, details, user=None, is_new=False, *args, **kwargs):
-    return _terms_of_service(strategy, **kwargs)
+    return _terms_of_service(strategy, user, **kwargs)
 
 
 def _add_date_accepted(strategy, user, **kwargs):
