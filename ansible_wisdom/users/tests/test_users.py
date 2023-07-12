@@ -11,7 +11,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
-from users.views import TermsOfService, _add_date_accepted, _terms_of_service
+from users.pipeline import _add_date_accepted, _terms_of_service
+from users.views import TermsOfService
 
 
 class TestUsers(WisdomServiceAPITestCaseBase):

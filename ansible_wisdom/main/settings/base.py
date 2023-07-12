@@ -118,14 +118,14 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
     'main.pipeline.remove_pii',
-    'users.views.terms_of_service',
+    'users.pipeline.terms_of_service',
     'social_core.pipeline.social_auth.auth_allowed',
-    'users.views.github_get_username',
+    'users.pipeline.github_get_username',
     # 'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-    'users.views.add_date_accepted',
+    'users.pipeline.add_date_accepted',
 )
 
 # Wisdom Eng Team:
