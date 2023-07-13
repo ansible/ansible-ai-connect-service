@@ -76,7 +76,8 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
             password=self.password,
         )
         self.user.user_id = str(uuid.uuid4())
-        self.user.date_terms_accepted = timezone.now()
+        self.user.community_terms_accepted = timezone.now()
+        self.user.commercial_terms_accepted = timezone.now()
         self.user.save()
 
         group_1, _ = Group.objects.get_or_create(name='Group 1')

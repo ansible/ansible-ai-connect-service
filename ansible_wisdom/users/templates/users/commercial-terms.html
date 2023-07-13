@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="pf-c-page__main-section pf-m-light">
+    <div class="pf-l-bullseye">
+        <div class="pf-l-bullseye__item">
+            <div class="pf-c-empty-state" style="text-align: left;">
+                <div class="pf-c-empty-state__content">
+                    <div class="pf-l-flex" style="padding-bottom: 45px">
+                        <div class="pf-l-flex__item">
+                            <img src="/static/assets/images/Red_Hat_logo.svg" width="110px" alt="Red Hat logo">
+                        </div>
+                        <div class="pf-l-flex__item  pf-m-align-right">
+                            <img src="/static/assets/images/IBM.svg" width="170px" alt="IBM logo">
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 15px">
+                        <a href="#ibm-terms" class="pf-c-button pf-m-secondary">IBM Terms</a>
+                        <a href="#red-hat-terms" class="pf-c-button pf-m-secondary">Red Hat Terms</a>
+                    </div>
+
+                    <form action={% url 'commercial_terms' %} method="post">{% csrf_token %}
+                    <input type="hidden" name="partial_token" value={{partial_token}}>
+
+                    <h1 class="pf-c-title pf-m-xl" id="ibm-terms">IBM Terms of Service</h1>
+
+                    <div class="pf-c-content">
+                        <p></p>
+                        <p>Placeholder</p>
+                    </div>
+
+                    <div class="pf-c-empty-state__content">
+                        <div style="padding-bottom: 35px"></div>
+                        <hr class="pf-c-divider" />
+                        <div style="padding-bottom: 35px"></div>
+                    </div>
+
+                    <h1 class="pf-c-title pf-m-xl" id="red-hat-terms">Red Hat Terms of Service</h1>
+                    <h2 class="pf-c-title pf-m-l">Red Hat Ansible Lightspeed with IBM Watson Code Assistant Technical Preview Program Terms </h2>
+                    <div class="pf-c-content">
+                        <p></p>
+                        <p>Placeholder</p>
+                        <div style="padding-bottom: 20px"></div>
+                    </div>
+
+
+                    <div class="pf-c-empty-state__content">
+                        <p>
+                            Click to accept both the Red Hat Ansible Lightspeed
+                            Placeholder terms and the IBM Watson Code Assistant
+                            Placeholder terms.
+                        </p>
+                        <div style="padding-bottom: 10px"></div>
+                        <button class="pf-c-button pf-m-primary" type="submit" name="accepted" value="True">
+                            <span class="pf-c-button__icon"><i class="fa fa-check-circle"></i></span>
+                            Agree
+                        </button>
+                        <button class="pf-c-button pf-m-secondary" type="submit" name="accepted" value="False">
+                            Disagree
+                        </button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}

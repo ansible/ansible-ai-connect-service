@@ -9,6 +9,6 @@ class AcceptedTermsPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            if user.date_terms_accepted:
+            if user.commercial_terms_accepted or user.community_terms_accepted:
                 return True
         return False
