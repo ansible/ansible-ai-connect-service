@@ -68,7 +68,6 @@ jobs:
         cd ansible_wisdom
         coverage run --rcfile=../setup.cfg manage.py test
         coverage xml
-        cat coverage.xml
         coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
 
     - name: Add Coverage PR Comment
@@ -81,7 +80,6 @@ jobs:
     - name: Fix paths in coverage file
       run: |
         sed -i 's/\/home\/runner\/work\/ansible-wisdom-service\/ansible-wisdom-service\//\/github\/workspace\//g' ansible_wisdom/coverage.xml
-        cat ansible_wisdom/coverage.xml
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
