@@ -62,6 +62,8 @@ class SegmentMiddleware:
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
                 suggestion_id = getattr(request, '_suggestion_id', request_data.get('suggestionId'))
+                task = getattr(request, '_task')
+                print(task)
                 if not suggestion_id:
                     suggestion_id = str(uuid.uuid4())
                 context = request_data.get('context')
@@ -74,8 +76,18 @@ class SegmentMiddleware:
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
+                    modelName = response_data.get('modelName')
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
+                    # this modelName default will be correct unless we're using launchdarkly
+                    # but needs to be revisited with commercial multimodel.
+                    modelName = settings.ANSIBLE_AI_MODEL_NAME
+
+                fqcn_module = response.fqcn_module
+                collection = ""
+                index = fqcn_module.rfind(".")
+                if index != -1:
+                    collection = fqcn_module[:index]
 
                 duration = round((time.time() - start_time) * 1000, 2)
                 event = {
@@ -91,8 +103,11 @@ class SegmentMiddleware:
                     },
                     "suggestionId": suggestion_id,
                     "metadata": metadata,
-                    "modelName": settings.ANSIBLE_AI_MODEL_NAME,
+                    "modelName": modelName,
                     "imageTags": version_info.image_tags,
+                    "collection": collection,
+                    "module": fqcn_module,
+                    "taskName": task,
                 }
 
                 send_segment_event(event, "completion", request.user)
