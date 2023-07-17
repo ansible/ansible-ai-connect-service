@@ -6,6 +6,7 @@ from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
 
+from .utils.jaeger import with_distributed_tracing
 
 class AnsibleDumper(yaml.Dumper):
     """
@@ -72,8 +73,13 @@ def normalize_yaml(yaml_str):
         return None
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
-
-def preprocess(context, prompt):
+@with_distributed_tracing(
+    name="Preprocess formatter",
+    description='Formats context and prompt' 'in accordance with model expectations',
+    file=__file__,
+    method='preprocess',
+)
+def preprocess(context, prompt, span_ctx):
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     Format and split off the last line as the prompt

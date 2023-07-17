@@ -371,3 +371,5 @@ CACHES = {
         "LOCATION": "cache",
     }
 }
+
+ENABLE_DISTRIBUTED_TRACING = os.environ.get("ENABLE_DISTRIBUTED_TRACING", False)

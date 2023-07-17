@@ -41,6 +41,7 @@ from .serializers import (
     SuggestionQualityFeedback,
 )
 from .utils.segment import send_segment_event
+from .utils.jaeger import distributed_tracing_method, with_distributed_tracing
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,13 @@ class Completions(APIView):
         },
         summary="Inline code suggestions",
     )
-    def post(self, request) -> Response:
+    @with_distributed_tracing(
+        name="Request recommendation",
+        description="preprocessing, recommendation retreival, postprocessing",
+        file=__file__,
+        method="post",
+    )
+    def post(self, request, inner_span_ctx) -> Response:
         # Here `request` is a DRF wrapper around Django's original
         # WSGIRequest object.  It holds the original as
         # `self._request`, and that's the one we need to modify to
@@ -166,7 +173,7 @@ class Completions(APIView):
 
         try:
             start_time = time.time()
-            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt, span_ctx = inner_span_ctx)
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
@@ -200,7 +207,7 @@ class Completions(APIView):
         exception = None
         start_time = time.time()
         try:
-            predictions = model_mesh_client.infer(data, model_name=model_name)
+            predictions = model_mesh_client.infer(data, model_name=model_name, span_ctx = inner_span_ctx)
         except ModelTimeoutError as exc:
             exception = exc
             logger.warn(
@@ -217,6 +224,14 @@ class Completions(APIView):
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
             value_template = Template("{{ _${variable_name}_ }}")
+            distributed_tracing_method(
+                'PII removal (anonymizer)',
+                'Responsible for removing Personally '
+                'Identifiable Information (PII) from ansible task',
+                __file__,
+                'anonymize_struct',
+                inner_span_ctx,
+            )
             ano_predictions = anonymizer.anonymize_struct(
                 predictions, value_template=value_template
             )
@@ -243,6 +258,7 @@ class Completions(APIView):
                 request.user,
                 payload.suggestionId,
                 indent=original_indent,
+                span_ctx=inner_span_ctx
             )
         except Exception:
             process_error_count.labels(stage='post-processing').inc()
@@ -274,15 +290,35 @@ class Completions(APIView):
             )
             raise InternalServerError
         completions_return_code.labels(code=200).inc()
+        distributed_tracing_method(
+            'Returning Recommendation for VSCode Extension',
+            'Creates and returns "Response" Object to be retrieved by VSCode Extension',
+            __file__,
+            '---',
+            inner_span_ctx,
+        )
         return Response(postprocessed_predictions, status=200)
 
-    def preprocess(self, context, prompt):
-        context, prompt = fmtr.preprocess(context, prompt)
+    @with_distributed_tracing(
+        name="Recommendation Pre-processing",
+        description='Parent method responsible for processing context (play configs) '
+        'and prompt (task name) to model expectations',
+        file=__file__,
+        method='preprocess',
+    )
+    def preprocess(self, context, prompt, span_ctx, inner_span_ctx):
+        context, prompt = fmtr.preprocess(context, prompt, span_ctx = inner_span_ctx)
 
         return context, prompt
 
-    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
-        ari_caller = apps.get_app_config("ai").get_ari_caller()
+    @with_distributed_tracing(
+        name="Recommendation Post-processing",
+        description='Writes recommendation yaml to segment, formats recommendation',
+        file=__file__,
+        method='postprocess',
+    )
+    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent, span_ctx, inner_span_ctx):
+        ari_caller = apps.get_app_config("ai").get_ari_caller(span_ctx = inner_span_ctx)
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
 
@@ -361,6 +397,7 @@ class Completions(APIView):
                         postprocess_detail,
                         exception,
                         start_time,
+                        span_ctx = inner_span_ctx,
                     )
                     if exception:
                         raise exception
@@ -377,6 +414,12 @@ class Completions(APIView):
             continue
         return recommendation
 
+    @with_distributed_tracing(
+        name="Write to Segment",
+        description='Creates event to be sent to Amplitude/S3 through Segment',
+        file=__file__,
+        method='write_to_segment',
+    )
     def write_to_segment(
         self,
         user,
@@ -387,6 +430,8 @@ class Completions(APIView):
         postprocess_detail,
         exception,
         start_time,
+        span_ctx,
+        inner_span_ctx
     ):
         duration = round((time.time() - start_time) * 1000, 2)
         problem = exception.problem if isinstance(exception, MarkedYAMLError) else None
