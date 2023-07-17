@@ -19,11 +19,11 @@
 
                     <div style="margin-top: 25px">
                     {% if use_redhat_sso %}
-                    <a class="pf-c-button pf-m-secondary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat SSO</a>
+                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat</a>
                     </div>
                     <div style="margin-top: 10px">
                     {% endif %}
-                    <a class="pf-c-button pf-m-primary"
+                    <a class="pf-c-button {% if use_redhat_sso %}pf-m-secondary{% else %}pf-m-primary{% endif %}"
                     {% if use_github_team %}
                         href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in
                         with GitHub</a>
