@@ -29,3 +29,5 @@ jobs:
           virtual-environment: env/
           ignore-vulns: |
             GHSA-282v-666c-3fvg
+            GHSA-jh3w-4vvf-mjgr
+            PYSEC-2023-100

@@ -81,7 +81,7 @@ dill==0.3.6
     # via
     #   datasets
     #   multiprocess
-django==4.2.3
+django==4.2.1
     # via
     #   -r requirements.in
     #   django-allow-cidr
@@ -369,7 +369,7 @@ s3transfer==0.6.1
     # via boto3
 scikit-learn==1.2.2
     # via sentence-transformers
-scipy==1.10.1
+scipy==1.11.1
     # via
     #   scikit-learn
     #   sentence-transformers
