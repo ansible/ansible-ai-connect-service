@@ -68,6 +68,7 @@ tomli==2.0.1
     # via
     #   black
     #   build
+    #   pyproject-hooks
 torch-model-archiver==0.8.0
     # via -r requirements-dev.in
 typing-extensions==4.6.3
