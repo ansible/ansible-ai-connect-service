@@ -9,9 +9,11 @@ from unittest.mock import patch
 from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
-from users.views import TermsOfService, _add_date_accepted, _terms_of_service
+from users.pipeline import _terms_of_service
+from users.views import TermsOfService
 
 
 class TestUsers(WisdomServiceAPITestCaseBase):
@@ -47,6 +49,9 @@ class TestTermsAndConditions(TestCase):
                 self.session = MockSession()
 
         class MockStrategy:
+            session = None
+            redirect_url = None
+
             def redirect(self, redirect_url):
                 self.redirect_url = redirect_url
 
@@ -55,6 +60,9 @@ class TestTermsAndConditions(TestCase):
                     return None
                 else:
                     return SimpleNamespace(backend='backend', token=partial_token)
+
+            def session_get(self, key, default=None):
+                return self.session.get(key, default)
 
         class MockUser:
             date_terms_accepted = None
@@ -65,6 +73,7 @@ class TestTermsAndConditions(TestCase):
 
         self.request = MockRequest()
         self.strategy = MockStrategy()
+        self.strategy.session = self.request.session
         self.partial = SimpleNamespace(token='token')
         self.user = MockUser()
 
@@ -78,55 +87,60 @@ class TestTermsAndConditions(TestCase):
         self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def test_terms_of_service_first_call(self):
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-        self.assertEqual(datetime.max.timestamp(), self.request.session['ts_date_terms_accepted'])
-        self.assertEqual('/terms_of_service/?partial_token=token', self.strategy.redirect_url)
+        _terms_of_service(
+            self.strategy, self.user, request=self.request, current_partial=self.partial
+        )
+        self.assertIsNone(self.request.session.get('terms_accepted', None))
+        self.assertEqual(self.strategy.redirect_url, '/terms_of_service/?partial_token=token')
+        self.assertFalse(self.user.saved)
+        self.assertIsNone(self.user.date_terms_accepted)
+
+    def test_terms_of_service_previously_accepted(self):
+        now = timezone.now()
+        self.user.date_terms_accepted = now
+        _terms_of_service(
+            self.strategy, self.user, request=self.request, current_partial=self.partial
+        )
+
+        self.assertNotEqual(self.strategy.redirect_url, '/terms_of_service/?partial_token=token')
+        self.assertFalse(self.user.saved)
+        self.assertEqual(self.user.date_terms_accepted, now)
 
     def test_terms_of_service_with_acceptance(self):
-        now = datetime.utcnow().timestamp()
-        self.request.session['ts_date_terms_accepted'] = now
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-        self.assertEqual(now, self.request.session['ts_date_terms_accepted'])
+        self.request.session['terms_accepted'] = True
+        _terms_of_service(
+            self.strategy, self.user, request=self.request, current_partial=self.partial
+        )
+        self.assertTrue(self.user.saved)
+        self.assertIsNotNone(self.user.date_terms_accepted)
 
     def test_terms_of_service_without_acceptance(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
+        self.request.session['terms_accepted'] = False
         with self.assertRaises(AuthCanceled):
-            _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-
-    def test_add_date_accepted_with_date_accepted(self):
-        now = datetime.utcnow().timestamp()
-        self.request.session['ts_date_terms_accepted'] = now
-        _add_date_accepted(self.strategy, self.user, request=self.request)
-        self.assertTrue(self.user.saved)
-        self.assertEqual(now, self.user.date_terms_accepted.timestamp())
-
-    def test_add_date_accepted_without_date_accepted(self):
-        _add_date_accepted(self.strategy, self.user, request=self.request)
+            _terms_of_service(
+                self.strategy, self.user, request=self.request, current_partial=self.partial
+            )
         self.assertFalse(self.user.saved)
         self.assertIsNone(self.user.date_terms_accepted)
 
     @patch('social_django.utils.get_strategy')
     def test_post_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'True'
         view = TermsOfService()
         view.post(self.request)
-        self.assertNotEqual(
-            datetime.max.timestamp(), self.request.session['ts_date_terms_accepted']
-        )
+        self.assertTrue(self.request.session['terms_accepted'])
         self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
 
     @patch('social_django.utils.get_strategy')
     def test_post_not_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'False'
         view = TermsOfService()
         view.post(self.request)
-        self.assertEqual(datetime.max.timestamp(), self.request.session['ts_date_terms_accepted'])
+        self.assertFalse(self.request.session['terms_accepted'])
         self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
 
     @patch('social_django.utils.get_strategy')
@@ -146,7 +160,6 @@ class TestTermsAndConditions(TestCase):
     @patch('social_django.utils.get_strategy')
     def test_post_with_invalid_partial_token(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'invalid_token'
         self.request.POST['accepted'] = 'False'
         view = TermsOfService()
@@ -156,7 +169,6 @@ class TestTermsAndConditions(TestCase):
             self.assertInLog('strategy.partial_load(partial_token) returned None', log.output)
 
     def test_get(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         view = TermsOfService()
         setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
         self.request.GET['partial_token'] = 'token'
@@ -166,7 +178,6 @@ class TestTermsAndConditions(TestCase):
         self.assertIn('partial_token', res.context_data)
 
     def test_get_without_partial_token(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         view = TermsOfService()
         setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
         # self.request.GET['partial_token'] = 'token'
