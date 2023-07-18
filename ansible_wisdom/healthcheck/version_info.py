@@ -16,8 +16,6 @@ class VersionInfo:
                 self._git_commit = configparser['ansible-wisdom-service']['GIT_COMMIT']
         except Exception:
             pass
-        finally:
-            return
 
     @property
     def image_tags(self):
