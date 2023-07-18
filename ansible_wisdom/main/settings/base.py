@@ -102,6 +102,7 @@ SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
+SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization']
 
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
@@ -125,6 +126,7 @@ SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.github_get_username',
     # 'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
+    'users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
     'users.pipeline.terms_of_service',

@@ -10,3 +10,4 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     community_terms_accepted = models.DateTimeField(default=None, null=True)
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
+    organization_id = models.IntegerField(default=None, null=True)

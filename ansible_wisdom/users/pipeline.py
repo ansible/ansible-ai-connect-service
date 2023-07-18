@@ -67,6 +67,17 @@ def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
 
+def redhat_organization(backend, user, response, *args, **kwargs):
+    if backend.name != 'oidc':
+        return
+    if not backend.id_token:
+        logger.error("Missing id_token, cannot get the organization id.")
+        return
+    user.organization_id = backend.id_token['organization']['id']
+    user.save()
+    return {'organization_id': backend.id_token['organization']['id']}
+
+
 def _terms_of_service(strategy, user, backend, **kwargs):
     # TODO: Not every usage of the Red Hat SSO is going to be
     # commercial, there also needs to be the seat check when that gets
