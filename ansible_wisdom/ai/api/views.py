@@ -27,7 +27,7 @@ from ..feature_flags import FeatureFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
-from .permissions import AcceptedTermsPermission
+from .permissions import AcceptedTermsPermission, CustomerWithASeatPermission
 from .serializers import (
     AnsibleContentFeedback,
     AttributionRequestSerializer,
@@ -118,6 +118,7 @@ class Completions(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        CustomerWithASeatPermission,
     ]
     required_scopes = ['read', 'write']
 
@@ -415,6 +416,7 @@ class Feedback(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        CustomerWithASeatPermission,
     ]
     required_scopes = ['read', 'write']
 
@@ -576,6 +578,7 @@ class Attributions(GenericAPIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        CustomerWithASeatPermission,
     ]
     required_scopes = ['read', 'write']
 

@@ -104,6 +104,11 @@ SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
 SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization']
 
+AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
+AUTHZ_SSO_CLIENT_SECRET = os.environ.get("AUTHZ_SSO_CLIENT_SECRET")
+AUTHZ_SSO_SERVER = os.environ.get("AUTHZ_SSO_SERVER")
+AUTHZ_END_POINT = os.environ.get("AUTHZ_END_POINT")
+
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
