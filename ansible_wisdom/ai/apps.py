@@ -4,17 +4,27 @@ import torch
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
+from users.authz_checker import (
+    AMSCheck,
+    CIAMCheck,
+    MockAlwaysFalseCheck,
+    MockAlwaysTrueCheck,
+)
 
 from ari import postprocessing
 
 logger = logging.getLogger(__name__)
+
+FAILED = False
+UNINITIALIZED = None
 
 
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
     model_mesh_client = None
-    _ari_caller = None
+    _ari_caller = UNINITIALIZED
+    _seat_checker = UNINITIALIZED
 
     def ready(self) -> None:
         if torch.cuda.is_available():
@@ -47,8 +57,6 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_ari_caller(self):
-        FAILED = False
-        UNINITIALIZED = None
         if not settings.ENABLE_ARI_POSTPROCESS:
             logger.info("Postprocessing is disabled.")
             self._ari_caller = UNINITIALIZED
@@ -71,3 +79,30 @@ class AiConfig(AppConfig):
             logger.exception("Failed to initialize ARI.")
             self._ari_caller = FAILED
         return self._ari_caller
+
+    def get_seat_checker(self):
+        backends = {
+            "ams": AMSCheck,
+            "ciam": CIAMCheck,
+            "mock_true": MockAlwaysTrueCheck,
+            "mock_false": MockAlwaysFalseCheck,
+        }
+        if not settings.AUTHZ_BACKEND_TYPE:
+            self._seat_checker = UNINITIALIZED
+            return None
+
+        try:
+            expected_backend = backends[settings.AUTHZ_BACKEND_TYPE]
+        except KeyError:
+            logger.error("Unexpected AUTHZ_BACKEND_TYPE value: '%s'", settings.AUTHZ_BACKEND_TYPE)
+            return None
+
+        if not isinstance(self._seat_checker, expected_backend):
+            self._seat_checker = expected_backend(
+                settings.AUTHZ_SSO_CLIENT_ID,
+                settings.AUTHZ_SSO_CLIENT_SECRET,
+                settings.AUTHZ_SSO_SERVER,
+                settings.AUTHZ_API_SERVER,
+            )
+
+        return self._seat_checker
