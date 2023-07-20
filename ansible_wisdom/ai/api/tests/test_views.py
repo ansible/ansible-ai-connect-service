@@ -290,9 +290,32 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    def test_completions_postprocessing_error(self):
+    def test_completions_postprocessing_error_for_invalid_yaml(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        # this prediction has indentation problem with the prompt above
+        response_data = {
+            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"]
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='ERROR') as log:  # Suppress debug output
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
+                self.assertEqual(None, r.data)
+                self.assertInLog('error postprocessing prediction for suggestion', log.output)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    def test_completions_postprocessing_error_for_invalid_context(self):
+        # this prompt has a invalid task which does not have module name in the context
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Python\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
