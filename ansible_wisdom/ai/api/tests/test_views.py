@@ -311,7 +311,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(None, r.data)
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ENABLE_ARI_POSTPROCESS=True, SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_postprocessing_error_for_invalid_context(self):
         # this prompt has a invalid task which does not have module name in the context
         payload = {
@@ -319,11 +319,11 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {
-            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"]
-        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='ERROR') as log:  # Suppress debug output
+        with self.assertLogs(
+            logger='root', level='DEBUG'
+        ) as log:  # Enable debug outputs for gettting Segment events
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
@@ -333,6 +333,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
+                segment_events = self.extractSegmentEventsFromLog(log.output)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    if event['event'] == 'postprocess':
+                        self.assertEqual(
+                            'ARI rule evaluation threw fatal exception: '
+                            'Invalid task structure: no module name found',
+                            event['properties']['problem'],
+                        )
 
     def test_completions_pii_clean_up(self):
         payload = {
