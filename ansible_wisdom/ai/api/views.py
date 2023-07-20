@@ -389,9 +389,13 @@ class Completions(APIView):
         start_time,
     ):
         duration = round((time.time() - start_time) * 1000, 2)
-        problem = (exception.problem if isinstance(exception, MarkedYAMLError)
-            else str(exception) if str(exception)
-            else exception.__class__.__name__)
+        problem = (
+            exception.problem
+            if isinstance(exception, MarkedYAMLError)
+            else str(exception)
+            if str(exception)
+            else exception.__class__.__name__
+        )
         event = {
             "exception": exception is not None,
             "problem": problem,
