@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Replace original get_username function to avoid a random hash at the end if
 # user authenticates with more than one github provider.
-def github_get_username(uid, strategy, details, backend, user=None, *args, **kwargs):
+def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
     if backend.name not in ['github', 'github-team']:
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
@@ -46,7 +46,7 @@ def github_get_username(uid, strategy, details, backend, user=None, *args, **kwa
     # Loop through the social users and confirm they are github users with same uid
     same_user = True
     for social_user in social_auth_users:
-        if social_user.uid != str(uid):
+        if social_user.uid != str(kwargs['uid']):
             same_user = False
             break
         if social_user.provider not in ['github', 'github-team']:
@@ -67,20 +67,40 @@ def github_get_username(uid, strategy, details, backend, user=None, *args, **kwa
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
 
-def _terms_of_service(strategy, user, **kwargs):
+def redhat_organization(backend, user, response, *args, **kwargs):
+    if backend.name != 'oidc':
+        return
+    if not backend.id_token:
+        logger.error("Missing id_token, cannot get the organization id.")
+        return
+    user.organization_id = backend.id_token['organization']['id']
+    user.save()
+    return {'organization_id': backend.id_token['organization']['id']}
+
+
+def _terms_of_service(strategy, user, backend, **kwargs):
+    # TODO: Not every usage of the Red Hat SSO is going to be
+    # commercial, there also needs to be the seat check when that gets
+    # integrated.  When that happens, update this to include that
+    # logic.  Possibly also remove the Commerical group?
+    is_commercial = user.groups.filter(name='Commercial').exists()
+    terms_type = 'commercial' if backend.name == 'oidc' and is_commercial else 'community'
+    field_name = f'{terms_type}_terms_accepted'
+    view_name = f'{terms_type}_terms'
+
     terms_accepted = strategy.session_get('terms_accepted', None)
-    if user.date_terms_accepted is None:
+    if getattr(user, field_name, None) is None:
         if terms_accepted is None:
             # We haven't gone through the flow yet -- go to the T&C page
             current_partial = kwargs.get('current_partial')
-            terms_of_service = reverse('terms_of_service')
+            terms_of_service = reverse(view_name)
             return strategy.redirect(f'{terms_of_service}?partial_token={current_partial.token}')
 
         if not terms_accepted:
             raise AuthCanceled("Terms and conditions were not accepted.")
 
         # We've accepted the T&C, set the field on the user.
-        user.date_terms_accepted = timezone.now()
+        setattr(user, field_name, timezone.now())
         user.save()
         return {'terms_accepted': terms_accepted}
 
@@ -89,5 +109,5 @@ def _terms_of_service(strategy, user, **kwargs):
 
 
 @partial
-def terms_of_service(strategy, details, user=None, is_new=False, *args, **kwargs):
-    return _terms_of_service(strategy, user, **kwargs)
+def terms_of_service(strategy, details, backend, user=None, is_new=False, *args, **kwargs):
+    return _terms_of_service(strategy, user, backend, **kwargs)

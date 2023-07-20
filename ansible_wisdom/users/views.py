@@ -34,7 +34,7 @@ class CurrentUserView(RetrieveAPIView):
 
 
 class TermsOfService(TemplateView):
-    template_name = 'users/terms_of_service.html'
+    template_name = None  # passed in via the urlpatterns
     extra_context = {
         'form': Form(),
     }
@@ -43,7 +43,7 @@ class TermsOfService(TemplateView):
         partial_token = request.GET.get('partial_token')
         self.extra_context['partial_token'] = partial_token
         if partial_token is None:
-            logger.error('GET /terms_of_service/ was invoked without partial_token')
+            logger.warning('GET TermsOfService was invoked without partial_token')
             return HttpResponseForbidden()
         return super().get(request, args, kwargs)
 
@@ -52,7 +52,7 @@ class TermsOfService(TemplateView):
         form.is_valid()
         partial_token = form.data.get('partial_token')
         if partial_token is None:
-            logger.error('POST /terms_of_service/ was invoked without partial_token')
+            logger.warning('POST TermsOfService was invoked without partial_token')
             return HttpResponseBadRequest()
 
         strategy = load_strategy()
