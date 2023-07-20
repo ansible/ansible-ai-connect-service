@@ -315,7 +315,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_completions_postprocessing_error_for_invalid_context(self):
         # this prompt has a invalid task which does not have module name in the context
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Python\n    - name: Install Apache\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Python\n"
+            "    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
