@@ -167,7 +167,6 @@ class Completions(APIView):
         try:
             start_time = time.time()
             payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
-            request._request._task = payload.prompt.lstrip('- name: ')
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context

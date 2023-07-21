@@ -62,8 +62,6 @@ class SegmentMiddleware:
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
                 suggestion_id = getattr(request, '_suggestion_id', request_data.get('suggestionId'))
-                task = getattr(request, '_task')
-                print(task)
                 if not suggestion_id:
                     suggestion_id = str(uuid.uuid4())
                 context = request_data.get('context')
@@ -107,7 +105,6 @@ class SegmentMiddleware:
                     "imageTags": version_info.image_tags,
                     "collection": collection,
                     "module": fqcn_module,
-                    "taskName": task,
                 }
 
                 send_segment_event(event, "completion", request.user)
