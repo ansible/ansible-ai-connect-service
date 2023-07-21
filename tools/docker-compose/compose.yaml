@@ -48,6 +48,7 @@ services:
       - AUTHZ_SSO_CLIENT_SECRET=${AUTHZ_SSO_CLIENT_SECRET}
       - AUTHZ_SSO_SERVER=${AUTHZ_SSO_SERVER}
       - AUTHZ_END_POINT=${AUTHZ_END_POINT}
+      - AUTHZ_BACKEND=${AUTHZ_BACKEND}
     command:
       - /usr/bin/launch-wisdom.sh
     networks:

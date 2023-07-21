@@ -4,7 +4,7 @@ import torch
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
-from users.authz_checker import CIAMCheck
+from users.authz_checker import AMSCheck, CIAMCheck
 
 from ari import postprocessing
 
@@ -20,6 +20,7 @@ class AiConfig(AppConfig):
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _ciam_checker = UNINITIALIZED
+    _ams_checker = UNINITIALIZED
 
     def ready(self) -> None:
         if torch.cuda.is_available():
@@ -85,3 +86,14 @@ class AiConfig(AppConfig):
             )
 
         return self._ciam_checker
+
+    def get_ams_checker(self):
+        if self._ams_checker is UNINITIALIZED:
+            self._ams_checker = AMSCheck(
+                settings.AUTHZ_SSO_CLIENT_ID,
+                settings.AUTHZ_SSO_CLIENT_SECRET,
+                settings.AUTHZ_SSO_SERVER,
+                settings.AUTHZ_END_POINT,
+            )
+
+        return self._ams_checker
