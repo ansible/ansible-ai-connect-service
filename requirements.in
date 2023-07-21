@@ -1,3 +1,8 @@
+# pin aiohttp on 3.8.5 to address CVE-2023-30589
+# remove this once datasets or fsspec is updated
+# to properly pull a version of aiohttp > 3.8.4.
+aiohttp==3.8.5  # Pin on 3.8.5 to
+
 ansible_anonymizer==1.4.1
 ansible-risk-insight==0.1.7
 boto3==1.26.84
