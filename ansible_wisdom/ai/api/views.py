@@ -281,7 +281,8 @@ class Completions(APIView):
         # Once we confirm WCA is only sending one prediction, we should consider changing the
         # response body to a single prediction string rather than an array. If it's multiple,
         # we can adjust the fqcn_module handling accordingly.
-        response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
+        if postprocessed_predictions["fqcn_module"]:
+            response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
         return response
 
     def preprocess(self, context, prompt):
