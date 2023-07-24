@@ -38,13 +38,16 @@ class Command(BaseCommand):
         User = get_user_model()
         if not User.objects.filter(username=username).exists():
             if create_user:
-                u = User.objects.create_user(username=username, date_terms_accepted=now())
+                n = now()
+                u = User.objects.create_user(
+                    username=username, community_terms_accepted=n, commercial_terms_accepted=n
+                )
             else:
                 raise CommandError(f"Cannot find user {username}")
         else:
             u = User.objects.get(username=username)
 
-        if not u.date_terms_accepted:
+        if not u.community_terms_accepted and not u.commercial_terms_accepted:
             raise CommandError(
                 f"User {username} already exists but the user "
                 "didn't accept the terms and conditions"

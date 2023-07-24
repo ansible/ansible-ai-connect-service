@@ -16,9 +16,14 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
         }
         with patch.object(
             self.user,
-            'date_terms_accepted',
+            'community_terms_accepted',
             None,
         ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), payload)
+            with patch.object(
+                self.user,
+                'commercial_terms_accepted',
+                None,
+            ):
+                self.client.force_authenticate(user=self.user)
+                r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

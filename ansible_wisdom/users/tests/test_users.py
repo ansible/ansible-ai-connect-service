@@ -4,14 +4,16 @@ from datetime import datetime
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
-from users.views import TermsOfService, _add_date_accepted, _terms_of_service
+from users.pipeline import _terms_of_service
+from users.views import TermsOfService
 
 
 class TestUsers(WisdomServiceAPITestCaseBase):
@@ -46,7 +48,13 @@ class TestTermsAndConditions(TestCase):
             def __init__(self):
                 self.session = MockSession()
 
+        class MockBackend:
+            name = 'github'
+
         class MockStrategy:
+            session = None
+            redirect_url = None
+
             def redirect(self, redirect_url):
                 self.redirect_url = redirect_url
 
@@ -56,17 +64,25 @@ class TestTermsAndConditions(TestCase):
                 else:
                     return SimpleNamespace(backend='backend', token=partial_token)
 
-        class MockUser:
-            date_terms_accepted = None
-            saved = False
+            def session_get(self, key, default=None):
+                return self.session.get(key, default)
 
-            def save(self):
-                self.saved = True
+        # class MockUser:
+        #     community_terms_accepted = None
+        #     commercial_terms_accepted = None
+        #     saved = False
+
+        #     def save(self):
+        #         self.saved = True
 
         self.request = MockRequest()
+        self.backend = MockBackend()
         self.strategy = MockStrategy()
+        self.strategy.session = self.request.session
         self.partial = SimpleNamespace(token='token')
-        self.user = MockUser()
+        self.user = Mock(community_terms_accepted=None, commercial_terms_accepted=None)
+        self.group_filter = self.user.groups.filter(name='Commercial')
+        self.group_filter.exists.return_value = False
 
     def searchInLogOutput(self, s, logs):
         for log in logs:
@@ -78,86 +94,123 @@ class TestTermsAndConditions(TestCase):
         self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def test_terms_of_service_first_call(self):
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-        self.assertEqual(datetime.max.timestamp(), self.request.session['ts_date_terms_accepted'])
-        self.assertEqual('/terms_of_service/?partial_token=token', self.strategy.redirect_url)
+        _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+        self.assertIsNone(self.request.session.get('terms_accepted', None))
+        self.assertEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertFalse(self.user.save.called)
+        self.assertIsNone(self.user.community_terms_accepted)
+        self.assertIsNone(self.user.commercial_terms_accepted)
+
+    def test_terms_of_service_first_commercial(self):
+        # We must be using the Red Hat SSO and be a member of the Community placeholder group
+        self.backend.name = 'oidc'
+        self.group_filter.exists.return_value = True
+
+        _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+        self.assertIsNone(self.request.session.get('terms_accepted', None))
+        self.assertEqual(self.strategy.redirect_url, '/commercial-terms/?partial_token=token')
+        self.assertFalse(self.user.save.called)
+        self.assertIsNone(self.user.community_terms_accepted)
+        self.assertIsNone(self.user.commercial_terms_accepted)
+
+    def test_terms_of_service_previously_accepted(self):
+        now = timezone.now()
+        self.user.community_terms_accepted = now
+        _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+
+        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertFalse(self.user.save.called)
+        self.assertEqual(self.user.community_terms_accepted, now)
 
     def test_terms_of_service_with_acceptance(self):
-        now = datetime.utcnow().timestamp()
-        self.request.session['ts_date_terms_accepted'] = now
-        _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-        self.assertEqual(now, self.request.session['ts_date_terms_accepted'])
+        self.request.session['terms_accepted'] = True
+        _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+        self.assertTrue(self.user.save.called)
+        self.assertIsNotNone(self.user.community_terms_accepted)
+        self.assertIsNone(self.user.commercial_terms_accepted)
 
     def test_terms_of_service_without_acceptance(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
+        self.request.session['terms_accepted'] = False
         with self.assertRaises(AuthCanceled):
-            _terms_of_service(self.strategy, request=self.request, current_partial=self.partial)
-
-    def test_add_date_accepted_with_date_accepted(self):
-        now = datetime.utcnow().timestamp()
-        self.request.session['ts_date_terms_accepted'] = now
-        _add_date_accepted(self.strategy, self.user, request=self.request)
-        self.assertTrue(self.user.saved)
-        self.assertEqual(now, self.user.date_terms_accepted.timestamp())
-
-    def test_add_date_accepted_without_date_accepted(self):
-        _add_date_accepted(self.strategy, self.user, request=self.request)
-        self.assertFalse(self.user.saved)
-        self.assertIsNone(self.user.date_terms_accepted)
+            _terms_of_service(
+                self.strategy,
+                self.user,
+                self.backend,
+                request=self.request,
+                current_partial=self.partial,
+            )
+        self.assertFalse(self.user.save.called)
+        self.assertIsNone(self.user.community_terms_accepted)
+        self.assertIsNone(self.user.commercial_terms_accepted)
 
     @patch('social_django.utils.get_strategy')
     def test_post_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'True'
-        view = TermsOfService()
+        view = TermsOfService(template_name='users/community-terms.html')
         view.post(self.request)
-        self.assertNotEqual(
-            datetime.max.timestamp(), self.request.session['ts_date_terms_accepted']
-        )
+        self.assertTrue(self.request.session['terms_accepted'])
         self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
 
     @patch('social_django.utils.get_strategy')
     def test_post_not_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'False'
-        view = TermsOfService()
+        view = TermsOfService(template_name='users/community-terms.html')
         view.post(self.request)
-        self.assertEqual(datetime.max.timestamp(), self.request.session['ts_date_terms_accepted'])
+        self.assertFalse(self.request.session['terms_accepted'])
         self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
 
     @patch('social_django.utils.get_strategy')
     def test_post_without_partial_token(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['date_terms_accepted'] = datetime.max
         # self.request.POST['partial_token'] = 'token'
         self.request.POST['accepted'] = 'False'
-        view = TermsOfService()
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        view = TermsOfService(template_name='users/community-terms.html')
+        with self.assertLogs(logger='root', level='WARN') as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
-            self.assertInLog(
-                'POST /terms_of_service/ was invoked without partial_token', log.output
-            )
+            self.assertInLog('POST TermsOfService was invoked without partial_token', log.output)
 
     @patch('social_django.utils.get_strategy')
     def test_post_with_invalid_partial_token(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
         self.request.POST['partial_token'] = 'invalid_token'
         self.request.POST['accepted'] = 'False'
-        view = TermsOfService()
+        view = TermsOfService(template_name='users/community-terms.html')
         with self.assertLogs(logger='root', level='ERROR') as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
             self.assertInLog('strategy.partial_load(partial_token) returned None', log.output)
 
     def test_get(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
-        view = TermsOfService()
+        view = TermsOfService(template_name='users/community-terms.html')
         setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
         self.request.GET['partial_token'] = 'token'
         res = view.get(self.request)
@@ -166,14 +219,13 @@ class TestTermsAndConditions(TestCase):
         self.assertIn('partial_token', res.context_data)
 
     def test_get_without_partial_token(self):
-        self.request.session['ts_date_terms_accepted'] = datetime.max.timestamp()
-        view = TermsOfService()
+        view = TermsOfService(template_name='users/community-terms.html')
         setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
         # self.request.GET['partial_token'] = 'token'
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger='root', level='WARN') as log:
             res = view.get(self.request)
             self.assertEqual(403, res.status_code)
-            self.assertInLog('GET /terms_of_service/ was invoked without partial_token', log.output)
+            self.assertInLog('GET TermsOfService was invoked without partial_token', log.output)
 
 
 class TestUserModelMetrics(APITransactionTestCase):

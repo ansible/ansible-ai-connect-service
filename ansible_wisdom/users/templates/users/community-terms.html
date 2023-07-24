@@ -19,7 +19,7 @@
                         <a href="#red-hat-terms" class="pf-c-button pf-m-secondary">Red Hat Terms</a>
                     </div>
 
-                    <form action={% url 'terms_of_service' %} method="post">{% csrf_token %}
+                    <form action={% url 'community_terms' %} method="post">{% csrf_token %}
                     <input type="hidden" name="partial_token" value={{partial_token}}>
 
                     <h1 class="pf-c-title pf-m-xl" id="ibm-terms">IBM Terms of Service</h1>
