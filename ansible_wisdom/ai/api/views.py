@@ -425,6 +425,7 @@ class Feedback(APIView):
     required_scopes = ['read', 'write']
 
     throttle_cache_key_suffix = '_feedback'
+    throttle_cache_multiplier = 6.0
 
     @extend_schema(
         request=FeedbackRequestSerializer,
