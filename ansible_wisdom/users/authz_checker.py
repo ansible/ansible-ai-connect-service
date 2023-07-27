@@ -23,12 +23,15 @@ class Token:
             "client_secret": self._client_secret,
             "scope": "api.iam.access",
         }
-
-        r = requests.post(
-            f"{self._server}/auth/realms/redhat-external/protocol/openid-connect/token",
-            data=data,
-            timeout=1,
-        )
+        try:
+            r = requests.post(
+                f"{self._server}/auth/realms/redhat-external/protocol/openid-connect/token",
+                data=data,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error("Cannot reach the SSO backend in time")
+            return False
         data = r.json()
         self.access_token = data["access_token"]
         expires_in = data["expires_in"]
@@ -48,19 +51,27 @@ class CIAMCheck:
 
     def check(self, user_id, _username, org_id) -> bool:
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
-        r = self._session.post(
-            self._api_server + "/v1alpha/check",
-            json={
-                "subject": str(user_id),
-                "operation": "access",
-                "resourcetype": "license",
-                "resourceid": f"{org_id}/smarts",
-            },
-            # Note: A ping from France against the preprod env, is slightly below 300ms
-            timeout=0.5,
-        )
+        try:
+            r = self._session.post(
+                self._api_server + "/v1alpha/check",
+                json={
+                    "subject": str(user_id),
+                    "operation": "access",
+                    "resourcetype": "license",
+                    "resourceid": f"{org_id}/smarts",
+                },
+                # Note: A ping from France against the preprod env, is slightly below 300ms
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error("Cannot reach the CIAM backend in time")
+            return False
         data = r.json()
-        return data["result"]
+        try:
+            return data["result"]
+        except (KeyError, TypeError):
+            logger.error("Unexpected Answer from CIAM")
+            return False
 
 
 class AMSCheck:
@@ -79,13 +90,22 @@ class AMSCheck:
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
         params = {"search": f"external_id='{rh_org_id}'"}
 
-        r = self._session.get(
-            self._api_server + "/api/accounts_mgmt/v1/organizations",
-            params=params,
-            timeout=0.8,
-        )
-        items = r.json().get("items")
-        return items[0]["id"]
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/organizations",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error("Cannot reach the AMS backend in time")
+            return ""
+        data = r.json()
+
+        try:
+            return data["items"][0]["id"]
+        except (KeyError, ValueError):
+            logger.error("Unexpected organization answer from AMS")
+            return ""
 
     def check(self, _user_id: str, username: str, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
@@ -95,13 +115,22 @@ class AMSCheck:
         }
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-        r = self._session.get(
-            self._api_server + "/api/accounts_mgmt/v1/subscriptions",
-            params=params,
-            timeout=0.8,
-        )
-        items = r.json().get("items")
-        return len(items) == 1
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error("Cannot reach the AMS backend in time")
+            return False
+        data = r.json()
+
+        try:
+            return len(data["items"]) == 1
+        except (KeyError, ValueError):
+            logger.error("Unexpected subscription answer from AMS")
+            return False
 
 
 class MockAlwaysTrueCheck:
