@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime, timedelta
 from functools import cache
+from http import HTTPStatus
 
 import requests
 
@@ -31,7 +32,10 @@ class Token:
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error("Cannot reach the SSO backend in time")
-            return False
+            return None
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by SSO service")
+            return None
         data = r.json()
         self.access_token = data["access_token"]
         expires_in = data["expires_in"]
@@ -66,6 +70,9 @@ class CIAMCheck:
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error("Cannot reach the CIAM backend in time")
             return False
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by CIAM backend")
+            return False
         data = r.json()
         try:
             return data["result"]
@@ -99,6 +106,9 @@ class AMSCheck:
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error("Cannot reach the AMS backend in time")
             return ""
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by AMS backend (org)")
+            return ""
         data = r.json()
 
         try:
@@ -124,8 +134,10 @@ class AMSCheck:
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error("Cannot reach the AMS backend in time")
             return False
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by AMS backend (sub)")
+            return ""
         data = r.json()
-
         try:
             return len(data["items"]) == 1
         except (KeyError, ValueError):
