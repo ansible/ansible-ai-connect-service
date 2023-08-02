@@ -306,8 +306,8 @@ APPEND_SLASH = True
 MOCK_MODEL_RESPONSE_BODY = os.environ.get(
     'MOCK_MODEL_RESPONSE_BODY',
     (
-        '{"predictions":["  ansible.builtin.apt:\\n    name: nginx\\n'
-        'update_cache: true\\n    state: present\\n"]}'
+        '{"predictions":["ansible.builtin.apt:\\n  name: nginx\\n'
+        '  update_cache: true\\n  state: present\\n"]}'
     ),
 )
 MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_MSEC', 3000))
