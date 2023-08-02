@@ -37,7 +37,7 @@ class AiConfig(AppConfig):
             self.model_mesh_client = GrpcClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
-        if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
             from .api.model_client.wca_client import WCAClient
 
             self.model_mesh_client = WCAClient(

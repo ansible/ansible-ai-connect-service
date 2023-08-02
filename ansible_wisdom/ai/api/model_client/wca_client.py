@@ -31,15 +31,15 @@ class WCAClient(ModelMeshClient):
             "prompt": f"{context}{prompt}\n",
         }
 
-        token = self.getToken()
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token['access_token']}",
-        }
-
         logger.debug(f"inference API payload: {data}")
 
         try:
+            token = self.getToken()
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token['access_token']}",
+            }
+
             result = self.session.post(
                 self._prediction_url, headers=headers, json=data, timeout=self.timeout
             )
@@ -59,12 +59,10 @@ class WCAClient(ModelMeshClient):
 
         data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": self._api_key}
 
-        try:
-            result = self.session.post(
-                "https://iam.cloud.ibm.com/identity/token",
-                headers=headers,
-                data=data,
-            )
-            return json.loads(result.text)
-        except Exception as e:
-            logger.error(f"error occurred {e}")
+        result = self.session.post(
+            "https://iam.cloud.ibm.com/identity/token",
+            headers=headers,
+            data=data,
+        )
+        result.raise_for_status()
+        return json.loads(result.text)
