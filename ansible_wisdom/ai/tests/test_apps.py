@@ -1,6 +1,7 @@
 from ai.api.model_client.grpc_client import GrpcClient
 from ai.api.model_client.http_client import HttpClient
 from ai.api.model_client.mock_client import MockClient
+from ai.api.model_client.wca_client import WCAClient
 from django.apps.config import AppConfig
 from django.test import override_settings
 from rest_framework.test import APITestCase
@@ -12,6 +13,12 @@ class TestAiApp(APITestCase):
         app_config = AppConfig.create('ai')
         app_config.ready()
         self.assertIsInstance(app_config.model_mesh_client, GrpcClient)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    def test_wca_client(self):
+        app_config = AppConfig.create('ai')
+        app_config.ready()
+        self.assertIsInstance(app_config.model_mesh_client, WCAClient)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='http')
     def test_http_client(self):
