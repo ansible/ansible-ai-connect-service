@@ -17,7 +17,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 DT_API_URL = "https://win89656.live.dynatrace.com/api/v2/otlp"
 DT_API_TOKEN = "dt0c01.BDJQZ4B5GF4TVLQNOL22UHLK.GVEBHIVB427YF5MSH2KTSFNNEKCICSLU7IB2GHNINUUQXBMJ3CA4FC7HLJRYGW4X"
 
-
 merged = dict()
 for name in ["dt_metadata_e617c525669e072eebe3d0f08212e8f2.json", "/var/lib/dynatrace/enrichment/dt_metadata.json"]:
   try:
@@ -34,9 +33,7 @@ merged.update({
 })
 resource = Resource.create(merged)
 
-
 # ===== TRACING SETUP =====
-
 tracer_provider = TracerProvider(sampler=sampling.ALWAYS_ON, resource=resource)
 trace.set_tracer_provider(tracer_provider)
 
@@ -53,8 +50,6 @@ tracer_provider.add_span_processor(
 
 tracer = get_tracer_provider().get_tracer("my-tracer")
 
-
-
 #tracing method
 def distributed_tracing_method(name, description, file, method, span_ctx):
     inner_span_ctx = None
@@ -66,10 +61,6 @@ def distributed_tracing_method(name, description, file, method, span_ctx):
             inner_span_ctx = trace.set_span_in_context(trace.get_current_span())
 
     return inner_span_ctx
-
-
-
-
 
 #wrapper method
 def with_distributed_tracing(name, description, file, method):
