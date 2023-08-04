@@ -43,7 +43,7 @@ botocore==1.29.143
     # via
     #   boto3
     #   s3transfer
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   launchdarkly-server-sdk
     #   opensearch-py
@@ -60,7 +60,7 @@ click==8.1.3
     # via nltk
 cmake==3.26.4
     # via triton
-cryptography==41.0.2
+cryptography==41.0.3
     # via
     #   ansible-core
     #   jwcrypto

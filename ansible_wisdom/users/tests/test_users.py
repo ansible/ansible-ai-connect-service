@@ -5,13 +5,16 @@ from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import Mock, patch
+from uuid import uuid4
 
 from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
+from social_django.models import UserSocialAuth
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
 
@@ -226,6 +229,34 @@ class TestTermsAndConditions(TestCase):
             res = view.get(self.request)
             self.assertEqual(403, res.status_code)
             self.assertInLog('GET TermsOfService was invoked without partial_token', log.output)
+
+
+class TestUserSeat(TestCase):
+    def create_user(self, provider_name: str):
+        username = 'u' + "".join(random.choices(string.digits, k=5))
+        password = 'secret'
+        email = username + '@example.com'
+        user = get_user_model().objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+        )
+        UserSocialAuth.objects.create(user=user, provider="oidc", uid=str(uuid4()))
+        return user
+
+    def test_has_seat_with_no_rhsso_user(self):
+        user = self.create_user(provider_name="github")
+        self.assertFalse(user.has_seat)
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
+    def test_has_seat_with_rhsso_user_no_seat(self):
+        user = self.create_user(provider_name="oidc")
+        self.assertFalse(user.has_seat)
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
+    def test_has_seat_with_rhsso_user_with_seat(self):
+        user = self.create_user(provider_name="oidc")
+        self.assertTrue(user.has_seat)
 
 
 class TestUserModelMetrics(APITransactionTestCase):
