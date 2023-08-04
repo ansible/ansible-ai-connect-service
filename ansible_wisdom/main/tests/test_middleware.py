@@ -71,6 +71,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     if event['event'] == 'completion':
                         self.assertEqual('ansible.builtin.package', properties['module'])
                         self.assertEqual('ansible.builtin', properties['collection'])
+                    self.assertIsNotNone(event['timestamp'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -88,6 +89,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("username", log.output)
                 self.assertInLog("james8@example.com", log.output)
                 self.assertInLog("ano-user", log.output)
+                self.assertSegmentTimestamp(log)
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
@@ -100,21 +102,21 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'completion',", log.output)
                 self.assertNotInLog("foo@ansible.com", log.output)
                 self.assertNotInLog("username", log.output)
+                self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.fmtr.preprocess', side_effect=Exception)
-    @patch('main.middleware.send_segment_event', return_value=None)
-    def test_preprocess_error(self, segment, preprocess):
+    def test_preprocess_error(self, preprocess):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
             "    - name: Install Apache for foo@ansible.com\n",
         }
 
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('completions'), payload, format='json')
-        self.assertIsNotNone(segment.call_args)
-        self.assertIn('suggestionId', segment.call_args.args[0], segment.call_args)
-        self.assertTrue(segment.call_args.args[0]['suggestionId'], segment.call_args)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            self.client.post(reverse('completions'), payload, format='json')
+            self.assertInLog("ERROR:ai.api.views:failed to preprocess:", log.output)
+            self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
@@ -143,12 +145,13 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 'model_mesh_client',
                 DummyMeshClient(self, payload, response_data),
             ):
-                with self.assertLogs(logger='root', level='ERROR') as log:
+                with self.assertLogs(logger='root', level='DEBUG') as log:
                     r = self.client.post(reverse('completions'), payload, format='json')
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.OK)
                     self.assertIsNotNone(r.data['predictions'])
                     self.assertInLog("An error occurred in sending data to Segment: ", log.output)
+                    self.assertSegmentTimestamp(log)
         finally:
             # Restore defaults and set the 'send' flag to False during test execution
             if analytics.default_client:
@@ -203,7 +206,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload, format='json')
+                self.client.post(reverse('completions'), payload, format='json')
                 analytics.flush()
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log.output)
                 self.assertInLog("sent segment event: segmentError", log.output)
@@ -213,3 +216,4 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertEqual(events[n - 1]['properties']['error_type'], 'event_exceeds_limit')
                 self.assertIsNotNone(events[n - 1]['properties']['details']['event_name'])
                 self.assertIsNotNone(events[n - 1]['properties']['details']['msg_len'] > 32 * 1024)
+                self.assertSegmentTimestamp(log)
