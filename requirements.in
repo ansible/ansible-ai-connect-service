@@ -35,4 +35,4 @@ uwsgi-readiness-check==0.2.0
 django-allow-cidr==0.6.0
 opentelemetry-api==1.18.0
 opentelemetry-sdk==1.18.0
-opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.18.0
