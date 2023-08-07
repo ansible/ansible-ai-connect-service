@@ -5,6 +5,7 @@ from unittest.mock import patch
 import grpc
 from ai.api.model_client.grpc_client import GrpcClient
 from ai.api.model_client.http_client import HttpClient
+from ai.api.model_client.wca_client import WCAClient
 from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse
@@ -32,6 +33,16 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc(self):
         model_client = GrpcClient(inference_url='http://example.com/')
+        self.assertEqual(123, model_client.timeout)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+    def test_timeout_settings_is_none_wca(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        self.assertIsNone(model_client.timeout)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
+    def test_timeout_settings_is_not_none_wca(self):
+        model_client = WCAClient(inference_url='http://example.com/')
         self.assertEqual(123, model_client.timeout)
 
     @patch("requests.Session.post", side_effect=ReadTimeout())

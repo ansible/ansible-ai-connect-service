@@ -34,6 +34,7 @@ class WCAClient(ModelMeshClient):
         logger.debug(f"inference API payload: {data}")
 
         try:
+            # TODO: store token and only fetch a new one if it has expired
             token = self.getToken()
             headers = {
                 "Content-Type": "application/json",
