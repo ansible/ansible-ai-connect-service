@@ -71,21 +71,24 @@ class SegmentMiddleware:
                 predictions = None
                 message = None
                 response_data = getattr(response, 'data', {})
+
+                # this modelName default will be correct unless we're using launchdarkly
+                # but needs to be revisited with commercial multimodel.
+                modelName = settings.ANSIBLE_AI_MODEL_NAME
+                fqcn_module = None
+                collection = None
+
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
                     modelName = response_data.get('modelName')
                     fqcn_module = getattr(response, 'fqcn_module', None)
-                    collection = None
                     if fqcn_module is not None:
                         index = fqcn_module.rfind(".")
                         if index != -1:
                             collection = fqcn_module[:index]
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
-                    # this modelName default will be correct unless we're using launchdarkly
-                    # but needs to be revisited with commercial multimodel.
-                    modelName = settings.ANSIBLE_AI_MODEL_NAME
 
                 duration = round((time.time() - start_time) * 1000, 2)
                 event = {
