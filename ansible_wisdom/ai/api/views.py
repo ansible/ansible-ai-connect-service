@@ -281,7 +281,7 @@ class Completions(APIView):
         # Once we confirm WCA is only sending one prediction, we should consider changing the
         # response body to a single prediction string rather than an array. If it's multiple,
         # we can adjust the fqcn_module handling accordingly.
-        if postprocessed_predictions["fqcn_module"]:
+        if postprocessed_predictions.get("fqcn_module"):
             response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
         return response
 
@@ -354,8 +354,8 @@ class Completions(APIView):
                             f"post-process detail: {json.dumps(postprocess_detail)}"
                         )
                         recommendation["predictions"][i] = postprocessed_yaml
-
-                        recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
+                        if postprocess_detail.get("fqcn_module"):
+                            recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -370,7 +370,7 @@ class Completions(APIView):
                         recommendation_yaml,
                         truncated_yaml,
                         postprocessed_yaml,
-                        postprocess_detail["rule_results"],
+                        postprocess_detail.get("rule_results", {}),
                         exception,
                         start_time,
                     )
