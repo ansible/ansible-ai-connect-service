@@ -68,6 +68,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     self.assertTrue('Group 1' in properties['groups'])
                     self.assertTrue('Group 2' in properties['groups'])
                     self.assertEqual(hostname, properties['hostname'])
+                    if event['event'] == 'completion':
+                        self.assertEqual('ansible.builtin.package', properties['module'])
+                        self.assertEqual('ansible.builtin', properties['collection'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
