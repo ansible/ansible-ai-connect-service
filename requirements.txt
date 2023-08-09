@@ -17,7 +17,7 @@ ansible-anonymizer==1.4.1
     # via -r requirements.in
 ansible-core==2.15.0
     # via ansible
-ansible-risk-insight==0.1.7
+ansible-risk-insight==0.1.10
     # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
