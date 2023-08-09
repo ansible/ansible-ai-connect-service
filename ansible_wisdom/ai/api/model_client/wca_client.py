@@ -1,6 +1,4 @@
-import json
 import logging
-import os
 
 import requests
 from django.conf import settings
@@ -31,11 +29,11 @@ class WCAClient(ModelMeshClient):
             "prompt": f"{context}{prompt}\n",
         }
 
-        logger.debug(f"inference API payload: {data}")
+        logger.debug(f"Inference API request payload: {data}")
 
         try:
             # TODO: store token and only fetch a new one if it has expired
-            token = self.getToken()
+            token = self.get_token()
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {token['access_token']}",
@@ -45,14 +43,14 @@ class WCAClient(ModelMeshClient):
                 self._prediction_url, headers=headers, json=data, timeout=self.timeout
             )
             result.raise_for_status()
-            response = json.loads(result.text)
-            logger.debug(f"inference API response: {response}")
+            response = result.json()
+            logger.debug(f"Inference API response: {response}")
             return response
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError
 
-    def getToken(self):
-        logger.debug("fetching WCA token")
+    def get_token(self):
+        logger.debug("Fetching WCA token")
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/json",
@@ -66,4 +64,4 @@ class WCAClient(ModelMeshClient):
             data=data,
         )
         result.raise_for_status()
-        return json.loads(result.text)
+        return result.json()
