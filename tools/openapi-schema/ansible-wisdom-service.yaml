@@ -179,6 +179,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/v0/wca/{org_id}/:
+    get:
+      operationId: wca_retrieve
+      summary: List WCA keys for an Organisation
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - read
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WCAKeys'
+          description: ''
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+    post:
+      operationId: wca_create
+      summary: Create a WCA key for an Organisation
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - wca
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WCAKey'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WCAKey'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WCAKey'
+        required: true
+      security:
+      - oauth2:
+        - read
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Empty response
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+  /api/v0/wca/{org_id}/{wca_key}:
+    delete:
+      operationId: wca_destroy
+      summary: Delete a WCA key from an Organisation
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: wca_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - write
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Empty response
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
   /check/:
     get:
       operationId: check_retrieve
@@ -187,6 +290,7 @@ paths:
       tags:
       - check
       security:
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -199,6 +303,7 @@ paths:
       tags:
       - check
       security:
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -216,9 +321,6 @@ paths:
                     git_commit: b987bc43b90f8aca2deaf3bda85596f4b95a10a0
                     model_name: ansible-wisdom-v09
                     dependencies:
-                    - name: cache
-                      status: ok
-                      time_taken: 2.032
                     - name: db
                       status: ok
                       time_taken: 233.538
@@ -324,17 +426,15 @@ components:
     CompletionResponse:
       type: object
       properties:
+        modelName:
+          type: string
+        suggestionId:
+          type: string
+          format: uuid
         predictions:
           type: array
           items:
             type: string
-        modelName:
-          type: string
-          readOnly: true
-        suggestionId:
-          type: string
-          format: uuid
-          readOnly: true
       required:
       - predictions
     FeedbackRequest:
@@ -469,6 +569,25 @@ components:
           maxLength: 150
       required:
       - username
+    WCAKey:
+      type: object
+      properties:
+        key:
+          type: string
+        description:
+          type: string
+      required:
+      - description
+      - key
+    WCAKeys:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/WCAKey'
+      required:
+      - keys
   securitySchemes:
     cookieAuth:
       type: apiKey
