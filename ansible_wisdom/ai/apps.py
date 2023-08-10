@@ -12,6 +12,7 @@ from users.authz_checker import (
 )
 
 from ari import postprocessing
+from ansible_lint import postprocessing
 
 from .api.aws.wca_secret_manager import WcaSecretManager
 from .api.model_client.wca_client import WCAClient
@@ -89,6 +90,30 @@ class AiConfig(AppConfig):
             logger.exception("Failed to initialize ARI.")
             self._ari_caller = FAILED
         return self._ari_caller
+
+    def get_ansible_lint_caller(self):
+        if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
+            logger.info("Ansible Lint Postprocessing is disabled.")
+            self._ansible_lint_caller = UNINITIALIZED
+            return None
+        if self._ansible_lint_caller is FAILED:
+            return None
+        if self._ansible_lint_caller:
+            return self._ansible_lint_caller
+        try:
+            self._ansible_lint_caller = postprocessing.AnsibleLintCaller(
+                config=Config(
+                    rules_dir=settings.ARI_RULES_DIR,
+                    data_dir=settings.ARI_DATA_DIR,
+                    rules=settings.ARI_RULES,
+                ),
+                silent=True,
+            )
+            logger.info("Ansible Lint Postprocessing is enabled.")
+        except Exception:
+            logger.exception("Failed to initialize Ansible Lint.")
+            self._ansible_lint_caller = FAILED
+        return self._ansible_lint_caller
 
     def get_seat_checker(self):
         backends = {

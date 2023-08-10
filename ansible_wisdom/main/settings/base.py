@@ -359,6 +359,8 @@ if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
 ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
 
+ENABLE_ANSIBLE_LINT_POSTPROCESS = os.getenv('ENABLE_ANSIBLE_LINT_POSTPROCESS', 'False').lower() == 'true'
+
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
 
 ANSIBLE_AI_SEARCH = {
