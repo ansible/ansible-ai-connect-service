@@ -1,7 +1,4 @@
 from django.urls import path
-from wca.views import WCAKeyDeleteView, WCAKeyListOrCreateView
+from wca.views import WCAKeyView
 
-urlpatterns = [
-    path('<str:org_id>/', WCAKeyListOrCreateView.as_view(), name='wca-get-create'),
-    path('<str:org_id>/<str:wca_key>', WCAKeyDeleteView.as_view(), name='wca-delete'),
-]
+urlpatterns = [path('<str:org_id>/', WCAKeyView.as_view(), name='wca')]
