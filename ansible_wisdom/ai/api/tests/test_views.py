@@ -312,14 +312,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True, SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_completions_postprocessing_error_for_invalid_context(self):
-        # this prompt has a invalid task which does not have module name in the context
+    def test_completions_postprocessing_for_invalid_suggestion(self):
+        # the suggested task is a invalid because it does not have module name
+        # in this case, ARI should throw an exception
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Python\n"
-            "    - name: Install Apache\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        # module name in the prediction is ""
+        response_data = {"predictions": ["      \"\":\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(
             logger='root', level='DEBUG'

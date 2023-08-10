@@ -17,7 +17,7 @@ ansible-anonymizer==1.4.1
     # via -r requirements.in
 ansible-core==2.15.0
     # via ansible
-ansible-risk-insight==0.1.7
+ansible-risk-insight==0.1.10
     # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
@@ -173,6 +173,8 @@ jwcrypto==1.5.0
     # via django-oauth-toolkit
 launchdarkly-server-sdk==8.1.1
     # via -r requirements.in
+levenshtein==0.21.1
+    # via ansible-risk-insight
 lit==16.0.5.post0
     # via triton
 markuppy==1.14
@@ -317,6 +319,8 @@ pyyaml==6.0
     #   huggingface-hub
     #   tablib
     #   transformers
+rapidfuzz==3.2.0
+    # via levenshtein
 regex==2023.5.5
     # via
     #   nltk
