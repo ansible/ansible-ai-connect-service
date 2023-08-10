@@ -40,19 +40,6 @@ from .serializers import (
 )
 from .utils.segment import send_segment_event
 
-# import os
-# import tempfile
-# from copy import deepcopy
-# from ansiblelint.rules import RulesCollection
-# from ansiblelint.runner import Runner
-# from ansiblelint.constants import DEFAULT_RULESDIR
-# from ansiblelint.config import options as default_options
-# from ansiblelint.runner import LintResult, _get_matches
-# from ansiblelint.file_utils import Lintable
-# from ansiblelint.config import Options
-# from ansiblelint.transformer import Transformer
-# from pprint import pprint
-
 logger = logging.getLogger(__name__)
 
 feature_flags = FeatureFlags()
@@ -305,44 +292,6 @@ class Completions(APIView):
             response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
         return response
 
-    # def run_linter(
-    #     self,
-    #     config_options: Options,
-    #     default_rules_collection: RulesCollection,
-    #     inline_completion: str,
-    # ) -> str:
-    #     """Runs the Runner to populate a LintResult for a given snippet."""
-
-    #     transformed_completion = inline_completion
-
-    #     # create a temporary file
-    #     with tempfile.NamedTemporaryFile(
-    #         mode="w", delete=False, suffix=".yml"
-    #     ) as temp_file:
-    #         # write the YAML string to the file
-    #         temp_file.write(inline_completion)
-    #         # get the path to the file
-    #         temp_completion_path = temp_file.name
-
-    #     config_options.lintables = [temp_completion_path]
-    #     result = _get_matches(rules=default_rules_collection, options=config_options)
-    #     # lintable = Lintable(temp_completion_path, kind="playbook")
-    #     # result = Runner(lintable, rules=default_rules_collection).run()
-    #     self.run_transform(result, config_options)
-
-    #     # read the transformed file
-    #     with open(temp_completion_path, "r", encoding="utf-8") as yaml_file:
-    #         transformed_completion = yaml_file.read()
-
-    #     # delete the temporary file
-    #     os.remove(temp_completion_path)
-
-    #     return transformed_completion
-
-    # def run_transform(self, lint_result: LintResult, config_options: Options):
-    #     transformer = Transformer(result=lint_result, options=config_options)
-    #     transformer.run()
-
     def preprocess(self, context, prompt):
         context, prompt = fmtr.preprocess(context, prompt)
 
@@ -351,9 +300,6 @@ class Completions(APIView):
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
         ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
-        # Ansible lint options
-        new_options = deepcopy(default_options)
-        new_options.write_list = ["all"]
 
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
@@ -362,14 +308,11 @@ class Completions(APIView):
 
         recommendation["fqcn_module"] = []
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+
             if ansible_lint_caller:
-                start_time = time.time()
                 # Post-processing by running Ansible Lint to model server predictions
-                linted_yaml = ansible_lint_caller.run_linter(
-                    new_options, RulesCollection(rulesdirs=[DEFAULT_RULESDIR]), recommendation_yaml
-                )
+                linted_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
                 recommendation_yaml = linted_yaml.strip('---\n')
-                ansible_lint_duration = round((time.time() - start_time) * 1000, 2)
 
             if ari_caller:
                 start_time = time.time()

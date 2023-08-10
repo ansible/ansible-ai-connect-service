@@ -12,7 +12,7 @@ from users.authz_checker import (
 )
 
 from ari import postprocessing
-from ansible_lint import postprocessing
+from ansible_lint import lintpostprocessing
 
 from .api.aws.wca_secret_manager import WcaSecretManager
 from .api.model_client.wca_client import WCAClient
@@ -31,6 +31,7 @@ class AiConfig(AppConfig):
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
+    _ansible_lint_caller = UNINITIALIZED
 
     def ready(self) -> None:
         if torch.cuda.is_available():
@@ -91,30 +92,6 @@ class AiConfig(AppConfig):
             self._ari_caller = FAILED
         return self._ari_caller
 
-    def get_ansible_lint_caller(self):
-        if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
-            logger.info("Ansible Lint Postprocessing is disabled.")
-            self._ansible_lint_caller = UNINITIALIZED
-            return None
-        if self._ansible_lint_caller is FAILED:
-            return None
-        if self._ansible_lint_caller:
-            return self._ansible_lint_caller
-        try:
-            self._ansible_lint_caller = postprocessing.AnsibleLintCaller(
-                config=Config(
-                    rules_dir=settings.ARI_RULES_DIR,
-                    data_dir=settings.ARI_DATA_DIR,
-                    rules=settings.ARI_RULES,
-                ),
-                silent=True,
-            )
-            logger.info("Ansible Lint Postprocessing is enabled.")
-        except Exception:
-            logger.exception("Failed to initialize Ansible Lint.")
-            self._ansible_lint_caller = FAILED
-        return self._ansible_lint_caller
-
     def get_seat_checker(self):
         backends = {
             "ams": AMSCheck,
@@ -153,3 +130,20 @@ class AiConfig(AppConfig):
             )
 
         return self._wca_secret_manager
+
+    def get_ansible_lint_caller(self):
+        if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
+            logger.info("Ansible Lint Postprocessing is disabled.")
+            self._ansible_lint_caller = UNINITIALIZED
+            return None
+        if self._ansible_lint_caller is FAILED:
+            return None
+        if self._ansible_lint_caller:
+            return self._ansible_lint_caller
+        try:
+            self._ansible_lint_caller = lintpostprocessing.AnsibleLintCaller()
+            logger.info("Ansible Lint Postprocessing is enabled.")
+        except Exception as ex:
+            logger.exception(f"Failed to initialize Ansible Lint with exception: {ex}")
+            self._ansible_lint_caller = FAILED
+        return self._ansible_lint_caller

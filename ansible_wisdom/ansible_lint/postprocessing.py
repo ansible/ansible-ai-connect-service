@@ -1,11 +1,7 @@
 import contextlib
-import json
 import logging
 import timeit
 from ansiblelint.rules import RulesCollection
-import yaml
-from ansible_risk_insight.scanner import ARIScanner
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +10,11 @@ import tempfile
 
 from copy import deepcopy
 from ansiblelint.rules import RulesCollection
-from ansiblelint.runner import Runner
 from ansiblelint.constants import DEFAULT_RULESDIR
 from ansiblelint.config import options as default_options
 from ansiblelint.runner import LintResult, _get_matches
-from ansiblelint.file_utils import Lintable
 from ansiblelint.config import Options
 from ansiblelint.transformer import Transformer
-from pprint import pprint
 
 
 @contextlib.contextmanager
@@ -37,10 +30,13 @@ def time_activity(activity_name: str):
 
 
 class AnsibleLintCaller:
+    def __init__(self) -> None:
+        self.config_options = deepcopy(default_options)
+        self.config_options.write_list = ["all"]
+        self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
+
     def run_linter(
         self,
-        config_options: Options,
-        default_rules_collection: RulesCollection,
         inline_completion: str,
     ) -> str:
         """Runs the Runner to populate a LintResult for a given snippet."""
@@ -56,11 +52,9 @@ class AnsibleLintCaller:
             # get the path to the file
             temp_completion_path = temp_file.name
 
-        config_options.lintables = [temp_completion_path]
-        result = _get_matches(rules=default_rules_collection, options=config_options)
-        # lintable = Lintable(temp_completion_path, kind="playbook")
-        # result = Runner(lintable, rules=default_rules_collection).run()
-        self.run_transform(result, config_options)
+        self.config_options.lintables = [temp_completion_path]
+        result = _get_matches(rules=self.default_rules_collection, options=self.config_options)
+        self.run_transform(result, self.config_options)
 
         # read the transformed file
         with open(temp_completion_path, "r", encoding="utf-8") as yaml_file:
