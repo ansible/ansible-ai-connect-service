@@ -19,23 +19,6 @@ from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD
 
 logger = logging.getLogger(__name__)
 
-# Temporary storage until AWS-SM is integrated
-storage: dict[str, str] = {'1': 'a-key'}
-
-
-def get_wca_key(org_id: str) -> str:
-    # This is temporary until we have the AWS-SM service
-    return storage.get(org_id)
-
-
-def set_wca_key(wca_key: any, org_id: str):
-    # This is temporary until we have the AWS-SM service
-    storage[org_id] = wca_key
-
-
-def delete_wca_key(org_id: str):
-    del storage[org_id]
-
 
 class TextParser(BaseParser):
     """
@@ -64,6 +47,20 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
     from rest_framework import permissions
 
+    # Temporary storage until AWS-SM is integrated
+    __storage__: dict[str, str] = {}
+
+    def __get_wca_key__(self, org_id: str) -> str:
+        # This is temporary until we have the AWS-SM service
+        return self.__storage__.get(org_id)
+
+    def __set_wca_key__(self, wca_key: any, org_id: str):
+        # This is temporary until we have the AWS-SM service
+        self.__storage__[org_id] = wca_key
+
+    def __delete_wca_key__(self, org_id: str):
+        del self.__storage__[org_id]
+
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
@@ -89,7 +86,7 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         logger.info("Get handler")
 
         org_id = kwargs.get("org_id")
-        if org_id not in storage:
+        if org_id not in self.__storage__:
             return HttpResponseNotFound()
 
         # Once written the Key value is never returned to the User
@@ -113,7 +110,7 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         # The data has already been decoded by this point
         wca_key = request.data
         org_id = kwargs.get("org_id")
-        set_wca_key(wca_key, org_id)
+        self.__set_wca_key__(wca_key, org_id)
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -131,9 +128,9 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         logger.info("Delete handler")
 
         org_id = kwargs.get("org_id")
-        if org_id not in storage:
+        if org_id not in self.__storage__:
             return HttpResponseNotFound()
 
-        delete_wca_key(org_id)
+        self.__delete_wca_key__(org_id)
 
         return Response(status=HTTP_204_NO_CONTENT)
