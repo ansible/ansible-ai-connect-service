@@ -8,7 +8,7 @@ fi
 
 last_reload=$(date +%s)
 
-inotifywait -mrq -e create,delete,attrib,close_write,move --exclude '(.*/tests/.*|.*/migrations/.*)' $1 | while read directory action file; do
+inotifywait -mrq -e create,delete,attrib,close_write,move --exclude '(.*/tests/.*|.*/migrations/.*|.*/flycheck.*)' $1 | while read directory action file; do
    this_reload=$(date +%s)
    since_last=$((this_reload-last_reload))
    if [[ "$file" =~ ^[^.].*\.py$ ]] && [[ "$since_last" -gt 1 ]]; then

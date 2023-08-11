@@ -1,6 +1,5 @@
 import random
 import string
-from datetime import datetime
 from http import HTTPStatus
 from types import SimpleNamespace
 from unittest import TestCase
@@ -8,6 +7,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 from django.urls import reverse
@@ -241,7 +241,7 @@ class TestUserSeat(TestCase):
             email=email,
             password=password,
         )
-        UserSocialAuth.objects.create(user=user, provider="oidc", uid=str(uuid4()))
+        UserSocialAuth.objects.create(user=user, provider=provider_name, uid=str(uuid4()))
         return user
 
     def test_has_seat_with_no_rhsso_user(self):
@@ -257,6 +257,11 @@ class TestUserSeat(TestCase):
     def test_has_seat_with_rhsso_user_with_seat(self):
         user = self.create_user(provider_name="oidc")
         self.assertTrue(user.has_seat)
+
+    def test_has_seat_with_no_seat_checker(self):
+        with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
+            user = self.create_user(provider_name="oidc")
+            self.assertFalse(user.has_seat)
 
 
 class TestUserModelMetrics(APITransactionTestCase):

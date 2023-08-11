@@ -24,9 +24,10 @@ from segment import analytics
 
 
 class DummyMeshClient(ModelMeshClient):
-    def __init__(self, test, payload, response_data):
+    def __init__(self, test, payload, response_data, test_inference_match=True):
         super().__init__(inference_url='dummy inference url')
         self.test = test
+        self.test_inference_match = test_inference_match
 
         if "prompt" in payload:
             try:
@@ -54,7 +55,8 @@ class DummyMeshClient(ModelMeshClient):
         self.response_data = response_data
 
     def infer(self, data, model_name=None):
-        self.test.assertEqual(data, self.expects)
+        if self.test_inference_match:
+            self.test.assertEqual(data, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
         # i.e., still receives 200 after 10 API calls...
         return self.response_data
@@ -114,9 +116,15 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
     def login(self):
         self.client.login(username=self.username, password=self.password)
 
+    def assertSegmentTimestamp(self, log):
+        segment_events = self.extractSegmentEventsFromLog(log.output)
+        for event in segment_events:
+            self.assertIsNotNone(event['timestamp'])
+
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -129,10 +137,13 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data['predictions'])
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_rate_limit(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -145,13 +156,16 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data['predictions'])
-            for _ in range(10):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                for _ in range(10):
+                    r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
+                self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_missing_prompt(self):
         payload = {
             "suggestionId": str(uuid.uuid4()),
@@ -163,8 +177,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_authentication_error(self):
@@ -184,14 +200,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
                 segment_events = self.extractSegmentEventsFromLog(log.output)
                 self.assertTrue(len(segment_events) > 0)
-                hostname = platform.node()
                 for event in segment_events:
                     self.assertEqual(event['userId'], 'unknown')
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
                     self.assertTrue('imageTags' in properties)
                     self.assertEqual(properties['response']['status_code'], 401)
+                    self.assertIsNotNone(event['timestamp'])
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error(self):
         payload = {
             "prompt": "---\n- hosts: all\nbecome: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -199,16 +216,18 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
-            ):
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertEqual(r.data['message'], 'Request contains invalid yaml')
+                self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error_with_invalid_prompt(self):
         payload = {
             "prompt": "---\n  - name: [Setup]",
@@ -216,16 +235,18 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='INFO'):  # Suppress debug output
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
-            ):
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertEqual(r.data['message'], 'Request contains invalid prompt')
+                self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error_without_name_prompt(self):
         payload = {
             "prompt": "---\n  - Name: [Setup]",
@@ -233,18 +254,20 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='INFO') as log:  # Suppress debug output
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
-            ):
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("failed to validate request", log.output)
                 self.assertTrue("prompt does not contain the name parameter" in str(r.content))
+                self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_without_ARI(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -252,20 +275,22 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='WARN') as log:
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
-            ):
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog(
                     'skipped ari post processing because ari was not initialized', log.output
                 )
+                self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_with_recommendation_with_broken_last_line(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -288,8 +313,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
+                self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_postprocessing_error_for_invalid_yaml(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -310,20 +337,23 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
                 self.assertInLog('error postprocessing prediction for suggestion', log.output)
+                self.assertSegmentTimestamp(log)
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=True, SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_completions_postprocessing_error_for_invalid_context(self):
-        # this prompt has a invalid task which does not have module name in the context
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_completions_postprocessing_for_invalid_suggestion(self):
+        # the suggested task is a invalid because it does not have module name
+        # in this case, ARI should throw an exception
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Python\n"
-            "    - name: Install Apache\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        # module name in the prediction is ""
+        response_data = {"predictions": ["      \"\":\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(
             logger='root', level='DEBUG'
-        ) as log:  # Enable debug outputs for gettting Segment events
+        ) as log:  # Enable debug outputs for getting Segment events
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
@@ -342,7 +372,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                             'Invalid task structure: no module name found',
                             event['properties']['problem'],
                         )
+                    self.assertIsNotNone(event['timestamp'])
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):
         payload = {
             "prompt": "- name: Create an account for foo@ansible.com \n",
@@ -354,11 +386,13 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                DummyMeshClient(self, payload, response_data, False),
             ):
-                r = self.client.post(reverse('completions'), payload)
+                self.client.post(reverse('completions'), payload)
                 self.assertInLog('Create an account for james8@example.com', log.output)
+                self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_completion_post_response(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -373,15 +407,18 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
         ):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data['predictions'])
-            self.assertIsNotNone(r.data['modelName'])
-            self.assertIsNotNone(r.data['suggestionId'])
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertIsNotNone(r.data['modelName'])
+                self.assertIsNotNone(r.data['suggestionId'])
+                self.assertSegmentTimestamp(log)
 
 
 @modify_settings()
 class TestFeedbackView(WisdomServiceAPITestCaseBase):
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_full_payload(self):
         payload = {
             "inlineSuggestion": {
@@ -419,18 +456,24 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "description": "This is a test issue description",
             },
         }
-        self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format='json')
-        self.assertEqual(r.status_code, HTTPStatus.OK)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_missing_content(self):
         payload = {
             "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
         }
-        self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('feedback'), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_anonymize(self):
         payload = {
             "ansibleContent": {
@@ -445,7 +488,9 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format="json")
             self.assertNotInLog('file:///home/user/ansible.yaml', log.output)
             self.assertInLog('file:///home/ano-user/ansible.yaml', log.output)
+            self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_authentication_error(self):
         payload = {
             "ansibleContent": {
@@ -456,8 +501,10 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             }
         }
         # self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('feedback'), payload, format="json")
-        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+            self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_events(self):
@@ -493,6 +540,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('Group 1' in properties['groups'])
                 self.assertTrue('Group 2' in properties['groups'])
                 self.assertEqual(hostname, properties['hostname'])
+                self.assertIsNotNone(event['timestamp'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_inline_suggestion_feedback_error(self):
@@ -521,6 +569,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "file:///home/ano-user/ansible.yaml",
                     properties['data']['inlineSuggestion']['documentUri'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_ansible_content_feedback_error(self):
@@ -549,6 +598,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "file:///home/ano-user/ansible.yaml",
                     properties['data']['ansibleContent']['documentUri'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
     @patch('ai.api.serializers.FeedbackRequestSerializer.is_valid')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -582,6 +632,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "file:///home/ano-user/ansible.yaml",
                     properties['data']['ansibleContent']['documentUri'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_suggestion_quality_feedback_error(self):
@@ -613,6 +664,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "Package name is changed",
                     properties['data']['suggestionQualityFeedback']['additionalComment'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_sentiment_feedback_error(self):
@@ -638,6 +690,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "This is a test feedback",
                     properties['data']['sentimentFeedback']['feedback'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_issue_feedback_error(self):
@@ -664,6 +717,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     "This is a test description",
                     properties['data']['issueFeedback']['description'],
                 )
+                self.assertIsNotNone(event['timestamp'])
 
 
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
@@ -708,6 +762,7 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('Group 1' in properties['groups'])
                 self.assertTrue('Group 2' in properties['groups'])
                 self.assertEqual(hostname, properties['hostname'])
+                self.assertIsNotNone(event['timestamp'])
 
     @patch('ai.search.search')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')

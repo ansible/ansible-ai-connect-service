@@ -8,7 +8,6 @@ import yaml
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
-from django.http import QueryDict
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from prometheus_client import Counter, Histogram
@@ -17,7 +16,6 @@ from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
@@ -259,13 +257,12 @@ class Completions(APIView):
             f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
         )
         try:
-            postprocessed_predictions.update(
-                {
-                    "modelName": model_name,
-                    "suggestionId": payload.suggestionId,
-                }
-            )
-            response_serializer = CompletionResponseSerializer(data=postprocessed_predictions)
+            response_data = {
+                "predictions": postprocessed_predictions["predictions"],
+                "modelName": model_name,
+                "suggestionId": payload.suggestionId,
+            }
+            response_serializer = CompletionResponseSerializer(data=response_data)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
             process_error_count.labels(stage='response_serialization_validation').inc()
@@ -274,7 +271,17 @@ class Completions(APIView):
             )
             raise InternalServerError
         completions_return_code.labels(code=200).inc()
-        return Response(postprocessed_predictions, status=200)
+        response = Response(response_data, status=200)
+
+        # add fields for telemetry only, not response data
+        # Note: Currently we return an array of predictions, but there's only ever one.
+        # So, we are just going to report the one fqcn_module, not an array of them.
+        # Once we confirm WCA is only sending one prediction, we should consider changing the
+        # response body to a single prediction string rather than an array. If it's multiple,
+        # we can adjust the fqcn_module handling accordingly.
+        if postprocessed_predictions.get("fqcn_module"):
+            response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
+        return response
 
     def preprocess(self, context, prompt):
         context, prompt = fmtr.preprocess(context, prompt)
@@ -286,6 +293,7 @@ class Completions(APIView):
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
 
+        recommendation["fqcn_module"] = []
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
             if ari_caller:
                 start_time = time.time()
@@ -344,6 +352,8 @@ class Completions(APIView):
                             f"post-process detail: {json.dumps(postprocess_detail)}"
                         )
                         recommendation["predictions"][i] = postprocessed_yaml
+                        if postprocess_detail.get("fqcn_module"):
+                            recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -358,7 +368,7 @@ class Completions(APIView):
                         recommendation_yaml,
                         truncated_yaml,
                         postprocessed_yaml,
-                        postprocess_detail,
+                        postprocess_detail.get("rule_results", {}),
                         exception,
                         start_time,
                     )

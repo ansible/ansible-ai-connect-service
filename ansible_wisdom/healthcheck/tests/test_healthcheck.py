@@ -14,7 +14,12 @@ from rest_framework.test import APITestCase
 
 
 class TestHealthCheck(APITestCase):
-    def mocked_requests_get(*args, **kwargs):
+    def mocked_requests_succeed(*args, **kwargs):
+        r = Response()
+        r.status_code = HTTPStatus.OK
+        return r
+
+    def mocked_requests_http_fail(*args, **kwargs):
         r = Response()
         if len(args) > 0 and args[0].endswith('/ping'):
             r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
@@ -22,7 +27,7 @@ class TestHealthCheck(APITestCase):
             r.status_code = HTTPStatus.OK
         return r
 
-    def mocked_requests_get_grpc(*args, **kwargs):
+    def mocked_requests_grpc_fail(*args, **kwargs):
         r = Response()
         if len(args) > 0 and args[0].endswith('/oauth/healthz'):
             r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
@@ -62,8 +67,8 @@ class TestHealthCheck(APITestCase):
         data = json.loads(r.content)
         self.assertEqual(timestamp, data['timestamp'])
 
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
-    def test_health_check_error(self, _):
+    @mock.patch('requests.get', side_effect=mocked_requests_http_fail)
+    def test_health_check_http_error(self, _):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -95,7 +100,7 @@ class TestHealthCheck(APITestCase):
         print(data['timestamp'])
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
     def test_health_check_grpc(self, _):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -114,7 +119,7 @@ class TestHealthCheck(APITestCase):
             self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    @mock.patch('requests.get', side_effect=mocked_requests_get_grpc)
+    @mock.patch('requests.get', side_effect=mocked_requests_grpc_fail)
     def test_health_check_grpc_error(self, _):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -137,7 +142,7 @@ class TestHealthCheck(APITestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
     def test_health_check_mock(self, _):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -158,7 +163,7 @@ class TestHealthCheck(APITestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @mock.patch('requests.get', side_effect=mocked_requests_get)
+    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
     @mock.patch('healthcheck.views.get_feature_flags')
     @mock.patch('ldclient.get')
     def test_health_check_mock_with_launchdarkly(self, ldclient_get, get_feature_flags, _):

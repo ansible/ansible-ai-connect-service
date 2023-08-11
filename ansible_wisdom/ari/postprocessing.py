@@ -126,6 +126,8 @@ class ARICaller:
             # modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
             modified_yaml = detail.get("modified_yaml", "")
             mutation_result = aggregated_detail.get("mutation_result", {})
+            detail_data["fqcn_module"] = aggregated_detail.get("correct_fqcn", "")
+            detail_data["rule_results"] = {}
             for rule_id in mutation_result:
                 rule_detail = mutation_result[rule_id]
                 if not rule_detail:
@@ -140,7 +142,7 @@ class ARICaller:
                     rule_detail["duration"] = _result.duration
                     rule_detail["matched"] = _result.matched
                     rule_detail["error"] = _result.error
-                detail_data[rule_id] = rule_detail
+                detail_data["rule_results"][rule_id] = rule_detail
 
         # return inference_output
         logger.debug("--before--")
