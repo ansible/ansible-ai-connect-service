@@ -62,6 +62,7 @@ cryptography==41.0.3
     # via
     #   ansible-core
     #   jwcrypto
+    #   pyopenssl
     #   social-auth-core
 datasets==2.10.1
     # via -r requirements.in
@@ -290,6 +291,8 @@ pygments==2.15.1
     # via ipython
 pyjwt==2.7.0
     # via social-auth-core
+pyopenssl==23.2.0
+    # via -r requirements.in
 pyrfc3339==1.1
     # via launchdarkly-server-sdk
 pyrsistent==0.19.3

@@ -23,6 +23,7 @@ protobuf==4.22.1
 psycopg[binary]==3.1.8
 pydantic==1.10.2
 pytz
+pyOpenSSL==23.2.0
 PyYAML==6.0
 requests==2.28.2
 segment-analytics-python==2.2.2

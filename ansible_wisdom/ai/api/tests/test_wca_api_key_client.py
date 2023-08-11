@@ -16,7 +16,7 @@ class TestWcaApiKeyClient(APITestCase):
             WcaApiKeysClient('dummy', 'dummy', 'dummy', 'dummy', replica_regions)
 
     def testGetSecretName(self):
-        with patch.object(WcaApiKeysClient, '__init__', self.nop):
-            org_id = 'org_123'
-            client = WcaApiKeysClient('dummy', 'dummy', 'dummy', 'dummy', [])
-            self.assertEqual(client.get_secret_id('org123'), f'{SECRET_KEY_PREFIX}/{org_id}')
+        org_id = 'org_123'
+        self.assertEqual(
+            WcaApiKeysClient.get_secret_id(org_id), f'{SECRET_KEY_PREFIX}/{org_id}/wca_key'
+        )
