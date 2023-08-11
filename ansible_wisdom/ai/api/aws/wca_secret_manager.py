@@ -3,15 +3,15 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-from .exceptions import WCAApiKeyClientError
+from .exceptions import WcaSecretManagerError
 
-SECRET_KEY_PREFIX = 'wca/apikeys'
+SECRET_KEY_PREFIX = 'wca'
 DELETE_GRACE_PERIOD_DAYS = 7
 
 logger = logging.getLogger(__name__)
 
 
-class WcaApiKeysClient:
+class WcaSecretManager:
     def __init__(
         self, access_key, secret_access_key, kms_secret_id, primary_region, replica_regions
     ):
@@ -41,7 +41,7 @@ class WcaApiKeysClient:
             try:
                 response = self._client.put_secret_value(SecretId=secret_id, SecretString=key)
             except ClientError as e:
-                raise WCAApiKeyClientError(e)
+                raise WcaSecretManagerError(e)
 
         else:
             replica_regions = [
@@ -56,7 +56,7 @@ class WcaApiKeysClient:
                     AddReplicaRegions=replica_regions,
                 )
             except ClientError as e:
-                raise WCAApiKeyClientError(e)
+                raise WcaSecretManagerError(e)
 
         return response['Name']
 
@@ -88,7 +88,7 @@ class WcaApiKeysClient:
             )
         except ClientError as e:
             logger.error("Error removing secret for org_id '%s'", org_id)
-            raise WCAApiKeyClientError(e)
+            raise WcaSecretManagerError(e)
 
     def get_key(self, org_id):
         """
@@ -103,7 +103,7 @@ class WcaApiKeysClient:
             return None
         except ClientError as e:
             logger.error("Error reading secret for org_id '%s'", org_id)
-            raise WCAApiKeyClientError(e)
+            raise WcaSecretManagerError(e)
 
     def key_exists(self, org_id):
         """

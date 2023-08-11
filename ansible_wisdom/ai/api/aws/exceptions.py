@@ -1,2 +1,2 @@
-class WCAApiKeyClientError(Exception):
+class WcaSecretManagerError(Exception):
     """Request to AWS Secrets Manager failed"""
