@@ -8,7 +8,6 @@ import yaml
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
-from django.http import QueryDict
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from prometheus_client import Counter, Histogram
@@ -17,7 +16,6 @@ from rest_framework import status as rest_framework_status
 from rest_framework.exceptions import APIException
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from users.models import User
 from yaml.error import MarkedYAMLError
