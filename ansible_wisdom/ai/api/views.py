@@ -309,37 +309,31 @@ class Completions(APIView):
         recommendation["fqcn_module"] = []
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
 
-            if ansible_lint_caller:
-                # Post-processing by running Ansible Lint to model server predictions
-                linted_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
-                recommendation_yaml = linted_yaml.strip('---\n')
-
+            recommendation_problem = None
+            truncated_yaml = None
+            # check if the recommendation_yaml is a valid YAML
+            try:
+                _ = yaml.safe_load(recommendation_yaml)
+            except Exception as exc:
+                # the recommendation YAML can have a broken line at the bottom
+                # because the token size of the wisdom model is limited.
+                # so we try truncating the last line of the recommendation here.
+                truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+                if truncated:
+                    try:
+                        _ = yaml.safe_load(truncated_yaml)
+                    except Exception as exc:
+                        recommendation_problem = exc
+                else:
+                    recommendation_problem = exc
+                if recommendation_problem:
+                    logger.error(
+                        f'recommendation_yaml is not a valid YAML: '
+                        f'\n{recommendation_yaml}'
+                        f'\nException:\n{recommendation_problem}'
+                    )
             if ari_caller:
                 start_time = time.time()
-                truncated_yaml = None
-                recommendation_problem = None
-                # check if the recommendation_yaml is a valid YAML
-                try:
-                    _ = yaml.safe_load(recommendation_yaml)
-                except Exception as exc:
-                    # the recommendation YAML can have a broken line at the bottom
-                    # because the token size of the wisdom model is limited.
-                    # so we try truncating the last line of the recommendation here.
-                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
-                    if truncated:
-                        try:
-                            _ = yaml.safe_load(truncated_yaml)
-                        except Exception as exc:
-                            recommendation_problem = exc
-                    else:
-                        recommendation_problem = exc
-                    if recommendation_problem:
-                        logger.error(
-                            f'recommendation_yaml is not a valid YAML: '
-                            f'\n{recommendation_yaml}'
-                            f'\nException:\n{recommendation_problem}'
-                        )
-
                 exception = None
                 postprocessed_yaml = None
                 postprocess_detail = None
@@ -388,6 +382,38 @@ class Completions(APIView):
                         truncated_yaml,
                         postprocessed_yaml,
                         postprocess_detail.get("rule_results", {}),
+                        exception,
+                        start_time,
+                    )
+                    if exception:
+                        raise exception
+
+            if ansible_lint_caller:
+                start_time = time.time()
+                exception = None
+                try:
+                    if recommendation_problem:
+                        exception = recommendation_problem
+                    else:
+                        # Post-processing by running Ansible Lint to model server predictions
+                        postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+                        # Stripping the linting transform and adding --- in the linted yaml
+                        recommendation["predictions"][i] = postprocessed_yaml.strip('---\n')
+                except Exception as exc:
+                    exception = exc
+                    # return the original recommendation if we failed to postprocess
+                    logger.exception(
+                        f'failed to postprocess recommendation with prompt {prompt} '
+                        f'context {context} and model recommendation {recommendation}'
+                    )
+                finally:
+                    self.write_to_segment(
+                        user,
+                        suggestion_id,
+                        recommendation_yaml,
+                        None,
+                        postprocessed_yaml.strip('---\n'),
+                        None,
                         exception,
                         start_time,
                     )
