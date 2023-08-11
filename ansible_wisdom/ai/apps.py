@@ -25,6 +25,7 @@ class AiConfig(AppConfig):
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
+    _wca_api_key_client = UNINITIALIZED
 
     def ready(self) -> None:
         if torch.cuda.is_available():
@@ -106,3 +107,20 @@ class AiConfig(AppConfig):
             )
 
         return self._seat_checker
+
+    def get_wca_api_key_client(self):
+        if not settings.ENABLE_WCA_API_KEY_CLIENT:
+            return None
+
+        if self._wca_api_key_client is UNINITIALIZED:
+            from .api.aws.wca_api_keys_client import WcaApiKeysClient
+
+            self._wca_api_key_client = WcaApiKeysClient(
+                settings.WCA_API_KEY_CLIENT_ACCESS_KEY,
+                settings.WCA_API_KEY_CLIENT_SECRET_ACCESS_KEY,
+                settings.WCA_API_KEY_CLIENT_KMS_KEY_ID,
+                settings.WCA_API_KEY_CLIENT_PRIMARY_REGION,
+                settings.WCA_API_KEY_CLIENT_REPLICA_REGIONS,
+            )
+
+        return self._wca_api_key_client

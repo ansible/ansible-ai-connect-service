@@ -36,3 +36,9 @@ class TestAiApp(APITestCase):
         app_config = AppConfig.create('ai')
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_WCA_API_KEY_CLIENT=False)
+    def test_disable_wca_api_key_client(self):
+        app_config = AppConfig.create('ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_wca_api_key_client())
