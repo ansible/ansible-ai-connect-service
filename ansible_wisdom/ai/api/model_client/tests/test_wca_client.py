@@ -1,11 +1,10 @@
+from unittest import TestCase
 from unittest.mock import Mock
 
 from ai.api.model_client.exceptions import ModelTimeoutError
 from ai.api.model_client.wca_client import WCAClient
 from django.test import override_settings
 from requests.exceptions import ReadTimeout
-
-from .test_views import WisdomServiceAPITestCaseBase
 
 
 class MockResponse:
@@ -20,7 +19,7 @@ class MockResponse:
         return
 
 
-class TestWCAClient(WisdomServiceAPITestCaseBase):
+class TestWCAClient(TestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
     def test_get_token(self):
         headers = {
