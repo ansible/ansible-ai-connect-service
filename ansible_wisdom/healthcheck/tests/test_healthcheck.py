@@ -68,7 +68,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(timestamp, data['timestamp'])
 
     @mock.patch('requests.get', side_effect=mocked_requests_http_fail)
-    def test_health_check_error(self, _):
+    def test_health_check_http_error(self, _):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
