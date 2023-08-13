@@ -9,6 +9,13 @@ class TestUrls(TestCase):
     @override_settings(DEBUG=True)
     def test_urlpatterns(self):
         reload(main.urls)
+        routes = [
+            'api/schema/',
+            'api/schema/swagger-ui/',
+            'api/schema/redoc/',
+        ]
         r = compile("api/schema/")
-        patterns = list(filter(lambda e: r.match(str(e.pattern)), main.urls.urlpatterns))
-        self.assertEqual(len(patterns), 3)
+        patterns = list(
+            filter(r.match, [str(pattern.pattern) for pattern in main.urls.urlpatterns])
+        )
+        self.assertCountEqual(routes, patterns)
