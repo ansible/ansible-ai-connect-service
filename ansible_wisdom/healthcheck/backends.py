@@ -20,7 +20,7 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
                 f'{settings.ANSIBLE_AI_MODEL_MESH_HOST}:'
                 f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz'
             )
-        else:  # 'mock'
+        else:  # 'mock' & 'wca'
             self.url = None
 
     def check_status(self):
