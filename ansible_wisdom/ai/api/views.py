@@ -304,11 +304,12 @@ class Completions(APIView):
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
         if not ansible_lint_caller:
-            logger.warn('skipped ansible lint post processing because ansible lint was not initialized')
+            logger.warn(
+                'skipped ansible lint post processing because ansible lint was not initialized'
+            )
 
         recommendation["fqcn_module"] = []
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-
             recommendation_problem = None
             truncated_yaml = None
             # check if the recommendation_yaml is a valid YAML

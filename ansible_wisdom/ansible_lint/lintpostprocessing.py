@@ -43,9 +43,7 @@ class AnsibleLintCaller:
         transformed_completion = inline_completion
 
         # create a temporary file
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".yml"
-        ) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".yml") as temp_file:
             # write the YAML string to the file
             temp_file.write(inline_completion)
             # get the path to the file
