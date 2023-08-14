@@ -423,6 +423,28 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                         )
                     self.assertIsNotNone(event['timestamp'])
 
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_without_ARI(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='WARN') as log:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertInLog(
+                    'Enabled only Ansible lint post processing, and skipped ARI', log.output
+                )
+
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):
         payload = {
