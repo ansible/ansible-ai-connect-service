@@ -425,7 +425,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_full_payload_without_ARI(self):
+    def test_payload_with_ansible_lint(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),

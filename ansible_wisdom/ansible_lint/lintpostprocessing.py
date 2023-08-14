@@ -1,20 +1,19 @@
 import contextlib
 import logging
-import timeit
-from ansiblelint.rules import RulesCollection
-
-logger = logging.getLogger(__name__)
-
 import os
 import tempfile
-
+import timeit
 from copy import deepcopy
+
+from ansiblelint.rules import RulesCollection
 from ansiblelint.rules import RulesCollection
 from ansiblelint.constants import DEFAULT_RULESDIR
 from ansiblelint.config import options as default_options
 from ansiblelint.runner import LintResult, _get_matches
 from ansiblelint.config import Options
 from ansiblelint.transformer import Transformer
+
+logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
