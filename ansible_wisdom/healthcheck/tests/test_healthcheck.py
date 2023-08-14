@@ -3,7 +3,7 @@ import time
 from http import HTTPStatus
 from unittest import mock
 
-from ai.api.views import feature_flags
+import healthcheck.views as healthcheck_views
 from ai.feature_flags import FeatureFlags
 from django.conf import settings
 from django.core.cache import cache
@@ -190,3 +190,7 @@ class TestHealthCheck(APITestCase):
             self.assertIn(dependency['name'], ['cache', 'db', 'model-server'])
             self.assertEqual('ok', dependency['status'])
             self.assertGreaterEqual(dependency['time_taken'], 0)
+
+    def test_get_feature_flags(self):
+        healthcheck_views.feature_flags = "return this"
+        self.assertEqual(healthcheck_views.get_feature_flags(), "return this")
