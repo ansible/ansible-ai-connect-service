@@ -21,6 +21,8 @@ else:
 
 def initialize_OpenSearch():
     # Initialize AI Search only when settings.ANSIBLE_AI_SEARCH['HOST'] has a non-empty hostname.
+    if settings.MOCK_ANSIBLE_AI_SEARCH:
+        return ("mock", None)
     if settings.ANSIBLE_AI_SEARCH['HOST']:
         client = OpenSearch(
             hosts=[
@@ -58,6 +60,8 @@ def generate_query(encoded):
 
 
 def search(suggestion, index=None):
+    if client == "mock":
+        return settings.MOCK_ANSIBLE_AI_SEARCH_RESULT
     if client is None:
         raise Exception('AI Search is not initialized.')
 

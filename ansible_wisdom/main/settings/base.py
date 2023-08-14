@@ -324,6 +324,24 @@ MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
 MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
     os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
 )
+MOCK_ANSIBLE_AI_SEARCH = bool(os.getenv("MOCK_ANSIBLE_AI_SEARCH", False))
+MOCK_ANSIBLE_AI_SEARCH_RESULT = {
+    'attributions': [
+        {
+            'repo_name': "perf-test",
+            'repo_url': "https://github.com/ansible/perf",
+            'path': "bar",
+            'license': "v1",
+            'data_source': "aws",
+            'ansible_type': "lightspeed",
+            'score': 0,
+        }
+    ],
+    'meta': {
+        'encode_duration': 1,
+        'search_duration': 1,
+    },
+}
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
 ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
