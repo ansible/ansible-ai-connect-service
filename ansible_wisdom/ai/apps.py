@@ -13,6 +13,8 @@ from users.authz_checker import (
 
 from ari import postprocessing
 
+from .api.aws.wca_secret_manager import WcaSecretManager
+
 logger = logging.getLogger(__name__)
 
 FAILED = False
@@ -25,6 +27,7 @@ class AiConfig(AppConfig):
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
+    _wca_secret_manager = UNINITIALIZED
 
     def ready(self) -> None:
         if torch.cuda.is_available():
@@ -112,3 +115,15 @@ class AiConfig(AppConfig):
             )
 
         return self._seat_checker
+
+    def get_wca_secret_manager(self):
+        if self._wca_secret_manager is UNINITIALIZED:
+            self._wca_secret_manager = WcaSecretManager(
+                settings.WCA_SECRET_MANAGER_ACCESS_KEY,
+                settings.WCA_SECRET_MANAGER_SECRET_ACCESS_KEY,
+                settings.WCA_SECRET_MANAGER_KMS_KEY_ID,
+                settings.WCA_SECRET_MANAGER_PRIMARY_REGION,
+                settings.WCA_SECRET_MANAGER_REPLICA_REGIONS,
+            )
+
+        return self._wca_secret_manager

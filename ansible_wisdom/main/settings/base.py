@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'import_export',
 ]
 
-
 MIDDLEWARE = [
     "allow_cidr.middleware.AllowCIDRMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
@@ -83,7 +82,6 @@ PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Intern
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
 
-
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
     USE_GITHUB_TEAM = True
@@ -110,7 +108,6 @@ AUTHZ_SSO_CLIENT_SECRET = os.environ.get("AUTHZ_SSO_CLIENT_SECRET")
 AUTHZ_SSO_SERVER = os.environ.get("AUTHZ_SSO_SERVER")
 AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
 
-
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
@@ -119,7 +116,6 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
-
 
 SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
@@ -154,7 +150,6 @@ OAUTH2_PROVIDER = {
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
     'REFRESH_TOKEN_EXPIRE_SECONDS': 1_209_600,  # = 2 weeks
 }
-
 
 # OAUTH: todo
 # - remove ansible_wisdom/users/auth.py module
@@ -236,7 +231,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "main.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASES = {
@@ -281,7 +275,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -382,3 +375,11 @@ CACHES = {
         "LOCATION": "cache",
     }
 }
+
+WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_ACCESS_KEY', '')
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_SECRET_ACCESS_KEY', '')
+WCA_SECRET_MANAGER_KMS_KEY_ID = os.getenv('WCA_SECRET_MANAGER_KMS_KEY_ID', '')
+WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_API_KEY_CLIENT_PRIMARY_REGION', '')
+WCA_SECRET_MANAGER_REPLICA_REGIONS = [
+    c.strip() for c in os.getenv('WCA_API_KEY_CLIENT_REPLICA_REGIONS', '').split(',') if c
+]
