@@ -1,6 +1,7 @@
 import logging
 
 import torch
+from ansible_lint import lintpostprocessing
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
@@ -128,3 +129,20 @@ class AiConfig(AppConfig):
             )
 
         return self._wca_secret_manager
+
+    def get_ansible_lint_caller(self):
+        if self._ansible_lint_caller:
+            return self._ansible_lint_caller
+        if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
+            logger.info("Ansible Lint Postprocessing is disabled.")
+            self._ansible_lint_caller = UNINITIALIZED
+            return None
+        if self._ansible_lint_caller is FAILED:
+            return None
+        try:
+            self._ansible_lint_caller = lintpostprocessing.AnsibleLintCaller()
+            logger.info("Ansible Lint Postprocessing is enabled.")
+        except Exception as ex:
+            logger.exception(f"Failed to initialize Ansible Lint with exception: {ex}")
+            self._ansible_lint_caller = FAILED
+        return self._ansible_lint_caller

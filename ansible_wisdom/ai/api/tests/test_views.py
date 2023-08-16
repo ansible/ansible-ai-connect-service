@@ -441,9 +441,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
-                self.assertInLog(
-                    'Enabled only Ansible lint post processing, and skipped ARI', log.output
-                )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):

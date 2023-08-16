@@ -77,6 +77,8 @@ process_error_count = Counter(
     'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
 )
 
+STRIP_YAML_LINE = '---\n'
+
 
 class BaseWisdomAPIException(APIException):
     def __init__(self, *args, **kwargs):
@@ -309,6 +311,7 @@ class Completions(APIView):
             )
 
         recommendation["fqcn_module"] = []
+        exception = None
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
             recommendation_problem = None
             truncated_yaml = None
@@ -333,41 +336,38 @@ class Completions(APIView):
                         f'\n{recommendation_yaml}'
                         f'\nException:\n{recommendation_problem}'
                     )
+                    # if the recommentation is not a valid yaml, record it as an exception
+                    exception = recommendation_problem
             if ari_caller:
                 start_time = time.time()
-                exception = None
                 postprocessed_yaml = None
                 postprocess_detail = None
                 try:
-                    # if the recommentation is not a valid yaml, record it as an exception
-                    if recommendation_problem:
-                        exception = recommendation_problem
-                    else:
-                        # otherwise, do postprocess here
+                    # otherwise, do postprocess here
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"original recommendation: \n{recommendation_yaml}"
+                    )
+                    if truncated_yaml:
                         logger.debug(
                             f"suggestion id: {suggestion_id}, "
-                            f"original recommendation: \n{recommendation_yaml}"
+                            f"truncated recommendation: \n{truncated_yaml}"
                         )
-                        if truncated_yaml:
-                            logger.debug(
-                                f"suggestion id: {suggestion_id}, "
-                                f"truncated recommendation: \n{truncated_yaml}"
-                            )
-                            recommendation_yaml = truncated_yaml
-                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                            recommendation_yaml, prompt, context
-                        )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-processed recommendation: \n{postprocessed_yaml}"
-                        )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-process detail: {json.dumps(postprocess_detail)}"
-                        )
-                        recommendation["predictions"][i] = postprocessed_yaml
-                        if postprocess_detail.get("fqcn_module"):
-                            recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
+                        recommendation_yaml = truncated_yaml
+                    postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                        recommendation_yaml, prompt, context
+                    )
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"post-processed recommendation: \n{postprocessed_yaml}"
+                    )
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"post-process detail: {json.dumps(postprocess_detail)}"
+                    )
+                    recommendation["predictions"][i] = postprocessed_yaml
+                    if postprocess_detail.get("fqcn_module"):
+                        recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -391,15 +391,11 @@ class Completions(APIView):
 
             if ansible_lint_caller:
                 start_time = time.time()
-                exception = None
                 try:
-                    if recommendation_problem:
-                        exception = recommendation_problem
-                    else:
-                        # Post-processing by running Ansible Lint to model server predictions
-                        postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
-                        # Stripping the linting transform and adding --- in the linted yaml
-                        recommendation["predictions"][i] = postprocessed_yaml.strip('---\n')
+                    # Post-processing by running Ansible Lint to model server predictions
+                    postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+                    # Stripping the linting transform and adding --- in the linted yaml
+                    recommendation["predictions"][i] = postprocessed_yaml.strip(STRIP_YAML_LINE)
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -413,7 +409,7 @@ class Completions(APIView):
                         suggestion_id,
                         recommendation_yaml,
                         None,
-                        postprocessed_yaml.strip('---\n'),
+                        postprocessed_yaml.strip(STRIP_YAML_LINE),
                         None,
                         exception,
                         start_time,
