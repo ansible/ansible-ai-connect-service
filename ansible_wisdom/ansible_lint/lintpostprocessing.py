@@ -53,7 +53,7 @@ class AnsibleLintCaller:
         self.run_transform(result, self.config_options)
 
         # read the transformed file
-        with open(temp_completion_path, "r", encoding="utf-8") as yaml_file:
+        with open(temp_completion_path, encoding="utf-8") as yaml_file:
             transformed_completion = yaml_file.read()
 
         # delete the temporary file
