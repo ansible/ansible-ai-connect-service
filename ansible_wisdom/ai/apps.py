@@ -135,7 +135,6 @@ class AiConfig(AppConfig):
             return self._ansible_lint_caller
         if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
             logger.info("Ansible Lint Postprocessing is disabled.")
-            self._ansible_lint_caller = UNINITIALIZED
             return None
         if self._ansible_lint_caller is FAILED:
             return None
