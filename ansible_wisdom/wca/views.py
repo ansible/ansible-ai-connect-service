@@ -1,6 +1,8 @@
 import codecs
 import logging
 
+from ai.api.aws.exceptions import WcaSecretManagerError
+from django.apps import apps
 from django.conf import settings
 from django.http import HttpResponseNotFound
 from django.utils.encoding import DjangoUnicodeDecodeError, smart_str
@@ -15,7 +17,13 @@ from rest_framework.generics import (
 )
 from rest_framework.parsers import BaseParser
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_204_NO_CONTENT,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +54,6 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     from ai.api.permissions import AcceptedTermsPermission, IsAdministrator
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
     from rest_framework import permissions
-
-    # Temporary storage until AWS-SM is integrated
-    __storage__: dict[str, str] = {}
 
     def __get_wca_key__(self, org_id: str) -> str:
         # This is temporary until we have the AWS-SM service
@@ -84,13 +89,17 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     )
     def get(self, request, *args, **kwargs):
         logger.info("Get handler")
-
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_id = kwargs.get("org_id")
-        if org_id not in self.__storage__:
-            return HttpResponseNotFound()
-
-        # Once written the Key value is never returned to the User
-        return Response(status=HTTP_200_OK)
+        try:
+            secret_value = secret_manager.get_key(org_id)
+            if secret_value is None:
+                return Response(status=HTTP_404_NOT_FOUND)
+            # Once written the Key value is never returned to the User
+            return Response(status=HTTP_200_OK)
+        except WcaSecretManagerError as e:
+            logger.error(e)
+            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(
         request={'text/plain; charset=utf-8': OpenApiTypes.STR},
@@ -106,11 +115,17 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     )
     def post(self, request, *args, **kwargs):
         logger.info("Set handler")
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
 
         # The data has already been decoded by this point
         wca_key = request.data
         org_id = kwargs.get("org_id")
-        self.__set_wca_key__(wca_key, org_id)
+        try:
+            secret_name = secret_manager.save_key(org_id, wca_key)
+            logger.info(f"stored secret ${secret_name} for org_id {org_id}")
+        except WcaSecretManagerError as e:
+            logger.error(e)
+            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -126,11 +141,13 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     )
     def delete(self, request, *args, **kwargs):
         logger.info("Delete handler")
-
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_id = kwargs.get("org_id")
-        if org_id not in self.__storage__:
-            return HttpResponseNotFound()
 
-        self.__delete_wca_key__(org_id)
+        try:
+            secret_manager.delete_key(org_id)
+        except WcaSecretManagerError as e:
+            logger.error(e)
+            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(status=HTTP_204_NO_CONTENT)

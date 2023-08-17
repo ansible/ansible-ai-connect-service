@@ -78,8 +78,8 @@ class WcaSecretManager:
             logger.error(
                 "Error removing replica regions, invalid region(s) for org_id '%s'", org_id
             )
-        except ClientError:
-            logger.error("Error removing replica regions for org_id '%s'", org_id)
+        except ClientError as e:
+            logger.error(e)
 
         try:
             _ = self._client.delete_secret(SecretId=secret_id, ForceDeleteWithoutRecovery=True)
