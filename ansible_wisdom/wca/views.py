@@ -92,11 +92,12 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_id = kwargs.get("org_id")
         try:
-            secret_value = secret_manager.get_key(org_id)
-            if secret_value is None:
+            response = secret_manager.get_key(org_id)
+            if response is None:
                 return Response(status=HTTP_404_NOT_FOUND)
-            # Once written the Key value is never returned to the User
-            return Response(status=HTTP_200_OK)
+            # Once written the Key value is never returned to the User,
+            # instead we return when the secret was last updated.
+            return Response(status=HTTP_200_OK, data={'LastUpdate': response['CreatedDate']})
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
