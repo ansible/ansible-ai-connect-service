@@ -6,7 +6,6 @@ from botocore.exceptions import ClientError
 from .exceptions import WcaSecretManagerError
 
 SECRET_KEY_PREFIX = 'wca'
-DELETE_GRACE_PERIOD_DAYS = 7
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +82,7 @@ class WcaSecretManager:
             logger.error("Error removing replica regions for org_id '%s'", org_id)
 
         try:
-            _ = self._client.delete_secret(
-                SecretId=secret_id, RecoveryWindowInDays=DELETE_GRACE_PERIOD_DAYS
-            )
+            _ = self._client.delete_secret(SecretId=secret_id, ForceDeleteWithoutRecovery=True)
         except ClientError as e:
             logger.error("Error removing secret for org_id '%s'", org_id)
             raise WcaSecretManagerError(e)
@@ -96,8 +93,7 @@ class WcaSecretManager:
         """
         secret_id = self.get_secret_id(org_id)
         try:
-            response = self._client.get_secret_value(SecretId=secret_id)
-            return response['SecretString']
+            return self._client.get_secret_value(SecretId=secret_id)
         except self._client.exceptions.ResourceNotFoundException:
             logger.info("No API Key exists for org with id '%s'", org_id)
             return None

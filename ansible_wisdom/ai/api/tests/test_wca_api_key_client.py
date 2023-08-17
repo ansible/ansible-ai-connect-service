@@ -38,7 +38,7 @@ class TestWcaApiKeyClient(APITestCase):
         with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             response = client.get_key(ORG_ID)
-            self.assertEqual(response, SECRET_VALUE)
+            self.assertEqual(response['SecretString'], SECRET_VALUE)
 
     def test_get_key_error(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -117,10 +117,8 @@ class TestWcaApiKeyClient(APITestCase):
         def mock_api_call(_, operation_name, kwarg):
             if operation_name == "RemoveRegionsFromReplication":
                 return None
-            if (
-                operation_name == "DeleteSecret"
-                and kwarg["SecretId"] == client.get_secret_id(ORG_ID)
-                and kwarg["RecoveryWindowInDays"] == 7
+            if operation_name == "DeleteSecret" and kwarg["SecretId"] == client.get_secret_id(
+                ORG_ID
             ):
                 return None
             raise ClientError({}, operation_name)
