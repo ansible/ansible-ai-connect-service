@@ -66,6 +66,7 @@ MIDDLEWARE = [
     "social_django.middleware.SocialAuthExceptionMiddleware",
     "main.middleware.SegmentMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 # Allow Prometheus to scrape metrics
@@ -394,3 +395,5 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
+
+CSP_DEFAULT_SRC = ("'self'", '*.redhat.com')
