@@ -89,6 +89,7 @@ services:
       - $PWD/grafana:/var/lib/grafana
     networks:
       - dbnet
+    user: "$UID:$GID"
 
 networks:
   dbnet:
