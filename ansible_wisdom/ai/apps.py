@@ -14,6 +14,7 @@ from users.authz_checker import (
 from ari import postprocessing
 
 from .api.aws.wca_secret_manager import WcaSecretManager
+from .api.model_client.wca_client import WCAClient
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
     model_mesh_client = None
+    wca_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
@@ -34,6 +36,9 @@ class AiConfig(AppConfig):
             logger.info('GPU is available')
         else:
             logger.error('GPU is not available')
+        self.wca_client = WCAClient(
+            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+        )
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
             from .api.model_client.grpc_client import GrpcClient
 
@@ -41,11 +46,7 @@ class AiConfig(AppConfig):
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-            from .api.model_client.wca_client import WCAClient
-
-            self.model_mesh_client = WCAClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-            )
+            self.model_mesh_client = self.wca_client
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
             from .api.model_client.http_client import HttpClient
 

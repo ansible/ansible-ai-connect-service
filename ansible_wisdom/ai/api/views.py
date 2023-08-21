@@ -141,6 +141,12 @@ class Completions(APIView):
         request._request._suggestion_id = request.data.get('suggestionId')
 
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            # if feature flag for wca is on for this user
+            wca_api = feature_flags.get("wca_api", request.user, "")
+            if wca_api:
+                model_mesh_client = apps.get_app_config("ai").wca_client
+                model_mesh_client.set_inference_url(wca_api)
         request_serializer = CompletionRequestSerializer(data=request.data)
         try:
             request_serializer.is_valid(raise_exception=True)
