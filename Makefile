@@ -32,7 +32,10 @@ docker-compose:
 
 # Run backend services in container for running Django application from source
 run-backends:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans -d
+
+# An alias for run-backends for consistency with the `stop` command
+start-backends: run-backends
 
 # Stop backend services
 stop-backends:
