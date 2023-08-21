@@ -157,3 +157,6 @@ db_data
 # Ansible Risk Insight
 ari/kb/data/
 ari/kb/rules/
+
+# Grafana db files
+grafana/*.db
