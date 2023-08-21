@@ -401,8 +401,8 @@ Unit-tests are based on Python's [unittest library](https://docs.python.org/3/li
 #### Preparation
 
 For running Unit Tests in this repository, you need to
-have backend services (Postgres DB and Redis) running.
-[Running them from container](#running-backend-services--from-container-)
+have backend services (Postgres, Prometheus and Grafana) running.
+[Running them from container](#running-backend-services-from-container)
 is one handy way for that requirement.
 
 For getting the unit test code coverage,
