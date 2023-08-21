@@ -158,5 +158,5 @@ db_data
 ari/kb/data/
 ari/kb/rules/
 
-# Grafana db files
-grafana/*.db
+# Generated Grafana files
+grafana/*
