@@ -396,4 +396,4 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
 
-CSP_DEFAULT_SRC = ("'self'", '*.redhat.com')
+CSP_DEFAULT_SRC = ("'self'",)
