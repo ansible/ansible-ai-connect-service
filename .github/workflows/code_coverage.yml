@@ -27,10 +27,6 @@ jobs:
       SECRET_KEY: somesecret
 
     services:
-      redis:
-        image: docker.io/library/redis:alpine
-        ports:
-          - 6379:6379
       postgres:
         image: docker.io/library/postgres:alpine
         env:
