@@ -15,6 +15,7 @@ from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
+from users.auth import BearerTokenAuthentication
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
 
@@ -36,6 +37,10 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn('You are currently not logged in.', str(r.content))
+
+    def test_auth_keyword(self):
+        bearer = BearerTokenAuthentication()
+        self.assertEqual(bearer.keyword, "Bearer")
 
 
 class TestTermsAndConditions(TestCase):
