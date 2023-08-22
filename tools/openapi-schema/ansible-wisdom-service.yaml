@@ -179,7 +179,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
-  /api/v0/wca/{org_id}/:
+  /api/v0/wca/{org_id}/apikey:
     get:
       operationId: wca_get
       summary: Get WCA key for an Organisation
