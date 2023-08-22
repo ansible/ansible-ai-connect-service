@@ -153,13 +153,20 @@ class Completions(APIView):
         payload.userId = request.user.uuid
         model_name = payload.model_name
         if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", request.user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                server, port, model_name, index = match.groups()
-                logger.info(f"selecting model '{model_name}@{server}:{port}'")
-                model_mesh_client.set_inference_url(f"{server}:{port}")
+            wca_api_info = feature_flags.get("wca-api", request.user, "")
+            if wca_api_info:
+                # if feature flag for wca is on for this user
+                wca_api, model_name = wca_api_info.split('<>')
+                model_mesh_client = apps.get_app_config("ai").wca_client
+                model_mesh_client.set_inference_url(wca_api)
+            else:
+                model_tuple = feature_flags.get("model_name", request.user, "")
+                logger.debug(f"flag model_name has value {model_tuple}")
+                match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
+                if match:
+                    server, port, model_name, index = match.groups()
+                    logger.info(f"selecting model '{model_name}@{server}:{port}'")
+                    model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
 
         try:
