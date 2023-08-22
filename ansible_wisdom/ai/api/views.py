@@ -38,6 +38,7 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
+import q
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
@@ -315,6 +316,7 @@ class Completions(APIView):
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
             recommendation_problem = None
             truncated_yaml = None
+            postprocessed_yaml = None
             # check if the recommendation_yaml is a valid YAML
             try:
                 _ = yaml.safe_load(recommendation_yaml)
@@ -340,7 +342,6 @@ class Completions(APIView):
                     exception = recommendation_problem
             if ari_caller:
                 start_time = time.time()
-                postprocessed_yaml = None
                 postprocess_detail = None
                 try:
                     # otherwise, do postprocess here
@@ -385,7 +386,7 @@ class Completions(APIView):
                         postprocess_detail.get("rule_results", {}),
                         exception,
                         start_time,
-                        "AnsibleRiskInsight_Postprocess",
+                        "ARI",
                     )
                     if exception:
                         raise exception
@@ -393,11 +394,18 @@ class Completions(APIView):
             if ansible_lint_caller:
                 start_time = time.time()
                 try:
-                    # Post-processing by running Ansible Lint to model server predictions
-                    postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
-                    # Stripping the linting transform and adding --- in the linted yaml
-                    postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
-                    recommendation["predictions"][i] = postprocessed_yaml
+                    if postprocessed_yaml:
+                        # Post-processing by running Ansible Lint to ARI processed yaml
+                        postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
+                        # Stripping the linting transform and adding --- in the linted yaml
+                        postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
+                        recommendation["predictions"][i] = postprocessed_yaml
+                    else:
+                        # Post-processing by running Ansible Lint to model server predictions
+                        postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+                        # Stripping the linting transform and adding --- in the linted yaml
+                        postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
+                        recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -415,7 +423,7 @@ class Completions(APIView):
                         None,
                         exception,
                         start_time,
-                        "AnsibleLint_Postprocess",
+                        "ansible-lint",
                     )
                     if exception:
                         raise exception
@@ -442,7 +450,7 @@ class Completions(APIView):
         postprocess_detail,
         exception,
         start_time,
-        processing_tool,
+        event_type,
     ):
         duration = round((time.time() - start_time) * 1000, 2)
         problem = (
@@ -452,18 +460,28 @@ class Completions(APIView):
             if str(exception)
             else exception.__class__.__name__
         )
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "detail": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-            "processingTool": processing_tool,
-        }
-        send_segment_event(event, "postprocess", user)
+        if event_type == "ARI":
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "truncated": truncated_yaml,
+                "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocess", user)
+        if event_type == "ansible-lint":
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "postprocessed": postprocessed_yaml,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocessLint", user)
 
 
 class Feedback(APIView):
