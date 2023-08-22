@@ -143,7 +143,7 @@ class Completions(APIView):
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         if settings.LAUNCHDARKLY_SDK_KEY:
             # if feature flag for wca is on for this user
-            wca_api = feature_flags.get("wca_api", request.user, "")
+            wca_api = feature_flags.get("wca-api", request.user, "")
             if wca_api:
                 model_mesh_client = apps.get_app_config("ai").wca_client
                 model_mesh_client.set_inference_url(wca_api)
