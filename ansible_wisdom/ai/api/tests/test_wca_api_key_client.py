@@ -1,12 +1,11 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import boto3
 import botocore
+from ai.api.aws.exceptions import WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import SECRET_KEY_PREFIX, WcaSecretManager
 from botocore.exceptions import ClientError
 from rest_framework.test import APITestCase
-
-from ..aws.exceptions import WcaSecretManagerError
-from ..aws.wca_secret_manager import SECRET_KEY_PREFIX, WcaSecretManager
 
 ORG_ID = "org_123"
 SECRET_VALUE = "secret"
@@ -50,7 +49,7 @@ class TestWcaApiKeyClient(APITestCase):
                 with self.assertLogs(logger='root', level='ERROR') as log:
                     client.get_key(ORG_ID)
                     expected_log = (
-                        "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager"
+                        "ERROR:ai.api.aws.wca_secret_manager"
                         + f"Error reading secret for org_id '{ORG_ID}'"
                     )
                     self.assertTrue(expected_log in log.output)
@@ -103,13 +102,19 @@ class TestWcaApiKeyClient(APITestCase):
             response = client.save_key(ORG_ID, SECRET_VALUE)
             self.assertEqual(response, client.get_secret_id(ORG_ID))
 
-    def test_save_key_fails(self):
-        def mock_api_call(_, operation_name, kwarg):
-            if operation_name == "GetSecretValue":
-                raise ClientError({}, operation_name)
-
-        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
+    def test_save_new_key_fails(self):
+        with patch("boto3.client"):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+            client._client.create_secret = Mock(side_effect=ClientError({}, "nop"))
+            client.key_exists = Mock(return_value=False)
+            with self.assertRaises(WcaSecretManagerError):
+                client.save_key(ORG_ID, SECRET_VALUE)
+
+    def test_save_key_fails(self):
+        with patch("boto3.client"):
+            client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+            client._client.put_secret_value = Mock(side_effect=ClientError({}, "nop"))
+            client.key_exists = Mock(return_value=True)
             with self.assertRaises(WcaSecretManagerError):
                 client.save_key(ORG_ID, SECRET_VALUE)
 
@@ -139,7 +144,7 @@ class TestWcaApiKeyClient(APITestCase):
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
                 expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
+                    "ERROR:ai.api.aws.wca_secret_manager:"
                     + f"Error removing replica regions, invalid region(s) for org_id '{ORG_ID}'"
                 )
                 self.assertTrue(expected_log in log.output)
@@ -156,7 +161,7 @@ class TestWcaApiKeyClient(APITestCase):
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
                 expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
+                    "ERROR:ai.api.aws.wca_secret_manager:"
                     + f"Error removing replica regions, secret does not exist for org_id '{ORG_ID}'"
                 )
                 self.assertTrue(expected_log in log.output)
@@ -172,7 +177,7 @@ class TestWcaApiKeyClient(APITestCase):
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
                 expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
+                    "ERROR:ai.api.aws.wca_secret_manager:"
                     + f"Error removing replica regions for org_id '{ORG_ID}'"
                 )
                 self.assertTrue(expected_log in log.output)
