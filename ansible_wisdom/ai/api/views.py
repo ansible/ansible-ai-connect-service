@@ -38,7 +38,6 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
-import q
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
