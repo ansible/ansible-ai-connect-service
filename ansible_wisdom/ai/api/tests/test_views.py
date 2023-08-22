@@ -153,7 +153,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
-            return "https://wca_api_url" if name == "wca-api" else ""
+            return "https://wca_api_url|modelX" if name == "wca-api" else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
@@ -171,6 +171,9 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(
                 model_client.session.post.call_args.args[0],
                 "https://wca_api_url/analytics/notebooks/codegen/gencode/",
+            )
+            self.assertEqual(
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'modelX'
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
