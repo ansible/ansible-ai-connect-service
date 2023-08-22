@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ai.api.aws.wca_secret_manager import WcaSecretManager
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
@@ -7,19 +7,7 @@ from django.apps import apps
 from django.urls import reverse
 from django.utils import timezone
 
-
-class DummySecretManager(WcaSecretManager):
-    __storage__: dict[str, object] = {}
-
-    def __init__(self, storage: dict[str, object]):
-        super().__init__(None, None, None, None, [])
-        self.__storage__ = storage
-
-    def get_key(self, org_id):
-        return self.__storage__.get(org_id)
-
-    def save_key(self, org_id, key):
-        self.__storage__[org_id] = {'key': key, 'CreatedDate': timezone.now().isoformat()}
+mockSecretManager = Mock(WcaSecretManager)
 
 
 class TestWCAKeyView(WisdomServiceAPITestCaseBase):
@@ -34,10 +22,12 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            DummySecretManager({}),
+            mockSecretManager,
         ):
+            mockSecretManager.get_key.return_value = None
             r = self.client.get(reverse('wca', kwargs={'org_id': 'unknown'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+            mockSecretManager.get_key.assert_called_with('unknown')
 
     def test_get_known_org_id(self):
         self.client.force_authenticate(user=self.user)
@@ -45,10 +35,12 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            DummySecretManager({'1': {'CreatedDate': timezone.now().isoformat()}}),
+            mockSecretManager,
         ):
+            mockSecretManager.get_key.return_value = {'CreatedDate': timezone.now().isoformat()}
             r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
+            mockSecretManager.get_key.assert_called_with('1')
 
     def test_set_unknown_org_id(self):
         self.client.force_authenticate(user=self.user)
@@ -57,20 +49,25 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            DummySecretManager({}),
+            mockSecretManager,
         ):
+            mockSecretManager.get_key.return_value = None
             r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+            mockSecretManager.get_key.assert_called_with('1')
 
             # Set Key
             r = self.client.post(
                 reverse('wca', kwargs={'org_id': '1'}), data='a-new-key', content_type='text/plain'
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            mockSecretManager.save_key.assert_called_with('1', 'a-new-key')
 
             # Check Key was stored
+            mockSecretManager.get_key.return_value = {'CreatedDate': timezone.now().isoformat()}
             r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
+            mockSecretManager.get_key.assert_called_with('1')
 
     def test_set_known_org_id(self):
         self.client.force_authenticate(user=self.user)
@@ -78,18 +75,23 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            DummySecretManager({'1': {'CreatedDate': timezone.now().isoformat()}}),
+            mockSecretManager,
         ):
             # Key should exist
+            mockSecretManager.get_key.return_value = {'CreatedDate': timezone.now().isoformat()}
             r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
+            mockSecretManager.get_key.assert_called_with('1')
 
             # Set Key
             r = self.client.post(
                 reverse('wca', kwargs={'org_id': '1'}), data='a-new-key', content_type='text/plain'
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            mockSecretManager.save_key.assert_called_with('1', 'a-new-key')
 
             # Check Key was stored
+            mockSecretManager.get_key.return_value = {'CreatedDate': timezone.now().isoformat()}
             r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
+            mockSecretManager.get_key.assert_called_with('1')
