@@ -135,6 +135,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_disabled(self, feature_flags):
         self.client.force_authenticate(user=self.user)
@@ -148,6 +149,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             feature_flags.assert_not_called()
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
@@ -172,6 +174,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_off(self, feature_flags):
         def get_feature_flags(name, *args):
