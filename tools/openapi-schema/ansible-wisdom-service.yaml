@@ -239,31 +239,6 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-    delete:
-      operationId: wca_delete
-      summary: Delete the WCA key for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
-      tags:
-      - wca
-      security:
-      - oauth2:
-        - read
-        - write
-      - cookieAuth: []
-      responses:
-        '204':
-          description: Empty response
-        '404':
-          description: Not found
-        '429':
-          description: Request was throttled
-        '503':
-          description: Service Unavailable
   /check/:
     get:
       operationId: check_retrieve

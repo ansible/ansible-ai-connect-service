@@ -4,23 +4,15 @@ import logging
 from ai.api.aws.exceptions import WcaSecretManagerError
 from django.apps import apps
 from django.conf import settings
-from django.http import HttpResponseNotFound
-from django.utils.encoding import DjangoUnicodeDecodeError, smart_str
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import ParseError
-from rest_framework.generics import (
-    CreateAPIView,
-    DestroyAPIView,
-    RetrieveAPIView,
-    UpdateAPIView,
-)
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.parsers import BaseParser
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_204_NO_CONTENT,
-    HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
@@ -50,21 +42,10 @@ class TextParser(BaseParser):
             raise ParseError(detail=exc)
 
 
-class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
+class WCAKeyView(RetrieveAPIView, CreateAPIView):
     from ai.api.permissions import AcceptedTermsPermission, IsAdministrator
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
     from rest_framework import permissions
-
-    def __get_wca_key__(self, org_id: str) -> str:
-        # This is temporary until we have the AWS-SM service
-        return self.__storage__.get(org_id)
-
-    def __set_wca_key__(self, wca_key: any, org_id: str):
-        # This is temporary until we have the AWS-SM service
-        self.__storage__[org_id] = wca_key
-
-    def __delete_wca_key__(self, org_id: str):
-        del self.__storage__[org_id]
 
     permission_classes = [
         permissions.IsAuthenticated,
@@ -124,29 +105,6 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         try:
             secret_name = secret_manager.save_key(org_id, wca_key)
             logger.info(f"stored secret ${secret_name} for org_id {org_id}")
-        except WcaSecretManagerError as e:
-            logger.error(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response(status=HTTP_204_NO_CONTENT)
-
-    @extend_schema(
-        responses={
-            204: OpenApiResponse(description='Empty response'),
-            404: OpenApiResponse(description='Not found'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
-        },
-        summary="Delete the WCA key for an Organisation",
-        operation_id="wca_delete",
-    )
-    def delete(self, request, *args, **kwargs):
-        logger.info("Delete handler")
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_id = kwargs.get("org_id")
-
-        try:
-            secret_manager.delete_key(org_id)
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
