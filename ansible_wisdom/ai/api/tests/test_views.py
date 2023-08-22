@@ -153,7 +153,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
-            return "https://wca_api_url|modelX" if name == "wca-api" else ""
+            return "https://wca_api_url<>modelX" if name == "wca-api" else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)

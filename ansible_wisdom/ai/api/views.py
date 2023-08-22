@@ -156,7 +156,7 @@ class Completions(APIView):
             wca_api_info = feature_flags.get("wca-api", request.user, "")
             if wca_api_info:
                 # if feature flag for wca is on for this user
-                wca_api, model_name = wca_api_info.split('|')
+                wca_api, model_name = wca_api_info.split('<>')
                 model_mesh_client = apps.get_app_config("ai").wca_client
                 model_mesh_client.set_inference_url(wca_api)
             else:
