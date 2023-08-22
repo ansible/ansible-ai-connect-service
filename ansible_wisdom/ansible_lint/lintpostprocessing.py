@@ -40,8 +40,9 @@ class AnsibleLintCaller:
         try:
             transformed_completion = inline_completion
             # Since the suggestions are tasks, for ansible-lint to run in write mode correctly it
-            # needs to identity the temporary file as tasks file, and for that to happen the temporary
-            # file needs to be be under tasks folder. Thus, creating a temporary file under tasks folder
+            # needs to identity the temporary file as tasks file, and for that to happen the
+            # temporary file needs to be be under tasks folder. Thus, creating a temporary file
+            # under tasks folder.
             tmp_dir = os.path.join(tempfile.gettempdir(), TEMP_TASK_FOLDER)
             os.mkdir(tmp_dir)
             with tempfile.NamedTemporaryFile(
