@@ -443,7 +443,7 @@ in `requirements-dev.txt` with the instructions in the
 
 The easiest way to run unit tests and measure code coverage report is to run
 
-```commandline
+```bash
 make code-coverage
 ```
 
@@ -451,14 +451,14 @@ If the execution was successful, results in HTML are showin in Chrome.
 
 #### Running Unit Tests from Command Line or PyCharm
 
-For executing unit tests from command lline,
+For executing unit tests from command line,
 You need to set some environment variables
 that are read by Lightspeed Service.
 If you are using PyCharm
 for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
 with the following `.env` file:
 
-```commandline
+```bash
 ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
@@ -479,7 +479,7 @@ export those variables as environment variables.
 If variables are defined in `.env` file,
 it can be done with following commands:
 
-```commandline
+```bash
 set -o allexport
 source .env
 set +o allexport
@@ -487,12 +487,18 @@ set +o allexport
 
 After environment variables are set, you can issue following commands
 
-```commandline
+```bash
 cd ansible_wisdom
 python3 manage.py test
 ```
 
 to run unit tests.
+
+Alternatively you can run the following command to run tests:
+
+```bash
+make test
+```
 
 #### Measuring Code Coverage from Command Line
 
@@ -501,21 +507,27 @@ running unit tests from command line,
 set environment variables listed in the section above
 and run following commands:
 
-```commandline
+```bash
 cd ansible_wisdom
 coverage run --rcfile=../setup.cfg manage.py test
 ```
 
 After tests completed, run
 
-```commandline
+```bash
 coverage report
 ```
 
 for showing results on console, or
 
-```commandline
+```bash
 coverage html
 ```
 
 to generate HTML reports under `htmlcov` directory.
+
+Alternatively you can run the following command for code coverage:
+
+```bash
+make code-coverage
+```
