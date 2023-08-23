@@ -52,7 +52,7 @@ run-django: run-server DEPRECATED
 run-server:
 	python ansible_wisdom/manage.py runserver
 
-# DEPRECATED: Please use runserver-containerized instead
+# DEPRECATED: Please use run-server-containerized instead
 run-django-container: run-server-containerized DEPRECATED
 
 .PHONY: run-server-containerized
