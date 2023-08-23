@@ -45,14 +45,15 @@ class TestWcaApiKeyClient(APITestCase):
 
         with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
-            with self.assertRaises(WcaSecretManagerError):
-                with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger='root', level='ERROR') as log:
+                expected_log = (
+                    "ERROR:ai.api.aws.wca_secret_manager:"
+                    + f"Error reading secret for org_id '{ORG_ID}'"
+                )
+                with self.assertRaises(WcaSecretManagerError):
                     client.get_key(ORG_ID)
-                    expected_log = (
-                        "ERROR:ai.api.aws.wca_secret_manager"
-                        + f"Error reading secret for org_id '{ORG_ID}'"
-                    )
-                    self.assertTrue(expected_log in log.output)
+
+                self.assertIn(expected_log, log.output)
 
     def test_key_exist(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -190,11 +191,12 @@ class TestWcaApiKeyClient(APITestCase):
 
         with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
-            with self.assertRaises(WcaSecretManagerError):
-                with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger='root', level='ERROR') as log:
+                expected_log = (
+                    "ERROR:ai.api.aws.wca_secret_manager:"
+                    + f"Error removing secret for org_id '{ORG_ID}'"
+                )
+                with self.assertRaises(WcaSecretManagerError):
                     client.delete_key(ORG_ID)
-                    expected_log = (
-                        "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
-                        + f"Error removing secret for org_id '{ORG_ID}'"
-                    )
-                    self.assertTrue(expected_log in log.output)
+
+                self.assertIn(expected_log, log.output)
