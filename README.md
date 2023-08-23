@@ -2,9 +2,13 @@
 
 Note: This repository is under active development and is not yet ready for production use.
 
-This repo contains a Django application that serves Ansible task suggestions for consumption by the Ansible VSCode extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint, etc.
+This repo contains a Django application that serves Ansible task suggestions for consumption by the Ansible VSCode
+extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint,
+etc.
 
-The Django application depends on a separate model server to perform the task suggestion predictions. There is a torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django application at the dev model server running at model.wisdom.testing.ansible.com as described below.
+The Django application depends on a separate model server to perform the task suggestion predictions. There is a
+torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django
+application at the dev model server running at model.wisdom.testing.ansible.com as described below.
 
 ## Using pre-commit
 
@@ -15,13 +19,12 @@ To use pre-commit, you need to first install the pre-commit package and its depe
 pip install -r requirements-dev.txt
 ```
 
-
-To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this repo:
+To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this
+repo:
 
 ```bash
 pre-commit install
 ```
-
 
 To update the pre-commit config to the latest repos' versions and run the precommit check across all files, run:
 
@@ -35,7 +38,7 @@ We are now using pip-compile in order to manage our Python
 dependencies.
 
 The specification of what packages we need now live in the
-requirements.in and requirements-dev.in files.  Use your preferred
+requirements.in and requirements-dev.in files. Use your preferred
 editor to make the needed changes in those files, then run
 
 ```bash
@@ -52,10 +55,9 @@ pip-compile requirements-dev.in
 
 These commands will produce fully populated and pinned requirements.txt and
 requirements-dev.txt files, containing all of the dependencies of
-our dependencies involved.  Due to differences in architecture and
+our dependencies involved. Due to differences in architecture and
 version of Python between developers' machines, we do not recommend
 running the pip-compile commands directly.
-
 
 ## Full Development Environment
 
@@ -94,7 +96,7 @@ command line the variable `DEBUG_VALUE=True`.
 The Django service listens on <http://127.0.0.1:8000>.
 
 Note that there is no pytorch service defined in the docker-compose
-file.  You should adjust the `ANSIBLE_AI_MODEL_MESH_HOST`
+file. You should adjust the `ANSIBLE_AI_MODEL_MESH_HOST`
 configuration key to point on an existing service.
 
 If you get a permission denied error when attempting to start the
@@ -107,98 +109,101 @@ chcon -t container_file_t -R prometheus/
 chcon -t container_file_t -R grafana/
 chcon -t container_file_t -R ari/
 ```
+
 Also run `chmod` against the `ari/` directory so that ARI can
 write temporary data in it:
+
 ```bash
 chmod -R 777 ari/
 ```
 
 Recreating the dev containers might be useful:
-``` bash
-$ make docker-compose-clean
+
+```bash
+make docker-compose-clean
 ```
 
 It may be necessary to recreate the dev image if anything has changed in the nginx settings:
-``` bash
-$ docker rmi docker-compose_django_1
+
+```bash
+ docker rmi docker-compose_django_1
 ```
 
 Create a local admin user:
-``` bash
-$ make docker-create-superuser
+
+```bash
+ make docker-create-superuser
 ```
 
 ## Running the Django application standalone (from container)
 
 1. Build the container
 
-```bash
-make ansible-wisdom-container
-```
+   ```bash
+   make build-wisdom-container
+   ```
 
 2. Start the container
 
-```bash
-make run-django-container
-```
+   ```bash
+   make run-server-containerized
+   ```
 
 ## Running the Django application standalone (from source)
 
 1. Clone the repository and install all the dependencies
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-If you are attempting to do this on a Mac, do instead:
+   If you are attempting to do this on a Mac, do instead:
 
-```bash
-pip install -r requirements.in
-```
+   ```bash
+   pip install -r requirements.in
+   ```
 
-This will avoid problems with the Python Nvidia CUDA libraries which are
-unavailable on Mac.
+   This will avoid problems with the Python Nvidia CUDA libraries which are
+   unavailable on Mac.
 
-1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
+2. Export the host and port for the model server.
 
-```bash
-export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
-```
+   > Skip this step if you want to use the model server on model.wisdom.testing.ansible.com.
+   See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
 
-1. Start the django application
+   ```bash
+   export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
+   export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
+   ```
 
-```bash
-make run-django
-```
-
-## Running Backend Services (from container)
-
-If you want to run backend services from container, run the following steps. This
-is convenient for debugging the Django application without installing backend
-services on your local machine.
-
-1. Build the container
+3. Start backend services.
 
     ```bash
-    make ansible-wisdom-container
+    make start-backends
     ```
 
-2. Start backend services.
+4. Create the application.
+   > Skip this step if you already created the application.
+
+   > Before running this step, make sure you set the `SOCIAL_AUTH_GITHUB_KEY` and `SOCIAL_AUTH_GITHUB_SECRET`
+   environment variables for VSCode connection.
 
     ```bash
-    make run-backends
+    make create-application
     ```
 
-For terminating backend services, run `make stop-backends`.
+5. Start the django application
 
-Note that you need to run `manage.py migrate` and `manage.py createcachetable` to set up DB
-before running the Django application from source,
+   ```bash
+   make run-server
+   ```
 
-The setup for debugging is different depending on the Python development tool.
-For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
+> The setup for debugging is different depending on the Python development tool.
+> For PyCharm, please look
+> at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
 ## Deploy the service via OpenShift S2I
+
 ```
 oc new-build --strategy=docker --binary --name wisdom-service
 oc start-build wisdom-service --from-dir . --exclude='(^|\/)(.git|.venv|.tox|model)(\/|$)' --wait=true
@@ -207,7 +212,8 @@ oc new-app wisdom-service
 
 ## Testing the completion API
 
-The sample request below tests the task suggestion prediction API provided by the Django application. This is the same request the VSCode extension will make.
+The sample request below tests the task suggestion prediction API provided by the Django application. This is the same
+request the VSCode extension will make.
 
 Request:
 
@@ -238,7 +244,7 @@ Access the updated Ansible VSCode extension here:
 https://drive.google.com/drive/u/1/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg
 
 In order to successfully connect to your local dev environment using
-the plugin, you need to create the OAuth2 application in Django.  Open
+the plugin, you need to create the OAuth2 application in Django. Open
 a shell session in the Django container using
 
 ```bash
@@ -261,28 +267,40 @@ into the VSCode extension.
 Review the screen recording for instruction on configuring the VSCode
 extension to access your running wisdom service.
 
-Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following command: ```python manage.py runserver --noreload```. You can also disable it by adding `INSTALLED_APPS = [i for i in INSTALLED_APPS if i not in ["django_prometheus"]]` to the `ansible_wisdom/main/settings/development.py` file.
-
+Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following
+command: ```python manage.py runserver --noreload```. You can also disable it by
+adding `INSTALLED_APPS = [i for i in INSTALLED_APPS if i not in ["django_prometheus"]]` to
+the `ansible_wisdom/main/settings/development.py` file.
 
 ## Authenticating with the completion API
 
-GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
+GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are
+currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
 
-To test GitHub authentication locally, you will need to create a new OAuth App at https://github.com/settings/developers. Provide an Authorization callback URL of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_TEAM_KEY` and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` correspond to the Client ID and Client Secret respectively, both of which are provided after creating a new OAuth App. If you are running with the compose [development environment](#development-environment) described below, put these env vars in a .env file in the `tools/docker-compose` directory.
+To test GitHub authentication locally, you will need to create a new OAuth App
+at https://github.com/settings/developers. Provide an Authorization callback URL
+of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY`
+and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_TEAM_KEY`
+and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` correspond to the Client ID and Client Secret respectively, both of which are
+provided after creating a new OAuth App. If you are running with the
+compose [development environment](#development-environment) described below, put these env vars in a .env file in
+the `tools/docker-compose` directory.
 
-
-Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
+Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
+authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
 
 To get an authentication token, you can run the following command:
 
 ```bash
 podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
-Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which case the command would be:
+
+Note: If using `docker-compose`, the container might have a different name such as `docker-compose-django-1` in which
+case the command would be:
+
 ```bash
 podman exec -it docker-compose-django-1 wisdom-manage createtoken --create-user
 ```
-
 
 - `my-test-user` will be create for you
 - `my-token` is the name of the token
@@ -299,7 +317,8 @@ To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAUL
 
 ## Enabling postprocess with ARI
 
-You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for improving the completion output just by following these 2 steps below.
+You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for
+improving the completion output just by following these 2 steps below.
 
 1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
 
@@ -310,11 +329,13 @@ You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/
 
 2. Prepare `rules` and `data` directory inside `ari/kb` directory.
 
-    `rules` should contain mutation rules for the postprocess, you can refer to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
+   `rules` should contain mutation rules for the postprocess, you can refer
+   to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
 
-    `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this file must be placed manually if you want to enable the postprocess.
+   `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this
+   file must be placed manually if you want to enable the postprocess.
 
-    Once the files are ready, the `ari/kb` directory should look like this.
+   Once the files are ready, the `ari/kb` directory should look like this.
 
     ```bash
     ari/kb/
@@ -331,7 +352,8 @@ Then you can build the django image or just run `make docker-compose`.
 
 ## Application metrics as a Prometheus-style endpoint
 
-We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into the Lightspeed service for monitoring and measuring its availability.
+We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into
+the Lightspeed service for monitoring and measuring its availability.
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
@@ -341,19 +363,19 @@ To provide feedback for operational needs as well as for continuous service impr
 
 Swagger UI is available at http://localhost:8000/api/schema/swagger-ui/ **in
 the development environment only**.
-- **Note:** It is not enabled in the production environment regardless of any settings.
 
+- **Note:** It is not enabled in the production environment regardless of any settings.
 
 If you want to test Lightspeed APIs using Swagger UI,
 
 1. Open http://localhost:8000/ and get an authentication token by
-following the instructions described in the
-[Authenticating with the completion API](#authenticating-with-the-completion-api)
-section.
+   following the instructions described in the
+   [Authenticating with the completion API](#authenticating-with-the-completion-api)
+   section.
 2. Open http://localhost:8000/api/schema/swagger-ui/
 3. Click the **Authorize** button.
 4. Input the authentication token for the tokenAuth as it is.
-You do not need to add any prefixes, such as `Bearer ` or `Token `.
+   You do not need to add any prefixes, such as `Bearer ` or `Token `.
 5. Click **Authorize**.
 6. Click **Close** to go back to the Swagger UI page.
 7. Expand a section for the API that you want to try and click **Try it out**.
@@ -367,14 +389,17 @@ Another OpenAPI UI in the ReDoc format is also available at  http://localhost:80
 ### OpenAPI 3.0 Schema
 
 The static OpenAPI Schema YAML file is stored as
-[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml) in this repository.
+[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml)
+in this repository.
 
 When you make code changes, please update the static OpenAPI Schema YAML file
 with the following steps:
 
-1. Update API descriptions.  See [this doc](https://docs.google.com/document/d/1iF32yui3JTG808GhInN7CUTEn4Ocimed1szOn0N0P_E/edit#heading=h.sufj9xfpwkbn)
-to find where to update.
-2. Make sure the API version is updated in [development.yaml](https://github.com/ansible/ansible-wisdom-service/blob/7a9669be1ac5b037d1bd92793db48e6aed15bb4e/ansible_wisdom/main/settings/development.py#L38)
+1. Update API descriptions.
+   See [this doc](https://docs.google.com/document/d/1iF32yui3JTG808GhInN7CUTEn4Ocimed1szOn0N0P_E/edit#heading=h.sufj9xfpwkbn)
+   to find where to update.
+2. Make sure the API version is updated
+   in [development.yaml](https://github.com/ansible/ansible-wisdom-service/blob/7a9669be1ac5b037d1bd92793db48e6aed15bb4e/ansible_wisdom/main/settings/development.py#L38)
 3. Run `make update-openapi-schema` in the project root.
 4. Checkin the updated OpenAPI Schema YAML file with your API changes.
 
@@ -385,16 +410,20 @@ Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded eith
 
 ## Test cases
 
-Unit-tests are based on Python's [unittest library](https://docs.python.org/3/library/unittest.html#module-unittest) and rely on [Django REST framework APIClient](https://www.django-rest-framework.org/api-guide/testing/#apiclient).
+Unit-tests are based on Python's [unittest library](https://docs.python.org/3/library/unittest.html#module-unittest) and
+rely on [Django REST framework APIClient](https://www.django-rest-framework.org/api-guide/testing/#apiclient).
 
 ### Unit-test Guidelines
 
--  Use `reverse()`:
+- Use `reverse()`:
 
-    Please make use of Django's [reverse() function](https://docs.djangoproject.com/en/4.1/ref/urlresolvers/#reverse) to specify which view you are hitting.
-    If and when we change the path some endpoint is at, the person making the change will appreciate not having to search and replace all of those strings.
+  Please make use of Django's [reverse() function](https://docs.djangoproject.com/en/4.1/ref/urlresolvers/#reverse) to
+  specify which view you are hitting.
+  If and when we change the path some endpoint is at, the person making the change will appreciate not having to search
+  and replace all of those strings.
 
-    Additionally if you are hitting the same endpoint over a bunch of methods on the same test class, you can always store the results of `reverse()` in an attribute and make use of that, to reduce the repetition.
+  Additionally if you are hitting the same endpoint over a bunch of methods on the same test class, you can always store
+  the results of `reverse()` in an attribute and make use of that, to reduce the repetition.
 
 ### Execute Unit Tests and Measure Code Coverage
 
@@ -413,21 +442,23 @@ in `requirements-dev.txt` with the instructions in the
 #### Use make
 
 The easiest way to run unit tests and measure code coverage report is to run
-```commandline
+
+```bash
 make code-coverage
 ```
+
 If the execution was successful, results in HTML are showin in Chrome.
 
 #### Running Unit Tests from Command Line or PyCharm
 
-For executing unit tests from command lline,
+For executing unit tests from command line,
 You need to set some environment variables
 that are read by Lightspeed Service.
 If you are using PyCharm
 for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
- with the following `.env` file:
+with the following `.env` file:
 
-```commandline
+```bash
 ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
@@ -438,6 +469,7 @@ ENABLE_ARI_POSTPROCESS=True
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
 ```
+
 Note that this `.env` file assumes that the Django
 service is executed in the `ansible_wisdom` subdirectory
 as `ARI_KB_PATH` is defined as `../ari/kb`.
@@ -447,7 +479,7 @@ export those variables as environment variables.
 If variables are defined in `.env` file,
 it can be done with following commands:
 
-```commandline
+```bash
 set -o allexport
 source .env
 set +o allexport
@@ -455,11 +487,18 @@ set +o allexport
 
 After environment variables are set, you can issue following commands
 
-```commandline
+```bash
 cd ansible_wisdom
 python3 manage.py test
 ```
+
 to run unit tests.
+
+Alternatively you can run the following command to run tests:
+
+```bash
+make test
+```
 
 #### Measuring Code Coverage from Command Line
 
@@ -468,17 +507,27 @@ running unit tests from command line,
 set environment variables listed in the section above
 and run following commands:
 
-```commandline
+```bash
 cd ansible_wisdom
 coverage run --rcfile=../setup.cfg manage.py test
 ```
 
 After tests completed, run
-```commandline
+
+```bash
 coverage report
 ```
+
 for showing results on console, or
-```commandline
+
+```bash
 coverage html
 ```
+
 to generate HTML reports under `htmlcov` directory.
+
+Alternatively you can run the following command for code coverage:
+
+```bash
+make code-coverage
+```
