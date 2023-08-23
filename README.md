@@ -109,94 +109,92 @@ chcon -t container_file_t -R ari/
 ```
 Also run `chmod` against the `ari/` directory so that ARI can
 write temporary data in it:
+
 ```bash
 chmod -R 777 ari/
 ```
 
 Recreating the dev containers might be useful:
-``` bash
-$ make docker-compose-clean
+
+```bash
+make docker-compose-clean
 ```
 
 It may be necessary to recreate the dev image if anything has changed in the nginx settings:
-``` bash
-$ docker rmi docker-compose_django_1
+
+```bash
+ docker rmi docker-compose_django_1
 ```
 
 Create a local admin user:
-``` bash
-$ make docker-create-superuser
+
+```bash
+ make docker-create-superuser
 ```
 
 ## Running the Django application standalone (from container)
 
 1. Build the container
 
-```bash
-make ansible-wisdom-container
-```
+   ```bash
+   make build-wisdom-container
+   ```
 
 2. Start the container
 
-```bash
-make run-django-container
-```
+   ```bash
+   make run-server-containerized
+   ```
 
 ## Running the Django application standalone (from source)
 
 1. Clone the repository and install all the dependencies
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-If you are attempting to do this on a Mac, do instead:
+   If you are attempting to do this on a Mac, do instead:
 
-```bash
-pip install -r requirements.in
-```
+   ```bash
+   pip install -r requirements.in
+   ```
 
-This will avoid problems with the Python Nvidia CUDA libraries which are
-unavailable on Mac.
+   This will avoid problems with the Python Nvidia CUDA libraries which are
+   unavailable on Mac.
 
-1. Export the host and port for the model server. Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
+2. Export the host and port for the model server. 
 
-```bash
-export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
-```
+   > Skip this step if you want to use the model server on model.wisdom.testing.ansible.com. See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
+   
+   ```bash
+   export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
+   export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
+   ```
 
-1. Start the django application
-
-```bash
-make run-django
-```
-
-## Running Backend Services (from container)
-
-If you want to run backend services from container, run the following steps. This
-is convenient for debugging the Django application without installing backend
-services on your local machine.
-
-1. Build the container
+3. Start backend services.
 
     ```bash
-    make ansible-wisdom-container
+    make start-backends
     ```
+   
+4. Create the application. 
+   > Skip this step if you already created the application.
 
-2. Start backend services.
+   > Before running this step, make sure you set the `SOCIAL_AUTH_GITHUB_KEY` and `SOCIAL_AUTH_GITHUB_SECRET` environment variables for VSCode connection.
 
     ```bash
-    make run-backends
+    make create-application
     ```
 
-For terminating backend services, run `make stop-backends`.
+5. Start the django application
 
-Note that you need to run `manage.py migrate` and `manage.py createcachetable` to set up DB
-before running the Django application from source,
-
-The setup for debugging is different depending on the Python development tool.
-For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
+   ```bash
+   make run-server
+   ```
+   
+> The setup for debugging is different depending on the Python development tool. 
+> For PyCharm, please look at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
 ## Deploy the service via OpenShift S2I
 ```
