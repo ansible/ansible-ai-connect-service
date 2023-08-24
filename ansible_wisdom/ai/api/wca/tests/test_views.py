@@ -16,7 +16,7 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
         r = self.client.get(reverse('wca', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    def test_get_unknown_org_id(self):
+    def test_get_key_when_undefined(self):
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
@@ -29,7 +29,7 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
             mockSecretManager.get_key.assert_called_with('unknown')
 
-    def test_get_known_org_id(self):
+    def test_get_key_when_defined(self):
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
@@ -42,7 +42,7 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mockSecretManager.get_key.assert_called_with('1')
 
-    def test_set_unknown_org_id(self):
+    def test_create_key(self):
         self.client.force_authenticate(user=self.user)
 
         # Key should initially not exist
@@ -69,7 +69,7 @@ class TestWCAKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mockSecretManager.get_key.assert_called_with('1')
 
-    def test_set_known_org_id(self):
+    def test_update_key(self):
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
