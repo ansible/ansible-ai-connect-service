@@ -9,6 +9,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import ParseError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.parsers import BaseParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
@@ -43,14 +44,18 @@ class TextParser(BaseParser):
 
 
 class WCAKeyView(RetrieveAPIView, CreateAPIView):
-    from ai.api.permissions import AcceptedTermsPermission, IsAdministrator
+    from ai.api.permissions import (
+        AcceptedTermsPermission,
+        IsAdministrator,
+        IsLightspeedSubscriber,
+    )
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
 
     permission_classes = [
-        permissions.IsAuthenticated,
+        IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         IsAdministrator,
+        IsLightspeedSubscriber,
         AcceptedTermsPermission,
     ]
     required_scopes = ['read', 'write']
@@ -66,10 +71,10 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
             503: OpenApiResponse(description='Service Unavailable'),
         },
         summary="Get WCA key for an Organisation",
-        operation_id="wca_get",
+        operation_id="wca_apikey_get",
     )
     def get(self, request, *args, **kwargs):
-        logger.info("Get handler")
+        logger.debug("WCA API Key:: GET handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_id = kwargs.get("org_id")
         try:
@@ -93,10 +98,10 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
             503: OpenApiResponse(description='Service Unavailable'),
         },
         summary="Set a WCA key for an Organisation",
-        operation_id="wca_set",
+        operation_id="wca_apikey_set",
     )
     def post(self, request, *args, **kwargs):
-        logger.info("Set handler")
+        logger.debug("WCA API Key:: POST handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
 
         # The data has already been decoded by this point
@@ -104,7 +109,8 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
         org_id = kwargs.get("org_id")
         try:
             secret_name = secret_manager.save_key(org_id, wca_key)
-            logger.info(f"stored secret ${secret_name} for org_id {org_id}")
+            user_name = request.user.username
+            logger.info(f"User '${user_name}' stored secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)

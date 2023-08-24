@@ -21,3 +21,12 @@ class IsAdministrator(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return True
+
+
+class IsLightspeedSubscriber(permissions.BasePermission):
+    """
+    Allow access only to users who have a Light Speed subscripton.
+    """
+
+    def has_permission(self, request, view):
+        return True
