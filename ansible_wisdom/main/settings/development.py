@@ -57,3 +57,5 @@ if DEBUG:
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
         MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
+
+CSP_REPORT_ONLY = True

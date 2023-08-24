@@ -21,6 +21,7 @@ class TestUrls(TestCase):
         )
         self.assertCountEqual(routes, patterns)
 
+    @override_settings(CSP_REPORT_ONLY=False)
     def test_headers(self):
         client = Client()
         response = client.get("/")
