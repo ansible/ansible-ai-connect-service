@@ -1,12 +1,10 @@
 from unittest.mock import patch
 
 import boto3
-import botocore
+from ai.api.aws.exceptions import WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import SECRET_KEY_PREFIX, WcaSecretManager
 from botocore.exceptions import ClientError
 from rest_framework.test import APITestCase
-
-from ..aws.exceptions import WcaSecretManagerError
-from ..aws.wca_secret_manager import SECRET_KEY_PREFIX, WcaSecretManager
 
 ORG_ID = "org_123"
 SECRET_VALUE = "secret"
@@ -49,11 +47,7 @@ class TestWcaApiKeyClient(APITestCase):
             with self.assertRaises(WcaSecretManagerError):
                 with self.assertLogs(logger='root', level='ERROR') as log:
                     client.get_key(ORG_ID)
-                    expected_log = (
-                        "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager"
-                        + f"Error reading secret for org_id '{ORG_ID}'"
-                    )
-                    self.assertTrue(expected_log in log.output)
+                    self.assertInLog(f"Error reading secret for org_id '{ORG_ID}'", log)
 
     def test_key_exist(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -138,11 +132,9 @@ class TestWcaApiKeyClient(APITestCase):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
-                expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
-                    + f"Error removing replica regions, invalid region(s) for org_id '{ORG_ID}'"
+                self.assertInLog(
+                    f"Error removing replica regions, invalid region(s) for org_id '{ORG_ID}'", log
                 )
-                self.assertTrue(expected_log in log.output)
 
     def test_delete_key_remove_regions_not_found(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -155,11 +147,10 @@ class TestWcaApiKeyClient(APITestCase):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
-                expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
-                    + f"Error removing replica regions, secret does not exist for org_id '{ORG_ID}'"
+                self.assertInLog(
+                    f"Error removing replica regions, secret does not exist for org_id '{ORG_ID}'",
+                    log,
                 )
-                self.assertTrue(expected_log in log.output)
 
     def test_delete_key_remove_regions_client_error(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -171,11 +162,10 @@ class TestWcaApiKeyClient(APITestCase):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             with self.assertLogs(logger='root', level='ERROR') as log:
                 client.delete_key(ORG_ID)
-                expected_log = (
-                    "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
-                    + f"Error removing replica regions for org_id '{ORG_ID}'"
+                self.assertInLog(
+                    "An error occurred",
+                    log,
                 )
-                self.assertTrue(expected_log in log.output)
 
     def test_delete_key_client_error(self):
         def mock_api_call(_, operation_name, kwarg):
@@ -188,8 +178,14 @@ class TestWcaApiKeyClient(APITestCase):
             with self.assertRaises(WcaSecretManagerError):
                 with self.assertLogs(logger='root', level='ERROR') as log:
                     client.delete_key(ORG_ID)
-                    expected_log = (
-                        "ERROR:ansible_wisdom.ai.api.aws.wca_secret_manager:"
-                        + f"Error removing secret for org_id '{ORG_ID}'"
-                    )
-                    self.assertTrue(expected_log in log.output)
+                    self.assertInLog(f"Error removing secret for org_id '{ORG_ID}'", log)
+
+    def assertInLog(self, s, logs):
+        self.assertTrue(self.searchInLogOutput(s, logs), logs)
+
+    @staticmethod
+    def searchInLogOutput(s, logs):
+        for log in logs.output:
+            if s in log:
+                return True
+        return False

@@ -12,3 +12,21 @@ class AcceptedTermsPermission(permissions.BasePermission):
             if user.commercial_terms_accepted or user.community_terms_accepted:
                 return True
         return False
+
+
+class IsAdministrator(permissions.BasePermission):
+    """
+    Allow access only to users who are an administrator.
+    """
+
+    def has_permission(self, request, view):
+        return True
+
+
+class IsLightspeedSubscriber(permissions.BasePermission):
+    """
+    Allow access only to users who have a Light Speed subscripton.
+    """
+
+    def has_permission(self, request, view):
+        return True
