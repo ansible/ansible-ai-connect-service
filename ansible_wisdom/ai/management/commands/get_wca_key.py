@@ -1,4 +1,8 @@
-from ai.api.aws.wca_secret_manager import WcaSecretManager, WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import (
+    Suffixes,
+    WcaSecretManager,
+    WcaSecretManagerError,
+)
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -25,7 +29,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Using AWS Primary Region: {settings.WCA_SECRET_MANAGER_PRIMARY_REGION}")
 
         try:
-            response = client.get_key(org_id)
+            response = client.get_secret(org_id, Suffixes.API_KEY)
             if response is None:
                 self.stdout.write(f"No API Key for orgId '{org_id}' found.")
                 return

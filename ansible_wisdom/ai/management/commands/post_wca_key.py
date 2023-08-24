@@ -1,4 +1,8 @@
-from ai.api.aws.wca_secret_manager import WcaSecretManager, WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import (
+    Suffixes,
+    WcaSecretManager,
+    WcaSecretManagerError,
+)
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -30,7 +34,7 @@ class Command(BaseCommand):
         )
 
         try:
-            key_name = client.save_key(org_id, key)
+            key_name = client.save_secret(org_id, Suffixes.API_KEY, key)
             self.stdout.write(f"API Key for orgId '{org_id}' stored as: {key_name}")
         except WcaSecretManagerError as e:
             raise CommandError(e)

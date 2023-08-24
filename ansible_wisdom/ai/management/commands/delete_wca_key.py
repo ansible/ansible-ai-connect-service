@@ -1,4 +1,8 @@
-from ai.api.aws.wca_secret_manager import WcaSecretManager, WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import (
+    Suffixes,
+    WcaSecretManager,
+    WcaSecretManagerError,
+)
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -28,7 +32,7 @@ class Command(BaseCommand):
         )
 
         try:
-            client.delete_key(org_id)
+            client.delete_secret(org_id, Suffixes.API_KEY)
             self.stdout.write(f"API Key for orgId '{org_id}' deleted.")
         except WcaSecretManagerError as e:
             raise CommandError(e)
