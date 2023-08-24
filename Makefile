@@ -20,7 +20,7 @@ ifeq ($(ENVIRONMENT),development)
 	export ANSIBLE_AI_DATABASE_NAME := wisdom
 	export ANSIBLE_AI_DATABASE_PASSWORD := wisdom
 	export ANSIBLE_AI_DATABASE_USER := wisdom
-	export ARI_KB_PATH := ../ari/kb/
+	export ARI_KB_PATH := ./ari/kb/
 	export DJANGO_SETTINGS_MODULE := main.settings.development
 	export ENABLE_ARI_POSTPROCESS := True
 	export PYTHONUNBUFFERED := 1
