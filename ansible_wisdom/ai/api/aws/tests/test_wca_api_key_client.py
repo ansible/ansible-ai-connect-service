@@ -183,10 +183,6 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             with self.assertLogs(logger='root', level='ERROR') as log:
-                expected_log = (
-                    "ERROR:ai.api.aws.wca_secret_manager:"
-                    + f"Error removing secret for org_id '{ORG_ID}'"
-                )
                 with self.assertRaises(WcaSecretManagerError):
                     client.delete_key(ORG_ID)
                     self.assertInLog(f"Error removing secret for org_id '{ORG_ID}'", log)
