@@ -5,12 +5,13 @@ from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import SECRET_KEY_PREFIX, WcaSecretManager
 from botocore.exceptions import ClientError
 from rest_framework.test import APITestCase
+from test_utils import AnsibleTestCase
 
 ORG_ID = "org_123"
 SECRET_VALUE = "secret"
 
 
-class TestWcaApiKeyClient(APITestCase):
+class TestWcaApiKeyClient(APITestCase, AnsibleTestCase):
     def nop(self):
         pass
 
@@ -179,13 +180,3 @@ class TestWcaApiKeyClient(APITestCase):
                 with self.assertLogs(logger='root', level='ERROR') as log:
                     client.delete_key(ORG_ID)
                     self.assertInLog(f"Error removing secret for org_id '{ORG_ID}'", log)
-
-    def assertInLog(self, s, logs):
-        self.assertTrue(self.searchInLogOutput(s, logs), logs)
-
-    @staticmethod
-    def searchInLogOutput(s, logs):
-        for log in logs.output:
-            if s in log:
-                return True
-        return False

@@ -15,6 +15,7 @@ from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
+from test_utils import AnsibleTestCase
 from users.auth import BearerTokenAuthentication
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
@@ -43,7 +44,7 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.assertEqual(bearer.keyword, "Bearer")
 
 
-class TestTermsAndConditions(TestCase):
+class TestTermsAndConditions(AnsibleTestCase):
     def setUp(self) -> None:
         class MockSession(dict):
             def save(self):
@@ -91,15 +92,6 @@ class TestTermsAndConditions(TestCase):
         self.user = Mock(community_terms_accepted=None, commercial_terms_accepted=None)
         self.group_filter = self.user.groups.filter(name='Commercial')
         self.group_filter.exists.return_value = False
-
-    def searchInLogOutput(self, s, logs):
-        for log in logs:
-            if s in log:
-                return True
-        return False
-
-    def assertInLog(self, s, logs):
-        self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
     def test_terms_of_service_first_call(self):
         _terms_of_service(
@@ -204,7 +196,7 @@ class TestTermsAndConditions(TestCase):
         with self.assertLogs(logger='root', level='WARN') as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
-            self.assertInLog('POST TermsOfService was invoked without partial_token', log.output)
+            self.assertInLog('POST TermsOfService was invoked without partial_token', log)
 
     @patch('social_django.utils.get_strategy')
     def test_post_with_invalid_partial_token(self, get_strategy):
@@ -215,7 +207,7 @@ class TestTermsAndConditions(TestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
-            self.assertInLog('strategy.partial_load(partial_token) returned None', log.output)
+            self.assertInLog('strategy.partial_load(partial_token) returned None', log)
 
     def test_get(self):
         view = TermsOfService(template_name='users/community-terms.html')
@@ -233,7 +225,7 @@ class TestTermsAndConditions(TestCase):
         with self.assertLogs(logger='root', level='WARN') as log:
             res = view.get(self.request)
             self.assertEqual(403, res.status_code)
-            self.assertInLog('GET TermsOfService was invoked without partial_token', log.output)
+            self.assertInLog('GET TermsOfService was invoked without partial_token', log)
 
 
 class TestUserSeat(TestCase):

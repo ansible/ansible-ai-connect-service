@@ -25,6 +25,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
+from test_utils import AnsibleTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -66,7 +67,7 @@ class DummyMeshClient(ModelMeshClient):
         return self.response_data
 
 
-class WisdomServiceAPITestCaseBase(APITransactionTestCase):
+class WisdomServiceAPITestCaseBase(APITransactionTestCase, AnsibleTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -92,38 +93,8 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase):
         group_2.user_set.add(self.user)
         cache.clear()
 
-    def searchInLogOutput(self, s, logs):
-        for log in logs:
-            if s in log:
-                return True
-        return False
-
-    def extractSegmentEventsFromLog(self, logs):
-        events = []
-        for log in logs:
-            if log.startswith('DEBUG:segment:queueing: '):
-                obj = literal_eval(
-                    log.replace('DEBUG:segment:queueing: ', '')
-                    .replace('\n', '')
-                    .replace('DataSource.UNKNOWN', '0')
-                    .replace('AnsibleType.UNKNOWN', '0')
-                )
-                events.append(obj)
-        return events
-
-    def assertInLog(self, s, logs):
-        self.assertTrue(self.searchInLogOutput(s, logs), logs)
-
-    def assertNotInLog(self, s, logs):
-        self.assertFalse(self.searchInLogOutput(s, logs), logs)
-
     def login(self):
         self.client.login(username=self.username, password=self.password)
-
-    def assertSegmentTimestamp(self, log):
-        segment_events = self.extractSegmentEventsFromLog(log.output)
-        for event in segment_events:
-            self.assertIsNotNone(event['timestamp'])
 
 
 @modify_settings()
@@ -276,7 +247,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
-                segment_events = self.extractSegmentEventsFromLog(log.output)
+                segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
                 for event in segment_events:
                     self.assertEqual(event['userId'], 'unknown')
@@ -340,7 +311,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                self.assertInLog("failed to validate request", log.output)
+                self.assertInLog("failed to validate request", log)
                 self.assertTrue("prompt does not contain the name parameter" in str(r.content))
                 self.assertSegmentTimestamp(log)
 
@@ -362,9 +333,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
-                self.assertInLog(
-                    'skipped ari post processing because ari was not initialized', log.output
-                )
+                self.assertInLog('skipped ari post processing because ari was not initialized', log)
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
@@ -390,7 +359,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
-                self.assertNotInLog('the recommendation_yaml is not a valid YAML', log.output)
+                self.assertNotInLog('the recommendation_yaml is not a valid YAML', log)
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
@@ -414,7 +383,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
-                self.assertInLog('error postprocessing prediction for suggestion', log.output)
+                self.assertInLog('error postprocessing prediction for suggestion', log)
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
@@ -440,8 +409,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertEqual(None, r.data)
-                self.assertInLog('error postprocessing prediction for suggestion', log.output)
-                segment_events = self.extractSegmentEventsFromLog(log.output)
+                self.assertInLog('error postprocessing prediction for suggestion', log)
+                segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
                 for event in segment_events:
                     if event['event'] == 'postprocess':
@@ -467,7 +436,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 DummyMeshClient(self, payload, response_data, False),
             ):
                 self.client.post(reverse('completions'), payload)
-                self.assertInLog('Create an account for james8@example.com', log.output)
+                self.assertInLog('Create an account for james8@example.com', log)
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -564,8 +533,8 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format="json")
-            self.assertNotInLog('file:///home/user/ansible.yaml', log.output)
-            self.assertInLog('file:///home/ano-user/ansible.yaml', log.output)
+            self.assertNotInLog('file:///home/user/ansible.yaml', log)
+            self.assertInLog('file:///home/ano-user/ansible.yaml', log)
             self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -607,7 +576,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
@@ -636,7 +605,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('inlineSuggestionFeedback', event['event'])
@@ -665,7 +634,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('ansibleContentFeedback', event['event'])
@@ -695,10 +664,8 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            self.assertInLog(
-                "An exception <class 'Exception'> occurred in sending a feedback", log.output
-            )
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            self.assertInLog("An exception <class 'Exception'> occurred in sending a feedback", log)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('ansibleContentFeedback', event['event'])
@@ -731,7 +698,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('suggestionQualityFeedback', event['event'])
@@ -757,7 +724,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('suggestionQualityFeedback', event['event'])
@@ -784,7 +751,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 self.assertTrue('issueFeedback', event['event'])
@@ -829,7 +796,7 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('attributions'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             hostname = platform.node()
             for event in segment_events:
@@ -856,6 +823,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('attributions'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
-            segment_events = self.extractSegmentEventsFromLog(log.output)
+            segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(len(segment_events), 0)
-            self.assertInLog('Failed to search for attributions', log.output)
+            self.assertInLog('Failed to search for attributions', log)
