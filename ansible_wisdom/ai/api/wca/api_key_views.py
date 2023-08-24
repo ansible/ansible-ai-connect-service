@@ -1,14 +1,12 @@
-import codecs
 import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.wca.text_parser import TextParser
 from django.apps import apps
-from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.exceptions import ParseError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
-from rest_framework.parsers import BaseParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -21,29 +19,7 @@ from rest_framework.status import (
 logger = logging.getLogger(__name__)
 
 
-class TextParser(BaseParser):
-    """
-    Parses Text-serialized data.
-    """
-
-    media_type = 'text/plain'
-
-    def parse(self, stream, media_type=None, parser_context=None):
-        """
-        Parses the incoming bytestream as Text and returns the resulting data.
-        """
-        parser_context = parser_context or {}
-        encoding = parser_context.get('encoding', settings.DEFAULT_CHARSET)
-
-        try:
-            decoded_stream = codecs.getreader(encoding)(stream)
-            decoded = decoded_stream.decode(stream.body)
-            return str(decoded[0])
-        except UnicodeDecodeError as exc:
-            raise ParseError(detail=exc)
-
-
-class WCAKeyView(RetrieveAPIView, CreateAPIView):
+class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     from ai.api.permissions import (
         AcceptedTermsPermission,
         IsAdministrator,
@@ -59,7 +35,7 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
         AcceptedTermsPermission,
     ]
     required_scopes = ['read', 'write']
-    throttle_cache_key_suffix = '_wca'
+    throttle_cache_key_suffix = '_wca_api_key'
     parser_classes = [TextParser]
 
     @extend_schema(
@@ -71,14 +47,14 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
             503: OpenApiResponse(description='Service Unavailable'),
         },
         summary="Get WCA key for an Organisation",
-        operation_id="wca_apikey_get",
+        operation_id="wca_api_key_get",
     )
     def get(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: GET handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_id = kwargs.get("org_id")
         try:
-            response = secret_manager.get_key(org_id)
+            response = secret_manager.get_secret(org_id, Suffixes.API_KEY)
             if response is None:
                 return Response(status=HTTP_404_NOT_FOUND)
             # Once written the Key value is never returned to the User,
@@ -97,8 +73,8 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
             429: OpenApiResponse(description='Request was throttled'),
             503: OpenApiResponse(description='Service Unavailable'),
         },
-        summary="Set a WCA key for an Organisation",
-        operation_id="wca_apikey_set",
+        summary="Set the WCA key for an Organisation",
+        operation_id="wca_api_key_set",
     )
     def post(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: POST handler")
@@ -108,7 +84,7 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
         wca_key = request.data
         org_id = kwargs.get("org_id")
         try:
-            secret_name = secret_manager.save_key(org_id, wca_key)
+            secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
             logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
