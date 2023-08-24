@@ -15,7 +15,7 @@ from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
-from test_utils import AnsibleTestCase
+from test_utils import WisdomServiceLogAwareTestCase
 from users.auth import BearerTokenAuthentication
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
@@ -44,7 +44,7 @@ class TestUsers(WisdomServiceAPITestCaseBase):
         self.assertEqual(bearer.keyword, "Bearer")
 
 
-class TestTermsAndConditions(AnsibleTestCase):
+class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
         class MockSession(dict):
             def save(self):

@@ -2,7 +2,7 @@ from ast import literal_eval
 from unittest import TestCase
 
 
-class AnsibleTestCase(TestCase):
+class WisdomServiceLogAwareTestCase(TestCase):
     @staticmethod
     def searchInLogOutput(s, logs):
         for log in logs.output:

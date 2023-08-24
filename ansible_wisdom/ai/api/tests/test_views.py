@@ -25,7 +25,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
-from test_utils import AnsibleTestCase
+from test_utils import WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -67,7 +67,7 @@ class DummyMeshClient(ModelMeshClient):
         return self.response_data
 
 
-class WisdomServiceAPITestCaseBase(APITransactionTestCase, AnsibleTestCase):
+class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
