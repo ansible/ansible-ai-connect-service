@@ -202,6 +202,27 @@ Create a local admin user:
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
+## Use the WCA API Keys Manager
+
+To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following
+variables to you environment file:
+
+```shell
+WCA_SECRET_MANAGER_ACCESS_KEY=<AWS access key>
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<AWS secret access key>
+WCA_SECRET_MANAGER_KMS_KEY_ID=<KMS key id or alias>
+WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
+WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
+```
+
+The AWS key and secret key must belong to a user who has both the `AnsibleWisdomWCASecretsReader` and
+`AnsibleWisdomWCASecretsWriter` policies.
+
+The KMS Secret needs to either be a multi region secret (when using the id) or a secret with the same name in the
+primary and replica regions (when using the alias).
+
+Note: when using a KMS key alias, prefix with `alias/<actual alias>`.
+
 ## Deploy the service via OpenShift S2I
 
 ```
