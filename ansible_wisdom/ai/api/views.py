@@ -162,9 +162,9 @@ class Completions(APIView):
             else:
                 model_tuple = feature_flags.get("model_name", request.user, "")
                 logger.debug(f"flag model_name has value {model_tuple}")
-                match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-                if match:
-                    server, port, model_name, index = match.groups()
+                model_parts = model_tuple.split(':')
+                if len(model_parts) == 4:
+                    server, port, model_name, _ = model_parts
                     logger.info(f"selecting model '{model_name}@{server}:{port}'")
                     model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
@@ -650,10 +650,11 @@ class Attributions(GenericAPIView):
         if settings.LAUNCHDARKLY_SDK_KEY:
             model_tuple = feature_flags.get("model_name", user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                *_, index = match.groups()
-                logger.info(f"using index '{index}' for content matchin")
+            model_parts = model_tuple.split(':')
+            if len(model_parts) == 4:
+                *_, index = model_parts
+                logger.info(f"using index '{index}' for content matching")
+
         data = ai_search.search(serializer.validated_data['suggestion'], index)
         resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
