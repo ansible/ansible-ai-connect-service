@@ -109,8 +109,7 @@ class WCAKeyView(RetrieveAPIView, CreateAPIView):
         org_id = kwargs.get("org_id")
         try:
             secret_name = secret_manager.save_key(org_id, wca_key)
-            user_name = request.user.username
-            logger.info(f"User '${user_name}' stored secret '${secret_name}' for org_id '{org_id}'")
+            logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
