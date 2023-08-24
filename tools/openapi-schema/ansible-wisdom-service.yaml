@@ -181,7 +181,7 @@ paths:
           description: ''
   /api/v0/wca/{org_id}/apikey:
     get:
-      operationId: wca_get
+      operationId: wca_apikey_get
       summary: Get WCA key for an Organisation
       parameters:
       - in: path
@@ -208,7 +208,7 @@ paths:
         '503':
           description: Service Unavailable
     post:
-      operationId: wca_set
+      operationId: wca_apikey_set
       summary: Set a WCA key for an Organisation
       parameters:
       - in: path
