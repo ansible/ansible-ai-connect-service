@@ -1,0 +1,31 @@
+from ai.api.aws.wca_secret_manager import (
+    Suffixes,
+    WcaSecretManager,
+    WcaSecretManagerError,
+)
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+
+
+class BaseWCACommand(BaseCommand):
+    def handle(self, *args, **options):
+        client = WcaSecretManager(
+            settings.WCA_SECRET_MANAGER_ACCESS_KEY,
+            settings.WCA_SECRET_MANAGER_SECRET_ACCESS_KEY,
+            settings.WCA_SECRET_MANAGER_KMS_KEY_ID,
+            settings.WCA_SECRET_MANAGER_PRIMARY_REGION,
+            settings.WCA_SECRET_MANAGER_REPLICA_REGIONS,
+        )
+
+        self.stdout.write(f"Using AWS Primary Region: {settings.WCA_SECRET_MANAGER_PRIMARY_REGION}")
+
+        try:
+            self.__do_command(client, args, options)
+        except WcaSecretManagerError as e:
+            raise CommandError(e)
+
+    def __do_command(self, client, *args, **options):
+        pass
+
+    def __get_secret_suffix(self) -> Suffixes:
+        pass

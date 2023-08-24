@@ -3,18 +3,20 @@ from ai.management.commands._base_wca_get_command import BaseWCAGetCommand
 
 
 class Command(BaseWCAGetCommand):
-    help = "Get WCA API Key for OrgId"
+    help = "Get WCA Model Id for OrgId"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "org_id", type=str, help="The Red Hat OrgId that the API Key belongs to"
+            "org_id", type=str, help="The Red Hat OrgId that the Model Id belongs to"
         )
 
     def __get_secret_suffix(self) -> Suffixes:
-        return Suffixes.API_KEY
+        return Suffixes.MODEL_ID
 
     def __get_message_found(self, org_id, response) -> str:
-        return f"API Key for orgId '{org_id}' found. Last updated: {response['CreatedDate']}"
+        message = f"Model id for orgId '{org_id}' found. "
+        f"Id: {response['model_id']}, Last updated: {response['CreatedDate']}"
+        return message
 
     def __get_message_not_found(self, org_id) -> str:
-        return f"No API Key for orgId '{org_id}' found."
+        return f"No Model Id for orgId '{org_id}' found."
