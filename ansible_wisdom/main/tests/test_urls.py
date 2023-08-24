@@ -2,7 +2,8 @@ from importlib import reload
 from re import compile
 
 import main.urls
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
+from django.test.utils import setup_test_environment
 
 
 class TestUrls(TestCase):
@@ -19,3 +20,9 @@ class TestUrls(TestCase):
             filter(r.match, [str(pattern.pattern) for pattern in main.urls.urlpatterns])
         )
         self.assertCountEqual(routes, patterns)
+
+    @override_settings(CSP_REPORT_ONLY=False)
+    def test_headers(self):
+        client = Client()
+        response = client.get("/")
+        self.assertIn("'self'", response.headers.get('Content-Security-Policy'))
