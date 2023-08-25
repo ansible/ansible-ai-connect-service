@@ -181,7 +181,7 @@ paths:
           description: ''
   /api/v0/wca/{org_id}/apikey:
     get:
-      operationId: wca_apikey_get
+      operationId: wca_api_key_get
       summary: Get WCA key for an Organisation
       parameters:
       - in: path
@@ -208,8 +208,68 @@ paths:
         '503':
           description: Service Unavailable
     post:
-      operationId: wca_apikey_set
-      summary: Set a WCA key for an Organisation
+      operationId: wca_api_key_set
+      summary: Set the WCA key for an Organisation
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - wca
+      requestBody:
+        content:
+          text/plain; charset=utf-8:
+            schema:
+              type: string
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Empty response
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+  /api/v0/wca/{org_id}/modelid:
+    get:
+      operationId: wca_model_id_get
+      summary: Get WCA Model Id for an Organisation
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+    post:
+      operationId: wca_model_id_set
+      summary: Set the Model Id to be used for an Organisation
       parameters:
       - in: path
         name: org_id
