@@ -14,7 +14,7 @@ class AcceptedTermsPermission(permissions.BasePermission):
         return False
 
 
-class IsAdministrator(permissions.BasePermission):
+class IsOrganisationAdministrator(permissions.BasePermission):
     """
     Allow access only to users who are an administrator.
     """

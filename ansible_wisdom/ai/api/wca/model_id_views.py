@@ -22,15 +22,15 @@ logger = logging.getLogger(__name__)
 class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     from ai.api.permissions import (
         AcceptedTermsPermission,
-        IsAdministrator,
         IsLightspeedSubscriber,
+        IsOrganisationAdministrator,
     )
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 
     permission_classes = [
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsAdministrator,
+        IsOrganisationAdministrator,
         IsLightspeedSubscriber,
         AcceptedTermsPermission,
     ]

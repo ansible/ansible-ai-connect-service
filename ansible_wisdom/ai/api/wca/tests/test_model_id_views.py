@@ -16,7 +16,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    def test_get_model_api_when_undefined(self):
+    def test_get_model_id_when_undefined(self):
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
@@ -46,7 +46,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data['model_id'], 'secret_model_id')
             mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
 
-    def test_create_model_id(self):
+    def test_set_model_id(self):
         self.client.force_authenticate(user=self.user)
 
         # ModelId should initially not exist
@@ -70,42 +70,6 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             mockSecretManager.save_secret.assert_called_with(
                 '1', Suffixes.MODEL_ID, 'secret_model_id'
             )
-
-            # Check ModelId was stored
-            mockSecretManager.get_secret.return_value = {
-                'SecretString': 'secret_model_id',
-                'CreatedDate': timezone.now().isoformat(),
-            }
-            r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(r.data['model_id'], 'secret_model_id')
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
-
-    def test_update_model_id(self):
-        self.client.force_authenticate(user=self.user)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mockSecretManager,
-        ):
-            # ModelId should exist
-            mockSecretManager.get_secret.return_value = {
-                'SecretString': 'secret_model_id',
-                'CreatedDate': timezone.now().isoformat(),
-            }
-            r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
-
-            # Set ModelId
-            r = self.client.post(
-                reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='a-new-key',
-                content_type='text/plain',
-            )
-            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mockSecretManager.save_secret.assert_called_with('1', Suffixes.MODEL_ID, 'a-new-key')
 
             # Check ModelId was stored
             mockSecretManager.get_secret.return_value = {

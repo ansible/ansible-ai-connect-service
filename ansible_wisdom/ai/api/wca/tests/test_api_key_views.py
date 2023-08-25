@@ -42,7 +42,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
-    def test_create_key(self):
+    def test_set_key(self):
         self.client.force_authenticate(user=self.user)
 
         # Key should initially not exist
@@ -54,35 +54,6 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             mockSecretManager.get_secret.return_value = None
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
-
-            # Set Key
-            r = self.client.post(
-                reverse('wca_api_key', kwargs={'org_id': '1'}),
-                data='a-new-key',
-                content_type='text/plain',
-            )
-            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mockSecretManager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
-
-            # Check Key was stored
-            mockSecretManager.get_secret.return_value = {'CreatedDate': timezone.now().isoformat()}
-            r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
-
-    def test_update_key(self):
-        self.client.force_authenticate(user=self.user)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mockSecretManager,
-        ):
-            # Key should exist
-            mockSecretManager.get_secret.return_value = {'CreatedDate': timezone.now().isoformat()}
-            r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
             mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
             # Set Key
