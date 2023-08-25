@@ -7,11 +7,11 @@ class Command(BaseWCADeleteCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "org_id", type=str, help="The Red Hat OrgId that the Model Id belongs to"
+            "org_id", type=str, help="The Red Hat OrgId that the ModelId belongs to"
         )
 
-    def __get_secret_suffix(self) -> Suffixes:
+    def get_secret_suffix(self) -> Suffixes:
         return Suffixes.MODEL_ID
 
-    def __get_success_message(self, org_id) -> str:
+    def get_success_message(self, org_id) -> str:
         return f"Model Id for orgId '{org_id}' deleted."

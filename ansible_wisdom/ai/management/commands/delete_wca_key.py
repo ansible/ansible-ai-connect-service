@@ -10,8 +10,8 @@ class Command(BaseWCADeleteCommand):
             "org_id", type=str, help="The Red Hat OrgId that the API Key belongs to"
         )
 
-    def __get_secret_suffix(self) -> Suffixes:
+    def get_secret_suffix(self) -> Suffixes:
         return Suffixes.API_KEY
 
-    def __get_success_message(self, org_id) -> str:
+    def get_success_message(self, org_id) -> str:
         return f"API Key for orgId '{org_id}' deleted."

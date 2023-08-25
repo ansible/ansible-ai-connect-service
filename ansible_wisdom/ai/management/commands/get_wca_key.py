@@ -10,11 +10,11 @@ class Command(BaseWCAGetCommand):
             "org_id", type=str, help="The Red Hat OrgId that the API Key belongs to"
         )
 
-    def __get_secret_suffix(self) -> Suffixes:
+    def get_secret_suffix(self) -> Suffixes:
         return Suffixes.API_KEY
 
-    def __get_message_found(self, org_id, response) -> str:
+    def get_message_found(self, org_id, response) -> str:
         return f"API Key for orgId '{org_id}' found. Last updated: {response['CreatedDate']}"
 
-    def __get_message_not_found(self, org_id) -> str:
+    def get_message_not_found(self, org_id) -> str:
         return f"No API Key for orgId '{org_id}' found."

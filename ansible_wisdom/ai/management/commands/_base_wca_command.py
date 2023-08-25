@@ -20,12 +20,12 @@ class BaseWCACommand(BaseCommand):
         self.stdout.write(f"Using AWS Primary Region: {settings.WCA_SECRET_MANAGER_PRIMARY_REGION}")
 
         try:
-            self.__do_command(client, args, options)
+            self.do_command(client, args, options)
         except WcaSecretManagerError as e:
             raise CommandError(e)
 
-    def __do_command(self, client, *args, **options):
+    def do_command(self, client, args, options):
         pass
 
-    def __get_secret_suffix(self) -> Suffixes:
+    def get_secret_suffix(self) -> Suffixes:
         pass
