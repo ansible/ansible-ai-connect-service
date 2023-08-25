@@ -21,7 +21,7 @@ from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags
+from ..feature_flags import FeatureFlags, WisdomFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -153,14 +153,14 @@ class Completions(APIView):
         payload.userId = request.user.uuid
         model_name = payload.model_name
         if settings.LAUNCHDARKLY_SDK_KEY:
-            wca_api_info = feature_flags.get("wca-api", request.user, "")
+            wca_api_info = feature_flags.get(WisdomFlags.WCA_API, request.user, "")
             if wca_api_info:
                 # if feature flag for wca is on for this user
                 wca_api, model_name = wca_api_info.split('<>')
                 model_mesh_client = apps.get_app_config("ai").wca_client
                 model_mesh_client.set_inference_url(wca_api)
             else:
-                model_tuple = feature_flags.get("model_name", request.user, "")
+                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, request.user, "")
                 logger.debug(f"flag model_name has value {model_tuple}")
                 model_parts = model_tuple.split(':')
                 if len(model_parts) == 4:

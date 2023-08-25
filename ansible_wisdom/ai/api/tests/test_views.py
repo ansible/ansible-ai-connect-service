@@ -15,7 +15,7 @@ from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import Completions
-from ai.feature_flags import FeatureFlags
+from ai.feature_flags import FeatureFlags, WisdomFlags
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -124,7 +124,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
-            return "https://wca_api_url<>modelX" if name == "wca-api" else ""
+            return "https://wca_api_url<>modelX" if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
@@ -152,7 +152,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_off(self, feature_flags):
         def get_feature_flags(name, *args):
-            return None if name == "wca-api" else ""
+            return None if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
