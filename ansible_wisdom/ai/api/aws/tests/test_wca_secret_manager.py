@@ -15,11 +15,6 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
     def nop(self):
         pass
 
-    def test_initializer(self):
-        replica_regions = "not,a,list"
-        with self.assertRaises(TypeError):
-            WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', replica_regions)
-
     def test_get_secret_name(self):
         self.assertEqual(
             WcaSecretManager.get_secret_id(ORG_ID, Suffixes.API_KEY),

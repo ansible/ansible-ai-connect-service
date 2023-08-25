@@ -6,9 +6,7 @@ class Command(BaseWCAPostCommand):
     help = "Create WCA API Key for OrgId"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "org_id", type=str, help="The Red Hat OrgId that the API Key belongs to"
-        )
+        super().add_arguments(parser)
         parser.add_argument('secret', type=str, help="IBM WCA API Key")
 
     def get_secret_suffix(self) -> Suffixes:

@@ -5,11 +5,6 @@ from ai.management.commands._base_wca_get_command import BaseWCAGetCommand
 class Command(BaseWCAGetCommand):
     help = "Get WCA Model Id for OrgId"
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "org_id", type=str, help="The Red Hat OrgId that the ModelId belongs to"
-        )
-
     def get_secret_suffix(self) -> Suffixes:
         return Suffixes.MODEL_ID
 

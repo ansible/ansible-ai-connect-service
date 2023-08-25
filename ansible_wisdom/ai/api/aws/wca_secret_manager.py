@@ -19,11 +19,13 @@ class Suffixes(Enum):
 
 class WcaSecretManager:
     def __init__(
-        self, access_key, secret_access_key, kms_secret_id, primary_region, replica_regions
+        self,
+        access_key,
+        secret_access_key,
+        kms_secret_id,
+        primary_region,
+        replica_regions: list[str],
     ):
-        if not isinstance(replica_regions, list):
-            raise TypeError("Expected replica_regions to be a list.")
-
         self.replica_regions = replica_regions
         self.kms_secret_id = kms_secret_id
         self._client = boto3.client(

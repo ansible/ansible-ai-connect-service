@@ -8,6 +8,9 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class BaseWCACommand(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("org_id", type=str, help="The Red Hat OrgId.")
+
     def handle(self, *args, **options):
         client = WcaSecretManager(
             settings.WCA_SECRET_MANAGER_ACCESS_KEY,
@@ -17,7 +20,10 @@ class BaseWCACommand(BaseCommand):
             settings.WCA_SECRET_MANAGER_REPLICA_REGIONS,
         )
 
-        self.stdout.write(f"Using AWS Primary Region: {settings.WCA_SECRET_MANAGER_PRIMARY_REGION}")
+        self.stdout.write(
+            f"Using AWS Primary Region: {settings.WCA_SECRET_MANAGER_PRIMARY_REGION} and "
+            f"AWS Replica Regions: {', '.join(settings.WCA_SECRET_MANAGER_REPLICA_REGIONS)}."
+        )
 
         try:
             self.do_command(client, args, options)
