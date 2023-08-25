@@ -3,7 +3,7 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
-from ai.api.permissions import IsWCAKeyApiFeatureFlagOn
+from ai.api.permissions import IsWCAKeyApiFeatureFlagOn, IsWCAModelIdApiFeatureFlagOn
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from ai.apps import AiConfig
 from django.apps import apps
