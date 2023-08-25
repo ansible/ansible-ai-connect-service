@@ -1,0 +1,17 @@
+.Info-icon {
+    color: var(--pf-global--Color--400);
+    margin-left: 8px;
+}
+
+.Secret-value {
+    background-color: var(--pf-global--Color--light-200);
+    line-height: var(--pf-global--LineHeight--md);
+    padding-top: var(--pf-global--spacer--form-element);
+    padding-bottom: var(--pf-global--spacer--form-element);
+    padding-left: var(--pf-global--spacer--md);
+    padding-right: var(--pf-global--spacer--md);
+}
+
+.Loading {
+    height: 200px;
+}

@@ -2,9 +2,16 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+    IsWCAKeyApiFeatureFlagOn,
+)
 from ai.api.serializers import WcaKeyRequestSerializer
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -19,26 +26,20 @@ from rest_framework.status import (
 
 logger = logging.getLogger(__name__)
 
+permission_classes = [
+    IsWCAKeyApiFeatureFlagOn,
+    IsAuthenticated,
+    IsAuthenticatedOrTokenHasScope,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+    AcceptedTermsPermission,
+]
+
 
 class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
-    from ai.api.permissions import (
-        AcceptedTermsPermission,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
-        IsWCAKeyApiFeatureFlagOn,
-    )
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-
-    permission_classes = [
-        IsWCAKeyApiFeatureFlagOn,
-        IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
-        AcceptedTermsPermission,
-    ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_api_key'
+    permission_classes = permission_classes
 
     @extend_schema(
         responses={
@@ -62,7 +63,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 return Response(status=HTTP_404_NOT_FOUND)
             # Once written the Key value is never returned to the User,
             # instead we return when the secret was last updated.
-            return Response(status=HTTP_200_OK, data={'LastUpdate': response['CreatedDate']})
+            return Response(status=HTTP_200_OK, data={'last_update': response['CreatedDate']})
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
@@ -88,6 +89,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         try:
             key_serializer.is_valid(raise_exception=True)
             wca_key = key_serializer.validated_data['key']
+            # TODO {manstis} Validate API Key. See https://issues.redhat.com/browse/AAP-15328
             secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
             logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
@@ -98,3 +100,26 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_204_NO_CONTENT)
+
+
+class WCAApiKeyValidatorView(RetrieveAPIView):
+    required_scopes = ['read']
+    throttle_cache_key_suffix = '_wca_api_key_validator'
+    permission_classes = permission_classes
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description='OK'),
+            401: OpenApiResponse(description='Unauthorized'),
+            403: OpenApiResponse(description='Forbidden'),
+            404: OpenApiResponse(description='Not found'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Validate WCA key for an Organisation",
+        operation_id="wca_api_key_validator_get",
+    )
+    def get(self, request, *args, **kwargs):
+        # TODO {manstis} Validate API Key. See https://issues.redhat.com/browse/AAP-15328
+        logger.debug("WCA API Key Validator:: GET handler")
+        return Response(status=HTTP_200_OK)

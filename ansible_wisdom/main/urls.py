@@ -24,6 +24,7 @@ from drf_spectacular.views import (
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 from main.views import LoginView
+from main.views import ConsoleView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
 WISDOM_API_VERSION = "v0"
@@ -62,6 +63,9 @@ urlpatterns = [
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('console/', ConsoleView.as_view(), name='console'),
+    path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
+    path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
 if settings.DEBUG:

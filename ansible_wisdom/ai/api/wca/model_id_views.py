@@ -2,9 +2,16 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+    IsWCAKeyApiFeatureFlagOn,
+)
 from ai.api.serializers import WcaModelIdRequestSerializer
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -19,26 +26,20 @@ from rest_framework.status import (
 
 logger = logging.getLogger(__name__)
 
+permission_classes = [
+    IsWCAKeyApiFeatureFlagOn,
+    IsAuthenticated,
+    IsAuthenticatedOrTokenHasScope,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+    AcceptedTermsPermission,
+]
+
 
 class WCAModelIdView(RetrieveAPIView, CreateAPIView):
-    from ai.api.permissions import (
-        AcceptedTermsPermission,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
-        IsWCAModelIdApiFeatureFlagOn,
-    )
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-
-    permission_classes = [
-        IsWCAModelIdApiFeatureFlagOn,
-        IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
-        AcceptedTermsPermission,
-    ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_model_id'
+    permission_classes = permission_classes
 
     @extend_schema(
         responses={
@@ -62,7 +63,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
                 return Response(status=HTTP_404_NOT_FOUND)
             return Response(
                 status=HTTP_200_OK,
-                data={'model_id': response['SecretString'], 'LastUpdate': response['CreatedDate']},
+                data={'model_id': response['SecretString'], 'last_update': response['CreatedDate']},
             )
         except WcaSecretManagerError as e:
             logger.error(e)
@@ -89,6 +90,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         try:
             model_id_serializer.is_valid(raise_exception=True)
             model_id = model_id_serializer.validated_data['model_id']
+            # TODO {manstis} Validate Model Id. See https://issues.redhat.com/browse/AAP-15328
             secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
             logger.info(f"Stored Secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
@@ -99,3 +101,26 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_204_NO_CONTENT)
+
+
+class WCAModelIdValidatorView(RetrieveAPIView):
+    required_scopes = ['read']
+    throttle_cache_key_suffix = '_wca_model_id_validator'
+    permission_classes = permission_classes
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description='OK'),
+            401: OpenApiResponse(description='Unauthorized'),
+            403: OpenApiResponse(description='Forbidden'),
+            404: OpenApiResponse(description='Not found'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Validate WCA Model Id for an Organisation",
+        operation_id="wca_model_id_validator_get",
+    )
+    def get(self, request, *args, **kwargs):
+        # TODO {manstis} Validate Model Id. See https://issues.redhat.com/browse/AAP-15328
+        logger.debug("WCA Model Id Validator:: GET handler")
+        return Response(status=HTTP_200_OK)
