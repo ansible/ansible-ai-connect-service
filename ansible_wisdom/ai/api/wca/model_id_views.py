@@ -24,6 +24,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         AcceptedTermsPermission,
         IsLightspeedSubscriber,
         IsOrganisationAdministrator,
+        IsWCAModelIdApiFeatureFlagOn,
     )
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 
@@ -33,6 +34,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         IsOrganisationAdministrator,
         IsLightspeedSubscriber,
         AcceptedTermsPermission,
+        IsWCAModelIdApiFeatureFlagOn,
     ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_model_id'
@@ -42,6 +44,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         responses={
             200: OpenApiResponse(description='OK'),
             401: OpenApiResponse(description='Unauthorized'),
+            403: OpenApiResponse(description='Forbidden'),
             404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
             503: OpenApiResponse(description='Service Unavailable'),
@@ -71,6 +74,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             204: OpenApiResponse(description='Empty response'),
             400: OpenApiResponse(description='Bad request'),
             401: OpenApiResponse(description='Unauthorized'),
+            403: OpenApiResponse(description='Forbidden'),
             429: OpenApiResponse(description='Request was throttled'),
             503: OpenApiResponse(description='Service Unavailable'),
         },
