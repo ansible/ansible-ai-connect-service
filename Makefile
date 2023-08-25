@@ -103,7 +103,7 @@ migrate:
 
 .PHONY: create-cachetable
 create-cachetable: migrate
-	python ansible_wisdom/manage.py create-cachetable
+	python ansible_wisdom/manage.py createcachetable
 
 .PHONY: create-superuser
 create-superuser: create-cachetable
