@@ -25,4 +25,7 @@ class TestUrls(TestCase):
     def test_headers(self):
         client = Client()
         response = client.get("/")
-        self.assertIn("'self'", response.headers.get('Content-Security-Policy'))
+        self.assertIn(
+            "style-src 'self' 'unsafe-inline'", response.headers.get('Content-Security-Policy')
+        )
+        self.assertIn("default-src 'self' data:", response.headers.get('Content-Security-Policy'))
