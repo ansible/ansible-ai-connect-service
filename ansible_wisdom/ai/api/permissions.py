@@ -24,7 +24,8 @@ class IsOrganisationAdministrator(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return True
+        user = request.user
+        return user.is_org_admin
 
 
 class IsLightspeedSubscriber(permissions.BasePermission):
