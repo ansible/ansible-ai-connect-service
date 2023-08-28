@@ -288,6 +288,47 @@ class TestOrgAdmin(TestCase):
         self.assertFalse(user.is_org_admin)
 
 
+class TestUsername(WisdomServiceLogAwareTestCase):
+    def setUp(self) -> None:
+        self.local_user = get_user_model().objects.create_user(
+            username="local-user",
+            email="local@user.nowhere",
+            password="bar",
+        )
+
+        self.sso_user = get_user_model().objects.create_user(
+            username="sso-user",
+            email="sso@user.nowhere",
+            password="bar",
+        )
+        usa = UserSocialAuth.objects.create(user=self.sso_user, provider="oidc", uid=str(uuid4()))
+        usa.set_extra_data({"login": "babar"})
+        usa.save()
+
+        self.invalid_sso_user = get_user_model().objects.create_user(
+            username="invalid-sso-user",
+            email="sso@user.nowhere",
+            password="bar",
+        )
+        usa = UserSocialAuth.objects.create(
+            user=self.invalid_sso_user, provider="oidc", uid=str(uuid4())
+        )
+        usa.extra_data = 1
+        usa.save()
+
+    def tearDown(self) -> None:
+        self.local_user.delete()
+        self.sso_user.delete()
+        self.invalid_sso_user.delete()
+
+    def test_username_from_sso(self) -> None:
+        self.assertEqual(self.sso_user.sso_login(), "babar")
+        self.assertEqual(self.local_user.sso_login(), "")
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertEqual(self.invalid_sso_user.sso_login(), "")
+            self.assertInLog("Unexpected extra_data", log)
+
+
 class TestIsOrgLightspeedSubscriber(TestCase):
     def test_is_org_lightspeed_subscriber_with_no_rhsso_user(self):
         user = create_user(provider_name="github")
