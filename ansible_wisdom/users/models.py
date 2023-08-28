@@ -55,3 +55,9 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return False
         rh_org_id = self.organization_id
         return seat_checker.is_org_lightspeed_subscriber(rh_org_id)
+
+    def sso_login(self) -> str:
+        try:
+            return self.social_auth.values()[0]['extra_data']['login']
+        except (KeyError, AttributeError, IndexError):
+            return ''
