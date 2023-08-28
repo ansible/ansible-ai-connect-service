@@ -85,3 +85,23 @@ class TestToken(TestCase):
             },
             timeout=0.8,
         )
+
+    def test_is_org_admin(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "123"}]},
+            {"items": [{"role": {"id": "OrganizationAdmin"}}]},
+        ]
+        m_r.status_code = 200
+
+        checker = AMSCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertTrue(checker.is_org_admin("user", "123"))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
+            params={"search": "account.username = 'user' AND organization.id='123'"},
+            timeout=0.8,
+        )

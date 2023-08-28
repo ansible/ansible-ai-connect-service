@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
-from ai.api.permissions import IsWCAKeyApiFeatureFlagOn, IsWCAModelIdApiFeatureFlagOn
+from ai.api.permissions import IsOrganisationAdministrator, IsWCAKeyApiFeatureFlagOn
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
@@ -13,9 +13,10 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    def test_featureflag_disabled(self):
+    def test_featureflag_disabled(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -24,7 +25,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_on_get_key(self, feature_flags):
+    def test_featureflag_on_get_key(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return "true"
 
@@ -43,7 +44,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_on_set_key(self, feature_flags):
+    def test_featureflag_on_set_key(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return "true"
 
@@ -65,7 +66,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_off_get_key(self, feature_flags):
+    def test_featureflag_off_get_key(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return ""
 
@@ -83,7 +84,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_off_set(self, feature_flags):
+    def test_featureflag_off_set(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return ""
 
@@ -106,13 +107,14 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 
 @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
 @patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
-    def test_authentication_error(self, _):
+    def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    def test_get_key_when_undefined(self, _):
+    def test_get_key_when_undefined(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -126,7 +128,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
             mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
 
-    def test_get_key_when_defined(self, _):
+    def test_get_key_when_defined(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -142,7 +144,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
-    def test_get_key_when_defined_throws_exception(self, _):
+    def test_get_key_when_defined_throws_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -155,7 +157,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    def test_set_key(self, _):
+    def test_set_key(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -187,7 +189,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
-    def test_set_key_throws_secret_manager_exception(self, _):
+    def test_set_key_throws_secret_manager_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -204,7 +206,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    def test_set_key_throws_validation_exception(self, _):
+    def test_set_key_throws_validation_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 

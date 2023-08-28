@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
-from ai.api.permissions import IsWCAModelIdApiFeatureFlagOn
+from ai.api.permissions import IsOrganisationAdministrator, IsWCAModelIdApiFeatureFlagOn
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
@@ -12,9 +12,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    def test_featureflag_disabled(self):
+    def test_featureflag_disabled(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -23,7 +24,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_on_get_model_id(self, feature_flags):
+    def test_featureflag_on_get_model_id(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return "true"
 
@@ -42,7 +43,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_on_set_model_id(self, feature_flags):
+    def test_featureflag_on_set_model_id(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return "true"
 
@@ -66,7 +67,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_off_get_model_id(self, feature_flags):
+    def test_featureflag_off_get_model_id(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return ""
 
@@ -84,7 +85,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
-    def test_featureflag_off_set_model_id(self, feature_flags):
+    def test_featureflag_off_set_model_id(self, feature_flags, *args):
         def get_feature_flags(name, *args):
             return ""
 
@@ -107,13 +108,14 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
 
 @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
 @patch.object(IsWCAModelIdApiFeatureFlagOn, 'has_permission', return_value=True)
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
-    def test_authentication_error(self, _):
+    def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    def test_get_model_id_when_undefined(self, _):
+    def test_get_model_id_when_undefined(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -127,7 +129,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
             mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.MODEL_ID)
 
-    def test_get_model_id_when_defined(self, _):
+    def test_get_model_id_when_defined(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -145,7 +147,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data['model_id'], 'secret_model_id')
             mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
 
-    def test_get_model_id_when_defined_throws_exception(self, _):
+    def test_get_model_id_when_defined_throws_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -158,7 +160,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    def test_set_model_id(self, _):
+    def test_set_model_id(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -194,7 +196,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data['model_id'], 'secret_model_id')
             mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
 
-    def test_set_model_id_throws_secret_manager_exception(self, _):
+    def test_set_model_id_throws_secret_manager_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 
@@ -211,7 +213,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    def test_set_model_id_throws_validation_exception(self, _):
+    def test_set_model_id_throws_validation_exception(self, *args):
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = Mock(WcaSecretManager)
 

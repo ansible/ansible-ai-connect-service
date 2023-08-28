@@ -144,6 +144,32 @@ class AMSCheck:
             logger.error("Unexpected subscription answer from AMS")
             return False
 
+    def is_org_admin(self, username: str, organization_id: str):
+        ams_org_id = self.get_ams_org(organization_id)
+        params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
+        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/role_bindings",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error("Cannot reach the AMS backend in time")
+            return False
+
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by AMS backend when listing role bindings")
+            return False
+
+        result = r.json()
+        for item in result['items']:
+            if item['role']['id'] == "OrganizationAdmin":
+                return True
+
+        return False
+
 
 class MockAlwaysTrueCheck:
     def __init__(self, *kargs):
