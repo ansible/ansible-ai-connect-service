@@ -37,7 +37,7 @@ class WcaSecretManager:
 
     @staticmethod
     def get_secret_id(org_id, suffix: Suffixes):
-        return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value}"
+        return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value[0]}"
 
     def save_secret(self, org_id, suffix: Suffixes, secret):
         """
