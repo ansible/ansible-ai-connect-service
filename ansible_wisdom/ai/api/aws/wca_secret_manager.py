@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class Suffixes(Enum):
-    API_KEY = ('api_key',)
-    MODEL_ID = ('model_id',)
+    API_KEY = 'api_key'
+    MODEL_ID = 'model_id'
 
 
 class WcaSecretManager:
@@ -37,7 +37,7 @@ class WcaSecretManager:
 
     @staticmethod
     def get_secret_id(org_id, suffix: Suffixes):
-        return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value[0]}"
+        return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value}"
 
     def save_secret(self, org_id, suffix: Suffixes, secret):
         """
