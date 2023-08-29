@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block header %}
-<script>
+<script nonce="{{request.csp_nonce}}">
     function handleAuthorize() {
         setTimeout(() => { window.location.href = "/" }, 5000)
     }
