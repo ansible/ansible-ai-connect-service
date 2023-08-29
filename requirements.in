@@ -28,8 +28,10 @@ PyYAML==6.0
 requests==2.31.0
 segment-analytics-python==2.2.2
 sentence-transformers==2.2.2
-social-auth-app-django==5.0.0
-social-auth-core[openidconnect]==4.3.0
+# Workaround until https://github.com/python-social-auth/social-app-django/pull/465
+# is released
+https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
+social-auth-core[openidconnect]==4.4.2
 tqdm==4.64.1
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
