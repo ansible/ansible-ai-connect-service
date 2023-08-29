@@ -65,6 +65,18 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         rh_org_id = self.organization_id
         return seat_checker.rh_org_has_subscription(rh_org_id)
 
+    @cached_property
+    def social_username(self) -> str:
+        if not self.social_auth.values():
+            return self.username
+
+        if self.social_auth.values()[0]["provider"] == "github":
+            return self.social_auth.values()[0]["extra_data"]["login"]
+        elif self.social_auth.values()[0]["provider"] == "oicd":
+            return self.social_auth.values()[0]["extra_data"]["preferred_username"]
+        else:
+            return self.username
+
     def sso_login(self) -> str:
         try:
             extra_data = self.social_auth.values()[0].get('extra_data') or {}
