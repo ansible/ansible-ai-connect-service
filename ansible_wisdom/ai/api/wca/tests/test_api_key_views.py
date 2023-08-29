@@ -2,16 +2,15 @@ from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
 
+from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
 from ai.api.permissions import IsWCAKeyApiFeatureFlagOn, IsWCAModelIdApiFeatureFlagOn
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ai.apps import AiConfig
 from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-
-mockSecretManager = Mock(WcaSecretManager)
+from rest_framework.exceptions import ValidationError
 
 
 class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
@@ -115,43 +114,61 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
 
     def test_get_key_when_undefined(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = None
+            mock_secret_manager.get_secret.return_value = None
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': 'unknown'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mockSecretManager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
+            mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
 
     def test_get_key_when_defined(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = {'CreatedDate': timezone.now().isoformat()}
+            mock_secret_manager.get_secret.return_value = {
+                'CreatedDate': timezone.now().isoformat()
+            }
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+
+    def test_get_key_when_defined_throws_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
+            r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_key(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         # Key should initially not exist
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = None
+            mock_secret_manager.get_secret.return_value = None
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
             # Set Key
             r = self.client.post(
@@ -160,10 +177,45 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
                 content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mockSecretManager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
+            mock_secret_manager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
 
             # Check Key was stored
-            mockSecretManager.get_secret.return_value = {'CreatedDate': timezone.now().isoformat()}
+            mock_secret_manager.get_secret.return_value = {
+                'CreatedDate': timezone.now().isoformat()
+            }
             r = self.client.get(reverse('wca_api_key', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+
+    def test_set_key_throws_secret_manager_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
+            r = self.client.post(
+                reverse('wca_api_key', kwargs={'org_id': '1'}),
+                data='{ "key": "a-new-key" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    def test_set_key_throws_validation_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            r = self.client.post(
+                reverse('wca_api_key', kwargs={'org_id': '1'}),
+                data='{ "unknown_json_field": "a-new-key" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
