@@ -2,16 +2,14 @@ from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
 
+from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
 from ai.api.permissions import IsWCAModelIdApiFeatureFlagOn
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ai.apps import AiConfig
 from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-
-mockSecretManager = Mock(WcaSecretManager)
 
 
 class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
@@ -58,11 +56,13 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mock_secret_mgr.save_secret.assert_called_once_with('1', Suffixes.MODEL_ID, 'a-key')
+            mock_secret_mgr.save_secret.assert_called_once_with(
+                '1', Suffixes.MODEL_ID, 'secret_model_id'
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -98,8 +98,8 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             mock_secret_mgr.save_secret.assert_not_called()
@@ -115,65 +115,115 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
 
     def test_get_model_id_when_undefined(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = None
+            mock_secret_manager.get_secret.return_value = None
             r = self.client.get(reverse('wca_model_id', kwargs={'org_id': 'unknown'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mockSecretManager.get_secret.assert_called_with('unknown', Suffixes.MODEL_ID)
+            mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.MODEL_ID)
 
     def test_get_model_id_when_defined(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = {
+            mock_secret_manager.get_secret.return_value = {
                 'SecretString': 'secret_model_id',
                 'CreatedDate': timezone.now().isoformat(),
             }
             r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data['model_id'], 'secret_model_id')
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+
+    def test_get_model_id_when_defined_throws_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
+            r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_model_id(self, _):
         self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
 
         # ModelId should initially not exist
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_secret_manager',
-            mockSecretManager,
+            mock_secret_manager,
         ):
-            mockSecretManager.get_secret.return_value = None
+            mock_secret_manager.get_secret.return_value = None
             r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
 
             # Set ModelId
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='secret_model_id',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mockSecretManager.save_secret.assert_called_with(
+            mock_secret_manager.save_secret.assert_called_with(
                 '1', Suffixes.MODEL_ID, 'secret_model_id'
             )
 
             # Check ModelId was stored
-            mockSecretManager.get_secret.return_value = {
+            mock_secret_manager.get_secret.return_value = {
                 'SecretString': 'secret_model_id',
                 'CreatedDate': timezone.now().isoformat(),
             }
             r = self.client.get(reverse('wca_model_id', kwargs={'org_id': '1'}))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data['model_id'], 'secret_model_id')
-            mockSecretManager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+
+    def test_set_model_id_throws_secret_manager_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
+            r = self.client.post(
+                reverse('wca_model_id', kwargs={'org_id': '1'}),
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    def test_set_model_id_throws_validation_exception(self, _):
+        self.client.force_authenticate(user=self.user)
+        mock_secret_manager = Mock(WcaSecretManager)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_secret_manager',
+            mock_secret_manager,
+        ):
+            mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
+            r = self.client.post(
+                reverse('wca_model_id', kwargs={'org_id': '1'}),
+                data='{ "unknown_json_field": "secret_model_id" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)

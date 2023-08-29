@@ -2,16 +2,17 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.wca.text_parser import TextParser
+from ai.api.serializers import WcaModelIdRequestSerializer
 from django.apps import apps
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_204_NO_CONTENT,
+    HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
@@ -38,7 +39,6 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_model_id'
-    parser_classes = [TextParser]
 
     @extend_schema(
         responses={
@@ -69,7 +69,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(
-        request={'text/plain; charset=utf-8': OpenApiTypes.STR},
+        request=WcaModelIdRequestSerializer,
         responses={
             204: OpenApiResponse(description='Empty response'),
             400: OpenApiResponse(description='Bad request'),
@@ -84,15 +84,18 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("WCA Model Id:: POST handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-
-        # The data has already been decoded by this point
-        wca_key = request.data
+        model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
         org_id = kwargs.get("org_id")
         try:
-            secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, wca_key)
+            model_id_serializer.is_valid(raise_exception=True)
+            model_id = model_id_serializer.validated_data['model_id']
+            secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
             logger.info(f"Stored Secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValidationError as e:
+            logger.error(e)
+            return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_204_NO_CONTENT)

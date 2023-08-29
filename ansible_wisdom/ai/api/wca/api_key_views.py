@@ -2,16 +2,17 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.wca.text_parser import TextParser
+from ai.api.serializers import WcaKeyRequestSerializer
 from django.apps import apps
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_204_NO_CONTENT,
+    HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
@@ -38,7 +39,6 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_api_key'
-    parser_classes = [TextParser]
 
     @extend_schema(
         responses={
@@ -68,7 +68,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(
-        request={'text/plain; charset=utf-8': OpenApiTypes.STR},
+        request=WcaKeyRequestSerializer,
         responses={
             204: OpenApiResponse(description='Empty response'),
             400: OpenApiResponse(description='Bad request'),
@@ -83,15 +83,18 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: POST handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-
-        # The data has already been decoded by this point
-        wca_key = request.data
+        key_serializer = WcaKeyRequestSerializer(data=request.data)
         org_id = kwargs.get("org_id")
         try:
+            key_serializer.is_valid(raise_exception=True)
+            wca_key = key_serializer.validated_data['key']
             secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
             logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValidationError as e:
+            logger.error(e)
+            return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_204_NO_CONTENT)
