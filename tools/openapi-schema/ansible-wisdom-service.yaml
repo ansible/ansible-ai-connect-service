@@ -403,6 +403,10 @@ components:
       - repo_name
       - repo_url
       - score
+    Attributions:
+      type: array
+      items:
+        $ref: '#/components/schemas/Attribution'
     AttributionRequest:
       type: object
       properties:
@@ -422,7 +426,7 @@ components:
         attributions:
           type: array
           items:
-            $ref: '#/components/schemas/Attribution'
+            $ref: '#/components/schemas/Attributions'
       required:
       - attributions
     CompletionRequest:
