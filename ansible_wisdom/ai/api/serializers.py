@@ -374,3 +374,55 @@ class AttributionResponseSerializer(serializers.Serializer):
         fields = ['attributions']
 
     attributions = serializers.ListField(child=AttributionSerializer())
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Valid example',
+            summary='Request Sample',
+            description='A valid WCA Key request.',
+            value={
+                'key': '1234567890',
+            },
+            request_only=True,
+            response_only=False,
+        ),
+    ]
+)
+class WcaKeyRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['key']
+
+    key = serializers.CharField(
+        trim_whitespace=False,
+        required=True,
+        label='Key',
+        help_text='WCA API Key.',
+    )
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Valid example',
+            summary='Request Sample',
+            description='A valid WCA Model Id request.',
+            value={
+                'model_id': '1234567890',
+            },
+            request_only=True,
+            response_only=False,
+        ),
+    ]
+)
+class WcaModelIdRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['model_id']
+
+    model_id = serializers.CharField(
+        trim_whitespace=False,
+        required=True,
+        label='Model Id',
+        help_text='WCA Model Id.',
+    )

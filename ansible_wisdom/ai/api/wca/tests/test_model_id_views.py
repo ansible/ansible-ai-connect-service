@@ -58,11 +58,13 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mock_secret_mgr.save_secret.assert_called_once_with('1', Suffixes.MODEL_ID, 'a-key')
+            mock_secret_mgr.save_secret.assert_called_once_with(
+                '1', Suffixes.MODEL_ID, 'secret_model_id'
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -98,8 +100,8 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             mock_secret_mgr.save_secret.assert_not_called()
@@ -160,8 +162,8 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             # Set ModelId
             r = self.client.post(
                 reverse('wca_model_id', kwargs={'org_id': '1'}),
-                data='secret_model_id',
-                content_type='text/plain',
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             mockSecretManager.save_secret.assert_called_with(

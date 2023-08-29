@@ -58,8 +58,8 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_api_key', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "key": "a-key" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             mock_secret_mgr.save_secret.assert_called_once_with('1', Suffixes.API_KEY, 'a-key')
@@ -98,8 +98,8 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         ):
             r = self.client.post(
                 reverse('wca_api_key', kwargs={'org_id': '1'}),
-                data='a-key',
-                content_type='text/plain',
+                data='{ "key": "a-key" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             mock_secret_mgr.save_secret.assert_not_called()
@@ -156,8 +156,8 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             # Set Key
             r = self.client.post(
                 reverse('wca_api_key', kwargs={'org_id': '1'}),
-                data='a-new-key',
-                content_type='text/plain',
+                data='{ "key": "a-new-key" }',
+                content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             mockSecretManager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
