@@ -18,7 +18,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
     def test_get_secret_name(self):
         self.assertEqual(
             WcaSecretManager.get_secret_id(ORG_ID, Suffixes.API_KEY),
-            f'{SECRET_KEY_PREFIX}/{ORG_ID}/{Suffixes.API_KEY.value[0]}',
+            f'{SECRET_KEY_PREFIX}/{ORG_ID}/{Suffixes.API_KEY.value}',
         )
 
     def test_get_key(self):
