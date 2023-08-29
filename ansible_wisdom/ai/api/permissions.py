@@ -43,8 +43,7 @@ class IsWCAKeyApiFeatureFlagOn(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if settings.LAUNCHDARKLY_SDK_KEY:
-            flag = feature_flags.get(WisdomFlags.WCA_KEY_API, request.user, "")
-            return flag == 'true'
+            return feature_flags.get(WisdomFlags.WCA_KEY_API, request.user, "")
         return False
 
 
@@ -55,6 +54,5 @@ class IsWCAModelIdApiFeatureFlagOn(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if settings.LAUNCHDARKLY_SDK_KEY:
-            flag = feature_flags.get(WisdomFlags.WCA_MODEL_ID_API, request.user, "")
-            return flag == 'true'
+            return feature_flags.get(WisdomFlags.WCA_MODEL_ID_API, request.user, "")
         return False
