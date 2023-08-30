@@ -404,9 +404,12 @@ components:
       - repo_url
       - score
     Attributions:
-      type: array
-      items:
-        $ref: '#/components/schemas/Attribution'
+      type: object
+      properties:
+        attribution:
+        type: array
+        items:
+          $ref: '#/components/schemas/Attribution'
     AttributionRequest:
       type: object
       properties:
