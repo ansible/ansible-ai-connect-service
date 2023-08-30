@@ -371,9 +371,9 @@ improving the completion output just by following these 2 steps below.
 
 Then you can build the django image or just run `make docker-compose`.
 
-## Enabling postprocess with Ansible Lint
+## Commercial users can enable postprocess with Ansible Lint
 
-You can enable postprocess with [Ansible Lint](https://github.com/ansible/ansible-lint) for improving the completion output just by setting the environment variable `ENABLE_ANSIBLE_LINT_POSTPROCESS` to True
+Commercial users can enable postprocess with [Ansible Lint](https://github.com/ansible/ansible-lint) for improving the completion output just by setting the environment variable `ENABLE_ANSIBLE_LINT_POSTPROCESS` to True
 
 ## Application metrics as a Prometheus-style endpoint
 

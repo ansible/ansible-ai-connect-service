@@ -301,13 +301,20 @@ class Completions(APIView):
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
-        ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
-
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
-        if not ansible_lint_caller:
+        # check for commercial users for lint processing
+        is_commercial = user.groups.filter(name='Commercial').exists()
+        if is_commercial:
+            ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
+            if not ansible_lint_caller:
+                logger.warn(
+                    'skipped ansible lint post processing because ansible lint was not initialized'
+                )
+        else:
+            ansible_lint_caller = None
             logger.warn(
-                'skipped ansible lint post processing because ansible lint was not initialized'
+                'skipped ansible lint post processing as lint processing is allowed for Commercial Users only!'
             )
 
         recommendation["fqcn_module"] = []
@@ -327,6 +334,11 @@ class Completions(APIView):
                 if truncated:
                     try:
                         _ = yaml.safe_load(truncated_yaml)
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"truncated recommendation: \n{truncated_yaml}"
+                        )
+                        recommendation_yaml = truncated_yaml
                     except Exception as exc:
                         recommendation_problem = exc
                 else:
@@ -348,12 +360,6 @@ class Completions(APIView):
                         f"suggestion id: {suggestion_id}, "
                         f"original recommendation: \n{recommendation_yaml}"
                     )
-                    if truncated_yaml:
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"truncated recommendation: \n{truncated_yaml}"
-                        )
-                        recommendation_yaml = truncated_yaml
                     postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
                         recommendation_yaml, prompt, context
                     )
@@ -396,15 +402,12 @@ class Completions(APIView):
                     if postprocessed_yaml:
                         # Post-processing by running Ansible Lint to ARI processed yaml
                         postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
-                        # Stripping the linting transform and adding --- in the linted yaml
-                        postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
-                        recommendation["predictions"][i] = postprocessed_yaml
                     else:
                         # Post-processing by running Ansible Lint to model server predictions
                         postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
-                        # Stripping the linting transform and adding --- in the linted yaml
-                        postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
-                        recommendation["predictions"][i] = postprocessed_yaml
+                    # Stripping the linting transform and adding --- in the linted yaml
+                    postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
+                    recommendation["predictions"][i] = postprocessed_yaml
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -417,7 +420,7 @@ class Completions(APIView):
                         user,
                         suggestion_id,
                         recommendation_yaml,
-                        None,
+                        truncated_yaml,
                         postprocessed_yaml,
                         None,
                         exception,
