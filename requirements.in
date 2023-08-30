@@ -4,7 +4,7 @@
 aiohttp==3.8.5
 # Pin on 3.8.5 to
 ansible_anonymizer==1.4.1
-ansible-risk-insight==0.1.10
+ansible-risk-insight==0.1.11
 boto3==1.26.84
 datasets==2.10.1
 Django==4.2.3
