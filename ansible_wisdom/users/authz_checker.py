@@ -82,6 +82,8 @@ class CIAMCheck:
 
 
 class AMSCheck:
+    ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time"
+
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
@@ -104,7 +106,7 @@ class AMSCheck:
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the AMS backend in time")
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return ""
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code returned by AMS backend (org)")
@@ -132,7 +134,7 @@ class AMSCheck:
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the AMS backend in time")
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code returned by AMS backend (sub)")
@@ -156,7 +158,7 @@ class AMSCheck:
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the AMS backend in time")
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
 
         if r.status_code != HTTPStatus.OK:
@@ -164,9 +166,12 @@ class AMSCheck:
             return False
 
         result = r.json()
-        for item in result['items']:
-            if item['role']['id'] == "OrganizationAdmin":
-                return True
+        try:
+            for item in result["items"]:
+                if item['role']['id'] == "OrganizationAdmin":
+                    return True
+        except (KeyError, ValueError):
+            return False
 
         return False
 
@@ -178,10 +183,16 @@ class MockAlwaysTrueCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return True
 
+    def is_org_admin(self, username: str, organization_id: str):
+        return True
+
 
 class MockAlwaysFalseCheck:
     def __init__(self, *kargs):
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
+        return False
+
+    def is_org_admin(self, username: str, organization_id: str):
         return False
