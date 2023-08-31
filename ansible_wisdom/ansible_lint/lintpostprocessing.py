@@ -20,15 +20,12 @@ TEMP_TASK_FOLDER = "tasks"
 
 class AnsibleLintCaller:
     def __init__(self) -> None:
-        if settings.ANSIBLE_LINT_TRANSFORM_CONFIG_OPTIONS:
-            self.config_options = settings.ANSIBLE_LINT_TRANSFORM_CONFIG_OPTIONS
+        self.config_options = deepcopy(default_options)
+        self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
+        if settings.ANSIBLE_LINT_CONFIG_OPTIONS:
+            self.config_options.write_list = settings.ANSIBLE_LINT_CONFIG_OPTIONS
         else:
-            self.config_options = deepcopy(default_options)
-        self.config_options.write_list = ["all"]
-        if settings.ANSIBLE_LINT_RULES_DIRECTORY:
-            self.default_rules_collection = settings.ANSIBLE_LINT_RULES_DIRECTORY
-        else:
-            self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
+            self.config_options.write_list = ["all"]
 
     def run_linter(
         self,
