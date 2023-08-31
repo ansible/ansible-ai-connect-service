@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.WisdomExt;
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message CodeGenerationTaskRequest {
+
+  /*-- fields --*/
+  optional string prompt = 1;
+  optional string context = 2;
+}

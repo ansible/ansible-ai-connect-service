@@ -1,0 +1,16 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.WisdomExt;
+import "codegenerationtaskrequest.proto";
+import "generatedresult.proto";
+
+
+/*-- SERVICES ----------------------------------------------------------------*/
+
+service WisdomExtService {
+  rpc CodeGenerationTaskPredict(caikit.runtime.WisdomExt.CodeGenerationTaskRequest) returns (caikit_data_model.wisdom_ext.GeneratedResult);
+}

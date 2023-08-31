@@ -2,11 +2,11 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import codegenerationtaskrequest_pb2 as codegenerationtaskrequest__pb2
-import generatedresult_pb2 as generatedresult__pb2
+import traininginforequest_pb2 as traininginforequest__pb2
+import traininginforesponse_pb2 as traininginforesponse__pb2
 
 
-class WisdomExtServiceStub(object):
+class TrainingManagementStub(object):
     """-- SERVICES ----------------------------------------------------------------
 
     """
@@ -17,46 +17,46 @@ class WisdomExtServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.CodeGenerationTaskPredict = channel.unary_unary(
-                '/caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict',
-                request_serializer=codegenerationtaskrequest__pb2.CodeGenerationTaskRequest.SerializeToString,
-                response_deserializer=generatedresult__pb2.GeneratedResult.FromString,
+        self.GetTrainingStatus = channel.unary_unary(
+                '/caikit.runtime.training.TrainingManagement/GetTrainingStatus',
+                request_serializer=traininginforequest__pb2.TrainingInfoRequest.SerializeToString,
+                response_deserializer=traininginforesponse__pb2.TrainingInfoResponse.FromString,
                 )
 
 
-class WisdomExtServiceServicer(object):
+class TrainingManagementServicer(object):
     """-- SERVICES ----------------------------------------------------------------
 
     """
 
-    def CodeGenerationTaskPredict(self, request, context):
+    def GetTrainingStatus(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_WisdomExtServiceServicer_to_server(servicer, server):
+def add_TrainingManagementServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'CodeGenerationTaskPredict': grpc.unary_unary_rpc_method_handler(
-                    servicer.CodeGenerationTaskPredict,
-                    request_deserializer=codegenerationtaskrequest__pb2.CodeGenerationTaskRequest.FromString,
-                    response_serializer=generatedresult__pb2.GeneratedResult.SerializeToString,
+            'GetTrainingStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTrainingStatus,
+                    request_deserializer=traininginforequest__pb2.TrainingInfoRequest.FromString,
+                    response_serializer=traininginforesponse__pb2.TrainingInfoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'caikit.runtime.WisdomExt.WisdomExtService', rpc_method_handlers)
+            'caikit.runtime.training.TrainingManagement', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class WisdomExtService(object):
+class TrainingManagement(object):
     """-- SERVICES ----------------------------------------------------------------
 
     """
 
     @staticmethod
-    def CodeGenerationTaskPredict(request,
+    def GetTrainingStatus(request,
             target,
             options=(),
             channel_credentials=None,
@@ -66,8 +66,8 @@ class WisdomExtService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/caikit.runtime.WisdomExt.WisdomExtService/CodeGenerationTaskPredict',
-            codegenerationtaskrequest__pb2.CodeGenerationTaskRequest.SerializeToString,
-            generatedresult__pb2.GeneratedResult.FromString,
+        return grpc.experimental.unary_unary(request, target, '/caikit.runtime.training.TrainingManagement/GetTrainingStatus',
+            traininginforequest__pb2.TrainingInfoRequest.SerializeToString,
+            traininginforesponse__pb2.TrainingInfoResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

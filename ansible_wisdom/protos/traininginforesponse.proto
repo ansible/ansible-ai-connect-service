@@ -1,0 +1,21 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit_data_model.runtime;
+import "trainingstatus.proto";
+
+
+/*-- MESSAGES ----------------------------------------------------------------*/
+
+message TrainingInfoResponse {
+
+  /*-- fields --*/
+  string training_id = 1;
+  caikit_data_model.runtime.TrainingStatus status = 2;
+  string submission_timestamp = 3;
+  string completion_timestamp = 4;
+  string error_code = 5;
+}

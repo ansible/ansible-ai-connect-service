@@ -1,0 +1,16 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.training;
+import "traininginforequest.proto";
+import "traininginforesponse.proto";
+
+
+/*-- SERVICES ----------------------------------------------------------------*/
+
+service TrainingManagement {
+  rpc GetTrainingStatus(caikit_data_model.runtime.TrainingInfoRequest) returns (caikit_data_model.runtime.TrainingInfoResponse);
+}

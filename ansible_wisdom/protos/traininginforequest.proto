@@ -4,14 +4,13 @@
  *----------------------------------------------------------------------------*/
 
 syntax = "proto3";
-package caikit.runtime.WisdomExt;
+package caikit_data_model.runtime;
 
 
 /*-- MESSAGES ----------------------------------------------------------------*/
 
-message AnsibleRequest {
+message TrainingInfoRequest {
 
   /*-- fields --*/
-  string prompt = 1;
-  string context = 2;
+  string training_id = 1;
 }
