@@ -445,7 +445,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_full_payload_without_ansible_lint(self):
+    def test_full_payload_without_ansible_lint_commercial(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -462,7 +462,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog(
-                    'skipped ansible lint post processing because ansible lint was not initialized',
+                    'skipped ansible lint post processing as lint processing is allowed for Commercial Users only!',
                     log,
                 )
                 self.assertSegmentTimestamp(log)
