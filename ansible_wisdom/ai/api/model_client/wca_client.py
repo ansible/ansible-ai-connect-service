@@ -19,7 +19,8 @@ class WCAClient(ModelMeshClient):
 
     def infer(self, model_input, model_name="wisdom"):
         logger.debug(f"Input prompt: {model_input}")
-        self._prediction_url = f"{self._inference_url}/analytics/notebooks/codegen/gencode/"
+        # path matches ANSIBLE_AI_MODEL_MESH_HOST="https://api.dataplatform.test.cloud.ibm.com"
+        self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
