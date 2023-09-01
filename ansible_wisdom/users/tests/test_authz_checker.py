@@ -185,3 +185,76 @@ class TestToken(WisdomServiceLogAwareTestCase):
             self.assertInLog(
                 "Unexpected error code returned by AMS backend when listing role bindings", log
             )
+
+    def test_is_org_lightspeed_subscriber(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "123"}]},
+            {"items": [{"subscription": {"status": "Active"}}]},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertTrue(checker.is_org_lightspeed_subscriber("123"))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            params={
+                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
+                "organization_id='123'"
+            },
+            timeout=0.8,
+        )
+
+    def test_is_org_not_lightspeed_subscriber(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "123"}]},
+            {"items": []},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            params={
+                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
+                "organization_id='123'"
+            },
+            timeout=0.8,
+        )
+
+    def test_is_org_lightspeed_subscriber_timeout(self):
+        def side_effect(*args, **kwargs):
+            raise requests.exceptions.Timeout()
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.side_effect = side_effect
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
+
+    def test_is_org_lightspeed_subscriber_network_error(self):
+        m_r = Mock()
+        m_r.status_code = 500
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertInLog(
+                "Unexpected error code returned by AMS backend when listing subscriptions", log
+            )

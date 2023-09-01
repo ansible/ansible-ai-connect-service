@@ -94,10 +94,13 @@ class AMSCheck:
             proxy = {"https": "http://squid.corp.redhat.com:3128"}
             self._session.proxies.update(proxy)
 
+    def update_bearer_token(self):
+        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+
     @cache
     def get_ams_org(self, rh_org_id: str) -> str:
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
         params = {"search": f"external_id='{rh_org_id}'"}
+        self.update_bearer_token()
 
         try:
             r = self._session.get(
@@ -125,7 +128,7 @@ class AMSCheck:
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
             f"creator.username = '{username}' AND organization_id='{ams_org_id}'"
         }
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+        self.update_bearer_token()
 
         try:
             r = self._session.get(
@@ -138,7 +141,7 @@ class AMSCheck:
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code returned by AMS backend (sub)")
-            return ""
+            return False
         data = r.json()
         try:
             return len(data["items"]) == 1
@@ -149,7 +152,7 @@ class AMSCheck:
     def is_org_admin(self, username: str, organization_id: str):
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+        self.update_bearer_token()
 
         try:
             r = self._session.get(
@@ -175,6 +178,33 @@ class AMSCheck:
 
         return False
 
+    def is_org_lightspeed_subscriber(self, organization_id: str) -> bool:
+        ams_org_id = self.get_ams_org(organization_id)
+        params = {
+            "search": f"plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
+            f"organization_id='{ams_org_id}'"
+        }
+        self.update_bearer_token()
+
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            return False
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by AMS backend when listing subscriptions")
+            return False
+        data = r.json()
+        try:
+            return len(data["items"]) > 0
+        except (KeyError, ValueError):
+            logger.error("Unexpected subscription answer from AMS")
+            return False
+
 
 class MockAlwaysTrueCheck:
     def __init__(self, *kargs):
@@ -183,7 +213,10 @@ class MockAlwaysTrueCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return True
 
-    def is_org_admin(self, username: str, organization_id: str):
+    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+        return True
+
+    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
         return True
 
 
@@ -194,5 +227,8 @@ class MockAlwaysFalseCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return False
 
-    def is_org_admin(self, username: str, organization_id: str):
+    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+        return False
+
+    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
         return False

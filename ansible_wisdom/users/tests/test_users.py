@@ -278,6 +278,22 @@ class TestOrgAdmin(TestCase):
         self.assertFalse(user.is_org_admin)
 
 
+class TestIsOrgLightspeedSubscriber(TestCase):
+    def test_is_org_lightspeed_subscriber_with_no_rhsso_user(self):
+        user = create_user(provider_name="github")
+        self.assertFalse(user.is_org_lightspeed_subscriber)
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
+    def test_is_org_lightspeed_subscriber_with_subscribed_user(self):
+        user = create_user(provider_name="oidc")
+        self.assertTrue(user.is_org_lightspeed_subscriber)
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
+    def test_is_org_lightspeed_subscriber_with_non_subscribed_user(self):
+        user = create_user(provider_name="oidc")
+        self.assertFalse(user.is_org_lightspeed_subscriber)
+
+
 class TestUserModelMetrics(APITransactionTestCase):
     def test_user_model_metrics(self):
         def get_user_count():
