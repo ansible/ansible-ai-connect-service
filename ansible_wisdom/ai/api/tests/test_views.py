@@ -141,7 +141,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             model_client.get_token.assert_called_once()
             self.assertEqual(
                 model_client.session.post.call_args.args[0],
-                "https://wca_api_url/analytics/notebooks/codegen/gencode/",
+                "https://wca_api_url/v1/wca/codegen/ansible",
             )
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'modelX'

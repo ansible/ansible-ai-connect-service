@@ -94,7 +94,7 @@ class TestWCAClient(TestCase):
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
-            "https://example.com/analytics/notebooks/codegen/gencode/",
+            "https://example.com/v1/wca/codegen/ansible",
             headers=headers,
             json=data,
             timeout=None,
