@@ -27,8 +27,10 @@ ifeq ($(ENVIRONMENT),development)
 	export SECRET_KEY := somesecret
 	export DJANGO_SUPERUSER_PASSWORD := somesecret
 
-	ifneq ("$(wildcard $(PWD)/.env)","")
-		include $(PWD)/.env
+	ifeq ($(wildcard $(PWD)/.env/.),)
+		ifneq ($(wildcard $(PWD)/.env),)
+			include $(PWD)/.env
+		endif
 	endif
 endif
 
