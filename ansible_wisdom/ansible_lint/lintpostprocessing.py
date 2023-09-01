@@ -22,10 +22,7 @@ class AnsibleLintCaller:
     def __init__(self) -> None:
         self.config_options = deepcopy(default_options)
         self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
-        if settings.ANSIBLE_LINT_CONFIG_OPTIONS:
-            self.config_options.write_list = settings.ANSIBLE_LINT_CONFIG_OPTIONS
-        else:
-            self.config_options.write_list = ["all"]
+        self.config_options.write_list = settings.ANSIBLE_LINT_CONFIG_OPTIONS
 
     def run_linter(
         self,
