@@ -23,19 +23,19 @@ logger = logging.getLogger(__name__)
 class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     from ai.api.permissions import (
         AcceptedTermsPermission,
-        IsLightspeedSubscriber,
         IsOrganisationAdministrator,
+        IsOrganisationLightspeedSubscriber,
         IsWCAModelIdApiFeatureFlagOn,
     )
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 
     permission_classes = [
+        IsWCAModelIdApiFeatureFlagOn,
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         IsOrganisationAdministrator,
-        IsLightspeedSubscriber,
+        IsOrganisationLightspeedSubscriber,
         AcceptedTermsPermission,
-        IsWCAModelIdApiFeatureFlagOn,
     ]
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_model_id'
@@ -55,7 +55,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("WCA Model Id:: GET handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_id = kwargs.get("org_id")
+        org_id = request._request.user.organization_id
         try:
             response = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
             if response is None:
@@ -85,7 +85,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         logger.debug("WCA Model Id:: POST handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
-        org_id = kwargs.get("org_id")
+        org_id = request._request.user.organization_id
         try:
             model_id_serializer.is_valid(raise_exception=True)
             model_id = model_id_serializer.validated_data['model_id']

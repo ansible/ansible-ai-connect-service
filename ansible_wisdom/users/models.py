@@ -14,11 +14,17 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = models.IntegerField(default=None, null=True)
 
-    @cached_property
-    def has_seat(self) -> bool:
+    def is_oidc_user(self) -> bool:
         if not self.social_auth.values():
             return False
         if self.social_auth.values()[0]["provider"] != "oidc":
+            return False
+
+        return True
+
+    @cached_property
+    def has_seat(self) -> bool:
+        if not self.is_oidc_user():
             return False
 
         seat_checker = apps.get_app_config("ai").get_seat_checker()
@@ -27,3 +33,25 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         uid = self.social_auth.values()[0]["uid"]
         rh_org_id = self.organization_id
         return seat_checker.check(uid, self.username, rh_org_id)
+
+    @cached_property
+    def is_org_admin(self) -> bool:
+        if not self.is_oidc_user():
+            return False
+
+        seat_checker = apps.get_app_config("ai").get_seat_checker()
+        if not seat_checker:
+            return False
+        rh_org_id = self.organization_id
+        return seat_checker.is_org_admin(self.username, rh_org_id)
+
+    @cached_property
+    def is_org_lightspeed_subscriber(self) -> bool:
+        if not self.is_oidc_user():
+            return False
+
+        seat_checker = apps.get_app_config("ai").get_seat_checker()
+        if not seat_checker:
+            return False
+        rh_org_id = self.organization_id
+        return seat_checker.is_org_lightspeed_subscriber(rh_org_id)

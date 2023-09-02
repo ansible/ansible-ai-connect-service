@@ -24,16 +24,18 @@ class IsOrganisationAdministrator(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return True
+        user = request.user
+        return user.is_org_admin
 
 
-class IsLightspeedSubscriber(permissions.BasePermission):
+class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     """
     Allow access only to users who have a Light Speed subscripton.
     """
 
     def has_permission(self, request, view):
-        return True
+        user = request.user
+        return user.is_org_lightspeed_subscriber
 
 
 class IsWCAKeyApiFeatureFlagOn(permissions.BasePermission):
