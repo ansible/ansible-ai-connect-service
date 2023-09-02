@@ -462,7 +462,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertInLog(
-                    'skipped ansible lint post processing as lint processing is allowed for Commercial Users only!',
+                    'skipped ansible lint post processing as lint processing is allowed'
+                    ' for Commercial Users only!',
                     log,
                 )
                 self.assertSegmentTimestamp(log)
