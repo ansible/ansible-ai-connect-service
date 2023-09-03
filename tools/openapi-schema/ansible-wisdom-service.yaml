@@ -183,12 +183,6 @@ paths:
     get:
       operationId: wca_api_key_get
       summary: Get WCA key for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       security:
@@ -212,12 +206,6 @@ paths:
     post:
       operationId: wca_api_key_set
       summary: Set the WCA key for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       requestBody:
@@ -260,12 +248,6 @@ paths:
     get:
       operationId: wca_model_id_get
       summary: Get WCA Model Id for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       security:
@@ -289,12 +271,6 @@ paths:
     post:
       operationId: wca_model_id_set
       summary: Set the Model Id to be used for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       requestBody:
