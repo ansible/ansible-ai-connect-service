@@ -179,7 +179,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
-  /api/v0/wca/{org_id}/apikey/:
+  /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
       summary: Get WCA key for an Organisation
@@ -256,7 +256,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v0/wca/{org_id}/modelid/:
+  /api/v0/wca/modelid/:
     get:
       operationId: wca_model_id_get
       summary: Get WCA Model Id for an Organisation
