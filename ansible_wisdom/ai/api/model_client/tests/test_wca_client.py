@@ -141,7 +141,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(api_key, 'abcdef')
 
     @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
-    def test_get_api_from_aws(self):
+    def test_get_api_key_from_aws(self):
         secret_value = "1234567"
 
         def mock_api_call(_, operation_name, *args):
@@ -157,11 +157,11 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
     @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
-    def test_get_api_from_aws_error(self):
+    def test_get_api_key_from_aws_error(self):
         def mock_api_call(_, operation_name, *args):
             raise ClientError({}, operation_name)
 
         with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
             model_client = WCAClient(inference_url='http://example.com/')
-            api_key = model_client.get_api_key(True, '1234567')
-            self.assertEqual(api_key, 'abcdef')
+            with self.assertRaises(WcaSecretManagerError):
+                model_client.get_api_key(True, '1234567')

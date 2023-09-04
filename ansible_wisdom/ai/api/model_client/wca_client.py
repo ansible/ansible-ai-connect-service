@@ -81,11 +81,11 @@ class WCAClient(ModelMeshClient):
 
         try:
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
-            if api_key is not None and "SecretString" in api_key:
+            if api_key is not None:
                 return api_key["SecretString"]
 
-        except WcaSecretManagerError:
+        except (WcaSecretManagerError, KeyError):
             # if retrieving the API Key from AWS fails, we log an error and return the shared key
-            logger.error(f"error retrieving WCA API Key for org_id {organization_id}")
+            logger.error(f"error retrieving WCA API Key for org_id '{organization_id}'")
 
-        return self._api_key
+        raise WcaSecretManagerError
