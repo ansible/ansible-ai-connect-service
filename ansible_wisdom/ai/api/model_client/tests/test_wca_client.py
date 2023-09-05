@@ -1,10 +1,13 @@
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
+from ai.api.aws.wca_secret_manager import WcaSecretManagerError
 from ai.api.model_client.exceptions import ModelTimeoutError
 from ai.api.model_client.wca_client import WCAClient
+from botocore.exceptions import ClientError
 from django.test import override_settings
 from requests.exceptions import ReadTimeout
+from test_utils import WisdomServiceLogAwareTestCase
 
 
 class MockResponse:
@@ -19,7 +22,7 @@ class MockResponse:
         return
 
 
-class TestWCAClient(TestCase):
+class TestWCAClient(WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
     def test_get_token(self):
         headers = {
@@ -42,7 +45,7 @@ class TestWCAClient(TestCase):
         model_client = WCAClient(inference_url='http://example.com/')
         model_client.session.post = Mock(return_value=response)
 
-        model_client.get_token()
+        model_client.get_token('abcdef')
 
         model_client.session.post.assert_called_once_with(
             "https://iam.cloud.ibm.com/identity/token",
@@ -124,3 +127,41 @@ class TestWCAClient(TestCase):
         model_client.session.post = Mock(side_effect=ReadTimeout())
         with self.assertRaises(ModelTimeoutError):
             model_client.infer(model_input=model_input, model_name=model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
+    def test_get_api_key_without_seat(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(False, None)
+        self.assertEqual(api_key, 'abcdef')
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
+    def test_get_api_key_without_org_id(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, None)
+        self.assertEqual(api_key, 'abcdef')
+
+    @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
+    def test_get_api_key_from_aws(self):
+        secret_value = "1234567"
+
+        def mock_api_call(_, operation_name, *args):
+            if operation_name == "GetSecretValue":
+                return {"SecretString": secret_value}
+            else:
+                raise ClientError({}, operation_name)
+
+        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
+            model_client = WCAClient(inference_url='http://example.com/')
+            api_key = model_client.get_api_key(True, secret_value)
+            self.assertEqual(api_key, secret_value)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
+    @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
+    def test_get_api_key_from_aws_error(self):
+        def mock_api_call(_, operation_name, *args):
+            raise ClientError({}, operation_name)
+
+        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
+            model_client = WCAClient(inference_url='http://example.com/')
+            with self.assertRaises(WcaSecretManagerError):
+                model_client.get_api_key(True, '1234567')

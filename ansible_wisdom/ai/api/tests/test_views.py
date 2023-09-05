@@ -50,6 +50,8 @@ class DummyMeshClient(ModelMeshClient):
                             "context": data.get("context"),
                             "prompt": data.get("prompt"),
                             "userId": str(test.user.uuid),
+                            "has_seat": False,
+                            "organization_id": None,
                             "suggestionId": payload.get("suggestionId"),
                         }
                     ]
