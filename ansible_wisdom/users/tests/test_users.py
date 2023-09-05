@@ -9,6 +9,7 @@ from uuid import uuid4
 from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -102,9 +103,9 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.strategy = MockStrategy()
         self.strategy.session = self.request.session
         self.partial = SimpleNamespace(token='token')
-        self.user = Mock(community_terms_accepted=None, commercial_terms_accepted=None)
-        self.group_filter = self.user.groups.filter(name='Commercial')
-        self.group_filter.exists.return_value = False
+        self.user = Mock(
+            community_terms_accepted=None, commercial_terms_accepted=None, has_seat=False
+        )
 
     def test_terms_of_service_first_call(self):
         _terms_of_service(
@@ -123,7 +124,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def test_terms_of_service_first_commercial(self):
         # We must be using the Red Hat SSO and be a member of the Community placeholder group
         self.backend.name = 'oidc'
-        self.group_filter.exists.return_value = True
+        self.user.has_seat = True
 
         _terms_of_service(
             self.strategy,
@@ -260,6 +261,15 @@ class TestUserSeat(TestCase):
         with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
             user = create_user(provider_name="oidc")
             self.assertFalse(user.has_seat)
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
+    def test_has_seat_with_commercial_group(self):
+        user = create_user(provider_name="github")
+
+        commercial_group = Group.objects.create(name='Commercial')
+        user.groups.add(commercial_group)
+
+        self.assertTrue(user.has_seat)
 
 
 class TestOrgAdmin(TestCase):
