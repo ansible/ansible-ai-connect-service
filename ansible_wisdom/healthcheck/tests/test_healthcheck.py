@@ -67,6 +67,7 @@ class TestHealthCheck(APITestCase):
         data = json.loads(r.content)
         self.assertEqual(timestamp, data['timestamp'])
 
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
     @mock.patch('requests.get', side_effect=mocked_requests_http_fail)
     def test_health_check_http_error(self, _):
         cache.clear()
