@@ -7,6 +7,8 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_prometheus.models import ExportModelOperationsMixin
 
+from .constants import USER_SOCIAL_AUTH_PROVIDER_GITHUB, USER_SOCIAL_AUTH_PROVIDER_OIDC
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     def is_oidc_user(self) -> bool:
         if not self.social_auth.values():
             return False
-        if self.social_auth.values()[0]["provider"] != "oidc":
+        if self.social_auth.values()[0]["provider"] != USER_SOCIAL_AUTH_PROVIDER_OIDC:
             return False
 
         return True
@@ -70,9 +72,9 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if not self.social_auth.values():
             return self.username
 
-        if self.social_auth.values()[0]["provider"] == "github":
+        if self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_GITHUB:
             return self.social_auth.values()[0]["extra_data"]["login"]
-        elif self.social_auth.values()[0]["provider"] == "oicd":
+        elif self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC:
             return self.social_auth.values()[0]["extra_data"]["preferred_username"]
         else:
             return self.username
