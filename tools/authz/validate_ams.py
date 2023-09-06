@@ -14,7 +14,6 @@ class Token:
         self._client_secret = client_secret
         self.expiration_date = datetime.fromtimestamp(0)
         self.access_token: str = ""
-        self.server = "sso.redhat.com"
 
     def refresh(self) -> None:
         data = {
@@ -25,7 +24,8 @@ class Token:
         }
 
         r = requests.post(
-            f"https://{self.server}/auth/realms/redhat-external/protocol/openid-connect/token",
+            os.environ['AUTHZ_SSO_SERVER']
+            + "/auth/realms/redhat-external/protocol/openid-connect/token",
             data=data,
         )
         data = r.json()
@@ -39,14 +39,14 @@ class Token:
         return self.access_token
 
 
-my_token = Token(os.environ["CLIENT_ID"], os.environ["CLIENT_SECRET"])
+my_token = Token(os.environ["AUTHZ_SSO_CLIENT_ID"], os.environ["AUTHZ_SSO_CLIENT_SECRET"])
 
 
 def get_ams_org(rh_org_id: str) -> str:
     params = {"search": f"external_id='{rh_org_id}'"}
 
     r = requests.get(
-        "https://api.openshift.com/api/accounts_mgmt/v1/organizations",
+        f"{os.environ['AUTHZ_API_SERVER']}/api/accounts_mgmt/v1/organizations",
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {my_token.get()}",
@@ -101,6 +101,7 @@ def rh_user_is_org_admin(username: str, organization_id: str) -> bool:
     return False
 
 
-# assert check("ansiblewisdomtesting1", "17233726") is True
+assert os.environ["AUTHZ_BACKEND_TYPE"] == "ams"
+assert check("ansiblewisdomtesting1", "17233726") is True
 assert rh_user_is_org_admin("ansiblewisdomtesting1", "17233726") is True
 print("Success")

@@ -24,7 +24,6 @@ class TestFixUsersWithTwoSSOProviders(WisdomServiceLogAwareTestCase):
 
     def test_without_fix_paramter(self):
         base = Mock()
-        User = get_user_model()
         before = UserSocialAuth.objects.all().filter(user=self.sso_user).count()
         Command.handle(base, fix=False)
         after = UserSocialAuth.objects.all().filter(user=self.sso_user).count()
@@ -35,7 +34,6 @@ class TestFixUsersWithTwoSSOProviders(WisdomServiceLogAwareTestCase):
 
     def test_with_fix_paramter(self):
         base = Mock()
-        User = get_user_model()
         Command.handle(base, fix=True)
         counter = UserSocialAuth.objects.all().filter(user=self.sso_user).count()
         self.assertEqual(counter, 1)
