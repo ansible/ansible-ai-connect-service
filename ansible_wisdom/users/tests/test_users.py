@@ -2,7 +2,7 @@ import random
 import string
 from http import HTTPStatus
 from types import SimpleNamespace
-from unittest import TestCase, mock
+from unittest import TestCase
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
