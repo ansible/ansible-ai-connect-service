@@ -160,3 +160,6 @@ ari/kb/rules/
 
 # Generated Grafana files
 grafana/*
+
+# Generate styles template
+ansible_wisdom/main/templates/styles.html

@@ -1,5 +1,6 @@
 ENVIRONMENT ?= development
 TAG ?= latest
+STYLES_TEMPLATE ?= ansible_wisdom/main/templates/styles.html
 
 # Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
@@ -43,7 +44,7 @@ DEPRECATED:
 ansible-wisdom-container: build-wisdom-container DEPRECATED
 
 .PHONY: build-wisdom-container
-build-wisdom-container:
+build-wisdom-container: create-styles-template
 	${CONTAINER_RUNTIME} build -f wisdom-service.Containerfile -t ansible_wisdom .
 
 # DEPRECATED: Please use run-server instead
@@ -91,6 +92,12 @@ docker-compose-clean:
 .PHONY: pip-compile
 pip-compile:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/pip-compile.yaml up --remove-orphans
+
+.PHONY: create-styles-template
+create-styles-template:
+	echo "<style>" > ${STYLES_TEMPLATE}
+	npx purgecss --css ansible_wisdom/main/static/patternfly.css --content ansible_wisdom/**/*.html | jq -r '.[] | .css' >> ${STYLES_TEMPLATE}
+	echo "</style>" >> ${STYLES_TEMPLATE}
 
 # DEPRECATED: Please use create-superuser-containerized instead
 docker-create-superuser: create-superuser-containerized DEPRECATED

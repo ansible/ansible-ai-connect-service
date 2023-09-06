@@ -59,6 +59,10 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
 
+    - name: Generate styles template
+      run: |
+        make create-styles-template
+
     - name: Running Unit Tests
       run: |
         cd ansible_wisdom
