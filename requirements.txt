@@ -18,16 +18,14 @@ ansible-anonymizer==1.4.2
 ansible-compat==4.1.8
     # via ansible-lint
 ansible-core==2.15.0
-    # via ansible
-ansible-risk-insight==0.1.11
     # via
     #   ansible
     #   ansible-compat
     #   ansible-lint
 ansible-lint==6.18.0
     # via -r requirements.in
-appnope==0.1.3
-    # via ipython
+ansible-risk-insight==0.1.11
+    # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
 asgiref==3.7.2
@@ -527,5 +525,6 @@ yamllint==1.32.0
     # via ansible-lint
 yarl==1.9.2
     # via aiohttp
+
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

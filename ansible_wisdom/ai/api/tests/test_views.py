@@ -29,7 +29,7 @@ from test_utils import WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
-    def __init__(self, test, payload, response_data, test_inference_match=True):
+    def __init__(self, test, payload, response_data, test_inference_match=True, has_seat=False):
         super().__init__(inference_url='dummy inference url')
         self.test = test
         self.test_inference_match = test_inference_match
@@ -50,7 +50,7 @@ class DummyMeshClient(ModelMeshClient):
                             "context": data.get("context"),
                             "prompt": data.get("prompt"),
                             "userId": str(test.user.uuid),
-                            "has_seat": False,
+                            "has_seat": has_seat,
                             "organization_id": None,
                             "suggestionId": payload.get("suggestionId"),
                         }
@@ -445,7 +445,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_full_payload_without_ansible_lint_commercial(self):
+    def test_full_payload_without_ansible_lint_without_commercial(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -482,7 +482,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            DummyMeshClient(self, payload, response_data, has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -508,7 +508,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            DummyMeshClient(self, payload, response_data, has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
