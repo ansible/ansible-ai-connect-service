@@ -180,15 +180,15 @@ class AMSCheck:
 
     def is_org_lightspeed_subscriber(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {
-            "search": f"plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
-            f"organization_id='{ams_org_id}'"
-        }
+        params = {"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"}
         self.update_bearer_token()
 
         try:
             r = self._session.get(
-                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
+                (
+                    f"{self._api_server}"
+                    f"/api/accounts_mgmt/v1/subscriptions/{ams_org_id}/resource_quota"
+                ),
                 params=params,
                 timeout=0.8,
             )
@@ -196,13 +196,15 @@ class AMSCheck:
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend when listing subscriptions")
+            logger.error(
+                "Unexpected error code returned by AMS backend when listing resource_quota"
+            )
             return False
         data = r.json()
         try:
-            return len(data["items"]) > 0
+            return data["total"] > 0
         except (KeyError, ValueError):
-            logger.error("Unexpected subscription answer from AMS")
+            logger.error("Unexpected resource_quota answer from AMS")
             return False
 
 
