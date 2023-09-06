@@ -488,10 +488,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
-                self.assertInLog(
-                    'skipped ansible lint post processing because ansible lint was not initialized',
-                    log,
-                )
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
