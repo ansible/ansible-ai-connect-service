@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import logging
-from datetime import datetime
 
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect

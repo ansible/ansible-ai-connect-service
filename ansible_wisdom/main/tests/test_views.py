@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 
-from uuid import uuid4
-
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase
 from main.views import LoginView
-from social_django.models import UserSocialAuth
 
 
 class AlreadyAuth(TestCase):
