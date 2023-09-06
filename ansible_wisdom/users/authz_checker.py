@@ -118,7 +118,7 @@ class AMSCheck:
 
         try:
             return data["items"][0]["id"]
-        except (KeyError, ValueError):
+        except (IndexError, KeyError, ValueError):
             logger.error("Unexpected organization answer from AMS")
             return ""
 
