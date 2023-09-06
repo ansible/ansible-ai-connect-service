@@ -363,7 +363,7 @@ class TestSocialAuthentication(APITransactionTestCase):
         self.assertEqual(social_username, user.social_username)
         self.assertNotEqual(user.username, user.social_username)
 
-    def test_oidc_user_social_username(self):
+    def test_rhsso_user_social_username(self):
         social_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -384,7 +384,7 @@ class TestSocialAuthentication(APITransactionTestCase):
         self.assertEqual(social_username, r.data.get('username'))
         self.assertNotEqual(user.username, r.data.get('username'))
 
-    def test_oidc_user_login(self):
+    def test_rhsso_user_login(self):
         social_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
