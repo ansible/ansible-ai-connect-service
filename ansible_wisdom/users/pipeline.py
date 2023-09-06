@@ -83,7 +83,7 @@ def _terms_of_service(strategy, user, backend, **kwargs):
     # commercial, there also needs to be the seat check when that gets
     # integrated.  When that happens, update this to include that
     # logic.  Possibly also remove the Commerical group?
-    is_commercial = user.groups.filter(name='Commercial').exists()
+    is_commercial = user.has_seat
     terms_type = 'commercial' if backend.name == 'oidc' and is_commercial else 'community'
     field_name = f'{terms_type}_terms_accepted'
     view_name = f'{terms_type}_terms'

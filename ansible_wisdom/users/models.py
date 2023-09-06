@@ -24,6 +24,10 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def has_seat(self) -> bool:
+        # For dev/test purposes only:
+        if self.groups.filter(name='Commercial').exists():
+            return True
+
         if not self.is_oidc_user():
             return False
 
