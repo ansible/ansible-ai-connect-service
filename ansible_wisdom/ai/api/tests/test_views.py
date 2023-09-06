@@ -468,6 +468,54 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_without_ansible_lint_with_commercial_user(self):
+        self.user.has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertInLog(
+                    'skipped ansible lint post processing because ansible lint was not initialized',
+                    log,
+                )
+                self.assertSegmentTimestamp(log)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_with_ansible_lint_with_commercial_user(self):
+        self.user.has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertSegmentTimestamp(log)
+
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):
         payload = {

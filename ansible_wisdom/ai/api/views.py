@@ -304,7 +304,7 @@ class Completions(APIView):
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
         # check for commercial users for lint processing
-        is_commercial = user.groups.filter(name='Commercial').exists()
+        is_commercial = user.has_seat
         if is_commercial:
             ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
             if not ansible_lint_caller:
