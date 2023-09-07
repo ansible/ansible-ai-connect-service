@@ -2,8 +2,6 @@ import json
 import logging
 
 import requests
-from rest_framework import status
-from rest_framework.response import Response
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError

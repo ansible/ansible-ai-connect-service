@@ -4,7 +4,6 @@
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from pprint import pprint
 
 import requests
 

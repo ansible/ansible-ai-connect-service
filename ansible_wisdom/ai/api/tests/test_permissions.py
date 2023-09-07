@@ -1,10 +1,7 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-from django.apps import apps
-from django.test import override_settings
 from django.urls import reverse
-from requests.exceptions import ReadTimeout
 
 from ..permissions import (
     AcceptedTermsPermission,

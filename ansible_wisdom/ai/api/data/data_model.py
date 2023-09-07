@@ -1,5 +1,5 @@
 import logging
-from typing import List, TypedDict, Union
+from typing import TypedDict, Union
 from uuid import UUID
 
 from django.conf import settings

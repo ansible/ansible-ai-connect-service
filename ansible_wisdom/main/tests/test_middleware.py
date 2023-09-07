@@ -1,4 +1,3 @@
-import os.path
 import platform
 import uuid
 from http import HTTPStatus

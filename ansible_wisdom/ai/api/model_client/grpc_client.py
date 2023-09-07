@@ -1,8 +1,6 @@
 import logging
 
 import grpc
-from django.conf import settings
-from rest_framework.response import Response
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError

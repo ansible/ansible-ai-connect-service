@@ -3,8 +3,6 @@ import logging
 import requests
 from django.apps import apps
 from django.conf import settings
-from rest_framework import status
-from rest_framework.response import Response
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
