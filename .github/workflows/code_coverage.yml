@@ -23,6 +23,7 @@ jobs:
       ARI_KB_PATH: ../ari/kb/
       DJANGO_SETTINGS_MODULE: main.settings.development
       ENABLE_ARI_POSTPROCESS: True
+      ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
       SECRET_KEY: somesecret
 
