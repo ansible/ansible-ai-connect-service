@@ -6,7 +6,7 @@ from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
-    IsWCAKeyApiFeatureFlagOn,
+    IsWCAModelIdApiFeatureFlagOn,
 )
 from ai.api.serializers import WcaModelIdRequestSerializer
 from django.apps import apps
@@ -27,7 +27,7 @@ from rest_framework.status import (
 logger = logging.getLogger(__name__)
 
 permission_classes = [
-    IsWCAKeyApiFeatureFlagOn,
+    IsWCAModelIdApiFeatureFlagOn,
     IsAuthenticated,
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
@@ -111,6 +111,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
     @extend_schema(
         responses={
             200: OpenApiResponse(description='OK'),
+            400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
             404: OpenApiResponse(description='Not found'),

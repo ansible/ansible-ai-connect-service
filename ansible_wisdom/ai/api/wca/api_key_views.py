@@ -110,6 +110,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
     @extend_schema(
         responses={
             200: OpenApiResponse(description='OK'),
+            400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
             404: OpenApiResponse(description='Not found'),
