@@ -15,7 +15,6 @@
                     <h1 class="pf-c-title pf-m-lg">Log in to Ansible Lightspeed with Watson Code Assistant</h1>
                     {% if not user.is_authenticated %}
                     <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using one of the buttons below.</div>
-                    {% endif %}
 
                     <div style="margin-top: 25px">
                     {% if use_redhat_sso %}
@@ -32,6 +31,7 @@
                         with GitHub</a>
                     {% endif %}
                     </div>
+                    {% endif %}
 
           <div class="pf-l-level" style="margin-top: 60px">
             <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>

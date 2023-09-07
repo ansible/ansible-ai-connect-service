@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from social_core.exceptions import AuthCanceled
+from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
@@ -123,3 +123,14 @@ def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
         extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
         extra_data = {k: v for k, v in extra_data.items() if k in accepted_extra_data}
         social.set_extra_data(extra_data)
+
+
+class AuthAlreadyLoggedIn(AuthException):
+    def __str__(self):
+        return "User already logged in"
+
+
+def block_auth_users(backend=None, details=None, response=None, user=None, *args, **kwargs):
+    """Safeguard to be sure user won't get multiple providers"""
+    if user:
+        raise AuthAlreadyLoggedIn(backend)
