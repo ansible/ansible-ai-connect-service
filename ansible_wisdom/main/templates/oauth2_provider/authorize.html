@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 
 {% block header %}
-<script>
-    function handleAuthorize() {
-        setTimeout(() => { window.location.href = "/" }, 5000)
-    }
+<script nonce="{{request.csp_nonce}}">
+    window.addEventListener('load', function () {
+        document.querySelector("button[type=submit]").addEventListener('click', function () {
+            setTimeout(() => { window.location.href = "/" }, 5000)
+        });
+    })
 </script>
 {% endblock %}
 
@@ -40,7 +42,7 @@
                         <footer class="pf-c-modal-box__footer">
                             <div class="control-group">
                                 <div class="controls">
-                                    <button type="submit" class="pf-c-button pf-m-primary" name="allow" value="Authorize" onClick="handleAuthorize()">
+                                    <button type="submit" class="pf-c-button pf-m-primary" name="allow" value="Authorize">
                                         Authorize
                                     </button>
                                     <button type="submit" class="pf-c-button pf-m-link" value="Cancel">Cancel</button>

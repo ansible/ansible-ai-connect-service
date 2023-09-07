@@ -15,7 +15,7 @@ from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import Completions
-from ai.feature_flags import FeatureFlags
+from ai.feature_flags import FeatureFlags, WisdomFlags
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -29,7 +29,7 @@ from test_utils import WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
-    def __init__(self, test, payload, response_data, test_inference_match=True):
+    def __init__(self, test, payload, response_data, test_inference_match=True, has_seat=False):
         super().__init__(inference_url='dummy inference url')
         self.test = test
         self.test_inference_match = test_inference_match
@@ -50,6 +50,8 @@ class DummyMeshClient(ModelMeshClient):
                             "context": data.get("context"),
                             "prompt": data.get("prompt"),
                             "userId": str(test.user.uuid),
+                            "has_seat": has_seat,
+                            "organization_id": None,
                             "suggestionId": payload.get("suggestionId"),
                         }
                     ]
@@ -124,7 +126,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
-            return "https://wca_api_url<>modelX" if name == "wca-api" else ""
+            return "https://wca_api_url<>modelX" if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
@@ -141,7 +143,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             model_client.get_token.assert_called_once()
             self.assertEqual(
                 model_client.session.post.call_args.args[0],
-                "https://wca_api_url/analytics/notebooks/codegen/gencode/",
+                "https://wca_api_url/v1/wca/codegen/ansible",
             )
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'modelX'
@@ -152,7 +154,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_off(self, feature_flags):
         def get_feature_flags(name, *args):
-            return None if name == "wca-api" else ""
+            return None if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
@@ -420,6 +422,95 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                             event['properties']['problem'],
                         )
                     self.assertIsNotNone(event['timestamp'])
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_payload_with_ansible_lint(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='WARN') as log:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
+            ):
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_without_ansible_lint_without_commercial(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertInLog(
+                    'skipped ansible lint post processing as lint processing is allowed'
+                    ' for Commercial Users only!',
+                    log,
+                )
+                self.assertSegmentTimestamp(log)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_without_ansible_lint_with_commercial_user(self):
+        self.user.has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data, has_seat=True),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertSegmentTimestamp(log)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_full_payload_with_ansible_lint_with_commercial_user(self):
+        self.user.has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data, has_seat=True),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):

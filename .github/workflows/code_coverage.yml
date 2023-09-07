@@ -23,6 +23,7 @@ jobs:
       ARI_KB_PATH: ../ari/kb/
       DJANGO_SETTINGS_MODULE: main.settings.development
       ENABLE_ARI_POSTPROCESS: True
+      ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
       SECRET_KEY: somesecret
 
@@ -51,7 +52,7 @@ jobs:
 
     - name: Retrieve ari knowledge base from s3
       run: |
-        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.10
+        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.11
         aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
         aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
       env:

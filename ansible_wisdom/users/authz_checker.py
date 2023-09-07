@@ -82,6 +82,8 @@ class CIAMCheck:
 
 
 class AMSCheck:
+    ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time"
+
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
@@ -92,10 +94,13 @@ class AMSCheck:
             proxy = {"https": "http://squid.corp.redhat.com:3128"}
             self._session.proxies.update(proxy)
 
+    def update_bearer_token(self):
+        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+
     @cache
     def get_ams_org(self, rh_org_id: str) -> str:
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
         params = {"search": f"external_id='{rh_org_id}'"}
+        self.update_bearer_token()
 
         try:
             r = self._session.get(
@@ -104,7 +109,7 @@ class AMSCheck:
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the AMS backend in time")
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return ""
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code returned by AMS backend (org)")
@@ -123,7 +128,7 @@ class AMSCheck:
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
             f"creator.username = '{username}' AND organization_id='{ams_org_id}'"
         }
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+        self.update_bearer_token()
 
         try:
             r = self._session.get(
@@ -132,16 +137,74 @@ class AMSCheck:
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the AMS backend in time")
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code returned by AMS backend (sub)")
-            return ""
+            return False
         data = r.json()
         try:
             return len(data["items"]) == 1
         except (KeyError, ValueError):
             logger.error("Unexpected subscription answer from AMS")
+            return False
+
+    def is_org_admin(self, username: str, organization_id: str):
+        ams_org_id = self.get_ams_org(organization_id)
+        params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
+        self.update_bearer_token()
+
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/role_bindings",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            return False
+
+        if r.status_code != HTTPStatus.OK:
+            logger.error("Unexpected error code returned by AMS backend when listing role bindings")
+            return False
+
+        result = r.json()
+        try:
+            for item in result["items"]:
+                if item['role']['id'] == "OrganizationAdmin":
+                    return True
+        except (KeyError, ValueError):
+            return False
+
+        return False
+
+    def is_org_lightspeed_subscriber(self, organization_id: str) -> bool:
+        ams_org_id = self.get_ams_org(organization_id)
+        params = {"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"}
+        self.update_bearer_token()
+
+        try:
+            r = self._session.get(
+                (
+                    f"{self._api_server}"
+                    f"/api/accounts_mgmt/v1/subscriptions/{ams_org_id}/resource_quota"
+                ),
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            return False
+        if r.status_code != HTTPStatus.OK:
+            logger.error(
+                "Unexpected error code returned by AMS backend when listing resource_quota"
+            )
+            return False
+        data = r.json()
+        try:
+            return data["total"] > 0
+        except (KeyError, ValueError):
+            logger.error("Unexpected resource_quota answer from AMS")
             return False
 
 
@@ -152,10 +215,22 @@ class MockAlwaysTrueCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return True
 
+    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+        return True
+
+    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
+        return True
+
 
 class MockAlwaysFalseCheck:
     def __init__(self, *kargs):
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
+        return False
+
+    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+        return False
+
+    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
         return False

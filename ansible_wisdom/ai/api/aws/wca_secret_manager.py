@@ -1,4 +1,6 @@
 import logging
+from enum import Enum
+from typing import Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -10,13 +12,20 @@ SECRET_KEY_PREFIX = 'wca'
 logger = logging.getLogger(__name__)
 
 
+class Suffixes(Enum):
+    API_KEY = 'api_key'
+    MODEL_ID = 'model_id'
+
+
 class WcaSecretManager:
     def __init__(
-        self, access_key, secret_access_key, kms_secret_id, primary_region, replica_regions
+        self,
+        access_key,
+        secret_access_key,
+        kms_secret_id,
+        primary_region,
+        replica_regions: list[str],
     ):
-        if not isinstance(replica_regions, list):
-            raise TypeError("Expected replica_regions to be a list")
-
         self.replica_regions = replica_regions
         self.kms_secret_id = kms_secret_id
         self._client = boto3.client(
@@ -27,18 +36,18 @@ class WcaSecretManager:
         )
 
     @staticmethod
-    def get_secret_id(org_id):
-        return f"{SECRET_KEY_PREFIX}/{org_id}/wca_key"
+    def get_secret_id(org_id, suffix: Suffixes):
+        return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value}"
 
-    def save_key(self, org_id, key):
+    def save_secret(self, org_id, suffix: Suffixes, secret):
         """
-        Stores or updates the API Key for a given org_id
+        Stores or updates the Secret for a given org_id and suffix.
         """
-        secret_id = self.get_secret_id(org_id)
+        secret_id = self.get_secret_id(org_id, suffix)
 
-        if self.key_exists(org_id):
+        if self.secret_exists(org_id, suffix):
             try:
-                response = self._client.put_secret_value(SecretId=secret_id, SecretString=key)
+                response = self._client.put_secret_value(SecretId=secret_id, SecretString=secret)
             except ClientError as e:
                 raise WcaSecretManagerError(e)
 
@@ -51,7 +60,7 @@ class WcaSecretManager:
                 response = self._client.create_secret(
                     Name=secret_id,
                     KmsKeyId=self.kms_secret_id,
-                    SecretString=key,
+                    SecretString=secret,
                     AddReplicaRegions=replica_regions,
                 )
             except ClientError as e:
@@ -59,11 +68,11 @@ class WcaSecretManager:
 
         return response['Name']
 
-    def delete_key(self, org_id) -> None:
+    def delete_secret(self, org_id, suffix: Suffixes) -> None:
         """
-        Deletes the API Key for the given org_id
+        Deletes the Secret for the given org_id and suffix.
         """
-        secret_id = self.get_secret_id(org_id)
+        secret_id = self.get_secret_id(org_id, suffix)
         try:
             # we need to remove the replica(s) first.
             # If this fails, we still try to delete the secret.
@@ -72,11 +81,17 @@ class WcaSecretManager:
             )
         except self._client.exceptions.ResourceNotFoundException:
             logger.error(
-                "Error removing replica regions, secret does not exist for org_id '%s'", org_id
+                "Error removing replica regions, "
+                "Secret does not exist for org_id '%s' with suffix '%s'.",
+                org_id,
+                suffix,
             )
         except self._client.exceptions.InvalidParameterException:
             logger.error(
-                "Error removing replica regions, invalid region(s) for org_id '%s'", org_id
+                "Error removing replica regions, "
+                "invalid region(s) for org_id '%s' with suffix '%s'.",
+                org_id,
+                suffix,
             )
         except ClientError as e:
             logger.error(e)
@@ -84,25 +99,25 @@ class WcaSecretManager:
         try:
             _ = self._client.delete_secret(SecretId=secret_id, ForceDeleteWithoutRecovery=True)
         except ClientError as e:
-            logger.error("Error removing secret for org_id '%s'", org_id)
+            logger.error("Error removing Secret for org_id '%s' with suffix '%s'.", org_id, suffix)
             raise WcaSecretManagerError(e)
 
-    def get_key(self, org_id):
+    def get_secret(self, org_id, suffix: Suffixes):
         """
-        Returns the API Key for the given org_id or None if not found
+        Returns the Secret for the given org_id and suffix or None if not found
         """
-        secret_id = self.get_secret_id(org_id)
+        secret_id = self.get_secret_id(org_id, suffix)
         try:
             return self._client.get_secret_value(SecretId=secret_id)
         except self._client.exceptions.ResourceNotFoundException:
-            logger.info("No API Key exists for org with id '%s'", org_id)
+            logger.info("No Secret exists for org with id '%s' and suffix '%s'.", org_id, suffix)
             return None
         except ClientError as e:
-            logger.error("Error reading secret for org_id '%s'", org_id)
+            logger.error("Error reading Secret for org_id '%s' with suffix '%s'.", org_id, suffix)
             raise WcaSecretManagerError(e)
 
-    def key_exists(self, org_id):
+    def secret_exists(self, org_id, suffix: Suffixes):
         """
-        Returns True if a key exists for the given org_id
+        Returns True if a Secret exists for the given org_id and suffix.
         """
-        return self.get_key(org_id) is not None
+        return self.get_secret(org_id, suffix) is not None

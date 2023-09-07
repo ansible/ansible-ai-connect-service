@@ -1,4 +1,8 @@
+from ai.feature_flags import FeatureFlags, WisdomFlags
+from django.conf import settings
 from rest_framework import permissions
+
+feature_flags = FeatureFlags()
 
 
 class AcceptedTermsPermission(permissions.BasePermission):
@@ -14,19 +18,43 @@ class AcceptedTermsPermission(permissions.BasePermission):
         return False
 
 
-class IsAdministrator(permissions.BasePermission):
+class IsOrganisationAdministrator(permissions.BasePermission):
     """
     Allow access only to users who are an administrator.
     """
 
     def has_permission(self, request, view):
-        return True
+        user = request.user
+        return user.is_org_admin
 
 
-class IsLightspeedSubscriber(permissions.BasePermission):
+class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     """
     Allow access only to users who have a Light Speed subscripton.
     """
 
     def has_permission(self, request, view):
-        return True
+        user = request.user
+        return user.is_org_lightspeed_subscriber
+
+
+class IsWCAKeyApiFeatureFlagOn(permissions.BasePermission):
+    """
+    Allow access only to users allowed by feature flag
+    """
+
+    def has_permission(self, request, view):
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            return feature_flags.get(WisdomFlags.WCA_KEY_API, request.user, "")
+        return False
+
+
+class IsWCAModelIdApiFeatureFlagOn(permissions.BasePermission):
+    """
+    Allow access only to users allowed by feature flag
+    """
+
+    def has_permission(self, request, view):
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            return feature_flags.get(WisdomFlags.WCA_MODEL_ID_API, request.user, "")
+        return False

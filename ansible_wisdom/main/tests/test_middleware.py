@@ -14,6 +14,7 @@ from segment import analytics
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):
         suggestionId = str(uuid.uuid4())

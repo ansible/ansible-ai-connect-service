@@ -44,9 +44,9 @@ class HealthCheckCustomView(MainView):
         if settings.LAUNCHDARKLY_SDK_KEY:
             feature_flags = get_feature_flags()
             model_tuple = feature_flags.get("model_name", user, f".:.:{model_name}:.")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                _, _, model_name, _ = match.groups()
+            model_parts = model_tuple.split(':')
+            if len(model_parts) == 4:
+                _, _, model_name, _ = model_parts
 
         data = {
             'status': 'error' if self.errors else 'ok',

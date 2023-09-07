@@ -21,7 +21,7 @@ from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags
+from ..feature_flags import FeatureFlags, WisdomFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -76,6 +76,8 @@ postprocess_hist = Histogram(
 process_error_count = Counter(
     'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
 )
+
+STRIP_YAML_LINE = '---\n'
 
 
 class BaseWisdomAPIException(APIException):
@@ -153,18 +155,18 @@ class Completions(APIView):
         payload.userId = request.user.uuid
         model_name = payload.model_name
         if settings.LAUNCHDARKLY_SDK_KEY:
-            wca_api_info = feature_flags.get("wca-api", request.user, "")
+            wca_api_info = feature_flags.get(WisdomFlags.WCA_API, request.user, "")
             if wca_api_info:
                 # if feature flag for wca is on for this user
                 wca_api, model_name = wca_api_info.split('<>')
                 model_mesh_client = apps.get_app_config("ai").wca_client
                 model_mesh_client.set_inference_url(wca_api)
             else:
-                model_tuple = feature_flags.get("model_name", request.user, "")
+                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, request.user, "")
                 logger.debug(f"flag model_name has value {model_tuple}")
-                match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-                if match:
-                    server, port, model_name, index = match.groups()
+                model_parts = model_tuple.split(':')
+                if len(model_parts) == 4:
+                    server, port, model_name, _ = model_parts
                     logger.info(f"selecting model '{model_name}@{server}:{port}'")
                     model_mesh_client.set_inference_url(f"{server}:{port}")
         original_indent = payload.prompt.find("name")
@@ -194,6 +196,8 @@ class Completions(APIView):
                     "prompt": payload.prompt,
                     "context": payload.context,
                     "userId": str(payload.userId) if payload.userId else None,
+                    "has_seat": request._request.user.has_seat,
+                    "organization_id": request._request.user.organization_id,
                     "suggestionId": str(payload.suggestionId),
                 }
             ]
@@ -299,68 +303,78 @@ class Completions(APIView):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
+        # check for commercial users for lint processing
+        is_commercial = user.has_seat
+        if is_commercial:
+            ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
+            if not ansible_lint_caller:
+                logger.warn(
+                    'skipped ansible lint post processing because ansible lint was not initialized'
+                )
+        else:
+            ansible_lint_caller = None
+            logger.warn(
+                'skipped ansible lint post processing as lint processing is allowed for'
+                ' Commercial Users only!'
+            )
 
         recommendation["fqcn_module"] = []
+        exception = None
         for i, recommendation_yaml in enumerate(recommendation["predictions"]):
+            recommendation_problem = None
+            truncated_yaml = None
+            postprocessed_yaml = None
+            # check if the recommendation_yaml is a valid YAML
+            try:
+                _ = yaml.safe_load(recommendation_yaml)
+            except Exception as exc:
+                # the recommendation YAML can have a broken line at the bottom
+                # because the token size of the wisdom model is limited.
+                # so we try truncating the last line of the recommendation here.
+                truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+                if truncated:
+                    try:
+                        _ = yaml.safe_load(truncated_yaml)
+                        logger.debug(
+                            f"suggestion id: {suggestion_id}, "
+                            f"truncated recommendation: \n{truncated_yaml}"
+                        )
+                        recommendation_yaml = truncated_yaml
+                    except Exception as exc:
+                        recommendation_problem = exc
+                else:
+                    recommendation_problem = exc
+                if recommendation_problem:
+                    logger.error(
+                        f'recommendation_yaml is not a valid YAML: '
+                        f'\n{recommendation_yaml}'
+                        f'\nException:\n{recommendation_problem}'
+                    )
+                    # if the recommentation is not a valid yaml, record it as an exception
+                    exception = recommendation_problem
             if ari_caller:
                 start_time = time.time()
-                truncated_yaml = None
-                recommendation_problem = None
-                # check if the recommendation_yaml is a valid YAML
-                try:
-                    _ = yaml.safe_load(recommendation_yaml)
-                except Exception as exc:
-                    # the recommendation YAML can have a broken line at the bottom
-                    # because the token size of the wisdom model is limited.
-                    # so we try truncating the last line of the recommendation here.
-                    truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
-                    if truncated:
-                        try:
-                            _ = yaml.safe_load(truncated_yaml)
-                        except Exception as exc:
-                            recommendation_problem = exc
-                    else:
-                        recommendation_problem = exc
-                    if recommendation_problem:
-                        logger.error(
-                            f'recommendation_yaml is not a valid YAML: '
-                            f'\n{recommendation_yaml}'
-                            f'\nException:\n{recommendation_problem}'
-                        )
-
-                exception = None
-                postprocessed_yaml = None
                 postprocess_detail = None
                 try:
-                    # if the recommentation is not a valid yaml, record it as an exception
-                    if recommendation_problem:
-                        exception = recommendation_problem
-                    else:
-                        # otherwise, do postprocess here
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"original recommendation: \n{recommendation_yaml}"
-                        )
-                        if truncated_yaml:
-                            logger.debug(
-                                f"suggestion id: {suggestion_id}, "
-                                f"truncated recommendation: \n{truncated_yaml}"
-                            )
-                            recommendation_yaml = truncated_yaml
-                        postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                            recommendation_yaml, prompt, context
-                        )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-processed recommendation: \n{postprocessed_yaml}"
-                        )
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"post-process detail: {json.dumps(postprocess_detail)}"
-                        )
-                        recommendation["predictions"][i] = postprocessed_yaml
-                        if postprocess_detail.get("fqcn_module"):
-                            recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
+                    # otherwise, do postprocess here
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"original recommendation: \n{recommendation_yaml}"
+                    )
+                    postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
+                        recommendation_yaml, prompt, context
+                    )
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"post-processed recommendation: \n{postprocessed_yaml}"
+                    )
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"post-process detail: {json.dumps(postprocess_detail)}"
+                    )
+                    recommendation["predictions"][i] = postprocessed_yaml
+                    if postprocess_detail.get("fqcn_module"):
+                        recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
                 except Exception as exc:
                     exception = exc
                     # return the original recommendation if we failed to postprocess
@@ -378,6 +392,41 @@ class Completions(APIView):
                         postprocess_detail.get("rule_results", {}),
                         exception,
                         start_time,
+                        "ARI",
+                    )
+                    if exception:
+                        raise exception
+
+            if ansible_lint_caller:
+                start_time = time.time()
+                try:
+                    if postprocessed_yaml:
+                        # Post-processing by running Ansible Lint to ARI processed yaml
+                        postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
+                    else:
+                        # Post-processing by running Ansible Lint to model server predictions
+                        postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+                    # Stripping the linting transform and adding --- in the linted yaml
+                    postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
+                    recommendation["predictions"][i] = postprocessed_yaml
+                except Exception as exc:
+                    exception = exc
+                    # return the original recommendation if we failed to postprocess
+                    logger.exception(
+                        f'failed to postprocess recommendation with prompt {prompt} '
+                        f'context {context} and model recommendation {recommendation}'
+                    )
+                finally:
+                    self.write_to_segment(
+                        user,
+                        suggestion_id,
+                        recommendation_yaml,
+                        truncated_yaml,
+                        postprocessed_yaml,
+                        None,
+                        exception,
+                        start_time,
+                        "ansible-lint",
                     )
                     if exception:
                         raise exception
@@ -404,6 +453,7 @@ class Completions(APIView):
         postprocess_detail,
         exception,
         start_time,
+        event_type,
     ):
         duration = round((time.time() - start_time) * 1000, 2)
         problem = (
@@ -413,17 +463,28 @@ class Completions(APIView):
             if str(exception)
             else exception.__class__.__name__
         )
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "detail": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
-        send_segment_event(event, "postprocess", user)
+        if event_type == "ARI":
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "truncated": truncated_yaml,
+                "postprocessed": postprocessed_yaml,
+                "detail": postprocess_detail,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocess", user)
+        if event_type == "ansible-lint":
+            event = {
+                "exception": exception is not None,
+                "problem": problem,
+                "duration": duration,
+                "recommendation": recommendation_yaml,
+                "postprocessed": postprocessed_yaml,
+                "suggestionId": str(suggestion_id) if suggestion_id else None,
+            }
+            send_segment_event(event, "postprocessLint", user)
 
 
 class Feedback(APIView):
@@ -650,10 +711,11 @@ class Attributions(GenericAPIView):
         if settings.LAUNCHDARKLY_SDK_KEY:
             model_tuple = feature_flags.get("model_name", user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
-            match = re.search(r"(.+):(.+):(.+):(.+)", model_tuple)
-            if match:
-                *_, index = match.groups()
-                logger.info(f"using index '{index}' for content matchin")
+            model_parts = model_tuple.split(':')
+            if len(model_parts) == 4:
+                *_, index = model_parts
+                logger.info(f"using index '{index}' for content matching")
+
         data = ai_search.search(serializer.validated_data['suggestion'], index)
         resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():

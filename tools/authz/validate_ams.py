@@ -3,6 +3,7 @@
 
 import os
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from pprint import pprint
 
 import requests
@@ -72,12 +73,35 @@ def check(username: str, organization_id: str) -> bool:
         },
         params=params,
     )
+
     items = r.json().get("items")
     return len(items) == 1
 
 
-assert check("ansiblewisdomtesting1", "17233726") is True
-assert check("goneri", "11009103") is False  # Org: 1HAXGgCYqHpednsRDiwWsZBmDlA
-assert check("gleboude@redhat.com", "11009103") is False
-assert check("gleboude1@redhat.com", "11009103") is False
+def is_org_admin(username: str, organization_id: str) -> bool:
+    ams_org_id = get_ams_org(organization_id)
+    params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
+    r = requests.get(
+        "https://api.openshift.com/api/accounts_mgmt/v1/role_bindings",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {my_token.get()}",
+        },
+        params=params,
+    )
+
+    if r.status_code != HTTPStatus.OK:
+        print(r.json())
+        return False
+
+    result = r.json()
+    for item in result['items']:
+        if item['role']['id'] == "OrganizationAdmin":
+            return True
+
+    return False
+
+
+# assert check("ansiblewisdomtesting1", "17233726") is True
+assert is_org_admin("ansiblewisdomtesting1", "17233726") is True
 print("Success")
