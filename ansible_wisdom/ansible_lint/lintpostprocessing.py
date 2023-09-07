@@ -22,7 +22,7 @@ class AnsibleLintCaller:
     def __init__(self) -> None:
         self.config_options = deepcopy(default_options)
         self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
-        self.config_options.write_list = settings.ANSIBLE_LINT_CONFIG_OPTIONS
+        self.config_options.write_list = settings.ANSIBLE_LINT_TRANSFORM_RULES
 
     def run_linter(
         self,
