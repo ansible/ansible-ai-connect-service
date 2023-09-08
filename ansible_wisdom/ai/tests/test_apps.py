@@ -46,6 +46,18 @@ class TestAiApp(APITestCase):
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_enable_ansible_lint(self):
+        app_config = AppConfig.create('ai')
+        app_config.ready()
+        self.assertIsNotNone(app_config.get_ansible_lint_caller())
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    def test_disable_ansible_lint(self):
+        app_config = AppConfig.create('ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ansible_lint_caller())
+
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='mock')
     @patch("torch.cuda.is_available")
     @patch("ai.apps.logger.info")

@@ -111,3 +111,15 @@ def _terms_of_service(strategy, user, backend, **kwargs):
 @partial
 def terms_of_service(strategy, details, backend, user=None, is_new=False, *args, **kwargs):
     return _terms_of_service(strategy, user, backend, **kwargs)
+
+
+def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
+    """Similar to the original load_extra_data, but with a filter on the fields to keep"""
+    accepted_extra_data = ["login"]
+    social = kwargs.get("social") or backend.strategy.storage.user.get_social_auth(
+        backend.name, uid
+    )
+    if social:
+        extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
+        extra_data = {k: v for k, v in extra_data.items() if k in accepted_extra_data}
+        social.set_extra_data(extra_data)

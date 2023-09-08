@@ -106,6 +106,7 @@ SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT'
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
 SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization']
+SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
 AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
@@ -138,6 +139,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
     'users.pipeline.terms_of_service',
+    'users.pipeline.load_extra_data',
 )
 
 # Wisdom Eng Team:
@@ -358,6 +360,12 @@ ARI_RULES = [
 if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
 ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
+
+ENABLE_ANSIBLE_LINT_POSTPROCESS = (
+    os.getenv('ENABLE_ANSIBLE_LINT_POSTPROCESS', 'False').lower() == 'true'
+)
+
+ANSIBLE_LINT_TRANSFORM_RULES = ["all"]
 
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
 

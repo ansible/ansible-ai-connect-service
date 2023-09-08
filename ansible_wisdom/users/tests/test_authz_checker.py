@@ -189,8 +189,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
     def test_is_org_lightspeed_subscriber(self):
         m_r = Mock()
         m_r.json.side_effect = [
-            {"items": [{"id": "123"}]},
-            {"items": [{"subscription": {"status": "Active"}}]},
+            {"items": [{"id": "rdgdfhbrdb"}]},
+            {"items": [{"subscription": {"status": "Active"}}], "total": 1},
         ]
         m_r.status_code = 200
 
@@ -201,19 +201,19 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         self.assertTrue(checker.is_org_lightspeed_subscriber("123"))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
-            params={
-                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
-                "organization_id='123'"
-            },
+            (
+                'https://some-api.server.host'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
+            ),
+            params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
             timeout=0.8,
         )
 
     def test_is_org_not_lightspeed_subscriber(self):
         m_r = Mock()
         m_r.json.side_effect = [
-            {"items": [{"id": "123"}]},
-            {"items": []},
+            {"items": [{"id": "rdgdfhbrdb"}]},
+            {"items": [], "total": 0},
         ]
         m_r.status_code = 200
 
@@ -224,11 +224,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
-            params={
-                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
-                "organization_id='123'"
-            },
+            (
+                'https://some-api.server.host'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
+            ),
+            params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
             timeout=0.8,
         )
 
@@ -256,5 +256,22 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
             self.assertInLog(
-                "Unexpected error code returned by AMS backend when listing subscriptions", log
+                "Unexpected error code returned by AMS backend when listing resource_quota", log
             )
+
+    def test_is_org_lightspeed_subscriber_wrong_output(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "rdgdfhbrdb"}]},
+            {"msg": "something unexpected"},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertInLog("Unexpected resource_quota answer from AMS", log)
