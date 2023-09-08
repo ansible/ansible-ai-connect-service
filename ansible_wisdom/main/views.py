@@ -9,9 +9,12 @@ from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCAKeyApiFeatureFlagOn,
+    IsWCAModelIdApiFeatureFlagOn,
 )
-from django.views.generic import TemplateView
-from rest_framework import exceptions
+from django.conf import settings
+from main.base_views import ProtectedTemplateView
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
 logger = logging.getLogger(__name__)
@@ -24,25 +27,22 @@ class LoginView(auth_views.LoginView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class ConsoleView(TemplateView):
+class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
 
-    permission_classes = [
-        IsAuthenticated,
-        # IsOrganisationAdministrator,
-        # IsOrganisationLightspeedSubscriber,
-        AcceptedTermsPermission,
-    ]
-
-    def get(self, request, *args, **kwargs):
-        self.check_permissions(request)
-
-        return super().get(request, *args, **kwargs)
-
-    def get_permissions(self):
-        return [permission() for permission in self.permission_classes]
-
-    def check_permissions(self, request):
-        for permission in self.get_permissions():
-            if not permission.has_permission(request, self):
-                raise exceptions.PermissionDenied()
+    if settings.DEBUG:
+        permission_classes = [
+            IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            AcceptedTermsPermission,
+        ]
+    else:
+        permission_classes = [
+            IsWCAKeyApiFeatureFlagOn,
+            IsWCAModelIdApiFeatureFlagOn,
+            IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            IsOrganisationAdministrator,
+            IsOrganisationLightspeedSubscriber,
+            AcceptedTermsPermission,
+        ]

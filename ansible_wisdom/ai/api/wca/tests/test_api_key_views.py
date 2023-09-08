@@ -248,3 +248,24 @@ class TestWCAApiKeyViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+
+@override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+@patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
+@patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
+class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
+    def test_authentication_error(self, *args):
+        # self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wca_api_key_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    @mock.patch('ai.api.permissions.feature_flags')
+    def test_validate_key(self, feature_flags, *args):
+        def get_feature_flags(name, *args):
+            return "true"
+
+        feature_flags.get = get_feature_flags
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wca_api_key_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)

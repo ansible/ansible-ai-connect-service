@@ -10,6 +10,7 @@ from ai.api.permissions import (
 )
 from ai.api.serializers import WcaKeyRequestSerializer
 from django.apps import apps
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -26,14 +27,21 @@ from rest_framework.status import (
 
 logger = logging.getLogger(__name__)
 
-permission_classes = [
-    IsWCAKeyApiFeatureFlagOn,
-    IsAuthenticated,
-    IsAuthenticatedOrTokenHasScope,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-    AcceptedTermsPermission,
-]
+if settings.DEBUG:
+    permission_classes = [
+        IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+else:
+    permission_classes = [
+        IsWCAKeyApiFeatureFlagOn,
+        IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        IsOrganisationAdministrator,
+        IsOrganisationLightspeedSubscriber,
+        AcceptedTermsPermission,
+    ]
 
 
 class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
