@@ -187,7 +187,7 @@ class AMSCheck:
             r = self._session.get(
                 (
                     f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/subscriptions/{ams_org_id}/resource_quota"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/resource_quota"
                 ),
                 params=params,
                 timeout=0.8,
