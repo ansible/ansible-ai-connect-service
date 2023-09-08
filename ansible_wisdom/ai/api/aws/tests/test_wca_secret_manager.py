@@ -98,15 +98,15 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         with patch("boto3.client"):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             client._client.create_secret = Mock(side_effect=ClientError({}, "nop"))
-            client.key_exists = Mock(return_value=False)
+            client.secret_exists = Mock(return_value=False)
             with self.assertRaises(WcaSecretManagerError):
-                client.save_key(ORG_ID, SECRET_VALUE)
+                client.save_secret(ORG_ID, Suffixes.API_KEY, SECRET_VALUE)
 
     def test_save_key_fails(self):
         with patch("boto3.client"):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
             client._client.put_secret_value = Mock(side_effect=ClientError({}, "nop"))
-            client.key_exists = Mock(return_value=True)
+            client.secret_exists = Mock(return_value=True)
             with self.assertRaises(WcaSecretManagerError):
                 client.save_secret(ORG_ID, Suffixes.API_KEY, SECRET_VALUE)
 
