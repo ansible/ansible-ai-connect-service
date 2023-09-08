@@ -15,14 +15,14 @@ ansible==8.0.0
     # via ansible-risk-insight
 ansible-anonymizer==1.4.2
     # via -r requirements.in
-ansible-compat==4.1.8
+ansible-compat==4.1.10
     # via ansible-lint
 ansible-core==2.15.0
     # via
     #   ansible
     #   ansible-compat
     #   ansible-lint
-ansible-lint==6.18.0
+ansible-lint==6.19.0
     # via -r requirements.in
 ansible-risk-insight==0.1.11
     # via -r requirements.in
