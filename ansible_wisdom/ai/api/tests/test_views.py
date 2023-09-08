@@ -87,7 +87,6 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         )
         self.user.user_id = str(uuid.uuid4())
         self.user.community_terms_accepted = timezone.now()
-        self.user.commercial_terms_accepted = timezone.now()
         self.user.save()
 
         group_1, _ = Group.objects.get_or_create(name='Group 1')
