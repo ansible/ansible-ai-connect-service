@@ -111,7 +111,6 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 
         # class MockUser:
         #     community_terms_accepted = None
-        #     commercial_terms_accepted = None
         #     saved = False
 
         #     def save(self):
@@ -126,7 +125,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             community_terms_accepted=None, commercial_terms_accepted=None, rh_user_has_seat=False
         )
 
-    def test_terms_of_service_first_call(self):
+    def test_terms_of_service_community_first_call(self):
         _terms_of_service(
             self.strategy,
             self.user,
@@ -138,10 +137,10 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.assertEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
-        self.assertIsNone(self.user.commercial_terms_accepted)
 
     def test_terms_of_service_first_commercial(self):
         # We must be using the Red Hat SSO and be a member of the Community placeholder group
+        # Commercial Users enclosed Terms of Service by default earlier, no need to ask them again
         self.backend.name = 'oidc'
         self.user.rh_user_has_seat = True
 
@@ -153,12 +152,28 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             current_partial=self.partial,
         )
         self.assertIsNone(self.request.session.get('terms_accepted', None))
-        self.assertEqual(self.strategy.redirect_url, '/commercial-terms/?partial_token=token')
+        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
-        self.assertIsNone(self.user.commercial_terms_accepted)
 
-    def test_terms_of_service_previously_accepted(self):
+    def test_terms_of_service_commercial_previously_accepted(self):
+        now = timezone.now()
+        self.user.community_terms_accepted = now
+        self.backend.name = 'oidc'
+        self.user.has_seat = True
+        _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+
+        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertFalse(self.user.save.called)
+        self.assertEqual(self.user.community_terms_accepted, now)
+
+    def test_terms_of_service_community_previously_accepted(self):
         now = timezone.now()
         self.user.community_terms_accepted = now
         _terms_of_service(
@@ -184,7 +199,6 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         )
         self.assertTrue(self.user.save.called)
         self.assertIsNotNone(self.user.community_terms_accepted)
-        self.assertIsNone(self.user.commercial_terms_accepted)
 
     def test_terms_of_service_without_acceptance(self):
         self.request.session['terms_accepted'] = False
@@ -198,7 +212,6 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             )
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
-        self.assertIsNone(self.user.commercial_terms_accepted)
 
     @patch('social_django.utils.get_strategy')
     def test_post_accepted(self, get_strategy):
