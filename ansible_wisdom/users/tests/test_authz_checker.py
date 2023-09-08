@@ -203,7 +203,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/subscriptions/rdgdfhbrdb/resource_quota'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
             ),
             params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
             timeout=0.8,
@@ -226,7 +226,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/subscriptions/rdgdfhbrdb/resource_quota'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
             ),
             params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
             timeout=0.8,
