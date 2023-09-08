@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import boto3
 from ai.api.aws.exceptions import WcaSecretManagerError
@@ -94,13 +94,19 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
             response = client.save_secret(ORG_ID, Suffixes.API_KEY, SECRET_VALUE)
             self.assertEqual(response, client.get_secret_id(ORG_ID, Suffixes.API_KEY))
 
-    def test_save_key_fails(self):
-        def mock_api_call(_, operation_name, kwarg):
-            if operation_name == "GetSecretValue":
-                raise ClientError({}, operation_name)
-
-        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
+    def test_save_new_key_fails(self):
+        with patch("boto3.client"):
             client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+            client._client.create_secret = Mock(side_effect=ClientError({}, "nop"))
+            client.secret_exists = Mock(return_value=False)
+            with self.assertRaises(WcaSecretManagerError):
+                client.save_secret(ORG_ID, Suffixes.API_KEY, SECRET_VALUE)
+
+    def test_save_key_fails(self):
+        with patch("boto3.client"):
+            client = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+            client._client.put_secret_value = Mock(side_effect=ClientError({}, "nop"))
+            client.secret_exists = Mock(return_value=True)
             with self.assertRaises(WcaSecretManagerError):
                 client.save_secret(ORG_ID, Suffixes.API_KEY, SECRET_VALUE)
 
