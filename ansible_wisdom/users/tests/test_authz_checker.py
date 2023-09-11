@@ -91,7 +91,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
             timeout=0.8,
         )
 
-    def test_is_org_admin(self):
+    def test_rh_user_is_org_admin(self):
         m_r = Mock()
         m_r.json.side_effect = [
             {"items": [{"id": "123"}]},
@@ -104,7 +104,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertTrue(checker.is_org_admin("user", "123"))
+        self.assertTrue(checker.rh_user_is_org_admin("user", "123"))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
             params={"search": "account.username = 'user' AND organization.id='123'"},
@@ -124,7 +124,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertFalse(checker.is_org_admin("user", "123"))
+        self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
             params={"search": "account.username = 'user' AND organization.id='123'"},
@@ -143,7 +143,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertFalse(checker.is_org_admin("user", "123"))
+        self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
 
     def test_role_has_no_id(self):
         m_r = Mock()
@@ -157,9 +157,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertFalse(checker.is_org_admin("user", "123"))
+        self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
 
-    def test_is_org_admin_timeout(self):
+    def test_rh_user_is_org_admin_timeout(self):
         def side_effect(*args, **kwargs):
             raise requests.exceptions.Timeout()
 
@@ -168,10 +168,10 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.side_effect = side_effect
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.is_org_admin("user", "123"))
+            self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
 
-    def test_is_org_admin_network_error(self):
+    def test_rh_user_is_org_admin_network_error(self):
         m_r = Mock()
         m_r.status_code = 500
 
@@ -181,12 +181,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.is_org_admin("user", "123"))
+            self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
             self.assertInLog(
                 "Unexpected error code returned by AMS backend when listing role bindings", log
             )
 
-    def test_is_org_lightspeed_subscriber(self):
+    def test_rh_org_has_subscription(self):
         m_r = Mock()
         m_r.json.side_effect = [
             {"items": [{"id": "rdgdfhbrdb"}]},
@@ -199,7 +199,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertTrue(checker.is_org_lightspeed_subscriber("123"))
+        self.assertTrue(checker.rh_org_has_subscription("123"))
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
@@ -222,7 +222,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+        self.assertFalse(checker.rh_org_has_subscription("123"))
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
@@ -232,7 +232,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
             timeout=0.8,
         )
 
-    def test_is_org_lightspeed_subscriber_timeout(self):
+    def test_rh_org_has_subscription_timeout(self):
         def side_effect(*args, **kwargs):
             raise requests.exceptions.Timeout()
 
@@ -241,10 +241,10 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.side_effect = side_effect
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
 
-    def test_is_org_lightspeed_subscriber_network_error(self):
+    def test_rh_org_has_subscription_network_error(self):
         m_r = Mock()
         m_r.status_code = 500
 
@@ -254,12 +254,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog(
                 "Unexpected error code returned by AMS backend when listing resource_quota", log
             )
 
-    def test_is_org_lightspeed_subscriber_wrong_output(self):
+    def test_rh_org_has_subscription_wrong_output(self):
         m_r = Mock()
         m_r.json.side_effect = [
             {"items": [{"id": "rdgdfhbrdb"}]},
@@ -273,5 +273,5 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.is_org_lightspeed_subscriber("123"))
+            self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog("Unexpected resource_quota answer from AMS", log)

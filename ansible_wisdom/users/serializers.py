@@ -8,8 +8,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'has_seat',
-            'is_org_admin',
-            'is_org_lightspeed_subscriber',
+            'rh_org_has_subscription',
+            'rh_user_has_seat',
+            'rh_user_is_org_admin',
             'username',
         ]

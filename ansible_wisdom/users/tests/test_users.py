@@ -104,7 +104,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.strategy.session = self.request.session
         self.partial = SimpleNamespace(token='token')
         self.user = Mock(
-            community_terms_accepted=None, commercial_terms_accepted=None, has_seat=False
+            community_terms_accepted=None, commercial_terms_accepted=None, rh_user_has_seat=False
         )
 
     def test_terms_of_service_first_call(self):
@@ -124,7 +124,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def test_terms_of_service_first_commercial(self):
         # We must be using the Red Hat SSO and be a member of the Community placeholder group
         self.backend.name = 'oidc'
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
 
         _terms_of_service(
             self.strategy,
@@ -243,49 +243,49 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 
 
 class TestUserSeat(TestCase):
-    def test_has_seat_with_no_rhsso_user(self):
+    def test_rh_user_has_seat_with_no_rhsso_user(self):
         user = create_user(provider_name="github")
-        self.assertFalse(user.has_seat)
+        self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_has_seat_with_rhsso_user_no_seat(self):
+    def test_rh_user_has_seat_with_rhsso_user_no_seat(self):
         user = create_user(provider_name="oidc")
-        self.assertFalse(user.has_seat)
+        self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
-    def test_has_seat_with_rhsso_user_with_seat(self):
+    def test_rh_user_has_seat_with_rhsso_user_with_seat(self):
         user = create_user(provider_name="oidc")
-        self.assertTrue(user.has_seat)
+        self.assertTrue(user.rh_user_has_seat)
 
-    def test_has_seat_with_no_seat_checker(self):
+    def test_rh_user_has_seat_with_no_seat_checker(self):
         with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
             user = create_user(provider_name="oidc")
-            self.assertFalse(user.has_seat)
+            self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_has_seat_with_commercial_group(self):
+    def test_rh_user_has_seat_with_commercial_group(self):
         user = create_user(provider_name="github")
 
         commercial_group = Group.objects.create(name='Commercial')
         user.groups.add(commercial_group)
 
-        self.assertTrue(user.has_seat)
+        self.assertTrue(user.rh_user_has_seat)
 
 
 class TestOrgAdmin(TestCase):
-    def test_is_org_admin_with_no_rhsso_user(self):
+    def test_rh_user_is_org_admin_with_no_rhsso_user(self):
         user = create_user(provider_name="github")
-        self.assertFalse(user.is_org_admin)
+        self.assertFalse(user.rh_user_is_org_admin)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
-    def test_is_org_admin_with_admin_rhsso_user(self):
+    def test_rh_user_is_org_admin_with_admin_rhsso_user(self):
         user = create_user(provider_name="oidc")
-        self.assertTrue(user.is_org_admin)
+        self.assertTrue(user.rh_user_is_org_admin)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_is_org_admin_with_non_admin_rhsso_user(self):
+    def test_rh_user_is_org_admin_with_non_admin_rhsso_user(self):
         user = create_user(provider_name="oidc")
-        self.assertFalse(user.is_org_admin)
+        self.assertFalse(user.rh_user_is_org_admin)
 
 
 class TestUsername(WisdomServiceLogAwareTestCase):
@@ -330,19 +330,19 @@ class TestUsername(WisdomServiceLogAwareTestCase):
 
 
 class TestIsOrgLightspeedSubscriber(TestCase):
-    def test_is_org_lightspeed_subscriber_with_no_rhsso_user(self):
+    def test_rh_org_has_subscription_with_no_rhsso_user(self):
         user = create_user(provider_name="github")
-        self.assertFalse(user.is_org_lightspeed_subscriber)
+        self.assertFalse(user.rh_org_has_subscription)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
-    def test_is_org_lightspeed_subscriber_with_subscribed_user(self):
+    def test_rh_org_has_subscription_with_subscribed_user(self):
         user = create_user(provider_name="oidc")
-        self.assertTrue(user.is_org_lightspeed_subscriber)
+        self.assertTrue(user.rh_org_has_subscription)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_is_org_lightspeed_subscriber_with_non_subscribed_user(self):
+    def test_rh_org_has_subscription_with_non_subscribed_user(self):
         user = create_user(provider_name="oidc")
-        self.assertFalse(user.is_org_lightspeed_subscriber)
+        self.assertFalse(user.rh_org_has_subscription)
 
 
 class TestUserModelMetrics(APITransactionTestCase):

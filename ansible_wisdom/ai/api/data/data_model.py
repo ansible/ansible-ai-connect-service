@@ -20,7 +20,7 @@ class ModelMeshData(TypedDict):
     prompt: str
     context: str
     userId: Union[str, None]
-    has_seat: bool
+    rh_user_has_seat: bool
     organization_id: Union[str, None]
     suggestionId: Union[str, None]
 

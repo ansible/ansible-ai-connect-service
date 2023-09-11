@@ -26,7 +26,8 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         return True
 
     @cached_property
-    def has_seat(self) -> bool:
+    def rh_user_has_seat(self) -> bool:
+        """True if the user comes from RHSSO and has a Wisdom Seat."""
         # For dev/test purposes only:
         if self.groups.filter(name='Commercial').exists():
             return True
@@ -42,7 +43,8 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         return seat_checker.check(uid, self.sso_login(), rh_org_id)
 
     @cached_property
-    def is_org_admin(self) -> bool:
+    def rh_user_is_org_admin(self) -> bool:
+        """True if the user comes from RHSSO and is admin of the organization."""
         if not self.is_oidc_user():
             return False
 
@@ -50,10 +52,11 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if not seat_checker:
             return False
         rh_org_id = self.organization_id
-        return seat_checker.is_org_admin(self.sso_login(), rh_org_id)
+        return seat_checker.rh_user_is_org_admin(self.sso_login(), rh_org_id)
 
     @cached_property
-    def is_org_lightspeed_subscriber(self) -> bool:
+    def rh_org_has_subscription(self) -> bool:
+        """True if the user comes from RHSSO and the associated org has access to Wisdom."""
         if not self.is_oidc_user():
             return False
 
@@ -61,7 +64,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if not seat_checker:
             return False
         rh_org_id = self.organization_id
-        return seat_checker.is_org_lightspeed_subscriber(rh_org_id)
+        return seat_checker.rh_org_has_subscription(rh_org_id)
 
     def sso_login(self) -> str:
         try:
