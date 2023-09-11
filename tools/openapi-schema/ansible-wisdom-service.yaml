@@ -588,13 +588,13 @@ components:
     User:
       type: object
       properties:
-        has_seat:
+        rh_org_has_subscription:
           type: boolean
           readOnly: true
-        is_org_admin:
+        rh_user_has_seat:
           type: boolean
           readOnly: true
-        is_org_lightspeed_subscriber:
+        rh_user_is_org_admin:
           type: boolean
           readOnly: true
         username:
@@ -604,9 +604,9 @@ components:
           pattern: ^[\w.@+-]+$
           maxLength: 150
       required:
-      - has_seat
-      - is_org_admin
-      - is_org_lightspeed_subscriber
+      - rh_org_has_subscription
+      - rh_user_has_seat
+      - rh_user_is_org_admin
       - username
     WcaKeyRequest:
       type: object

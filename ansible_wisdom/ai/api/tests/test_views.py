@@ -28,7 +28,9 @@ from test_utils import WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
-    def __init__(self, test, payload, response_data, test_inference_match=True, has_seat=False):
+    def __init__(
+        self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
+    ):
         super().__init__(inference_url='dummy inference url')
         self.test = test
         self.test_inference_match = test_inference_match
@@ -49,7 +51,7 @@ class DummyMeshClient(ModelMeshClient):
                             "context": data.get("context"),
                             "prompt": data.get("prompt"),
                             "userId": str(test.user.uuid),
-                            "has_seat": has_seat,
+                            "rh_user_has_seat": rh_user_has_seat,
                             "organization_id": None,
                             "suggestionId": payload.get("suggestionId"),
                         }
@@ -471,7 +473,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ansible_lint_with_commercial_user(self):
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -481,7 +483,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data, has_seat=True),
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -493,7 +495,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_with_ansible_lint_with_commercial_user(self):
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -503,7 +505,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data, has_seat=True),
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)

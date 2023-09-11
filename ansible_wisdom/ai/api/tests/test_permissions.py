@@ -37,7 +37,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
 @patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
 @patch.object(AcceptedTermsPermission, 'has_permission', return_value=True)
 class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
-    def test_user_is_org_admin(self, *args):
+    def test_user_rh_user_is_org_admin(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

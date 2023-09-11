@@ -195,7 +195,7 @@ class Completions(APIView):
                     "prompt": payload.prompt,
                     "context": payload.context,
                     "userId": str(payload.userId) if payload.userId else None,
-                    "has_seat": request._request.user.has_seat,
+                    "rh_user_has_seat": request._request.user.rh_user_has_seat,
                     "organization_id": request._request.user.organization_id,
                     "suggestionId": str(payload.suggestionId),
                 }
@@ -303,7 +303,7 @@ class Completions(APIView):
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
         # check for commercial users for lint processing
-        is_commercial = user.has_seat
+        is_commercial = user.rh_user_has_seat
         if is_commercial:
             ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
             if not ansible_lint_caller:

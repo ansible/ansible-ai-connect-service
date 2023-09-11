@@ -25,7 +25,7 @@ class IsOrganisationAdministrator(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return user.is_org_admin
+        return user.rh_user_is_org_admin
 
 
 class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
@@ -35,7 +35,7 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return user.is_org_lightspeed_subscriber
+        return user.rh_org_has_subscription
 
 
 class IsWCAKeyApiFeatureFlagOn(permissions.BasePermission):

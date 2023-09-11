@@ -77,7 +77,7 @@ def check(username: str, organization_id: str) -> bool:
     return len(items) == 1
 
 
-def is_org_admin(username: str, organization_id: str) -> bool:
+def rh_user_is_org_admin(username: str, organization_id: str) -> bool:
     ams_org_id = get_ams_org(organization_id)
     params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
     r = requests.get(
@@ -102,5 +102,5 @@ def is_org_admin(username: str, organization_id: str) -> bool:
 
 
 # assert check("ansiblewisdomtesting1", "17233726") is True
-assert is_org_admin("ansiblewisdomtesting1", "17233726") is True
+assert rh_user_is_org_admin("ansiblewisdomtesting1", "17233726") is True
 print("Success")
