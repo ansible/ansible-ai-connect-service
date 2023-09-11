@@ -4,6 +4,7 @@ import logging
 import timeit
 
 import yaml
+from ai.api import formatter as fmtr
 from ansible_risk_insight.scanner import ARIScanner
 from django.conf import settings
 
@@ -85,12 +86,12 @@ class ARICaller:
                 f'the created one is the following:\n{playbook_yaml}'
             )
             raise
-        task_name = prompt.split("name:")[-1].strip()
+
         logger.debug(f"generated playbook yaml: \n{playbook_yaml}")
-        return playbook_yaml, is_playbook, task_name
+        return playbook_yaml, is_playbook
 
     def postprocess(self, inference_output, prompt, context):
-        input_yaml, is_playbook, task_name = self.make_input_yaml(context, prompt, inference_output)
+        input_yaml, is_playbook = self.make_input_yaml(context, prompt, inference_output)
 
         # print("---context---")
         # print(context)
@@ -115,41 +116,57 @@ class ARICaller:
         if not target:
             raise ValueError(f"the {target_type} was not found")
 
-        task = target.task(name=task_name)
-        modified_yaml = inference_output
-        detail_data = {}
-        if task:
-            rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
-            detail = rule_result.get_detail()
-            aggregated_detail = detail.get("detail", {})
-            # prompt_indent = self.get_indent_size(prompt)
-            # modified_yaml = self.indent_suggestion(detail.get("modified_yaml", ""), prompt_indent)
-            modified_yaml = detail.get("modified_yaml", "")
-            mutation_result = aggregated_detail.get("mutation_result", {})
-            detail_data["fqcn_module"] = aggregated_detail.get("correct_fqcn", "")
-            detail_data["rule_results"] = {}
-            for rule_id in mutation_result:
-                rule_detail = mutation_result[rule_id]
-                if not rule_detail:
-                    continue
-                _result = task.find_result(rule_id=rule_id)
-                if _result:
-                    if "description" not in rule_detail:
-                        rule_detail["description"] = _result.description
-                    if _result.rule:
-                        rule_detail["version"] = _result.rule.version
-                        rule_detail["commit_id"] = _result.rule.commit_id
-                    rule_detail["duration"] = _result.duration
-                    rule_detail["matched"] = _result.matched
-                    rule_detail["error"] = _result.error
-                detail_data["rule_results"][rule_id] = rule_detail
+        ari_results = []
+        modified_yamls = []
 
+        task_names = fmtr.get_task_names(prompt)
+        for task_name in task_names:
+            detail_data = {}
+            ari_result = {"name": task_name, "rule_details": detail_data}
+            ari_results.append(ari_result)
+            task = target.task(name=task_name)
+            if task:
+                rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
+                detail = rule_result.get_detail()
+                aggregated_detail = detail.get("detail", {})
+
+                if fmtr.is_multi_task_prompt(prompt):
+                    # prompt_indent = self.get_indent_size(prompt) # maybe this gets fixed later??
+                    # modified_yamls.append(self.indent_suggestion(f"- name: {task_name}", prompt_indent)) # noqa: E501
+                    # # TODO - not sure about the math for this
+                    modified_yamls.append(f"- name: {task_name}")
+                # TODO: I think this should blow up if it's missing. we have no fallback.
+                modified_yamls.append(detail.get("modified_yaml", ""))
+                # # this is missing the name and I don't think we need it. can remove.
+                # ari_result["prediction"] = detail.get("modified_yaml", "")
+
+                mutation_result = aggregated_detail.get("mutation_result", {})
+                ari_result["fqcn_module"] = aggregated_detail.get("correct_fqcn", "")
+                for rule_id in mutation_result:
+                    rule_detail = mutation_result[rule_id]
+                    if not rule_detail:
+                        continue
+                    _result = task.find_result(rule_id=rule_id)
+                    if _result:
+                        if "description" not in rule_detail:
+                            rule_detail["description"] = _result.description
+                        if _result.rule:
+                            rule_detail["version"] = _result.rule.version
+                            rule_detail["commit_id"] = _result.rule.commit_id
+                        rule_detail["duration"] = _result.duration
+                        rule_detail["matched"] = _result.matched
+                        rule_detail["error"] = _result.error
+                    detail_data[rule_id] = rule_detail
+            else:
+                raise Exception('task not found in ARI postprocess results')
+
+        modified_yaml = '\n'.join(modified_yamls)
         # return inference_output
         logger.debug("--before--")
         logger.debug(inference_output)
         logger.debug("--after--")
         logger.debug(modified_yaml)
-        logger.debug("--detail--")
-        logger.debug(json.dumps(detail_data, indent=2))
+        logger.debug("--results--")
+        logger.info(json.dumps(ari_results, indent=2))  # TODO - back to debug
 
-        return modified_yaml, detail_data
+        return modified_yaml, ari_results

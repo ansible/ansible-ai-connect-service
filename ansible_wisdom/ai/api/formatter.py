@@ -170,3 +170,41 @@ def restore_indentation(yaml, original_indent):
             corrected_lines = [line[extra_indent:] for line in lines]
             return "\n".join(corrected_lines)
     return yaml
+
+
+def extract_prompt_and_context(input):
+    input = input.rstrip()
+    segs = input.rsplit('\n', 1)
+
+    if len(segs) == 2:
+        context = segs[0] + '\n'
+        prompt = segs[1]
+    else:  # Context is empty
+        context = ""
+        prompt = segs[0]
+    return prompt, context
+
+
+# extract full task from one or more tasks in a string
+def extract_task(tasks, task_name):
+    NAME = "- name: "
+    splits = tasks.split(NAME)
+    indent = splits[0]
+    for i in range(1, len(splits)):
+        if splits[i].lower().startswith(task_name.lower()):
+            return f"{indent}{NAME}{splits[i].rstrip()}"
+    return None
+
+
+def is_multi_task_prompt(prompt):
+    return prompt.lstrip().startswith('#')
+
+
+def get_task_names(prompt):
+    if is_multi_task_prompt(prompt):
+        prompt = prompt.split('#', 1)[1].strip()
+        split_list = prompt.split('&')
+        trimmed_list = [prompt.strip() for prompt in split_list]
+        return trimmed_list
+    else:
+        return [prompt.split("name:")[-1].strip()]

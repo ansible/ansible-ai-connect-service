@@ -169,11 +169,10 @@ class Completions(APIView):
                     server, port, model_name, _ = model_parts
                     logger.info(f"selecting model '{model_name}@{server}:{port}'")
                     model_mesh_client.set_inference_url(f"{server}:{port}")
-        original_indent = payload.prompt.find("name")
 
         try:
             start_time = time.time()
-            payload.context, payload.prompt = self.preprocess(payload.context, payload.prompt)
+            payload.context, payload.prompt, original_indent = self.preprocess(payload.prompt)
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
@@ -245,7 +244,7 @@ class Completions(APIView):
         postprocessed_predictions = None
         try:
             start_time = time.time()
-            postprocessed_predictions = self.postprocess(
+            postprocessed_predictions, tasks_results = self.postprocess(
                 ano_predictions,
                 payload.prompt,
                 payload.context,
@@ -286,18 +285,33 @@ class Completions(APIView):
 
         # add fields for telemetry only, not response data
         # Note: Currently we return an array of predictions, but there's only ever one.
-        # So, we are just going to report the one fqcn_module, not an array of them.
-        # Once we confirm WCA is only sending one prediction, we should consider changing the
-        # response body to a single prediction string rather than an array. If it's multiple,
-        # we can adjust the fqcn_module handling accordingly.
-        if postprocessed_predictions.get("fqcn_module"):
-            response.fqcn_module = postprocessed_predictions["fqcn_module"][0]
+        # The tasks array added to the completion event is representative of the first (only)
+        # entry in the predictions array
+        response.tasks = tasks_results
         return response
 
-    def preprocess(self, context, prompt):
-        context, prompt = fmtr.preprocess(context, prompt)
+    def preprocess(self, prompt):
+        prompt, context = fmtr.extract_prompt_and_context(prompt)
+        if fmtr.is_multi_task_prompt(prompt):
+            # Hold the original indent so we can restore indentation in postprocess
+            original_indent = prompt.find('#')
+            # WCA codegen endpoint requires prompt to end with \n
+            if prompt.endswith('\n') is False:
+                prompt = f"{prompt}\n"
+            # Workaround for https://github.com/rh-ibm-synergy/wca-feedback/issues/3
+            prompt = prompt.lstrip()
 
-        return context, prompt
+            # TODO - commercial check
+            # TODO - max 10 check
+            # TODO - whatever else I had in my first implementation
+            pass
+        else:
+            # once we switch completely to WCA, we should be able to remove this entirely
+            # since they're doing the same preprocessing on their side
+            original_indent = prompt.find("name")
+            context, prompt = fmtr.preprocess(context, prompt)
+
+        return context, prompt, original_indent
 
     def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
@@ -318,130 +332,161 @@ class Completions(APIView):
                 ' Commercial Users only!'
             )
 
-        recommendation["fqcn_module"] = []
         exception = None
-        for i, recommendation_yaml in enumerate(recommendation["predictions"]):
-            recommendation_problem = None
-            truncated_yaml = None
-            postprocessed_yaml = None
-            # check if the recommendation_yaml is a valid YAML
-            try:
-                _ = yaml.safe_load(recommendation_yaml)
-            except Exception as exc:
-                # the recommendation YAML can have a broken line at the bottom
-                # because the token size of the wisdom model is limited.
-                # so we try truncating the last line of the recommendation here.
-                truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
-                if truncated:
-                    try:
-                        _ = yaml.safe_load(truncated_yaml)
-                        logger.debug(
-                            f"suggestion id: {suggestion_id}, "
-                            f"truncated recommendation: \n{truncated_yaml}"
-                        )
-                        recommendation_yaml = truncated_yaml
-                    except Exception as exc:
-                        recommendation_problem = exc
-                else:
-                    recommendation_problem = exc
-                if recommendation_problem:
-                    logger.error(
-                        f'recommendation_yaml is not a valid YAML: '
-                        f'\n{recommendation_yaml}'
-                        f'\nException:\n{recommendation_problem}'
-                    )
-                    # if the recommentation is not a valid yaml, record it as an exception
-                    exception = recommendation_problem
-            if ari_caller:
-                start_time = time.time()
-                postprocess_detail = None
-                try:
-                    # otherwise, do postprocess here
-                    logger.debug(
-                        f"suggestion id: {suggestion_id}, "
-                        f"original recommendation: \n{recommendation_yaml}"
-                    )
-                    postprocessed_yaml, postprocess_detail = ari_caller.postprocess(
-                        recommendation_yaml, prompt, context
-                    )
-                    logger.debug(
-                        f"suggestion id: {suggestion_id}, "
-                        f"post-processed recommendation: \n{postprocessed_yaml}"
-                    )
-                    logger.debug(
-                        f"suggestion id: {suggestion_id}, "
-                        f"post-process detail: {json.dumps(postprocess_detail)}"
-                    )
-                    recommendation["predictions"][i] = postprocessed_yaml
-                    if postprocess_detail.get("fqcn_module"):
-                        recommendation["fqcn_module"].append(postprocess_detail["fqcn_module"])
-                except Exception as exc:
-                    exception = exc
-                    # return the original recommendation if we failed to postprocess
-                    logger.exception(
-                        f'failed to postprocess recommendation with prompt {prompt} '
-                        f'context {context} and model recommendation {recommendation}'
-                    )
-                finally:
-                    self.write_to_segment(
-                        user,
-                        suggestion_id,
-                        recommendation_yaml,
-                        truncated_yaml,
-                        postprocessed_yaml,
-                        postprocess_detail.get("rule_results", {}),
-                        exception,
-                        start_time,
-                        "ARI",
-                    )
-                    if exception:
-                        raise exception
 
-            if ansible_lint_caller:
-                start_time = time.time()
-                try:
-                    if postprocessed_yaml:
-                        # Post-processing by running Ansible Lint to ARI processed yaml
-                        postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
-                    else:
-                        # Post-processing by running Ansible Lint to model server predictions
-                        postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
-                    # Stripping the linting transform and adding --- in the linted yaml
-                    postprocessed_yaml = postprocessed_yaml.strip(STRIP_YAML_LINE)
-                    recommendation["predictions"][i] = postprocessed_yaml
-                except Exception as exc:
-                    exception = exc
-                    # return the original recommendation if we failed to postprocess
-                    logger.exception(
-                        f'failed to postprocess recommendation with prompt {prompt} '
-                        f'context {context} and model recommendation {recommendation}'
-                    )
-                finally:
-                    self.write_to_segment(
-                        user,
-                        suggestion_id,
-                        recommendation_yaml,
-                        truncated_yaml,
-                        postprocessed_yaml,
-                        None,
-                        exception,
-                        start_time,
-                        "ansible-lint",
-                    )
-                    if exception:
-                        raise exception
-
-            # adjust indentation as per default ansible-lint configuration
-            indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][i])
-
-            # restore original indentation
-            indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
-            recommendation["predictions"][i] = indented_yaml
-            logger.debug(
-                f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}"
+        # We don't currently expect or support more than one prediction.
+        if len(recommendation["predictions"]) != 1:
+            raise Exception(
+                f"unexpected predictions array length {len(recommendation['predictions'])}"
             )
-            continue
-        return recommendation
+
+        recommendation_yaml = recommendation["predictions"][0]
+        recommendation_problem = None
+        truncated_yaml = None
+        postprocessed_yaml = None
+        tasks = []
+        task_names = fmtr.get_task_names(prompt)
+        for task_name in task_names:
+            tasks.append({"name": task_name})
+        ari_results = None
+
+        # check if the recommendation_yaml is a valid YAML
+        try:
+            _ = yaml.safe_load(recommendation_yaml)
+        except Exception as exc:
+            # the recommendation YAML can have a broken line at the bottom
+            # because the token size of the wisdom model is limited.
+            # so we try truncating the last line of the recommendation here.
+            truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+            if truncated:
+                try:
+                    _ = yaml.safe_load(truncated_yaml)
+                    logger.debug(
+                        f"suggestion id: {suggestion_id}, "
+                        f"truncated recommendation: \n{truncated_yaml}"
+                    )
+                    recommendation_yaml = truncated_yaml
+                except Exception as exc:
+                    recommendation_problem = exc
+            else:
+                recommendation_problem = exc
+            if recommendation_problem:
+                logger.error(
+                    f'recommendation_yaml is not a valid YAML: '
+                    f'\n{recommendation_yaml}'
+                    f'\nException:\n{recommendation_problem}'
+                )
+                # if the recommentation is not a valid yaml, record it as an exception
+                exception = recommendation_problem
+        if ari_caller:
+            start_time = time.time()
+            postprocess_details = []
+            try:
+                # otherwise, do postprocess here
+                logger.debug(
+                    f"suggestion id: {suggestion_id}, "
+                    f"original recommendation: \n{recommendation_yaml}"
+                )
+                postprocessed_yaml, ari_results = ari_caller.postprocess(
+                    recommendation_yaml, prompt, context
+                )
+                logger.debug(
+                    f"suggestion id: {suggestion_id}, "
+                    f"post-processed recommendation: \n{postprocessed_yaml}"
+                )
+                logger.debug(
+                    f"suggestion id: {suggestion_id}, "
+                    f"post-process detail: {json.dumps(ari_results)}"
+                )
+                recommendation["predictions"][0] = postprocessed_yaml
+                for ari_result in ari_results:
+                    postprocess_details.append(
+                        {"name": ari_result["name"], "rule_details": ari_result["rule_details"]}
+                    )
+
+            except Exception as exc:
+                exception = exc
+                # return the original recommendation if we failed to postprocess
+                logger.exception(
+                    f'failed to postprocess recommendation with prompt {prompt} '
+                    f'context {context} and model recommendation {recommendation}'
+                )
+            finally:
+                self.write_to_segment(
+                    user,
+                    suggestion_id,
+                    recommendation_yaml,
+                    truncated_yaml,
+                    postprocessed_yaml,
+                    postprocess_details,
+                    exception,
+                    start_time,
+                    "ARI",
+                )
+                if exception:
+                    raise exception
+
+        if ansible_lint_caller:
+            start_time = time.time()
+            try:
+                if postprocessed_yaml:
+                    # Post-processing by running Ansible Lint to ARI processed yaml
+                    postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
+                else:
+                    # Post-processing by running Ansible Lint to model server predictions
+                    postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+                # Stripping the leading STRIP_YAML_LINE that was added by above processing
+                if postprocessed_yaml.startswith(STRIP_YAML_LINE):
+                    postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
+                recommendation["predictions"][0] = postprocessed_yaml
+            except Exception as exc:
+                exception = exc
+                # return the original recommendation if we failed to postprocess
+                logger.exception(
+                    f'failed to postprocess recommendation with prompt {prompt} '
+                    f'context {context} and model recommendation {recommendation}'
+                )
+            finally:
+                self.write_to_segment(
+                    user,
+                    suggestion_id,
+                    recommendation_yaml,
+                    truncated_yaml,
+                    postprocessed_yaml,
+                    None,
+                    exception,
+                    start_time,
+                    "ansible-lint",
+                )
+                if exception:
+                    raise exception
+
+        # adjust indentation as per default ansible-lint configuration
+        indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][0])
+
+        # restore original indentation
+        indented_yaml = fmtr.restore_indentation(indented_yaml, indent)
+        recommendation["predictions"][0] = indented_yaml
+        logger.debug(f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}")
+
+        # gather data for completion segment event
+        for i, task in enumerate(tasks):
+            if fmtr.is_multi_task_prompt(prompt):
+                task["prediction"] = fmtr.extract_task(
+                    recommendation["predictions"][0], task["name"]
+                )
+            else:
+                task["prediction"] = recommendation["predictions"][0]
+            if ari_results is not None:
+                ari_result = ari_results[i]
+                fqcn_module = ari_result["fqcn_module"]
+                if fqcn_module is not None:
+                    task["module"] = fqcn_module
+                    index = fqcn_module.rfind(".")
+                    if index != -1:
+                        task["collection"] = fqcn_module[:index]
+
+        return recommendation, tasks
 
     def write_to_segment(
         self,
@@ -471,7 +516,7 @@ class Completions(APIView):
                 "recommendation": recommendation_yaml,
                 "truncated": truncated_yaml,
                 "postprocessed": postprocessed_yaml,
-                "detail": postprocess_detail,
+                "details": postprocess_detail,  # TODO - update this to be what I need
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
             send_segment_event(event, "postprocess", user)

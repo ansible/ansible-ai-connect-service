@@ -29,9 +29,12 @@ class WCAClient(ModelMeshClient):
         has_seat = model_input.get("instances", [{}])[0].get("has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
+        if prompt.endswith('\n') is False:
+            prompt = f"{prompt}\n"
+
         data = {
             "model_id": model_name,
-            "prompt": f"{context}{prompt}\n",
+            "prompt": f"{context}{prompt}",
         }
 
         logger.debug(f"Inference API request payload: {data}")

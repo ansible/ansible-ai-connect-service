@@ -13,7 +13,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers
 
-from .fields import AnonymizedCharField
+from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 
 class Metadata(serializers.Serializer):
@@ -47,7 +47,7 @@ class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'suggestionId', 'metadata']
 
-    prompt = AnonymizedCharField(
+    prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
         required=True,
         label='Prompt',
@@ -63,37 +63,10 @@ class CompletionRequestSerializer(serializers.Serializer):
 
     def validate(self, data):
         data = super().validate(data)
-        CompletionRequestSerializer.extract_prompt_and_context(data)
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
             data['suggestionId'] = uuid.uuid4()
         return data
-
-    @staticmethod
-    def extract_prompt_and_context(data):
-        #
-        # Set the last line as prompt and the rest as context.
-        # Note that usually both prompt and context end with '\n'.
-        #
-        extracted_prompt = ''
-        extracted_context = ''
-        prompt_in_request = data['prompt']
-        if prompt_in_request:
-            s = prompt_in_request[:-1].rpartition('\n')
-            if s[1] == '\n':
-                extracted_prompt = s[2] + prompt_in_request[-1]
-                extracted_context = s[0] + s[1]
-            else:
-                extracted_prompt = prompt_in_request
-                extracted_context = ''
-
-        # Confirm the prompt contains some flavor of '- name:'
-        match = re.search(r"^[\s]*-[\s]+name[\s]*:", extracted_prompt)
-        if not match:
-            raise serializers.ValidationError("prompt does not contain the name parameter")
-
-        data['prompt'] = extracted_prompt
-        data['context'] = extracted_context
 
 
 @extend_schema_serializer(
