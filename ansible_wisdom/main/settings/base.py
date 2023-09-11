@@ -127,6 +127,7 @@ SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
 ]
 SOCIAL_AUTH_PIPELINE = (
+    'users.pipeline.block_auth_users',
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
