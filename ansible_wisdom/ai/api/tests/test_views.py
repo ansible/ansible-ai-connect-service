@@ -5,7 +5,6 @@ import random
 import string
 import time
 import uuid
-from ast import literal_eval
 from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
@@ -15,7 +14,7 @@ from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import Completions
-from ai.feature_flags import FeatureFlags, WisdomFlags
+from ai.feature_flags import WisdomFlags
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -432,7 +431,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='WARN') as log:
+        with self.assertLogs(logger='root', level='WARN'):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
@@ -623,7 +622,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
-            r = self.client.post(reverse('feedback'), payload, format="json")
+            self.client.post(reverse('feedback'), payload, format="json")
             self.assertNotInLog('file:///home/user/ansible.yaml', log)
             self.assertInLog('file:///home/ano-user/ansible.yaml', log)
             self.assertSegmentTimestamp(log)

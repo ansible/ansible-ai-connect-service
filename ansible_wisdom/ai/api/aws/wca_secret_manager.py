@@ -1,6 +1,5 @@
 import logging
 from enum import Enum
-from typing import Union
 
 import boto3
 from botocore.exceptions import ClientError

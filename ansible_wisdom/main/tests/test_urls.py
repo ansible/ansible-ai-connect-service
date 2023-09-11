@@ -3,7 +3,6 @@ from re import compile
 
 import main.urls
 from django.test import Client, TestCase, override_settings
-from django.test.utils import setup_test_environment
 
 
 class TestUrls(TestCase):

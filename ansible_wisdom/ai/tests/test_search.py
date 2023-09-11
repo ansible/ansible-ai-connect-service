@@ -1,6 +1,6 @@
 from copy import copy
 from importlib import reload
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import ai.search as search
 import numpy as np

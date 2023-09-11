@@ -167,20 +167,18 @@ class AnsibleDumperTestCase(TestCase):
         # make sure that an exception is thrown when the prompt contains a list as the name
         context = "---"
         prompt = "  - name: [This is a list]"
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(Exception):
             fmtr.preprocess(context, prompt)
 
     def test_dict_as_name(self):
         # make sure that an exception is thrown when the prompt contains a dictionary as the name
         context = "---"
         prompt = "  - name: {This is a dict}"
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(Exception):
             fmtr.preprocess(context, prompt)
 
 
 if __name__ == "__main__":
-    import yaml
-
     tests = AnsibleDumperTestCase()
     tests.test_extra_empty_lines()
     tests.test_extra_empty_spaces()

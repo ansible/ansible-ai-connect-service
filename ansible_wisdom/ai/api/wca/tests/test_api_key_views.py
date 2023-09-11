@@ -14,7 +14,6 @@ from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)

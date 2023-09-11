@@ -1,4 +1,4 @@
-from unittest import TestCase, mock
+from unittest import mock
 
 import requests
 from django.test import SimpleTestCase, override_settings
