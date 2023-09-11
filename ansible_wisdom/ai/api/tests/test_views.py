@@ -431,7 +431,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='WARN') as log:
+        with self.assertLogs(logger='root', level='WARN'):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',

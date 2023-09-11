@@ -1,5 +1,4 @@
 import logging
-import os
 import uuid
 
 from django.apps import apps
