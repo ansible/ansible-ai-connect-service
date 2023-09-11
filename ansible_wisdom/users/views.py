@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = 'users/home.html'
+    extra_context = {'is_debug': settings.DEBUG}
 
 
 class UnauthorizedView(TemplateView):
