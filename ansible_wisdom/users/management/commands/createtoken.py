@@ -47,12 +47,6 @@ class Command(BaseCommand):
         else:
             u = User.objects.get(username=username)
 
-        if not u.community_terms_accepted and not u.commercial_terms_accepted:
-            raise CommandError(
-                f"User {username} already exists but the user "
-                "didn't accept the terms and conditions"
-            )
-
         group_objs = []
         for g in groups or ():
             group_obj, created = Group.objects.get_or_create(name=g)
