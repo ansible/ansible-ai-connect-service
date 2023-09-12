@@ -15,7 +15,7 @@
           <h1 class="pf-c-title pf-m-lg">Red Hat Ansible Lightspeed with IBM Watson Code Assistant</h1>
           {% if user.is_authenticated %}
             <div style="padding: 15px">
-              <p>{{ user.social_username }} {% if user.has_seat %}(Commercial user){% endif %}
+              <p>{{ user.external_username }} {% if user.has_seat %}(Commercial user){% endif %}
             </div>
 
             <a class="pf-c-button pf-m-secondary" type="button" href="{% url 'logout' %}">Log out</a>

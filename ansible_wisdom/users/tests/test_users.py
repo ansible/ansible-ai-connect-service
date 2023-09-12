@@ -332,10 +332,12 @@ class TestUsername(WisdomServiceLogAwareTestCase):
         self.invalid_sso_user.delete()
 
     def test_username_from_sso(self) -> None:
-        self.assertEqual(self.sso_user.sso_login(), "babar")
-        self.assertEqual(self.local_user.sso_login(), "")
+        self.assertEqual(self.sso_user.external_username, "babar")
+        self.assertEqual(self.local_user.external_username, self.local_user.username)
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertEqual(self.invalid_sso_user.sso_login(), "")
+            self.assertEqual(
+                self.invalid_sso_user.external_username, self.invalid_sso_user.username
+            )
             self.assertInLog("Unexpected extra_data", log)
 
 
@@ -356,70 +358,70 @@ class TestIsOrgLightspeedSubscriber(TestCase):
 
 
 class TestSocialAuthentication(APITransactionTestCase):
-    def test_github_user_social_username(self):
-        social_username = "github_username"
+    def test_github_user_external_username(self):
+        external_username = "github_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
-        self.assertEqual(social_username, user.social_username)
-        self.assertNotEqual(user.username, user.social_username)
-        self.assertNotEqual(user.social_username, "")
+        self.assertEqual(external_username, user.external_username)
+        self.assertNotEqual(user.username, user.external_username)
+        self.assertNotEqual(user.external_username, "")
 
-    def test_rhsso_user_social_username(self):
-        social_username = "sso_username"
+    def test_rhsso_user_external_username(self):
+        external_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
-        self.assertEqual(social_username, user.social_username)
-        self.assertNotEqual(user.username, user.social_username)
-        self.assertNotEqual(user.social_username, "")
+        self.assertEqual(external_username, user.external_username)
+        self.assertNotEqual(user.username, user.external_username)
+        self.assertNotEqual(user.external_username, "")
 
     def test_github_user_login(self):
-        social_username = "github_username"
+        external_username = "github_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
         self.client.force_authenticate(user=user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(social_username, r.data.get('username'))
-        self.assertNotEqual(user.username, r.data.get('username'))
+        self.assertEqual(external_username, r.data.get('external_username'))
+        self.assertNotEqual(user.username, r.data.get('external_username'))
 
     def test_rhsso_user_login(self):
-        social_username = "sso_username"
+        external_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
         self.client.force_authenticate(user=user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(social_username, r.data.get('username'))
-        self.assertNotEqual(user.username, r.data.get('username'))
+        self.assertEqual(external_username, r.data.get('external_username'))
+        self.assertNotEqual(user.username, r.data.get('external_username'))
 
     def test_user_login_with_same_usernames(self):
-        social_username = "a_username"
+        external_username = "a_username"
         oidc_user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
         github_user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
-            social_auth_extra_data={"login": social_username},
+            social_auth_extra_data={"login": external_username},
         )
         self.client.force_authenticate(user=oidc_user)
         r = self.client.get(reverse('me'))
-        self.assertEqual(social_username, r.data.get('username'))
+        self.assertEqual(external_username, r.data.get('external_username'))
 
         self.client.force_authenticate(user=github_user)
         r = self.client.get(reverse('me'))
-        self.assertEqual(social_username, r.data.get('username'))
+        self.assertEqual(external_username, r.data.get('external_username'))
 
         self.assertNotEqual(oidc_user.username, github_user.username)
-        self.assertEqual(oidc_user.social_username, github_user.social_username)
+        self.assertEqual(oidc_user.external_username, github_user.external_username)
 
 
 class TestUserModelMetrics(APITransactionTestCase):

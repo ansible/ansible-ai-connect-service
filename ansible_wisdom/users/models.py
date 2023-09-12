@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_prometheus.models import ExportModelOperationsMixin
 
-from .constants import USER_SOCIAL_AUTH_PROVIDER_GITHUB, USER_SOCIAL_AUTH_PROVIDER_OIDC
+from .constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return False
         uid = self.social_auth.values()[0]["uid"]
         rh_org_id = self.organization_id
-        return seat_checker.check(uid, self.sso_login(), rh_org_id)
+        return seat_checker.check(uid, self.external_username, rh_org_id)
 
     @cached_property
     def rh_user_is_org_admin(self) -> bool:
@@ -53,7 +53,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if not seat_checker:
             return False
         rh_org_id = self.organization_id
-        return seat_checker.rh_user_is_org_admin(self.sso_login(), rh_org_id)
+        return seat_checker.rh_user_is_org_admin(self.external_username, rh_org_id)
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:
@@ -68,20 +68,8 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         return seat_checker.rh_org_has_subscription(rh_org_id)
 
     @cached_property
-    def social_username(self) -> str:
-        if not self.social_auth.values():
-            return self.username
-
-        if (
-            self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_GITHUB
-            or self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC
-        ):
-            return self._extra_data().get('login', '')
-        else:
-            return self.username
-
-    def sso_login(self) -> str:
-        return self._extra_data().get('login', '')
+    def external_username(self) -> str:
+        return self._extra_data().get('login', self.username)
 
     def _extra_data(self) -> dict:
         try:
