@@ -19,6 +19,9 @@
             </div>
 
             <a class="pf-c-button pf-m-secondary" type="button" href="{% url 'logout' %}">Log out</a>
+              {% if user.is_org_admin and user.is_org_lightspeed_subscriber or is_debug %}
+                  <a class="pf-c-button pf-m-secondary" type="button" href="{% url 'console' %}">Console</a>
+              {%  endif %}
           {% else %}
             <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
             <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
