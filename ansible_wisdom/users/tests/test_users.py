@@ -362,15 +362,17 @@ class TestSocialAuthentication(APITransactionTestCase):
         )
         self.assertEqual(social_username, user.social_username)
         self.assertNotEqual(user.username, user.social_username)
+        self.assertNotEqual(user.social_username, "")
 
     def test_rhsso_user_social_username(self):
         social_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"preferred_username": social_username},
+            social_auth_extra_data={"login": social_username},
         )
         self.assertEqual(social_username, user.social_username)
         self.assertNotEqual(user.username, user.social_username)
+        self.assertNotEqual(user.social_username, "")
 
     def test_github_user_login(self):
         social_username = "github_username"
@@ -388,7 +390,7 @@ class TestSocialAuthentication(APITransactionTestCase):
         social_username = "sso_username"
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"preferred_username": social_username},
+            social_auth_extra_data={"login": social_username},
         )
         self.client.force_authenticate(user=user)
         r = self.client.get(reverse('me'))
@@ -397,10 +399,10 @@ class TestSocialAuthentication(APITransactionTestCase):
         self.assertNotEqual(user.username, r.data.get('username'))
 
     def test_user_login_with_same_usernames(self):
-        social_username = "same_username"
+        social_username = "a_username"
         oidc_user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"preferred_username": social_username},
+            social_auth_extra_data={"login": social_username},
         )
         github_user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,

@@ -72,14 +72,18 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if not self.social_auth.values():
             return self.username
 
-        if self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_GITHUB:
-            return self.social_auth.values()[0]["extra_data"]["login"]
-        elif self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC:
-            return self.social_auth.values()[0]["extra_data"]["preferred_username"]
+        if (
+            self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_GITHUB
+            or self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC
+        ):
+            return self._extra_data().get('login', '')
         else:
             return self.username
 
     def sso_login(self) -> str:
+        return self._extra_data().get('login', '')
+
+    def _extra_data(self) -> dict:
         try:
             extra_data = self.social_auth.values()[0].get('extra_data') or {}
             if not isinstance(extra_data, dict):
@@ -87,4 +91,4 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
                 raise ValueError
         except (KeyError, AttributeError, IndexError, ValueError):
             extra_data = {}
-        return extra_data.get('login', '')
+        return extra_data
