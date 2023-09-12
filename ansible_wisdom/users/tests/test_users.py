@@ -6,7 +6,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
+from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -18,35 +18,54 @@ from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
 from test_utils import WisdomServiceLogAwareTestCase
 from users.auth import BearerTokenAuthentication
+from users.constants import (
+    USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+    USER_SOCIAL_AUTH_PROVIDER_OIDC,
+)
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
 
 
-def create_user(provider_name: str):
-    username = 'u' + "".join(random.choices(string.digits, k=5))
-    password = 'secret'
+def create_user(
+    username: str = None,
+    password: str = None,
+    provider: str = None,
+    social_auth_extra_data: any = {},
+):
+    username = username or 'u' + "".join(random.choices(string.digits, k=5))
+    password = password or 'secret'
     email = username + '@example.com'
     user = get_user_model().objects.create_user(
         username=username,
         email=email,
         password=password,
     )
-    UserSocialAuth.objects.create(user=user, provider=provider_name, uid=str(uuid4()))
+    if provider:
+        social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=str(uuid4()))
+        social_auth.set_extra_data(social_auth_extra_data)
     return user
 
 
-class TestUsers(WisdomServiceAPITestCaseBase):
+class TestUsers(APITransactionTestCase):
+    def setUp(self) -> None:
+        self.password = "somepassword"
+        self.user = create_user(
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": "anexternalusername"},
+        )
+
     def test_users(self):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(self.username, r.data.get('username'))
+        self.assertEqual(self.user.username, r.data.get('username'))
 
     def test_home_view(self):
-        self.login()
+        self.client.login(username=self.user.username, password=self.password)
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn(self.username, str(r.content))
+        self.assertIn(self.user.external_username, str(r.content))
 
     def test_home_view_without_login(self):
         r = self.client.get(reverse('home'))
@@ -244,27 +263,27 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 
 class TestUserSeat(TestCase):
     def test_rh_user_has_seat_with_no_rhsso_user(self):
-        user = create_user(provider_name="github")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
     def test_rh_user_has_seat_with_rhsso_user_no_seat(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
     def test_rh_user_has_seat_with_rhsso_user_with_seat(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertTrue(user.rh_user_has_seat)
 
     def test_rh_user_has_seat_with_no_seat_checker(self):
         with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
-            user = create_user(provider_name="oidc")
+            user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
             self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
     def test_rh_user_has_seat_with_commercial_group(self):
-        user = create_user(provider_name="github")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
 
         commercial_group = Group.objects.create(name='Commercial')
         user.groups.add(commercial_group)
@@ -274,47 +293,40 @@ class TestUserSeat(TestCase):
 
 class TestOrgAdmin(TestCase):
     def test_rh_user_is_org_admin_with_no_rhsso_user(self):
-        user = create_user(provider_name="github")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_user_is_org_admin)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
     def test_rh_user_is_org_admin_with_admin_rhsso_user(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertTrue(user.rh_user_is_org_admin)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
     def test_rh_user_is_org_admin_with_non_admin_rhsso_user(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertFalse(user.rh_user_is_org_admin)
 
 
 class TestUsername(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
-        self.local_user = get_user_model().objects.create_user(
+        self.local_user = create_user(
             username="local-user",
-            email="local@user.nowhere",
             password="bar",
         )
 
-        self.sso_user = get_user_model().objects.create_user(
+        self.sso_user = create_user(
             username="sso-user",
-            email="sso@user.nowhere",
             password="bar",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "babar"},
         )
-        usa = UserSocialAuth.objects.create(user=self.sso_user, provider="oidc", uid=str(uuid4()))
-        usa.set_extra_data({"login": "babar"})
-        usa.save()
 
-        self.invalid_sso_user = get_user_model().objects.create_user(
+        self.invalid_sso_user = create_user(
             username="invalid-sso-user",
-            email="sso@user.nowhere",
             password="bar",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data=1,
         )
-        usa = UserSocialAuth.objects.create(
-            user=self.invalid_sso_user, provider="oidc", uid=str(uuid4())
-        )
-        usa.extra_data = 1
-        usa.save()
 
     def tearDown(self) -> None:
         self.local_user.delete()
@@ -322,27 +334,94 @@ class TestUsername(WisdomServiceLogAwareTestCase):
         self.invalid_sso_user.delete()
 
     def test_username_from_sso(self) -> None:
-        self.assertEqual(self.sso_user.sso_login(), "babar")
-        self.assertEqual(self.local_user.sso_login(), "")
+        self.assertEqual(self.sso_user.external_username, "babar")
+        self.assertEqual(self.local_user.external_username, "")
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertEqual(self.invalid_sso_user.sso_login(), "")
+            self.assertEqual(self.invalid_sso_user.external_username, "")
             self.assertInLog("Unexpected extra_data", log)
 
 
 class TestIsOrgLightspeedSubscriber(TestCase):
     def test_rh_org_has_subscription_with_no_rhsso_user(self):
-        user = create_user(provider_name="github")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_org_has_subscription)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
     def test_rh_org_has_subscription_with_subscribed_user(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertTrue(user.rh_org_has_subscription)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
     def test_rh_org_has_subscription_with_non_subscribed_user(self):
-        user = create_user(provider_name="oidc")
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.assertFalse(user.rh_org_has_subscription)
+
+
+class TestThirdPartyAuthentication(APITransactionTestCase):
+    def test_github_user_external_username(self):
+        external_username = "github_username"
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": external_username},
+        )
+        self.assertEqual(external_username, user.external_username)
+        self.assertNotEqual(user.username, user.external_username)
+        self.assertNotEqual(user.external_username, "")
+
+    def test_rhsso_user_external_username(self):
+        external_username = "sso_username"
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": external_username},
+        )
+        self.assertEqual(external_username, user.external_username)
+        self.assertNotEqual(user.username, user.external_username)
+        self.assertNotEqual(user.external_username, "")
+
+    def test_github_user_login(self):
+        external_username = "github_username"
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": external_username},
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(external_username, r.data.get('external_username'))
+        self.assertNotEqual(user.username, r.data.get('external_username'))
+
+    def test_rhsso_user_login(self):
+        external_username = "sso_username"
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": external_username},
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(external_username, r.data.get('external_username'))
+        self.assertNotEqual(user.username, r.data.get('external_username'))
+
+    def test_user_login_with_same_usernames(self):
+        external_username = "a_username"
+        oidc_user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": external_username},
+        )
+        github_user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": external_username},
+        )
+        self.client.force_authenticate(user=oidc_user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(external_username, r.data.get('external_username'))
+
+        self.client.force_authenticate(user=github_user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(external_username, r.data.get('external_username'))
+
+        self.assertNotEqual(oidc_user.username, github_user.username)
+        self.assertEqual(oidc_user.external_username, github_user.external_username)
 
 
 class TestUserModelMetrics(APITransactionTestCase):

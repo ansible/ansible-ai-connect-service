@@ -11,5 +11,6 @@ class UserSerializer(serializers.ModelSerializer):
             'rh_org_has_subscription',
             'rh_user_has_seat',
             'rh_user_is_org_admin',
+            'external_username',
             'username',
         ]
