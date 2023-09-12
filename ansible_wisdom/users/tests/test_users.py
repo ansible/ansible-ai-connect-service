@@ -309,7 +309,9 @@ class TestUsername(WisdomServiceLogAwareTestCase):
             email="sso@user.nowhere",
             password="bar",
         )
-        usa = UserSocialAuth.objects.create(user=self.sso_user, provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, uid=str(uuid4()))
+        usa = UserSocialAuth.objects.create(
+            user=self.sso_user, provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, uid=str(uuid4())
+        )
         usa.set_extra_data({"login": "babar"})
         usa.save()
 
