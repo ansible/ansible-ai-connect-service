@@ -6,7 +6,7 @@ repos:
   - id: isort
     name: isort (python)
 - repo: https://github.com/ambv/black
-  rev: 23.1.0
+  rev: 23.9.1
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
@@ -24,13 +24,13 @@ repos:
   - id: debug-statements
     language_version: python3
 - repo: https://github.com/PyCQA/flake8
-  rev: 6.0.0
+  rev: 6.1.0
   hooks:
   - id: flake8
     args: [--config=.flake8]
     language_version: python3
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.3.1
+  rev: v3.10.1
   hooks:
   - id: pyupgrade
     language_version: python3

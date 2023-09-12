@@ -4,7 +4,6 @@ from unittest.mock import patch
 from django.urls import reverse
 
 from ..permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
     IsWCAKeyApiFeatureFlagOn,
