@@ -6,7 +6,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from ai.api.tests.test_views import APITransactionTestCase, WisdomServiceAPITestCaseBase
+from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -27,34 +27,45 @@ from users.views import TermsOfService
 
 
 def create_user(
+    username: str = None,
+    password: str = None,
     provider: str = None,
-    social_auth_extra_data: dict = {},
+    social_auth_extra_data: any = {},
 ):
-    username = 'u' + "".join(random.choices(string.digits, k=5))
-    password = 'secret'
+    username = username or 'u' + "".join(random.choices(string.digits, k=5))
+    password = password or 'secret'
     email = username + '@example.com'
     user = get_user_model().objects.create_user(
         username=username,
         email=email,
         password=password,
     )
-    social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=str(uuid4()))
-    social_auth.set_extra_data(social_auth_extra_data)
+    if provider:
+        social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=str(uuid4()))
+        social_auth.set_extra_data(social_auth_extra_data)
     return user
 
 
-class TestUsers(WisdomServiceAPITestCaseBase):
+class TestUsers(APITransactionTestCase):
+    def setUp(self) -> None:
+        self.password = "somepassword"
+        self.user = create_user(
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": "anexternalusername"},
+        )
+
     def test_users(self):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(self.username, r.data.get('username'))
+        self.assertEqual(self.user.username, r.data.get('username'))
 
     def test_home_view(self):
-        self.login()
+        self.client.login(username=self.user.username, password=self.password)
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn(self.username, str(r.content))
+        self.assertIn(self.user.external_username, str(r.content))
 
     def test_home_view_without_login(self):
         r = self.client.get(reverse('home'))
@@ -298,33 +309,24 @@ class TestOrgAdmin(TestCase):
 
 class TestUsername(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
-        self.local_user = get_user_model().objects.create_user(
+        self.local_user = create_user(
             username="local-user",
-            email="local@user.nowhere",
             password="bar",
         )
 
-        self.sso_user = get_user_model().objects.create_user(
+        self.sso_user = create_user(
             username="sso-user",
-            email="sso@user.nowhere",
             password="bar",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "babar"},
         )
-        usa = UserSocialAuth.objects.create(
-            user=self.sso_user, provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, uid=str(uuid4())
-        )
-        usa.set_extra_data({"login": "babar"})
-        usa.save()
 
-        self.invalid_sso_user = get_user_model().objects.create_user(
+        self.invalid_sso_user = create_user(
             username="invalid-sso-user",
-            email="sso@user.nowhere",
             password="bar",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data=1,
         )
-        usa = UserSocialAuth.objects.create(
-            user=self.invalid_sso_user, provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, uid=str(uuid4())
-        )
-        usa.extra_data = 1
-        usa.save()
 
     def tearDown(self) -> None:
         self.local_user.delete()
@@ -333,11 +335,9 @@ class TestUsername(WisdomServiceLogAwareTestCase):
 
     def test_username_from_sso(self) -> None:
         self.assertEqual(self.sso_user.external_username, "babar")
-        self.assertEqual(self.local_user.external_username, self.local_user.username)
+        self.assertEqual(self.local_user.external_username, "")
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertEqual(
-                self.invalid_sso_user.external_username, self.invalid_sso_user.username
-            )
+            self.assertEqual(self.invalid_sso_user.external_username, "")
             self.assertInLog("Unexpected extra_data", log)
 
 
@@ -357,7 +357,7 @@ class TestIsOrgLightspeedSubscriber(TestCase):
         self.assertFalse(user.rh_org_has_subscription)
 
 
-class TestSocialAuthentication(APITransactionTestCase):
+class TestThirdPartyAuthentication(APITransactionTestCase):
     def test_github_user_external_username(self):
         external_username = "github_username"
         user = create_user(

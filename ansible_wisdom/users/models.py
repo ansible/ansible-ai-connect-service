@@ -69,7 +69,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def external_username(self) -> str:
-        return self._extra_data().get('login', self.username)
+        return self._extra_data().get('login', '')
 
     def _extra_data(self) -> dict:
         try:
