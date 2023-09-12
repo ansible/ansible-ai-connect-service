@@ -2,6 +2,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from ai.api.permissions import (
+    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
     IsWCAKeyApiFeatureFlagOn,
@@ -9,7 +10,9 @@ from ai.api.permissions import (
 )
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework.permissions import IsAuthenticated
 
 
 @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -27,3 +30,20 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    def test_permission_classes(self, *args):
+        url = reverse('console')
+        view = resolve(url).func.view_class
+
+        required_permissions = [
+            IsWCAKeyApiFeatureFlagOn,
+            IsWCAModelIdApiFeatureFlagOn,
+            IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            IsOrganisationAdministrator,
+            IsOrganisationLightspeedSubscriber,
+            AcceptedTermsPermission,
+        ]
+        self.assertEqual(len(view.permission_classes), len(required_permissions))
+        for permission in required_permissions:
+            self.assertTrue(permission in view.permission_classes)
