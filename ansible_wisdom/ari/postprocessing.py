@@ -131,9 +131,9 @@ class ARICaller:
                 aggregated_detail = detail.get("detail", {})
 
                 if fmtr.is_multi_task_prompt(prompt):
-                    # prompt_indent = self.get_indent_size(prompt) # maybe this gets fixed later??
-                    # modified_yamls.append(self.indent_suggestion(f"- name: {task_name}", prompt_indent)) # noqa: E501
-                    # # TODO - not sure about the math for this
+                    # Here we are using the anonyimized prompt, NOT what came back
+                    # from WCA, which should be the same.
+                    # TODO: see if we can get this back from ARI instead
                     modified_yamls.append(f"- name: {task_name}")
                 # TODO: I think this should blow up if it's missing. we have no fallback.
                 modified_yamls.append(detail.get("modified_yaml", ""))
@@ -167,6 +167,6 @@ class ARICaller:
         logger.debug("--after--")
         logger.debug(modified_yaml)
         logger.debug("--results--")
-        logger.info(json.dumps(ari_results, indent=2))  # TODO - back to debug
+        logger.debug(json.dumps(ari_results, indent=2))
 
         return modified_yaml, ari_results

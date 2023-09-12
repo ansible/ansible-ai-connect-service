@@ -36,7 +36,9 @@ class DummyMeshClient(ModelMeshClient):
 
         if "prompt" in payload:
             try:
-                serializer = CompletionRequestSerializer()
+                user = Mock(has_seat=has_seat)
+                request = Mock(user=user)
+                serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
                 view = Completions()
@@ -56,7 +58,8 @@ class DummyMeshClient(ModelMeshClient):
                         }
                     ]
                 }
-            except Exception:  # ignore exception thrown here
+            except Exception as ex:  # ignore exception thrown here
+                print(ex)
                 pass
 
         self.response_data = response_data

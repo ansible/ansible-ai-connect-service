@@ -143,7 +143,9 @@ class Completions(APIView):
         request._request._suggestion_id = request.data.get('suggestionId')
 
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        request_serializer = CompletionRequestSerializer(data=request.data)
+        request_serializer = CompletionRequestSerializer(
+            data=request.data, context={'request': request}
+        )
         try:
             request_serializer.is_valid(raise_exception=True)
             request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
@@ -301,11 +303,6 @@ class Completions(APIView):
                 prompt = f"{prompt}\n"
             # Workaround for https://github.com/rh-ibm-synergy/wca-feedback/issues/3
             prompt = prompt.lstrip()
-
-            # TODO - commercial check
-            # TODO - max 10 check
-            # TODO - whatever else I had in my first implementation
-            pass
         else:
             # once we switch completely to WCA, we should be able to remove this entirely
             # since they're doing the same preprocessing on their side
@@ -517,7 +514,7 @@ class Completions(APIView):
                 "recommendation": recommendation_yaml,
                 "truncated": truncated_yaml,
                 "postprocessed": postprocessed_yaml,
-                "details": postprocess_detail,  # TODO - update this to be what I need
+                "details": postprocess_detail,
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
             send_segment_event(event, "postprocess", user)

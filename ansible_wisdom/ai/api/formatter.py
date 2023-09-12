@@ -203,6 +203,13 @@ def is_multi_task_prompt(prompt):
     return prompt.lstrip().startswith('#')
 
 
+def get_task_count_from_prompt(prompt):
+    task_count = 0
+    if prompt:
+        task_count = len(prompt.strip().split('&'))
+    return task_count
+
+
 def get_task_names(prompt):
     if is_multi_task_prompt(prompt):
         prompt = prompt.split('#', 1)[1].strip()

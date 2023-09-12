@@ -63,20 +63,31 @@ class CompletionRequestSerializer(serializers.Serializer):
     metadata = Metadata(required=False)
 
     @staticmethod
-    def validate_extracted_prompt(prompt):
+    def validate_extracted_prompt(prompt, user):
         if fmtr.is_multi_task_prompt(prompt):
-            pass
+            # Multi-task is commercial-only
+            if user.has_seat is False:
+                raise serializers.ValidationError(
+                    {"prompt": "requested prompt format is not supported"}
+                )
+            task_count = fmtr.get_task_count_from_prompt(prompt)
+            if task_count > 10:
+                raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})
         else:
             # Confirm the prompt contains some flavor of '- name:'
             match = re.search(r"^[\s]*-[\s]+name[\s]*:", prompt)
             if not match:
-                raise serializers.ValidationError("prompt does not contain the name parameter")
+                raise serializers.ValidationError(
+                    {"prompt": "prompt does not contain the name parameter"}
+                )
 
     def validate(self, data):
         data = super().validate(data)
 
         data['prompt'], data['context'] = fmtr.extract_prompt_and_context(data['prompt'])
-        CompletionRequestSerializer.validate_extracted_prompt(data['prompt'])
+        CompletionRequestSerializer.validate_extracted_prompt(
+            data['prompt'], self.context.get('request').user
+        )
 
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
