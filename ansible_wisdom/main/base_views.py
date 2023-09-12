@@ -54,21 +54,11 @@ class ProtectedTemplateView(TemplateView):
         """
         Returns the initial request object.
         """
-
-        def get_parser_context():
-            """
-            Returns a dict that is passed through to Parser.parse(),
-            as the `parser_context` keyword argument.
-            """
-            # Note: Additionally `request` and `encoding` will also be added
-            #       to the context by the Request object.
-            return {
-                'view': self,
-                'args': getattr(self, 'args', ()),
-                'kwargs': getattr(self, 'kwargs', {}),
-            }
-
-        parser_context = get_parser_context()
+        parser_context = {
+            'view': self,
+            'args': getattr(self, 'args', ()),
+            'kwargs': getattr(self, 'kwargs', {}),
+        }
 
         return Request(
             request, authenticators=self.get_authenticators(), parser_context=parser_context
