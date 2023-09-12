@@ -2,9 +2,6 @@
 
 import logging
 
-from django.contrib.auth import views as auth_views
-from django.http import HttpResponseRedirect
-
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -13,6 +10,8 @@ from ai.api.permissions import (
     IsWCAModelIdApiFeatureFlagOn,
 )
 from django.conf import settings
+from django.contrib.auth import views as auth_views
+from django.http import HttpResponseRedirect
 from main.base_views import ProtectedTemplateView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated

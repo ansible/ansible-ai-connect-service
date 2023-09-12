@@ -23,8 +23,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
-from main.views import LoginView
-from main.views import ConsoleView
+from main.views import ConsoleView, LoginView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
 WISDOM_API_VERSION = "v0"
