@@ -28,13 +28,13 @@ from rest_framework.status import (
 logger = logging.getLogger(__name__)
 
 if settings.DEBUG:
-    permission_classes = [
+    PERMISSION_CLASSES = [
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
     ]
 else:
-    permission_classes = [
+    PERMISSION_CLASSES = [
         IsWCAKeyApiFeatureFlagOn,
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
@@ -47,7 +47,7 @@ else:
 class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     required_scopes = ['read', 'write']
     throttle_cache_key_suffix = '_wca_api_key'
-    permission_classes = permission_classes
+    permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
@@ -113,7 +113,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 class WCAApiKeyValidatorView(RetrieveAPIView):
     required_scopes = ['read']
     throttle_cache_key_suffix = '_wca_api_key_validator'
-    permission_classes = permission_classes
+    permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
