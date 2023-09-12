@@ -177,6 +177,31 @@ class AnsibleDumperTestCase(TestCase):
         with self.assertRaises(Exception) as cm:
             fmtr.preprocess(context, prompt)
 
+    def run_a_test(self, prompt_in, context_expected, prompt_expected):
+        prompt, context = fmtr.extract_prompt_and_context(prompt_in)
+        self.assertEqual(prompt_expected, prompt)
+        self.assertEqual(context_expected, context)
+
+    def test_get_instances_from_payload(self):
+        # test standard context+prompt
+        PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n'
+        CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+        PROMPT_OUT = "  - name: Install Apache\n"
+
+        self.run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
+
+        # test prompt with no additional context
+        self.run_a_test('- name: Install Apache\n', '', '- name: Install Apache\n')
+
+    # def test_get_instances_from_payload_raises_exception(self):
+    # fmtr.extract_prompt_and_context(None)
+    # with self.assertRaises(serializers.ValidationError):
+    #     fmtr.extract_prompt_and_context({'prompt': None})
+    # with self.assertRaises(serializers.ValidationError):
+    #     fmtr.extract_prompt_and_context({'prompt': "---\n"})
+    # with self.assertRaises(serializers.ValidationError):
+    #     fmtr.extract_prompt_and_context({'prompt': "#Install Apache\n"})
+
 
 if __name__ == "__main__":
     import yaml
@@ -194,3 +219,4 @@ if __name__ == "__main__":
     tests.test_valid_prompt()
     tests.test_list_as_name()
     tests.test_dict_as_name()
+    tests.test_get_instances_from_payload()

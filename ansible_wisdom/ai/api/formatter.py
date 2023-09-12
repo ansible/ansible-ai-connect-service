@@ -173,15 +173,18 @@ def restore_indentation(yaml, original_indent):
 
 
 def extract_prompt_and_context(input):
-    input = input.rstrip()
-    segs = input.rsplit('\n', 1)
+    context = ''
+    prompt = ''
+    if input:
+        input = input.rstrip()
+        segs = input.rsplit('\n', 1)
 
-    if len(segs) == 2:
-        context = segs[0] + '\n'
-        prompt = segs[1]
-    else:  # Context is empty
-        context = ""
-        prompt = segs[0]
+        if len(segs) == 2:
+            context = segs[0] + '\n'
+            prompt = segs[1] + '\n'
+        else:  # Context is empty
+            context = ""
+            prompt = segs[0] + '\n'
     return prompt, context
 
 

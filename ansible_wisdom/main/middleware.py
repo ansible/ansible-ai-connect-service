@@ -74,6 +74,7 @@ class SegmentMiddleware:
 
                 # this modelName default will be correct unless we're using launchdarkly
                 # but needs to be revisited with commercial multimodel.
+                modelName = settings.ANSIBLE_AI_MODEL_NAME
 
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')

@@ -40,7 +40,7 @@ class DummyMeshClient(ModelMeshClient):
                 data = serializer.validate(payload.copy())
 
                 view = Completions()
-                data["context"], data["prompt"] = view.preprocess(
+                data["context"], data["prompt"], _ = view.preprocess(
                     data.get("context"), data.get("prompt")
                 )
 

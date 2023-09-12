@@ -13,6 +13,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers
 
+from . import formatter as fmtr
 from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 
@@ -61,8 +62,22 @@ class CompletionRequestSerializer(serializers.Serializer):
     )
     metadata = Metadata(required=False)
 
+    @staticmethod
+    def validate_extracted_prompt(prompt):
+        if fmtr.is_multi_task_prompt(prompt):
+            pass
+        else:
+            # Confirm the prompt contains some flavor of '- name:'
+            match = re.search(r"^[\s]*-[\s]+name[\s]*:", prompt)
+            if not match:
+                raise serializers.ValidationError("prompt does not contain the name parameter")
+
     def validate(self, data):
         data = super().validate(data)
+
+        data['prompt'], data['context'] = fmtr.extract_prompt_and_context(data['prompt'])
+        CompletionRequestSerializer.validate_extracted_prompt(data['prompt'])
+
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
             data['suggestionId'] = uuid.uuid4()

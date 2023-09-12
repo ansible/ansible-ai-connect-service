@@ -172,7 +172,9 @@ class Completions(APIView):
 
         try:
             start_time = time.time()
-            payload.context, payload.prompt, original_indent = self.preprocess(payload.prompt)
+            payload.context, payload.prompt, original_indent = self.preprocess(
+                payload.context, payload.prompt
+            )
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
@@ -290,8 +292,7 @@ class Completions(APIView):
         response.tasks = tasks_results
         return response
 
-    def preprocess(self, prompt):
-        prompt, context = fmtr.extract_prompt_and_context(prompt)
+    def preprocess(self, context, prompt):
         if fmtr.is_multi_task_prompt(prompt):
             # Hold the original indent so we can restore indentation in postprocess
             original_indent = prompt.find('#')
