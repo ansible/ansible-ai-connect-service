@@ -9,6 +9,9 @@ ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
 ENV PROMETHEUS_MULTIPROC_DIR=/var/run/django_metrics
 
+ENV BUILD_PATH=/var/www/wisdom/public/static/console
+
+# Install dependencies
 RUN dnf install -y \
     git \
     python3-devel \
@@ -18,7 +21,8 @@ RUN dnf install -y \
     python3 \
     python3-pip \
     postgresql \
-    less
+    less \
+    npm
 
 RUN dnf module install -y nginx/common
 
@@ -27,6 +31,7 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf remove -y epel-release && \
     dnf clean all
 
+# Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
 COPY requirements.txt /var/www/
@@ -44,6 +49,19 @@ IMAGE_TAGS = ${IMAGE_TAGS}\n\
 GIT_COMMIT = ${GIT_COMMIT}\n\
 " > /var/www/ansible_wisdom/version_info.ini
 
+# Compile React/TypeScript Console application
+# Copy each source folder individually to avoid copying 'node_modules'
+COPY ansible_wisdom_console_react/config /tmp/ansible_wisdom_console_react/config
+COPY ansible_wisdom_console_react/public /tmp/ansible_wisdom_console_react/public
+COPY ansible_wisdom_console_react/scripts /tmp/ansible_wisdom_console_react/scripts
+COPY ansible_wisdom_console_react/src /tmp/ansible_wisdom_console_react/src
+COPY ansible_wisdom_console_react/package.json /tmp/ansible_wisdom_console_react/package.json
+COPY ansible_wisdom_console_react/package-lock.json /tmp/ansible_wisdom_console_react/package-lock.json
+COPY ansible_wisdom_console_react/tsconfig.json /tmp/ansible_wisdom_console_react/tsconfig.json
+RUN npm --prefix /tmp/ansible_wisdom_console_react install
+RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+
+# Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
@@ -54,6 +72,7 @@ COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
 COPY ari /etc/ari
 
+# Set permissions
 RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
@@ -66,7 +85,11 @@ RUN for dir in \
       /var/run/django_metrics ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
+
+# Install ARI rules
 RUN /usr/bin/install-ari-rule-requirements.sh
+
+# Launch!
 ENV ANSIBLE_HOME=/etc/ansible
 WORKDIR /var/www
 
