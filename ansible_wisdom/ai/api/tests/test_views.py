@@ -14,7 +14,7 @@ from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import Completions
+from ai.api.views import Completions, CompletionsPromptType
 from ai.feature_flags import FeatureFlags, WisdomFlags
 from django.apps import apps
 from django.contrib.auth import get_user_model
@@ -219,6 +219,13 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertSegmentTimestamp(log)
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    if event['event'] == 'completion':
+                        properties = event['properties']
+                        self.assertEqual(properties['taskCount'], 2)
+                        self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_rate_limit(self):

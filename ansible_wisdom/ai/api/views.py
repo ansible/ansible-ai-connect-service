@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from enum import Enum
 from string import Template
 
 import yaml
@@ -104,6 +105,11 @@ class ServiceUnavailable(BaseWisdomAPIException):
 class InternalServerError(BaseWisdomAPIException):
     status_code = 500
     default_detail = {"message": "An error occurred attempting to complete the request"}
+
+
+class CompletionsPromptType(str, Enum):
+    MULTITASK = "MULTITASK"
+    SINGLETASK = "SINGLETASK"
 
 
 class Completions(APIView):
@@ -292,6 +298,11 @@ class Completions(APIView):
         # The tasks array added to the completion event is representative of the first (only)
         # entry in the predictions array
         response.tasks = tasks_results
+        response.promptType = (
+            CompletionsPromptType.MULTITASK
+            if fmtr.is_multi_task_prompt(payload.prompt)
+            else CompletionsPromptType.SINGLETASK
+        )
         return response
 
     def preprocess(self, context, prompt):

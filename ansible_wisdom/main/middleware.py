@@ -84,6 +84,7 @@ class SegmentMiddleware:
                     message = str(response.content)
 
                 duration = round((time.time() - start_time) * 1000, 2)
+                tasks = getattr(response, 'tasks', [])
                 event = {
                     "duration": duration,
                     "request": {"context": context, "prompt": prompt},
@@ -99,7 +100,9 @@ class SegmentMiddleware:
                     "metadata": metadata,
                     "modelName": modelName,
                     "imageTags": version_info.image_tags,
-                    "tasks": getattr(response, 'tasks', None),
+                    "tasks": tasks,
+                    "promptType": getattr(response, 'promptType', None),
+                    "taskCount": len(tasks),
                 }
 
                 send_segment_event(event, "completion", request.user)
