@@ -179,16 +179,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
-  /api/v0/wca/{org_id}/apikey/:
+  /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
       summary: Get WCA key for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       security:
@@ -212,12 +206,6 @@ paths:
     post:
       operationId: wca_api_key_set
       summary: Set the WCA key for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       requestBody:
@@ -256,16 +244,35 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v0/wca/{org_id}/modelid/:
+  /api/v0/wca/apikey/test/:
+    get:
+      operationId: wca_api_key_validator_get
+      summary: Validate WCA key for an Organisation
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - read
+      - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+  /api/v0/wca/modelid/:
     get:
       operationId: wca_model_id_get
       summary: Get WCA Model Id for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       security:
@@ -289,12 +296,6 @@ paths:
     post:
       operationId: wca_model_id_set
       summary: Set the Model Id to be used for an Organisation
-      parameters:
-      - in: path
-        name: org_id
-        schema:
-          type: string
-        required: true
       tags:
       - wca
       requestBody:
@@ -329,6 +330,31 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+  /api/v0/wca/modelid/test/:
+    get:
+      operationId: wca_model_id_validator_get
+      summary: Validate WCA Model Id for an Organisation
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - read
+      - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
         '429':
           description: Request was throttled
         '503':
@@ -612,6 +638,18 @@ components:
     User:
       type: object
       properties:
+        rh_org_has_subscription:
+          type: boolean
+          readOnly: true
+        rh_user_has_seat:
+          type: boolean
+          readOnly: true
+        rh_user_is_org_admin:
+          type: boolean
+          readOnly: true
+        external_username:
+          type: string
+          readOnly: true
         username:
           type: string
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
@@ -619,6 +657,10 @@ components:
           pattern: ^[\w.@+-]+$
           maxLength: 150
       required:
+      - external_username
+      - rh_org_has_subscription
+      - rh_user_has_seat
+      - rh_user_is_org_admin
       - username
     WcaKeyRequest:
       type: object

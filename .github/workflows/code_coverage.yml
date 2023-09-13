@@ -83,3 +83,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    - name: Ensure the OpenAPI file is up to date
+      run: |
+        make run-server &
+        sleep 10
+        make create-cachetable
+        make update-openapi-schema
+        git diff --exit-code -- tools/openapi-schema/ansible-wisdom-service.yaml

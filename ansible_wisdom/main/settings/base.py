@@ -79,12 +79,6 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
-# To be updated with URL to pilot test plan
-PILOT_DOCS_URL = os.environ.get(
-    'PILOT_DOCS_URL', 'https://drive.google.com/drive/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg'
-)
-PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Internal Red Hat Slack')
-
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
@@ -94,11 +88,13 @@ if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
     SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
     SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
     SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+    SOCIAL_AUTH_GITHUB_TEAM_EXTRA_DATA = ['login']
 else:
     USE_GITHUB_TEAM = False
     SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
     SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
     SOCIAL_AUTH_GITHUB_SCOPE = [""]
+    SOCIAL_AUTH_GITHUB_EXTRA_DATA = ['login']
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
@@ -127,6 +123,7 @@ SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
 ]
 SOCIAL_AUTH_PIPELINE = (
+    'users.pipeline.block_auth_users',
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',

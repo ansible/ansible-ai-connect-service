@@ -362,7 +362,7 @@ class EnumField(serializers.Field):
 class AttributionSerializer(serializers.Serializer):
     repo_name = serializers.CharField()
     repo_url = serializers.URLField()
-    path = serializers.CharField()
+    path = serializers.CharField(allow_blank=True)
     license = serializers.CharField()
     data_source = EnumField(choices=DataSource)
     ansible_type = EnumField(choices=AnsibleType)

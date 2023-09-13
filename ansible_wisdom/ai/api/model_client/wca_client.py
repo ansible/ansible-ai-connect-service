@@ -3,8 +3,6 @@ import logging
 import requests
 from django.apps import apps
 from django.conf import settings
-from rest_framework import status
-from rest_framework.response import Response
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
@@ -26,7 +24,7 @@ class WCAClient(ModelMeshClient):
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
-        has_seat = model_input.get("instances", [{}])[0].get("has_seat", False)
+        rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
         if prompt.endswith('\n') is False:
@@ -41,7 +39,7 @@ class WCAClient(ModelMeshClient):
 
         try:
             # TODO: store token and only fetch a new one if it has expired
-            api_key = self.get_api_key(has_seat, organization_id)
+            api_key = self.get_api_key(rh_user_has_seat, organization_id)
             token = self.get_token(api_key)
             headers = {
                 "Content-Type": "application/json",
@@ -75,9 +73,9 @@ class WCAClient(ModelMeshClient):
         result.raise_for_status()
         return result.json()
 
-    def get_api_key(self, has_seat, organization_id):
+    def get_api_key(self, rh_user_has_seat, organization_id):
         # use the shared API Key if the user has no seat
-        if not has_seat or organization_id is None:
+        if not rh_user_has_seat or organization_id is None:
             return self._api_key
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()

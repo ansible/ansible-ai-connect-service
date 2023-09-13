@@ -40,13 +40,7 @@ extend-ignore =
   # Safeguard neutering of flake8-quotes : https://github.com/zheller/flake8-quotes/issues/105
   Q,
   # annoy black by allowing white space before : https://github.com/psf/black/issues/315
-  E203,
-   # duplicate of pylint W0611 (unused-import)
-  F401,
-  # duplicate of pylint E0602 (undefined-variable)
-  F821,
-  # duplicate of pylint W0612 (unused-variable)
-  F841
+  E203
 
 # Accessibility/large fonts and PEP8 unfriendly:
 max-line-length = 100
@@ -62,7 +56,7 @@ per-file-ignores =
   # S101: Allow the use of assert within the tests directory, since tests require it.
   tests/**.py: S101
   # ignores for auto-generated files
-  ansible_wisdom/ai/api/model_client/grpc_pb/**.py: E402, E501, E712
+  ansible_wisdom/ai/api/model_client/grpc_pb/**.py: E402, E501, E712, F401, F821
   ansible_wisdom/users/migrations/0001_initial.py: E501
 
 # Count the number of occurrences of each error/warning code and print a report:

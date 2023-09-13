@@ -23,6 +23,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
+from main.views import ConsoleView, LoginView
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
 WISDOM_API_VERSION = "v0"
@@ -52,16 +53,18 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path(
         'login/',
-        auth_views.LoginView.as_view(
+        LoginView.as_view(
             extra_context={
-                'pilot_contact': settings.PILOT_CONTACT,
                 'use_github_team': settings.USE_GITHUB_TEAM,
                 'use_redhat_sso': bool(settings.SOCIAL_AUTH_OIDC_OIDC_ENDPOINT),
-            }
+            },
         ),
         name='login',
     ),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('console/', ConsoleView.as_view(), name='console'),
+    path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
+    path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
 if settings.DEBUG:

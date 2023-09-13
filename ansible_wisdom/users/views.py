@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from django.conf import settings
 from django.forms import Form
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = 'users/home.html'
-    extra_context = {'pilot_docs_url': settings.PILOT_DOCS_URL}
+    extra_context = {'is_debug': settings.DEBUG}
 
 
 class UnauthorizedView(TemplateView):

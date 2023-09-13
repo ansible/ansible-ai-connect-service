@@ -1,8 +1,6 @@
-import contextlib
 import logging
 import os
 import tempfile
-import timeit
 from copy import deepcopy
 
 from ansiblelint.config import Options

@@ -118,7 +118,7 @@ class AMSCheck:
 
         try:
             return data["items"][0]["id"]
-        except (KeyError, ValueError):
+        except (IndexError, KeyError, ValueError):
             logger.error("Unexpected organization answer from AMS")
             return ""
 
@@ -149,7 +149,7 @@ class AMSCheck:
             logger.error("Unexpected subscription answer from AMS")
             return False
 
-    def is_org_admin(self, username: str, organization_id: str):
+    def rh_user_is_org_admin(self, username: str, organization_id: str):
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
@@ -178,7 +178,7 @@ class AMSCheck:
 
         return False
 
-    def is_org_lightspeed_subscriber(self, organization_id: str) -> bool:
+    def rh_org_has_subscription(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"}
         self.update_bearer_token()
@@ -187,7 +187,7 @@ class AMSCheck:
             r = self._session.get(
                 (
                     f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/subscriptions/{ams_org_id}/resource_quota"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/resource_quota"
                 ),
                 params=params,
                 timeout=0.8,
@@ -215,10 +215,10 @@ class MockAlwaysTrueCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return True
 
-    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
         return True
 
-    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
+    def rh_org_has_subscription(self, _organization_id: str) -> bool:
         return True
 
 
@@ -229,8 +229,8 @@ class MockAlwaysFalseCheck:
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return False
 
-    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
         return False
 
-    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
+    def rh_org_has_subscription(self, _organization_id: str) -> bool:
         return False

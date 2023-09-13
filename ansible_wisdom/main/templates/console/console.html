@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+
+{%  block header %}
+    <meta charset="utf-8"/>
+    <title>Ansible Wisdom Lightspeed - Console</title>
+    <script defer="defer" src="{% static '/console/static/js/main.js' %}"></script>
+    <link href="{% static '/console/static/css/main.css' %}" rel='stylesheet'>
+{% endblock header %}
+
+{% block content %}
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root" class="Root"></div>
+{% endblock content %}

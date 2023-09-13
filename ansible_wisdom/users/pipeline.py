@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from social_core.exceptions import AuthCanceled
+from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
@@ -83,7 +83,7 @@ def _terms_of_service(strategy, user, backend, **kwargs):
     # commercial, there also needs to be the seat check when that gets
     # integrated.  When that happens, update this to include that
     # logic.  Possibly also remove the Commerical group?
-    is_commercial = user.has_seat
+    is_commercial = user.rh_user_has_seat
     terms_type = 'commercial' if backend.name == 'oidc' and is_commercial else 'community'
     field_name = f'{terms_type}_terms_accepted'
     view_name = f'{terms_type}_terms'
@@ -123,3 +123,14 @@ def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
         extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
         extra_data = {k: v for k, v in extra_data.items() if k in accepted_extra_data}
         social.set_extra_data(extra_data)
+
+
+class AuthAlreadyLoggedIn(AuthException):
+    def __str__(self):
+        return "User already logged in"
+
+
+def block_auth_users(backend=None, details=None, response=None, user=None, *args, **kwargs):
+    """Safeguard to be sure user won't get multiple providers"""
+    if user:
+        raise AuthAlreadyLoggedIn(backend)

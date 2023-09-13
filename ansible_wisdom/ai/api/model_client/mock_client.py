@@ -5,7 +5,6 @@ import time
 
 import requests
 from django.conf import settings
-from rest_framework.response import Response
 
 from .base import ModelMeshClient
 

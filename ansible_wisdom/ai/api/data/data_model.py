@@ -1,5 +1,5 @@
 import logging
-from typing import List, TypedDict, Union
+from typing import TypedDict, Union
 from uuid import UUID
 
 from django.conf import settings
@@ -20,7 +20,7 @@ class ModelMeshData(TypedDict):
     prompt: str
     context: str
     userId: Union[str, None]
-    has_seat: bool
+    rh_user_has_seat: bool
     organization_id: Union[str, None]
     suggestionId: Union[str, None]
 

@@ -71,6 +71,17 @@ key:
 export SECRET_KEY=somesecretvalue
 ```
 
+Then, set environment variables for access to AWS:
+
+```bash
+export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
+export WCA_SECRET_MANAGER_KMS_KEY_ID=<kms-key-id>
+export WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
+export WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
+export WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
+```
+See [here](#aws-config) for details.
+
 For convenience, we have a make target to bring up all of the
 containers:
 
@@ -202,7 +213,7 @@ Create a local admin user:
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
-## Use the WCA API Keys Manager
+## <a name="aws-config">Use the WCA API Keys Manager</a>
 
 To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following
 variables to you environment file:
