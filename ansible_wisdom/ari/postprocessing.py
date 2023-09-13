@@ -133,10 +133,14 @@ class ARICaller:
                 if fmtr.is_multi_task_prompt(prompt):
                     # Here we are using the anonyimized prompt, NOT what came back
                     # from WCA, which should be the same.
-                    # TODO: see if we can get this back from ARI instead
+                    # TODO: See if we can get this task name back from ARI instead,
+                    # which might result in e.g. values being replaced with variables
                     modified_yamls.append(f"- name: {task_name}")
-                # TODO: I think this should blow up if it's missing. we have no fallback.
-                modified_yamls.append(detail.get("modified_yaml", ""))
+
+                task_modified_yaml = detail.get("modified_yaml")
+                if task_modified_yaml is None:
+                    raise Exception("no modified yaml returned from ARI")
+                modified_yamls.append(task_modified_yaml)
 
                 mutation_result = aggregated_detail.get("mutation_result", {})
                 ari_result["fqcn_module"] = aggregated_detail.get("correct_fqcn", "")
