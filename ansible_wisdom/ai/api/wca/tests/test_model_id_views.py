@@ -5,6 +5,7 @@ from unittest.mock import patch
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
 from ai.api.permissions import (
+    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
     IsWCAModelIdApiFeatureFlagOn,
@@ -12,8 +13,10 @@ from ai.api.permissions import (
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 from django.utils import timezone
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework.permissions import IsAuthenticated
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
@@ -116,10 +119,31 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
     def tearDown(self):
         self.secret_manager_patcher.stop()
 
-    def test_authentication_error(self, *args):
+    def test_get_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_get_key_without_org_id(self, *args):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wca_model_id'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_permission_classes(self, *args):
+        url = reverse('wca_model_id')
+        view = resolve(url).func.view_class
+
+        required_permissions = [
+            IsWCAModelIdApiFeatureFlagOn,
+            IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            IsOrganisationAdministrator,
+            IsOrganisationLightspeedSubscriber,
+            AcceptedTermsPermission,
+        ]
+        self.assertEqual(len(view.permission_classes), len(required_permissions))
+        for permission in required_permissions:
+            self.assertTrue(permission in view.permission_classes)
 
     def test_get_model_id_when_undefined(self, *args):
         self.user.organization_id = "unknown"
@@ -147,6 +171,16 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    def test_set_model_id_authentication_error(self, *args):
+        # self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('wca_model_id'))
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_set_key_without_org_id(self, *args):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('wca_model_id'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_set_model_id(self, *args):
         self.user.organization_id = "1"
@@ -217,10 +251,15 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
-    def test_authentication_error(self, *args):
+    def test_validate_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_validate_model_id_without_org_id(self, *args):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wca_model_id_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @mock.patch('ai.api.permissions.feature_flags')
     def test_validate_model_id(self, feature_flags, *args):
