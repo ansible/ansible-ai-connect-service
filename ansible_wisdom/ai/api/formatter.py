@@ -212,7 +212,7 @@ def get_task_count_from_prompt(prompt):
     return task_count
 
 
-def get_task_names(prompt):
+def get_task_names_from_prompt(prompt):
     if is_multi_task_prompt(prompt):
         prompt = prompt.split('#', 1)[1].strip()
         split_list = prompt.split('&')
@@ -220,3 +220,18 @@ def get_task_names(prompt):
         return trimmed_list
     else:
         return [prompt.split("name:")[-1].strip()]
+
+
+def get_task_names_from_tasks(tasks):
+    task_list = yaml.load(tasks, Loader=yaml.SafeLoader)
+    if (
+        not isinstance(task_list, list)
+        or not isinstance(task_list[0], dict)
+        or 'name' not in task_list[0]
+        or not isinstance(task_list[0]['name'], str)
+    ):
+        raise Exception("unexpected tasks yaml")
+    names = []
+    for task in task_list:
+        names.append(task["name"])
+    return names

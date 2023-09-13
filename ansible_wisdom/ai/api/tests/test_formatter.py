@@ -245,14 +245,25 @@ class AnsibleDumperTestCase(TestCase):
         )
 
     def test_get_task_names_single(self):
-        self.assertEqual(["Install ssh"], fmtr.get_task_names("- name: Install ssh"))
+        self.assertEqual(["Install ssh"], fmtr.get_task_names_from_prompt("- name: Install ssh"))
 
     def test_get_task_names_multi(self):
-        self.assertEqual(["Install ssh"], fmtr.get_task_names("#Install ssh"))
-        self.assertEqual(["Install ssh"], fmtr.get_task_names("# Install ssh"))
+        self.assertEqual(["Install ssh"], fmtr.get_task_names_from_prompt("#Install ssh"))
+        self.assertEqual(["Install ssh"], fmtr.get_task_names_from_prompt("# Install ssh"))
         self.assertEqual(
-            ["Install ssh", "start ssh"], fmtr.get_task_names("# Install ssh & start ssh")
+            ["Install ssh", "start ssh"],
+            fmtr.get_task_names_from_prompt("# Install ssh & start ssh"),
         )
+
+    def test_get_task_names_from_tasks(self):
+        tasks_txt = "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+        self.assertEqual(
+            ['Install Apache', 'say hello fred@example.com'],
+            fmtr.get_task_names_from_tasks(tasks_txt),
+        )
+
+        with self.assertRaises(Exception, msg="unexpected tasks yaml"):
+            fmtr.get_task_names_from_tasks("not well-formed tasks yaml")
 
 
 if __name__ == "__main__":
@@ -273,3 +284,4 @@ if __name__ == "__main__":
     tests.test_extract_task()
     tests.test_is_multi_task_prompt()
     tests.test_get_task_count_from_prompt()
+    tests.test_get_task_names_from_tasks()

@@ -119,12 +119,20 @@ class ARICaller:
         ari_results = []
         modified_yamls = []
 
-        task_names = fmtr.get_task_names(prompt)
-        for task_name in task_names:
+        original_task_names = fmtr.get_task_names_from_prompt(prompt)
+        # For multi-task, we also need to also retrieve the task names from the
+        # inference output, because we've run this through the anonymizer again
+        # and PII values may havechanged. We need to use this value to retrieve
+        # the correct task from ARI.
+        predicted_task_names = original_task_names
+        if fmtr.is_multi_task_prompt(prompt):
+            predicted_task_names = fmtr.get_task_names_from_tasks(inference_output)
+        for i, original_anonymized_task_name in enumerate(original_task_names):
+            predicted_task_name = predicted_task_names[i]
             detail_data = {}
-            ari_result = {"name": task_name, "rule_details": detail_data}
+            ari_result = {"name": original_anonymized_task_name, "rule_details": detail_data}
             ari_results.append(ari_result)
-            task = target.task(name=task_name)
+            task = target.task(name=predicted_task_name)
             if task:
                 rule_result = task.find_result(rule_id=settings.ARI_RULE_FOR_OUTPUT_RESULT)
                 detail = rule_result.get_detail()
@@ -135,7 +143,7 @@ class ARICaller:
                     # from WCA, which should be the same.
                     # TODO: See if we can get this task name back from ARI instead,
                     # which might result in e.g. values being replaced with variables
-                    modified_yamls.append(f"- name: {task_name}")
+                    modified_yamls.append(f"- name: {predicted_task_name}")
 
                 task_modified_yaml = detail.get("modified_yaml")
                 if task_modified_yaml is None:

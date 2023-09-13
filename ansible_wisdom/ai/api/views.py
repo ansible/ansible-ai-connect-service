@@ -353,7 +353,7 @@ class Completions(APIView):
         truncated_yaml = None
         postprocessed_yaml = None
         tasks = []
-        task_names = fmtr.get_task_names(prompt)
+        task_names = fmtr.get_task_names_from_prompt(prompt)
         for task_name in task_names:
             tasks.append({"name": task_name})
         ari_results = None
