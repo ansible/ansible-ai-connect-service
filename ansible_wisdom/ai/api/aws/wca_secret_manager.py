@@ -9,6 +9,7 @@ from .exceptions import WcaSecretManagerError
 SECRET_KEY_PREFIX = 'wca'
 
 logger = logging.getLogger(__name__)
+# NOTHING
 
 
 class Suffixes(Enum):
