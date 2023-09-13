@@ -45,7 +45,14 @@ class ProtectedTemplateView(TemplateView):
         except Exception as exc:
             # Map _internal_ errors to a generic PermissionDenied error
             # for which Django handles rendering a default view to Users
-            if isinstance(exc, (exceptions.NotAuthenticated, exceptions.AuthenticationFailed)):
+            if isinstance(
+                exc,
+                (
+                    exceptions.NotAuthenticated,
+                    exceptions.AuthenticationFailed,
+                    exceptions.PermissionDenied,
+                ),
+            ):
                 raise core_exceptions.PermissionDenied()
             else:
                 raise exc

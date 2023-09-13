@@ -15,21 +15,32 @@ from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScop
 from rest_framework.permissions import IsAuthenticated
 
 
-@override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-@patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
-@patch.object(IsWCAModelIdApiFeatureFlagOn, 'has_permission', return_value=True)
-@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
-@patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestConsoleView(WisdomServiceAPITestCaseBase):
     def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
+    @patch.object(IsWCAModelIdApiFeatureFlagOn, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
     def test_get_when_authenticated(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    # Mock Permissions not being satisfied
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=False)
+    @patch.object(IsWCAModelIdApiFeatureFlagOn, 'has_permission', return_value=False)
+    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=False)
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
+    def test_get_when_authenticated_missing_permission(self, *args):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('console'))
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     def test_permission_classes(self, *args):
         url = reverse('console')
