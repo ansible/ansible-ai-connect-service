@@ -67,7 +67,7 @@ class CompletionRequestSerializer(serializers.Serializer):
     def validate_extracted_prompt(prompt, user):
         if fmtr.is_multi_task_prompt(prompt):
             # Multi-task is commercial-only
-            if user.has_seat is False:
+            if user.rh_user_has_seat is False:
                 raise serializers.ValidationError(
                     {"prompt": "requested prompt format is not supported"}
                 )

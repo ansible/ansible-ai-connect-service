@@ -37,7 +37,7 @@ class DummyMeshClient(ModelMeshClient):
 
         if "prompt" in payload:
             try:
-                user = Mock(has_seat=has_seat)
+                user = Mock(rh_user_has_seat=rh_user_has_seat)
                 request = Mock(user=user)
                 serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
@@ -209,12 +209,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
             ]
         }
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data, has_seat=True),
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)

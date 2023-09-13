@@ -12,7 +12,7 @@ from rest_framework import serializers
 
 class CompletionRequestSerializerTest(TestCase):
     def test_validate(self):
-        user = Mock(has_seat=False)
+        user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
         data = {
@@ -23,7 +23,7 @@ class CompletionRequestSerializerTest(TestCase):
         self.assertTrue(isinstance(data['suggestionId'], UUID))
 
     def test_validate_raises_exception(self):
-        user = Mock(has_seat=False)
+        user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
         with self.assertRaises(serializers.ValidationError):
@@ -35,7 +35,7 @@ class CompletionRequestSerializerTest(TestCase):
             serializer.validate({'prompt': "Install Apache\n"})
 
     def test_validate_multitask_commercial(self):
-        user = Mock(has_seat=True)
+        user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
 
@@ -48,7 +48,7 @@ class CompletionRequestSerializerTest(TestCase):
 
     @override_settings(MULTI_TASK_MAX_REQUESTS=3)
     def test_validate_max_multitask_requests_setting(self):
-        user = Mock(has_seat=True)
+        user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
 
@@ -60,7 +60,7 @@ class CompletionRequestSerializerTest(TestCase):
             serializer.validate({'prompt': "#1&2&3&4\n"})
 
     def test_validate_multitask_no_seat(self):
-        user = Mock(has_seat=False)
+        user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
 
