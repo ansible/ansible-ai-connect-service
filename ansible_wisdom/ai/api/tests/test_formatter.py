@@ -177,30 +177,82 @@ class AnsibleDumperTestCase(TestCase):
         with self.assertRaises(Exception) as cm:
             fmtr.preprocess(context, prompt)
 
-    def run_a_test(self, prompt_in, context_expected, prompt_expected):
-        prompt, context = fmtr.extract_prompt_and_context(prompt_in)
-        self.assertEqual(prompt_expected, prompt)
-        self.assertEqual(context_expected, context)
+    def test_extract_prompt_and_context(self):
+        def run_a_test(prompt_in, context_expected, prompt_expected):
+            prompt, context = fmtr.extract_prompt_and_context(prompt_in)
+            self.assertEqual(prompt_expected, prompt)
+            self.assertEqual(context_expected, context)
 
-    def test_get_instances_from_payload(self):
-        # test standard context+prompt
+        # test standard single-task context+prompt
         PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n'
         CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
         PROMPT_OUT = "  - name: Install Apache\n"
 
-        self.run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
+        run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
 
-        # test prompt with no additional context
-        self.run_a_test('- name: Install Apache\n', '', '- name: Install Apache\n')
+        # test standard multi-task context+prompt
+        PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache\n'
+        CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+        PROMPT_OUT = "  # Install Apache\n"
 
-    # def test_get_instances_from_payload_raises_exception(self):
-    # fmtr.extract_prompt_and_context(None)
-    # with self.assertRaises(serializers.ValidationError):
-    #     fmtr.extract_prompt_and_context({'prompt': None})
-    # with self.assertRaises(serializers.ValidationError):
-    #     fmtr.extract_prompt_and_context({'prompt': "---\n"})
-    # with self.assertRaises(serializers.ValidationError):
-    #     fmtr.extract_prompt_and_context({'prompt': "#Install Apache\n"})
+        run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
+
+        # test single task prompt with no additional context
+        run_a_test('- name: Install Apache\n', '', '- name: Install Apache\n')
+
+        # test multi-task prompt with no additional context
+        run_a_test('# Install SSH\n', '', '# Install SSH\n')
+
+        run_a_test(None, '', '')
+
+    def test_extract_task(self):
+        tasks = """  - name: Install ssh
+    ansible.builtin.package:
+      name: "{{ _name_ }}"
+      state: present
+
+  - name: Start ssh service
+    ansible.builtin.service:
+      name: "{{ _name_ }}"
+      state: started
+      enabled: true
+"""
+        expected_task = """  - name: Start ssh service
+    ansible.builtin.service:
+      name: "{{ _name_ }}"
+      state: started
+      enabled: true"""
+
+        result = fmtr.extract_task(tasks, "Start ssh service")
+        self.assertEqual(result, expected_task)
+
+        result = fmtr.extract_task(tasks, "Nonexistent task")
+        self.assertEqual(result, None)
+
+    def test_is_multi_task_prompt(self):
+        self.assertTrue(fmtr.is_multi_task_prompt("# Install ssh"))
+        self.assertTrue(fmtr.is_multi_task_prompt("   # Install ssh"))
+        self.assertFalse(fmtr.is_multi_task_prompt("- name: Install ssh"))
+        self.assertFalse(fmtr.is_multi_task_prompt("Install ssh"))
+        self.assertFalse(fmtr.is_multi_task_prompt(None))
+
+    def test_get_task_count_from_prompt(self):
+        self.assertEqual(0, fmtr.get_task_count_from_prompt(None))
+        self.assertEqual(1, fmtr.get_task_count_from_prompt("# Install ssh"))
+        self.assertEqual(2, fmtr.get_task_count_from_prompt("# Install ssh & start ssh"))
+        self.assertEqual(
+            3, fmtr.get_task_count_from_prompt("# Install ssh & start ssh & print hello")
+        )
+
+    def test_get_task_names_single(self):
+        self.assertEqual(["Install ssh"], fmtr.get_task_names("- name: Install ssh"))
+
+    def test_get_task_names_multi(self):
+        self.assertEqual(["Install ssh"], fmtr.get_task_names("#Install ssh"))
+        self.assertEqual(["Install ssh"], fmtr.get_task_names("# Install ssh"))
+        self.assertEqual(
+            ["Install ssh", "start ssh"], fmtr.get_task_names("# Install ssh & start ssh")
+        )
 
 
 if __name__ == "__main__":
@@ -219,4 +271,7 @@ if __name__ == "__main__":
     tests.test_valid_prompt()
     tests.test_list_as_name()
     tests.test_dict_as_name()
-    tests.test_get_instances_from_payload()
+    tests.test_extract_prompt_and_context()
+    tests.test_extract_task()
+    tests.test_is_multi_task_prompt()
+    tests.test_get_task_count_from_prompt()

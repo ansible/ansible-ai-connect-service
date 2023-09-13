@@ -58,8 +58,8 @@ class DummyMeshClient(ModelMeshClient):
                         }
                     ]
                 }
-            except Exception as ex:  # ignore exception thrown here
-                print(ex)
+            except Exception as exc:  # ignore exception thrown here
+                print(exc)
                 pass
 
         self.response_data = response_data
@@ -190,6 +190,29 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             DummyMeshClient(self, payload, response_data),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertSegmentTimestamp(log)
+
+    def test_multi_task_prompt_commercial(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "predictions": [
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
+            ]
+        }
+        self.user.has_seat = True
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data, has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)

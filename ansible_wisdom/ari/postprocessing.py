@@ -137,8 +137,6 @@ class ARICaller:
                     modified_yamls.append(f"- name: {task_name}")
                 # TODO: I think this should blow up if it's missing. we have no fallback.
                 modified_yamls.append(detail.get("modified_yaml", ""))
-                # # this is missing the name and I don't think we need it. can remove.
-                # ari_result["prediction"] = detail.get("modified_yaml", "")
 
                 mutation_result = aggregated_detail.get("mutation_result", {})
                 ari_result["fqcn_module"] = aggregated_detail.get("correct_fqcn", "")
@@ -166,7 +164,7 @@ class ARICaller:
         logger.debug(inference_output)
         logger.debug("--after--")
         logger.debug(modified_yaml)
-        logger.debug("--results--")
+        logger.debug("--details--")
         logger.debug(json.dumps(ari_results, indent=2))
 
         return modified_yaml, ari_results

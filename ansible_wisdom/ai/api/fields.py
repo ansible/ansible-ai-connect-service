@@ -11,7 +11,7 @@ class AnonymizedFieldMixin:
         return data
 
 
-# For multitask completion requets, the prompt is contained in a comment,
+# For multitask completion requests, the prompt is contained in a comment,
 # which by default is removed by the anonymizer. This field therefore
 # requires special handling to anonymize the comment rather than strip it.
 class AnonymizedPromptMixin:

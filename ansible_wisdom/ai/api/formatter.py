@@ -200,7 +200,9 @@ def extract_task(tasks, task_name):
 
 
 def is_multi_task_prompt(prompt):
-    return prompt.lstrip().startswith('#')
+    if prompt:
+        return prompt.lstrip().startswith('#')
+    return False
 
 
 def get_task_count_from_prompt(prompt):
