@@ -173,6 +173,8 @@ OAUTH2_PROVIDER = {
 COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
 
+MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_THROTTLE_CLASSES': ['users.throttling.GroupSpecificThrottle'],

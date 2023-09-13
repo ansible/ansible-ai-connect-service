@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from uuid import UUID
 
 from ai.api.serializers import CompletionRequestSerializer
+from django.test import override_settings
 from rest_framework import serializers
 
 
@@ -44,6 +45,19 @@ class CompletionRequestSerializerTest(TestCase):
         # too-many-tasks raises an exception
         with self.assertRaises(serializers.ValidationError):
             serializer.validate({'prompt': "#1&2&3&4&5&6&7&8&9&10&11\n"})
+
+    @override_settings(MULTI_TASK_MAX_REQUESTS=3)
+    def test_validate_max_multitask_requests_setting(self):
+        user = Mock(has_seat=True)
+        request = Mock(user=user)
+        serializer = CompletionRequestSerializer(context={'request': request})
+
+        # two tasks multitask prompt validates without exception
+        serializer.validate({'prompt': "#Install SSH & start service\n"})
+
+        # too-many-tasks raises an exception
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate({'prompt': "#1&2&3&4\n"})
 
     def test_validate_multitask_no_seat(self):
         user = Mock(has_seat=False)

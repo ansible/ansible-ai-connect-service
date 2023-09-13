@@ -4,6 +4,7 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 import re
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import (
@@ -71,7 +72,7 @@ class CompletionRequestSerializer(serializers.Serializer):
                     {"prompt": "requested prompt format is not supported"}
                 )
             task_count = fmtr.get_task_count_from_prompt(prompt)
-            if task_count > 10:
+            if task_count > int(settings.MULTI_TASK_MAX_REQUESTS):
                 raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})
         else:
             # Confirm the prompt contains some flavor of '- name:'

@@ -299,9 +299,9 @@ class Completions(APIView):
         # entry in the predictions array
         response.tasks = tasks_results
         response.promptType = (
-            CompletionsPromptType.MULTITASK
+            CompletionsPromptType.MULTITASK.value
             if fmtr.is_multi_task_prompt(payload.prompt)
-            else CompletionsPromptType.SINGLETASK
+            else CompletionsPromptType.SINGLETASK.value
         )
         return response
 

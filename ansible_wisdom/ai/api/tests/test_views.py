@@ -197,6 +197,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_multi_task_prompt_commercial(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
