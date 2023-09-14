@@ -306,17 +306,18 @@ the `ansible_wisdom/main/settings/development.py` file.
 
 ## Authenticating with the completion API
 
-GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are
-currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
+The wisdom service supports both GitHub and Red Hat authentication. GitHub authentication can be open to all
+GitHub users, or limited to a specific team. The following directions are for configuring the service to grant
+access to any GitHub user.
 
-To test GitHub authentication locally, you will need to create a new OAuth App
-at https://github.com/settings/developers. Provide an Authorization callback URL
-of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY`
-and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_TEAM_KEY`
-and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` correspond to the Client ID and Client Secret respectively, both of which are
-provided after creating a new OAuth App. If you are running with the
-compose [development environment](#development-environment) described below, put these env vars in a .env file in
-the `tools/docker-compose` directory.
+To test GitHub authentication locally, you will need to create a new OAuth App at
+https://github.com/settings/developers. Provide an Authorization callback URL of
+http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` and
+`SOCIAL_AUTH_GITHUB_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_KEY` and
+`SOCIAL_AUTH_GITHUB_SECRET` correspond to the Client ID and Client Secret respectively,
+both of which are provided after creating a new OAuth App. If you are running with the
+compose [development environment](#development-environment) described below, put these
+env vars in a .env file in the `tools/docker-compose` directory.
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
 authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
