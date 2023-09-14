@@ -303,7 +303,10 @@ MOCK_MODEL_RESPONSE_BODY = os.environ.get(
         '  update_cache: true\\n  state: present\\n"]}'
     ),
 )
-MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000))
+
+MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
+    os.environ.get('MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000)
+)
 MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
     os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
 )
