@@ -234,6 +234,8 @@ primary and replica regions (when using the alias).
 
 Note: when using a KMS key alias, prefix with `alias/<actual alias>`.
 
+Refer to [the set up document](https://github.com/ansible/ansible-wisdom-ops/blob/main/docs/wca-vault.md) for the AWS accounts and secrets.
+
 ## Deploy the service via OpenShift S2I
 
 ```
