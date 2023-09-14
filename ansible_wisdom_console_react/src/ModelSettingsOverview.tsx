@@ -7,6 +7,7 @@ import {Success, WcaKey, WcaKeyResponse, WcaModelId, WcaModelIdResponse} from ".
 import {testWcaKey, testWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {Alerts, AlertsHandle} from "./Alerts";
+import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsOverviewProps {
     wcaKey: WcaKey;
@@ -139,13 +140,14 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                                     </TextContent>
                                                 </SplitItem>
                                                 <SplitItem>
-                                                    <Button
+                                                    <BusyButton
                                                         variant={"tertiary"}
                                                         isSmall={true}
+                                                        isBusy={isValidatingKey}
                                                         isDisabled={isValidatingKey}
                                                         onClick={testKey}>
                                                         {t("Test")}
-                                                    </Button>
+                                                    </BusyButton>
                                                 </SplitItem>
                                             </Split>
                                         </>
@@ -232,13 +234,14 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                                         </TextContent>
                                                     </SplitItem>
                                                     <SplitItem>
-                                                        <Button
+                                                        <BusyButton
                                                             variant={"tertiary"}
                                                             isSmall={true}
+                                                            isBusy={isValidatingModelId}
                                                             isDisabled={isValidatingModelId}
                                                             onClick={testModelId}>
                                                             {t("Test")}
-                                                        </Button>
+                                                        </BusyButton>
                                                     </SplitItem>
                                                 </Split>
                                             </>

@@ -25,6 +25,7 @@ import './ModelSettings.css';
 import {WcaKey, WcaKeyRequest} from "./api/types";
 import {saveWcaKey} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
+import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsKeyProps {
     wcaKey: WcaKey | undefined;
@@ -129,13 +130,14 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                                 <StackItem>
                                     <Split hasGutter={true}>
                                         <SplitItem>
-                                            <Button
+                                            <BusyButton
                                                 variant={"primary"}
                                                 icon={<CheckCircleIcon/>}
                                                 onClick={() => save(value)}
+                                                isBusy={isSaving}
                                                 isDisabled={isSaveDisabled}>
                                                 {t("Save")}
-                                            </Button>
+                                            </BusyButton>
                                         </SplitItem>
                                         <SplitItem>
                                             <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>
