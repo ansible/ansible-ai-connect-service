@@ -105,6 +105,28 @@ class InternalServerError(BaseWisdomAPIException):
     default_detail = {"message": "An error occurred attempting to complete the request"}
 
 
+def get_model_client(wisdom_app, user):
+    model_mesh_client = wisdom_app.model_mesh_client
+    model_name = None
+    if settings.LAUNCHDARKLY_SDK_KEY:
+        wca_api_info = feature_flags.get(WisdomFlags.WCA_API, user, "")
+        if wca_api_info:
+            # if feature flag for wca is on for this user
+            logger.debug(f"flag {WisdomFlags.WCA_API} has value {wca_api_info}")
+            wca_api, model_name = wca_api_info.split('<>')
+            model_mesh_client = wisdom_app.wca_client
+            model_mesh_client.set_inference_url(wca_api)
+        else:
+            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+            logger.debug(f"flag model_name has value {model_tuple}")
+            model_parts = model_tuple.split(':')
+            if len(model_parts) == 4:
+                server, port, model_name, _ = model_parts
+                logger.info(f"selecting model '{model_name}@{server}:{port}'")
+                model_mesh_client.set_inference_url(f"{server}:{port}")
+    return model_mesh_client, model_name
+
+
 class Completions(APIView):
     """
     Returns inline code suggestions based on a given Ansible editor context.
@@ -141,7 +163,6 @@ class Completions(APIView):
         # make this available to the middleware.
         request._request._suggestion_id = request.data.get('suggestionId')
 
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
         request_serializer = CompletionRequestSerializer(data=request.data)
         try:
             request_serializer.is_valid(raise_exception=True)
@@ -152,22 +173,8 @@ class Completions(APIView):
             raise exc
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
-        model_name = payload.model_name
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            wca_api_info = feature_flags.get(WisdomFlags.WCA_API, request.user, "")
-            if wca_api_info:
-                # if feature flag for wca is on for this user
-                wca_api, model_name = wca_api_info.split('<>')
-                model_mesh_client = apps.get_app_config("ai").wca_client
-                model_mesh_client.set_inference_url(wca_api)
-            else:
-                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, request.user, "")
-                logger.debug(f"flag model_name has value {model_tuple}")
-                model_parts = model_tuple.split(':')
-                if len(model_parts) == 4:
-                    server, port, model_name, _ = model_parts
-                    logger.info(f"selecting model '{model_name}@{server}:{port}'")
-                    model_mesh_client.set_inference_url(f"{server}:{port}")
+        model_mesh_client, model_name = get_model_client(apps.get_app_config("ai"), request.user)
+        model_name = model_name or payload.model_name
         original_indent = payload.prompt.find("name")
 
         try:
