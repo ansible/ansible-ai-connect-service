@@ -11,16 +11,20 @@ export function PageApp(props: {
     sidebar?: ReactNode
 }) {
     const {navigationItems, basename, header, sidebar} = props
-    const navigationItemsWithRoot = useMemo(
+    const navigationItemsWithRoot = useMemo<PageNavigationElements>(
         () => [
             {
-                path: '/',
+                path: '*',
                 element: <PageRouterLayout header={header} sidebar={sidebar}/>,
                 children: navigationItems,
             },
             {
-                path: '*',
-                element: <Navigate to="/"/>,
+                path: '/',
+                element: <Navigate to="/admin/settings" replace={true}/>,
+            },
+            {
+                path: '/admin',
+                element: <Navigate to="/admin/settings" replace={true}/>,
             },
         ],
         [header, navigationItems, sidebar]
