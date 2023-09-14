@@ -25,6 +25,7 @@ import './ModelSettings.css';
 import {WcaKey, WcaKeyRequest} from "./api/types";
 import {saveWcaKey} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
+import {DELAY} from "./api/globals";
 
 interface ModelSettingsKeyProps {
     wcaKey: WcaKey | undefined;
@@ -45,7 +46,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
     const [keyError, setKeyError] = useState<HasError>(NO_ERROR);
 
     const save = useCallback((value: string) => {
-        setSaving(true);
+        const interval = setInterval(() => setSaving(true), DELAY);
         const wcaKey: WcaKeyRequest = {key: value};
         saveWcaKey(wcaKey)
             .then((_) => {
@@ -61,6 +62,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
             })
             .finally(() => {
                 setSaving(false);
+                clearInterval(interval);
             });
     }, [reload]);
 

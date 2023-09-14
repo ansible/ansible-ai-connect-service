@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {CheckCircleIcon, OutlinedQuestionCircleIcon, PlusCircleIcon} from "@patternfly/react-icons";
 import './ModelSettings.css';
 import {Success, WcaKey, WcaKeyResponse, WcaModelId, WcaModelIdResponse} from "./api/types";
+import {DELAY} from "./api/globals";
 import {testWcaKey, testWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {Alerts, AlertsHandle} from "./Alerts";
@@ -38,7 +39,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
     const alertsRef = useRef<AlertsHandle>(null);
 
     const testKey = useCallback(() => {
-        setIsValidatingKey(true);
+        const interval = setInterval(() => setIsValidatingKey(true), DELAY);
         testWcaKey()
             .then((_) => {
                 alertsRef.current?.addAlert(t("KeyValidationSuccess"));
@@ -53,11 +54,12 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             })
             .finally(() => {
                 setIsValidatingKey(false);
+                clearInterval(interval);
             });
-    }, []);
+    }, [t]);
 
     const testModelId = () => {
-        setIsValidatingModelId(true);
+        const interval = setInterval(() => setIsValidatingModelId(true), DELAY);
         testWcaModelId()
             .then((_) => {
                 alertsRef.current?.addAlert(t("ModelIdValidationSuccess"));
@@ -72,6 +74,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             })
             .finally(() => {
                 setIsValidatingModelId(false);
+                clearInterval(interval);
             });
     };
 

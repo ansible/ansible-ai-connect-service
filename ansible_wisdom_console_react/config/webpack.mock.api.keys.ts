@@ -1,13 +1,16 @@
+import {delay, DELAY_MS, ORG_ID} from './webpack.mock.globals';
+
 const webpackMockServer = require("webpack-mock-server");
+
 export default webpackMockServer.add((app, helper) => {
 
-    const ORG_ID = 'org-id';
     const KEY_FIELD = 'key';
     const LAST_UPDATED_FIELD = 'last_update';
     const keys = new Map<string, { key: string, last_update: Date }>();
 
     app.get("/api/v0/wca/apikey/",
-        (_req, res) => {
+        async (_req, res) => {
+            await delay(DELAY_MS);
             if (keys.has(ORG_ID)) {
                 // Key response only contains the Last Updated field
                 const data = keys.get(ORG_ID);
@@ -18,7 +21,8 @@ export default webpackMockServer.add((app, helper) => {
         });
 
     app.get("/api/v0/wca/apikey/test/",
-        (_req, res) => {
+        async (_req, res) => {
+            await delay(DELAY_MS);
             if (!keys.has(ORG_ID)) {
                 res.sendStatus(404);
             } else {
@@ -31,13 +35,15 @@ export default webpackMockServer.add((app, helper) => {
                 if (key === "invalid-test") {
                     // Emulate an invalid API Key
                     res.sendStatus(400);
+                    return;
                 }
             }
             res.sendStatus(200);
         });
 
     app.post("/api/v0/wca/apikey/",
-        (_req, res) => {
+        async (_req, res) => {
+            await delay(DELAY_MS);
             const key = _req.body['key'];
             if (key === "error") {
                 // Emulate a server-side error
@@ -46,6 +52,7 @@ export default webpackMockServer.add((app, helper) => {
             if (key === "invalid") {
                 // Emulate an invalid API Key
                 res.sendStatus(400);
+                return;
             }
             const entry = {key: key, last_update: new Date()};
             keys.set(ORG_ID, entry);

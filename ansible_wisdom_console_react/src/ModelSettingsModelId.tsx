@@ -25,6 +25,7 @@ import './ModelSettings.css';
 import {WcaModelId, WcaModelIdRequest} from "./api/types";
 import {saveWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
+import {DELAY} from "./api/globals";
 
 interface ModelSettingsModelIdProps {
     wcaModelId: WcaModelId;
@@ -45,7 +46,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
     const [modelIdError, setModelIdError] = useState<HasError>(NO_ERROR);
 
     const save = useCallback((value: string) => {
-        setSaving(true);
+        const interval = setInterval(() => setSaving(true), DELAY);
         const wcaModelId: WcaModelIdRequest = {model_id: value};
         saveWcaModelId(wcaModelId)
             .then((response) => {
@@ -61,6 +62,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
             })
             .finally(() => {
                 setSaving(false);
+                clearInterval(interval);
             });
     }, [reload]);
 
