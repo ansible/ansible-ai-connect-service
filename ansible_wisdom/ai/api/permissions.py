@@ -13,7 +13,7 @@ class AcceptedTermsPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            if user.community_terms_accepted or user.has_seat:
+            if user.community_terms_accepted or user.rh_user_has_seat:
                 return True
         return False
 

@@ -160,7 +160,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         now = timezone.now()
         self.user.community_terms_accepted = now
         self.backend.name = 'oidc'
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         _terms_of_service(
             self.strategy,
             self.user,

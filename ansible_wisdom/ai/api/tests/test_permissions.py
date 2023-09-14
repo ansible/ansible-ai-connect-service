@@ -37,7 +37,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     def test_commercial_user_has_not_accepted(self):
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         with self.not_accepted_terms():
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('completions'), self.payload)
@@ -50,7 +50,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     def test_commercial_user_has_accepted(self):
-        self.user.has_seat = True
+        self.user.rh_user_has_seat = True
         with self.accepted_terms():
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('completions'), self.payload)
