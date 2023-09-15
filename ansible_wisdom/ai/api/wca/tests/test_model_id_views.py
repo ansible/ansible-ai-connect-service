@@ -47,12 +47,12 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = {'SecretString': '1', 'CreatedDate': '0'}
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_once_with('1', Suffixes.MODEL_ID)
+        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.MODEL_ID)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -61,7 +61,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.post(
             reverse('wca_model_id'),
@@ -70,7 +70,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
         )
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
         self.mock_secret_manager.save_secret.assert_called_once_with(
-            '1', Suffixes.MODEL_ID, 'secret_model_id'
+            '123', Suffixes.MODEL_ID, 'secret_model_id'
         )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -80,7 +80,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
             return ""
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -93,7 +93,7 @@ class TestWCAModelIdFeatureFlagView(WisdomServiceAPITestCaseBase):
             return ""
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.post(
             reverse('wca_model_id'),
@@ -146,15 +146,15 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
             self.assertTrue(permission in view.permission_classes)
 
     def test_get_model_id_when_undefined(self, *args):
-        self.user.organization_id = "unknown"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-        self.mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.MODEL_ID)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
     def test_get_model_id_when_defined(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = {
             'SecretString': 'secret_model_id',
@@ -163,10 +163,10 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(r.data['model_id'], 'secret_model_id')
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
     def test_get_model_id_when_defined_throws_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
         r = self.client.get(reverse('wca_model_id'))
@@ -183,12 +183,12 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_set_model_id(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
         # Set ModelId
         r = self.client.post(
@@ -198,7 +198,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         )
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
         self.mock_secret_manager.save_secret.assert_called_with(
-            '1', Suffixes.MODEL_ID, 'secret_model_id'
+            '123', Suffixes.MODEL_ID, 'secret_model_id'
         )
 
         # Check ModelId was stored
@@ -209,10 +209,10 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(r.data['model_id'], 'secret_model_id')
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.MODEL_ID)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
     def test_set_model_id_throws_secret_manager_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
         r = self.client.post(
@@ -223,7 +223,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_model_id_throws_validation_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
         r = self.client.post(
@@ -240,7 +240,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
 class TestWCAModelIdViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
     def test_get_model_id_as_non_subscriber(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -267,7 +267,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.OK)

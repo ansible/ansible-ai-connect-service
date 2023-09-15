@@ -9,6 +9,7 @@ from ai.api.permissions import (
     IsWCAModelIdApiFeatureFlagOn,
 )
 from ai.api.serializers import WcaModelIdRequestSerializer
+from ai.api.wca.utils import is_org_id_invalid
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -68,7 +69,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -103,7 +104,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -147,7 +148,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # TODO {manstis} Validate Model Id. See https://issues.redhat.com/browse/AAP-15955

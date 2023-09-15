@@ -53,14 +53,14 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = {
             'CreatedDate': timezone.now().isoformat()
         }
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_once_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.API_KEY)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -87,7 +87,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
             return ""
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -100,7 +100,7 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
             return ""
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.post(
             reverse('wca_api_key'),
@@ -158,25 +158,25 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             self.assertTrue(permission in view.permission_classes)
 
     def test_get_key_when_undefined(self, *args):
-        self.user.organization_id = "unknown"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-        self.mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
     def test_get_key_when_defined(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = {
             'CreatedDate': timezone.now().isoformat()
         }
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
     def test_get_key_when_defined_throws_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
         r = self.client.get(reverse('wca_api_key'))
@@ -193,14 +193,14 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_set_key_with_valid_value(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
         # Key should initially not exist
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
         # Set Key
         self.mock_wca_client.get_token.return_value = "token"
@@ -210,7 +210,9 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             content_type='application/json',
         )
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-        self.mock_secret_manager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
+        self.mock_secret_manager.save_secret.assert_called_with(
+            '123', Suffixes.API_KEY, 'a-new-key'
+        )
 
         # Check Key was stored
         self.mock_secret_manager.get_secret.return_value = {
@@ -218,17 +220,17 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         }
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
     def test_set_key_with_invalid_value(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
         # Key should initially not exist
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
         # Set Key
         self.mock_wca_client.get_token.return_value = None
@@ -241,7 +243,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.mock_secret_manager.save_secret.assert_not_called()
 
     def test_set_key_throws_secret_manager_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.get_token.return_value = "token"
         self.mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
@@ -253,7 +255,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_key_throws_validation_exception(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.post(
             reverse('wca_api_key'),
@@ -269,7 +271,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
 class TestWCAApiKeyViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
     def test_get_api_key_as_non_subscriber(self, *args):
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -306,7 +308,7 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
         self.mock_wca_client.get_token.return_value = "token"
@@ -319,7 +321,7 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
             return "true"
 
         feature_flags.get = get_feature_flags
-        self.user.organization_id = "1"
+        self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
         self.mock_wca_client.get_token.return_value = None

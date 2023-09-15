@@ -9,6 +9,7 @@ from ai.api.permissions import (
     IsWCAKeyApiFeatureFlagOn,
 )
 from ai.api.serializers import WcaKeyRequestSerializer
+from ai.api.wca.utils import is_org_id_invalid
 from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -68,7 +69,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         try:
@@ -102,7 +103,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # Extract API Key from request
@@ -156,7 +157,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
         org_id = request._request.user.organization_id
-        if org_id is None:
+        if is_org_id_invalid(org_id):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # Validate API Key
