@@ -135,8 +135,8 @@ SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.terms_of_service',
     'users.pipeline.load_extra_data',
+    'users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
