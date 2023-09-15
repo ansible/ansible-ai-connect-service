@@ -4,6 +4,7 @@ import time
 from string import Template
 
 import yaml
+from ai.api.model_client.wca_client import WcaBadRequest
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -93,6 +94,11 @@ class PostprocessException(BaseWisdomAPIException):
 class ModelTimeoutException(BaseWisdomAPIException):
     status_code = 204
     error_type = 'model_timeout'
+
+
+class WcaBadRequestException(BaseWisdomAPIException):
+    status_code = 400
+    default_detail = {"message": "Bad request for WCA completion"}
 
 
 class ServiceUnavailable(BaseWisdomAPIException):
@@ -223,6 +229,10 @@ class Completions(APIView):
                 f" for suggestion {payload.suggestionId}"
             )
             raise ModelTimeoutException
+        except WcaBadRequest as exc:
+            exception = exc
+            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            raise WcaBadRequestException
         except Exception as exc:
             exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
@@ -276,7 +286,7 @@ class Completions(APIView):
         try:
             response_data = {
                 "predictions": postprocessed_predictions["predictions"],
-                "modelName": model_name,
+                "modelName": predictions['model_id'],
                 "suggestionId": payload.suggestionId,
             }
             response_serializer = CompletionResponseSerializer(data=response_data)

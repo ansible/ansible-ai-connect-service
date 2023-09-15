@@ -42,6 +42,7 @@ class GrpcClient(ModelMeshClient):
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
+            result['model_id'] = model_name
             return result
         except grpc.RpcError as exc:
             if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
