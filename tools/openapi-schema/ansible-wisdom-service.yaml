@@ -201,8 +201,8 @@ paths:
           description: Not found
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
     post:
       operationId: wca_api_key_set
       summary: Set the WCA key for an Organisation
@@ -242,8 +242,8 @@ paths:
           description: Forbidden
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
   /api/v0/wca/apikey/test/:
     get:
       operationId: wca_api_key_validator_get
@@ -263,12 +263,10 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden
-        '404':
-          description: Not found
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
   /api/v0/wca/modelid/:
     get:
       operationId: wca_model_id_get
@@ -291,8 +289,8 @@ paths:
           description: Not found
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
     post:
       operationId: wca_model_id_set
       summary: Set the Model Id to be used for an Organisation
@@ -332,8 +330,8 @@ paths:
           description: Forbidden
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
   /api/v0/wca/modelid/test/:
     get:
       operationId: wca_model_id_validator_get
@@ -353,12 +351,10 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden
-        '404':
-          description: Not found
         '429':
           description: Request was throttled
-        '503':
-          description: Service Unavailable
+        '500':
+          description: Internal service error
   /check/:
     get:
       operationId: check_retrieve

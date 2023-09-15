@@ -56,7 +56,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             403: OpenApiResponse(description='Forbidden'),
             404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Get WCA key for an Organisation",
         operation_id="wca_api_key_get",
@@ -84,28 +84,39 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Set the WCA key for an Organisation",
         operation_id="wca_api_key_set",
     )
     def post(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: POST handler")
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+
+        # Extract API Key from request
         key_serializer = WcaKeyRequestSerializer(data=request.data)
-        org_id = request._request.user.organization_id
         try:
             key_serializer.is_valid(raise_exception=True)
             wca_key = key_serializer.validated_data['key']
-            # TODO {manstis} Validate API Key. See https://issues.redhat.com/browse/AAP-15328
-            secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
-            logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
-        except WcaSecretManagerError as e:
-            logger.error(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
         except ValidationError as e:
             logger.error(e)
             return Response(status=HTTP_400_BAD_REQUEST)
+
+        # Validate API Key
+        model_mesh_client = apps.get_app_config("ai").wca_client
+        try:
+            token = model_mesh_client.get_token(wca_key)
+            if token is None:
+                return Response(status=HTTP_400_BAD_REQUEST)
+
+            # Store the validated API Key
+            org_id = request._request.user.organization_id
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
+            logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
+
+        except WcaSecretManagerError as e:
+            logger.error(e)
+            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -121,14 +132,26 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
-            404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Validate WCA key for an Organisation",
         operation_id="wca_api_key_validator_get",
     )
     def get(self, request, *args, **kwargs):
-        # TODO {manstis} Validate API Key. See https://issues.redhat.com/browse/AAP-15328
         logger.debug("WCA API Key Validator:: GET handler")
+
+        # Validate API Key
+        model_mesh_client = apps.get_app_config("ai").wca_client
+        try:
+            rh_user_has_seat = request.user.rh_user_has_seat
+            organization_id = request.user.organization_id
+            api_key = model_mesh_client.get_api_key(rh_user_has_seat, organization_id)
+            token = model_mesh_client.get_token(api_key)
+            if token is None:
+                return Response(status=HTTP_400_BAD_REQUEST)
+        except WcaSecretManagerError as e:
+            logger.error(e)
+            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(status=HTTP_200_OK)

@@ -30,7 +30,7 @@ class IsOrganisationAdministrator(permissions.BasePermission):
 
 class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     """
-    Allow access only to users who have a Light Speed subscripton.
+    Allow access only to users who have a Light Speed subscription.
     """
 
     def has_permission(self, request, view):
