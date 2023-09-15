@@ -7,18 +7,19 @@ export interface BusyButtonProps extends ButtonProps {
 
 export const BusyButton = (props: BusyButtonProps) => {
     const {isBusy, children} = props;
+    const {isBusy: _, ...baseProps} = props;
     return (
         <>
             {isBusy && (
                 <Button
-                    {...props}
+                    {...baseProps}
                     icon={undefined}
                     isLoading={isBusy}>
                     {children}
                 </Button>
             )}
             {!isBusy && (
-                <Button {...props}>
+                <Button {...baseProps}>
                     {children}
                 </Button>
             )}

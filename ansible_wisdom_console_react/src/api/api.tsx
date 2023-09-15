@@ -1,11 +1,10 @@
-import {httpClient} from "./httpClient";
-import {AxiosRequestConfig} from "axios";
 import {WcaKeyRequest, WcaModelIdRequest} from "./types";
+import axios from "axios";
 
-const API_WCA_KEY_PATH = "/api/v0/wca/apikey/";
-const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
-const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
-const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
+export const API_WCA_KEY_PATH = "/api/v0/wca/apikey/";
+export const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
+export const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
+export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
 
 const readCookie = (name: string) => {
     const nameEQ = name + "=";
@@ -23,55 +22,27 @@ const readCookie = (name: string) => {
 }
 
 export const getWcaKey = () => {
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_KEY_PATH,
-        method: "get"
-    };
-    return httpClient(getExecConfig);
+    return axios.get(API_WCA_KEY_PATH);
 };
 
 export const saveWcaKey = (wcaKey: WcaKeyRequest) => {
     const csrfToken = readCookie('csrftoken');
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_KEY_PATH,
-        method: "post",
-        data: wcaKey,
-        headers: {"X-CSRFToken": csrfToken}
-    };
-    return httpClient(getExecConfig);
+    return axios.post(API_WCA_KEY_PATH, wcaKey, {headers: {"X-CSRFToken": csrfToken}});
 };
 
 export const testWcaKey = () => {
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_KEY_TEST_PATH,
-        method: "get",
-    };
-    return httpClient(getExecConfig);
+    return axios.get(API_WCA_KEY_TEST_PATH);
 };
 
 export const getWcaModelId = () => {
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_MODEL_ID_PATH,
-        method: "get",
-    };
-    return httpClient(getExecConfig);
+    return axios.get(API_WCA_MODEL_ID_PATH);
 };
 
 export const saveWcaModelId = (wcaModelId: WcaModelIdRequest) => {
     const csrfToken = readCookie('csrftoken');
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_MODEL_ID_PATH,
-        method: "post",
-        data: wcaModelId,
-        headers: {"X-CSRFToken": csrfToken}
-    };
-    return httpClient(getExecConfig);
+    return axios.post(API_WCA_MODEL_ID_PATH, wcaModelId, {headers: {"X-CSRFToken": csrfToken}});
 };
 
 export const testWcaModelId = () => {
-    const getExecConfig: AxiosRequestConfig = {
-        url: API_WCA_MODEL_ID_TEST_PATH,
-        method: "get",
-    };
-    return httpClient(getExecConfig);
+    return axios.get(API_WCA_MODEL_ID_TEST_PATH);
 };
