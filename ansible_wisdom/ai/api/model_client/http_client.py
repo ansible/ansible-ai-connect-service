@@ -2,6 +2,7 @@ import json
 import logging
 
 import requests
+from django.conf import settings
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
@@ -15,7 +16,8 @@ class HttpClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_name="wisdom"):
+    def infer(self, model_input, model_name=None):
+        model_name = model_name or settings.ANSIBLE_AI_MODEL_NAME
         self._prediction_url = f"{self._inference_url}/predictions/{model_name}"
 
         try:

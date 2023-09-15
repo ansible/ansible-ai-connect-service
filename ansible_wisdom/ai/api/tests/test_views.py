@@ -16,6 +16,7 @@ from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSou
 from ai.api.views import Completions
 from ai.feature_flags import WisdomFlags
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.cache import cache
@@ -61,6 +62,7 @@ class DummyMeshClient(ModelMeshClient):
                 pass
 
         self.response_data = response_data
+        self.response_data['model_id'] = settings.ANSIBLE_AI_MODEL_NAME
 
     def infer(self, data, model_name=None):
         if self.test_inference_match:

@@ -2,14 +2,13 @@ import logging
 from typing import TypedDict, Union
 from uuid import UUID
 
-from django.conf import settings
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
 class APIPayload(BaseModel):
-    model_name: str = settings.ANSIBLE_AI_MODEL_NAME
+    model_name: str = ""
     prompt: str = ""
     context: str = ""
     userId: Union[UUID, None]
