@@ -28,7 +28,7 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 If you want to integrate the "Admin Portal" into the Django application launched with `manage.py runserver` you need to ensure the React/TypeScript code is compiled and linked to Django's path.
 
-This can be accomplished using `make create-application-ui-react`.
+This can be accomplished using `make admin-portal-bundle`.
 
 ## Packing into Docker images
 
