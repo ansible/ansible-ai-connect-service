@@ -1,4 +1,4 @@
-name: pip-audit
+name: wisdom-service - pip-audit
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
     #   - v*
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   pull_request:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
 permissions:
   contents: read
 

@@ -1,11 +1,15 @@
-name: Code Coverage
+name: wisdom-service - Code Coverage
 on:
   push:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   pull_request:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   # have the ability to trigger this workflow manually
   workflow_dispatch:
 
