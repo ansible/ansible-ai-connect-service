@@ -133,6 +133,8 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             return "https://wca_api_url<>modelX" if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         response = MockResponse(
             json={"predictions": [""]},
@@ -141,6 +143,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
+        model_client.get_model_id = Mock(return_value='modelX')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
             r = self.client.post(reverse('completions'), self.payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)

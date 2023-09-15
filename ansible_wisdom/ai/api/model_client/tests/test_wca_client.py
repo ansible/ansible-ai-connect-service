@@ -91,6 +91,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
+        model_client.get_model_id = Mock(return_value=model_name)
 
         result = model_client.infer(model_input=model_input, model_name=model_name)
 
@@ -124,6 +125,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
+        model_client.get_model_id = Mock(return_value=model_name)
         with self.assertRaises(ModelTimeoutError):
             model_client.infer(model_input=model_input, model_name=model_name)
 
