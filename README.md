@@ -328,7 +328,7 @@ env vars in a .env file in the `tools/docker-compose` directory.
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
 authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
 
-> **Warning:** The Django `runserver` command launches `ansible-wisdom-service` as http://127.0.0.1:8000. It is important that the host name used in your browser and that configured in GitHub OAuth Authorization callback URL are identical. Should you use Django's link the GitHub OAth Authorization callback URL will need to use `127.0.0.1` in lieu of `localhost` too.
+> **Warning:** The Django `runserver` command launches `ansible-wisdom-service` as http://127.0.0.1:8000. It is important that the host name used in your browser and that configured in GitHub OAuth Authorization callback URL are identical. Should you use Django's link the GitHub OAuth Authorization callback URL will need to use `127.0.0.1` in lieu of `localhost` too.
 
 To get an authentication token, you can run the following command:
 
