@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from unittest import mock
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
@@ -20,6 +20,21 @@ from django.utils import timezone
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.wca_client_patcher = patch.object(
+            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
+        )
+        self.mock_wca_client = self.wca_client_patcher.start()
+        self.secret_manager_patcher = patch.object(
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
+        )
+        self.mock_secret_manager = self.secret_manager_patcher.start()
+
+    def tearDown(self):
+        self.wca_client_patcher.stop()
+        self.secret_manager_patcher.stop()
+
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_featureflag_disabled(self, *args):
         self.client.force_authenticate(user=self.user)
@@ -37,16 +52,12 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         feature_flags.get = get_feature_flags
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_mgr = Mock(WcaSecretManager)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_mgr,
-        ):
-            mock_secret_mgr.get_secret.return_value = {'CreatedDate': timezone.now().isoformat()}
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            mock_secret_mgr.get_secret.assert_called_once_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.return_value = {
+            'CreatedDate': timezone.now().isoformat()
+        }
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.mock_secret_manager.get_secret.assert_called_once_with('1', Suffixes.API_KEY)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -57,26 +68,14 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         feature_flags.get = get_feature_flags
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_mgr = Mock(WcaSecretManager)
-        mock_wca_client = Mock(WCAClient)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_mgr,
-        ):
-            with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                mock_wca_client,
-            ):
-                mock_wca_client.get_token.return_value = "token"
-                r = self.client.post(
-                    reverse('wca_api_key'),
-                    data='{ "key": "a-key" }',
-                    content_type='application/json',
-                )
-                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                mock_secret_mgr.save_secret.assert_called_once_with('1', Suffixes.API_KEY, 'a-key')
+        self.mock_wca_client.get_token.return_value = "token"
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+        self.mock_secret_manager.save_secret.assert_called_once_with('1', Suffixes.API_KEY, 'a-key')
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -87,15 +86,9 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         feature_flags.get = get_feature_flags
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_mgr = Mock(WcaSecretManager)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_mgr,
-        ):
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-            mock_secret_mgr.get_secret.assert_not_called()
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.mock_secret_manager.get_secret.assert_not_called()
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('ai.api.permissions.feature_flags')
@@ -106,19 +99,13 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
         feature_flags.get = get_feature_flags
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_mgr = Mock(WcaSecretManager)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_mgr,
-        ):
-            r = self.client.post(
-                reverse('wca_api_key'),
-                data='{ "key": "a-key" }',
-                content_type='application/json',
-            )
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-            mock_secret_mgr.save_secret.assert_not_called()
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.mock_secret_manager.save_secret.assert_not_called()
 
 
 @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -126,6 +113,21 @@ class TestWCAKeyFeatureFlagView(WisdomServiceAPITestCaseBase):
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.wca_client_patcher = patch.object(
+            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
+        )
+        self.mock_wca_client = self.wca_client_patcher.start()
+        self.secret_manager_patcher = patch.object(
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
+        )
+        self.mock_secret_manager = self.secret_manager_patcher.start()
+
+    def tearDown(self):
+        self.wca_client_patcher.stop()
+        self.secret_manager_patcher.stop()
+
     def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
@@ -134,164 +136,97 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
     def test_get_key_when_undefined(self, *args):
         self.user.organization_id = "unknown"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            mock_secret_manager.get_secret.return_value = None
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.return_value = None
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+        self.mock_secret_manager.get_secret.assert_called_with('unknown', Suffixes.API_KEY)
 
     def test_get_key_when_defined(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            mock_secret_manager.get_secret.return_value = {
-                'CreatedDate': timezone.now().isoformat()
-            }
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.return_value = {
+            'CreatedDate': timezone.now().isoformat()
+        }
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
     def test_get_key_when_defined_throws_exception(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_key_with_valid_value(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-        mock_wca_client = Mock(WCAClient)
 
         # Key should initially not exist
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            mock_secret_manager.get_secret.return_value = None
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.return_value = None
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
-            # Set Key
-            with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                mock_wca_client,
-            ):
-                mock_wca_client.get_token.return_value = "token"
-                r = self.client.post(
-                    reverse('wca_api_key'),
-                    data='{ "key": "a-new-key" }',
-                    content_type='application/json',
-                )
-                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                mock_secret_manager.save_secret.assert_called_with(
-                    '1', Suffixes.API_KEY, 'a-new-key'
-                )
+        # Set Key
+        self.mock_wca_client.get_token.return_value = "token"
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-new-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+        self.mock_secret_manager.save_secret.assert_called_with('1', Suffixes.API_KEY, 'a-new-key')
 
-                # Check Key was stored
-                mock_secret_manager.get_secret.return_value = {
-                    'CreatedDate': timezone.now().isoformat()
-                }
-                r = self.client.get(reverse('wca_api_key'))
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        # Check Key was stored
+        self.mock_secret_manager.get_secret.return_value = {
+            'CreatedDate': timezone.now().isoformat()
+        }
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
     def test_set_key_with_invalid_value(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-        mock_wca_client = Mock(WCAClient)
 
         # Key should initially not exist
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            mock_secret_manager.get_secret.return_value = None
-            r = self.client.get(reverse('wca_api_key'))
-            self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
-            mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
+        self.mock_secret_manager.get_secret.return_value = None
+        r = self.client.get(reverse('wca_api_key'))
+        self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+        self.mock_secret_manager.get_secret.assert_called_with('1', Suffixes.API_KEY)
 
-            # Set Key
-            with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                mock_wca_client,
-            ):
-                mock_wca_client.get_token.return_value = None
-                r = self.client.post(
-                    reverse('wca_api_key'),
-                    data='{ "key": "a-new-key" }',
-                    content_type='application/json',
-                )
-                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                mock_secret_manager.save_secret.assert_not_called()
+        # Set Key
+        self.mock_wca_client.get_token.return_value = None
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-new-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        self.mock_secret_manager.save_secret.assert_not_called()
 
     def test_set_key_throws_secret_manager_exception(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-        mock_wca_client = Mock(WCAClient)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                mock_wca_client,
-            ):
-                mock_wca_client.get_token.return_value = "token"
-                mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
-                r = self.client.post(
-                    reverse('wca_api_key'),
-                    data='{ "key": "a-new-key" }',
-                    content_type='application/json',
-                )
-                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.mock_wca_client.get_token.return_value = "token"
+        self.mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-new-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_set_key_throws_validation_exception(self, *args):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        mock_secret_manager = Mock(WcaSecretManager)
-
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            mock_secret_manager,
-        ):
-            r = self.client.post(
-                reverse('wca_api_key'),
-                data='{ "unknown_json_field": "a-new-key" }',
-                content_type='application/json',
-            )
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "unknown_json_field": "a-new-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
 
 @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -311,6 +246,16 @@ class TestWCAApiKeyViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        self.wca_client_patcher = patch.object(
+            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
+        )
+        self.mock_wca_client = self.wca_client_patcher.start()
+
+    def tearDown(self):
+        self.wca_client_patcher.stop()
+
     def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key_validator'))
@@ -323,16 +268,10 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
-        mock_wca_client = Mock(WCAClient)
 
-        with patch.object(
-            apps.get_app_config('ai'),
-            'wca_client',
-            mock_wca_client,
-        ):
-            mock_wca_client.get_token.return_value = "token"
-            r = self.client.get(reverse('wca_api_key_validator'))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.mock_wca_client.get_token.return_value = "token"
+        r = self.client.get(reverse('wca_api_key_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
 
     @mock.patch('ai.api.permissions.feature_flags')
     def test_validate_key_with_invalid_value(self, feature_flags, *args):
@@ -341,13 +280,7 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)
-        mock_wca_client = Mock(WCAClient)
 
-        with patch.object(
-            apps.get_app_config('ai'),
-            'wca_client',
-            mock_wca_client,
-        ):
-            mock_wca_client.get_token.return_value = None
-            r = self.client.get(reverse('wca_api_key_validator'))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        self.mock_wca_client.get_token.return_value = None
+        r = self.client.get(reverse('wca_api_key_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)

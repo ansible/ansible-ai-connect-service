@@ -23,7 +23,6 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_503_SERVICE_UNAVAILABLE,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +56,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             403: OpenApiResponse(description='Forbidden'),
             404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Get WCA key for an Organisation",
         operation_id="wca_api_key_get",
@@ -85,7 +84,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Set the WCA key for an Organisation",
         operation_id="wca_api_key_set",
@@ -104,8 +103,6 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
         # Validate API Key
         model_mesh_client = apps.get_app_config("ai").wca_client
-        if model_mesh_client is None:
-            return Response(status=HTTP_503_SERVICE_UNAVAILABLE)
         try:
             token = model_mesh_client.get_token(wca_key)
             if token is None:
@@ -135,9 +132,8 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
-            404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            500: OpenApiResponse(description='Internal service error'),
         },
         summary="Validate WCA key for an Organisation",
         operation_id="wca_api_key_validator_get",
@@ -147,8 +143,6 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
 
         # Validate API Key
         model_mesh_client = apps.get_app_config("ai").wca_client
-        if model_mesh_client is None:
-            return Response(status=HTTP_503_SERVICE_UNAVAILABLE)
         try:
             rh_user_has_seat = request.user.rh_user_has_seat
             organization_id = request.user.organization_id
