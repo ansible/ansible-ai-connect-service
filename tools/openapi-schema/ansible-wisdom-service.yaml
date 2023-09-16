@@ -498,6 +498,8 @@ components:
           description: A UUID that identifies a suggestion.
         metadata:
           $ref: '#/components/schemas/Metadata'
+        model_name:
+          type: string
       required:
       - prompt
     CompletionResponse:
