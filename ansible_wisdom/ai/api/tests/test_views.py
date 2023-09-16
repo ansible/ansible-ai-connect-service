@@ -218,7 +218,7 @@ class TestCompletionViewWithModels(WisdomServiceAPITestCaseBase):
         )
         self.assertEqual(wca_client.session.post.call_args.kwargs['json']['model_id'], 'free')
 
-    def test_seatless_user_picks_model_failed(self, get_model_client):
+    def test_seatless_cannot_pick_model(self, get_model_client):
         self.user.rh_user_has_seat = False
         self.client.force_authenticate(user=self.user)
         wca_client = self.get_mock_wca_client()
@@ -228,7 +228,7 @@ class TestCompletionViewWithModels(WisdomServiceAPITestCaseBase):
         r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-    def test_seated_user_org_default_model_used(self, get_model_client):
+    def test_seated_get_org_default_model(self, get_model_client):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
@@ -251,7 +251,8 @@ class TestCompletionViewWithModels(WisdomServiceAPITestCaseBase):
                 wca_client.session.post.call_args.kwargs['json']['model_id'], 'org-model'
             )
 
-    def test_seated_user_no_model_failed(self, get_model_client):
+    def test_seated_cannot_have_no_model(self, get_model_client):
+        # Seated user needs either model set in request or stored in secret manager
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
@@ -271,7 +272,7 @@ class TestCompletionViewWithModels(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             wca_client.session.post.assert_not_called()
 
-    def test_seated_user_picks_model(self, get_model_client):
+    def test_seated_can_pick_model(self, get_model_client):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
