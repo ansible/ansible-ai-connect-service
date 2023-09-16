@@ -102,6 +102,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
 
 @modify_settings()
+@override_settings(ANSIBLE_WCA_INFERENCE_URL='https://wca_api_url')
 class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     payload = {
         "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -128,7 +129,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_on(self, feature_flags):
         def get_feature_flags(name, *args):
-            return "https://wca_api_url<>modelX" if name == WisdomFlags.WCA_API else ""
+            return "something" if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
         self.user.rh_user_has_seat = True
@@ -138,7 +139,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             json={"predictions": [""]},
             status_code=200,
         )
-        model_client = WCAClient(inference_url='https://example.com')
+        model_client = WCAClient(inference_url='https://wca_api_url')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
@@ -160,7 +161,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
     @mock.patch('ai.api.views.feature_flags')
     def test_wca_featureflag_off(self, feature_flags):
         def get_feature_flags(name, *args):
-            return None if name == WisdomFlags.WCA_API else ""
+            return ""
 
         feature_flags.get = get_feature_flags
         self.client.force_authenticate(user=self.user)

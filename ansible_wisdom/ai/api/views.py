@@ -117,11 +117,9 @@ def get_model_client(wisdom_app, user):
     if settings.LAUNCHDARKLY_SDK_KEY:
         wca_api_info = feature_flags.get(WisdomFlags.WCA_API, user, "")
         if wca_api_info:
-            # if feature flag for wca is on for this user
-            logger.debug(f"flag {WisdomFlags.WCA_API} has value {wca_api_info}")
-            wca_api, _ = wca_api_info.split('<>')
+            # if WCA feature flag is on for this user
+            logger.debug(f"flag {WisdomFlags.WCA_API} is on")
             model_mesh_client = wisdom_app.wca_client
-            model_mesh_client.set_inference_url(wca_api)
         else:
             model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
