@@ -22,7 +22,6 @@ class MockResponse:
 
 
 class TestWCAClient(WisdomServiceLogAwareTestCase):
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
     def test_get_token(self):
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -129,14 +128,14 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         with self.assertRaises(ModelTimeoutError):
             model_client.infer(model_input=model_input, model_name=model_name)
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
+    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):
         model_client = WCAClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(False, None)
         self.assertEqual(api_key, 'abcdef')
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
-    def test_get_api_key_without_org_id(self):
+    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
+    def test_get_api_key_with_seat_without_org_id(self):
         model_client = WCAClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(True, None)
         self.assertEqual(api_key, 'abcdef')
@@ -154,7 +153,6 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(api_key, secret_value)
         m_boto3_client.get_secret_value.assert_called()
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
     @patch('ai.api.aws.wca_secret_manager.WcaSecretManager.get_client')
     def test_get_api_key_from_aws_error(self, m_get_client):
         m_boto3_client = Mock()

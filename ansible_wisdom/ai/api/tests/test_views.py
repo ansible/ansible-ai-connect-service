@@ -143,7 +143,8 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
-        model_client.get_model_id = Mock(return_value='modelX')
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        model_client.get_model_id = Mock(return_value='org-model-id')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
             r = self.client.post(reverse('completions'), self.payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -153,7 +154,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                 "https://wca_api_url/v1/wca/codegen/ansible",
             )
             self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'modelX'
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
