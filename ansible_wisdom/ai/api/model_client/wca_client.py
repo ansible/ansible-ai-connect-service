@@ -19,8 +19,7 @@ class WCAClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
         self.session = requests.Session()
-        self.free_api_key = settings.ANSIBLE_AI_MODEL_MESH_API_KEY
-        # settings.ANSIBLE_WCA_FREE_API_KEY or ""
+        self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
 
     def infer(self, model_input, model_name=None):

@@ -119,7 +119,7 @@ def get_model_client(wisdom_app, user):
         if wca_api_info:
             # if feature flag for wca is on for this user
             logger.debug(f"flag {WisdomFlags.WCA_API} has value {wca_api_info}")
-            wca_api, model_name = wca_api_info.split('<>')
+            wca_api, _ = wca_api_info.split('<>')
             model_mesh_client = wisdom_app.wca_client
             model_mesh_client.set_inference_url(wca_api)
         else:
