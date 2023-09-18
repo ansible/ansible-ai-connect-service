@@ -3,7 +3,6 @@ import {useTranslation} from 'react-i18next'
 import {AppHeader} from './AppHeader'
 import {PageApp} from './PageApp'
 import {PageNavigation, PageNavigationElements} from './PageNavigation'
-import {Overview} from "./Overview";
 import {ModelSettings} from "./ModelSettings";
 
 export function App() {
@@ -11,12 +10,6 @@ export function App() {
 
     const navigationItems = useMemo<PageNavigationElements>(
         () => [
-            {
-                // Overview
-                label: t('Overview'),
-                path: 'overview',
-                element: <Overview/>,
-            },
             {
                 // Admin portal
                 label: t('AdminPortal'),

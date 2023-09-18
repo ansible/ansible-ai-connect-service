@@ -179,7 +179,6 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -285,7 +284,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_missing_prompt(self):
         payload = {
             "suggestionId": str(uuid.uuid4()),
@@ -328,7 +326,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     self.assertEqual(properties['response']['status_code'], 401)
                     self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error(self):
         payload = {
             "prompt": "---\n- hosts: all\nbecome: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -347,7 +344,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.data['message'], 'Request contains invalid yaml')
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error_with_invalid_prompt(self):
         payload = {
             "prompt": "---\n  - name: [Setup]",
@@ -366,7 +362,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.data['message'], 'Request contains invalid prompt')
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_preprocessing_error_without_name_prompt(self):
         payload = {
             "prompt": "---\n  - Name: [Setup]",
@@ -387,7 +382,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_without_ARI(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -408,7 +402,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_with_recommendation_with_broken_last_line(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -434,7 +427,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_postprocessing_error_for_invalid_yaml(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -512,7 +504,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ansible_lint_without_commercial(self):
         payload = {
@@ -538,7 +529,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
@@ -560,7 +550,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_with_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
@@ -581,7 +570,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_pii_clean_up(self):
         payload = {
             "prompt": "- name: Create an account for foo@ansible.com \n",
@@ -599,7 +587,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertInLog('Create an account for james8@example.com', log)
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_completion_post_response(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -624,8 +611,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
 
 @modify_settings()
+@override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
 class TestFeedbackView(WisdomServiceAPITestCaseBase):
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_full_payload(self):
         payload = {
             "inlineSuggestion": {
@@ -669,7 +656,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_missing_content(self):
         payload = {
             "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
@@ -680,7 +666,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_anonymize(self):
         payload = {
             "ansibleContent": {
@@ -697,7 +682,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertInLog('file:///home/ano-user/ansible.yaml', log)
             self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_authentication_error(self):
         payload = {
             "ansibleContent": {
@@ -713,7 +697,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
             self.assertSegmentTimestamp(log)
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_events(self):
         payload = {
             "inlineSuggestion": {
@@ -749,7 +732,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(hostname, properties['hostname'])
                 self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_inline_suggestion_feedback_error(self):
         payload = {
             "inlineSuggestion": {
@@ -778,7 +760,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_ansible_content_feedback_error(self):
         payload = {
             "ansibleContent": {
@@ -808,7 +789,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(event['timestamp'])
 
     @patch('ai.api.serializers.FeedbackRequestSerializer.is_valid')
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_ansible_content_500_error(self, is_valid):
         is_valid.side_effect = Exception('Dummy Exception')
         payload = {
@@ -839,7 +819,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_suggestion_quality_feedback_error(self):
         payload = {
             "suggestionQualityFeedback": {
@@ -871,7 +850,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_sentiment_feedback_error(self):
         payload = {
             "sentimentFeedback": {
@@ -897,7 +875,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_feedback_segment_issue_feedback_error(self):
         payload = {
             "issueFeedback": {
@@ -925,9 +902,9 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(event['timestamp'])
 
 
+@patch('ai.search.search')
+@override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
-    @patch('ai.search.search')
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_events(self, mock_search):
         mock_search.return_value = {
             'attributions': [
@@ -969,8 +946,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(hostname, properties['hostname'])
                 self.assertIsNotNone(event['timestamp'])
 
-    @patch('ai.search.search')
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_events_with_exception(self, mock_search):
         mock_search.side_effect = Exception('Search Exception')
         payload = {

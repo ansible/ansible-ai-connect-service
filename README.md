@@ -1,14 +1,18 @@
 # Red Hat Ansible Lightspeed with IBM Watson Code Assistant service
 
-Note: This repository is under active development and is not yet ready for production use.
+> **Note:** This repository is under active development and is not yet ready for production use.
 
-This repo contains a Django application that serves Ansible task suggestions for consumption by the Ansible VSCode
+#### Wisdom Service
+This repository contains a Python/Django application under the `ansible-wisdom-service/ansible_wisdom` path. This application serves Ansible task suggestions for consumption by the Ansible VSCode
 extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint,
 etc.
 
 The Django application depends on a separate model server to perform the task suggestion predictions. There is a
 torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django
 application at the dev model server running at model.wisdom.testing.ansible.com as described below.
+
+#### Admin Portal
+This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located under `ansible-wisdom-service/ansible_wisdom_console_react`. Further details can be found in the corresponding `README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
 
 ## Using pre-commit
 
@@ -234,6 +238,8 @@ primary and replica regions (when using the alias).
 
 Note: when using a KMS key alias, prefix with `alias/<actual alias>`.
 
+Refer to [the set up document](https://github.com/ansible/ansible-wisdom-ops/blob/main/docs/wca-vault.md) for the AWS accounts and secrets.
+
 ## Deploy the service via OpenShift S2I
 
 ```
@@ -306,20 +312,23 @@ the `ansible_wisdom/main/settings/development.py` file.
 
 ## Authenticating with the completion API
 
-GitHub authentication has been added for the pilot. Pilot access will be limited to a specific team. Settings are
-currently hardcoded to the wisdom-contrib team, but a new team will be created for the pilot.
+The wisdom service supports both GitHub and Red Hat authentication. GitHub authentication can be open to all
+GitHub users, or limited to a specific team. The following directions are for configuring the service to grant
+access to any GitHub user.
 
-To test GitHub authentication locally, you will need to create a new OAuth App
-at https://github.com/settings/developers. Provide an Authorization callback URL
-of http://localhost:8000/complete/github-team/. Export Update `SOCIAL_AUTH_GITHUB_TEAM_KEY`
-and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_TEAM_KEY`
-and `SOCIAL_AUTH_GITHUB_TEAM_SECRET` correspond to the Client ID and Client Secret respectively, both of which are
-provided after creating a new OAuth App. If you are running with the
-compose [development environment](#development-environment) described below, put these env vars in a .env file in
-the `tools/docker-compose` directory.
+To test GitHub authentication locally, you will need to create a new OAuth App at
+https://github.com/settings/developers. Provide an Authorization callback URL of
+http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` and
+`SOCIAL_AUTH_GITHUB_SECRET` before starting your app. `SOCIAL_AUTH_GITHUB_KEY` and
+`SOCIAL_AUTH_GITHUB_SECRET` correspond to the Client ID and Client Secret respectively,
+both of which are provided after creating a new OAuth App. If you are running with the
+compose [development environment](#development-environment) described below, put these
+env vars in a .env file in the `tools/docker-compose` directory.
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
 authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
+
+> **Warning:** The Django `runserver` command launches `ansible-wisdom-service` as http://127.0.0.1:8000. It is important that the host name used in your browser and that configured in GitHub OAuth Authorization callback URL are identical. Should you use Django's link the GitHub OAuth Authorization callback URL will need to use `127.0.0.1` in lieu of `localhost` too.
 
 To get an authentication token, you can run the following command:
 

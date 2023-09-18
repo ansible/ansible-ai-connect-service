@@ -140,27 +140,26 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(api_key, 'abcdef')
 
     @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
-    def test_get_api_key_from_aws(self):
+    @patch('ai.api.aws.wca_secret_manager.WcaSecretManager.get_client')
+    def test_get_api_key_from_aws(self, m_get_client):
         secret_value = "1234567"
+        m_boto3_client = Mock()
+        m_boto3_client.get_secret_value.return_value = {"SecretString": secret_value}
+        m_get_client.return_value = m_boto3_client
 
-        def mock_api_call(_, operation_name, *args):
-            if operation_name == "GetSecretValue":
-                return {"SecretString": secret_value}
-            else:
-                raise ClientError({}, operation_name)
-
-        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
-            model_client = WCAClient(inference_url='http://example.com/')
-            api_key = model_client.get_api_key(True, secret_value)
-            self.assertEqual(api_key, secret_value)
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, secret_value)
+        self.assertEqual(api_key, secret_value)
+        m_boto3_client.get_secret_value.assert_called()
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='abcdef')
-    @override_settings(WCA_SECRET_MANAGER_PRIMARY_REGION='us-east-1')
-    def test_get_api_key_from_aws_error(self):
-        def mock_api_call(_, operation_name, *args):
-            raise ClientError({}, operation_name)
+    @patch('ai.api.aws.wca_secret_manager.WcaSecretManager.get_client')
+    def test_get_api_key_from_aws_error(self, m_get_client):
+        m_boto3_client = Mock()
+        m_boto3_client.exceptions.ResourceNotFoundException = Exception
+        m_boto3_client.get_secret_value.side_effect = ClientError
+        m_get_client.return_value = m_boto3_client
 
-        with patch("botocore.client.BaseClient._make_api_call", new=mock_api_call):
-            model_client = WCAClient(inference_url='http://example.com/')
-            with self.assertRaises(WcaSecretManagerError):
-                model_client.get_api_key(True, '1234567')
+        model_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaSecretManagerError):
+            model_client.get_api_key(True, '1234567')

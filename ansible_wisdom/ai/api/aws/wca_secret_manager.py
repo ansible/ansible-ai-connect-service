@@ -4,7 +4,7 @@ from enum import Enum
 import boto3
 from botocore.exceptions import ClientError
 
-from .exceptions import WcaSecretManagerError
+from .exceptions import WcaSecretManagerError, WcaSecretManagerMissingCredentialsError
 
 SECRET_KEY_PREFIX = 'wca'
 
@@ -19,20 +19,32 @@ class Suffixes(Enum):
 class WcaSecretManager:
     def __init__(
         self,
-        access_key,
-        secret_access_key,
+        aws_access_key_id,
+        aws_secret_access_key,
         kms_secret_id,
         primary_region,
         replica_regions: list[str],
     ):
         self.replica_regions = replica_regions
         self.kms_secret_id = kms_secret_id
-        self._client = boto3.client(
-            'secretsmanager',
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_access_key,
-            region_name=primary_region,
-        )
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.primary_region = primary_region
+        self._client = None
+
+    def get_client(self):
+        if not self._client:
+            if not all([self.aws_access_key_id, self.aws_secret_access_key, self.primary_region]):
+                logger.error("Cannot load the ssm client, credentials are missing.")
+                raise WcaSecretManagerMissingCredentialsError
+
+            self._client = boto3.client(
+                'secretsmanager',
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name=self.primary_region,
+            )
+        return self._client
 
     @staticmethod
     def get_secret_id(org_id, suffix: Suffixes):
@@ -46,7 +58,9 @@ class WcaSecretManager:
 
         if self.secret_exists(org_id, suffix):
             try:
-                response = self._client.put_secret_value(SecretId=secret_id, SecretString=secret)
+                response = self.get_client().put_secret_value(
+                    SecretId=secret_id, SecretString=secret
+                )
             except ClientError as e:
                 raise WcaSecretManagerError(e)
 
@@ -56,7 +70,7 @@ class WcaSecretManager:
                 for region in self.replica_regions
             ]
             try:
-                response = self._client.create_secret(
+                response = self.get_client().create_secret(
                     Name=secret_id,
                     KmsKeyId=self.kms_secret_id,
                     SecretString=secret,
@@ -75,17 +89,17 @@ class WcaSecretManager:
         try:
             # we need to remove the replica(s) first.
             # If this fails, we still try to delete the secret.
-            _ = self._client.remove_regions_from_replication(
+            _ = self.get_client().remove_regions_from_replication(
                 SecretId=secret_id, RemoveReplicaRegions=self.replica_regions
             )
-        except self._client.exceptions.ResourceNotFoundException:
+        except self.get_client().exceptions.ResourceNotFoundException:
             logger.error(
                 "Error removing replica regions, "
                 "Secret does not exist for org_id '%s' with suffix '%s'.",
                 org_id,
                 suffix,
             )
-        except self._client.exceptions.InvalidParameterException:
+        except self.get_client().exceptions.InvalidParameterException:
             logger.error(
                 "Error removing replica regions, "
                 "invalid region(s) for org_id '%s' with suffix '%s'.",
@@ -96,7 +110,7 @@ class WcaSecretManager:
             logger.error(e)
 
         try:
-            _ = self._client.delete_secret(SecretId=secret_id, ForceDeleteWithoutRecovery=True)
+            _ = self.get_client().delete_secret(SecretId=secret_id, ForceDeleteWithoutRecovery=True)
         except ClientError as e:
             logger.error("Error removing Secret for org_id '%s' with suffix '%s'.", org_id, suffix)
             raise WcaSecretManagerError(e)
@@ -107,8 +121,8 @@ class WcaSecretManager:
         """
         secret_id = self.get_secret_id(org_id, suffix)
         try:
-            return self._client.get_secret_value(SecretId=secret_id)
-        except self._client.exceptions.ResourceNotFoundException:
+            return self.get_client().get_secret_value(SecretId=secret_id)
+        except self.get_client().exceptions.ResourceNotFoundException:
             logger.info("No Secret exists for org with id '%s' and suffix '%s'.", org_id, suffix)
             return None
         except ClientError as e:
