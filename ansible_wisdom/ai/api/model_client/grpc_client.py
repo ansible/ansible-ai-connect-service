@@ -1,6 +1,7 @@
 import logging
 
 import grpc
+from django.conf import settings
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
@@ -26,6 +27,7 @@ class GrpcClient(ModelMeshClient):
         self._inference_stub = self.get_inference_stub()
 
     def infer(self, data, model_name):
+        model_name = model_name or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug(f"Input prompt: {data}")
         prompt = data.get("instances", [{}])[0].get("prompt", "")
         context = data.get("instances", [{}])[0].get("context", "")

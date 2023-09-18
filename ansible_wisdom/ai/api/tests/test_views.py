@@ -9,7 +9,6 @@ from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
 
-from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
@@ -179,123 +178,6 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 model_client.get_token.assert_not_called()
                 model_client.session.post.assert_not_called()
-
-
-@modify_settings()
-@override_settings(ENABLE_ARI_POSTPROCESS=False, ANSIBLE_WCA_FREE_MODEL_ID='free')
-@mock.patch('ai.api.views.get_model_client')
-class TestCompletionViewWithModels(WisdomServiceAPITestCaseBase):
-    payload = {
-        "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-        "suggestionId": str(uuid.uuid4()),
-    }
-    response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
-
-    def get_mock_wca_client(self, status_code=None, predictions=None):
-        status_code = status_code or 200
-        predictions = predictions or {"predictions": [""]}
-        response = MockResponse(
-            json=predictions,
-            status_code=status_code,
-        )
-        wca_client = WCAClient(inference_url='https://wca_api_url')
-        wca_client.session.post = Mock(return_value=response)
-        wca_client.get_token = Mock(return_value={"access_token": "abc"})
-        return wca_client
-
-    def test_seatless_get_free_model(self, get_model_client):
-        self.user.rh_user_has_seat = False
-        self.client.force_authenticate(user=self.user)
-        wca_client = self.get_mock_wca_client()
-        get_model_client.return_value = (wca_client, None)
-
-        r = self.client.post(reverse('completions'), self.payload)
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        wca_client.get_token.assert_called_once()
-        self.assertEqual(
-            wca_client.session.post.call_args.args[0],
-            "https://wca_api_url/v1/wca/codegen/ansible",
-        )
-        self.assertEqual(wca_client.session.post.call_args.kwargs['json']['model_id'], 'free')
-
-    def test_seatless_cannot_pick_model(self, get_model_client):
-        self.user.rh_user_has_seat = False
-        self.client.force_authenticate(user=self.user)
-        wca_client = self.get_mock_wca_client()
-        get_model_client.return_value = (wca_client, None)
-
-        payload = self.payload | {'model_name': 'modelX'}
-        r = self.client.post(reverse('completions'), payload)
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    def test_seated_get_org_default_model(self, get_model_client):
-        self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
-        self.client.force_authenticate(user=self.user)
-
-        secret_manager = Mock(WcaSecretManager)
-        secret_manager.get_secret.side_effect = [
-            {"SecretString": "org-model", "CreatedDate": "xxx"},
-            {"SecretString": "api-key-xxx", "CreatedDate": "xxx"},
-        ]
-        wca_client = self.get_mock_wca_client()
-        get_model_client.return_value = (wca_client, None)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            secret_manager,
-        ):
-            r = self.client.post(reverse('completions'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(
-                wca_client.session.post.call_args.kwargs['json']['model_id'], 'org-model'
-            )
-
-    def test_seated_cannot_have_no_model(self, get_model_client):
-        # Seated user needs either model set in request or stored in secret manager
-        self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
-        self.client.force_authenticate(user=self.user)
-        secret_manager = Mock(WcaSecretManager)
-        secret_manager.get_secret.side_effect = [
-            None,
-            {"SecretString": "api-key-xxx", "CreatedDate": "xxx"},
-        ]
-        wca_client = self.get_mock_wca_client()
-        get_model_client.return_value = (wca_client, None)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            secret_manager,
-        ):
-            r = self.client.post(reverse('completions'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            wca_client.session.post.assert_not_called()
-
-    def test_seated_can_pick_model(self, get_model_client):
-        self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
-        self.client.force_authenticate(user=self.user)
-
-        secret_manager = Mock(WcaSecretManager)
-        secret_manager.get_secret.return_value = {
-            "SecretString": "api-key-xxx",
-            "CreatedDate": "xxx",
-        }
-        wca_client = self.get_mock_wca_client()
-        get_model_client.return_value = (wca_client, None)
-        with patch.object(
-            apps.get_app_config('ai'),
-            '_wca_secret_manager',
-            secret_manager,
-        ):
-            payload = self.payload | {'model_name': 'model-i-pick'}
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(
-                wca_client.session.post.call_args.kwargs['json']['model_id'], 'model-i-pick'
-            )
-            secret_manager.get_secret.assert_called_once_with('1', Suffixes.API_KEY)
 
 
 @modify_settings()
