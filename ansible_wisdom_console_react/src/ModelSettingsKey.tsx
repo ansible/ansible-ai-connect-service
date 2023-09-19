@@ -26,6 +26,7 @@ import {WcaKey, WcaKeyRequest} from "./api/types";
 import {saveWcaKey} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {DELAY} from "./api/globals";
+import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsKeyProps {
     wcaKey: WcaKey | undefined;
@@ -55,9 +56,10 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
-                }
-                if (error.response?.status === 500) {
+                } else if (error.response?.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
+                } else {
+                    setKeyError({inError: true, message: error.message});
                 }
             })
             .finally(() => {
@@ -131,13 +133,14 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                                 <StackItem>
                                     <Split hasGutter={true}>
                                         <SplitItem>
-                                            <Button
+                                            <BusyButton
                                                 variant={"primary"}
                                                 icon={<CheckCircleIcon/>}
                                                 onClick={() => save(value)}
+                                                isBusy={isSaving}
                                                 isDisabled={isSaveDisabled}>
                                                 {t("Save")}
-                                            </Button>
+                                            </BusyButton>
                                         </SplitItem>
                                         <SplitItem>
                                             <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>

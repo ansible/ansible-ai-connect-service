@@ -26,6 +26,7 @@ import {WcaModelId, WcaModelIdRequest} from "./api/types";
 import {saveWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {DELAY} from "./api/globals";
+import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsModelIdProps {
     wcaModelId: WcaModelId;
@@ -55,9 +56,10 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
-                }
-                if (error.response?.status === 500) {
+                } else if (error.response?.status === 500) {
                     setModelIdError({inError: true, message: error.response.data});
+                } else {
+                    setModelIdError({inError: true, message: error.message});
                 }
             })
             .finally(() => {
@@ -129,13 +131,14 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                                 <StackItem>
                                     <Split hasGutter={true}>
                                         <SplitItem>
-                                            <Button
+                                            <BusyButton
                                                 variant={"primary"}
                                                 icon={<CheckCircleIcon/>}
                                                 onClick={() => save(value)}
+                                                isBusy={isSaving}
                                                 isDisabled={isSaveDisabled}>
                                                 {t("Save")}
-                                            </Button>
+                                            </BusyButton>
                                         </SplitItem>
                                         <SplitItem>
                                             <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>
