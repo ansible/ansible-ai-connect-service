@@ -20,6 +20,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
     timestamp = timezone.now().isoformat()
 
     if 'modelName' not in event:
+        # we should probably fail this, it shouldn't happen, right?
         event['modelName'] = settings.ANSIBLE_AI_MODEL_NAME
 
     if 'imageTags' not in event:

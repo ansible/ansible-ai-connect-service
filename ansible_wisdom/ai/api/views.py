@@ -4,6 +4,7 @@ import time
 from string import Template
 
 import yaml
+from ai.api.model_client.wca_client import WcaBadRequest
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -95,6 +96,11 @@ class ModelTimeoutException(BaseWisdomAPIException):
     error_type = 'model_timeout'
 
 
+class WcaBadRequestException(BaseWisdomAPIException):
+    status_code = 400
+    default_detail = {"message": "Bad request for WCA completion"}
+
+
 class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
     default_detail = {"message": "An error occurred attempting to complete the request"}
@@ -113,7 +119,7 @@ def get_model_client(wisdom_app, user):
         if wca_api_info:
             # if feature flag for wca is on for this user
             logger.debug(f"flag {WisdomFlags.WCA_API} has value {wca_api_info}")
-            wca_api, model_name = wca_api_info.split('<>')
+            wca_api, _ = wca_api_info.split('<>')
             model_mesh_client = wisdom_app.wca_client
             model_mesh_client.set_inference_url(wca_api)
         else:
@@ -223,6 +229,10 @@ class Completions(APIView):
                 f" for suggestion {payload.suggestionId}"
             )
             raise ModelTimeoutException
+        except WcaBadRequest as exc:
+            exception = exc
+            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            raise WcaBadRequestException
         except Exception as exc:
             exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
@@ -276,7 +286,7 @@ class Completions(APIView):
         try:
             response_data = {
                 "predictions": postprocessed_predictions["predictions"],
-                "modelName": model_name,
+                "modelName": predictions['model_id'],
                 "suggestionId": payload.suggestionId,
             }
             response_serializer = CompletionResponseSerializer(data=response_data)
