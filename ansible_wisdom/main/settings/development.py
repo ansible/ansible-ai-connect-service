@@ -58,4 +58,11 @@ if DEBUG:
         )
         MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
 
+    SOCIAL_AUTH_PIPELINE = SOCIAL_AUTH_PIPELINE + (  # noqa: F405
+        # This ensures GitHub Users used during local development
+        # have both an organization_id and seat. Both are required
+        # to use the WCA API Key and Model ID APIs from the Admin Portal.
+        'users.pipeline.redhat_organization_for_github_users',
+    )
+
 CSP_REPORT_ONLY = True

@@ -1,6 +1,8 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils import timezone
 from social_core.exceptions import AuthCanceled, AuthException
@@ -76,6 +78,18 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     user.organization_id = backend.id_token['organization']['id']
     user.save()
     return {'organization_id': backend.id_token['organization']['id']}
+
+
+def redhat_organization_for_github_users(backend, user, response, *args, **kwargs):
+    # For dev/test purposes only:
+    if backend.name == 'github-team' and settings.DEBUG:
+        # In order to use WcaClient to validate API Keys and ModelId Users must have a seat.
+        commercial_group = Group.objects.get_or_create(name='Commercial')
+        user.groups.add(commercial_group[0])
+        # Due to https://issues.redhat.com/browse/AAP-16009 *ALL* Users need an organization_id
+        user.organization_id = '123'
+        user.save()
+        return {'organization_id': '123'}
 
 
 def _terms_of_service(strategy, user, backend, **kwargs):
