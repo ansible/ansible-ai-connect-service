@@ -25,12 +25,14 @@ export default webpackMockServer.add((app, helper) => {
             await delay(DELAY_MS);
             if (!keys.has(ORG_ID)) {
                 res.sendStatus(404);
+                return;
             } else {
                 const data = keys.get(ORG_ID);
                 const key = data[KEY_FIELD];
                 if (key === "error-test") {
                     // Emulate a server-side error
-                    throw new Error("An error occurred. Oops.");
+                    res.sendStatus(500);
+                    return;
                 }
                 if (key === "invalid-test") {
                     // Emulate an invalid API Key
@@ -47,7 +49,8 @@ export default webpackMockServer.add((app, helper) => {
             const key = _req.body['key'];
             if (key === "error") {
                 // Emulate a server-side error
-                throw new Error("An error occurred. Oops.");
+                res.sendStatus(500);
+                return;
             }
             if (key === "invalid") {
                 // Emulate an invalid API Key

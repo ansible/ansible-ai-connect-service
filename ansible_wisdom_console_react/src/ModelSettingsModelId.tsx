@@ -46,23 +46,23 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
     const [modelIdError, setModelIdError] = useState<HasError>(NO_ERROR);
 
     const save = useCallback((value: string) => {
-        const interval = setInterval(() => setSaving(true), DELAY);
+        const timeoutId = setTimeout(() => setSaving(true), DELAY);
         const wcaModelId: WcaModelIdRequest = {model_id: value};
         saveWcaModelId(wcaModelId)
             .then((response) => {
                 reload();
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setModelIdError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setSaving(false);
-                clearInterval(interval);
+                clearTimeout(timeoutId);
             });
     }, [reload]);
 

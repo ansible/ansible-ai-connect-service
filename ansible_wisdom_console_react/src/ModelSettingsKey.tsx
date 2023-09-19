@@ -46,23 +46,23 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
     const [keyError, setKeyError] = useState<HasError>(NO_ERROR);
 
     const save = useCallback((value: string) => {
-        const interval = setInterval(() => setSaving(true), DELAY);
+        const timeoutId = setTimeout(() => setSaving(true), DELAY);
         const wcaKey: WcaKeyRequest = {key: value};
         saveWcaKey(wcaKey)
             .then((_) => {
                 reload();
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setSaving(false);
-                clearInterval(interval);
+                clearTimeout(timeoutId);
             });
     }, [reload]);
 

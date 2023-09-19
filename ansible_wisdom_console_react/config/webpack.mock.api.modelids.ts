@@ -21,12 +21,14 @@ export default webpackMockServer.add((app, helper) => {
             await delay(DELAY_MS);
             if (!modelIds.has(ORG_ID)) {
                 res.sendStatus(404);
+                return;
             } else {
                 const data = modelIds.get(ORG_ID);
                 const modelId = data[MODEL_ID_FIELD];
                 if (modelId === "error-test") {
                     // Emulate a server-side error
-                    throw new Error("An error occurred. Oops.");
+                    res.sendStatus(500);
+                    return;
                 }
                 if (modelId === "invalid-test") {
                     // Emulate an invalid Model Id
@@ -43,7 +45,8 @@ export default webpackMockServer.add((app, helper) => {
             const modelId = _req.body['model_id'];
             if (modelId === "error") {
                 // Emulate a server-side error
-                throw new Error("An error occurred. Oops.");
+                res.sendStatus(500);
+                return;
             }
             if (modelId === "invalid") {
                 // Emulate an invalid Model Id

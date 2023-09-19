@@ -39,42 +39,42 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
     const alertsRef = useRef<AlertsHandle>(null);
 
     const testKey = useCallback(() => {
-        const interval = setInterval(() => setIsValidatingKey(true), DELAY);
+        const timeoutId = setTimeout(() => setIsValidatingKey(true), DELAY);
         testWcaKey()
             .then((_) => {
                 alertsRef.current?.addAlert(t("KeyValidationSuccess"));
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setIsValidatingKey(false);
-                clearInterval(interval);
+                clearTimeout(timeoutId);
             });
     }, [t]);
 
     const testModelId = () => {
-        const interval = setInterval(() => setIsValidatingModelId(true), DELAY);
+        const timeoutId = setTimeout(() => setIsValidatingModelId(true), DELAY);
         testWcaModelId()
             .then((_) => {
                 alertsRef.current?.addAlert(t("ModelIdValidationSuccess"));
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setModelIdError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setIsValidatingModelId(false);
-                clearInterval(interval);
+                clearTimeout(timeoutId);
             });
     };
 
