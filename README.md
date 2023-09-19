@@ -141,7 +141,7 @@ make docker-compose-clean
 It may be necessary to recreate the dev image if anything has changed in the nginx settings:
 
 ```bash
- docker rmi docker-compose_django_1
+ docker rmi docker-compose-django-1
 ```
 
 Create a local admin user:
@@ -188,7 +188,7 @@ Create a local admin user:
 
    ```bash
    export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-   export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
+   export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=8033
    ```
 
 3. Start backend services.
@@ -220,7 +220,7 @@ Create a local admin user:
 ## <a name="aws-config">Use the WCA API Keys Manager</a>
 
 To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following
-variables to you environment file:
+variables to your environment file:
 
 ```shell
 WCA_SECRET_MANAGER_ACCESS_KEY=<AWS access key>
@@ -286,7 +286,7 @@ the plugin, you need to create the OAuth2 application in Django. Open
 a shell session in the Django container using
 
 ```bash
-docker exec -it docker-compose_django_1 bash
+docker exec -it docker-compose-django-1 bash
 ```
 
 and then run the Django command to create the application:
@@ -297,6 +297,15 @@ and then run the Django command to create the application:
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
     --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible" \
     public authorization-code
+```
+
+or you can run this command locally without docker/podman
+
+```bash
+  python3 ansible_wisdom/manage.py createapplication \
+   --name "Project Wisdom for VSCode" \
+   --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
+   --redirect-uris "vscode://redhat.ansible" public authorization-code
 ```
 
 This sets up a matching client ID to the one that is coded directly
