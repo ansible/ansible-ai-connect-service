@@ -47,9 +47,10 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .catch((error) => {
                 if (error.response.status === 400) {
                     setIsKeyInvalid(true);
-                }
-                if (error.response.status === 500) {
+                } else if (error.response.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
+                } else {
+                    setKeyError({inError: true, message: error.message});
                 }
             })
             .finally(() => {
@@ -66,9 +67,10 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .catch((error) => {
                 if (error.response.status === 400) {
                     setIsModelIdInvalid(true);
-                }
-                if (error.response.status === 500) {
+                } else if (error.response.status === 500) {
                     setModelIdError({inError: true, message: error.response.data});
+                } else {
+                    setModelIdError({inError: true, message: error.message});
                 }
             })
             .finally(() => {

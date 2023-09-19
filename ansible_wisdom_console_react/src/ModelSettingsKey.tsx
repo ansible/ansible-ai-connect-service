@@ -55,9 +55,10 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
             .catch((error) => {
                 if (error.response.status === 400) {
                     setIsKeyInvalid(true);
-                }
-                if (error.response.status === 500) {
+                } else if (error.response.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
+                } else {
+                    setKeyError({inError: true, message: error.message});
                 }
             })
             .finally(() => {
