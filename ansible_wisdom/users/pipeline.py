@@ -79,33 +79,31 @@ def redhat_organization(backend, user, response, *args, **kwargs):
 
 
 def _terms_of_service(strategy, user, backend, **kwargs):
-    # TODO: Not every usage of the Red Hat SSO is going to be
-    # commercial, there also needs to be the seat check when that gets
-    # integrated.  When that happens, update this to include that
-    # logic.  Possibly also remove the Commerical group?
+    accepted = 'terms_accepted'
     is_commercial = user.rh_user_has_seat
-    terms_type = 'commercial' if backend.name == 'oidc' and is_commercial else 'community'
-    field_name = f'{terms_type}_terms_accepted'
-    view_name = f'{terms_type}_terms'
+    if is_commercial:
+        # Commercial users are not presented with T&C page in login flow (new and existing users)
+        return {accepted: True}
 
-    terms_accepted = strategy.session_get('terms_accepted', None)
-    if getattr(user, field_name, None) is None:
-        if terms_accepted is None:
-            # We haven't gone through the flow yet -- go to the T&C page
-            current_partial = kwargs.get('current_partial')
-            terms_of_service = reverse(view_name)
-            return strategy.redirect(f'{terms_of_service}?partial_token={current_partial.token}')
+    field_name = 'community_terms_accepted'
+    view_name = 'community_terms'
+    terms_accepted = strategy.session_get(accepted, None)
+    if getattr(user, field_name, None) is not None:
+        # User had previously accepted, so short-circuit the T&C page.
+        return {accepted: True}
 
-        if not terms_accepted:
-            raise AuthCanceled("Terms and conditions were not accepted.")
+    if terms_accepted is None:
+        # We haven't gone through the flow yet -- go to the T&C page
+        current_partial = kwargs.get('current_partial')
+        return strategy.redirect(f'{reverse(view_name)}?partial_token={current_partial.token}')
 
-        # We've accepted the T&C, set the field on the user.
-        setattr(user, field_name, timezone.now())
-        user.save()
-        return {'terms_accepted': terms_accepted}
+    if not terms_accepted:
+        raise AuthCanceled("Terms and conditions were not accepted.")
 
-    # User had previously accepted, so short-circuit the T&C page.
-    return {'terms_accepted': True}
+    # We've accepted the T&C, set the field on the user.
+    setattr(user, field_name, timezone.now())
+    user.save()
+    return {accepted: terms_accepted}
 
 
 @partial

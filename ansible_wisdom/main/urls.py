@@ -41,11 +41,6 @@ urlpatterns = [
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
     path(
-        'commercial-terms/',
-        TermsOfService.as_view(template_name='users/commercial-terms.html'),
-        name='commercial_terms',
-    ),
-    path(
         'community-terms/',
         TermsOfService.as_view(template_name='users/community-terms.html'),
         name='community_terms',
