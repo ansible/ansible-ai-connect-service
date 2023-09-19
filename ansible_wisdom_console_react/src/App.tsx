@@ -5,8 +5,13 @@ import {PageApp} from './PageApp'
 import {PageNavigation, PageNavigationElements} from './PageNavigation'
 import {ModelSettings} from "./ModelSettings";
 
-export function App() {
-    const {t} = useTranslation()
+export interface AppProps {
+    debug: boolean
+}
+
+export function App(props: AppProps) {
+    const {t} = useTranslation();
+    const {debug} = props;
 
     const navigationItems = useMemo<PageNavigationElements>(
         () => [
@@ -19,13 +24,13 @@ export function App() {
                         // Model settings
                         label: t('ModelSettings'),
                         path: 'settings',
-                        element: <ModelSettings/>
+                        element: <ModelSettings debug={debug}/>
                     },
                 ],
             },
         ],
         [t]
-    )
+    );
 
     return (
         <PageApp
@@ -34,7 +39,7 @@ export function App() {
             navigationItems={navigationItems}
             basename="/console"
         />
-    )
+    );
 }
 
 export default App;
