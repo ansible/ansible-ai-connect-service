@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {CheckCircleIcon, OutlinedQuestionCircleIcon, PlusCircleIcon} from "@patternfly/react-icons";
 import './ModelSettings.css';
 import {Success, WcaKey, WcaKeyResponse, WcaModelId, WcaModelIdResponse} from "./api/types";
+import {DELAY} from "./api/globals";
 import {testWcaKey, testWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {Alerts, AlertsHandle} from "./Alerts";
@@ -38,40 +39,42 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
     const alertsRef = useRef<AlertsHandle>(null);
 
     const testKey = useCallback(() => {
-        setIsValidatingKey(true);
+        const timeoutId = setTimeout(() => setIsValidatingKey(true), DELAY);
         testWcaKey()
             .then((_) => {
                 alertsRef.current?.addAlert(t("KeyValidationSuccess"));
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setKeyError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setIsValidatingKey(false);
+                clearTimeout(timeoutId);
             });
-    }, []);
+    }, [t]);
 
     const testModelId = () => {
-        setIsValidatingModelId(true);
+        const timeoutId = setTimeout(() => setIsValidatingModelId(true), DELAY);
         testWcaModelId()
             .then((_) => {
                 alertsRef.current?.addAlert(t("ModelIdValidationSuccess"));
             })
             .catch((error) => {
-                if (error.response.status === 400) {
+                if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
                 }
-                if (error.response.status === 500) {
+                if (error.response?.status === 500) {
                     setModelIdError({inError: true, message: error.response.data});
                 }
             })
             .finally(() => {
                 setIsValidatingModelId(false);
+                clearTimeout(timeoutId);
             });
     };
 

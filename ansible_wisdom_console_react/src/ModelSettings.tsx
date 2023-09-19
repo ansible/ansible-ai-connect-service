@@ -48,6 +48,7 @@ export function ModelSettings() {
                     wcaKey={wcaKey}
                     cancel={() => setMode('OVERVIEW')}
                     reload={() => {
+                        setWcaKey({status: "NOT_ASKED"});
                         setReloadWcaKey(true);
                         setMode('OVERVIEW');
                     }}
@@ -58,6 +59,7 @@ export function ModelSettings() {
                     wcaModelId={wcaModelId}
                     cancel={() => setMode('OVERVIEW')}
                     reload={() => {
+                        setWcaModelId({status: "NOT_ASKED"});
                         setReloadWcaModelId(true);
                         setMode('OVERVIEW');
                     }}
