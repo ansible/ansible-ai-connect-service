@@ -29,7 +29,7 @@ export function App(props: AppProps) {
                 ],
             },
         ],
-        [t]
+        [t, debug]
     );
 
     return (
