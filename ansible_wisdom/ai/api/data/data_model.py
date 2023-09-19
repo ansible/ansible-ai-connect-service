@@ -26,3 +26,10 @@ class ModelMeshData(TypedDict):
 
 class ModelMeshPayload(BaseModel):
     instances: list[ModelMeshData]
+
+
+class CodematchPostData(TypedDict):
+    input: str
+    rh_user_has_seat: bool
+    organization_id: Union[str, None]
+    suggestionId: Union[str, None]

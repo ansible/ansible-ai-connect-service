@@ -1,13 +1,13 @@
 import json
 import logging
+from abc import abstractmethod
 
 import requests
 from django.apps import apps
 from django.conf import settings
 
-from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
-from .base import ModelMeshClient
-from .exceptions import ModelTimeoutError
+from ...aws.wca_secret_manager import Suffixes, WcaSecretManagerError
+from ..base import ModelMeshClient
 
 logger = logging.getLogger(__name__)
 
