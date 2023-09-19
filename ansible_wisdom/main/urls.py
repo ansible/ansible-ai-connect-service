@@ -24,6 +24,7 @@ from drf_spectacular.views import (
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
 from main.views import ConsoleView, LoginView
+from oauth2_provider.urls import app_name, base_urlpatterns
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
 WISDOM_API_VERSION = "v0"
@@ -45,7 +46,7 @@ urlpatterns = [
         TermsOfService.as_view(template_name='users/community-terms.html'),
         name='community_terms',
     ),
-    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('o/', include((base_urlpatterns, app_name), namespace='oauth2_provider')),
     path(
         'login/',
         LoginView.as_view(
