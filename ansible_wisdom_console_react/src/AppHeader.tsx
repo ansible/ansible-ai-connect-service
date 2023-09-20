@@ -1,9 +1,39 @@
 import {PageMasthead} from '@ansible/ansible-ui-framework'
 import {useTranslation} from 'react-i18next'
+import {DropdownItem, ToolbarGroup, ToolbarItem} from "@patternfly/react-core";
+import {UserCircleIcon} from "@patternfly/react-icons";
+import {PageMastheadDropdown} from "./PageMastheadDropdown";
 
-export function AppHeader() {
+export interface AppHeaderProps {
+    userName: string
+}
+
+export function AppHeader(props: AppHeaderProps) {
     const {t} = useTranslation()
+    const {userName} = props;
+
+    const logout = () => {
+        window.location.assign("/logout")
+    };
+
     return (
-        <PageMasthead title={t("AnsibleLightspeedConsole")}/>
+        <PageMasthead
+            title={t("AnsibleLightspeedConsole")}
+        >
+            <ToolbarItem style={{flexGrow: 1}}/>
+            <ToolbarGroup variant="icon-button-group">
+                <ToolbarItem>
+                    <PageMastheadDropdown
+                        id="account-menu"
+                        icon={<UserCircleIcon size="md"/>}
+                        label={userName}
+                    >
+                        <DropdownItem id="logout" label={t('Logout')} onClick={logout}>
+                            {t('Logout')}
+                        </DropdownItem>
+                    </PageMastheadDropdown>
+                </ToolbarItem>
+            </ToolbarGroup>
+        </PageMasthead>
     )
 }
