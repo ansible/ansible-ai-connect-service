@@ -193,6 +193,8 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad Request
         '401':
           description: Unauthorized
         '403':
@@ -281,6 +283,8 @@ paths:
       responses:
         '200':
           description: OK
+        '400':
+          description: Bad request
         '401':
           description: Unauthorized
         '403':
@@ -494,6 +498,8 @@ components:
           description: A UUID that identifies a suggestion.
         metadata:
           $ref: '#/components/schemas/Metadata'
+        model_name:
+          type: string
       required:
       - prompt
     CompletionResponse:

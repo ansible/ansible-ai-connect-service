@@ -47,7 +47,7 @@ class Metadata(serializers.Serializer):
 )
 class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['prompt', 'suggestionId', 'metadata']
+        fields = ['prompt', 'suggestionId', 'metadata', 'model_name']
 
     prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
@@ -62,6 +62,7 @@ class CompletionRequestSerializer(serializers.Serializer):
         help_text="A UUID that identifies a suggestion.",
     )
     metadata = Metadata(required=False)
+    model_name = serializers.CharField(required=False)
 
     @staticmethod
     def validate_extracted_prompt(prompt, user):

@@ -16,6 +16,7 @@ from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSou
 from ai.api.views import Completions, CompletionsPromptType
 from ai.feature_flags import WisdomFlags
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.cache import cache
@@ -64,6 +65,7 @@ class DummyMeshClient(ModelMeshClient):
                 pass
 
         self.response_data = response_data
+        self.response_data['model_id'] = settings.ANSIBLE_AI_MODEL_NAME
 
     def infer(self, data, model_name=None):
         if self.test_inference_match:
@@ -90,7 +92,6 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         )
         self.user.user_id = str(uuid.uuid4())
         self.user.community_terms_accepted = timezone.now()
-        self.user.commercial_terms_accepted = timezone.now()
         self.user.save()
 
         group_1, _ = Group.objects.get_or_create(name='Group 1')
@@ -133,6 +134,8 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             return "https://wca_api_url<>modelX" if name == WisdomFlags.WCA_API else ""
 
         feature_flags.get = get_feature_flags
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         response = MockResponse(
             json={"predictions": [""]},
@@ -141,6 +144,8 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        model_client.get_model_id = Mock(return_value='org-model-id')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
             r = self.client.post(reverse('completions'), self.payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -150,7 +155,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                 "https://wca_api_url/v1/wca/codegen/ansible",
             )
             self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'modelX'
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -178,6 +183,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
 
 @modify_settings()
+@override_settings(LAUNCHDARKLY_SDK_KEY=None)
 class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_full_payload(self):
         payload = {

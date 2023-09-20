@@ -7,13 +7,13 @@ feature_flags = FeatureFlags()
 
 class AcceptedTermsPermission(permissions.BasePermission):
     """
-    Allow access only to users who have accepted terms and conditions.
+    Allow access only to users who have accepted terms and conditions or paid users.
     """
 
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            if user.commercial_terms_accepted or user.community_terms_accepted:
+            if user.community_terms_accepted or user.rh_user_has_seat:
                 return True
         return False
 

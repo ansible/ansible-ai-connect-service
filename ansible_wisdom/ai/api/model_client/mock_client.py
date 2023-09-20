@@ -17,9 +17,11 @@ class MockClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_name="wisdom"):
+    def infer(self, model_input, model_name=None):
+        model_name = model_name or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'mock' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
         jitter = random.random() if settings.MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER else 1
         time.sleep((settings.MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter) / 1000)
+        settings.MOCK_MODEL_RESPONSE_BODY['model_id'] = '_'
         return json.loads(settings.MOCK_MODEL_RESPONSE_BODY)

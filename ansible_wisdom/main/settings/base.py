@@ -22,8 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
 # WCA
-ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
 ANSIBLE_AI_MODEL_WCA_INFERENCE_URL = os.getenv("ANSIBLE_AI_MODEL_WCA_INFERENCE_URL")
+ANSIBLE_WCA_FREE_API_KEY = os.getenv("ANSIBLE_WCA_FREE_API_KEY")
+ANSIBLE_WCA_FREE_MODEL_ID = os.getenv("ANSIBLE_WCA_FREE_MODEL_ID")
+
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
@@ -135,8 +137,8 @@ SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.terms_of_service',
     'users.pipeline.load_extra_data',
+    'users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
@@ -187,6 +189,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
 
 ROOT_URLCONF = "main.urls"
