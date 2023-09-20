@@ -123,7 +123,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         except HTTPError:
             # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
             logger.error(
-                f"An error occurred trying to retrieve a WCA Token with API Key '${wca_key}'."
+                f"An error occurred trying to retrieve a WCA Token for Organisation '${org_id}'."
             )
             return Response(status=HTTP_400_BAD_REQUEST)
 
