@@ -114,6 +114,9 @@ class InternalServerError(BaseWisdomAPIException):
 def get_model_client(wisdom_app, user):
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
+    if user.rh_user_has_seat:
+        model_mesh_client = wisdom_app.wca_client
+        model_mesh_client.set_inference_url(settings.ANSIBLE_AI_MODEL_WCA_INFERENCE_URL)
     if settings.LAUNCHDARKLY_SDK_KEY:
         wca_api_info = feature_flags.get(WisdomFlags.WCA_API, user, "")
         if wca_api_info:
