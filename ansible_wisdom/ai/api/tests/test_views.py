@@ -6,15 +6,13 @@ import string
 import time
 import uuid
 from http import HTTPStatus
-from unittest import mock
 from unittest.mock import Mock, patch
 
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import Completions
-from ai.feature_flags import WisdomFlags
+from ai.api.views import Completions, get_model_client
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -102,39 +100,31 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
 
 @modify_settings()
-@override_settings(ANSIBLE_WCA_INFERENCE_URL='https://wca_api_url')
 class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
-    payload = {
-        "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-        "suggestionId": str(uuid.uuid4()),
-    }
-    response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @mock.patch('ai.api.views.feature_flags')
-    def test_wca_featureflag_disabled(self, feature_flags):
-        self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            DummyMeshClient(self, self.payload, self.response_data),
-        ):
-            r = self.client.post(reverse('completions'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            feature_flags.assert_not_called()
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @mock.patch('ai.api.views.feature_flags')
-    def test_wca_featureflag_on(self, feature_flags):
-        def get_feature_flags(name, *args):
-            return "something" if name == WisdomFlags.WCA_API else ""
-
-        feature_flags.get = get_feature_flags
+    def test_seated_got_wca(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, WCAClient))
+        self.assertIsNone(model_name)
+
+    def test_seatless_got_no_wca(self):
+        self.user.rh_user_has_seat = False
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertFalse(isinstance(model_client, WCAClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
         response = MockResponse(
             json={"predictions": [""]},
             status_code=200,
@@ -145,7 +135,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('completions'), self.payload)
+            r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()
             self.assertEqual(
@@ -155,29 +145,6 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @mock.patch('ai.api.views.feature_flags')
-    def test_wca_featureflag_off(self, feature_flags):
-        def get_feature_flags(name, *args):
-            return ""
-
-        feature_flags.get = get_feature_flags
-        self.client.force_authenticate(user=self.user)
-        model_client = WCAClient(inference_url='https://example.com')
-        model_client.session.post = Mock()
-        model_client.get_token = Mock()
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, self.payload, self.response_data),
-            ):
-                r = self.client.post(reverse('completions'), self.payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                model_client.get_token.assert_not_called()
-                model_client.session.post.assert_not_called()
 
 
 @modify_settings()
