@@ -59,19 +59,21 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_model_id'))
-        self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
     def test_get_model_id_when_defined(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
+        date_time = timezone.now().isoformat()
         self.mock_secret_manager.get_secret.return_value = {
             'SecretString': 'secret_model_id',
-            'CreatedDate': timezone.now().isoformat(),
+            'CreatedDate': date_time,
         }
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(r.data['model_id'], 'secret_model_id')
+        self.assertEqual(r.data['last_update'], date_time)
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
     def test_get_model_id_when_defined_throws_exception(self, *args):
@@ -94,9 +96,11 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
     def test_set_model_id(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
+
+        # ModelId should initially not exist
         self.mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_model_id'))
-        self.assertEqual(r.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
 
         # Set ModelId

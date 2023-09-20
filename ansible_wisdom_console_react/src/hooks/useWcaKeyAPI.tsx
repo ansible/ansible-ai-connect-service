@@ -15,15 +15,15 @@ export const useWcaKey = (reload: boolean) => {
                 .then((response) => {
                     if (isMounted) {
                         const lastUpdate = response.data['last_update'];
-                        setWcaKey({status: "SUCCESS", data: {lastUpdate: new Date(lastUpdate)}});
+                        if (lastUpdate) {
+                            setWcaKey({status: "SUCCESS", data: {lastUpdate: new Date(lastUpdate)}});
+                        } else {
+                            setWcaKey({status: "SUCCESS_NOT_FOUND"});
+                        }
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 404) {
-                        setWcaKey({status: "SUCCESS_NOT_FOUND"});
-                    } else {
-                        setWcaKey({status: "FAILURE", error: error});
-                    }
+                    setWcaKey({status: "FAILURE", error: error});
                 });
         }
         return () => {

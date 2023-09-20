@@ -12,7 +12,7 @@ export default webpackMockServer.add((app, helper) => {
             if (modelIds.has(ORG_ID)) {
                 res.json(modelIds.get(ORG_ID));
             } else {
-                res.sendStatus(404);
+                res.json({});
             }
         });
 

@@ -16,15 +16,15 @@ export const useWcaModelId = (reload: boolean) => {
                     if (isMounted) {
                         const modelId = response.data['model_id'];
                         const lastUpdate = response.data['last_update'];
-                        setWcaModelId({status: "SUCCESS", data: {model_id: modelId, lastUpdate: new Date(lastUpdate)}});
+                        if (lastUpdate) {
+                            setWcaModelId({status: "SUCCESS", data: {model_id: modelId, lastUpdate: new Date(lastUpdate)}});
+                        } else {
+                            setWcaModelId({status: "SUCCESS_NOT_FOUND"});
+                        }
                     }
                 })
                 .catch((error) => {
-                    if (error.response.status === 404) {
-                        setWcaModelId({status: "SUCCESS_NOT_FOUND"});
-                    } else {
-                        setWcaModelId({status: "FAILURE", error: error});
-                    }
+                    setWcaModelId({status: "FAILURE", error: error});
                 });
         }
         return () => {

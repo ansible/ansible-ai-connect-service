@@ -22,7 +22,6 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_204_NO_CONTENT,
     HTTP_400_BAD_REQUEST,
-    HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
@@ -48,7 +47,6 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             400: OpenApiResponse(description='Bad Request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
-            404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
             500: OpenApiResponse(description='Internal service error'),
         },
@@ -66,12 +64,12 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            response = secret_manager.get_secret(org_id, Suffixes.API_KEY)
-            if response is None:
-                return Response(status=HTTP_404_NOT_FOUND)
+            wca_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+            if wca_key is None:
+                return Response(status=HTTP_200_OK)
             # Once written the Key value is never returned to the User,
             # instead we return when the secret was last updated.
-            return Response(status=HTTP_200_OK, data={'last_update': response['CreatedDate']})
+            return Response(status=HTTP_200_OK, data={'last_update': wca_key['CreatedDate']})
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)

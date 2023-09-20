@@ -16,7 +16,7 @@ export default webpackMockServer.add((app, helper) => {
                 const data = keys.get(ORG_ID);
                 res.json({last_update: data[LAST_UPDATED_FIELD]});
             } else {
-                res.sendStatus(404);
+                res.json({});
             }
         });
 
