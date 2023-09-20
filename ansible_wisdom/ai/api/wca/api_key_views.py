@@ -14,6 +14,7 @@ from django.apps import apps
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -118,10 +119,15 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         # Validate API Key
         model_mesh_client = apps.get_app_config("ai").wca_client
         try:
-            token = model_mesh_client.get_token(wca_key)
-            if token is None:
-                return Response(status=HTTP_400_BAD_REQUEST)
+            model_mesh_client.get_token(wca_key)
+        except HTTPError:
+            # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
+            logger.error(
+                f"An error occurred trying to retrieve a WCA Token for Organisation '${org_id}'."
+            )
+            return Response(status=HTTP_400_BAD_REQUEST)
 
+        try:
             # Store the validated API Key
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)

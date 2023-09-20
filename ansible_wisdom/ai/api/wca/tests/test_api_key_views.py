@@ -17,6 +17,7 @@ from django.test import override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from requests.exceptions import HTTPError
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -233,7 +234,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
         # Set Key
-        self.mock_wca_client.get_token.return_value = None
+        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
         r = self.client.post(
             reverse('wca_api_key'),
             data='{ "key": "a-new-key" }',
