@@ -1,4 +1,4 @@
-name: pip-compile
+name: wisdom-service - pip-compile
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
     #   - v*
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   pull_request:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
 permissions:
   contents: read
 

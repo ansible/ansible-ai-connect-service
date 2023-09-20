@@ -1,4 +1,4 @@
-import React, {forwardRef, useImperativeHandle} from 'react';
+import React, {forwardRef, useCallback, useImperativeHandle} from 'react';
 import {Alert, AlertActionCloseButton, AlertGroup, AlertProps} from "@patternfly/react-core";
 import {useTranslation} from "react-i18next";
 import './ModelSettings.css';
@@ -13,7 +13,11 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
     const {t} = useTranslation();
     const [alerts, setAlerts] = React.useState<React.ReactElement<AlertProps>[]>([]);
 
-    const _addAlert = (title: string) => {
+    const _removeAlert = useCallback((key: React.Key) => {
+        setAlerts(prevAlerts => prevAlerts.filter(alert => alert.props.id !== key.toString()));
+    }, []);
+
+    const _addAlert = useCallback((title: string) => {
         const key = new Date().getTime();
         setAlerts(prevAlerts => [
             <Alert
@@ -35,11 +39,7 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
             </Alert>,
             ...prevAlerts
         ]);
-    };
-
-    const _removeAlert = (key: React.Key) => {
-        setAlerts(prevAlerts => prevAlerts.filter(alert => alert.props.id !== key.toString()));
-    };
+    }, [t, _removeAlert]);
 
     useImperativeHandle(ref, () => ({
         addAlert(title: string) {
