@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Page} from "@patternfly/react-core";
+import {Alert, Page, PageSection, PageSectionVariants} from "@patternfly/react-core";
 import './ModelSettings.css';
 import {ModelSettingsKey} from "./ModelSettingsKey";
 import {ModelSettingsModelId} from "./ModelSettingsModelId";
@@ -7,10 +7,16 @@ import {ModelSettingsOverview} from "./ModelSettingsOverview";
 import {useWcaKey} from "./hooks/useWcaKeyAPI";
 import {WcaKey, WcaModelId} from "./api/types";
 import {useWcaModelId} from "./hooks/useWcaModelIdAPI";
+import {useTranslation} from "react-i18next";
 
 export type Mode = 'OVERVIEW' | 'SET_WCA_KEY' | 'SET_MODEL_ID';
 
-export function ModelSettings() {
+export interface ModelSettingsProps {
+    debug: boolean
+}
+
+export function ModelSettings(props: ModelSettingsProps) {
+    const {t} = useTranslation();
     const [mode, setMode] = useState<Mode>('OVERVIEW');
     const [reloadWcaKey, setReloadWcaKey] = useState<boolean>(true);
     const [reloadWcaModelId, setReloadWcaModelId] = useState<boolean>(true);
@@ -18,6 +24,7 @@ export function ModelSettings() {
     const [wcaModelId, setWcaModelId] = useState<WcaModelId>({status: "NOT_ASKED"});
     const _wcaKey = useWcaKey(reloadWcaKey);
     const _wcaModelId = useWcaModelId(reloadWcaModelId);
+    const {debug} = props;
 
     useEffect(() => {
         setWcaKey(_wcaKey);
@@ -29,6 +36,11 @@ export function ModelSettings() {
 
     return (
         <Page>
+            {debug && (
+                <PageSection variant={PageSectionVariants.light} isWidthLimited>
+                    <Alert title={t("DebugModeWarning")} variant={"warning"}/>
+                </PageSection>
+            )}
             {mode === 'OVERVIEW' && (
                 <ModelSettingsOverview
                     wcaKey={wcaKey}

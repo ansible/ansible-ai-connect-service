@@ -28,6 +28,7 @@ class LoginView(auth_views.LoginView):
 
 class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
+    extra_context = {'is_debug': settings.DEBUG}
 
     if settings.DEBUG:
         permission_classes = [

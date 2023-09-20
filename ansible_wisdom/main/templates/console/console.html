@@ -11,4 +11,5 @@
 {% block content %}
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root" class="Root"></div>
+    {% if is_debug %}<div id="debug"></div>{% endif %}
 {% endblock content %}

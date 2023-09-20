@@ -13,12 +13,6 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
     const {t} = useTranslation();
     const [alerts, setAlerts] = React.useState<React.ReactElement<AlertProps>[]>([]);
 
-    useImperativeHandle(ref, () => ({
-        addAlert(title: string) {
-            _addAlert(title);
-        }
-    }), []);
-
     const _addAlert = (title: string) => {
         const key = new Date().getTime();
         setAlerts(prevAlerts => [
@@ -46,6 +40,13 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
     const _removeAlert = (key: React.Key) => {
         setAlerts(prevAlerts => prevAlerts.filter(alert => alert.props.id !== key.toString()));
     };
+
+    useImperativeHandle(ref, () => ({
+        addAlert(title: string) {
+            _addAlert(title);
+        }
+    }), [_addAlert]);
+
     return (
         <AlertGroup isToast={true} isLiveRegion={true}>
             {alerts}
