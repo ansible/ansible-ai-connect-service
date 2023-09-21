@@ -20,7 +20,6 @@ ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock"] = (
     os.getenv("ANSIBLE_AI_MODEL_MESH_API_TYPE") or "http"
 )
 
-MOCK_ANSIBLE_AI_SEARCH = bool(os.getenv("MOCK_ANSIBLE_AI_SEARCH", False))
 MOCK_ANSIBLE_AI_SEARCH_RESULT = {
     'attributions': [
         {
