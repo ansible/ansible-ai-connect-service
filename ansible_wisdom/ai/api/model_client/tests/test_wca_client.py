@@ -202,3 +202,16 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaBadRequest):
             wca_client.get_model_id(True, '123', None)
+
+    # Seated users with no org are test users in "Commercial" group
+    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
+    def test_seated_with_no_org_get_free_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, None, None)
+        self.assertEqual(model_id, 'free')
+
+    # Seated users with no org are test users in "Commercial" group
+    def test_seated_with_no_org_can_pick_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, None, 'model-i-pick')
+        self.assertEqual(model_id, 'model-i-pick')

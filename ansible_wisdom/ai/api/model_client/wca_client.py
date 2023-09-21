@@ -96,10 +96,10 @@ class WCAClient(ModelMeshClient):
         raise WcaSecretManagerError
 
     def get_model_id(self, rh_user_has_seat, organization_id, requested_model_id):
-        if not rh_user_has_seat or organization_id is None:
+        if not rh_user_has_seat:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
-                logger.error(err_message)
+                logger.info(err_message)
                 raise WcaBadRequest(err_message)
             return self.free_model_id
 
@@ -108,6 +108,10 @@ class WCAClient(ModelMeshClient):
             # requested_model_id defined: i.e. not None, not "", not {} etc
             # let them use what they ask for
             return requested_model_id
+
+        # Non-RHSSO users with faked seats ("Commercial" group) will not have an org
+        if organization_id is None:
+            return self.free_model_id
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
 
