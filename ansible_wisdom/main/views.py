@@ -46,3 +46,9 @@ class ConsoleView(ProtectedTemplateView):
             IsOrganisationLightspeedSubscriber,
             AcceptedTermsPermission,
         ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user:
+            context["user_name"] = self.request.user.username
+        return context

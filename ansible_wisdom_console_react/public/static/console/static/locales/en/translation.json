@@ -39,5 +39,6 @@
   "Error": "Error",
   "ErrorDetails": "Details",
   "Test": "Test",
-  "Close": "Close"
+  "Close": "Close",
+  "UnknownUser": "<Unknown>"
 }

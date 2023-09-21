@@ -4,7 +4,7 @@
   "private": true,
   "homepage": "/static/console/",
   "dependencies": {
-    "@ansible/ansible-ui-framework": "^2.4.336",
+    "@ansible/ansible-ui-framework": "^2.4.456",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",
     "@patternfly/patternfly": "^4.224.5",
