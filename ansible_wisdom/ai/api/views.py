@@ -112,24 +112,19 @@ class InternalServerError(BaseWisdomAPIException):
 
 
 def get_model_client(wisdom_app, user):
+    if user.rh_user_has_seat:
+        return wisdom_app.wca_client, None
+
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
     if settings.LAUNCHDARKLY_SDK_KEY:
-        wca_api_info = feature_flags.get(WisdomFlags.WCA_API, user, "")
-        if wca_api_info:
-            # if feature flag for wca is on for this user
-            logger.debug(f"flag {WisdomFlags.WCA_API} has value {wca_api_info}")
-            wca_api, _ = wca_api_info.split('<>')
-            model_mesh_client = wisdom_app.wca_client
-            model_mesh_client.set_inference_url(wca_api)
-        else:
-            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            model_parts = model_tuple.split(':')
-            if len(model_parts) == 4:
-                server, port, model_name, _ = model_parts
-                logger.info(f"selecting model '{model_name}@{server}:{port}'")
-                model_mesh_client.set_inference_url(f"{server}:{port}")
+        model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+        logger.debug(f"flag model_name has value {model_tuple}")
+        model_parts = model_tuple.split(':')
+        if len(model_parts) == 4:
+            server, port, model_name, _ = model_parts
+            logger.info(f"selecting model '{model_name}@{server}:{port}'")
+            model_mesh_client.set_inference_url(f"{server}:{port}")
     return model_mesh_client, model_name
 
 
