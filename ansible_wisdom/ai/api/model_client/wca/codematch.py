@@ -2,9 +2,8 @@ import logging
 
 import requests
 
-from ansible_wisdom.ai.api.model_client.wca import WCAClient
-
-from .exceptions import ModelTimeoutError
+from ..exceptions import ModelTimeoutError
+from . import WCAClient
 
 logger = logging.getLogger(__name__)
 

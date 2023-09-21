@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class WCACodegenClient(WCAClient):
-    def infer(self, model_input, model_name="wisdom"):
+    def infer(self, model_input, model_name=None):
         logger.debug(f"Input prompt: {model_input}")
-        # path matches ANSIBLE_AI_MODEL_MESH_HOST="https://api.dataplatform.test.cloud.ibm.com"
+        # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -19,12 +19,16 @@ class WCACodegenClient(WCAClient):
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
+        if prompt.endswith('\n') is False:
+            prompt = f"{prompt}\n"
+
+        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_name)
         data = {
-            "model_id": model_name,
-            "prompt": f"{context}{prompt}\n",
+            "model_id": model_id,
+            "prompt": f"{context}{prompt}",
         }
 
-        logger.debug(f"Codegen API request payload: {data}")
+        logger.debug(f"Inference API request payload: {data}")
 
         try:
             # TODO: store token and only fetch a new one if it has expired
@@ -40,7 +44,8 @@ class WCACodegenClient(WCAClient):
             )
             result.raise_for_status()
             response = result.json()
-            logger.debug(f"Codegen API response: {response}")
+            response['model_id'] = model_id
+            logger.debug(f"Inference API response: {response}")
             return response
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError
