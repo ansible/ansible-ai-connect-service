@@ -302,6 +302,7 @@ class TestUserSeat(TestCase):
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)
+        self.assertEqual(user.org_id, '9999999999')
 
 
 class TestOrgAdmin(TestCase):
