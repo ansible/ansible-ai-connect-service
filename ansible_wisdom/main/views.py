@@ -9,7 +9,6 @@ from ai.api.permissions import (
     IsWCAKeyApiFeatureFlagOn,
     IsWCAModelIdApiFeatureFlagOn,
 )
-from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect
 from main.base_views import ProtectedTemplateView
@@ -28,24 +27,16 @@ class LoginView(auth_views.LoginView):
 
 class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
-    extra_context = {'is_debug': settings.DEBUG}
 
-    if settings.DEBUG:
-        permission_classes = [
-            IsAuthenticated,
-            IsAuthenticatedOrTokenHasScope,
-            AcceptedTermsPermission,
-        ]
-    else:
-        permission_classes = [
-            IsWCAKeyApiFeatureFlagOn,
-            IsWCAModelIdApiFeatureFlagOn,
-            IsAuthenticated,
-            IsAuthenticatedOrTokenHasScope,
-            IsOrganisationAdministrator,
-            IsOrganisationLightspeedSubscriber,
-            AcceptedTermsPermission,
-        ]
+    permission_classes = [
+        IsWCAKeyApiFeatureFlagOn,
+        IsWCAModelIdApiFeatureFlagOn,
+        IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        IsOrganisationAdministrator,
+        IsOrganisationLightspeedSubscriber,
+        AcceptedTermsPermission,
+    ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

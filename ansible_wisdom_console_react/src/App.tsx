@@ -6,13 +6,12 @@ import {PageNavigationItem} from "@ansible/ansible-ui-framework";
 import {PageApp} from "./PageApp";
 
 export interface AppProps {
-    debug: boolean
     userName?: string
 }
 
 export function App(props: AppProps) {
     const {t} = useTranslation();
-    const {debug, userName} = props;
+    const {userName} = props;
 
     const navigationItems = useMemo<PageNavigationItem[]>(
         () => [
@@ -25,12 +24,12 @@ export function App(props: AppProps) {
                         // Model settings
                         label: t('ModelSettings'),
                         path: 'settings',
-                        element: <ModelSettings debug={debug}/>
+                        element: <ModelSettings/>
                     },
                 ],
             },
         ],
-        [t, debug]
+        [t]
     );
 
     return (

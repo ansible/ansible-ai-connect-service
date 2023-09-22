@@ -11,7 +11,6 @@ from ai.api.permissions import (
 from ai.api.serializers import WcaModelIdRequestSerializer
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
-from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -28,21 +27,14 @@ from rest_framework.status import (
 
 logger = logging.getLogger(__name__)
 
-if settings.DEBUG:
-    PERMISSION_CLASSES = [
-        IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-    ]
-else:
-    PERMISSION_CLASSES = [
-        IsWCAModelIdApiFeatureFlagOn,
-        IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
-        AcceptedTermsPermission,
-    ]
+PERMISSION_CLASSES = [
+    IsWCAModelIdApiFeatureFlagOn,
+    IsAuthenticated,
+    IsAuthenticatedOrTokenHasScope,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+    AcceptedTermsPermission,
+]
 
 
 class WCAModelIdView(RetrieveAPIView, CreateAPIView):
