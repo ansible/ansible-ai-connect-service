@@ -1,5 +1,4 @@
 {
-  "AnsibleLightspeedConsole": "Ansible Lightspeed Admin Portal",
   "DebugModeWarning": "You are running the Admin Portal in DEBUG mode. Some permissions are disabled to simplify development.",
   "Overview": "Overview",
   "OverviewDescription": "Placeholder. Feature to be implemented.",
