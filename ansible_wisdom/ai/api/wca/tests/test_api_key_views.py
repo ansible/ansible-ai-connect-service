@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
-from ai.api.model_client.wca_client import WCAClient
+from ai.api.model_client.wca import WCAClient
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
