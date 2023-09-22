@@ -30,7 +30,7 @@ from yaml.error import MarkedYAMLError
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
 from . import formatter as fmtr
-from .data.data_model import APIPayload, ModelMeshPayload
+from .data.data_model import APIPayload, AttributionDataTransformer, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
 from .serializers import (
@@ -148,7 +148,7 @@ class CompletionsPromptType(str, Enum):
 
 def get_model_client(wisdom_app, user):
     if user.rh_user_has_seat:
-        return wisdom_app.wca_client, None
+        return wisdom_app.wca_codegen_client, None
 
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
@@ -817,38 +817,106 @@ class Attributions(GenericAPIView):
         summary="Code suggestion attributions",
     )
     def post(self, request) -> Response:
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        request_serializer = self.get_serializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        suggestion_id = str(request_serializer.validated_data.get('suggestionId', ''))
 
-        suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
-        start_time = time.time()
-        try:
-            encode_duration, search_duration, resp_serializer = self.perform_search(
-                serializer, request.user
+        if request.user.rh_user_has_seat:
+            model_mesh_client = apps.get_app_config("ai").wca_codematch_client
+            request_data = request_serializer.validated_data
+            user_id = request.user.uuid
+
+            model_mesh_payload = ModelMeshPayload(
+                instances=[
+                    {
+                        "prompt": request_data.get('suggestion', ''),
+                        "userId": str(user_id) if user_id else None,
+                        "rh_user_has_seat": request._request.user.rh_user_has_seat,
+                        "organization_id": request._request.user.organization_id,
+                        "suggestionId": suggestion_id,
+                        "context": "",
+                    }
+                ]
             )
-        except Exception as exc:
-            logger.error(f"Failed to search for attributions\nException:\n{exc}")
-            return Response({'message': "Unable to complete the request"}, status=503)
-        duration = round((time.time() - start_time) * 1000, 2)
-        attribution_encoding_hist.observe(encode_duration / 1000)
-        attribution_search_hist.observe(search_duration / 1000)
-        # Currently the only thing from Attributions that is going to Segment is the
-        # inferred sources, which do not seem to need anonymizing.
-        self.write_to_segment(
-            request.user,
-            suggestion_id,
-            duration,
-            encode_duration,
-            search_duration,
-            resp_serializer.validated_data,
-        )
 
-        return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
+            data = model_mesh_payload.dict()
+            logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{data}")
+
+            attributions = None
+            exception = None
+            start_time = time.time()
+            try:
+                client_response = model_mesh_client.infer(data)
+                attributions = AttributionDataTransformer(**client_response[0]).attributions()
+                try:
+                    response_data = {
+                        "attributions": attributions,
+                    }
+                    response_serializer = AttributionResponseSerializer(data=response_data)
+                    response_serializer.is_valid(raise_exception=True)
+                except Exception:
+                    process_error_count.labels(stage='response_serialization_validation').inc()
+                    logger.exception(
+                        f"error serializing final response for suggestion {suggestion_id}"
+                    )
+                    raise InternalServerError
+            except ModelTimeoutError as exc:
+                exception = exc
+                logger.warn(
+                    f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                    f" for suggestion {suggestion_id}"
+                )
+                raise ModelTimeoutException
+            except WcaBadRequest as exc:
+                exception = exc
+                logger.exception(f"bad request for completion for suggestion {suggestion_id}")
+                raise WcaBadRequestException
+            except Exception as exc:
+                exception = exc
+                logger.exception(f"error requesting completion for suggestion {suggestion_id}")
+                raise ServiceUnavailable
+            finally:
+                duration = round((time.time() - start_time) * 1000, 2)
+                attribution_search_hist.observe(duration / 1000)
+                event = {
+                    "duration": duration,
+                    "exception": exception is not None,
+                    "problem": None if exception is None else exception.__class__.__name__,
+                    "request": data,
+                    "response": attributions,
+                    "suggestionId": str(suggestion_id),
+                }
+                send_segment_event(event, "attribution", request.user)
+
+        else:
+            start_time = time.time()
+            try:
+                encode_duration, search_duration, response_serializer = self.perform_search(
+                    request_serializer, request.user
+                )
+            except Exception as exc:
+                logger.error(f"Failed to search for attributions\nException:\n{exc}")
+                return Response({'message': "Unable to complete the request"}, status=503)
+            duration = round((time.time() - start_time) * 1000, 2)
+            attribution_encoding_hist.observe(encode_duration / 1000)
+            attribution_search_hist.observe(search_duration / 1000)
+            # Currently the only thing from Attributions that is going to Segment is the
+            # inferred sources, which do not seem to need anonymizing.
+            event = {
+                'suggestionId': suggestion_id,
+                'duration': duration,
+                'encode_duration': encode_duration,
+                'search_duration': search_duration,
+                'attributions': response_serializer.validated_data.get('attributions', []),
+            }
+            send_segment_event(event, "attribution", request.user)
+
+        return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_search(self, serializer, user: User):
         index = None
         if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", user, "")
+            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
             model_parts = model_tuple.split(':')
             if len(model_parts) == 4:
@@ -860,16 +928,3 @@ class Attributions(GenericAPIView):
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
         return data['meta']['encode_duration'], data['meta']['search_duration'], resp_serializer
-
-    def write_to_segment(
-        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
-    ):
-        attributions = attribution_data.get('attributions', [])
-        event = {
-            'suggestionId': suggestion_id,
-            'duration': duration,
-            'encode_duration': encode_duration,
-            'search_duration': search_duration,
-            'attributions': attributions,
-        }
-        send_segment_event(event, "attribution", user)

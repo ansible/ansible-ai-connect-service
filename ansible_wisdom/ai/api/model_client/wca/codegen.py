@@ -9,11 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class WCACodegenClient(WCAClient):
-    def infer(self, model_input, model_name=None):
-        logger.debug(f"Input prompt: {model_input}")
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
+    def infer(self, model_input, model_name=None):
+        logger.debug(f"Input prompt: {model_input}")
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)

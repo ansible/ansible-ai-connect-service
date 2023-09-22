@@ -34,9 +34,3 @@ repos:
   hooks:
   - id: pyupgrade
     language_version: python3
-- repo: local
-  hooks:
-  - id: check_temp_code
-    language: system
-    name: Temporary Code Check
-    entry: bash -c "chmod +x ./tools/scripts/check_temp_code.sh && sh ./tools/scripts/check_temp_code.sh"

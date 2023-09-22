@@ -28,8 +28,7 @@ class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ai"
     model_mesh_client = None
-    wca_codegen_client = None
-    wca_codematch_client = None
+    wca_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
