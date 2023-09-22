@@ -171,7 +171,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_multi_task_prompt_commercial(self):
+    @patch("ai.api.views.get_model_client")
+    def test_multi_task_prompt_commercial(self, mock_get_model_client):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
             "suggestionId": str(uuid.uuid4()),
@@ -183,26 +184,27 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
+        mock_get_model_client.return_value = (
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
-        ):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data['predictions'])
-                self.assertSegmentTimestamp(log)
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event['event'] == 'completion':
-                        properties = event['properties']
-                        self.assertEqual(properties['taskCount'], 2)
-                        self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
+            None,
+        )
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data['predictions'])
+            self.assertSegmentTimestamp(log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'completion':
+                    properties = event['properties']
+                    self.assertEqual(properties['taskCount'], 2)
+                    self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_multi_task_prompt_commercial_with_pii(self):
+    @patch("ai.api.views.get_model_client")
+    def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & say hello fred@redhat.com\n",  # noqa: E501
             "suggestionId": str(uuid.uuid4()),
@@ -214,26 +216,25 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            # test_inference_match=False because anonymizer changes the prompt before calling WCA
+        # test_inference_match=False because anonymizer changes the prompt before calling WCA
+        mock_get_model_client.return_value = (
             DummyMeshClient(
                 self, payload, response_data, test_inference_match=False, rh_user_has_seat=True
             ),
-        ):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data['predictions'])
-                self.assertSegmentTimestamp(log)
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event['event'] == 'completion':
-                        properties = event['properties']
-                        self.assertEqual(properties['taskCount'], 2)
-                        self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
+            None,
+        )
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data['predictions'])
+            self.assertSegmentTimestamp(log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'completion':
+                    properties = event['properties']
+                    self.assertEqual(properties['taskCount'], 2)
+                    self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_rate_limit(self):
