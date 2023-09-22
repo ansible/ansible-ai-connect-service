@@ -58,3 +58,16 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.assertEqual(len(view.permission_classes), len(required_permissions))
         for permission in required_permissions:
             self.assertTrue(permission in view.permission_classes)
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(IsWCAKeyApiFeatureFlagOn, 'has_permission', return_value=True)
+    @patch.object(IsWCAModelIdApiFeatureFlagOn, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
+    def test_extra_data(self, *args):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse('console'))
+        self.assertIsInstance(response.context_data, dict)
+        context = response.context_data
+        self.assertEqual(context['is_debug'], False)
+        self.assertEqual(context['user_name'], self.user.username)

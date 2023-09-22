@@ -115,10 +115,6 @@ create-superuser: create-cachetable
 create-application: create-superuser
 	python ansible_wisdom/manage.py createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
 
-.PHONY: create-application-ui-react
-create-application-ui-react:
-	npm --prefix ./ansible_wisdom_console_react run build
-
 .PHONY: test
 test:
 	python ansible_wisdom/manage.py test
@@ -131,3 +127,22 @@ code-coverage:
 	coverage run --rcfile=../setup.cfg manage.py test && \
 	coverage html && \
 	google-chrome htmlcov/index.html
+
+# ============================
+# Admin Portal related commands
+# ============================
+
+# Compile and bundle Admin Portal into Django application
+.PHONY: admin-portal-bundle
+admin-portal-bundle:
+	npm --prefix ./ansible_wisdom_console_react run build
+
+# Run tests for Admin Portal
+.PHONY: admin-portal-test
+admin-portal-test:
+	npm --prefix ./ansible_wisdom_console_react run test
+
+# Run lint checks for Admin Portal
+.PHONY: admin-portal-lint
+admin-portal-lint:
+	npm --prefix ./ansible_wisdom_console_react run lint

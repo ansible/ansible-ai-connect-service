@@ -39,7 +39,7 @@ class AiConfig(AppConfig):
         else:
             logger.error('GPU is not available')
         self.wca_client = WCAClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
         )
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
             from .api.model_client.grpc_client import GrpcClient

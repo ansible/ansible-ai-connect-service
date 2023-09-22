@@ -1,4 +1,4 @@
-import React, {forwardRef, useImperativeHandle} from 'react';
+import React, {forwardRef, useCallback, useImperativeHandle} from 'react';
 import {Alert, AlertActionCloseButton, AlertGroup, AlertProps} from "@patternfly/react-core";
 import {useTranslation} from "react-i18next";
 import './ModelSettings.css';
@@ -13,13 +13,11 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
     const {t} = useTranslation();
     const [alerts, setAlerts] = React.useState<React.ReactElement<AlertProps>[]>([]);
 
-    useImperativeHandle(ref, () => ({
-        addAlert(title: string) {
-            _addAlert(title);
-        }
-    }), []);
+    const _removeAlert = useCallback((key: React.Key) => {
+        setAlerts(prevAlerts => prevAlerts.filter(alert => alert.props.id !== key.toString()));
+    }, []);
 
-    const _addAlert = (title: string) => {
+    const _addAlert = useCallback((title: string) => {
         const key = new Date().getTime();
         setAlerts(prevAlerts => [
             <Alert
@@ -41,11 +39,14 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
             </Alert>,
             ...prevAlerts
         ]);
-    };
+    }, [t, _removeAlert]);
 
-    const _removeAlert = (key: React.Key) => {
-        setAlerts(prevAlerts => prevAlerts.filter(alert => alert.props.id !== key.toString()));
-    };
+    useImperativeHandle(ref, () => ({
+        addAlert(title: string) {
+            _addAlert(title);
+        }
+    }), [_addAlert]);
+
     return (
         <AlertGroup isToast={true} isLiveRegion={true}>
             {alerts}

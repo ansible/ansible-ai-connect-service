@@ -60,7 +60,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             });
     }, [t]);
 
-    const testModelId = () => {
+    const testModelId = useCallback(() => {
         const timeoutId = setTimeout(() => setIsValidatingModelId(true), DELAY);
         testWcaModelId()
             .then((_) => {
@@ -79,7 +79,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                 setIsValidatingModelId(false);
                 clearTimeout(timeoutId);
             });
-    };
+    }, [t]);
 
     return (
         <>

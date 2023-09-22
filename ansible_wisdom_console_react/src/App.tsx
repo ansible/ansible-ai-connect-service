@@ -1,14 +1,20 @@
 import {useMemo} from 'react'
 import {useTranslation} from 'react-i18next'
 import {AppHeader} from './AppHeader'
-import {PageApp} from './PageApp'
-import {PageNavigation, PageNavigationElements} from './PageNavigation'
 import {ModelSettings} from "./ModelSettings";
+import {PageNavigationItem} from "@ansible/ansible-ui-framework";
+import {PageApp} from "./PageApp";
 
-export function App() {
-    const {t} = useTranslation()
+export interface AppProps {
+    debug: boolean
+    userName?: string
+}
 
-    const navigationItems = useMemo<PageNavigationElements>(
+export function App(props: AppProps) {
+    const {t} = useTranslation();
+    const {debug, userName} = props;
+
+    const navigationItems = useMemo<PageNavigationItem[]>(
         () => [
             {
                 // Admin portal
@@ -19,22 +25,21 @@ export function App() {
                         // Model settings
                         label: t('ModelSettings'),
                         path: 'settings',
-                        element: <ModelSettings/>
+                        element: <ModelSettings debug={debug}/>
                     },
                 ],
             },
         ],
-        [t]
-    )
+        [t, debug]
+    );
 
     return (
         <PageApp
-            header={<AppHeader/>}
-            sidebar={<PageNavigation navigationItems={navigationItems}/>}
+            header={<AppHeader userName={userName ?? t("UnknownUser")}/>}
             navigationItems={navigationItems}
             basename="/console"
         />
-    )
+    );
 }
 
 export default App;

@@ -9,8 +9,11 @@ import {App} from './App'
 import './i18n'
 import './index.css'
 
+const debugElement = document.getElementById('debug');
+const userName = document.getElementById('userName')?.innerText ?? undefined;
+
 createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>
-        <App/>
+        <App debug={debugElement !== null} userName={userName}/>
     </StrictMode>
 )
