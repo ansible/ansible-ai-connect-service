@@ -46,6 +46,10 @@ class CompletionRequestSerializerTest(TestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.validate({'prompt': "#1&2&3&4&5&6&7&8&9&10&11\n"})
 
+        # multiple && raises an exception
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate({'prompt': "#install ssh && start ssh\n"})
+
     @override_settings(MULTI_TASK_MAX_REQUESTS=3)
     def test_validate_max_multitask_requests_setting(self):
         user = Mock(rh_user_has_seat=True)

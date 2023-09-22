@@ -72,6 +72,12 @@ class CompletionRequestSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     {"prompt": "requested prompt format is not supported"}
                 )
+
+            if '&&' in prompt:
+                raise serializers.ValidationError(
+                    {"prompt": "multiple task requests should be separated by a single '&'"}
+                )
+
             task_count = fmtr.get_task_count_from_prompt(prompt)
             if task_count > int(settings.MULTI_TASK_MAX_REQUESTS):
                 raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})

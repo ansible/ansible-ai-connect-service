@@ -197,6 +197,15 @@ class AnsibleDumperTestCase(TestCase):
 
         run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
 
+        # test standard multi-task context+prompt with multiple tasks
+        PROMPT_IN = (
+            '---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache & Start Apache\n'
+        )
+        CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
+        PROMPT_OUT = "  # Install Apache & Start Apache\n"
+
+        run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
+
         # test single task prompt with no additional context
         run_a_test('- name: Install Apache\n', '', '- name: Install Apache\n')
 
@@ -231,6 +240,7 @@ class AnsibleDumperTestCase(TestCase):
 
     def test_is_multi_task_prompt(self):
         self.assertTrue(fmtr.is_multi_task_prompt("# Install ssh"))
+        self.assertTrue(fmtr.is_multi_task_prompt("# Install ssh & Start ssh"))
         self.assertTrue(fmtr.is_multi_task_prompt("   # Install ssh"))
         self.assertFalse(fmtr.is_multi_task_prompt("- name: Install ssh"))
         self.assertFalse(fmtr.is_multi_task_prompt("Install ssh"))
@@ -285,3 +295,5 @@ if __name__ == "__main__":
     tests.test_is_multi_task_prompt()
     tests.test_get_task_count_from_prompt()
     tests.test_get_task_names_from_tasks()
+    tests.test_get_task_names_single()
+    tests.test_get_task_names_multi()

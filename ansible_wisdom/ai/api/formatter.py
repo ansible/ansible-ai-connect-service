@@ -216,7 +216,7 @@ def get_task_names_from_prompt(prompt):
     if is_multi_task_prompt(prompt):
         prompt = prompt.split('#', 1)[1].strip()
         split_list = prompt.split('&')
-        trimmed_list = [prompt.strip() for prompt in split_list]
+        trimmed_list = [task_prompt.strip() for task_prompt in split_list]
         return trimmed_list
     else:
         return [prompt.split("name:")[-1].strip()]

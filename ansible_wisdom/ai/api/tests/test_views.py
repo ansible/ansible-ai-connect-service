@@ -58,8 +58,7 @@ class DummyMeshClient(ModelMeshClient):
                         }
                     ]
                 }
-            except Exception as exc:  # ignore exception thrown here
-                print(exc)
+            except Exception:  # ignore exception thrown here
                 pass
 
         self.response_data = response_data
