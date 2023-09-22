@@ -71,6 +71,7 @@ click==8.1.3
     #   nltk
 cmake==3.27.2
     # via triton
+# UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==41.0.4
     # via
     #   ansible-core
@@ -473,7 +474,8 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-transformers==4.29.2
+# UPDATED MANUALLY: waiting for parent package to be updated
+transformers==4.30.0
     # via sentence-transformers
 triton==2.0.0
     # via torch
