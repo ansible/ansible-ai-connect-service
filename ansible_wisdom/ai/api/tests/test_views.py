@@ -640,7 +640,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_client',
+            'wca_codegen_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -666,7 +666,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_client',
+            'wca_codegen_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
