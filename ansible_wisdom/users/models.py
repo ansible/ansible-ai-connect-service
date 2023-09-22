@@ -18,6 +18,14 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = models.IntegerField(default=None, null=True)
 
+    @property
+    def org_id(self):
+        if self.organization_id:
+            return self.organization_id
+        if self.groups.filter(name='Commercial').exists():
+            return '9999999999'
+        return None
+
     def is_oidc_user(self) -> bool:
         if not self.social_auth.values():
             return False
