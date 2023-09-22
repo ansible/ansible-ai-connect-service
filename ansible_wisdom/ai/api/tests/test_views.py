@@ -123,14 +123,14 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertTrue(isinstance(model_client, WCAClient))
+        self.assertTrue(isinstance(model_client, WCACodegenClient))
         self.assertIsNone(model_name)
 
     def test_seatless_got_no_wca(self):
         self.user.rh_user_has_seat = False
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertFalse(isinstance(model_client, WCAClient))
+        self.assertFalse(isinstance(model_client, WCACodegenClient))
         self.assertIsNone(model_name)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
