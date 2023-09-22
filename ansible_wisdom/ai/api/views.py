@@ -324,7 +324,7 @@ class Completions(APIView):
                 )
         else:
             ansible_lint_caller = None
-            logger.warn(
+            logger.debug(
                 'skipped ansible lint post processing as lint processing is allowed for'
                 ' Commercial Users only!'
             )
