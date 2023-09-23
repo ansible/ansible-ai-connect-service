@@ -1,4 +1,4 @@
-# Red Hat Ansible Lightspeed with IBM Watson Code Assistant service
+# Red Hat Ansible Lightspeed with IBM watsonx Code Assistant.
 
 > **Note:** This repository is under active development and is not yet ready for production use.
 

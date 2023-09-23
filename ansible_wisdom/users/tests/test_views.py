@@ -130,7 +130,7 @@ class UserHomeTestAsUser(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: licensed user")
         self.assertContains(
-            response, "Red Hat Ansible Lightspeed with IBM Watson Code Assistant</h1>"
+            response, "Red Hat Ansible Lightspeed with IBM watsonx Code Assistant</h1>"
         )
         self.assertNotContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
