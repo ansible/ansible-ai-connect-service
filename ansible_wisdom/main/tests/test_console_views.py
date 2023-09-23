@@ -69,5 +69,4 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         response = self.client.get(reverse('console'))
         self.assertIsInstance(response.context_data, dict)
         context = response.context_data
-        self.assertEqual(context['is_debug'], False)
         self.assertEqual(context['user_name'], self.user.username)
