@@ -18,7 +18,7 @@ export function AppHeader(props: AppHeaderProps) {
 
     return (
         <PageMasthead
-            title={t("AnsibleLightspeedConsole")}
+            title={t("AnsibleLightspeed") + ' ' + t('AdminPortal')}
         >
             <ToolbarItem style={{flexGrow: 1}}/>
             <ToolbarGroup variant="icon-button-group">
