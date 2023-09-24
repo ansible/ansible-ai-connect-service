@@ -170,3 +170,68 @@ def restore_indentation(yaml, original_indent):
             corrected_lines = [line[extra_indent:] for line in lines]
             return "\n".join(corrected_lines)
     return yaml
+
+
+def extract_prompt_and_context(input):
+    context = ''
+    prompt = ''
+    if input:
+        input = input.rstrip()
+        segs = input.rsplit('\n', 1)
+
+        if len(segs) == 2:
+            context = segs[0] + '\n'
+            prompt = segs[1] + '\n'
+        else:  # Context is empty
+            context = ""
+            prompt = segs[0] + '\n'
+    return prompt, context
+
+
+# extract full task from one or more tasks in a string
+def extract_task(tasks, task_name):
+    NAME = "- name: "
+    splits = tasks.split(NAME)
+    indent = splits[0]
+    for i in range(1, len(splits)):
+        if splits[i].lower().startswith(task_name.lower()):
+            return f"{indent}{NAME}{splits[i].rstrip()}"
+    return None
+
+
+def is_multi_task_prompt(prompt):
+    if prompt:
+        return prompt.lstrip().startswith('#')
+    return False
+
+
+def get_task_count_from_prompt(prompt):
+    task_count = 0
+    if prompt:
+        task_count = len(prompt.strip().split('&'))
+    return task_count
+
+
+def get_task_names_from_prompt(prompt):
+    if is_multi_task_prompt(prompt):
+        prompt = prompt.split('#', 1)[1].strip()
+        split_list = prompt.split('&')
+        trimmed_list = [task_prompt.strip() for task_prompt in split_list]
+        return trimmed_list
+    else:
+        return [prompt.split("name:")[-1].strip()]
+
+
+def get_task_names_from_tasks(tasks):
+    task_list = yaml.load(tasks, Loader=yaml.SafeLoader)
+    if (
+        not isinstance(task_list, list)
+        or not isinstance(task_list[0], dict)
+        or 'name' not in task_list[0]
+        or not isinstance(task_list[0]['name'], str)
+    ):
+        raise Exception("unexpected tasks yaml")
+    names = []
+    for task in task_list:
+        names.append(task["name"])
+    return names

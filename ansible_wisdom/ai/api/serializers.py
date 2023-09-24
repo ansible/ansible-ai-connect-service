@@ -4,6 +4,7 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 import re
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import (
@@ -13,7 +14,8 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers
 
-from .fields import AnonymizedCharField
+from . import formatter as fmtr
+from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 
 class Metadata(serializers.Serializer):
@@ -47,7 +49,7 @@ class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'suggestionId', 'metadata', 'model_name']
 
-    prompt = AnonymizedCharField(
+    prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
         required=True,
         label='Prompt',
@@ -62,39 +64,43 @@ class CompletionRequestSerializer(serializers.Serializer):
     metadata = Metadata(required=False)
     model_name = serializers.CharField(required=False)
 
+    @staticmethod
+    def validate_extracted_prompt(prompt, user):
+        if fmtr.is_multi_task_prompt(prompt):
+            # Multi-task is commercial-only
+            if user.rh_user_has_seat is False:
+                raise serializers.ValidationError(
+                    {"prompt": "requested prompt format is not supported"}
+                )
+
+            if '&&' in prompt:
+                raise serializers.ValidationError(
+                    {"prompt": "multiple task requests should be separated by a single '&'"}
+                )
+
+            task_count = fmtr.get_task_count_from_prompt(prompt)
+            if task_count > int(settings.MULTI_TASK_MAX_REQUESTS):
+                raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})
+        else:
+            # Confirm the prompt contains some flavor of '- name:'
+            match = re.search(r"^[\s]*-[\s]+name[\s]*:", prompt)
+            if not match:
+                raise serializers.ValidationError(
+                    {"prompt": "prompt does not contain the name parameter"}
+                )
+
     def validate(self, data):
         data = super().validate(data)
-        CompletionRequestSerializer.extract_prompt_and_context(data)
+
+        data['prompt'], data['context'] = fmtr.extract_prompt_and_context(data['prompt'])
+        CompletionRequestSerializer.validate_extracted_prompt(
+            data['prompt'], self.context.get('request').user
+        )
+
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
             data['suggestionId'] = uuid.uuid4()
         return data
-
-    @staticmethod
-    def extract_prompt_and_context(data):
-        #
-        # Set the last line as prompt and the rest as context.
-        # Note that usually both prompt and context end with '\n'.
-        #
-        extracted_prompt = ''
-        extracted_context = ''
-        prompt_in_request = data['prompt']
-        if prompt_in_request:
-            s = prompt_in_request[:-1].rpartition('\n')
-            if s[1] == '\n':
-                extracted_prompt = s[2] + prompt_in_request[-1]
-                extracted_context = s[0] + s[1]
-            else:
-                extracted_prompt = prompt_in_request
-                extracted_context = ''
-
-        # Confirm the prompt contains some flavor of '- name:'
-        match = re.search(r"^[\s]*-[\s]+name[\s]*:", extracted_prompt)
-        if not match:
-            raise serializers.ValidationError("prompt does not contain the name parameter")
-
-        data['prompt'] = extracted_prompt
-        data['context'] = extracted_context
 
 
 @extend_schema_serializer(

@@ -69,8 +69,16 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     self.assertTrue('Group 2' in properties['groups'])
                     self.assertEqual(hostname, properties['hostname'])
                     if event['event'] == 'completion':
-                        self.assertEqual('ansible.builtin.package', properties['module'])
-                        self.assertEqual('ansible.builtin', properties['collection'])
+                        self.assertEqual(
+                            'ansible.builtin.package', properties['tasks'][0]['module']
+                        )
+                        self.assertEqual('ansible.builtin', properties['tasks'][0]['collection'])
+                        self.assertIsNotNone(properties['tasks'][0]['prediction'])
+                        self.assertEqual(
+                            'install apache for james8@example.com', properties['tasks'][0]['name']
+                        )
+                        self.assertEqual(1, properties['taskCount'])
+                        self.assertEqual('SINGLETASK', properties['promptType'])
                     self.assertIsNotNone(event['timestamp'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:

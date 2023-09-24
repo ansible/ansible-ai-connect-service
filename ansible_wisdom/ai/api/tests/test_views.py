@@ -12,7 +12,7 @@ from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import Completions, get_model_client
+from ai.api.views import Completions, CompletionsPromptType, get_model_client
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -36,11 +36,13 @@ class DummyMeshClient(ModelMeshClient):
 
         if "prompt" in payload:
             try:
-                serializer = CompletionRequestSerializer()
+                user = Mock(rh_user_has_seat=rh_user_has_seat)
+                request = Mock(user=user)
+                serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
                 view = Completions()
-                data["context"], data["prompt"] = view.preprocess(
+                data["context"], data["prompt"], _ = view.preprocess(
                     data.get("context"), data.get("prompt")
                 )
 
@@ -168,6 +170,73 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch("ai.api.views.get_model_client")
+    def test_multi_task_prompt_commercial(self, mock_get_model_client):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "predictions": [
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
+            ]
+        }
+        self.user.rh_user_has_seat = True
+        self.client.force_authenticate(user=self.user)
+        mock_get_model_client.return_value = (
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            None,
+        )
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data['predictions'])
+            self.assertSegmentTimestamp(log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'completion':
+                    properties = event['properties']
+                    self.assertEqual(properties['taskCount'], 2)
+                    self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch("ai.api.views.get_model_client")
+    def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & say hello fred@redhat.com\n",  # noqa: E501
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "predictions": [
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+            ]
+        }
+        self.user.rh_user_has_seat = True
+        self.client.force_authenticate(user=self.user)
+        # test_inference_match=False because anonymizer changes the prompt before calling WCA
+        mock_get_model_client.return_value = (
+            DummyMeshClient(
+                self, payload, response_data, test_inference_match=False, rh_user_has_seat=True
+            ),
+            None,
+        )
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data['predictions'])
+            self.assertSegmentTimestamp(log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'completion':
+                    properties = event['properties']
+                    self.assertEqual(properties['taskCount'], 2)
+                    self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_rate_limit(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
