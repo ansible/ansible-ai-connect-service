@@ -26,8 +26,8 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, data, model_name):
-        model_name = model_name or settings.ANSIBLE_AI_MODEL_NAME
+    def infer(self, data, model_id):
+        model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug(f"Input prompt: {data}")
         prompt = data.get("instances", [{}])[0].get("prompt", "")
         context = data.get("instances", [{}])[0].get("context", "")
@@ -37,14 +37,14 @@ class GrpcClient(ModelMeshClient):
         try:
             response = self._inference_stub.AnsiblePredict(
                 request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
-                metadata=[("mm-vmodel-id", model_name)],
+                metadata=[("mm-vmodel-id", model_id)],
                 timeout=self.timeout,
             )
 
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
             result = {"predictions": [response.text]}
-            result['model_id'] = model_name
+            result['model_id'] = model_id
             return result
         except grpc.RpcError as exc:
             if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:

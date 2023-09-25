@@ -22,7 +22,7 @@ class WCAClient(ModelMeshClient):
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
 
-    def infer(self, model_input, model_name=None):
+    def infer(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
@@ -35,7 +35,7 @@ class WCAClient(ModelMeshClient):
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_name)
+        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",

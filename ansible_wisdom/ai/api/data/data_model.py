@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class APIPayload(BaseModel):
-    model_name: str = ''
+    model: str = ''
     prompt: str = ""
     context: str = ""
     userId: Union[UUID, None]

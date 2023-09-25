@@ -183,7 +183,11 @@ class Completions(APIView):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
         model_mesh_client, model_name = get_model_client(apps.get_app_config("ai"), request.user)
-        model_name = model_name or payload.model_name
+        # We have a little inconsistency of the "model" term throughout the application:
+        # - FeatureFlags use 'model_name'
+        # - ModelMeshClient uses 'model_id'
+        # - Public completion API uses 'model'
+        model_id = model_name or payload.model
 
         try:
             start_time = time.time()
@@ -225,7 +229,7 @@ class Completions(APIView):
         exception = None
         start_time = time.time()
         try:
-            predictions = model_mesh_client.infer(data, model_name=model_name)
+            predictions = model_mesh_client.infer(data, model_id=model_id)
         except ModelTimeoutError as exc:
             exception = exc
             logger.warn(
@@ -290,7 +294,7 @@ class Completions(APIView):
         try:
             response_data = {
                 "predictions": postprocessed_predictions["predictions"],
-                "modelName": predictions['model_id'],
+                "model": predictions['model_id'],
                 "suggestionId": payload.suggestionId,
             }
             response_serializer = CompletionResponseSerializer(data=response_data)
