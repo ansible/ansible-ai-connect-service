@@ -19,8 +19,6 @@ from django.test import override_settings
 from requests.exceptions import ReadTimeout
 from test_utils import WisdomServiceLogAwareTestCase
 
-from ansible_wisdom.ai.api.model_client.wca.codematch import WCACodematchClient
-
 
 class MockResponse:
     def __init__(self, json, status_code):
@@ -356,7 +354,6 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_input = {
             "instances": [
                 {
-                    "context": "null",
                     "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
                 }
             ]

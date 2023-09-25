@@ -30,7 +30,7 @@ class WCACodegenClient(WCAClient):
             "prompt": f"{context}{prompt}",
         }
 
-        logger.debug(f"Inference API request payload: {data}")
+        logger.debug(f"Codegen API request payload: {data}")
 
         try:
             # TODO: store token and only fetch a new one if it has expired
@@ -47,7 +47,7 @@ class WCACodegenClient(WCAClient):
             result.raise_for_status()
             response = result.json()
             response['model_id'] = model_id
-            logger.debug(f"Inference API response: {response}")
+            logger.debug(f"Codegen API response: {response}")
             return response
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError
