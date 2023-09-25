@@ -7,6 +7,8 @@ ansible-anonymizer==1.4.2
 ansible-risk-insight==0.1.11
 ansible-lint==6.19.0
 boto3==1.26.84
+# UPDATED MANUALLY: waiting for parent package to be updated
+cryptography==41.0.4
 datasets==2.10.1
 Django==4.2.3
 django-extensions==3.2.1
@@ -33,6 +35,8 @@ sentence-transformers==2.2.2
 # is released
 https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
 social-auth-core[openidconnect]==4.4.2
+# UPDATED MANUALLY: waiting for parent package to be updated
+transformers==4.30.0
 tqdm==4.64.1
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
