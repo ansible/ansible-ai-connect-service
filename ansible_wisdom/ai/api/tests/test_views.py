@@ -1111,6 +1111,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
         path = "tasks/main.yml"
         license = "apache-2.0"
+        data_source = "Ansible Galaxy roles"
 
         response = MockResponse(
             json=[
@@ -1151,4 +1152,4 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["attributions"][0]["repo_url"], repo_url)
             self.assertEqual(r.data["attributions"][0]["path"], path)
             self.assertEqual(r.data["attributions"][0]["license"], license)
-            self.assertEqual(r.data["attributions"][0]["data_source"], DataSource.GALAXY_R.value)
+            self.assertEqual(r.data["attributions"][0]["data_source"], data_source)

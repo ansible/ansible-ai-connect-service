@@ -24,7 +24,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         self.wca_client_patcher = patch.object(
-            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
+            apps.get_app_config('ai'), 'wca_codegen_client', spec=WCAClient
         )
         self.mock_wca_client = self.wca_client_patcher.start()
         self.secret_manager_patcher = patch.object(
@@ -197,7 +197,7 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         self.wca_client_patcher = patch.object(
-            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
+            apps.get_app_config('ai'), 'wca_codegen_client', spec=WCAClient
         )
         self.mock_wca_client = self.wca_client_patcher.start()
 
