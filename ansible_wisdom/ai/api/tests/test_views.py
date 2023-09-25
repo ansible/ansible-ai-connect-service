@@ -150,7 +150,6 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
 
 @modify_settings()
-@override_settings(LAUNCHDARKLY_SDK_KEY=None)
 class TestCompletionView(WisdomServiceAPITestCaseBase):
     def test_full_payload(self):
         payload = {
