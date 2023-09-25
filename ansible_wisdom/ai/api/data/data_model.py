@@ -3,9 +3,8 @@ from enum import Enum
 from typing import Any, TypedDict, Union
 from uuid import UUID
 
+from ai.api.serializers import DataSource
 from pydantic import BaseModel
-
-from ansible_wisdom.ai.api.serializers import DataSource
 
 logger = logging.getLogger(__name__)
 

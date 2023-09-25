@@ -19,6 +19,8 @@ from django.test import override_settings
 from requests.exceptions import ReadTimeout
 from test_utils import WisdomServiceLogAwareTestCase
 
+from ansible_wisdom.ai.api.model_client.wca.codematch import WCACodematchClient
+
 
 class MockResponse:
     def __init__(self, json, status_code):
@@ -258,3 +260,118 @@ class TestWCACodegenClient(WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
             model_client.infer(model_input=model_input, model_id=model_id)
+
+
+class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        super().setUp()
+        self.secret_manager_patcher = patch.object(
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
+        )
+        self.mock_secret_manager = self.secret_manager_patcher.start()
+
+    def tearDown(self):
+        self.secret_manager_patcher.stop()
+
+    def test_get_token(self):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+        }
+        data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": "abcdef"}
+        response = MockResponse(
+            json={
+                "access_token": "access_token",
+                "refresh_token": "not_supported",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "expiration": 1691445310,
+                "scope": "ibm openid",
+            },
+            status_code=200,
+        )
+
+        model_client = WCACodematchClient(inference_url='http://example.com/')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token('abcdef')
+
+        model_client.session.post.assert_called_once_with(
+            "https://iam.cloud.ibm.com/identity/token",
+            headers=headers,
+            data=data,
+        )
+
+    def test_infer(self):
+        model_name = "sample_model_name"
+        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+
+        model_input = {
+            "instances": [
+                {
+                    "prompt": prompt,
+                }
+            ]
+        }
+        data = {
+            "model_id": model_name,
+            "input": [f"{prompt}"],
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        client_response = {"attributions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response = MockResponse(
+            json=client_response,
+            status_code=200,
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token['access_token']}",
+        }
+
+        model_client = WCACodematchClient(inference_url='https://example.com')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token = Mock(return_value=token)
+        model_client.get_model_id = Mock(return_value=model_name)
+
+        result = model_client.infer(model_input=model_input, model_name=model_name)
+
+        model_client.get_token.assert_called_once()
+        model_client.session.post.assert_called_once_with(
+            "https://example.com/v1/wca/codematch/ansible",
+            headers=headers,
+            json=data,
+            timeout=None,
+        )
+        self.assertEqual(result, client_response)
+
+    def test_infer_timeout(self):
+        model_name = "sample_model_name"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        model_client = WCACodematchClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=ReadTimeout())
+        model_client.get_model_id = Mock(return_value=model_name)
+        with self.assertRaises(ModelTimeoutError):
+            model_client.infer(model_input=model_input, model_name=model_name)
