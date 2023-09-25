@@ -843,11 +843,12 @@ class Attributions(GenericAPIView):
             logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{data}")
 
             attributions = None
-            exception = None
             start_time = time.time()
             try:
                 client_response = model_mesh_client.infer(data)
-                attributions = AttributionDataTransformer(**client_response[0]).attributions()
+                encode_duration, search_duration, attributions = AttributionDataTransformer(
+                    **client_response[0]
+                ).values()
                 try:
                     response_data = {
                         "attributions": attributions,
@@ -860,34 +861,18 @@ class Attributions(GenericAPIView):
                         f"error serializing final response for suggestion {suggestion_id}"
                     )
                     raise InternalServerError
-            except ModelTimeoutError as exc:
-                exception = exc
+            except ModelTimeoutError:
                 logger.warn(
                     f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
                     f" for suggestion {suggestion_id}"
                 )
                 raise ModelTimeoutException
-            except WcaBadRequest as exc:
-                exception = exc
+            except WcaBadRequest:
                 logger.exception(f"bad request for completion for suggestion {suggestion_id}")
                 raise WcaBadRequestException
-            except Exception as exc:
-                exception = exc
+            except Exception:
                 logger.exception(f"error requesting completion for suggestion {suggestion_id}")
                 raise ServiceUnavailable
-            finally:
-                duration = round((time.time() - start_time) * 1000, 2)
-                attribution_search_hist.observe(duration / 1000)
-                event = {
-                    "duration": duration,
-                    "exception": exception is not None,
-                    "problem": None if exception is None else exception.__class__.__name__,
-                    "request": data,
-                    "response": attributions,
-                    "suggestionId": str(suggestion_id),
-                }
-                send_segment_event(event, "attribution", request.user)
-
         else:
             start_time = time.time()
             try:
@@ -897,19 +882,20 @@ class Attributions(GenericAPIView):
             except Exception as exc:
                 logger.error(f"Failed to search for attributions\nException:\n{exc}")
                 return Response({'message': "Unable to complete the request"}, status=503)
-            duration = round((time.time() - start_time) * 1000, 2)
-            attribution_encoding_hist.observe(encode_duration / 1000)
-            attribution_search_hist.observe(search_duration / 1000)
-            # Currently the only thing from Attributions that is going to Segment is the
-            # inferred sources, which do not seem to need anonymizing.
-            event = {
-                'suggestionId': suggestion_id,
-                'duration': duration,
-                'encode_duration': encode_duration,
-                'search_duration': search_duration,
-                'attributions': response_serializer.validated_data.get('attributions', []),
-            }
-            send_segment_event(event, "attribution", request.user)
+
+        duration = round((time.time() - start_time) * 1000, 2)
+        attribution_encoding_hist.observe(encode_duration / 1000)
+        attribution_search_hist.observe(search_duration / 1000)
+        # Currently the only thing from Attributions that is going to Segment is the
+        # inferred sources, which do not seem to need anonymizing.
+        self.write_to_segment(
+            request.user,
+            suggestion_id,
+            duration,
+            encode_duration,
+            search_duration,
+            response_serializer.validated_data,
+        )
 
         return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
@@ -928,3 +914,16 @@ class Attributions(GenericAPIView):
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
         return data['meta']['encode_duration'], data['meta']['search_duration'], resp_serializer
+
+    def write_to_segment(
+        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
+    ):
+        attributions = attribution_data.get('attributions', [])
+        event = {
+            'suggestionId': suggestion_id,
+            'duration': duration,
+            'encode_duration': encode_duration,
+            'search_duration': search_duration,
+            'attributions': attributions,
+        }
+        send_segment_event(event, "attribution", user)

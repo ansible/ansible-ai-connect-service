@@ -47,6 +47,11 @@ class AttributionData(BaseModel):
 
 class AttributionDataTransformer(BaseModel):
     code_matches: list[AttributionData]
+    meta: dict
 
-    def attributions(self):
-        return self.dict().get("code_matches", "")
+    def values(self):
+        return (
+            self.meta.get("encode_duration", ""),
+            self.meta.get("search_duration", ""),
+            self.dict().get("code_matches", ""),
+        )

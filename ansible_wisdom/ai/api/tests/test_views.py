@@ -1077,3 +1077,78 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(len(segment_events), 0)
             self.assertInLog('Failed to search for attributions', log)
+
+
+@modify_settings()
+class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @patch('ai.api.views.Attributions.perform_search')
+    def test_wca_attribution_with_no_seated_user(self, mock_perform_search):
+        self.user.rh_user_has_seat = False
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
+            "tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+
+        self.client.post(reverse('attributions'), payload)
+        mock_perform_search.assert_called_once()
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_attribution_with_seated_user(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
+            "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+
+        repo_name = "robertdebock.nginx"
+        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
+        path = "tasks/main.yml"
+        license = "apache-2.0"
+
+        response = MockResponse(
+            json=[
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": repo_name,
+                            "repo_url": repo_url,
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550663,
+                        }
+                    ],
+                    "meta": {"encode_duration": 367.3, "search_duration": 151.98},
+                }
+            ],
+            status_code=200,
+        )
+        model_client = WCACodematchClient(inference_url='https://wca_api_url')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        model_client.get_model_id = Mock(return_value='org-model-id')
+        with patch.object(apps.get_app_config('ai'), 'wca_codematch_client', model_client):
+            r = self.client.post(reverse('attributions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            model_client.get_token.assert_called_once()
+            self.assertEqual(
+                model_client.session.post.call_args.args[0],
+                "https://wca_api_url/v1/wca/codematch/ansible",
+            )
+            self.assertEqual(
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+            )
+
+            self.assertEqual(r.data["attributions"][0]["repo_name"], repo_name)
+            self.assertEqual(r.data["attributions"][0]["repo_url"], repo_url)
+            self.assertEqual(r.data["attributions"][0]["path"], path)
+            self.assertEqual(r.data["attributions"][0]["license"], license)
+            self.assertEqual(r.data["attributions"][0]["data_source"], DataSource.GALAXY_R.value)
