@@ -6,7 +6,6 @@ from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
-    IsWCAModelIdApiFeatureFlagOn,
 )
 from ai.api.serializers import WcaModelIdRequestSerializer
 from ai.api.wca.utils import is_org_id_valid
@@ -28,7 +27,6 @@ from rest_framework.status import (
 logger = logging.getLogger(__name__)
 
 PERMISSION_CLASSES = [
-    IsWCAModelIdApiFeatureFlagOn,
     IsAuthenticated,
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,

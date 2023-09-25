@@ -6,8 +6,6 @@ from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
-    IsWCAKeyApiFeatureFlagOn,
-    IsWCAModelIdApiFeatureFlagOn,
 )
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect
@@ -29,8 +27,6 @@ class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
 
     permission_classes = [
-        IsWCAKeyApiFeatureFlagOn,
-        IsWCAModelIdApiFeatureFlagOn,
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         IsOrganisationAdministrator,
