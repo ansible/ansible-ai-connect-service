@@ -2,6 +2,7 @@ import json
 import logging
 
 import requests
+from ai.api.formatter import get_task_names_from_prompt
 from django.apps import apps
 from django.conf import settings
 
@@ -73,8 +74,9 @@ class WCAClient(ModelMeshClient):
                 "Authorization": f"Bearer {token['access_token']}",
             }
 
+            task_count = len(get_task_names_from_prompt(prompt))
             result = self.session.post(
-                self._prediction_url, headers=headers, json=data, timeout=self.timeout
+                self._prediction_url, headers=headers, json=data, timeout=self.timeout(task_count)
             )
 
             # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
@@ -88,7 +90,7 @@ class WCAClient(ModelMeshClient):
             response['model_id'] = model_id
             logger.debug(f"Inference API response: {response}")
             return response
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
     def get_token(self, api_key):
@@ -180,8 +182,9 @@ class WCAClient(ModelMeshClient):
                 "Authorization": f"Bearer {token['access_token']}",
             }
 
+            task_count = len(get_task_names_from_prompt(prompt))
             result = self.session.post(
-                self._search_url, headers=headers, json=data, timeout=self.timeout
+                self._search_url, headers=headers, json=data, timeout=self.timeout(task_count)
             )
 
             if result.status_code == 204:

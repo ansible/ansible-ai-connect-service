@@ -1,6 +1,7 @@
 import logging
 
 import grpc
+from ai.api.formatter import get_task_names_from_prompt
 from django.conf import settings
 
 from .base import ModelMeshClient
@@ -26,19 +27,20 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, data, model_id):
+    def infer(self, model_input, model_id=None):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
-        logger.debug(f"Input prompt: {data}")
-        prompt = data.get("instances", [{}])[0].get("prompt", "")
-        context = data.get("instances", [{}])[0].get("context", "")
+        logger.debug(f"Input prompt: {model_input}")
+        prompt = model_input.get("instances", [{}])[0].get("prompt", "")
+        context = model_input.get("instances", [{}])[0].get("context", "")
         logger.debug(f"Input prompt: {prompt}")
         logger.debug(f"Input context: {context}")
 
         try:
+            task_count = len(get_task_names_from_prompt(prompt))
             response = self._inference_stub.AnsiblePredict(
                 request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
                 metadata=[("mm-vmodel-id", model_id)],
-                timeout=self.timeout,
+                timeout=self.timeout(task_count),
             )
 
             logger.debug(f"inference response: {response}")

@@ -19,4 +19,4 @@ class TestModelMeshClient(TestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=timeout)
     def test_timeout(self):
         c = ModelMeshClient(inference_url="https://example.com")
-        self.assertEqual(c.timeout, timeout)
+        self.assertEqual(c.timeout(1), timeout)

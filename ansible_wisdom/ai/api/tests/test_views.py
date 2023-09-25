@@ -21,6 +21,7 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from requests.exceptions import ReadTimeout
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
 from test_utils import WisdomServiceLogAwareTestCase
@@ -234,6 +235,76 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 self.assertInLog("WCA returned an empty response", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
+    def test_wca_completion_timeout_single_task(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+        )
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        model_client, _ = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
+    def test_wca_completion_timeout_multi_task(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+        )
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  "
+            "tasks:\n    # Install Apache & start Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        model_client, _ = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_completion_timed_out(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+        )
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  "
+            "tasks:\n    # Install Apache & start Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        model_client, _ = stub
+        model_client.session.post = Mock(side_effect=ReadTimeout())
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    if event['event'] == 'prediction':
+                        properties = event['properties']
+                        self.assertTrue(properties['exception'])
+                        self.assertEqual(properties['problem'], 'ModelTimeoutError')
 
 
 @modify_settings()
@@ -540,7 +611,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_completions_postprocessing_for_invalid_suggestion(self):
-        # the suggested task is a invalid because it does not have module name
+        # the suggested task is invalid because it does not have module name
         # in this case, ARI should throw an exception
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",

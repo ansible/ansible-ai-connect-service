@@ -16,6 +16,5 @@ class ModelMeshClient:
     def set_inference_url(self, inference_url):
         self._inference_url = inference_url
 
-    @property
-    def timeout(self):
-        return self._timeout
+    def timeout(self, task_count=1):
+        return self._timeout * task_count if self._timeout else None
