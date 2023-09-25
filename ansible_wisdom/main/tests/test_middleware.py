@@ -38,7 +38,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": activityId,
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -138,7 +141,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": str(uuid.uuid4()),
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
 
         # Override properties of Segment client to cause an error
@@ -207,7 +213,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": str(uuid.uuid4()),
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
