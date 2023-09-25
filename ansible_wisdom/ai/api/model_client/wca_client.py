@@ -1,3 +1,4 @@
+import json
 import logging
 
 import requests
@@ -11,8 +12,28 @@ from .exceptions import ModelTimeoutError
 logger = logging.getLogger(__name__)
 
 
-class WcaBadRequest(Exception):
+class WcaException(Exception):
+    """Base WCA Exception"""
+
+
+class WcaBadRequest(WcaException):
     """Bad request to WCA"""
+
+
+class WcaInvalidModelId(WcaException):
+    """WCA Model ID is invalid."""
+
+
+class WcaKeyNotFound(WcaException):
+    """WCA API Key was expected but not found."""
+
+
+class WcaModelIdNotFound(WcaException):
+    """WCA Model ID was expected but not found."""
+
+
+class WcaEmptyResponse(WcaException):
+    """WCA returned an empty response."""
 
 
 class WCAClient(ModelMeshClient):
@@ -41,7 +62,7 @@ class WCAClient(ModelMeshClient):
             "prompt": f"{context}{prompt}",
         }
 
-        logger.debug(f"Inference API request payload: {data}")
+        logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
         try:
             # TODO: store token and only fetch a new one if it has expired
@@ -55,6 +76,13 @@ class WCAClient(ModelMeshClient):
             result = self.session.post(
                 self._prediction_url, headers=headers, json=data, timeout=self.timeout
             )
+
+            # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
+            if result.status_code == 204:
+                raise WcaEmptyResponse
+            if result.status_code in [400, 403]:
+                raise WcaInvalidModelId
+
             result.raise_for_status()
             response = result.json()
             response['model_id'] = model_id
@@ -85,18 +113,19 @@ class WCAClient(ModelMeshClient):
         if not rh_user_has_seat or organization_id is None:
             return self.free_api_key
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-
         try:
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
             if api_key is not None:
                 return api_key["SecretString"]
 
         except (WcaSecretManagerError, KeyError):
-            # if retrieving the API Key from AWS fails, we log an error and return the shared key
+            # if retrieving the API Key from AWS fails, we log an error
             logger.error(f"error retrieving WCA API Key for org_id '{organization_id}'")
+            raise
 
-        raise WcaSecretManagerError
+        logger.error("Seated user's organization doesn't have default API Key set")
+        raise WcaKeyNotFound
 
     def get_model_id(self, rh_user_has_seat, organization_id, requested_model_id):
         if not rh_user_has_seat or organization_id is None:
@@ -112,18 +141,16 @@ class WCAClient(ModelMeshClient):
             # let them use what they ask for
             return requested_model_id
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-
         try:
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
             if model_id is not None:
                 return model_id["SecretString"]
-            err_message = "Seated user's organization doesn't have default model ID set"
-            logger.error(err_message)
-            raise WcaBadRequest(err_message)
 
         except (WcaSecretManagerError, KeyError):
-            # if retrieving from AWS fails
+            # if retrieving the Model ID from AWS fails, we log an error
             logger.error(f"error retrieving WCA Model ID for org_id '{organization_id}'")
+            raise
 
-        raise WcaSecretManagerError
+        logger.error("Seated user's organization doesn't have default model ID set")
+        raise WcaModelIdNotFound
