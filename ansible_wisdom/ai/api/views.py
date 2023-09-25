@@ -45,7 +45,6 @@ logger = logging.getLogger(__name__)
 
 feature_flags = FeatureFlags()
 
-
 completions_hist = Histogram(
     'model_prediction_latency_seconds',
     "Histogram of model prediction processing time",
@@ -187,6 +186,7 @@ class Completions(APIView):
         # - FeatureFlags use 'model_name'
         # - ModelMeshClient uses 'model_id'
         # - Public completion API uses 'model'
+        # - Segment Events use 'modelName'
         model_id = model_name or payload.model
 
         try:

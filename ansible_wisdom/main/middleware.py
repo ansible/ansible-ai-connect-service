@@ -74,12 +74,12 @@ class SegmentMiddleware:
 
                 # this modelName default will be correct unless we're using launchdarkly
                 # but needs to be revisited with commercial multimodel.
-                modelName = settings.ANSIBLE_AI_MODEL_NAME
+                model_name = settings.ANSIBLE_AI_MODEL_NAME
 
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
-                    modelName = response_data.get('modelName')
+                    model_name = response_data.get('model')
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
 
@@ -98,7 +98,7 @@ class SegmentMiddleware:
                     },
                     "suggestionId": suggestion_id,
                     "metadata": metadata,
-                    "modelName": modelName,
+                    "modelName": model_name,
                     "imageTags": version_info.image_tags,
                     "tasks": tasks,
                     "promptType": getattr(response, 'promptType', None),
