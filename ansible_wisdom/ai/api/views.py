@@ -28,7 +28,7 @@ from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags, WisdomFlags
+from ..feature_flags import FeatureFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, AttributionDataTransformer, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -148,12 +148,12 @@ class CompletionsPromptType(str, Enum):
 
 def get_model_client(wisdom_app, user):
     if user.rh_user_has_seat:
-        return wisdom_app.wca_codegen_client, None
+        return wisdom_app.wca_client, None
 
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
     if settings.LAUNCHDARKLY_SDK_KEY:
-        model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+        model_tuple = feature_flags.get("model_name", user, "")
         logger.debug(f"flag model_name has value {model_tuple}")
         model_parts = model_tuple.split(':')
         if len(model_parts) == 4:
@@ -822,7 +822,7 @@ class Attributions(GenericAPIView):
         suggestion_id = str(request_serializer.validated_data.get('suggestionId', ''))
 
         if request.user.rh_user_has_seat:
-            model_mesh_client = apps.get_app_config("ai").wca_codematch_client
+            model_mesh_client = apps.get_app_config("ai").wca_client
             request_data = request_serializer.validated_data
             user_id = request.user.uuid
 
@@ -845,7 +845,7 @@ class Attributions(GenericAPIView):
             attributions = None
             start_time = time.time()
             try:
-                client_response = model_mesh_client.infer(data)
+                client_response = model_mesh_client.search(data)
                 encode_duration, search_duration, attributions = AttributionDataTransformer(
                     **client_response[0]
                 ).values()
@@ -902,7 +902,7 @@ class Attributions(GenericAPIView):
     def perform_search(self, serializer, user: User):
         index = None
         if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+            model_tuple = feature_flags.get("model_name", user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
             model_parts = model_tuple.split(':')
             if len(model_parts) == 4:

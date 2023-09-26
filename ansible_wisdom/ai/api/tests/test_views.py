@@ -123,14 +123,14 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertTrue(isinstance(model_client, WCACodegenClient))
+        self.assertTrue(isinstance(model_client, WCAClient))
         self.assertIsNone(model_name)
 
     def test_seatless_got_no_wca(self):
         self.user.rh_user_has_seat = False
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertFalse(isinstance(model_client, WCACodegenClient))
+        self.assertFalse(isinstance(model_client, WCAClient))
         self.assertIsNone(model_name)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -640,7 +640,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_codegen_client',
+            'wca_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -666,7 +666,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_codegen_client',
+            'wca_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -1131,12 +1131,12 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             ],
             status_code=200,
         )
-        model_client = WCACodematchClient(inference_url='https://wca_api_url')
+        model_client = WCAClient(inference_url='https://wca_api_url')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        with patch.object(apps.get_app_config('ai'), 'wca_codematch_client', model_client):
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
             r = self.client.post(reverse('attributions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()

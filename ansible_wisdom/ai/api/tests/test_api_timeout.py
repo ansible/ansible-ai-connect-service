@@ -5,7 +5,7 @@ from unittest.mock import patch
 import grpc
 from ai.api.model_client.grpc_client import GrpcClient
 from ai.api.model_client.http_client import HttpClient
-from ai.api.model_client.wca import WCAClient
+from ai.api.model_client.wca_client import WCAClient
 from django.apps import apps
 from django.test import override_settings
 from django.urls import reverse

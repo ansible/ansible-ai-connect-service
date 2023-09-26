@@ -289,7 +289,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             status_code=200,
         )
 
-        model_client = WCACodematchClient(inference_url='http://example.com/')
+        model_client = WCAClient(inference_url='http://example.com/')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token('abcdef')
 
@@ -333,7 +333,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             "Authorization": f"Bearer {token['access_token']}",
         }
 
-        model_client = WCACodematchClient(inference_url='https://example.com')
+        model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_name)
@@ -366,7 +366,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
-        model_client = WCACodematchClient(inference_url='https://example.com')
+        model_client = WCAClient(inference_url='https://example.com')
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_name)
