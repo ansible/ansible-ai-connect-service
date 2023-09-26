@@ -30,28 +30,28 @@ describe('ModelSettings', () => {
 
     it('API Key Loaded',
         async () => {
-            (axios.get as jest.Mock).mockResolvedValue({"data": {}});
+            (axios.get as jest.Mock).mockResolvedValue({"data": {"last_update": new Date()}});
             render(<ModelSettings/>);
             expect(await screen.findByTestId("model-settings-overview__key")).toBeInTheDocument();
         });
 
     it('API Key Not Found',
         async () => {
-            (axios.get as jest.Mock).mockRejectedValue({"response": {"status": 404}});
+            (axios.get as jest.Mock).mockResolvedValue({"data": {}});
             render(<ModelSettings/>);
             expect(await screen.findByTestId("model-settings-overview__key-not-found")).toBeInTheDocument();
         });
 
     it('Model Id Loaded',
         async () => {
-            (axios.get as jest.Mock).mockResolvedValue({"data": {}});
+            (axios.get as jest.Mock).mockResolvedValue({"data": {"last_update": new Date()}});
             render(<ModelSettings/>);
             expect(await screen.findByTestId("model-settings-overview__model-id")).toBeInTheDocument();
         });
 
     it('Model Id Key Not Found',
         async () => {
-            (axios.get as jest.Mock).mockRejectedValue({"response": {"status": 404}});
+            (axios.get as jest.Mock).mockResolvedValue({"data": {}});
             render(<ModelSettings/>);
             expect(await screen.findByTestId("model-settings-overview__model-id-not-found")).toBeInTheDocument();
         });
