@@ -1,8 +1,11 @@
 {
+  "AnsibleLightspeed": "Ansible Lightspeed",
   "DebugModeWarning": "You are running the Admin Portal in DEBUG mode. Some permissions are disabled to simplify development.",
   "Overview": "Overview",
   "OverviewDescription": "Placeholder. Feature to be implemented.",
   "AdminPortal": "Admin Portal",
+  "IBMwatsonxCodeAssistant": "IBM watsonx Code Assistant",
+  "with": "with",
   "ModelSettings": "Model Settings",
   "APIKey": "IBM Cloud API Key",
   "APIKeyTooltip": "Used to authenticate with IBM watsonx Code Assistant.",

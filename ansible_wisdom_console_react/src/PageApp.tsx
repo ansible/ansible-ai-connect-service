@@ -1,7 +1,17 @@
-import {PageFramework, PageLayout, PageNavigation, PageNavigationItem} from '@ansible/ansible-ui-framework'
-import {Page} from '@patternfly/react-core'
+import {
+    PageFramework,
+    PageLayout,
+    PageNavigation,
+    PageNavigationItem,
+    usePageNavSideBar
+} from '@ansible/ansible-ui-framework'
+import {Page, TextContent, Text, TextVariants} from '@patternfly/react-core'
 import {ReactNode, useMemo} from 'react'
+import {useTranslation} from 'react-i18next'
 import {createBrowserRouter, Navigate, Outlet, RouterProvider,} from 'react-router-dom'
+import {Brand} from "@patternfly/react-core";
+import LSLogo from "./lightspeed-logo.png"
+import './PageApp.css'
 
 // This is copied from ansible/ansible-ui/framework and modified to support redirection
 // to 'admin/settings' by default. When the Admin Portal moves to console.redhat.com *OR*
@@ -40,11 +50,40 @@ export function PageApp(props: {
     return <RouterProvider router={router}/>
 }
 
+function LSBrand(props: { cName?: string }) {
+    const {t} = useTranslation();
+    return (
+        <div className={props.cName}>
+            <Brand alt="" widths={{default: '40px', md: '40px'}} className={'ansible-lightspeed-logo'}>
+                <source media="(min-width: 40px)" srcSet={LSLogo}/>
+            </Brand>
+            <TextContent className={'ansible-lightspeed-w'}>
+                <Text component={TextVariants.p} className={'ansible-lightspeed-t'}>
+                    {t('AnsibleLightspeed') + ' ' + t('with')}
+                </Text>
+                <Text component={TextVariants.p} className={'ansible-lightspeed-t'}>
+                    {t('IBMwatsonxCodeAssistant')}
+                </Text>
+            </TextContent>
+        </div>
+    )
+};
+
+function PageSidebar(props: { navigation: PageNavigationItem[] }) {
+    const navBar = usePageNavSideBar();
+    const barStateClassName = navBar.isOpen ? "pf-m-expanded" : "pf-m-collapsed";
+    const groupClassName = ' pf-c-page__sidebar ' + barStateClassName;
+    return (<div className={groupClassName}>
+        <LSBrand cName={groupClassName} aria-hidden={!navBar.isOpen}/>
+        <PageNavigation navigation={props.navigation}/>
+    </div>)
+}
+
 function PageRouterLayout(props: { header?: ReactNode; navigationItems: PageNavigationItem[] }) {
     const {header, navigationItems} = props
     return (
         <PageFramework>
-            <Page header={header} sidebar={<PageNavigation navigation={navigationItems}/>}>
+            <Page header={header} sidebar={<PageSidebar navigation={navigationItems}/>}>
                 <PageLayout>
                     <Outlet/>
                 </PageLayout>
