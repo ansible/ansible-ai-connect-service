@@ -278,34 +278,6 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.secret_manager_patcher.stop()
 
-    def test_get_token(self):
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept": "application/json",
-        }
-        data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": "abcdef"}
-        response = MockResponse(
-            json={
-                "access_token": "access_token",
-                "refresh_token": "not_supported",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "expiration": 1691445310,
-                "scope": "ibm openid",
-            },
-            status_code=200,
-        )
-
-        model_client = WCAClient(inference_url='http://example.com/')
-        model_client.session.post = Mock(return_value=response)
-        model_client.get_token('abcdef')
-
-        model_client.session.post.assert_called_once_with(
-            "https://iam.cloud.ibm.com/identity/token",
-            headers=headers,
-            data=data,
-        )
-
     def test_codematch(self):
         model_id = "sample_model_name"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
@@ -380,7 +352,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         with self.assertRaises(ModelTimeoutError):
             model_client.codematch(model_input=model_input, model_id=model_id)
 
-    def test_codematch_garbage_model_id(self):
+    def test_codematch_bad_model_id(self):
         stub = stub_wca_client(400, "sample_model_name")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
