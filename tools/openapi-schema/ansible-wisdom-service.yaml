@@ -470,6 +470,8 @@ components:
           title: Suggestion ID
           description: A UUID that identifies the particular suggestion attribution
             data is being requested for.
+        model:
+          type: string
       required:
       - suggestion
     AttributionResponse:

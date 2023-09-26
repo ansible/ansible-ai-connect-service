@@ -305,7 +305,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
 
 class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['suggestion', 'suggestionId']
+        fields = ['suggestion', 'suggestionId', 'model']
 
     suggestion = serializers.CharField(trim_whitespace=False)
     suggestionId = serializers.UUIDField(
@@ -317,6 +317,7 @@ class AttributionRequestSerializer(serializers.Serializer):
             " attribution data is being requested for."
         ),
     )
+    model = serializers.CharField(required=False)
 
 
 class DataSource(models.IntegerChoices):

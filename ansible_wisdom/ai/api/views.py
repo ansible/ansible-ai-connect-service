@@ -30,7 +30,7 @@ from yaml.error import MarkedYAMLError
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
 from . import formatter as fmtr
-from .data.data_model import APIPayload, ModelMeshPayload
+from .data.data_model import APIPayload, AttributionDataTransformer, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
 from .serializers import (
@@ -104,7 +104,7 @@ class ModelTimeoutException(BaseWisdomAPIException):
 
 class WcaBadRequestException(BaseWisdomAPIException):
     status_code = 400
-    default_detail = {"message": "Bad request for WCA completion"}
+    default_detail = {"message": "Bad request for WCA"}
 
 
 class WcaInvalidModelIdException(BaseWisdomAPIException):
@@ -271,32 +271,36 @@ class Completions(APIView):
 
         except WcaBadRequest as e:
             logger.error(e)
-            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            logger.exception(f"bad request for completion suggestion {payload.suggestionId}")
             raise WcaBadRequestException
 
         except WcaInvalidModelId as e:
             logger.error(e)
-            logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
+            logger.exception(
+                f"WCA Model ID is invalid for completion suggestion {payload.suggestionId}"
+            )
             raise WcaInvalidModelIdException
 
         except WcaKeyNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Api Key was expected but not found for suggestion {payload.suggestionId}"
+                f"A WCA Api Key was expected but not found for "
+                f"completion suggestion {payload.suggestionId}"
             )
             raise WcaKeyNotFoundException
 
         except WcaModelIdNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Model ID was expected but not found for suggestion {payload.suggestionId}"
+                f"A WCA Model ID was expected but not found for "
+                f"completion suggestion {payload.suggestionId}"
             )
             raise WcaModelIdNotFoundException
 
         except WcaEmptyResponse as e:
             logger.error(e)
             logger.exception(
-                f"WCA returned an empty response for suggestion {payload.suggestionId}"
+                f"WCA returned an empty response for completion suggestion {payload.suggestionId}"
             )
             raise WcaEmptyResponseException
 
@@ -817,18 +821,35 @@ class Attributions(GenericAPIView):
         summary="Code suggestion attributions",
     )
     def post(self, request) -> Response:
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        request_serializer = self.get_serializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
 
-        suggestion_id = str(serializer.validated_data.get('suggestionId', ''))
+        request_data = request_serializer.validated_data
+        suggestion_id = str(request_data.get('suggestionId', ''))
+        model_id = str(request_data.get('model', ''))
+
         start_time = time.time()
-        try:
-            encode_duration, search_duration, resp_serializer = self.perform_search(
-                serializer, request.user
-            )
-        except Exception as exc:
-            logger.error(f"Failed to search for attributions\nException:\n{exc}")
-            return Response({'message': "Unable to complete the request"}, status=503)
+        if request.user.rh_user_has_seat:
+            try:
+                (
+                    encode_duration,
+                    search_duration,
+                    response_serializer,
+                ) = self.perform_content_matching(
+                    model_id, suggestion_id, request.user, request_data
+                )
+            except Exception:
+                logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
+                raise ServiceUnavailable
+        else:
+            try:
+                encode_duration, search_duration, response_serializer = self.perform_search(
+                    request_serializer, request.user
+                )
+            except Exception as exc:
+                logger.error(f"Failed to search for attributions\nException:\n{exc}")
+                return Response({'message': "Unable to complete the request"}, status=503)
+
         duration = round((time.time() - start_time) * 1000, 2)
         attribution_encoding_hist.observe(encode_duration / 1000)
         attribution_search_hist.observe(search_duration / 1000)
@@ -840,15 +861,97 @@ class Attributions(GenericAPIView):
             duration,
             encode_duration,
             search_duration,
-            resp_serializer.validated_data,
+            response_serializer.validated_data,
         )
 
-        return Response(resp_serializer.data, status=rest_framework_status.HTTP_200_OK)
+        return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+
+    def perform_content_matching(
+        self,
+        model_id: str,
+        suggestion_id: str,
+        user: User,
+        request_data,
+    ):
+        wca_client = apps.get_app_config("ai").wca_client
+        user_id = user.uuid
+        model_mesh_payload = ModelMeshPayload(
+            instances=[
+                {
+                    "prompt": request_data.get('suggestion', ''),
+                    "userId": str(user_id) if user_id else None,
+                    "rh_user_has_seat": user.rh_user_has_seat,
+                    "organization_id": user.organization_id,
+                    "suggestionId": suggestion_id,
+                    "context": "",
+                }
+            ]
+        )
+        data = model_mesh_payload.dict()
+        logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{data}")
+        attributions = None
+        try:
+            client_response = wca_client.codematch(data, model_id)
+            encode_duration, search_duration, attributions = AttributionDataTransformer(
+                **client_response[0]
+            ).values()
+            try:
+                response_data = {
+                    "attributions": attributions,
+                }
+                response_serializer = AttributionResponseSerializer(data=response_data)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(stage='response_serialization_validation').inc()
+                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
+                raise InternalServerError
+        except ModelTimeoutError:
+            logger.warn(
+                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                f" for suggestion {suggestion_id}"
+            )
+            raise ModelTimeoutException
+
+        except WcaBadRequest as e:
+            logger.error(e)
+            logger.exception(f"bad request for content matching suggestion {suggestion_id}")
+            raise WcaBadRequestException
+
+        except WcaInvalidModelId as e:
+            logger.error(e)
+            logger.exception(
+                f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
+            )
+            raise WcaInvalidModelIdException
+
+        except WcaKeyNotFound as e:
+            logger.error(e)
+            logger.exception(
+                f"A WCA Api Key was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
+            )
+            raise WcaKeyNotFoundException
+
+        except WcaModelIdNotFound as e:
+            logger.error(e)
+            logger.exception(
+                f"A WCA Model ID was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
+            )
+            raise WcaModelIdNotFoundException
+
+        except WcaEmptyResponse as e:
+            logger.error(e)
+            logger.exception(
+                f"WCA returned an empty response for content matching suggestion {suggestion_id}"
+            )
+            raise WcaEmptyResponseException
+        return encode_duration, search_duration, response_serializer
 
     def perform_search(self, serializer, user: User):
         index = None
         if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", user, "")
+            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
             model_parts = model_tuple.split(':')
             if len(model_parts) == 4:

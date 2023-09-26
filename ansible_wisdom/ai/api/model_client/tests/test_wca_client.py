@@ -32,6 +32,27 @@ class MockResponse:
         return
 
 
+def stub_wca_client(status_code, model_id):
+    model_input = {
+        "instances": [
+            {
+                "context": "null",
+                "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+            }
+        ]
+    }
+    response = MockResponse(
+        json={},
+        status_code=status_code,
+    )
+    model_client = WCAClient(inference_url='https://wca_api_url')
+    model_client.session.post = Mock(return_value=response)
+    model_client.get_api_key = Mock(return_value='org-api-key')
+    model_client.get_model_id = Mock(return_value=model_id)
+    model_client.get_token = Mock(return_value={"access_token": "abc"})
+    return model_id, model_client, model_input
+
+
 class TestWCAClient(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -43,25 +64,84 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.secret_manager_patcher.stop()
 
-    def stub_wca_client(self, status_code, model_name):
-        model_input = {
-            "instances": [
-                {
-                    "context": "null",
-                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
-                }
-            ]
+    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
+    def test_get_api_key_without_seat(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(False, None)
+        self.assertEqual(api_key, 'abcdef')
+
+    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
+    def test_get_api_key_with_seat_without_org_id(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, None)
+        self.assertEqual(api_key, 'abcdef')
+
+    def test_get_api_key_from_aws(self):
+        secret_value = '12345'
+        self.mock_secret_manager.get_secret.return_value = {
+            "SecretString": secret_value,
+            "CreatedDate": "xxx",
         }
-        response = MockResponse(
-            json={},
-            status_code=status_code,
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, '123')
+        self.assertEqual(api_key, secret_value)
+        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.API_KEY)
+
+    def test_get_api_key_from_aws_error(self):
+        self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError
+        model_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaSecretManagerError):
+            model_client.get_api_key(True, '123')
+
+    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
+    def test_seatless_get_free_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(False, None, None)
+        self.assertEqual(model_id, 'free')
+
+    def test_seatless_cannot_pick_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaBadRequest):
+            wca_client.get_model_id(False, None, 'some-model')
+
+    def test_seated_get_org_default_model(self):
+        self.mock_secret_manager.get_secret.return_value = {
+            "SecretString": "org-model",
+            "CreatedDate": "xxx",
+        }
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, '123', None)
+        self.assertEqual(model_id, 'org-model')
+        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.MODEL_ID)
+
+    def test_seated_can_pick_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
+        self.assertEqual(model_id, 'model-i-pick')
+
+    def test_seated_cannot_have_no_key(self):
+        self.mock_secret_manager.get_secret.return_value = None
+        wca_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaKeyNotFound):
+            wca_client.get_api_key(True, '123')
+
+    def test_seated_cannot_have_no_model(self):
+        self.mock_secret_manager.get_secret.return_value = None
+        wca_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaModelIdNotFound):
+            wca_client.get_model_id(True, '123', None)
+
+
+class TestWCACodegen(WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        super().setUp()
+        self.secret_manager_patcher = patch.object(
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
         )
-        model_client = WCAClient(inference_url='https://wca_api_url')
-        model_client.session.post = Mock(return_value=response)
-        model_client.get_api_key = Mock(return_value='org-api-key')
-        model_client.get_model_id = Mock(return_value=model_name)
-        model_client.get_token = Mock(return_value={"access_token": "abc"})
-        return model_name, model_client, model_input
+        self.mock_secret_manager = self.secret_manager_patcher.start()
+
+    def tearDown(self):
+        self.secret_manager_patcher.stop()
 
     def test_get_token(self):
         headers = {
@@ -83,7 +163,6 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
 
         model_client = WCAClient(inference_url='http://example.com/')
         model_client.session.post = Mock(return_value=response)
-
         model_client.get_token('abcdef')
 
         model_client.session.post.assert_called_once_with(
@@ -170,86 +249,123 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_garbage_model_id(self):
-        stub = self.stub_wca_client(400, "zavala")
+        stub = stub_wca_client(400, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_invalid_model_id_for_api_key(self):
-        stub = self.stub_wca_client(403, "zavala")
+        stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_empty_response(self):
-        stub = self.stub_wca_client(204, "zavala")
+        stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
             model_client.infer(model_input=model_input, model_id=model_id)
 
-    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
-    def test_get_api_key_without_seat(self):
-        model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(False, None)
-        self.assertEqual(api_key, 'abcdef')
 
-    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
-    def test_get_api_key_with_seat_without_org_id(self):
-        model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, None)
-        self.assertEqual(api_key, 'abcdef')
+class TestWCACodematch(WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        super().setUp()
+        self.secret_manager_patcher = patch.object(
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
+        )
+        self.mock_secret_manager = self.secret_manager_patcher.start()
 
-    def test_get_api_key_from_aws(self):
-        secret_value = '12345'
-        self.mock_secret_manager.get_secret.return_value = {
-            "SecretString": secret_value,
-            "CreatedDate": "xxx",
+    def tearDown(self):
+        self.secret_manager_patcher.stop()
+
+    def test_codematch(self):
+        model_id = "sample_model_name"
+        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+
+        model_input = {
+            "instances": [
+                {
+                    "prompt": prompt,
+                }
+            ]
         }
-        model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, '123')
-        self.assertEqual(api_key, secret_value)
-        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.API_KEY)
-
-    def test_get_api_key_from_aws_error(self):
-        self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError
-        model_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaSecretManagerError):
-            model_client.get_api_key(True, '123')
-
-    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
-    def test_seatless_get_free_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(False, None, None)
-        self.assertEqual(model_id, 'free')
-
-    def test_seatless_cannot_pick_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaBadRequest):
-            wca_client.get_model_id(False, None, 'some-model')
-
-    def test_seated_get_org_default_model(self):
-        self.mock_secret_manager.get_secret.return_value = {
-            "SecretString": "org-model",
-            "CreatedDate": "xxx",
+        data = {
+            "model_id": model_id,
+            "input": [f"{prompt}"],
         }
-        wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, '123', None)
-        self.assertEqual(model_id, 'org-model')
-        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.MODEL_ID)
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        client_response = {"attributions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response = MockResponse(
+            json=client_response,
+            status_code=200,
+        )
 
-    def test_seated_can_pick_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
-        self.assertEqual(model_id, 'model-i-pick')
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token['access_token']}",
+        }
 
-    def test_seated_cannot_have_no_key(self):
-        self.mock_secret_manager.get_secret.return_value = None
-        wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaKeyNotFound):
-            wca_client.get_api_key(True, '123')
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token = Mock(return_value=token)
+        model_client.get_model_id = Mock(return_value=model_id)
 
-    def test_seated_cannot_have_no_model(self):
-        self.mock_secret_manager.get_secret.return_value = None
-        wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaModelIdNotFound):
-            wca_client.get_model_id(True, '123', None)
+        result = model_client.codematch(model_input=model_input, model_id=model_id)
+
+        model_client.get_token.assert_called_once()
+        model_client.session.post.assert_called_once_with(
+            "https://example.com/v1/wca/codematch/ansible",
+            headers=headers,
+            json=data,
+            timeout=None,
+        )
+        self.assertEqual(result, client_response)
+
+    def test_codematch_timeout(self):
+        model_id = "sample_model_name"
+        model_input = {
+            "instances": [
+                {
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=ReadTimeout())
+        model_client.get_model_id = Mock(return_value=model_id)
+        with self.assertRaises(ModelTimeoutError):
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_bad_model_id(self):
+        stub = stub_wca_client(400, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_invalid_model_id_for_api_key(self):
+        stub = stub_wca_client(403, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_empty_response(self):
+        stub = stub_wca_client(204, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaEmptyResponse):
+            model_client.codematch(model_input=model_input, model_id=model_id)
