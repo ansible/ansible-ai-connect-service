@@ -28,7 +28,7 @@ from users.models import User
 from yaml.error import MarkedYAMLError
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags
+from ..feature_flags import FeatureFlags, WisdomFlags
 from . import formatter as fmtr
 from .data.data_model import APIPayload, AttributionDataTransformer, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
@@ -153,7 +153,7 @@ def get_model_client(wisdom_app, user):
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
     if settings.LAUNCHDARKLY_SDK_KEY:
-        model_tuple = feature_flags.get("model_name", user, "")
+        model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
         logger.debug(f"flag model_name has value {model_tuple}")
         model_parts = model_tuple.split(':')
         if len(model_parts) == 4:
@@ -939,7 +939,7 @@ class Attributions(GenericAPIView):
     def perform_search(self, serializer, user: User):
         index = None
         if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get("model_name", user, "")
+            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
             logger.debug(f"flag model_name has value {model_tuple}")
             model_parts = model_tuple.split(':')
             if len(model_parts) == 4:
