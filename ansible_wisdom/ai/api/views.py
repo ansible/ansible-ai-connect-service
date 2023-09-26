@@ -87,9 +87,26 @@ STRIP_YAML_LINE = '---\n'
 
 
 class BaseWisdomAPIException(APIException):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, cause=None, **kwargs):
         completions_return_code.labels(code=self.status_code).inc()
         super().__init__(*args, **kwargs)
+        if cause and isinstance(self.detail, dict):
+            model_id = self.get_model_id_from_exception(cause)
+            if model_id:
+                self.detail["model"] = model_id
+
+    @staticmethod
+    def get_model_id_from_exception(cause):
+        """Attempt to get model_id in the request data embedded in an cause."""
+        model_id = None
+        backend_request_body = getattr(getattr(cause, "request", None), "body", None)
+        if backend_request_body:
+            try:
+                o = json.loads(backend_request_body)
+                model_id = o.get("model_id", model_id)
+            except Exception:
+                pass
+        return model_id
 
 
 class PostprocessException(BaseWisdomAPIException):
@@ -100,6 +117,7 @@ class PostprocessException(BaseWisdomAPIException):
 class ModelTimeoutException(BaseWisdomAPIException):
     status_code = 204
     error_type = 'model_timeout'
+    default_detail = {"message": "An timeout occurred attempting to complete the request."}
 
 
 class WcaBadRequestException(BaseWisdomAPIException):
@@ -257,6 +275,7 @@ class Completions(APIView):
 
         predictions = None
         exception = None
+        error = None
         start_time = time.time()
         try:
             predictions = model_mesh_client.infer(data, model_id=model_id)
@@ -267,47 +286,52 @@ class Completions(APIView):
                 f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
                 f" for suggestion {payload.suggestionId}"
             )
-            raise ModelTimeoutException
+            raise ModelTimeoutException(cause=exc)
 
         except WcaBadRequest as e:
+            error = e
             logger.error(e)
             logger.exception(f"bad request for completion suggestion {payload.suggestionId}")
-            raise WcaBadRequestException
+            raise WcaBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
+            error = e
             logger.error(e)
             logger.exception(
                 f"WCA Model ID is invalid for completion suggestion {payload.suggestionId}"
             )
-            raise WcaInvalidModelIdException
+            raise WcaInvalidModelIdException(cause=e)
 
         except WcaKeyNotFound as e:
+            error = e
             logger.error(e)
             logger.exception(
                 f"A WCA Api Key was expected but not found for "
                 f"completion suggestion {payload.suggestionId}"
             )
-            raise WcaKeyNotFoundException
+            raise WcaKeyNotFoundException(cause=e)
 
         except WcaModelIdNotFound as e:
+            error = e
             logger.error(e)
             logger.exception(
                 f"A WCA Model ID was expected but not found for "
                 f"completion suggestion {payload.suggestionId}"
             )
-            raise WcaModelIdNotFoundException
+            raise WcaModelIdNotFoundException(cause=e)
 
         except WcaEmptyResponse as e:
+            error = e
             logger.error(e)
             logger.exception(
                 f"WCA returned an empty response for completion suggestion {payload.suggestionId}"
             )
-            raise WcaEmptyResponseException
+            raise WcaEmptyResponseException(cause=e)
 
         except Exception as exc:
             exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
-            raise ServiceUnavailable
+            raise ServiceUnavailable(cause=exc)
         finally:
             process_error_count.labels(stage='prediction').inc()
             duration = round((time.time() - start_time) * 1000, 2)
@@ -316,6 +340,14 @@ class Completions(APIView):
             ano_predictions = anonymizer.anonymize_struct(
                 predictions, value_template=value_template
             )
+            # If an exception was thrown during the backend call, try to get the model ID
+            # that is contained in the exception.
+            if exception or error:
+                model_id_in_exception = BaseWisdomAPIException.get_model_id_from_exception(
+                    exception if exception else error
+                )
+                if model_id_in_exception:
+                    model_id = model_id_in_exception
             event = {
                 "duration": duration,
                 "exception": exception is not None,

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import platform
 import random
 import string
@@ -8,11 +9,24 @@ import uuid
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
+import requests
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
-from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound, WcaModelIdNotFound
+from ai.api.model_client.wca_client import (
+    WCAClient,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+)
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import Completions, CompletionsPromptType, get_model_client
+from ai.api.views import (
+    Completions,
+    CompletionsPromptType,
+    ModelTimeoutError,
+    WcaBadRequest,
+    get_model_client,
+)
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -752,6 +766,60 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
                     self.assertEqual(properties['modelName'], dummy_model_id)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.model_client.wca_client.WCAClient.infer')
+    def test_wca_client_errors(self, infer):
+        """Run WCA client error scenarios for various errors."""
+        for error, status_code_expected in [
+            (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
+            (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
+            (WcaInvalidModelId, HTTPStatus.FORBIDDEN),
+            (WcaKeyNotFound, HTTPStatus.FORBIDDEN),
+            (WcaModelIdNotFound, HTTPStatus.FORBIDDEN),
+            (WcaEmptyResponse, HTTPStatus.NO_CONTENT),
+            (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
+        ]:
+            infer.side_effect = self.get_side_effect(error)
+            self.run_wca_client_error_case(status_code_expected)
+
+    def run_wca_client_error_case(self, status_code_expected):
+        """Execute a single WCA client error scenario."""
+        self.user.rh_user_has_seat = True
+        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, status_code_expected)
+                self.assertSegmentTimestamp(log)
+
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    # Make sure the model name stored in Segment events is the one in the exception
+                    # thrown from the backend server.
+                    self.assertEqual(properties['modelName'], dummy_model_id)
+
+    def get_side_effect(self, connection_error):
+        """Create a side effect for WCA error test cases."""
+        request = requests.PreparedRequest()
+        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+        body = {
+            "model_id": dummy_model_id,
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+        }
+        request.body = json.dumps(body).encode("utf-8")
+        connection_error.request = request
+        return connection_error
 
     def test_completions_pii_clean_up(self):
         payload = {
