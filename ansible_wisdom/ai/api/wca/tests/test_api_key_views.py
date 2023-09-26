@@ -235,10 +235,9 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         self.mock_wca_client.get_token.return_value = "token"
-        self.mock_secret_manager.get_secret.return_value = "wca_key"
+        self.mock_wca_client.get_api_key.return_value = "wca_key"
         r = self.client.get(reverse('wca_api_key_validator'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
     def test_validate_key_with_invalid_value(self, *args):
         self.user.organization_id = '123'
