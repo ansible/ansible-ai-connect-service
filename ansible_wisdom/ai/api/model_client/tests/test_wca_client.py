@@ -300,7 +300,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         )
 
     def test_search(self):
-        model_name = "sample_model_name"
+        model_id = "sample_model_name"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
 
         model_input = {
@@ -311,7 +311,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             ]
         }
         data = {
-            "model_id": model_name,
+            "model_id": model_id,
             "input": [f"{prompt}"],
         }
         token = {
@@ -336,9 +336,9 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
-        model_client.get_model_id = Mock(return_value=model_name)
+        model_client.get_model_id = Mock(return_value=model_id)
 
-        result = model_client.search(model_input=model_input, model_name=model_name)
+        result = model_client.search(model_input=model_input, model_id=model_id)
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -350,7 +350,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(result, client_response)
 
     def test_search_timeout(self):
-        model_name = "sample_model_name"
+        model_id = "sample_model_name"
         model_input = {
             "instances": [
                 {
@@ -369,6 +369,6 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
-        model_client.get_model_id = Mock(return_value=model_name)
+        model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(ModelTimeoutError):
-            model_client.search(model_input=model_input, model_name=model_name)
+            model_client.search(model_input=model_input, model_id=model_id)
