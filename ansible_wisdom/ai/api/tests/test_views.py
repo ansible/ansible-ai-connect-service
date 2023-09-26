@@ -1081,7 +1081,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @patch('ai.api.views.Attributions.perform_search')
     def test_wca_attribution_with_no_seated_user(self, mock_perform_search):
         self.user.rh_user_has_seat = False
@@ -1096,7 +1095,6 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.post(reverse('attributions'), payload)
         mock_perform_search.assert_called_once()
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_attribution_with_seated_user(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
@@ -1154,7 +1152,6 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["attributions"][0]["license"], license)
             self.assertEqual(r.data["attributions"][0]["data_source"], data_source)
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_attribution_with_seated_user_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"

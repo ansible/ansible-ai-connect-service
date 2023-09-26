@@ -104,7 +104,7 @@ class ModelTimeoutException(BaseWisdomAPIException):
 
 class WcaBadRequestException(BaseWisdomAPIException):
     status_code = 400
-    default_detail = {"message": "Bad request for WCA completion"}
+    default_detail = {"message": "Bad request for WCA"}
 
 
 class WcaInvalidModelIdException(BaseWisdomAPIException):
@@ -271,32 +271,36 @@ class Completions(APIView):
 
         except WcaBadRequest as e:
             logger.error(e)
-            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            logger.exception(f"bad request for completion suggestion {payload.suggestionId}")
             raise WcaBadRequestException
 
         except WcaInvalidModelId as e:
             logger.error(e)
-            logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
+            logger.exception(
+                f"WCA Model ID is invalid for completion suggestion {payload.suggestionId}"
+            )
             raise WcaInvalidModelIdException
 
         except WcaKeyNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Api Key was expected but not found for suggestion {payload.suggestionId}"
+                f"A WCA Api Key was expected but not found for "
+                f"completion suggestion {payload.suggestionId}"
             )
             raise WcaKeyNotFoundException
 
         except WcaModelIdNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Model ID was expected but not found for suggestion {payload.suggestionId}"
+                f"A WCA Model ID was expected but not found for "
+                f"completion suggestion {payload.suggestionId}"
             )
             raise WcaModelIdNotFoundException
 
         except WcaEmptyResponse as e:
             logger.error(e)
             logger.exception(
-                f"WCA returned an empty response for suggestion {payload.suggestionId}"
+                f"WCA returned an empty response for completion suggestion {payload.suggestionId}"
             )
             raise WcaEmptyResponseException
 
@@ -820,7 +824,7 @@ class Attributions(GenericAPIView):
         request_serializer = self.get_serializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         suggestion_id = str(request_serializer.validated_data.get('suggestionId', ''))
-        model_id = str(request_serializer.validated_data.get('model'))
+        model_id = str(request_serializer.validated_data.get('model', ''))
 
         start_time = time.time()
         if request.user.rh_user_has_seat:
@@ -905,34 +909,40 @@ class Attributions(GenericAPIView):
 
         except WcaBadRequest as e:
             logger.error(e)
-            logger.exception(f"bad request for attribution for suggestion {suggestion_id}")
+            logger.exception(f"bad request for content matching suggestion {suggestion_id}")
             raise WcaBadRequestException
 
         except WcaInvalidModelId as e:
             logger.error(e)
-            logger.exception(f"WCA Model ID is invalid for suggestion {suggestion_id}")
+            logger.exception(
+                f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
+            )
             raise WcaInvalidModelIdException
 
         except WcaKeyNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Api Key was expected but not found for suggestion {suggestion_id}"
+                f"A WCA Api Key was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
             )
             raise WcaKeyNotFoundException
 
         except WcaModelIdNotFound as e:
             logger.error(e)
             logger.exception(
-                f"A WCA Model ID was expected but not found for suggestion {suggestion_id}"
+                f"A WCA Model ID was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException
 
         except WcaEmptyResponse as e:
             logger.error(e)
-            logger.exception(f"WCA returned an empty response for suggestion {suggestion_id}")
+            logger.exception(
+                f"WCA returned an empty response for content matching suggestion {suggestion_id}"
+            )
             raise WcaEmptyResponseException
         except Exception:
-            logger.exception(f"error requesting attribution for suggestion {suggestion_id}")
+            logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
             raise ServiceUnavailable
         return encode_duration, search_duration, response_serializer
 
