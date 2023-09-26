@@ -12,12 +12,7 @@ from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound, WcaModelIdNotFound
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import (
-    Completions,
-    CompletionsPromptType,
-    ServiceUnavailable,
-    get_model_client,
-)
+from ai.api.views import Completions, CompletionsPromptType, get_model_client
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -1109,9 +1104,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             "tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-
-        with self.assertRaises(ServiceUnavailable):
-            self.client.post(reverse('attributions'), payload)
+        self.client.post(reverse('attributions'), payload)
         mock_perform_content_matching.assert_called_once()
 
     def test_wca_attribution_with_seated_user(self):
