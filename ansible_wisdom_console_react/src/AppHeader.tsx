@@ -1,8 +1,9 @@
 import {PageMasthead} from '@ansible/ansible-ui-framework'
 import {useTranslation} from 'react-i18next'
-import {DropdownItem, ToolbarGroup, ToolbarItem} from "@patternfly/react-core";
+import {Brand, DropdownItem, ToolbarGroup, ToolbarItem} from "@patternfly/react-core";
 import {UserCircleIcon} from "@patternfly/react-icons";
 import {PageMastheadDropdown} from "./PageMastheadDropdown";
+import RedHatLogo from './redhat-logo.svg';
 
 export interface AppHeaderProps {
     userName: string
@@ -18,7 +19,10 @@ export function AppHeader(props: AppHeaderProps) {
 
     return (
         <PageMasthead
-            title={t("AnsibleLightspeedConsole")}
+            icon={<Brand alt="" widths={{default: '125px', md: '125px'}}>
+                        <source media="(min-width: 125px)" srcSet={RedHatLogo}/>
+                    </Brand>}
+            title=""
         >
             <ToolbarItem style={{flexGrow: 1}}/>
             <ToolbarGroup variant="icon-button-group">
