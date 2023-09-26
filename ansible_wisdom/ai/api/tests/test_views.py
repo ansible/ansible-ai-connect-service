@@ -1084,7 +1084,6 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
     @patch('ai.api.views.Attributions.perform_search')
     def test_wca_attribution_with_no_seated_user(self, mock_perform_search):
         self.user.rh_user_has_seat = False
-        self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
