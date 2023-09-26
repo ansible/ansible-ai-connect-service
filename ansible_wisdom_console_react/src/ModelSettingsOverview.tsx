@@ -99,7 +99,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                     <Text component="h1">{t("ModelSettings")}</Text>
                 </TextContent>
             </PageSection>
-            <PageSection>
+            <PageSection data-testid={"model-settings-overview"}>
                 <Panel variant={"bordered"}>
                     <PanelMain>
                         <PanelMainBody>
@@ -124,18 +124,18 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                 </StackItem>
                                 <StackItem>
                                     {isWcaKeyLoading && (
-                                        <div className={"Loading"}>
+                                        <div className={"Loading"} data-testid={"model-settings-overview__key-loading"}>
                                             <Skeleton height="100%" screenreaderText={t("Loading")}/>
                                         </div>
                                     )}
                                     {isWcaKeyNotFound && (
-                                        <TextContent>
+                                        <TextContent data-testid={"model-settings-overview__key-not-found"}>
                                             <Text component={"p"}>{t("NoAPIKey")}</Text>
                                         </TextContent>
                                     )}
                                     {isWcaKeyFound && (
                                         <>
-                                            <TextContent>
+                                            <TextContent data-testid={"model-settings-overview__key"}>
                                                 <Text component={"h3"}>{t("APIKey")}</Text>
                                             </TextContent>
                                             <Split>
@@ -217,14 +217,19 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                 </StackItem>
                                 <StackItem>
                                     <StackItem>
+                                        {isWcaModelIdLoading && (
+                                            <div className={"Loading"} data-testid={"model-settings-overview__model-id-loading"}>
+                                                <Skeleton height="100%" screenreaderText={t("Loading")}/>
+                                            </div>
+                                        )}
                                         {isWcaModelIdNotFound && (
-                                            <TextContent>
+                                            <TextContent data-testid={"model-settings-overview__model-id-not-found"}>
                                                 <Text component={"p"}>{t("NoModelId")}</Text>
                                             </TextContent>
                                         )}
                                         {isWcaModelIdFound && (
                                             <>
-                                                <TextContent>
+                                                <TextContent data-testid={"model-settings-overview__model-id"}>
                                                     <Text component={"h3"}>{t("ModelId")}</Text>
                                                 </TextContent>
                                                 <Split>
@@ -254,11 +259,6 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                     </StackItem>
                                 </StackItem>
                                 <StackItem>
-                                    {isWcaModelIdLoading && (
-                                        <div className={"Loading"}>
-                                            <Skeleton height="100%" screenreaderText={t("Loading")}/>
-                                        </div>
-                                    )}
                                     {isWcaModelIdNotFound && (
                                         <Button variant={"primary"} icon={<PlusCircleIcon/>} onClick={setModeToModelId}>{t("AddModelId")}</Button>
                                     )}
