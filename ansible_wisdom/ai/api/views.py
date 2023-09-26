@@ -820,6 +820,7 @@ class Attributions(GenericAPIView):
         request_serializer = self.get_serializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         suggestion_id = str(request_serializer.validated_data.get('suggestionId', ''))
+        model_id = str(request_serializer.validated_data.get('modelId'))
 
         if request.user.rh_user_has_seat:
             model_mesh_client = apps.get_app_config("ai").wca_client
@@ -845,7 +846,7 @@ class Attributions(GenericAPIView):
             attributions = None
             start_time = time.time()
             try:
-                client_response = model_mesh_client.search(data)
+                client_response = model_mesh_client.search(data, model_id)
                 encode_duration, search_duration, attributions = AttributionDataTransformer(
                     **client_response[0]
                 ).values()

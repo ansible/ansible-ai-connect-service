@@ -1153,3 +1153,54 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["attributions"][0]["path"], path)
             self.assertEqual(r.data["attributions"][0]["license"], license)
             self.assertEqual(r.data["attributions"][0]["data_source"], data_source)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_attribution_with_seated_user_with_custom_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
+            "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "suggestionId": str(uuid.uuid4()),
+            "modelId": "org-model-id",
+        }
+
+        repo_name = "robertdebock.nginx"
+        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
+        path = "tasks/main.yml"
+        license = "apache-2.0"
+
+        response = MockResponse(
+            json=[
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": repo_name,
+                            "repo_url": repo_url,
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550663,
+                        }
+                    ],
+                    "meta": {"encode_duration": 367.3, "search_duration": 151.98},
+                }
+            ],
+            status_code=200,
+        )
+        model_client = WCAClient(inference_url='https://wca_api_url')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            r = self.client.post(reverse('attributions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            model_client.get_token.assert_called_once()
+            self.assertEqual(
+                model_client.session.post.call_args.args[0],
+                "https://wca_api_url/v1/wca/codematch/ansible",
+            )
+            self.assertEqual(
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+            )

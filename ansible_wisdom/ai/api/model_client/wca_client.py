@@ -64,7 +64,7 @@ class WCAClient(ModelMeshClient):
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError
 
-    def search(self, model_input, model_name=None):
+    def search(self, model_input, requested_model_id=None):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
@@ -72,8 +72,7 @@ class WCAClient(ModelMeshClient):
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
-        # AAP-16023
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_name)
+        model_id = self.get_model_id(rh_user_has_seat, organization_id, requested_model_id)
         data = {
             "model_id": model_id,
             "input": [f"{prompt}"],
