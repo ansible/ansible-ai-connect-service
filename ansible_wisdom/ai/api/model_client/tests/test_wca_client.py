@@ -171,21 +171,21 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
 
     def test_infer_garbage_model_id(self):
         stub = self.stub_wca_client(400, "zavala")
-        model_name, model_client, model_input = stub
+        model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
-            model_client.infer(model_input=model_input, model_name=model_name)
+            model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_invalid_model_id_for_api_key(self):
         stub = self.stub_wca_client(403, "zavala")
-        model_name, model_client, model_input = stub
+        model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
-            model_client.infer(model_input=model_input, model_name=model_name)
+            model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_empty_response(self):
         stub = self.stub_wca_client(204, "zavala")
-        model_name, model_client, model_input = stub
+        model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
-            model_client.infer(model_input=model_input, model_name=model_name)
+            model_client.infer(model_input=model_input, model_id=model_id)
 
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):
