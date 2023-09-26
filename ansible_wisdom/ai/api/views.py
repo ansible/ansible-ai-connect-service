@@ -260,6 +260,7 @@ class Completions(APIView):
         start_time = time.time()
         try:
             predictions = model_mesh_client.infer(data, model_id=model_id)
+            model_id = predictions.get("model_id", model_id)
         except ModelTimeoutError as exc:
             exception = exc
             logger.warn(
@@ -314,6 +315,7 @@ class Completions(APIView):
             event = {
                 "duration": duration,
                 "exception": exception is not None,
+                "modelName": model_id,
                 "problem": None if exception is None else exception.__class__.__name__,
                 "request": data,
                 "response": ano_predictions,
@@ -334,6 +336,7 @@ class Completions(APIView):
                 request.user,
                 payload.suggestionId,
                 indent=original_indent,
+                model_id=model_id,
             )
         except Exception:
             process_error_count.labels(stage='post-processing').inc()
@@ -395,24 +398,12 @@ class Completions(APIView):
 
         return context, prompt, original_indent
 
-    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent):
+    def postprocess(self, recommendation, prompt, context, user, suggestion_id, indent, model_id):
         ari_caller = apps.get_app_config("ai").get_ari_caller()
         if not ari_caller:
             logger.warn('skipped ari post processing because ari was not initialized')
-        # check for commercial users for lint processing
-        is_commercial = user.rh_user_has_seat
-        if is_commercial:
-            ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
-            if not ansible_lint_caller:
-                logger.warn(
-                    'skipped ansible lint post processing because ansible lint was not initialized'
-                )
-        else:
-            ansible_lint_caller = None
-            logger.debug(
-                'skipped ansible lint post processing as lint processing is allowed for'
-                ' Commercial Users only!'
-            )
+
+        ansible_lint_caller = self.get_ansible_lint_caller(user)
 
         exception = None
 
@@ -426,10 +417,7 @@ class Completions(APIView):
         recommendation_problem = None
         truncated_yaml = None
         postprocessed_yaml = None
-        tasks = []
-        task_names = fmtr.get_task_names_from_prompt(prompt)
-        for task_name in task_names:
-            tasks.append({"name": task_name})
+        tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(prompt)]
         ari_results = None
 
         # check if the recommendation_yaml is a valid YAML
@@ -504,6 +492,7 @@ class Completions(APIView):
                     exception,
                     start_time,
                     "ARI",
+                    model_id,
                 )
                 if exception:
                     raise exception
@@ -539,6 +528,7 @@ class Completions(APIView):
                     exception,
                     start_time,
                     "ansible-lint",
+                    model_id,
                 )
                 if exception:
                     raise exception
@@ -570,6 +560,23 @@ class Completions(APIView):
 
         return recommendation, tasks
 
+    def get_ansible_lint_caller(self, user):
+        """check for commercial users for lint processing"""
+        is_commercial = user.rh_user_has_seat
+        if is_commercial:
+            ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
+            if not ansible_lint_caller:
+                logger.warn(
+                    'skipped ansible lint post processing because ansible lint was not initialized'
+                )
+        else:
+            ansible_lint_caller = None
+            logger.debug(
+                'skipped ansible lint post processing as lint processing is allowed for'
+                ' Commercial Users only!'
+            )
+        return ansible_lint_caller
+
     def write_to_segment(
         self,
         user,
@@ -581,6 +588,7 @@ class Completions(APIView):
         exception,
         start_time,
         event_type,
+        model_id,
     ):
         duration = round((time.time() - start_time) * 1000, 2)
         problem = (
@@ -591,6 +599,7 @@ class Completions(APIView):
             else exception.__class__.__name__
         )
         if event_type == "ARI":
+            event_name = "postprocess"
             event = {
                 "exception": exception is not None,
                 "problem": problem,
@@ -601,8 +610,8 @@ class Completions(APIView):
                 "details": postprocess_detail,
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
-            send_segment_event(event, "postprocess", user)
         if event_type == "ansible-lint":
+            event_name = "postprocessLint"
             event = {
                 "exception": exception is not None,
                 "problem": problem,
@@ -611,7 +620,10 @@ class Completions(APIView):
                 "postprocessed": postprocessed_yaml,
                 "suggestionId": str(suggestion_id) if suggestion_id else None,
             }
-            send_segment_event(event, "postprocessLint", user)
+
+        if model_id:
+            event["modelName"] = model_id
+        send_segment_event(event, event_name, user)
 
 
 class Feedback(APIView):

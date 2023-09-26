@@ -62,7 +62,6 @@ class DummyMeshClient(ModelMeshClient):
                 pass
 
         self.response_data = response_data
-        self.response_data['model_id'] = settings.ANSIBLE_AI_MODEL_NAME
 
     def infer(self, data, model_id=None):
         if self.test_inference_match:
@@ -244,7 +243,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -265,9 +267,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
-            ]
+            ],
         }
         self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
@@ -297,9 +300,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
-            ]
+            ],
         }
         self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
@@ -329,7 +333,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -349,7 +356,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         payload = {
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -367,7 +377,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         # self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -392,7 +405,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\nbecome: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -410,7 +426,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n  - name: [Setup]",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -428,7 +447,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n  - Name: [Setup]",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -448,7 +470,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -470,9 +495,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # quotation in the last line is not closed, but the truncate function can handle this.
         response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
                 "      ansible.builtin.apt:\n        name: apache2\n      register: \"test"
-            ]
+            ],
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='INFO') as log:
@@ -495,7 +521,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # this prediction has indentation problem with the prompt above
         response_data = {
-            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"]
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='ERROR') as log:  # Suppress debug output
@@ -520,7 +547,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         # module name in the prediction is ""
-        response_data = {"predictions": ["      \"\":\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      \"\":\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(
             logger='root', level='DEBUG'
@@ -552,7 +582,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='WARN'):
             with patch.object(
@@ -571,7 +604,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -597,7 +633,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -612,13 +651,18 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_with_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
+        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": dummy_model_id,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -631,12 +675,22 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(r.data['predictions'])
                 self.assertSegmentTimestamp(log)
 
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertEqual(properties['modelName'], dummy_model_id)
+
     def test_completions_pii_clean_up(self):
         payload = {
             "prompt": "- name: Create an account for foo@ansible.com \n",
             "suggestionId": str(uuid.uuid4()),
         }
-        response_data = {"predictions": [""]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": [""],
+        }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             with patch.object(
@@ -654,6 +708,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
