@@ -11,6 +11,8 @@ from ai.api.model_client.wca_client import (
     WCAClient,
     WcaEmptyResponse,
     WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
 )
 from django.apps import apps
 from django.test import override_settings
@@ -117,10 +119,16 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
         self.assertEqual(model_id, 'model-i-pick')
 
+    def test_seated_cannot_have_no_key(self):
+        self.mock_secret_manager.get_secret.return_value = None
+        wca_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaKeyNotFound):
+            wca_client.get_api_key(True, '123')
+
     def test_seated_cannot_have_no_model(self):
         self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaBadRequest):
+        with self.assertRaises(WcaModelIdNotFound):
             wca_client.get_model_id(True, '123', None)
 
 
