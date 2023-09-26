@@ -8,6 +8,7 @@ from ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ai.api.serializers import WcaKeyRequestSerializer
+from ai.api.views import ServiceUnavailable, WcaKeyNotFoundException
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -98,8 +99,8 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # Extract API Key from request
-        key_serializer = WcaKeyRequestSerializer(data=request.data)
         try:
+            key_serializer = WcaKeyRequestSerializer(data=request.data)
             key_serializer.is_valid(raise_exception=True)
             wca_key = key_serializer.validated_data['key']
         except ValidationError as e:
@@ -107,8 +108,8 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # Validate API Key
-        model_mesh_client = apps.get_app_config("ai").wca_client
         try:
+            model_mesh_client = apps.get_app_config("ai").wca_client
             model_mesh_client.get_token(wca_key)
         except HTTPError:
             # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
@@ -125,7 +126,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
         except WcaSecretManagerError as e:
             logger.error(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+            raise ServiceUnavailable
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -157,16 +158,28 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             return Response(status=HTTP_400_BAD_REQUEST)
 
         # Validate API Key
-        model_mesh_client = apps.get_app_config("ai").wca_client
         try:
+            model_mesh_client = apps.get_app_config("ai").wca_client
             rh_user_has_seat = request.user.rh_user_has_seat
             organization_id = request.user.organization_id
             api_key = model_mesh_client.get_api_key(rh_user_has_seat, organization_id)
             token = model_mesh_client.get_token(api_key)
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
+
+        except WcaKeyNotFoundException as e:
+            logger.error(e)
+            raise WcaKeyNotFoundException
+
         except WcaSecretManagerError as e:
             logger.error(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+            raise ServiceUnavailable
+
+        except HTTPError:
+            # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
+            logger.error(
+                f"An error occurred trying to retrieve a WCA Token for Organisation '${org_id}'."
+            )
+            return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_200_OK)

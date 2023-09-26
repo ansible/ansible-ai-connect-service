@@ -6,7 +6,14 @@ from ai.api.aws.wca_secret_manager import (
     WcaSecretManagerError,
 )
 from ai.api.model_client.exceptions import ModelTimeoutError
-from ai.api.model_client.wca_client import WcaBadRequest, WCAClient
+from ai.api.model_client.wca_client import (
+    WcaBadRequest,
+    WCAClient,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+)
 from django.apps import apps
 from django.test import override_settings
 from requests.exceptions import ReadTimeout
@@ -35,6 +42,26 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
+
+    def stub_wca_client(self, status_code, model_name):
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        response = MockResponse(
+            json={},
+            status_code=status_code,
+        )
+        model_client = WCAClient(inference_url='https://wca_api_url')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        model_client.get_model_id = Mock(return_value=model_name)
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_name, model_client, model_input
 
     def test_get_token(self):
         headers = {
@@ -142,6 +169,24 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         with self.assertRaises(ModelTimeoutError):
             model_client.infer(model_input=model_input, model_id=model_id)
 
+    def test_infer_garbage_model_id(self):
+        stub = self.stub_wca_client(400, "zavala")
+        model_name, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.infer(model_input=model_input, model_name=model_name)
+
+    def test_infer_invalid_model_id_for_api_key(self):
+        stub = self.stub_wca_client(403, "zavala")
+        model_name, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.infer(model_input=model_input, model_name=model_name)
+
+    def test_infer_empty_response(self):
+        stub = self.stub_wca_client(204, "zavala")
+        model_name, model_client, model_input = stub
+        with self.assertRaises(WcaEmptyResponse):
+            model_client.infer(model_input=model_input, model_name=model_name)
+
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):
         model_client = WCAClient(inference_url='http://example.com/')
@@ -197,8 +242,14 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
         self.assertEqual(model_id, 'model-i-pick')
 
+    def test_seated_cannot_have_no_key(self):
+        self.mock_secret_manager.get_secret.return_value = None
+        wca_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaKeyNotFound):
+            wca_client.get_api_key(True, '123')
+
     def test_seated_cannot_have_no_model(self):
         self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaBadRequest):
+        with self.assertRaises(WcaModelIdNotFound):
             wca_client.get_model_id(True, '123', None)

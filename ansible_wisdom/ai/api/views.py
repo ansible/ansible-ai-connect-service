@@ -5,7 +5,13 @@ from enum import Enum
 from string import Template
 
 import yaml
-from ai.api.model_client.wca_client import WcaBadRequest
+from ai.api.model_client.wca_client import (
+    WcaBadRequest,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+)
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -99,6 +105,30 @@ class ModelTimeoutException(BaseWisdomAPIException):
 class WcaBadRequestException(BaseWisdomAPIException):
     status_code = 400
     default_detail = {"message": "Bad request for WCA completion"}
+
+
+class WcaInvalidModelIdException(BaseWisdomAPIException):
+    status_code = 403
+    default_detail = {"message": "WCA Model ID is invalid. Please contact your administrator."}
+
+
+class WcaKeyNotFoundException(BaseWisdomAPIException):
+    status_code = 403
+    default_detail = {
+        "message": "A WCA Api Key was expected but not found. Please contact your administrator."
+    }
+
+
+class WcaModelIdNotFoundException(BaseWisdomAPIException):
+    status_code = 403
+    default_detail = {
+        "message": "A WCA Model ID was expected but not found. Please contact your administrator."
+    }
+
+
+class WcaEmptyResponseException(BaseWisdomAPIException):
+    status_code = 204
+    default_detail = {"message": "WCA returned an empty response."}
 
 
 class ServiceUnavailable(BaseWisdomAPIException):
@@ -237,10 +267,38 @@ class Completions(APIView):
                 f" for suggestion {payload.suggestionId}"
             )
             raise ModelTimeoutException
-        except WcaBadRequest as exc:
-            exception = exc
+
+        except WcaBadRequest as e:
+            logger.error(e)
             logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
             raise WcaBadRequestException
+
+        except WcaInvalidModelId as e:
+            logger.error(e)
+            logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
+            raise WcaInvalidModelIdException
+
+        except WcaKeyNotFound as e:
+            logger.error(e)
+            logger.exception(
+                f"A WCA Api Key was expected but not found for suggestion {payload.suggestionId}"
+            )
+            raise WcaKeyNotFoundException
+
+        except WcaModelIdNotFound as e:
+            logger.error(e)
+            logger.exception(
+                f"A WCA Model ID was expected but not found for suggestion {payload.suggestionId}"
+            )
+            raise WcaModelIdNotFoundException
+
+        except WcaEmptyResponse as e:
+            logger.error(e)
+            logger.exception(
+                f"WCA returned an empty response for suggestion {payload.suggestionId}"
+            )
+            raise WcaEmptyResponseException
+
         except Exception as exc:
             exception = exc
             logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")

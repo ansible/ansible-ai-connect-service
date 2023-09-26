@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
-from ai.api.model_client.wca_client import WCAClient
+from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound, WcaModelIdNotFound
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import Completions, CompletionsPromptType, get_model_client
 from django.apps import apps
@@ -103,6 +103,22 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
 @modify_settings()
 class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
+    def stub_wca_client(self, status_code, mock_api_key, mock_model_id):
+        model_input = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response = MockResponse(
+            json={"predictions": [""]},
+            status_code=status_code,
+        )
+        model_client = WCAClient(inference_url='https://wca_api_url')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = mock_api_key
+        model_client.get_model_id = mock_model_id
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_client, model_input
+
     def test_seated_got_wca(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
@@ -123,21 +139,13 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response = MockResponse(
-            json={"predictions": [""]},
-            status_code=200,
+
+        stub = self.stub_wca_client(
+            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
         )
-        model_client = WCAClient(inference_url='https://wca_api_url')
-        model_client.session.post = Mock(return_value=response)
-        model_client.get_token = Mock(return_value={"access_token": "abc"})
-        model_client.get_api_key = Mock(return_value='org-api-key')
-        model_client.get_model_id = Mock(return_value='org-model-id')
+        model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()
             self.assertEqual(
@@ -147,6 +155,86 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_missing_api_key(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200, Mock(side_effect=WcaKeyNotFound), Mock(return_value='org-model-id')
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+                self.assertInLog("A WCA Api Key was expected but not found", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_missing_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200, Mock(return_value='org-api-key'), Mock(side_effect=WcaModelIdNotFound)
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+                self.assertInLog("A WCA Model ID was expected but not found", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_garbage_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            400, Mock(return_value='org-api-key'), Mock(return_value='garbage')
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+                self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            403, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+                self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_empty_response(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            204, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+                self.assertInLog("WCA returned an empty response", log)
 
 
 @modify_settings()

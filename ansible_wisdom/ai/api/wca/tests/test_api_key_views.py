@@ -156,7 +156,19 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             data='{ "key": "a-new-key" }',
             content_type='application/json',
         )
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+    def test_set_key_throws_wca_exception(self, *args):
+        self.user.organization_id = '123'
+        self.client.force_authenticate(user=self.user)
+        self.mock_wca_client.get_token.return_value = "token"
+        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
+        r = self.client.post(
+            reverse('wca_api_key'),
+            data='{ "key": "a-new-key" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_set_key_throws_validation_exception(self, *args):
         self.user.organization_id = '123'
@@ -214,6 +226,6 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
-        self.mock_wca_client.get_token.return_value = None
+        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
         r = self.client.get(reverse('wca_api_key_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
