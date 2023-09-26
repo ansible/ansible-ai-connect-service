@@ -823,18 +823,24 @@ class Attributions(GenericAPIView):
     def post(self, request) -> Response:
         request_serializer = self.get_serializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        suggestion_id = str(request_serializer.validated_data.get('suggestionId', ''))
-        model_id = str(request_serializer.validated_data.get('model', ''))
+
+        request_data = request_serializer.validated_data
+        suggestion_id = str(request_data.get('suggestionId', ''))
+        model_id = str(request_data.get('model', ''))
 
         start_time = time.time()
         if request.user.rh_user_has_seat:
-            (
-                encode_duration,
-                search_duration,
-                response_serializer,
-            ) = self.perform_content_matching(
-                model_id, suggestion_id, request.user, request_serializer
-            )
+            try:
+                (
+                    encode_duration,
+                    search_duration,
+                    response_serializer,
+                ) = self.perform_content_matching(
+                    model_id, suggestion_id, request.user, request_data
+                )
+            except Exception:
+                logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
+                raise ServiceUnavailable
         else:
             try:
                 encode_duration, search_duration, response_serializer = self.perform_search(
@@ -865,10 +871,9 @@ class Attributions(GenericAPIView):
         model_id: str,
         suggestion_id: str,
         user: User,
-        request_serializer: AttributionRequestSerializer,
+        request_data,
     ):
         wca_client = apps.get_app_config("ai").wca_client
-        request_data = request_serializer.validated_data
         user_id = user.uuid
         model_mesh_payload = ModelMeshPayload(
             instances=[
@@ -941,9 +946,6 @@ class Attributions(GenericAPIView):
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
             raise WcaEmptyResponseException
-        except Exception:
-            logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
-            raise ServiceUnavailable
         return encode_duration, search_duration, response_serializer
 
     def perform_search(self, serializer, user: User):

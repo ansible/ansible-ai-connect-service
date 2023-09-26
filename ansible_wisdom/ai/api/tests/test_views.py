@@ -1094,6 +1094,20 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.post(reverse('attributions'), payload)
         mock_perform_search.assert_called_once()
 
+    @patch('ai.api.views.Attributions.perform_content_matching')
+    def test_wca_attribution_high_level_with_seated_user(self, mock_perform_content_matching):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
+            "tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+
+        self.client.post(reverse('attributions'), payload)
+        mock_perform_content_matching.assert_called_once()
+
     def test_wca_attribution_with_seated_user(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
