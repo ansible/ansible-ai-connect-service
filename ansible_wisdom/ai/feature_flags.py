@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class WisdomFlags(str, Enum):
-    pass
+    MODEL_NAME = "model_name"  # model name selection
 
 
 class FeatureFlags:
