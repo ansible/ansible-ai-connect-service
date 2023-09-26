@@ -66,7 +66,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         )
 
     def test_infer(self):
-        model_name = "zavala"
+        model_id = "zavala"
         context = "null"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
 
@@ -79,7 +79,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
             ]
         }
         data = {
-            "model_id": model_name,
+            "model_id": model_id,
             "prompt": f"{context}{prompt}\n",
         }
         token = {
@@ -104,9 +104,9 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
-        model_client.get_model_id = Mock(return_value=model_name)
+        model_client.get_model_id = Mock(return_value=model_id)
 
-        result = model_client.infer(model_input=model_input, model_name=model_name)
+        result = model_client.infer(model_input=model_input, model_id=model_id)
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -118,7 +118,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(result, predictions)
 
     def test_infer_timeout(self):
-        model_name = "zavala"
+        model_id = "zavala"
         model_input = {
             "instances": [
                 {
@@ -138,9 +138,9 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='https://example.com')
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
-        model_client.get_model_id = Mock(return_value=model_name)
+        model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(ModelTimeoutError):
-            model_client.infer(model_input=model_input, model_name=model_name)
+            model_client.infer(model_input=model_input, model_id=model_id)
 
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):

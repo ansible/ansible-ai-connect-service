@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from ai.api.tests.test_views import DummyMeshClient, WisdomServiceAPITestCaseBase
 from django.apps import apps
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
@@ -63,6 +64,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
+                    self.assertEqual(properties['modelName'], settings.ANSIBLE_AI_MODEL_NAME)
                     self.assertTrue('imageTags' in properties)
                     self.assertTrue('groups' in properties)
                     self.assertTrue('Group 1' in properties['groups'])

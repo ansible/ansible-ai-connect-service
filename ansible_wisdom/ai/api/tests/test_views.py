@@ -64,7 +64,7 @@ class DummyMeshClient(ModelMeshClient):
         self.response_data = response_data
         self.response_data['model_id'] = settings.ANSIBLE_AI_MODEL_NAME
 
-    def infer(self, data, model_name=None):
+    def infer(self, data, model_id=None):
         if self.test_inference_match:
             self.test.assertEqual(data, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
@@ -578,7 +578,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
-                self.assertIsNotNone(r.data['modelName'])
+                self.assertIsNotNone(r.data['model'])
                 self.assertIsNotNone(r.data['suggestionId'])
                 self.assertSegmentTimestamp(log)
 
