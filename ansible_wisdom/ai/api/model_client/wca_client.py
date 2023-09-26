@@ -22,7 +22,7 @@ class WCAClient(ModelMeshClient):
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
 
-    def infer(self, model_input, model_name=None):
+    def infer(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
@@ -36,7 +36,7 @@ class WCAClient(ModelMeshClient):
             prompt = f"{prompt}\n"
 
         #
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_name)
+        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
@@ -64,7 +64,7 @@ class WCAClient(ModelMeshClient):
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError
 
-    def search(self, model_input, requested_model_id=None):
+    def search(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
@@ -72,7 +72,7 @@ class WCAClient(ModelMeshClient):
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, requested_model_id)
+        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
         data = {
             "model_id": model_id,
             "input": [f"{prompt}"],

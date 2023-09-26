@@ -1163,7 +1163,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
             "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
             "ansible.builtin.package:\n name: nginx\n state: present\n",
             "suggestionId": str(uuid.uuid4()),
-            "modelId": "org-model-id",
+            "model": "org-model-id",
         }
 
         repo_name = "robertdebock.nginx"

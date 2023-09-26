@@ -317,7 +317,7 @@ class AttributionRequestSerializer(serializers.Serializer):
             " attribution data is being requested for."
         ),
     )
-    modelId = serializers.CharField(required=False)
+    model = serializers.CharField(required=False)
 
 
 class DataSource(models.IntegerChoices):
