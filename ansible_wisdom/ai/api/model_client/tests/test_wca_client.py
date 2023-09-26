@@ -11,8 +11,6 @@ from ai.api.model_client.wca_client import (
     WCAClient,
     WcaEmptyResponse,
     WcaInvalidModelId,
-    WcaKeyNotFound,
-    WcaModelIdNotFound,
 )
 from django.apps import apps
 from django.test import override_settings
@@ -32,6 +30,27 @@ class MockResponse:
         return
 
 
+def stub_wca_client(status_code, model_id):
+    model_input = {
+        "instances": [
+            {
+                "context": "null",
+                "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+            }
+        ]
+    }
+    response = MockResponse(
+        json={},
+        status_code=status_code,
+    )
+    model_client = WCAClient(inference_url='https://wca_api_url')
+    model_client.session.post = Mock(return_value=response)
+    model_client.get_api_key = Mock(return_value='org-api-key')
+    model_client.get_model_id = Mock(return_value=model_id)
+    model_client.get_token = Mock(return_value={"access_token": "abc"})
+    return model_id, model_client, model_input
+
+
 class TestWCAClient(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -42,26 +61,6 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
-
-    def stub_wca_client(self, status_code, model_name):
-        model_input = {
-            "instances": [
-                {
-                    "context": "null",
-                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
-                }
-            ]
-        }
-        response = MockResponse(
-            json={},
-            status_code=status_code,
-        )
-        model_client = WCAClient(inference_url='https://wca_api_url')
-        model_client.session.post = Mock(return_value=response)
-        model_client.get_api_key = Mock(return_value='org-api-key')
-        model_client.get_model_id = Mock(return_value=model_name)
-        model_client.get_token = Mock(return_value={"access_token": "abc"})
-        return model_name, model_client, model_input
 
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):
@@ -125,7 +124,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
             wca_client.get_model_id(True, '123', None)
 
 
-class TestWCACodegenClient(WisdomServiceLogAwareTestCase):
+class TestWCACodegen(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
@@ -242,25 +241,25 @@ class TestWCACodegenClient(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_garbage_model_id(self):
-        stub = self.stub_wca_client(400, "zavala")
+        stub = stub_wca_client(400, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_invalid_model_id_for_api_key(self):
-        stub = self.stub_wca_client(403, "zavala")
+        stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId):
             model_client.infer(model_input=model_input, model_id=model_id)
 
     def test_infer_empty_response(self):
-        stub = self.stub_wca_client(204, "zavala")
+        stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
             model_client.infer(model_input=model_input, model_id=model_id)
 
 
-class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
+class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
@@ -299,7 +298,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             data=data,
         )
 
-    def test_search(self):
+    def test_codematch(self):
         model_id = "sample_model_name"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
 
@@ -338,7 +337,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
 
-        result = model_client.search(model_input=model_input, model_id=model_id)
+        result = model_client.codematch(model_input=model_input, model_id=model_id)
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -349,7 +348,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         )
         self.assertEqual(result, client_response)
 
-    def test_search_timeout(self):
+    def test_codematch_timeout(self):
         model_id = "sample_model_name"
         model_input = {
             "instances": [
@@ -371,4 +370,22 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(ModelTimeoutError):
-            model_client.search(model_input=model_input, model_id=model_id)
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_garbage_model_id(self):
+        stub = stub_wca_client(400, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_invalid_model_id_for_api_key(self):
+        stub = stub_wca_client(403, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaInvalidModelId):
+            model_client.codematch(model_input=model_input, model_id=model_id)
+
+    def test_codematch_empty_response(self):
+        stub = stub_wca_client(204, "sample_model_name")
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaEmptyResponse):
+            model_client.codematch(model_input=model_input, model_id=model_id)
