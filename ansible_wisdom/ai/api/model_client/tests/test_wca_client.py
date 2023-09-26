@@ -299,7 +299,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
             data=data,
         )
 
-    def test_infer(self):
+    def test_search(self):
         model_name = "sample_model_name"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
 
@@ -338,7 +338,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_name)
 
-        result = model_client.infer(model_input=model_input, model_name=model_name)
+        result = model_client.search(model_input=model_input, model_name=model_name)
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -349,7 +349,7 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         )
         self.assertEqual(result, client_response)
 
-    def test_infer_timeout(self):
+    def test_search_timeout(self):
         model_name = "sample_model_name"
         model_input = {
             "instances": [
@@ -371,4 +371,4 @@ class TestWCACodematchClient(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_name)
         with self.assertRaises(ModelTimeoutError):
-            model_client.infer(model_input=model_input, model_name=model_name)
+            model_client.search(model_input=model_input, model_name=model_name)
