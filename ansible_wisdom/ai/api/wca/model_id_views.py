@@ -20,7 +20,6 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_204_NO_CONTENT,
     HTTP_400_BAD_REQUEST,
-    HTTP_404_NOT_FOUND,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
@@ -46,7 +45,6 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             400: OpenApiResponse(description='Bad request'),
             401: OpenApiResponse(description='Unauthorized'),
             403: OpenApiResponse(description='Forbidden'),
-            404: OpenApiResponse(description='Not found'),
             429: OpenApiResponse(description='Request was throttled'),
             500: OpenApiResponse(description='Internal service error'),
         },
@@ -66,7 +64,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         try:
             response = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
             if response is None:
-                return Response(status=HTTP_404_NOT_FOUND)
+                return Response(status=HTTP_200_OK)
             return Response(
                 status=HTTP_200_OK,
                 data={'model_id': response['SecretString'], 'last_update': response['CreatedDate']},
