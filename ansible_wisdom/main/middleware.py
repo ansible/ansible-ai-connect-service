@@ -9,6 +9,7 @@ from django.conf import settings
 from django.http import QueryDict
 from django.urls import reverse
 from healthcheck.version_info import VersionInfo
+from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
@@ -79,7 +80,15 @@ class SegmentMiddleware:
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
-                    model_name = response_data.get('model')
+                    if isinstance(message, ErrorDetail):
+                        message = str(message)
+                    model_name = response_data.get('model', model_name)
+                    # Clean up response.data for 204
+                    if response.status_code == 204:
+                        response.data = None
+                    # For other error cases, remove 'model' in response data
+                    elif response.status_code >= 400:
+                        response_data.pop('model', None)
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
 

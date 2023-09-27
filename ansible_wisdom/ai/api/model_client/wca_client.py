@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass
 
 import requests
 from ai.api.formatter import get_task_names_from_prompt
@@ -13,26 +14,34 @@ from .exceptions import ModelTimeoutError
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class WcaException(Exception):
     """Base WCA Exception"""
 
+    model_id: str = ''
 
+
+@dataclass
 class WcaBadRequest(WcaException):
     """Bad request to WCA"""
 
 
+@dataclass
 class WcaInvalidModelId(WcaException):
     """WCA Model ID is invalid."""
 
 
+@dataclass
 class WcaKeyNotFound(WcaException):
     """WCA API Key was expected but not found."""
 
 
+@dataclass
 class WcaModelIdNotFound(WcaException):
     """WCA Model ID was expected but not found."""
 
 
+@dataclass
 class WcaEmptyResponse(WcaException):
     """WCA returned an empty response."""
 
@@ -81,9 +90,9 @@ class WCAClient(ModelMeshClient):
 
             # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
             if result.status_code == 204:
-                raise WcaEmptyResponse
+                raise WcaEmptyResponse(model_id=model_id)
             if result.status_code in [400, 403]:
-                raise WcaInvalidModelId
+                raise WcaInvalidModelId(model_id=model_id)
 
             result.raise_for_status()
             response = result.json()
@@ -91,7 +100,7 @@ class WCAClient(ModelMeshClient):
             logger.debug(f"Inference API response: {response}")
             return response
         except requests.exceptions.Timeout:
-            raise ModelTimeoutError
+            raise ModelTimeoutError(model_id=model_id)
 
     def get_token(self, api_key):
         logger.debug("Fetching WCA token")
@@ -134,7 +143,7 @@ class WCAClient(ModelMeshClient):
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
                 logger.error(err_message)
-                raise WcaBadRequest(err_message)
+                raise WcaBadRequest(model_id=requested_model_id)
             return self.free_model_id
 
         # from here on, user has a seat
@@ -155,7 +164,7 @@ class WCAClient(ModelMeshClient):
             raise
 
         logger.error("Seated user's organization doesn't have default model ID set")
-        raise WcaModelIdNotFound
+        raise WcaModelIdNotFound(model_id=requested_model_id)
 
     def codematch(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
@@ -188,13 +197,13 @@ class WCAClient(ModelMeshClient):
             )
 
             if result.status_code == 204:
-                raise WcaEmptyResponse
+                raise WcaEmptyResponse(model_id=model_id)
             if result.status_code in [400, 403]:
-                raise WcaInvalidModelId
+                raise WcaInvalidModelId(model_id=model_id)
 
             result.raise_for_status()
             response = result.json()
             logger.debug(f"Codematch API response: {response}")
             return response
         except requests.exceptions.ReadTimeout:
-            raise ModelTimeoutError
+            raise ModelTimeoutError(model_id=model_id)

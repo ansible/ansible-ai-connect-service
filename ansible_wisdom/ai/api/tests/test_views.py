@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import platform
 import random
 import string
@@ -8,11 +9,25 @@ import uuid
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
+import requests
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.tests.test_wca_client import MockResponse
-from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound, WcaModelIdNotFound
+from ai.api.model_client.wca_client import (
+    WCAClient,
+    WcaEmptyResponse,
+    WcaException,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+)
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import Completions, CompletionsPromptType, get_model_client
+from ai.api.views import (
+    Completions,
+    CompletionsPromptType,
+    ModelTimeoutError,
+    WcaBadRequest,
+    get_model_client,
+)
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -309,6 +324,9 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):
+    # An artificial model ID for model-ID related test cases.
+    DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -725,13 +743,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_with_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
-        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": dummy_model_id,
+            "model_id": self.DUMMY_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -751,7 +768,67 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
-                    self.assertEqual(properties['modelName'], dummy_model_id)
+                    self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.model_client.wca_client.WCAClient.infer')
+    def test_wca_client_errors(self, infer):
+        """Run WCA client error scenarios for various errors."""
+        for error, status_code_expected in [
+            (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
+            (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
+            (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
+            (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
+            (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
+        ]:
+            infer.side_effect = self.get_side_effect(error)
+            self.run_wca_client_error_case(status_code_expected)
+
+    def run_wca_client_error_case(self, status_code_expected):
+        """Execute a single WCA client error scenario."""
+        self.user.rh_user_has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, status_code_expected)
+                self.assertSegmentTimestamp(log)
+
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    # Make sure the model name stored in Segment events is the one in the exception
+                    # thrown from the backend server.
+                    self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
+
+    def get_side_effect(self, error):
+        """Create a side effect for WCA error test cases."""
+        # if the error is either WcaException or ModelTimeoutError,
+        # assume model_id is found in the model_id property.
+        if isinstance(error, (WcaException, ModelTimeoutError)):
+            error.model_id = self.DUMMY_MODEL_ID
+        # otherwise, assume it is a requests.exceptions.RequestException
+        # found in the communication w/ WCA server.
+        else:
+            request = requests.PreparedRequest()
+            body = {
+                "model_id": self.DUMMY_MODEL_ID,
+                "prompt": "---\n- hosts: all\n  become: yes\n\n"
+                "  tasks:\n    - name: Install Apache\n",
+            }
+            request.body = json.dumps(body).encode("utf-8")
+            error.request = request
+        return error
 
     def test_completions_pii_clean_up(self):
         payload = {
