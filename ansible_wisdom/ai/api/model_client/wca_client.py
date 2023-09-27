@@ -70,8 +70,6 @@ class WCAClient(ModelMeshClient):
 
     def infer(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
-        # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
-        self._prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
@@ -81,43 +79,11 @@ class WCAClient(ModelMeshClient):
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
-        data = {
-            "model_id": model_id,
-            "prompt": f"{context}{prompt}",
-        }
-
-        logger.debug(f"Inference API request payload: {json.dumps(data)}")
-
         try:
-            # TODO: store token and only fetch a new one if it has expired
+            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
-            token = self.get_token(api_key)
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {token['access_token']}",
-            }
 
-            task_count = len(get_task_names_from_prompt(prompt))
-
-            @backoff.on_exception(
-                backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
-            )
-            def post_request():
-                return self.session.post(
-                    self._prediction_url,
-                    headers=headers,
-                    json=data,
-                    timeout=self.timeout(task_count),
-                )
-
-            result = post_request()
-
-            # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
-            if result.status_code == 204:
-                raise WcaEmptyResponse(model_id=model_id)
-            if result.status_code in [400, 403]:
-                raise WcaInvalidModelId(model_id=model_id)
+            result = self.infer_from_parameters(api_key, model_id, context, prompt)
 
             result.raise_for_status()
             response = result.json()
@@ -126,6 +92,42 @@ class WCAClient(ModelMeshClient):
             return response
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
+
+    def infer_from_parameters(self, api_key, model_id, context, prompt):
+        data = {
+            "model_id": model_id,
+            "prompt": f"{context}{prompt}",
+        }
+        logger.debug(f"Inference API request payload: {json.dumps(data)}")
+
+        # TODO: store token and only fetch a new one if it has expired
+        token = self.get_token(api_key)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token['access_token']}",
+        }
+        task_count = len(get_task_names_from_prompt(prompt))
+        # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
+        prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
+
+        @backoff.on_exception(
+            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+        )
+        def post_request():
+            return self.session.post(
+                prediction_url,
+                headers=headers,
+                json=data,
+                timeout=self.timeout(task_count),
+            )
+
+        response = post_request()
+        # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
+        if response.status_code == 204:
+            raise WcaEmptyResponse(model_id=model_id)
+        if response.status_code in [400, 403]:
+            raise WcaInvalidModelId(model_id=model_id)
+        return response
 
     def get_token(self, api_key):
         logger.debug("Fetching WCA token")

@@ -8,7 +8,7 @@ from ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ai.api.serializers import WcaKeyRequestSerializer
-from ai.api.views import ServiceUnavailable, WcaKeyNotFoundException
+from ai.api.views import ServiceUnavailable
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -158,16 +158,11 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         # Validate API Key
         try:
             model_mesh_client = apps.get_app_config("ai").wca_client
-            rh_user_has_seat = request.user.rh_user_has_seat
-            organization_id = request.user.organization_id
-            api_key = model_mesh_client.get_api_key(rh_user_has_seat, organization_id)
-            token = model_mesh_client.get_token(api_key)
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+            token = model_mesh_client.get_token(api_key['SecretString'])
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
-
-        except WcaKeyNotFoundException as e:
-            logger.error(e)
-            raise WcaKeyNotFoundException
 
         except WcaSecretManagerError as e:
             logger.error(e)
