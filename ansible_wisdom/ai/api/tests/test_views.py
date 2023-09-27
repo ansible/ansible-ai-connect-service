@@ -15,6 +15,7 @@ from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import (
     WCAClient,
     WcaEmptyResponse,
+    WcaException,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -776,10 +777,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         for error, status_code_expected in [
             (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
             (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
-            (WcaInvalidModelId, HTTPStatus.FORBIDDEN),
-            (WcaKeyNotFound, HTTPStatus.FORBIDDEN),
-            (WcaModelIdNotFound, HTTPStatus.FORBIDDEN),
-            (WcaEmptyResponse, HTTPStatus.NO_CONTENT),
+            (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
+            (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
         ]:
             infer.side_effect = self.get_side_effect(error)
@@ -810,16 +811,24 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     # thrown from the backend server.
                     self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
 
-    def get_side_effect(self, connection_error):
+    def get_side_effect(self, error):
         """Create a side effect for WCA error test cases."""
-        request = requests.PreparedRequest()
-        body = {
-            "model_id": self.DUMMY_MODEL_ID,
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-        }
-        request.body = json.dumps(body).encode("utf-8")
-        connection_error.request = request
-        return connection_error
+        # if the error is either WcaException or ModelTimeoutError,
+        # assume model_id is found in the model_id property.
+        if isinstance(error, (WcaException, ModelTimeoutError)):
+            error.model_id = self.DUMMY_MODEL_ID
+        # otherwise, assume it is a requests.exceptions.RequestException
+        # found in the communication w/ WCA server.
+        else:
+            request = requests.PreparedRequest()
+            body = {
+                "model_id": self.DUMMY_MODEL_ID,
+                "prompt": "---\n- hosts: all\n  become: yes\n\n"
+                "  tasks:\n    - name: Install Apache\n",
+            }
+            request.body = json.dumps(body).encode("utf-8")
+            error.request = request
+        return error
 
     def test_completions_pii_clean_up(self):
         payload = {

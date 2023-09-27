@@ -8,6 +8,7 @@ import yaml
 from ai.api.model_client.wca_client import (
     WcaBadRequest,
     WcaEmptyResponse,
+    WcaException,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -99,13 +100,16 @@ class BaseWisdomAPIException(APIException):
     def get_model_id_from_exception(cause):
         """Attempt to get model_id in the request data embedded in an cause."""
         model_id = None
-        backend_request_body = getattr(getattr(cause, "request", None), "body", None)
-        if backend_request_body:
-            try:
-                o = json.loads(backend_request_body)
-                model_id = o.get("model_id", model_id)
-            except Exception:
-                pass
+        if isinstance(cause, (WcaException, ModelTimeoutError)):
+            model_id = cause.model_id
+        else:
+            backend_request_body = getattr(getattr(cause, "request", None), "body", None)
+            if backend_request_body:
+                try:
+                    o = json.loads(backend_request_body)
+                    model_id = o.get("model_id", model_id)
+                except Exception:
+                    pass
         return model_id
 
 
