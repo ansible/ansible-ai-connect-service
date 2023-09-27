@@ -916,6 +916,8 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('groups' in properties)
                 self.assertTrue('Group 1' in properties['groups'])
                 self.assertTrue('Group 2' in properties['groups'])
+                self.assertTrue('rh_user_has_seat' in properties)
+                self.assertTrue('rh_user_org_id' in properties)
                 self.assertEqual(hostname, properties['hostname'])
                 self.assertIsNotNone(event['timestamp'])
 
@@ -1130,6 +1132,8 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('groups' in properties)
                 self.assertTrue('Group 1' in properties['groups'])
                 self.assertTrue('Group 2' in properties['groups'])
+                self.assertTrue('rh_user_has_seat' in properties)
+                self.assertTrue('rh_user_org_id' in properties)
                 self.assertEqual(hostname, properties['hostname'])
                 self.assertIsNotNone(event['timestamp'])
 

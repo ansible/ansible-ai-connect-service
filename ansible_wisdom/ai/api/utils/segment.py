@@ -32,6 +32,12 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
     if 'groups' not in event:
         event['groups'] = list(user.groups.values_list('name', flat=True)) if user else []
 
+    if 'rh_user_has_seat' not in event:
+        event['rh_user_has_seat'] = getattr(user, 'rh_user_has_seat', False)
+
+    if 'rh_user_org_id' not in event:
+        event['rh_user_org_id'] = getattr(user, 'org_id', None)
+
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
