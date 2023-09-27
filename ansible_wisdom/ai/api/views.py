@@ -90,7 +90,7 @@ class BaseWisdomAPIException(APIException):
     def __init__(self, *args, cause=None, **kwargs):
         completions_return_code.labels(code=self.status_code).inc()
         super().__init__(*args, **kwargs)
-        if cause and isinstance(self.detail, dict):
+        if settings.SEGMENT_WRITE_KEY and cause and isinstance(self.detail, dict):
             model_id = self.get_model_id_from_exception(cause)
             if model_id:
                 self.detail["model"] = model_id

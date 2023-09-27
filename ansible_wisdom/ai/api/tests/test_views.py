@@ -323,6 +323,9 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):
+    # An artificial model ID for model-ID related test cases.
+    DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+
     def test_full_payload(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -739,13 +742,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload_with_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
-        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": dummy_model_id,
+            "model_id": self.DUMMY_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -765,7 +767,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
-                    self.assertEqual(properties['modelName'], dummy_model_id)
+                    self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.model_client.wca_client.WCAClient.infer')
@@ -786,7 +788,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     def run_wca_client_error_case(self, status_code_expected):
         """Execute a single WCA client error scenario."""
         self.user.rh_user_has_seat = True
-        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -807,14 +808,13 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     self.assertTrue('modelName' in properties)
                     # Make sure the model name stored in Segment events is the one in the exception
                     # thrown from the backend server.
-                    self.assertEqual(properties['modelName'], dummy_model_id)
+                    self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
 
     def get_side_effect(self, connection_error):
         """Create a side effect for WCA error test cases."""
         request = requests.PreparedRequest()
-        dummy_model_id = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
         body = {
-            "model_id": dummy_model_id,
+            "model_id": self.DUMMY_MODEL_ID,
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
         }
         request.body = json.dumps(body).encode("utf-8")
