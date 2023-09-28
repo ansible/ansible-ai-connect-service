@@ -786,6 +786,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             infer.side_effect = self.get_side_effect(error)
             self.run_wca_client_error_case(status_code_expected)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.model_client.wca_client.WCAClient.infer')
+    def test_wca_client_postprocess_error(self, infer):
+        infer.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
+        self.run_wca_client_error_case(HTTPStatus.NO_CONTENT)
+
     def run_wca_client_error_case(self, status_code_expected):
         """Execute a single WCA client error scenario."""
         self.user.rh_user_has_seat = True

@@ -102,6 +102,8 @@ class BaseWisdomAPIException(APIException):
         model_id = None
         if isinstance(cause, (WcaException, ModelTimeoutError)):
             model_id = cause.model_id
+        elif isinstance(cause, dict) and "model_id" in cause:
+            model_id = cause.get("model_id")
         else:
             backend_request_body = getattr(getattr(cause, "request", None), "body", None)
             if backend_request_body:
@@ -116,6 +118,7 @@ class BaseWisdomAPIException(APIException):
 class PostprocessException(BaseWisdomAPIException):
     status_code = 204
     error_type = 'postprocess_error'
+    default_detail = {"message": "A postprocess error occurred."}
 
 
 class ModelTimeoutException(BaseWisdomAPIException):
@@ -383,7 +386,11 @@ class Completions(APIView):
             logger.exception(
                 f"error postprocessing prediction for suggestion {payload.suggestionId}"
             )
-            raise PostprocessException
+            # Raise a PostprocessException with setting predictions, not the exception
+            # to the cause parameter. It is because the cause parameter is used for getting
+            # model ID, and we cannot except exceptions from postprocess() will contain
+            # the information about model ID.
+            raise PostprocessException(cause=predictions)
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             postprocess_hist.observe(duration / 1000)  # millisec to seconds
