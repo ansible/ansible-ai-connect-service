@@ -6,6 +6,7 @@ class HealthCheckAppConfig(AppConfig):
     name = 'healthcheck'
 
     def ready(self):
-        from .backends import ModelServerHealthCheck
+        from .backends import AWSSecretManagerHealthCheck, ModelServerHealthCheck
 
         plugin_dir.register(ModelServerHealthCheck)
+        plugin_dir.register(AWSSecretManagerHealthCheck)

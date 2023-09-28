@@ -1,7 +1,10 @@
 import requests
+from ai.api.aws.wca_secret_manager import Suffixes
+from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
+from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 
 class ModelServerHealthCheck(BaseHealthCheckBackend):
@@ -40,3 +43,20 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
 
     def identifier(self):
         return self.__class__.__name__  # Display name on the endpoint.
+
+
+class AWSSecretManagerHealthCheck(BaseHealthCheckBackend):
+    critical_service = True
+
+    def __init__(self):
+        super().__init__()
+        self.secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+
+    def check_status(self):
+        try:
+            self.secret_manager.get_secret(FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY)
+        except Exception as e:
+            self.add_error(ServiceUnavailable('An error occurred'), e)
+
+    def identifier(self):
+        return self.__class__.__name__

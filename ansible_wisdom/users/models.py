@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_prometheus.models import ExportModelOperationsMixin
 
-from .constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
+from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     @property
     def org_id(self):
         if self.groups.filter(name='Commercial').exists():
-            return '9999999999'
+            return FAUX_COMMERCIAL_USER_ORG_ID
         if self.organization_id:
             return self.organization_id
         return None

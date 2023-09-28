@@ -19,6 +19,7 @@ from social_django.models import UserSocialAuth
 from test_utils import WisdomServiceLogAwareTestCase
 from users.auth import BearerTokenAuthentication
 from users.constants import (
+    FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
@@ -303,7 +304,7 @@ class TestUserSeat(TestCase):
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)
-        self.assertEqual(user.org_id, '9999999999')
+        self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
     def test_rh_user_has_seat_with_rhsso_commercial_group(self):
@@ -313,7 +314,7 @@ class TestUserSeat(TestCase):
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)
-        self.assertEqual(user.org_id, '9999999999')
+        self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
 
 
 class TestOrgAdmin(TestCase):
