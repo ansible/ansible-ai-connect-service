@@ -39,6 +39,7 @@ def create_user(
         username=username,
         email=email,
         password=password,
+        organization_id='1234567' if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
     )
     if provider:
         social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=str(uuid4()))
@@ -295,10 +296,20 @@ class TestUserSeat(TestCase):
             self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_rh_user_has_seat_with_commercial_group(self):
+    def test_rh_user_has_seat_with_github_commercial_group(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
 
-        commercial_group = Group.objects.create(name='Commercial')
+        commercial_group, _ = Group.objects.get_or_create(name='Commercial')
+        user.groups.add(commercial_group)
+
+        self.assertTrue(user.rh_user_has_seat)
+        self.assertEqual(user.org_id, '9999999999')
+
+    @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
+    def test_rh_user_has_seat_with_rhsso_commercial_group(self):
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+
+        commercial_group, _ = Group.objects.get_or_create(name='Commercial')
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)

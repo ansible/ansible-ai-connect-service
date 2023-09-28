@@ -20,10 +20,10 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @property
     def org_id(self):
-        if self.organization_id:
-            return self.organization_id
         if self.groups.filter(name='Commercial').exists():
             return '9999999999'
+        if self.organization_id:
+            return self.organization_id
         return None
 
     def is_oidc_user(self) -> bool:
