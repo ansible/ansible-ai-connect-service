@@ -68,6 +68,34 @@ class WCAClient(ModelMeshClient):
             # retry on all other errors (e.g. network)
             return False
 
+    def self_test(self) -> (bool, bool):
+        """Performs a self test using the 'free' API key and Model ID."""
+        token = None
+        predictions = None
+        try:
+            # Try to get a WCA Token.
+            api_key = self.get_api_key(False, None)
+            token = self.get_token(api_key)
+        except Exception as e:
+            logger.error(e)
+            logger.info("Unable to retrieve a token.")
+
+        try:
+            # Try to execute a WCA code completion.
+            model_input = {
+                "instances": [
+                    {
+                        "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                    }
+                ]
+            }
+            predictions = self.infer(model_input, None)
+        except Exception as e:
+            logger.error(e)
+            logger.info("Unable to execute a model.")
+
+        return token is not None, predictions is not None
+
     def infer(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
 

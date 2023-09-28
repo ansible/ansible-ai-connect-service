@@ -13,6 +13,7 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 from health_check.views import MainView
+from healthcheck.backends import BaseLightspeedHealthCheck
 from rest_framework import permissions
 from rest_framework.views import APIView
 
@@ -30,6 +31,7 @@ class HealthCheckCustomView(MainView):
         'DatabaseBackend': 'db',
         'ModelServerHealthCheck': 'model-server',
         'AWSSecretManagerHealthCheck': 'aws-secret-manager',
+        'WCAHealthCheck': 'wca',
     }
 
     _version_info = VersionInfo()
@@ -58,7 +60,10 @@ class HealthCheckCustomView(MainView):
         dependencies = []
         for p in plugins:
             plugins_id = self._plugin_name_map.get(p.identifier(), 'unknown')
-            plugin_status = str(p.pretty_status()) if p.errors else 'ok'
+            if isinstance(p, BaseLightspeedHealthCheck):
+                plugin_status = p.pretty_status()
+            else:
+                plugin_status = str(p.pretty_status()) if p.errors else 'ok'
             time_taken = round(p.time_taken * 1000, 3)
             dependencies.append(
                 {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}

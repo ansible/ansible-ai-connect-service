@@ -12,6 +12,7 @@ from ai.api.model_client.wca_client import (
     WcaBadRequest,
     WCAClient,
     WcaEmptyResponse,
+    WcaException,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -294,6 +295,35 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
             model_client.infer(model_input=model_input, model_id=model_id)
+
+    def test_self_test_success(self):
+        stub = stub_wca_client(200, "zavala")
+        _, model_client, _ = stub
+
+        status = model_client.self_test()
+
+        self.assertTrue(status[0])
+        self.assertTrue(status[1])
+
+    def test_self_test_tokens_failure(self):
+        stub = stub_wca_client(200, "zavala")
+        _, model_client, _ = stub
+        model_client.get_token = Mock(side_effect=WcaException)
+
+        status = model_client.self_test()
+
+        self.assertFalse(status[0])
+        self.assertFalse(status[1])
+
+    def test_self_test_models_failure(self):
+        stub = stub_wca_client(200, "zavala")
+        _, model_client, _ = stub
+        model_client.infer = Mock(side_effect=WcaException)
+
+        status = model_client.self_test()
+
+        self.assertTrue(status[0])
+        self.assertFalse(status[1])
 
 
 class TestWCACodematch(WisdomServiceLogAwareTestCase):

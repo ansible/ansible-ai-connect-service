@@ -7,7 +7,20 @@ from health_check.exceptions import ServiceUnavailable
 from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 
-class ModelServerHealthCheck(BaseHealthCheckBackend):
+class WcaTokenRequestException(ServiceUnavailable):
+    """There was an error trying to get a WCA token."""
+
+
+class WcaModelRequestException(ServiceUnavailable):
+    """There was an error trying to invoke a WCA Model."""
+
+
+class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
+    def pretty_status(self):
+        return str(super().pretty_status()) if self.errors else 'ok'
+
+
+class ModelServerHealthCheck(BaseLightspeedHealthCheck):
     # If this is set to False, the status endpoints will respond with a 200
     # status code even if the check errors.
     critical_service = True
@@ -45,7 +58,7 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
         return self.__class__.__name__  # Display name on the endpoint.
 
 
-class AWSSecretManagerHealthCheck(BaseHealthCheckBackend):
+class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
     critical_service = True
 
     def __init__(self):
@@ -57,6 +70,32 @@ class AWSSecretManagerHealthCheck(BaseHealthCheckBackend):
             self.secret_manager.get_secret(FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY)
         except Exception as e:
             self.add_error(ServiceUnavailable('An error occurred'), e)
+
+    def identifier(self):
+        return self.__class__.__name__
+
+
+class WCAHealthCheck(BaseLightspeedHealthCheck):
+    critical_service = True
+
+    def __init__(self):
+        super().__init__()
+        self.model_mesh_client = apps.get_app_config("ai").wca_client
+
+    def check_status(self):
+        token_status_ok, model_status_ok = self.model_mesh_client.self_test()
+        if not token_status_ok:
+            self.add_error(WcaTokenRequestException("An error occurred"))
+        if not model_status_ok:
+            self.add_error(WcaModelRequestException("An error occurred"))
+
+    def pretty_status(self):
+        token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
+        model_error = [item for item in self.errors if isinstance(item, WcaModelRequestException)]
+        return {
+            "tokens": str(token_error[0]) if token_error else "ok",
+            "models": str(model_error[0]) if model_error else "ok",
+        }
 
     def identifier(self):
         return self.__class__.__name__
