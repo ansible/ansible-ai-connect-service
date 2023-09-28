@@ -1,5 +1,7 @@
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
+import requests
 from ai.api.aws.wca_secret_manager import (
     Suffixes,
     WcaSecretManager,
@@ -130,6 +132,33 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaModelIdNotFound):
             wca_client.get_model_id(True, '123', None)
+
+    def test_fatal_exception(self):
+        """Test the logic to determine if an exception is fatal or not"""
+        exc = Exception()
+        b = WCAClient.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+        exc.response = response
+        b = WCAClient.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.TOO_MANY_REQUESTS
+        exc.response = response
+        b = WCAClient.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.BAD_REQUEST
+        exc.response = response
+        b = WCAClient.fatal_exception(exc)
+        self.assertTrue(b)
 
 
 class TestWCACodegen(WisdomServiceLogAwareTestCase):

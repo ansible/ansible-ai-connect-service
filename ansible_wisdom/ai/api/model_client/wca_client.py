@@ -2,6 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 
+import backoff
 import requests
 from ai.api.formatter import get_task_names_from_prompt
 from django.apps import apps
@@ -52,6 +53,20 @@ class WCAClient(ModelMeshClient):
         self.session = requests.Session()
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
+        self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
+
+    @staticmethod
+    def fatal_exception(exc):
+        """Determine if an exception is fatal or not"""
+        if isinstance(exc, requests.RequestException):
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            # retry on server errors and client errors
+            # with 429 status code (rate limited),
+            # don't retry on other client errors
+            return status_code and (400 <= status_code < 500) and status_code != 429
+        else:
+            # retry on all other errors (e.g. network)
+            return False
 
     def infer(self, model_input, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
@@ -84,9 +99,19 @@ class WCAClient(ModelMeshClient):
             }
 
             task_count = len(get_task_names_from_prompt(prompt))
-            result = self.session.post(
-                self._prediction_url, headers=headers, json=data, timeout=self.timeout(task_count)
+
+            @backoff.on_exception(
+                backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
             )
+            def post_request():
+                return self.session.post(
+                    self._prediction_url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.timeout(task_count),
+                )
+
+            result = post_request()
 
             # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
             if result.status_code == 204:
@@ -192,9 +217,16 @@ class WCAClient(ModelMeshClient):
             }
 
             task_count = len(get_task_names_from_prompt(prompt))
-            result = self.session.post(
-                self._search_url, headers=headers, json=data, timeout=self.timeout(task_count)
+
+            @backoff.on_exception(
+                backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
             )
+            def post_request():
+                return self.session.post(
+                    self._search_url, headers=headers, json=data, timeout=self.timeout(task_count)
+                )
+
+            result = post_request()
 
             if result.status_code == 204:
                 raise WcaEmptyResponse(model_id=model_id)
