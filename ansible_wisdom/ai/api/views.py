@@ -5,7 +5,7 @@ from enum import Enum
 from string import Template
 
 import yaml
-from ai.api.model_client.wca_client import (
+from ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaEmptyResponse,
     WcaException,

@@ -7,10 +7,9 @@ from ai.api.aws.wca_secret_manager import (
     WcaSecretManager,
     WcaSecretManagerError,
 )
-from ai.api.model_client.exceptions import ModelTimeoutError
-from ai.api.model_client.wca_client import (
+from ai.api.model_client.exceptions import (
+    ModelTimeoutError,
     WcaBadRequest,
-    WCAClient,
     WcaCodeMatchFailure,
     WcaEmptyResponse,
     WcaInferenceFailure,
@@ -19,6 +18,7 @@ from ai.api.model_client.wca_client import (
     WcaModelIdNotFound,
     WcaTokenFailure,
 )
+from ai.api.model_client.wca_client import WCAClient
 from django.apps import apps
 from django.test import override_settings
 from requests.exceptions import HTTPError, ReadTimeout
@@ -37,17 +37,22 @@ class MockResponse:
         return
 
 
-def stub_wca_client(status_code, model_id):
+def stub_wca_client(
+    status_code,
+    model_id,
+    prompt="- name: install ffmpeg on Red Hat Enterprise Linux",
+    response_data: dict = None,
+):
     model_input = {
         "instances": [
             {
                 "context": "null",
-                "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                "prompt": prompt,
             }
         ]
     }
     response = MockResponse(
-        json={},
+        json=response_data,
         status_code=status_code,
     )
     model_client = WCAClient(inference_url='https://wca_api_url')
@@ -333,6 +338,21 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaEmptyResponse) as e:
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
+
+    def test_infer_preprocessed_multitask_prompt_error(self):
+        # See https://issues.redhat.com/browse/AAP-16642
+        stub = stub_wca_client(
+            400,
+            "zavala",
+            "#Install Apache & say hello fred@redhat.com\n",
+            {
+                "detail": "(400, 'Failed to preprocess the "
+                "prompt: mapping values are not allowed here"
+            },
+        )
+        model_id, model_client, model_input = stub
+        with self.assertRaises(WcaEmptyResponse):
+            model_client.infer(model_input=model_input, model_id=model_id)
 
 
 class TestWCACodematch(WisdomServiceLogAwareTestCase):

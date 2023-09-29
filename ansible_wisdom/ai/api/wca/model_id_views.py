@@ -2,6 +2,12 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.model_client.exceptions import (
+    WcaBadRequest,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+)
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -23,12 +29,6 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
-from ..model_client.wca_client import (
-    WcaBadRequest,
-    WcaInvalidModelId,
-    WcaKeyNotFound,
-    WcaModelIdNotFound,
-)
 from ..views import ServiceUnavailable, WcaBadRequestException, WcaKeyNotFoundException
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
             validate(api_key['SecretString'], model_id)
             secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
-            logger.info(f"Stored Secret '${secret_name}' for org_id '{org_id}'")
+            logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)

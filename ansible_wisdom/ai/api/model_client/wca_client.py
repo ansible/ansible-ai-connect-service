@@ -1,66 +1,34 @@
 import json
 import logging
-from dataclasses import dataclass
 
 import backoff
 import requests
 from ai.api.formatter import get_task_names_from_prompt
+from ai.api.model_client.wca_utils import InferenceContext, InferenceResponseChecks
 from django.apps import apps
 from django.conf import settings
 from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
-from .exceptions import ModelTimeoutError
+from .exceptions import (
+    ModelTimeoutError,
+    WcaBadRequest,
+    WcaCodeMatchFailure,
+    WcaInferenceFailure,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+    WcaTokenFailure,
+)
 
 logger = logging.getLogger(__name__)
+inference_response_checks = InferenceResponseChecks()
 
 
-@dataclass
-class WcaException(Exception):
-    """Base WCA Exception"""
-
-    model_id: str = ''
-
-
-@dataclass
-class WcaBadRequest(WcaException):
-    """Bad request to WCA"""
-
-
-@dataclass
-class WcaInvalidModelId(WcaException):
-    """WCA Model ID is invalid."""
-
-
-@dataclass
-class WcaKeyNotFound(WcaException):
-    """WCA API Key was expected but not found."""
-
-
-@dataclass
-class WcaModelIdNotFound(WcaException):
-    """WCA Model ID was expected but not found."""
-
-
-@dataclass
-class WcaEmptyResponse(WcaException):
-    """WCA returned an empty response."""
-
-
-@dataclass
-class WcaTokenFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
-
-
-@dataclass
-class WcaInferenceFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
-
-
-@dataclass
-class WcaCodeMatchFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+def raise_for_wca_response(model_id, result, is_multi_task_prompt):
+    """Maps WCA responses to those we want to present to Users"""
+    context = InferenceContext(model_id, result, is_multi_task_prompt)
+    inference_response_checks.run_checks(context)
 
 
 class WCAClient(ModelMeshClient):
@@ -138,13 +106,7 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
-
-            # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
-            if response.status_code == 204:
-                raise WcaEmptyResponse(model_id=model_id)
-            if response.status_code in [400, 403]:
-                raise WcaInvalidModelId(model_id=model_id)
-
+            raise_for_wca_response(model_id, response, task_count > 1)
             response.raise_for_status()
 
         except HTTPError as e:
@@ -204,7 +166,7 @@ class WCAClient(ModelMeshClient):
 
         # from here on, user has a seat
         if requested_model_id:
-            # requested_model_id defined: i.e. not None, not "", not {} etc
+            # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
 
@@ -258,13 +220,9 @@ class WCAClient(ModelMeshClient):
                 )
 
             result = post_request()
-
-            if result.status_code == 204:
-                raise WcaEmptyResponse(model_id=model_id)
-            if result.status_code in [400, 403]:
-                raise WcaInvalidModelId(model_id=model_id)
-
+            raise_for_wca_response(model_id, result, task_count > 1)
             result.raise_for_status()
+
             response = result.json()
             logger.debug(f"Codematch API response: {response}")
             return response
