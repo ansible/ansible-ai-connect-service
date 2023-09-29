@@ -43,6 +43,7 @@ class HealthCheckCustomView(MainView):
 
     def render_to_response_json(self, plugins, status, user):  # customize JSON output
         model_name = settings.ANSIBLE_AI_MODEL_NAME
+        deployed_region = settings.DEPLOYED_REGION
         if settings.LAUNCHDARKLY_SDK_KEY:
             feature_flags = get_feature_flags()
             model_tuple = feature_flags.get("model_name", user, f".:.:{model_name}:.")
@@ -56,6 +57,7 @@ class HealthCheckCustomView(MainView):
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
             'model_name': model_name,
+            'deployed_region': deployed_region,
         }
         dependencies = []
         for p in plugins:
@@ -99,6 +101,7 @@ class WisdomServiceHealthView(APIView):
                     "version": "latest 0.1.202303131417",
                     "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
                     "model_name": "ansible-wisdom-v09",
+                    "deployed_region": "dev",
                     "dependencies": [
                         {"name": "db", "status": "ok", "time_taken": 233.538},
                         {"name": "model-server", "status": "ok", "time_taken": 0.001},

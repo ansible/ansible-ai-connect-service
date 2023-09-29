@@ -82,6 +82,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -113,6 +114,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -148,6 +150,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -170,6 +173,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -195,6 +199,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         self.assertEqual(data['model_name'], settings.ANSIBLE_AI_MODEL_NAME)
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
@@ -227,6 +232,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         self.assertEqual(data['model_name'], 'model_name')
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
@@ -256,6 +262,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -284,6 +291,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
@@ -313,6 +321,7 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
+        self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
