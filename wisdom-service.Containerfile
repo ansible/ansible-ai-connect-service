@@ -34,6 +34,7 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
 # Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
+ENV PATH="/var/www/venv/bin:${PATH}"
 COPY requirements.txt /var/www/
 COPY model-cache /var/www/model-cache
 # See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
