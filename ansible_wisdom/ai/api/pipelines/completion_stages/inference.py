@@ -23,6 +23,7 @@ from ai.api.pipelines.common import (
     WcaModelIdNotFoundException,
     process_error_count,
 )
+from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.utils.segment import send_segment_event
 from ai.feature_flags import FeatureFlags, WisdomFlags
 from ansible_anonymizer import anonymizer
@@ -60,9 +61,9 @@ def get_model_client(wisdom_app, user):
 
 
 class InferenceStage(PipelineElement):
-    def process(self, context) -> None:
-        request = context["request"]
-        payload = context["payload"]
+    def process(self, context: CompletionContext) -> None:
+        request = context.request
+        payload = context.payload
         model_mesh_client, model_name = get_model_client(apps.get_app_config("ai"), request.user)
         # We have a little inconsistency of the "model" term throughout the application:
         # - FeatureFlags use 'model_name'
@@ -174,6 +175,6 @@ class InferenceStage(PipelineElement):
             f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
         )
 
-        context["model_id"] = model_id
-        context["predictions"] = predictions
-        context["ano_predictions"] = ano_predictions
+        context.model_id = model_id
+        context.predictions = predictions
+        context.ano_predictions = ano_predictions

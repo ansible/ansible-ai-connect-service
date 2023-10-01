@@ -3,6 +3,7 @@ import time
 
 from ai.api import formatter as fmtr
 from ai.api.pipelines.common import PipelineElement, process_error_count
+from ai.api.pipelines.completion_context import CompletionContext
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from rest_framework.response import Response
@@ -16,7 +17,7 @@ preprocess_hist = Histogram(
 )
 
 
-def preprocess(context, prompt):
+def preprocess(context: CompletionContext, prompt):
     if fmtr.is_multi_task_prompt(prompt):
         # Hold the original indent so we can restore indentation in postprocess
         original_indent = prompt.find('#')
@@ -35,10 +36,10 @@ def preprocess(context, prompt):
 
 
 class PreProcessStage(PipelineElement):
-    def process(self, context) -> None:
+    def process(self, context: CompletionContext) -> None:
         original_indent = ""
         start_time = time.time()
-        payload = context["payload"]
+        payload = context.payload
         try:
             payload.context, payload.prompt, original_indent = preprocess(
                 context=payload.context, prompt=payload.prompt
@@ -54,9 +55,9 @@ class PreProcessStage(PipelineElement):
                 if isinstance(exc, fmtr.InvalidPromptException)
                 else 'Request contains invalid yaml'
             )
-            context["response"] = Response({'message': message}, status=400)
+            context.response = Response({'message': message}, status=400)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             preprocess_hist.observe(duration / 1000)  # millisec to seconds
-            context["original_indent"] = original_indent
+            context.original_indent = original_indent

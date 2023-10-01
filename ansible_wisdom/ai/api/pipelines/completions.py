@@ -9,11 +9,14 @@ from ai.api.pipelines.completion_stages.response import ResponseStage
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from .completion_context import CompletionContext
+
 logger = logging.getLogger(__name__)
 
 
 class CompletionsPipeline(Pipeline[Response]):
     def __init__(self, request: Request):
+        self.context = CompletionContext(request=request)
         super().__init__(
             [
                 DeserializeStage(),
@@ -22,14 +25,14 @@ class CompletionsPipeline(Pipeline[Response]):
                 PostProcessStage(),
                 ResponseStage(),
             ],
-            {"request": request},
+            self.context,
         )
 
     def execute(self) -> Response:
         for pe in self.pipeline:
             pe.process(context=self.context)
-            if "response" in self.context:
-                return self.context["response"]
+            if self.context.response:
+                return self.context.response
         raise InternalServerError(
             "Pipeline terminated abnormally. 'response' not found in context."
         )

@@ -2,14 +2,15 @@ import logging
 
 from ai.api.data.data_model import APIPayload
 from ai.api.pipelines.common import PipelineElement, process_error_count
+from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.serializers import CompletionRequestSerializer
 
 logger = logging.getLogger(__name__)
 
 
 class DeserializeStage(PipelineElement):
-    def process(self, context) -> None:
-        request = context["request"]
+    def process(self, context: CompletionContext) -> None:
+        request = context.request
         request._request._suggestion_id = request.data.get('suggestionId')
 
         request_serializer = CompletionRequestSerializer(
@@ -26,4 +27,4 @@ class DeserializeStage(PipelineElement):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
 
-        context["payload"] = payload
+        context.payload = payload

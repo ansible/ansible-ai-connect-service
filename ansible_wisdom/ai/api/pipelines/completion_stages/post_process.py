@@ -9,6 +9,7 @@ from ai.api.pipelines.common import (
     PostprocessException,
     process_error_count,
 )
+from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.utils.segment import send_segment_event
 from ai.feature_flags import FeatureFlags
 from django.apps import apps
@@ -279,14 +280,14 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
 
 
 class PostProcessStage(PipelineElement):
-    def process(self, context) -> None:
+    def process(self, context: CompletionContext) -> None:
         start_time = time.time()
-        request = context["request"]
-        payload = context["payload"]
-        predictions = context["predictions"]
-        ano_predictions = context["ano_predictions"]
-        original_indent = context["original_indent"]
-        model_id = context["model_id"]
+        request = context.request
+        payload = context.payload
+        predictions = context.predictions
+        ano_predictions = context.ano_predictions
+        original_indent = context.original_indent
+        model_id = context.model_id
         try:
             postprocessed_predictions, tasks_results = postprocess(
                 ano_predictions,
@@ -316,5 +317,5 @@ class PostProcessStage(PipelineElement):
             f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
         )
 
-        context["postprocessed_predictions"] = postprocessed_predictions
-        context["tasks_results"] = tasks_results
+        context.postprocessed_predictions = postprocessed_predictions
+        context.tasks_results = tasks_results

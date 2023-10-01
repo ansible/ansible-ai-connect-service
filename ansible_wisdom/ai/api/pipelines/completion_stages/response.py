@@ -8,6 +8,7 @@ from ai.api.pipelines.common import (
     completions_return_code,
     process_error_count,
 )
+from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.serializers import CompletionResponseSerializer
 from rest_framework.response import Response
 
@@ -20,11 +21,11 @@ class CompletionsPromptType(str, Enum):
 
 
 class ResponseStage(PipelineElement):
-    def process(self, context) -> None:
-        payload = context["payload"]
-        predictions = context["predictions"]
-        postprocessed_predictions = context["postprocessed_predictions"]
-        tasks_results = context["tasks_results"]
+    def process(self, context: CompletionContext) -> None:
+        payload = context.payload
+        predictions = context.predictions
+        postprocessed_predictions = context.postprocessed_predictions
+        tasks_results = context.tasks_results
         try:
             response_data = {
                 "predictions": postprocessed_predictions["predictions"],
@@ -53,4 +54,4 @@ class ResponseStage(PipelineElement):
             else CompletionsPromptType.SINGLETASK.value
         )
 
-        context["response"] = response
+        context.response = response
