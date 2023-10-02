@@ -7,6 +7,7 @@ import requests
 from ai.api.formatter import get_task_names_from_prompt
 from django.apps import apps
 from django.conf import settings
+from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
@@ -47,6 +48,21 @@ class WcaEmptyResponse(WcaException):
     """WCA returned an empty response."""
 
 
+@dataclass
+class WcaTokenFailure(WcaException):
+    """An attempt to retrieve a WCA Toke failed."""
+
+
+@dataclass
+class WcaInferenceFailure(WcaException):
+    """An attempt to retrieve a WCA Toke failed."""
+
+
+@dataclass
+class WcaCodeMatchFailure(WcaException):
+    """An attempt to retrieve a WCA Toke failed."""
+
+
 class WCAClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
@@ -80,16 +96,15 @@ class WCAClient(ModelMeshClient):
             prompt = f"{prompt}\n"
 
         try:
-            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
-
+            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
             result = self.infer_from_parameters(api_key, model_id, context, prompt)
 
-            result.raise_for_status()
             response = result.json()
             response['model_id'] = model_id
             logger.debug(f"Inference API response: {response}")
             return response
+
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
@@ -121,12 +136,21 @@ class WCAClient(ModelMeshClient):
                 timeout=self.timeout(task_count),
             )
 
-        response = post_request()
-        # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
-        if response.status_code == 204:
-            raise WcaEmptyResponse(model_id=model_id)
-        if response.status_code in [400, 403]:
-            raise WcaInvalidModelId(model_id=model_id)
+        try:
+            response = post_request()
+
+            # Map WCA responses. See https://issues.redhat.com/browse/AAP-16370
+            if response.status_code == 204:
+                raise WcaEmptyResponse(model_id=model_id)
+            if response.status_code in [400, 403]:
+                raise WcaInvalidModelId(model_id=model_id)
+
+            response.raise_for_status()
+
+        except HTTPError as e:
+            logger.error(f"WCA inference failed due to {e}.")
+            raise WcaInferenceFailure(model_id=model_id)
+
         return response
 
     def get_token(self, api_key):
@@ -135,15 +159,20 @@ class WCAClient(ModelMeshClient):
             "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/json",
         }
-
         data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": api_key}
 
-        result = self.session.post(
-            "https://iam.cloud.ibm.com/identity/token",
-            headers=headers,
-            data=data,
-        )
-        result.raise_for_status()
+        try:
+            result = self.session.post(
+                "https://iam.cloud.ibm.com/identity/token",
+                headers=headers,
+                data=data,
+            )
+            result.raise_for_status()
+
+        except HTTPError as e:
+            logger.error(f"Failed to retrieve a WCA Token due to {e}.")
+            raise WcaTokenFailure()
+
         return result.json()
 
     def get_api_key(self, rh_user_has_seat, organization_id):
@@ -239,5 +268,9 @@ class WCAClient(ModelMeshClient):
             response = result.json()
             logger.debug(f"Codematch API response: {response}")
             return response
+
+        except HTTPError:
+            raise WcaCodeMatchFailure(model_id=model_id)
+
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError(model_id=model_id)

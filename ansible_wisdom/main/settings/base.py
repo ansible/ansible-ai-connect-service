@@ -414,3 +414,6 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_INCLUDE_NONCE_IN = ['script-src-elem']
+
+# Region for where the service is deployed. Used by the Health Check endpoint.
+DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')

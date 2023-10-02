@@ -1,10 +1,27 @@
 import requests
+from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.model_client.wca_client import WcaInferenceFailure, WcaTokenFailure
+from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
+from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 
-class ModelServerHealthCheck(BaseHealthCheckBackend):
+class WcaTokenRequestException(ServiceUnavailable):
+    """There was an error trying to get a WCA token."""
+
+
+class WcaModelRequestException(ServiceUnavailable):
+    """There was an error trying to invoke a WCA Model."""
+
+
+class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
+    def pretty_status(self):
+        return str(super().pretty_status()) if self.errors else 'ok'
+
+
+class ModelServerHealthCheck(BaseLightspeedHealthCheck):
     # If this is set to False, the status endpoints will respond with a 200
     # status code even if the check errors.
     critical_service = True
@@ -26,7 +43,7 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
     def check_status(self):
         try:
             if self.url:
-                # As of today (2023-03-27) SSL Certificate Verification falis with
+                # As of today (2023-03-27) SSL Certificate Verification fails with
                 # the gRPC model server in the Staging environment.  The verify
                 # option in the following line is just TEMPORARY and will be removed
                 # as soon as the certificate is replaced with a valid one.
@@ -40,3 +57,50 @@ class ModelServerHealthCheck(BaseHealthCheckBackend):
 
     def identifier(self):
         return self.__class__.__name__  # Display name on the endpoint.
+
+
+class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
+    critical_service = True
+
+    def check_status(self):
+        try:
+            apps.get_app_config("ai").get_wca_secret_manager().get_secret(
+                FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY
+            )
+        except Exception as e:
+            self.add_error(ServiceUnavailable('An error occurred'), e)
+
+    def identifier(self):
+        return self.__class__.__name__
+
+
+class WCAHealthCheck(BaseLightspeedHealthCheck):
+    critical_service = True
+
+    def check_status(self):
+        free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
+        free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
+        try:
+            apps.get_app_config("ai").wca_client.infer_from_parameters(
+                free_api_key,
+                free_model_id,
+                "",
+                "- name: install ffmpeg on Red Hat Enterprise Linux",
+            )
+        except WcaTokenFailure:
+            # If there's a Token failure we'll also not be able to execute Model inference.
+            self.add_error(WcaTokenRequestException("An error occurred"))
+            self.add_error(WcaModelRequestException("An error occurred"))
+        except WcaInferenceFailure:
+            self.add_error(WcaModelRequestException("An error occurred"))
+
+    def pretty_status(self):
+        token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
+        model_error = [item for item in self.errors if isinstance(item, WcaModelRequestException)]
+        return {
+            "tokens": str(token_error[0]) if token_error else "ok",
+            "models": str(model_error[0]) if model_error else "ok",
+        }
+
+    def identifier(self):
+        return self.__class__.__name__
