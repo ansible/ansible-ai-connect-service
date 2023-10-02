@@ -123,19 +123,25 @@ class WCAClient(ModelMeshClient):
         }
         data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": api_key}
 
-        try:
-            result = self.session.post(
+        @backoff.on_exception(
+            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+        )
+        def post_request():
+            return self.session.post(
                 "https://iam.cloud.ibm.com/identity/token",
                 headers=headers,
                 data=data,
             )
-            result.raise_for_status()
+
+        try:
+            response = post_request()
+            response.raise_for_status()
 
         except HTTPError as e:
             logger.error(f"Failed to retrieve a WCA Token due to {e}.")
             raise WcaTokenFailure()
 
-        return result.json()
+        return response.json()
 
     def get_api_key(self, rh_user_has_seat, organization_id):
         # use the shared API Key if the user has no seat

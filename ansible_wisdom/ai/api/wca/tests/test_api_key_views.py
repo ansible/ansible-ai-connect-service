@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
+from ai.api.model_client.exceptions import WcaTokenFailure
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.permissions import (
     AcceptedTermsPermission,
@@ -14,7 +15,6 @@ from django.apps import apps
 from django.urls import resolve, reverse
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from requests.exceptions import HTTPError
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -137,7 +137,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
         # Set Key
-        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
+        self.mock_wca_client.get_token.side_effect = WcaTokenFailure('Something went wrong')
         r = self.client.post(
             reverse('wca_api_key'),
             data='{ "key": "a-new-key" }',
@@ -158,22 +158,10 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         )
         self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
-    def test_set_key_throws_wca_exception(self, *args):
-        self.user.organization_id = '123'
-        self.client.force_authenticate(user=self.user)
-        self.mock_wca_client.get_token.return_value = "token"
-        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
-        r = self.client.post(
-            reverse('wca_api_key'),
-            data='{ "key": "a-new-key" }',
-            content_type='application/json',
-        )
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
     def test_set_key_throws_wca_client_exception(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
-        self.mock_wca_client.get_token.side_effect = HTTPError()
+        self.mock_wca_client.get_token.side_effect = WcaTokenFailure()
         r = self.client.post(
             reverse('wca_api_key'),
             data='{ "key": "a-new-key" }',
@@ -243,6 +231,6 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
-        self.mock_wca_client.get_token.side_effect = HTTPError('Something went wrong')
+        self.mock_wca_client.get_token.side_effect = WcaTokenFailure('Something went wrong')
         r = self.client.get(reverse('wca_api_key_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
