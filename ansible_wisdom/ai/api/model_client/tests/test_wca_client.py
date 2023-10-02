@@ -11,15 +11,17 @@ from ai.api.model_client.exceptions import ModelTimeoutError
 from ai.api.model_client.wca_client import (
     WcaBadRequest,
     WCAClient,
+    WcaCodeMatchFailure,
     WcaEmptyResponse,
-    WcaException,
+    WcaInferenceFailure,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaTokenFailure,
 )
 from django.apps import apps
 from django.test import override_settings
-from requests.exceptions import ReadTimeout
+from requests.exceptions import HTTPError, ReadTimeout
 from test_utils import WisdomServiceLogAwareTestCase
 
 
@@ -201,6 +203,12 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             data=data,
         )
 
+    def test_get_token_http_error(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        model_client.session.post = Mock(side_effect=HTTPError(404))
+        with self.assertRaises(WcaTokenFailure):
+            model_client.get_token("api-key")
+
     def test_infer(self):
         model_id = "zavala"
         context = "null"
@@ -275,55 +283,56 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
-        with self.assertRaises(ModelTimeoutError):
+        with self.assertRaises(ModelTimeoutError) as e:
             model_client.infer(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
+
+    def test_infer_http_error(self):
+        model_id = "zavala"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=HTTPError(404))
+        model_client.get_model_id = Mock(return_value=model_id)
+        with self.assertRaises(WcaInferenceFailure) as e:
+            model_client.infer(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_infer_garbage_model_id(self):
         stub = stub_wca_client(400, "zavala")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaInvalidModelId):
+        with self.assertRaises(WcaInvalidModelId) as e:
             model_client.infer(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_infer_invalid_model_id_for_api_key(self):
         stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaInvalidModelId):
+        with self.assertRaises(WcaInvalidModelId) as e:
             model_client.infer(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_infer_empty_response(self):
         stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaEmptyResponse):
+        with self.assertRaises(WcaEmptyResponse) as e:
             model_client.infer(model_input=model_input, model_id=model_id)
-
-    def test_self_test_success(self):
-        stub = stub_wca_client(200, "zavala")
-        _, model_client, _ = stub
-
-        status = model_client.self_test()
-
-        self.assertTrue(status[0])
-        self.assertTrue(status[1])
-
-    def test_self_test_tokens_failure(self):
-        stub = stub_wca_client(200, "zavala")
-        _, model_client, _ = stub
-        model_client.get_token = Mock(side_effect=WcaException)
-
-        status = model_client.self_test()
-
-        self.assertFalse(status[0])
-        self.assertFalse(status[1])
-
-    def test_self_test_models_failure(self):
-        stub = stub_wca_client(200, "zavala")
-        _, model_client, _ = stub
-        model_client.infer = Mock(side_effect=WcaException)
-
-        status = model_client.self_test()
-
-        self.assertTrue(status[0])
-        self.assertFalse(status[1])
+        self.assertEqual(e.exception.model_id, model_id)
 
 
 class TestWCACodematch(WisdomServiceLogAwareTestCase):
@@ -408,23 +417,52 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
-        with self.assertRaises(ModelTimeoutError):
+        with self.assertRaises(ModelTimeoutError) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
+
+    def test_codematch_http_error(self):
+        model_id = "sample_model_name"
+        model_input = {
+            "instances": [
+                {
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=HTTPError(404))
+        model_client.get_model_id = Mock(return_value=model_id)
+        with self.assertRaises(WcaCodeMatchFailure) as e:
+            model_client.codematch(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_codematch_bad_model_id(self):
         stub = stub_wca_client(400, "sample_model_name")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaInvalidModelId):
+        with self.assertRaises(WcaInvalidModelId) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_codematch_invalid_model_id_for_api_key(self):
         stub = stub_wca_client(403, "sample_model_name")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaInvalidModelId):
+        with self.assertRaises(WcaInvalidModelId) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)
 
     def test_codematch_empty_response(self):
         stub = stub_wca_client(204, "sample_model_name")
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaEmptyResponse):
+        with self.assertRaises(WcaEmptyResponse) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
+        self.assertEqual(e.exception.model_id, model_id)

@@ -6,7 +6,11 @@ from unittest.mock import Mock, patch
 
 import healthcheck.views as healthcheck_views
 from ai.api.aws.wca_secret_manager import WcaSecretManager, WcaSecretManagerError
-from ai.api.model_client.wca_client import WCAClient
+from ai.api.model_client.wca_client import (
+    WCAClient,
+    WcaInferenceFailure,
+    WcaTokenFailure,
+)
 from ai.feature_flags import FeatureFlags
 from django.apps import apps
 from django.conf import settings
@@ -32,7 +36,6 @@ class TestHealthCheck(APITestCase):
             apps.get_app_config('ai'), 'wca_client', spec=WCAClient
         )
         self.mock_wca_client = self.wca_client_patcher.start()
-        self.mock_wca_client.self_test.return_value = (True, True)
         self.secret_manager_patcher = patch.object(
             apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
         )
@@ -278,9 +281,9 @@ class TestHealthCheck(APITestCase):
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     # @patch.object(WCAClient, 'get_token', side_effect=WcaException)
-    def test_health_check_wca_tokens_error(self, *args):
+    def test_health_check_wca_token_error(self, *args):
         cache.clear()
-        self.mock_wca_client.self_test.return_value = (False, False)
+        self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
 
         r = self.client.get(reverse('health_check'))
 
@@ -308,9 +311,9 @@ class TestHealthCheck(APITestCase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
-    def test_health_check_wca_models_error(self, *args):
+    def test_health_check_wca_inference_error(self, *args):
         cache.clear()
-        self.mock_wca_client.self_test.return_value = (True, False)
+        self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
 
         r = self.client.get(reverse('health_check'))
 
