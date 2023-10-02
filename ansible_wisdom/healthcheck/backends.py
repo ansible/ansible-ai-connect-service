@@ -104,3 +104,16 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
 
     def identifier(self):
         return self.__class__.__name__
+
+
+class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
+    critical_service = True
+
+    def check_status(self):
+        try:
+            apps.get_app_config("ai").get_seat_checker().self_test()
+        except Exception as e:
+            self.add_error(ServiceUnavailable('An error occurred'), e)
+
+    def identifier(self):
+        return self.__class__.__name__

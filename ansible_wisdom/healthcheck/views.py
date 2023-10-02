@@ -32,6 +32,7 @@ class HealthCheckCustomView(MainView):
         'ModelServerHealthCheck': 'model-server',
         'AWSSecretManagerHealthCheck': 'secret-manager',
         'WCAHealthCheck': 'wca',
+        'AuthorizationHealthCheck': 'authorization',
     }
 
     _version_info = VersionInfo()

@@ -4,6 +4,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import requests
+from requests.exceptions import HTTPError
 from test_utils import WisdomServiceLogAwareTestCase
 from users.authz_checker import AMSCheck, CIAMCheck, Token
 
@@ -50,6 +51,31 @@ class TestToken(WisdomServiceLogAwareTestCase):
             timeout=0.8,
         )
 
+    def test_ciam_self_test_success(self):
+        m_r = Mock()
+        m_r.status_code = 200
+
+        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.post.return_value = m_r
+        try:
+            checker.self_test()
+        except HTTPError:
+            self.fail("self_test() should not have raised an exception.")
+
+    def test_ciam_self_test_failure(self):
+        r = requests.models.Response()
+        r.status_code = 500
+
+        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.post.return_value = r
+
+        with self.assertRaises(HTTPError):
+            checker.self_test()
+
     def test_ams_get_ams_org(self):
         m_r = Mock()
         m_r.json.return_value = {"items": [{"id": "qwe"}]}
@@ -89,6 +115,31 @@ class TestToken(WisdomServiceLogAwareTestCase):
             },
             timeout=0.8,
         )
+
+    def test_ams_self_test_success(self):
+        m_r = Mock()
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+        try:
+            checker.self_test()
+        except HTTPError:
+            self.fail("self_test() should not have raised an exception.")
+
+    def test_ams_self_test_failure(self):
+        r = requests.models.Response()
+        r.status_code = 500
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = r
+
+        with self.assertRaises(HTTPError):
+            checker.self_test()
 
     def test_rh_user_is_org_admin(self):
         m_r = Mock()

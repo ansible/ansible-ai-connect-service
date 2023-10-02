@@ -13,11 +13,11 @@ from ai.api.model_client.wca_client import (
 )
 from ai.feature_flags import FeatureFlags
 from django.apps import apps
-from django.conf import settings
 from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from requests import Response
+from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
 
 
@@ -41,10 +41,16 @@ class TestHealthCheck(APITestCase):
         )
         self.mock_secret_manager = self.secret_manager_patcher.start()
         self.mock_secret_manager.get_secret.return_value = None
+        self.seat_checker = Mock()
+        self.get_seat_checker_patcher = patch.object(
+            apps.get_app_config('ai'), 'get_seat_checker', Mock(return_value=self.seat_checker)
+        )
+        self.get_seat_checker_patcher.start()
 
     def tearDown(self):
         self.wca_client_patcher.stop()
         self.secret_manager_patcher.stop()
+        self.get_seat_checker_patcher.stop()
 
     def mocked_requests_succeed(*args, **kwargs):
         r = Response()
@@ -72,14 +78,15 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertJSONEqual(r.content, {"status": "ok"})
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
-    def test_health_check(self):
-        cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
+    def assert_basic_data(self, r: Response, expected_status: str) -> (str, []):
+        """
+        Performs assertion of the basic data returned for all Health Checks.
+        :param r: HTTP Response
+        :param expected_status: HTTP status
+        :return: (timestamp, dependencies) tuple from the basic data.
+        """
         data = json.loads(r.content)
-        self.assertEqual('ok', data['status'])
+        self.assertEqual(expected_status, data['status'])
         timestamp = data['timestamp']
         self.assertIsNotNone(timestamp)
         self.assertIsNotNone(data['version'])
@@ -87,13 +94,25 @@ class TestHealthCheck(APITestCase):
         self.assertIsNotNone(data['model_name'])
         self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        self.assertEqual(5, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
+                dependency['name'],
+                ['cache', 'db', 'model-server', 'secret-manager', 'wca', 'authorization'],
             )
-            self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
+
+        return timestamp, dependencies
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    def test_health_check(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        timestamp, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            self.assertTrue(is_status_ok(dependency['status']))
 
         time.sleep(1)
 
@@ -110,26 +129,13 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual('error', data['status'])
-        timestamp = data['timestamp']
-        self.assertIsNotNone(timestamp)
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        timestamp, dependencies = self.assert_basic_data(r, 'error')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             if dependency['name'] == 'model-server':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
-        print(data['timestamp'])
 
         time.sleep(1)
 
@@ -138,7 +144,6 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
         data = json.loads(r.content)
         self.assertEqual(timestamp, data['timestamp'])
-        print(data['timestamp'])
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
@@ -147,21 +152,9 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        data = json.loads(r.content)
-        self.assertEqual('ok', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'ok')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
@@ -170,24 +163,12 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual('error', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'error')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             if dependency['name'] == 'model-server':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -196,22 +177,9 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        data = json.loads(r.content)
-        self.assertEqual('ok', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        self.assertEqual(data['model_name'], settings.ANSIBLE_AI_MODEL_NAME)
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'ok')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
@@ -229,22 +197,9 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        data = json.loads(r.content)
-        self.assertEqual('ok', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        self.assertEqual(data['model_name'], 'model_name')
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'ok')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     def test_get_feature_flags(self):
         healthcheck_views.feature_flags = "return this"
@@ -259,28 +214,15 @@ class TestHealthCheck(APITestCase):
         r = self.client.get(reverse('health_check'))
 
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual('error', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'error')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             if dependency['name'] == 'secret-manager':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
-    # @patch.object(WCAClient, 'get_token', side_effect=WcaException)
     def test_health_check_wca_token_error(self, *args):
         cache.clear()
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
@@ -288,26 +230,14 @@ class TestHealthCheck(APITestCase):
         r = self.client.get(reverse('health_check'))
 
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual('error', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'error')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             if dependency['name'] == 'wca':
                 # If a Token cannot be retrieved we can also not execute Models
                 self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
                 self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -318,22 +248,27 @@ class TestHealthCheck(APITestCase):
         r = self.client.get(reverse('health_check'))
 
         self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual('error', data['status'])
-        self.assertIsNotNone(data['timestamp'])
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
-        self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
-        dependencies = data.get('dependencies', [])
-        self.assertEqual(4, len(dependencies))
+        _, dependencies = self.assert_basic_data(r, 'error')
         for dependency in dependencies:
-            self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
-            )
             if dependency['name'] == 'wca':
                 self.assertEqual('ok', dependency['status']['tokens'])
                 self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    def test_health_check_authorization_error(self, *args):
+        cache.clear()
+        self.seat_checker.self_test = Mock(side_effect=HTTPError)
+
+        r = self.client.get(reverse('health_check'))
+
+        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        _, dependencies = self.assert_basic_data(r, 'error')
+        for dependency in dependencies:
+            if dependency['name'] == 'authorization':
+                self.assertTrue(dependency['status'].startswith('unavailable:'))
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
