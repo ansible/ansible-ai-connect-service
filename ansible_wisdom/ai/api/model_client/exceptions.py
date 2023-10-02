@@ -22,7 +22,8 @@ class WcaBadRequest(WcaException):
 
 @dataclass
 class WcaInvalidModelId(WcaException):
-    """WCA Model ID is invalid."""
+    """A WML instance is required for code generation.
+    This is possibly caused by an invalid WCA Model ID being provided."""
 
 
 @dataclass
