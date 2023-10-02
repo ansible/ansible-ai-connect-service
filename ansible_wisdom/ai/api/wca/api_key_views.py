@@ -112,7 +112,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         except HTTPError:
             # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
             logger.error(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '${org_id}'."
+                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
             )
             return Response(status=HTTP_400_BAD_REQUEST)
 
@@ -120,7 +120,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             # Store the validated API Key
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
-            logger.info(f"Stored secret '${secret_name}' for org_id '{org_id}'")
+            logger.info(f"Stored secret '{secret_name}' for org_id '{org_id}'")
 
         except WcaSecretManagerError as e:
             logger.error(e)
@@ -171,7 +171,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         except HTTPError:
             # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
             logger.error(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '${org_id}'."
+                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
             )
             return Response(status=HTTP_400_BAD_REQUEST)
 

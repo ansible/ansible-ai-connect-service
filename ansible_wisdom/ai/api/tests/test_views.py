@@ -11,15 +11,15 @@ from unittest.mock import Mock, patch
 
 import requests
 from ai.api.model_client.base import ModelMeshClient
-from ai.api.model_client.tests.test_wca_client import MockResponse
-from ai.api.model_client.wca_client import (
-    WCAClient,
+from ai.api.model_client.exceptions import (
     WcaEmptyResponse,
     WcaException,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
 )
+from ai.api.model_client.tests.test_wca_client import MockResponse
+from ai.api.model_client.wca_client import WCAClient
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
 from ai.api.views import (
     Completions,
