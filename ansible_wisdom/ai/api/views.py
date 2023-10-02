@@ -1,18 +1,6 @@
 import logging
 import time
 
-from ansible_anonymizer import anonymizer
-from django.apps import apps
-from django.conf import settings
-from django_prometheus.conf import NAMESPACE
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from prometheus_client import Histogram
-from rest_framework import serializers
-from rest_framework import status as rest_framework_status
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaEmptyResponse,
@@ -32,7 +20,21 @@ from ai.api.pipelines.common import (
     process_error_count,
 )
 from ai.api.pipelines.completions import CompletionsPipeline
+from ansible_anonymizer import anonymizer
+from django.apps import apps
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from prometheus_client import Histogram
+from rest_framework import serializers
+from rest_framework import status as rest_framework_status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from users.models import User
+
+from .. import search as ai_search
+from ..feature_flags import FeatureFlags, WisdomFlags
 from .data.data_model import AttributionDataTransformer, ModelMeshPayload
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
@@ -49,8 +51,6 @@ from .serializers import (
     SuggestionQualityFeedback,
 )
 from .utils.segment import send_segment_event
-from .. import search as ai_search
-from ..feature_flags import FeatureFlags, WisdomFlags
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +152,11 @@ class Feedback(APIView):
             self.write_to_segment(request.user, validated_data, exception, request.data)
 
     def write_to_segment(
-            self,
-            user: User,
-            validated_data: dict,
-            exception: Exception = None,
-            request_data=None,
+        self,
+        user: User,
+        validated_data: dict,
+        exception: Exception = None,
+        request_data=None,
     ) -> None:
         inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
         ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
@@ -315,11 +315,11 @@ class Attributions(GenericAPIView):
         return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_content_matching(
-            self,
-            model_id: str,
-            suggestion_id: str,
-            user: User,
-            request_data,
+        self,
+        model_id: str,
+        suggestion_id: str,
+        user: User,
+        request_data,
     ):
         wca_client = apps.get_app_config("ai").wca_client
         user_id = user.uuid
@@ -413,7 +413,7 @@ class Attributions(GenericAPIView):
         return data['meta']['encode_duration'], data['meta']['search_duration'], resp_serializer
 
     def write_to_segment(
-            self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
+        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
     ):
         attributions = attribution_data.get('attributions', [])
         event = {

@@ -10,18 +10,7 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import requests
-from django.apps import apps
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.core.cache import cache
-from django.test import modify_settings, override_settings
-from django.urls import reverse
-from django.utils import timezone
-from requests.exceptions import ReadTimeout
-from rest_framework.test import APITransactionTestCase
-from segment import analytics
-
+from ai.api.data.data_model import APIPayload
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
@@ -34,16 +23,28 @@ from ai.api.model_client.exceptions import (
 )
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
+from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.pipelines.completion_stages.inference import get_model_client
-from ai.api.pipelines.completion_stages.pre_process import preprocess
+from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
 from ai.api.pipelines.completion_stages.response import CompletionsPromptType
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
+from django.apps import apps
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.core.cache import cache
+from django.test import modify_settings, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from requests.exceptions import ReadTimeout
+from rest_framework.test import APITransactionTestCase
+from segment import analytics
 from test_utils import WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
     def __init__(
-            self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
+        self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
     ):
         super().__init__(inference_url='dummy inference url')
         self.test = test
@@ -56,15 +57,17 @@ class DummyMeshClient(ModelMeshClient):
                 serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
-                data["context"], data["prompt"], _ = preprocess(
-                    data.get("context"), data.get("prompt")
+                context = CompletionContext(
+                    request=request,
+                    payload=APIPayload(prompt=data.get("prompt"), context=data.get("context")),
                 )
+                completion_pre_process(context)
 
                 self.expects = {
                     "instances": [
                         {
-                            "context": data.get("context"),
-                            "prompt": data.get("prompt"),
+                            "context": context.payload.context,
+                            "prompt": context.payload.prompt,
                             "userId": str(test.user.uuid),
                             "rh_user_has_seat": rh_user_has_seat,
                             "organization_id": None,
@@ -281,7 +284,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
-                      "tasks:\n    # Install Apache & start Apache\n",
+            "tasks:\n    # Install Apache & start Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         model_client, _ = stub
@@ -302,7 +305,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
-                      "tasks:\n    # Install Apache & start Apache\n",
+            "tasks:\n    # Install Apache & start Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         model_client, _ = stub
@@ -336,9 +339,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -356,8 +359,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         response_data = {
             "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
-                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"
-                # noqa: E501
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
             ],
         }
         self.user.rh_user_has_seat = True
@@ -390,8 +392,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         response_data = {
             "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
-                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
-                # noqa: E501
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
         }
         self.user.rh_user_has_seat = True
@@ -428,9 +429,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -451,9 +452,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -472,9 +473,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -500,9 +501,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -521,9 +522,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -542,9 +543,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -565,9 +566,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -592,9 +593,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='INFO') as log:
             with patch.object(
-                    apps.get_app_config('ai'),
-                    'model_mesh_client',
-                    DummyMeshClient(self, payload, response_data),
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -616,9 +617,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='ERROR') as log:  # Suppress debug output
             with patch.object(
-                    apps.get_app_config('ai'),
-                    'model_mesh_client',
-                    DummyMeshClient(self, payload, response_data),
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -642,12 +643,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(
-                logger='root', level='DEBUG'
+            logger='root', level='DEBUG'
         ) as log:  # Enable debug outputs for getting Segment events
             with patch.object(
-                    apps.get_app_config('ai'),
-                    'model_mesh_client',
-                    DummyMeshClient(self, payload, response_data),
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -678,9 +679,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='WARN'):
             with patch.object(
-                    apps.get_app_config('ai'),
-                    'model_mesh_client',
-                    DummyMeshClient(self, payload, response_data),
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -699,9 +700,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -728,9 +729,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            apps.get_app_config('ai'),
+            'wca_client',
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -753,9 +754,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'wca_client',
-                DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            apps.get_app_config('ai'),
+            'wca_client',
+            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -801,7 +802,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -830,7 +831,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             body = {
                 "model_id": self.DUMMY_MODEL_ID,
                 "prompt": "---\n- hosts: all\n  become: yes\n\n"
-                          "  tasks:\n    - name: Install Apache\n",
+                "  tasks:\n    - name: Install Apache\n",
             }
             request.body = json.dumps(body).encode("utf-8")
             error.request = request
@@ -848,9 +849,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             with patch.object(
-                    apps.get_app_config('ai'),
-                    'model_mesh_client',
-                    DummyMeshClient(self, payload, response_data, False),
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                DummyMeshClient(self, payload, response_data, False),
             ):
                 self.client.post(reverse('completions'), payload)
                 self.assertInLog('Create an account for james8@example.com', log)
@@ -867,9 +868,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -894,7 +895,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             },
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
                 "activityId": str(uuid.uuid4()),
                 "trigger": "0",
@@ -905,13 +906,13 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             },
             "suggestionQualityFeedback": {
                 "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
-                          " - name: Install Apache\n",
+                " - name: Install Apache\n",
                 "providedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
-                                      "ansible.builtin.package:\n      name: apache2\n"
-                                      "      state: present",
+                "ansible.builtin.package:\n      name: apache2\n"
+                "      state: present",
                 "expectedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
-                                      "ansible.builtin.package:\n      name: apache\n"
-                                      "      state: present",
+                "ansible.builtin.package:\n      name: apache\n"
+                "      state: present",
                 "additionalComment": "Package name is changed",
             },
             "issueFeedback": {
@@ -940,7 +941,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         payload = {
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/jean-pierre/ansible.yaml",
                 "trigger": "0",
             }
@@ -956,7 +957,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         payload = {
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
                 "trigger": "0",
             }
@@ -978,7 +979,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             },
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
                 "activityId": str(uuid.uuid4()),
                 "trigger": "0",
@@ -1036,7 +1037,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         payload = {
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "activityId": "123456",  # an invalid UUID
                 "trigger": "0",
@@ -1066,7 +1067,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         payload = {
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
-                           "tasks:\n    - name: Install Apache\n",
+                "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "activityId": str(uuid.uuid4()),
                 "trigger": "0",
@@ -1096,11 +1097,11 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             "suggestionQualityFeedback": {
                 # required key "prompt" is missing
                 "providedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
-                                      "ansible.builtin.package:\n      name: apache2\n      "
-                                      "state: present",
+                "ansible.builtin.package:\n      name: apache2\n      "
+                "state: present",
                 "expectedSuggestion": "    when: ansible_os_family == 'Debian'\n    "
-                                      "ansible.builtin.package:\n      name: apache\n      "
-                                      "state: present",
+                "ansible.builtin.package:\n      name: apache\n      "
+                "state: present",
                 "additionalComment": "Package name is changed",
             }
         }
@@ -1245,7 +1246,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
-                          "tasks:\n    - name: Install Apache\n",
+            "tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
 
@@ -1259,7 +1260,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
-                          "tasks:\n    - name: Install Apache\n",
+            "tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
         }
         self.client.post(reverse('attributions'), payload)
@@ -1271,7 +1272,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
-                          "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "ansible.builtin.package:\n name: nginx\n state: present\n",
             "suggestionId": str(uuid.uuid4()),
         }
 
@@ -1328,7 +1329,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
-                          "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "ansible.builtin.package:\n name: nginx\n state: present\n",
             "suggestionId": str(uuid.uuid4()),
             "model": "org-model-id",
         }

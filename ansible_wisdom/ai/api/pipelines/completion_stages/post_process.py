@@ -120,7 +120,15 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
     return True, truncated_yaml
 
 
-def postprocess(recommendation, prompt, context, user, suggestion_id, original_indent, model_id):
+def completion_post_process(context: CompletionContext):
+    user = context.request.user
+    model_id = context.model_id
+    suggestion_id = context.payload.suggestionId
+    cp = context.payload.prompt
+    cc = context.payload.context
+    original_indent = context.original_indent
+    post_processed_predictions = context.anonymized_predictions.copy()
+
     ari_caller = apps.get_app_config("ai").get_ari_caller()
     if not ari_caller:
         logger.warning('skipped ari post processing because ari was not initialized')
@@ -130,14 +138,16 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
     exception = None
 
     # We don't currently expect or support more than one prediction.
-    if len(recommendation["predictions"]) != 1:
-        raise Exception(f"unexpected predictions array length {len(recommendation['predictions'])}")
+    if len(post_processed_predictions["predictions"]) != 1:
+        raise Exception(
+            f"unexpected predictions array length {len(post_processed_predictions['predictions'])}"
+        )
 
-    recommendation_yaml = recommendation["predictions"][0]
+    recommendation_yaml = post_processed_predictions["predictions"][0]
     recommendation_problem = None
     truncated_yaml = None
     postprocessed_yaml = None
-    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(prompt)]
+    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(cp)]
     ari_results = None
 
     # check if the recommendation_yaml is a valid YAML
@@ -177,9 +187,7 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
                 f"suggestion id: {suggestion_id}, "
                 f"original recommendation: \n{recommendation_yaml}"
             )
-            postprocessed_yaml, ari_results = ari_caller.postprocess(
-                recommendation_yaml, prompt, context
-            )
+            postprocessed_yaml, ari_results = ari_caller.postprocess(recommendation_yaml, cp, cc)
             logger.debug(
                 f"suggestion id: {suggestion_id}, "
                 f"post-processed recommendation: \n{postprocessed_yaml}"
@@ -188,7 +196,7 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
                 f"suggestion id: {suggestion_id}, "
                 f"post-process detail: {json.dumps(ari_results)}"
             )
-            recommendation["predictions"][0] = postprocessed_yaml
+            post_processed_predictions["predictions"][0] = postprocessed_yaml
             for ari_result in ari_results:
                 postprocess_details.append(
                     {"name": ari_result["name"], "rule_details": ari_result["rule_details"]}
@@ -198,8 +206,8 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {prompt} '
-                f'context {context} and model recommendation {recommendation}'
+                f'failed to postprocess recommendation with prompt {cp} '
+                f'context {cc} and model recommendation {post_processed_predictions}'
             )
         finally:
             write_to_segment(
@@ -229,13 +237,13 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
                 postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
-            recommendation["predictions"][0] = postprocessed_yaml
+            post_processed_predictions["predictions"][0] = postprocessed_yaml
         except Exception as exc:
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {prompt} '
-                f'context {context} and model recommendation {recommendation}'
+                f'failed to postprocess recommendation with prompt {cp} '
+                f'context {cc} and model recommendation {post_processed_predictions}'
             )
         finally:
             write_to_segment(
@@ -254,19 +262,21 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
                 raise exception
 
     # adjust indentation as per default ansible-lint configuration
-    indented_yaml = fmtr.adjust_indentation(recommendation["predictions"][0])
+    indented_yaml = fmtr.adjust_indentation(post_processed_predictions["predictions"][0])
 
     # restore original indentation
     indented_yaml = fmtr.restore_indentation(indented_yaml, original_indent)
-    recommendation["predictions"][0] = indented_yaml
+    post_processed_predictions["predictions"][0] = indented_yaml
     logger.debug(f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}")
 
     # gather data for completion segment event
     for i, task in enumerate(tasks):
-        if fmtr.is_multi_task_prompt(prompt):
-            task["prediction"] = fmtr.extract_task(recommendation["predictions"][0], task["name"])
+        if fmtr.is_multi_task_prompt(cp):
+            task["prediction"] = fmtr.extract_task(
+                post_processed_predictions["predictions"][0], task["name"]
+            )
         else:
-            task["prediction"] = recommendation["predictions"][0]
+            task["prediction"] = post_processed_predictions["predictions"][0]
         if ari_results is not None:
             ari_result = ari_results[i]
             fqcn_module = ari_result["fqcn_module"]
@@ -276,28 +286,17 @@ def postprocess(recommendation, prompt, context, user, suggestion_id, original_i
                 if index != -1:
                     task["collection"] = fqcn_module[:index]
 
-    return recommendation, tasks
+    context.task_results = tasks
+    context.post_processed_predictions = post_processed_predictions
 
 
 class PostProcessStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         start_time = time.time()
-        request = context.request
         payload = context.payload
         predictions = context.predictions
-        ano_predictions = context.ano_predictions
-        original_indent = context.original_indent
-        model_id = context.model_id
         try:
-            postprocessed_predictions, tasks_results = postprocess(
-                ano_predictions,
-                payload.prompt,
-                payload.context,
-                request.user,
-                payload.suggestionId,
-                original_indent,
-                model_id,
-            )
+            completion_post_process(context)
         except Exception:
             process_error_count.labels(stage='post-processing').inc()
             logger.exception(
@@ -314,8 +313,5 @@ class PostProcessStage(PipelineElement):
 
         logger.debug(
             f"response from postprocess for "
-            f"suggestion id {payload.suggestionId}:\n{postprocessed_predictions}"
+            f"suggestion id {payload.suggestionId}:\n{context.anonymized_predictions}"
         )
-
-        context.postprocessed_predictions = postprocessed_predictions
-        context.tasks_results = tasks_results

@@ -11,11 +11,12 @@ class CompletionContext:
     request: Request
     response: Response = None
 
-    payload: APIPayload = None
     model_id: str = ""
+    payload: APIPayload = None
     original_indent: int = 0
 
     predictions: dict[str, Union[list[str], str]] = None
-    ano_predictions: dict[str, Union[list[str], str]] = None
-    postprocessd_predictions: dict[str, Union[list[str], str]] = None
+    anonymized_predictions: dict[str, Union[list[str], str]] = None
+    post_processed_predictions: dict[str, Union[list[str], str]] = None
+
     task_results: list[dict[str, str]] = None

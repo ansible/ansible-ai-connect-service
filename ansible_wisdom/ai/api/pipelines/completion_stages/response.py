@@ -24,11 +24,11 @@ class ResponseStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         payload = context.payload
         predictions = context.predictions
-        postprocessed_predictions = context.postprocessed_predictions
-        tasks_results = context.tasks_results
+        post_processed_predictions = context.post_processed_predictions
+        tasks_results = context.task_results
         try:
             response_data = {
-                "predictions": postprocessed_predictions["predictions"],
+                "predictions": post_processed_predictions["predictions"],
                 "model": predictions['model_id'],
                 "suggestionId": payload.suggestionId,
             }

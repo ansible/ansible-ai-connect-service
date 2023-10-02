@@ -14,7 +14,7 @@ from .completion_context import CompletionContext
 logger = logging.getLogger(__name__)
 
 
-class CompletionsPipeline(Pipeline[Response]):
+class CompletionsPipeline(Pipeline[Response, CompletionContext]):
     def __init__(self, request: Request):
         self.context = CompletionContext(request=request)
         super().__init__(

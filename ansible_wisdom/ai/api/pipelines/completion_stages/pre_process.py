@@ -17,33 +17,34 @@ preprocess_hist = Histogram(
 )
 
 
-def preprocess(context: CompletionContext, prompt):
-    if fmtr.is_multi_task_prompt(prompt):
-        # Hold the original indent so we can restore indentation in postprocess
-        original_indent = prompt.find('#')
+def completion_pre_process(context: CompletionContext):
+    cp = context.payload.prompt
+    cc = context.payload.context
+    if fmtr.is_multi_task_prompt(cp):
+        # Hold the original indent so that we can restore indentation in postprocess
+        original_indent = cp.find('#')
         # WCA codegen endpoint requires prompt to end with \n
-        if prompt.endswith('\n') is False:
-            prompt = f"{prompt}\n"
+        if cp.endswith('\n') is False:
+            cp = f"{cp}\n"
         # Workaround for https://github.com/rh-ibm-synergy/wca-feedback/issues/3
-        prompt = prompt.lstrip()
+        cp = cp.lstrip()
     else:
         # once we switch completely to WCA, we should be able to remove this entirely
         # since they're doing the same preprocessing on their side
-        original_indent = prompt.find("name")
-        context, prompt = fmtr.preprocess(context, prompt)
+        original_indent = cp.find("name")
+        cc, cp = fmtr.preprocess(cc, cp)
 
-    return context, prompt, original_indent
+    context.payload.prompt = cp
+    context.payload.context = cc
+    context.original_indent = original_indent
 
 
 class PreProcessStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
-        original_indent = ""
         start_time = time.time()
         payload = context.payload
         try:
-            payload.context, payload.prompt, original_indent = preprocess(
-                context=payload.context, prompt=payload.prompt
-            )
+            completion_pre_process(context)
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
@@ -60,4 +61,3 @@ class PreProcessStage(PipelineElement):
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             preprocess_hist.observe(duration / 1000)  # millisec to seconds
-            context.original_indent = original_indent

@@ -1,8 +1,7 @@
 import json
 from typing import Generic, TypeVar
 
-from ai.api.model_client.exceptions import ModelTimeoutError
-from ai.api.model_client.wca_client import WcaException
+from ai.api.model_client.exceptions import ModelTimeoutError, WcaException
 from django.conf import settings
 from prometheus_client import Counter
 from rest_framework.exceptions import APIException
@@ -21,10 +20,11 @@ class PipelineElement:
 
 
 T = TypeVar('T')
+C = TypeVar('C')
 
 
-class Pipeline(Generic[T]):
-    def __init__(self, pipeline: list[PipelineElement], context: dict[str, any]):
+class Pipeline(Generic[T, C]):
+    def __init__(self, pipeline: list[PipelineElement], context: C):
         self.pipeline = pipeline
         self.context = context
 

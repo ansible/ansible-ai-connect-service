@@ -3,8 +3,8 @@ import time
 from string import Template
 
 from ai.api.data.data_model import ModelMeshPayload
-from ai.api.model_client.exceptions import ModelTimeoutError
-from ai.api.model_client.wca_client import (
+from ai.api.model_client.exceptions import (
+    ModelTimeoutError,
     WcaBadRequest,
     WcaEmptyResponse,
     WcaInvalidModelId,
@@ -149,7 +149,7 @@ class InferenceStage(PipelineElement):
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
             value_template = Template("{{ _${variable_name}_ }}")
-            ano_predictions = anonymizer.anonymize_struct(
+            anonymized_predictions = anonymizer.anonymize_struct(
                 predictions, value_template=value_template
             )
             # If an exception was thrown during the backend call, try to get the model ID
@@ -166,7 +166,7 @@ class InferenceStage(PipelineElement):
                 "modelName": model_id,
                 "problem": None if exception is None else exception.__class__.__name__,
                 "request": data,
-                "response": ano_predictions,
+                "response": anonymized_predictions,
                 "suggestionId": str(payload.suggestionId),
             }
             send_segment_event(event, "prediction", request.user)
@@ -177,4 +177,4 @@ class InferenceStage(PipelineElement):
 
         context.model_id = model_id
         context.predictions = predictions
-        context.ano_predictions = ano_predictions
+        context.anonymized_predictions = anonymized_predictions
