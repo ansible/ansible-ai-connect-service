@@ -1,0 +1,35 @@
+[auth]
+disable_login_form = false
+disable_signout_menu = false
+
+[auth.anonymous]
+enabled = false
+
+[auth.basic]
+enabled = true
+
+[auth.github]
+api_url = https://api.github.com/user
+auth_url = https://github.com/login/oauth/authorize
+client_id = 5ef25443f506f8a3f8bd
+client_secret = b874413f88aaae89ab2283fc60ec76b10de67a6d
+enabled = true
+scopes = user:email,read:org
+team_ids = 7842845
+token_url = https://github.com/login/oauth/access_token
+
+[log]
+level = warn
+mode = console
+
+[paths]
+data = /var/lib/grafana
+logs = /var/log/grafana
+plugins = /var/lib/grafana/plugins
+provisioning = /etc/grafana/provisioning/
+
+[server]
+root_url = https://grafana-route-grafana.apps.wisdom-staging.vc79.p1.openshiftapps.com
+
+[users]
+auto_assign_org_role = Editor
