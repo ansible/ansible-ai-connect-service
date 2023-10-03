@@ -2,6 +2,7 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.model_client.exceptions import WcaTokenFailure
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -13,7 +14,6 @@ from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from requests.exceptions import HTTPError
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -109,8 +109,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         try:
             model_mesh_client = apps.get_app_config("ai").wca_client
             model_mesh_client.get_token(wca_key)
-        except HTTPError:
-            # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
+        except WcaTokenFailure:
             logger.error(
                 f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
             )
@@ -168,8 +167,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             logger.error(e)
             raise ServiceUnavailable
 
-        except HTTPError:
-            # WCAClient can raise arbitrary HTTPError's if it was unable to retrieve a Token.
+        except WcaTokenFailure:
             logger.error(
                 f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
             )

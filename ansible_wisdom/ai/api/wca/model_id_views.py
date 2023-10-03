@@ -7,6 +7,7 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaTokenFailure,
 )
 from ai.api.permissions import (
     AcceptedTermsPermission,
@@ -122,7 +123,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
-        except (WcaInvalidModelId, WcaModelIdNotFound, ValidationError) as e:
+        except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure, ValidationError) as e:
             logger.error(e)
             return Response(status=HTTP_400_BAD_REQUEST)
 
@@ -163,7 +164,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
                 api_key['SecretString'],
                 str(model_id['SecretString']) if model_id['SecretString'] else None,
             )
-        except (WcaInvalidModelId, WcaModelIdNotFound, ValidationError) as e:
+        except (WcaInvalidModelId, WcaModelIdNotFound, ValidationError, WcaTokenFailure) as e:
             logger.error(e)
             return Response(status=HTTP_400_BAD_REQUEST)
         except WcaKeyNotFound as e:
