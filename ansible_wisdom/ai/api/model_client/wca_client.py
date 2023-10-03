@@ -60,6 +60,7 @@ class WCAClient(ModelMeshClient):
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
+        # WCA codegen endpoint requires prompt to end with \n
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
