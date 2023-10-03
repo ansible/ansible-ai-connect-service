@@ -30,7 +30,7 @@ class HealthCheckCustomView(MainView):
     _plugin_name_map = {
         'DatabaseBackend': 'db',
         'ModelServerHealthCheck': 'model-server',
-        'AWSSecretManagerHealthCheck': 'aws-secret-manager',
+        'AWSSecretManagerHealthCheck': 'secret-manager',
         'WCAHealthCheck': 'wca',
     }
 
