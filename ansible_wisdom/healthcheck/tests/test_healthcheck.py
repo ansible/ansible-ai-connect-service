@@ -90,7 +90,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -122,7 +122,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             if dependency['name'] == 'model-server':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
@@ -158,7 +158,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -181,7 +181,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             if dependency['name'] == 'model-server':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
@@ -208,7 +208,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -241,7 +241,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             self.assertTrue(is_status_ok(dependency['status']))
             self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -270,9 +270,9 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
-            if dependency['name'] == 'aws-secret-manager':
+            if dependency['name'] == 'secret-manager':
                 self.assertTrue(dependency['status'].startswith('unavailable:'))
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
@@ -299,7 +299,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             if dependency['name'] == 'wca':
                 # If a Token cannot be retrieved we can also not execute Models
@@ -329,7 +329,7 @@ class TestHealthCheck(APITestCase):
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
-                dependency['name'], ['cache', 'db', 'model-server', 'aws-secret-manager', 'wca']
+                dependency['name'], ['cache', 'db', 'model-server', 'secret-manager', 'wca']
             )
             if dependency['name'] == 'wca':
                 self.assertEqual('ok', dependency['status']['tokens'])
