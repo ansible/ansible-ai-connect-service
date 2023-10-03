@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from abc import abstractmethod
 from datetime import datetime, timedelta
 from functools import cache
 from http import HTTPStatus
@@ -7,6 +8,20 @@ from http import HTTPStatus
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+class BaseCheck:
+    @abstractmethod
+    def self_test(self):
+        """
+        Check the health of the underlying authentication service.
+        Any exception signifies a failure of the underlying service.
+        """
+        pass
+
+    @abstractmethod
+    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+        pass
 
 
 class Token:
@@ -47,11 +62,19 @@ class Token:
         return self.access_token
 
 
-class CIAMCheck:
+class CIAMCheck(BaseCheck):
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
         self._api_server = api_server
+
+    def self_test(self):
+        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+        r = self._session.post(
+            self._api_server + "/v1alpha/healthcheck",
+            timeout=0.8,
+        )
+        r.raise_for_status()
 
     def check(self, user_id, _username, org_id) -> bool:
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
@@ -81,7 +104,7 @@ class CIAMCheck:
             return False
 
 
-class AMSCheck:
+class AMSCheck(BaseCheck):
     ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time"
 
     def __init__(self, client_id, client_secret, sso_server, api_server):
@@ -121,6 +144,15 @@ class AMSCheck:
         except (IndexError, KeyError, ValueError):
             logger.error("Unexpected organization answer from AMS")
             return ""
+
+    def self_test(self):
+        self.update_bearer_token()
+        r = self._session.get(
+            # A _basic_ call that needs no parameters.
+            self._api_server + "/api/accounts_mgmt/v1/metrics",
+            timeout=0.8,
+        )
+        r.raise_for_status()
 
     def check(self, _user_id: str, username: str, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
@@ -208,8 +240,11 @@ class AMSCheck:
             return False
 
 
-class MockAlwaysTrueCheck:
+class MockAlwaysTrueCheck(BaseCheck):
     def __init__(self, *kargs):
+        pass
+
+    def self_test(self):
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
@@ -222,8 +257,11 @@ class MockAlwaysTrueCheck:
         return True
 
 
-class MockAlwaysFalseCheck:
+class MockAlwaysFalseCheck(BaseCheck):
     def __init__(self, *kargs):
+        pass
+
+    def self_test(self):
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
