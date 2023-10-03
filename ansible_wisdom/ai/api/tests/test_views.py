@@ -10,8 +10,11 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import requests
+from ai.api.data.data_model import APIPayload
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
+    ModelTimeoutError,
+    WcaBadRequest,
     WcaEmptyResponse,
     WcaException,
     WcaInvalidModelId,
@@ -20,14 +23,11 @@ from ai.api.model_client.exceptions import (
 )
 from ai.api.model_client.tests.test_wca_client import MockResponse
 from ai.api.model_client.wca_client import WCAClient
+from ai.api.pipelines.completion_context import CompletionContext
+from ai.api.pipelines.completion_stages.inference import get_model_client
+from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
+from ai.api.pipelines.completion_stages.response import CompletionsPromptType
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.views import (
-    Completions,
-    CompletionsPromptType,
-    ModelTimeoutError,
-    WcaBadRequest,
-    get_model_client,
-)
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -57,16 +57,17 @@ class DummyMeshClient(ModelMeshClient):
                 serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
-                view = Completions()
-                data["context"], data["prompt"], _ = view.preprocess(
-                    data.get("context"), data.get("prompt")
+                context = CompletionContext(
+                    request=request,
+                    payload=APIPayload(prompt=data.get("prompt"), context=data.get("context")),
                 )
+                completion_pre_process(context)
 
                 self.expects = {
                     "instances": [
                         {
-                            "context": data.get("context"),
-                            "prompt": data.get("prompt"),
+                            "context": context.payload.context,
+                            "prompt": context.payload.prompt,
                             "userId": str(test.user.uuid),
                             "rh_user_has_seat": rh_user_has_seat,
                             "organization_id": None,
@@ -349,7 +350,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch("ai.api.views.get_model_client")
+    @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial(self, mock_get_model_client):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
@@ -382,7 +383,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch("ai.api.views.get_model_client")
+    @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & say hello fred@redhat.com\n",  # noqa: E501

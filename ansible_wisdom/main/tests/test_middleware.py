@@ -120,7 +120,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.fmtr.preprocess', side_effect=Exception)
+    @patch('ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess', side_effect=Exception)
     def test_preprocess_error(self, preprocess):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
@@ -130,7 +130,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.post(reverse('completions'), payload, format='json')
-            self.assertInLog("ERROR:ai.api.views:failed to preprocess:", log)
+            self.assertInLog(
+                "ERROR:ai.api.pipelines.completion_stages.pre_process:failed to preprocess:", log
+            )
             self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
