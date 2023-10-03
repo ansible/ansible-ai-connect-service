@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeserializeStage(PipelineElement):
-    def process(self, context: CompletionContext) -> None:
-        request = context.request
+    def process(self, completion_context: CompletionContext) -> None:
+        request = completion_context.request
         request._request._suggestion_id = request.data.get('suggestionId')
 
         request_serializer = CompletionRequestSerializer(
@@ -27,4 +27,4 @@ class DeserializeStage(PipelineElement):
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
 
-        context.payload = payload
+        completion_context.payload = payload

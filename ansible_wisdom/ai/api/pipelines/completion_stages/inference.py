@@ -3,6 +3,7 @@ import time
 from string import Template
 
 from ai.api.data.data_model import ModelMeshPayload
+from ai.api.formatter import get_task_names_from_prompt
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
@@ -61,9 +62,9 @@ def get_model_client(wisdom_app, user):
 
 
 class InferenceStage(PipelineElement):
-    def process(self, context: CompletionContext) -> None:
-        request = context.request
-        payload = context.payload
+    def process(self, completion_context: CompletionContext) -> None:
+        request = completion_context.request
+        payload = completion_context.payload
         model_mesh_client, model_name = get_model_client(apps.get_app_config("ai"), request.user)
         # We have a little inconsistency of the "model" term throughout the application:
         # - FeatureFlags use 'model_name'
@@ -71,12 +72,17 @@ class InferenceStage(PipelineElement):
         # - Public completion API uses 'model'
         # - Segment Events use 'modelName'
         model_id = model_name or payload.model
+        task_count = len(get_task_names_from_prompt(payload.prompt))
+        timeout = model_mesh_client.timeout(task_count)
+        prompt, context = model_mesh_client.prepare_prompt_and_context(
+            payload.prompt, payload.context
+        )
 
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
-                    "prompt": payload.prompt,
-                    "context": payload.context,
+                    "prompt": prompt,
+                    "context": context,
                     "userId": str(payload.userId) if payload.userId else None,
                     "rh_user_has_seat": request._request.user.rh_user_has_seat,
                     "organization_id": request._request.user.org_id,
@@ -91,7 +97,7 @@ class InferenceStage(PipelineElement):
         exception = None
         start_time = time.time()
         try:
-            predictions = model_mesh_client.infer(data, model_id=model_id)
+            predictions = model_mesh_client.infer(data, timeout=timeout, model_id=model_id)
             model_id = predictions.get("model_id", model_id)
         except ModelTimeoutError as e:
             exception = e
@@ -175,6 +181,6 @@ class InferenceStage(PipelineElement):
             f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
         )
 
-        context.model_id = model_id
-        context.predictions = predictions
-        context.anonymized_predictions = anonymized_predictions
+        completion_context.model_id = model_id
+        completion_context.predictions = predictions
+        completion_context.anonymized_predictions = anonymized_predictions

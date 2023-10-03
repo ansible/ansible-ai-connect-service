@@ -30,7 +30,7 @@ class CompletionsPipeline(Pipeline[Response, CompletionContext]):
 
     def execute(self) -> Response:
         for pe in self.pipeline:
-            pe.process(context=self.context)
+            pe.process(completion_context=self.context)
             if self.context.response:
                 return self.context.response
         raise InternalServerError(

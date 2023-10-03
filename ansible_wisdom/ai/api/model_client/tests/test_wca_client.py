@@ -216,8 +216,8 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
 
     def test_infer(self):
         model_id = "zavala"
-        context = "null"
-        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+        context = None
+        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux\n"
 
         model_input = {
             "instances": [
@@ -227,10 +227,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
                 }
             ]
         }
-        data = {
-            "model_id": model_id,
-            "prompt": f"{context}{prompt}\n",
-        }
+        data = {"model_id": model_id, "prompt": prompt}
         token = {
             "access_token": "access_token",
             "refresh_token": "not_supported",

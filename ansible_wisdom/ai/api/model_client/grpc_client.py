@@ -27,7 +27,7 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, model_input, model_id=None):
+    def infer(self, model_input, timeout, model_id=None):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug(f"Input prompt: {model_input}")
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -36,11 +36,10 @@ class GrpcClient(ModelMeshClient):
         logger.debug(f"Input context: {context}")
 
         try:
-            task_count = len(get_task_names_from_prompt(prompt))
             response = self._inference_stub.AnsiblePredict(
                 request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
                 metadata=[("mm-vmodel-id", model_id)],
-                timeout=self.timeout(task_count),
+                timeout=timeout,
             )
 
             logger.debug(f"inference response: {response}")

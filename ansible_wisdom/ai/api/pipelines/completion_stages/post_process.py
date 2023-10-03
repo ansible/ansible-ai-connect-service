@@ -120,14 +120,14 @@ def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
     return True, truncated_yaml
 
 
-def completion_post_process(context: CompletionContext):
-    user = context.request.user
-    model_id = context.model_id
-    suggestion_id = context.payload.suggestionId
-    cp = context.payload.prompt
-    cc = context.payload.context
-    original_indent = context.original_indent
-    post_processed_predictions = context.anonymized_predictions.copy()
+def completion_post_process(completion_context: CompletionContext):
+    user = completion_context.request.user
+    model_id = completion_context.model_id
+    suggestion_id = completion_context.payload.suggestionId
+    cp = completion_context.payload.prompt
+    cc = completion_context.payload.context
+    original_indent = completion_context.original_indent
+    post_processed_predictions = completion_context.anonymized_predictions.copy()
 
     ari_caller = apps.get_app_config("ai").get_ari_caller()
     if not ari_caller:
@@ -286,17 +286,17 @@ def completion_post_process(context: CompletionContext):
                 if index != -1:
                     task["collection"] = fqcn_module[:index]
 
-    context.task_results = tasks
-    context.post_processed_predictions = post_processed_predictions
+    completion_context.task_results = tasks
+    completion_context.post_processed_predictions = post_processed_predictions
 
 
 class PostProcessStage(PipelineElement):
-    def process(self, context: CompletionContext) -> None:
+    def process(self, completion_context: CompletionContext) -> None:
         start_time = time.time()
-        payload = context.payload
-        predictions = context.predictions
+        payload = completion_context.payload
+        predictions = completion_context.predictions
         try:
-            completion_post_process(context)
+            completion_post_process(completion_context)
         except Exception:
             process_error_count.labels(stage='post-processing').inc()
             logger.exception(
@@ -313,5 +313,5 @@ class PostProcessStage(PipelineElement):
 
         logger.debug(
             f"response from postprocess for "
-            f"suggestion id {payload.suggestionId}:\n{context.anonymized_predictions}"
+            f"suggestion id {payload.suggestionId}:\n{completion_context.anonymized_predictions}"
         )

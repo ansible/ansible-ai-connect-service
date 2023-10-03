@@ -17,9 +17,9 @@ preprocess_hist = Histogram(
 )
 
 
-def completion_pre_process(context: CompletionContext):
-    cp = context.payload.prompt
-    cc = context.payload.context
+def completion_pre_process(completion_context: CompletionContext):
+    cp = completion_context.payload.prompt
+    cc = completion_context.payload.context
     if fmtr.is_multi_task_prompt(cp):
         # Hold the original indent so that we can restore indentation in postprocess
         original_indent = cp.find('#')
@@ -29,17 +29,17 @@ def completion_pre_process(context: CompletionContext):
         original_indent = cp.find("name")
         cc, cp = fmtr.preprocess(cc, cp)
 
-    context.payload.prompt = cp
-    context.payload.context = cc
-    context.original_indent = original_indent
+    completion_context.payload.prompt = cp
+    completion_context.payload.context = cc
+    completion_context.original_indent = original_indent
 
 
 class PreProcessStage(PipelineElement):
-    def process(self, context: CompletionContext) -> None:
+    def process(self, completion_context: CompletionContext) -> None:
         start_time = time.time()
-        payload = context.payload
+        payload = completion_context.payload
         try:
-            completion_pre_process(context)
+            completion_pre_process(completion_context)
         except Exception as exc:
             process_error_count.labels(stage='pre-processing').inc()
             # return the original prompt, context
@@ -51,7 +51,7 @@ class PreProcessStage(PipelineElement):
                 if isinstance(exc, fmtr.InvalidPromptException)
                 else 'Request contains invalid yaml'
             )
-            context.response = Response({'message': message}, status=400)
+            completion_context.response = Response({'message': message}, status=400)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

@@ -19,7 +19,7 @@ class APIPayload(BaseModel):
 
 class ModelMeshData(TypedDict):
     prompt: str
-    context: str
+    context: Union[str, None]
     userId: Union[str, None]
     rh_user_has_seat: bool
     organization_id: Union[str, None]

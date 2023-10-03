@@ -46,7 +46,7 @@ PERMISSION_CLASSES = [
 def validate(api_key, model_id):
     model_mesh_client = apps.get_app_config("ai").wca_client
     model_mesh_client.infer_from_parameters(
-        api_key, model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
+        api_key, model_id, "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
     )
 
 

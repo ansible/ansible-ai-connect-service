@@ -10,8 +10,13 @@ class ModelMeshClient:
         self._timeout = int(i) if i is not None else None
 
     @abstractmethod
-    def infer(self, model_input, model_id="wisdom"):  # pragma: no cover
+    def infer(
+        self, model_input, timeout=settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT, model_id="wisdom"
+    ):  # pragma: no cover
         pass
+
+    def prepare_prompt_and_context(self, prompt, context):
+        return prompt, context
 
     def set_inference_url(self, inference_url):
         self._inference_url = inference_url

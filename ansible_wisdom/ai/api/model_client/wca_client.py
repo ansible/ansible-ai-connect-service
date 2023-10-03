@@ -52,11 +52,17 @@ class WCAClient(ModelMeshClient):
             # retry on all other errors (e.g. network)
             return False
 
-    def infer(self, model_input, model_id=None):
+    def prepare_prompt_and_context(self, prompt, context):
+        # WCA codegen endpoint requires prompt to end with \n
+        if prompt.endswith('\n') is False:
+            prompt = f"{prompt}\n"
+        prompt = f"{context}{prompt}"
+        return prompt, None
+
+    def infer(self, model_input, timeout, model_id=None):
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
-        context = model_input.get("instances", [{}])[0].get("context", "")
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
@@ -67,7 +73,7 @@ class WCAClient(ModelMeshClient):
         try:
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
             model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
-            result = self.infer_from_parameters(api_key, model_id, context, prompt)
+            result = self.infer_from_parameters(api_key, model_id, prompt, timeout)
 
             response = result.json()
             response['model_id'] = model_id
@@ -77,10 +83,10 @@ class WCAClient(ModelMeshClient):
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt):
+    def infer_from_parameters(self, api_key, model_id, prompt, timeout):
         data = {
             "model_id": model_id,
-            "prompt": f"{context}{prompt}",
+            "prompt": prompt,
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
@@ -90,7 +96,7 @@ class WCAClient(ModelMeshClient):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
         }
-        task_count = len(get_task_names_from_prompt(prompt))
+
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
@@ -102,7 +108,7 @@ class WCAClient(ModelMeshClient):
                 prediction_url,
                 headers=headers,
                 json=data,
-                timeout=self.timeout(task_count),
+                timeout=timeout,
             )
 
         try:

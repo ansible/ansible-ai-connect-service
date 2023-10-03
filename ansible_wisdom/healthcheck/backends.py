@@ -84,7 +84,6 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
             apps.get_app_config("ai").wca_client.infer_from_parameters(
                 free_api_key,
                 free_model_id,
-                "",
                 "- name: install ffmpeg on Red Hat Enterprise Linux",
             )
         except WcaTokenFailure:

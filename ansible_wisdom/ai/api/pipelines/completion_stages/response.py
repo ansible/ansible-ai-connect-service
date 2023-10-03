@@ -21,11 +21,11 @@ class CompletionsPromptType(str, Enum):
 
 
 class ResponseStage(PipelineElement):
-    def process(self, context: CompletionContext) -> None:
-        payload = context.payload
-        predictions = context.predictions
-        post_processed_predictions = context.post_processed_predictions
-        tasks_results = context.task_results
+    def process(self, completion_context: CompletionContext) -> None:
+        payload = completion_context.payload
+        predictions = completion_context.predictions
+        post_processed_predictions = completion_context.post_processed_predictions
+        tasks_results = completion_context.task_results
         try:
             response_data = {
                 "predictions": post_processed_predictions["predictions"],
@@ -54,4 +54,4 @@ class ResponseStage(PipelineElement):
             else CompletionsPromptType.SINGLETASK.value
         )
 
-        context.response = response
+        completion_context.response = response
