@@ -18,9 +18,13 @@ class FeatureFlags:
             import ldclient
             from ldclient.config import Config
 
-            ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
-            self.client = ldclient.get()
-            logger.info("feature flag client initialized")
+            def create_ld_client():
+                ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
+                client = ldclient.get()
+                logger.info("feature flag client initialized")
+                return client
+
+            self.client = create_ld_client()
         else:
             self.client = None
 
