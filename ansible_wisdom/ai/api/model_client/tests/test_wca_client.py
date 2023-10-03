@@ -368,18 +368,15 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
 
     def test_codematch(self):
         model_id = "sample_model_name"
-        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+        suggestions = [
+            "- name: install ffmpeg on Red Hat Enterprise Linux",
+            "- name: This is another test",
+        ]
 
-        model_input = {
-            "instances": [
-                {
-                    "prompt": prompt,
-                }
-            ]
-        }
+        model_input = {"suggestions": suggestions}
         data = {
             "model_id": model_id,
-            "input": [f"{prompt}"],
+            "input": suggestions,
         }
         token = {
             "access_token": "access_token",
@@ -389,7 +386,26 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
-        client_response = {"attributions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        client_response = {
+            "code_matches": [
+                {
+                    "repo_name": "fiaasco.solr",
+                    "repo_url": "https://galaxy.ansible.com/fiaasco/solr",
+                    "path": "tasks/cores.yml",
+                    "license": "mit",
+                    "data_source_description": "Galaxy-R",
+                    "score": 0.7182885,
+                },
+                {
+                    "repo_name": "juju4.misp",
+                    "repo_url": "https://galaxy.ansible.com/juju4/misp",
+                    "path": "tasks/main.yml",
+                    "license": "bsd-2-clause",
+                    "data_source_description": "Galaxy-R",
+                    "score": 0.71385884,
+                },
+            ]
+        }
         response = MockResponse(
             json=client_response,
             status_code=200,
@@ -418,13 +434,12 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
 
     def test_codematch_timeout(self):
         model_id = "sample_model_name"
-        model_input = {
-            "instances": [
-                {
-                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
-                }
-            ]
-        }
+        suggestions = [
+            "- name: install ffmpeg on Red Hat Enterprise Linux",
+            "- name: This is another test",
+        ]
+
+        model_input = {"suggestions": suggestions}
         token = {
             "access_token": "access_token",
             "refresh_token": "not_supported",

@@ -90,7 +90,7 @@ class WCAClient(ModelMeshClient):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
         }
-        task_count = len(get_task_names_from_prompt(prompt))
+        suggestion_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
@@ -102,7 +102,7 @@ class WCAClient(ModelMeshClient):
                 prediction_url,
                 headers=headers,
                 json=data,
-                timeout=self.timeout(task_count),
+                timeout=self.timeout(suggestion_count),
             )
 
         try:
@@ -195,14 +195,14 @@ class WCAClient(ModelMeshClient):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
-        prompt = model_input.get("instances", [{}])[0].get("prompt", "")
-        rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
-        organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
+        suggestions = model_input.get("suggestions", "")
+        rh_user_has_seat = model_input.get("rh_user_has_seat", False)
+        organization_id = model_input.get("organization_id", None)
 
         model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
         data = {
             "model_id": model_id,
-            "input": [f"{prompt}"],
+            "input": suggestions,
         }
 
         logger.debug(f"Codematch API request payload: {data}")
@@ -216,14 +216,17 @@ class WCAClient(ModelMeshClient):
                 "Authorization": f"Bearer {token['access_token']}",
             }
 
-            task_count = len(get_task_names_from_prompt(prompt))
+            suggestion_count = len(suggestions)
 
             @backoff.on_exception(
                 backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
             )
             def post_request():
                 return self.session.post(
-                    self._search_url, headers=headers, json=data, timeout=self.timeout(task_count)
+                    self._search_url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.timeout(suggestion_count),
                 )
 
             result = post_request()

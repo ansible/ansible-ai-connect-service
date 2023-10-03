@@ -30,7 +30,15 @@ class ModelMeshPayload(BaseModel):
     instances: list[ModelMeshData]
 
 
-class AttributionData(BaseModel):
+class ContentMatchPayloadData(TypedDict):
+    suggestions: list[str]
+    user_id: Union[str, None]
+    rh_user_has_seat: bool
+    organization_id: Union[str, None]
+    suggestionId: Union[str, None]
+
+
+class ContentMatchResponseData(BaseModel):
     repo_name: str = ''
     repo_url: str = ""
     path: str = ""
@@ -45,13 +53,18 @@ class AttributionData(BaseModel):
         self.data_source = DataSource[self.data_source_description.replace("-", "_").upper()]
 
 
-class AttributionDataTransformer(BaseModel):
-    code_matches: list[AttributionData]
+class ContentMatchResponseDto(BaseModel):
+    code_matches: list[ContentMatchResponseData]
     meta: dict
 
-    def values(self):
-        return (
-            self.meta.get("encode_duration", ""),
-            self.meta.get("search_duration", ""),
-            self.dict().get("code_matches", ""),
-        )
+    @property
+    def encode_duration(self):
+        return self.meta.get("encode_duration", "")
+
+    @property
+    def search_duration(self):
+        return self.meta.get("search_duration", "")
+
+    @property
+    def content_matches(self):
+        return {"contentmatch": self.dict()["code_matches"]}
