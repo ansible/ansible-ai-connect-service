@@ -4,7 +4,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    Icon,
+    Icon, InputGroup,
     PageSection,
     PageSectionVariants,
     Panel,
@@ -20,7 +20,7 @@ import {
     Tooltip
 } from "@patternfly/react-core";
 import {useTranslation} from "react-i18next";
-import {CheckCircleIcon, OutlinedQuestionCircleIcon} from "@patternfly/react-icons";
+import {CheckCircleIcon, OutlinedQuestionCircleIcon, TimesIcon} from "@patternfly/react-icons";
 import './ModelSettings.css';
 import {WcaKey, WcaKeyRequest} from "./api/types";
 import {saveWcaKey} from "./api/api";
@@ -118,17 +118,28 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                                     </TextContent>
                                 </StackItem>
                                 <StackItem>
-                                    <TextInput
-                                        value={value}
-                                        type="text"
-                                        onChange={(value) => {
-                                            setValue(value);
-                                            setIsKeyInvalid(false);
-                                        }}
-                                        aria-label={t("AddKey")}
-                                        placeholder={t("PlaceholderKey")}
-                                        isDisabled={isSaving}
-                                    />
+                                    <InputGroup>
+                                        <TextInput
+                                            value={value}
+                                            type="text"
+                                            onChange={(value) => {
+                                                setValue(value);
+                                                setIsKeyInvalid(false);
+                                            }}
+                                            aria-label={t("AddKey")}
+                                            placeholder={t("PlaceholderKey")}
+                                            isDisabled={isSaving}
+                                        />
+                                        <Button variant="plain"
+                                                aria-label={t('ClearText')}
+                                                title={t('ClearText')}
+                                                onClick={() => {
+                                                    setValue('');
+                                                }}
+                                                isDisabled={value.trim().length === 0}>
+                                             <TimesIcon />
+                                        </Button>
+                                    </InputGroup>
                                 </StackItem>
                                 <StackItem>
                                     <Split hasGutter={true}>
