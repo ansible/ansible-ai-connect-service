@@ -23,11 +23,6 @@ def completion_pre_process(context: CompletionContext):
     if fmtr.is_multi_task_prompt(cp):
         # Hold the original indent so that we can restore indentation in postprocess
         original_indent = cp.find('#')
-        # WCA codegen endpoint requires prompt to end with \n
-        if cp.endswith('\n') is False:
-            cp = f"{cp}\n"
-        # Workaround for https://github.com/rh-ibm-synergy/wca-feedback/issues/3
-        cp = cp.lstrip()
     else:
         # once we switch completely to WCA, we should be able to remove this entirely
         # since they're doing the same preprocessing on their side
