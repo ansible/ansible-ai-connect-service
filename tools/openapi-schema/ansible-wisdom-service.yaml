@@ -108,6 +108,46 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
+  /api/v0/ai/contentmatches/:
+    post:
+      operationId: ai_contentmatches_create
+      description: Returns content matches that were the highest likelihood sources
+        for a given code suggestion.
+      summary: Code suggestion attributions
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentMatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContentMatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContentMatchRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentMatchResponse'
+          description: ''
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
   /api/v0/ai/feedback/:
     post:
       operationId: ai_feedback_create
@@ -471,8 +511,6 @@ components:
           title: Suggestion ID
           description: A UUID that identifies the particular suggestion attribution
             data is being requested for.
-        model:
-          type: string
       required:
       - suggestion
     AttributionResponse:
@@ -515,6 +553,68 @@ components:
             type: string
       required:
       - predictions
+    ContentMatch:
+      type: object
+      properties:
+        repo_name:
+          type: string
+        repo_url:
+          type: string
+          format: uri
+        path:
+          type: string
+        license:
+          type: string
+        data_source:
+          type: string
+        ansible_type:
+          type: string
+        score:
+          type: number
+          format: double
+      required:
+      - ansible_type
+      - data_source
+      - license
+      - path
+      - repo_name
+      - repo_url
+      - score
+    ContentMatchList:
+      type: object
+      properties:
+        contentmatch:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentMatch'
+      required:
+      - contentmatch
+    ContentMatchRequest:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: string
+        suggestionId:
+          type: string
+          format: uuid
+          title: Suggestion ID
+          description: A UUID that identifies the particular suggestion attribution
+            data is being requested for.
+        model:
+          type: string
+      required:
+      - suggestions
+    ContentMatchResponse:
+      type: object
+      properties:
+        contentmatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentMatchList'
+      required:
+      - contentmatches
     FeedbackRequest:
       type: object
       properties:
