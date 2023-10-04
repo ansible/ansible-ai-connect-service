@@ -35,13 +35,7 @@ from users.models import User
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
-from . import formatter as fmtr
-from .data.data_model import (
-    APIPayload,
-    ContentMatchPayloadData,
-    ContentMatchResponseDto,
-    ModelMeshPayload,
-)
+from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
 from .serializers import (

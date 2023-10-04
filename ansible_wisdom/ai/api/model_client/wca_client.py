@@ -4,7 +4,12 @@ import logging
 import backoff
 import requests
 from ai.api.formatter import get_task_names_from_prompt
-from ai.api.model_client.wca_utils import InferenceContext, InferenceResponseChecks
+from ai.api.model_client.wca_utils import (
+    ContentMatchContext,
+    ContentMatchResponseChecks,
+    InferenceContext,
+    InferenceResponseChecks,
+)
 from django.apps import apps
 from django.conf import settings
 from requests.exceptions import HTTPError
@@ -22,13 +27,6 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-inference_response_checks = InferenceResponseChecks()
-
-
-def raise_for_wca_response(model_id, result, is_multi_task_prompt):
-    """Maps WCA responses to those we want to present to Users"""
-    context = InferenceContext(model_id, result, is_multi_task_prompt)
-    inference_response_checks.run_checks(context)
 
 
 class WCAClient(ModelMeshClient):
@@ -90,7 +88,7 @@ class WCAClient(ModelMeshClient):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
         }
-        suggestion_count = len(get_task_names_from_prompt(prompt))
+        task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
@@ -102,12 +100,13 @@ class WCAClient(ModelMeshClient):
                 prediction_url,
                 headers=headers,
                 json=data,
-                timeout=self.timeout(suggestion_count),
+                timeout=self.timeout(task_count),
             )
 
         try:
             response = post_request()
-            raise_for_wca_response(model_id, response, task_count > 1)
+            context = InferenceContext(model_id, response, task_count > 1)
+            InferenceResponseChecks().run_checks(context)
             response.raise_for_status()
 
         except HTTPError as e:
@@ -230,7 +229,8 @@ class WCAClient(ModelMeshClient):
                 )
 
             result = post_request()
-            raise_for_wca_response(model_id, result, task_count > 1)
+            context = ContentMatchContext(model_id, result, suggestion_count > 1)
+            ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
 
             response = result.json()
