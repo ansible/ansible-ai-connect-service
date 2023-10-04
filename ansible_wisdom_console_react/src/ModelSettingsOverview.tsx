@@ -164,6 +164,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                     )}
                                     {isWcaKeyFound && (
                                         <Button
+                                            data-testid={"model-settings-overview__edit-key-button"}
                                             variant={"primary"}
                                             icon={<CheckCircleIcon/>}
                                             isDisabled={isValidatingKey}
@@ -264,6 +265,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                     )}
                                     {isWcaModelIdFound && (
                                         <Button
+                                            data-testid={"model-settings-overview__edit-model-id-button"}
                                             variant={"primary"}
                                             icon={<CheckCircleIcon/>}
                                             isDisabled={isValidatingModelId}

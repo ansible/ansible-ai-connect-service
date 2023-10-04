@@ -32,7 +32,11 @@ export function AppHeader(props: AppHeaderProps) {
                         icon={<UserCircleIcon size="md"/>}
                         label={userName}
                     >
-                        <DropdownItem id="logout" label={t('Logout')} onClick={logout}>
+                        <DropdownItem
+                            id="logout"
+                            label={t('Logout')}
+                            onClick={logout}
+                            data-testid="app-header__logout">
                             {t('Logout')}
                         </DropdownItem>
                     </PageMastheadDropdown>

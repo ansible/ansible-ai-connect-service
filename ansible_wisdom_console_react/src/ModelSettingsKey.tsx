@@ -75,7 +75,11 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                 hasError={keyError}
                 close={() => setKeyError(NO_ERROR)}
             />
-            <PageSection variant={PageSectionVariants.light} isWidthLimited>
+            <PageSection
+                data-testid={"model-settings-key__bread-crumbs"}
+                variant={PageSectionVariants.light}
+                isWidthLimited
+            >
                 <Stack hasGutter={true}>
                     <StackItem>
                         <Breadcrumb>
@@ -95,7 +99,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                     </StackItem>
                 </Stack>
             </PageSection>
-            <PageSection>
+            <PageSection data-testid={"model-settings-key__editor"}>
                 <Panel variant={"bordered"}>
                     <PanelMain>
                         <PanelMainBody>

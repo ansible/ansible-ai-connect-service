@@ -1,8 +1,8 @@
-export default jest.mock("react-i18next",
-    () => ({
-        useTranslation: () => {
-            return {
-                t: (str: String) => str,
-            };
-        },
-    }));
+module.exports = {
+    // Stub methods as needed...
+    useTranslation: () => {
+        return {
+            t: (str: String) => str,
+        };
+    },
+};

@@ -50,7 +50,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
         const timeoutId = setTimeout(() => setSaving(true), DELAY);
         const wcaModelId: WcaModelIdRequest = {model_id: value};
         saveWcaModelId(wcaModelId)
-            .then((response) => {
+            .then((_) => {
                 reload();
             })
             .catch((error) => {
@@ -75,7 +75,11 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                 hasError={modelIdError}
                 close={() => setModelIdError(NO_ERROR)}
             />
-            <PageSection variant={PageSectionVariants.light} isWidthLimited>
+            <PageSection
+                data-testid={"model-settings-model-id__bread-crumbs"}
+                variant={PageSectionVariants.light}
+                isWidthLimited
+            >
                 <Stack hasGutter={true}>
                     <StackItem>
                         <Breadcrumb>
@@ -96,7 +100,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                     </StackItem>
                 </Stack>
             </PageSection>
-            <PageSection>
+            <PageSection data-testid={"model-settings-model-id__editor"}>
                 <Panel variant={"bordered"}>
                     <PanelMain>
                         <PanelMainBody>

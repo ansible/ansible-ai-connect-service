@@ -18,8 +18,12 @@ export function PageMastheadDropdown(props: {
     <Dropdown
       id={props.id}
       onSelect={onSelect}
+      data-testid="page-masthead-dropdown"
       toggle={
-        <DropdownToggle toggleIndicator={null} onToggle={onToggle}>
+        <DropdownToggle
+            toggleIndicator={null} onToggle={onToggle}
+            data-testid="page-masthead-dropdown__button"
+        >
           <Flex
             alignItems={{ default: 'alignItemsCenter' }}
             flexWrap={{ default: 'nowrap' }}
