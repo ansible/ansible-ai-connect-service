@@ -89,6 +89,11 @@ class CompletionRequestSerializer(serializers.Serializer):
                     {"prompt": "prompt does not contain the name parameter"}
                 )
 
+    def validate_model(self, value):
+        user = self.context.get('request').user
+        if user.rh_user_has_seat is False:
+            raise serializers.ValidationError("user is not entitled to customized model")
+
     def validate(self, data):
         data = super().validate(data)
 

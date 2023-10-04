@@ -167,7 +167,7 @@ class WCAClient(ModelMeshClient):
         if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
-                logger.error(err_message)
+                logger.info(err_message)
                 raise WcaBadRequest(model_id=requested_model_id)
             return self.free_model_id
 
