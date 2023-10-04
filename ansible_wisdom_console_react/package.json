@@ -85,6 +85,7 @@
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --passWithNoTests --coverage",
     "test:all": "node scripts/test.js --passWithNoTests --coverage --watchAll",
+    "test:clear": "node scripts/test.js --clearCache",
     "lint:eslint": "eslint \"**/*.{ts,tsx}\" --max-warnings=0",
     "lint:tsc": "tsc --noemit",
     "lint": "run-p lint:*"

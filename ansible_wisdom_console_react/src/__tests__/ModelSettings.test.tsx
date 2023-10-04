@@ -66,7 +66,7 @@ describe('ModelSettings',
                 expect(await screen.findByTestId("model-settings-overview__model-id")).toBeInTheDocument();
 
                 // Emulate User clicking on "Update Key" button
-                const editButton = await screen.findByTestId("model-settings-overview__edit-key-button");
+                const editButton = await screen.findByTestId("model-settings-overview__update-key-button");
                 await userEvent.click(editButton);
 
                 // The ModelSettingsKey component should be rendered
@@ -81,7 +81,7 @@ describe('ModelSettings',
                 expect(await screen.findByTestId("model-settings-overview__model-id")).toBeInTheDocument();
 
                 // Emulate User clicking on "Update Model Id" button
-                const editButton = await screen.findByTestId("model-settings-overview__edit-model-id-button");
+                const editButton = await screen.findByTestId("model-settings-overview__update-model-id-button");
                 await userEvent.click(editButton);
 
                 // The ModelSettingsModelId component should be rendered

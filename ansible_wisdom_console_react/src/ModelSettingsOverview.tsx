@@ -106,7 +106,11 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                             <Stack hasGutter={true}>
                                 {isKeyInvalid && (
                                     <StackItem>
-                                        <Alert variant="warning" title={t("KeyInvalidAlert")}/>
+                                        <Alert
+                                            variant="warning"
+                                            title={t("KeyInvalidAlert")}
+                                            data-testid={"model-settings-overview__alert-key-invalid"}
+                                        />
                                     </StackItem>
                                 )}
                                 <StackItem>
@@ -150,7 +154,9 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                                         isSmall={true}
                                                         isBusy={isValidatingKey}
                                                         isDisabled={isValidatingKey}
-                                                        onClick={testKey}>
+                                                        onClick={testKey}
+                                                        data-testid={"model-settings-overview__key-test-button"}
+                                                    >
                                                         {t("Test")}
                                                     </BusyButton>
                                                 </SplitItem>
@@ -160,15 +166,23 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                 </StackItem>
                                 <StackItem>
                                     {isWcaKeyNotFound && (
-                                        <Button variant={"primary"} icon={<PlusCircleIcon/>} onClick={setModeToKey}>{t("AddAPIKey")}</Button>
+                                        <Button
+                                            variant={"primary"}
+                                            icon={<PlusCircleIcon/>}
+                                            onClick={setModeToKey}
+                                            data-testid={"model-settings-overview__add-key-button"}
+                                        >
+                                            {t("AddAPIKey")}
+                                        </Button>
                                     )}
                                     {isWcaKeyFound && (
                                         <Button
-                                            data-testid={"model-settings-overview__edit-key-button"}
                                             variant={"primary"}
                                             icon={<CheckCircleIcon/>}
                                             isDisabled={isValidatingKey}
-                                            onClick={setModeToKey}>
+                                            onClick={setModeToKey}
+                                            data-testid={"model-settings-overview__update-key-button"}
+                                        >
                                             {t("UpdateAPIKey")}
                                         </Button>
                                     )}
@@ -200,7 +214,11 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                             <Stack hasGutter={true}>
                                 {isModelIdInvalid && (
                                     <StackItem>
-                                        <Alert variant="warning" title={t("ModelIdInvalidAlert")}/>
+                                        <Alert
+                                            variant="warning"
+                                            title={t("ModelIdInvalidAlert")}
+                                            data-testid={"model-settings-overview__alert-model-id-invalid"}
+                                        />
                                     </StackItem>
                                 )}
                                 <StackItem>
@@ -250,7 +268,9 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                                             isSmall={true}
                                                             isBusy={isValidatingModelId}
                                                             isDisabled={isValidatingModelId}
-                                                            onClick={testModelId}>
+                                                            onClick={testModelId}
+                                                            data-testid={"model-settings-overview__model-id-test-button"}
+                                                        >
                                                             {t("Test")}
                                                         </BusyButton>
                                                     </SplitItem>
@@ -261,15 +281,23 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                 </StackItem>
                                 <StackItem>
                                     {isWcaModelIdNotFound && (
-                                        <Button variant={"primary"} icon={<PlusCircleIcon/>} onClick={setModeToModelId}>{t("AddModelId")}</Button>
+                                        <Button
+                                            variant={"primary"}
+                                            icon={<PlusCircleIcon/>}
+                                            onClick={setModeToModelId}
+                                            data-testid={"model-settings-overview__add-model-id-button"}
+                                        >
+                                            {t("AddModelId")}
+                                        </Button>
                                     )}
                                     {isWcaModelIdFound && (
                                         <Button
-                                            data-testid={"model-settings-overview__edit-model-id-button"}
                                             variant={"primary"}
                                             icon={<CheckCircleIcon/>}
                                             isDisabled={isValidatingModelId}
-                                            onClick={setModeToModelId}>
+                                            onClick={setModeToModelId}
+                                            data-testid={"model-settings-overview__update-model-id-button"}
+                                        >
                                             {t("UpdateModelId")}
                                         </Button>
                                     )}

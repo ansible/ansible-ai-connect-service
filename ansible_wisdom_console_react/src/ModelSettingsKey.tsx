@@ -76,9 +76,9 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                 close={() => setKeyError(NO_ERROR)}
             />
             <PageSection
-                data-testid={"model-settings-key__bread-crumbs"}
                 variant={PageSectionVariants.light}
                 isWidthLimited
+                data-testid={"model-settings-key__bread-crumbs"}
             >
                 <Stack hasGutter={true}>
                     <StackItem>
@@ -106,7 +106,11 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                             <Stack hasGutter={true}>
                                 {isKeyInvalid && (
                                     <StackItem>
-                                        <Alert variant="warning" title={t("KeyInvalidAlert")}/>
+                                        <Alert
+                                            variant="warning"
+                                            title={t("KeyInvalidAlert")}
+                                            data-testid={"model-settings-key__alert-key-invalid"}
+                                        />
                                     </StackItem>
                                 )}
                                 <StackItem>
@@ -132,6 +136,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                                         aria-label={t("AddKey")}
                                         placeholder={t("PlaceholderKey")}
                                         isDisabled={isSaving}
+                                        data-testid={"model-settings-key__key_textbox"}
                                     />
                                 </StackItem>
                                 <StackItem>
@@ -142,12 +147,21 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
                                                 icon={<CheckCircleIcon/>}
                                                 onClick={() => save(value)}
                                                 isBusy={isSaving}
-                                                isDisabled={isSaveDisabled}>
+                                                isDisabled={isSaveDisabled}
+                                                data-testid={"model-settings-key__save-button"}
+                                            >
                                                 {t("Save")}
                                             </BusyButton>
                                         </SplitItem>
                                         <SplitItem>
-                                            <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>
+                                            <Button
+                                                variant={"secondary"}
+                                                onClick={cancel}
+                                                isDisabled={isSaving}
+                                                data-testid={"model-settings-key__cancel-button"}
+                                            >
+                                                {t("Cancel")}
+                                            </Button>
                                         </SplitItem>
                                     </Split>
                                 </StackItem>

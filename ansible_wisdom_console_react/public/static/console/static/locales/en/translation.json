@@ -30,7 +30,7 @@
   "UpdateModelIdTitle": "Update Model Id",
   "PlaceholderModelId": "Paste new Model Id here",
   "ModelIdInvalidAlert": "Model Id is invalid. Update the Model Id to a valid value or your organisation will be unable to use IBM watsonx Code Assistant.",
-  "ModelError": "The Model Id could not be saved.",
+  "ModelIdError": "The Model Id could not be saved.",
   "ModelIdValidationError": "The Model Id could not be validated.",
   "ModelIdValidationSuccess": "The Model Id is valid.",
   "Save": "Save",

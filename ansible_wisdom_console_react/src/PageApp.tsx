@@ -1,15 +1,8 @@
-import {
-    PageFramework,
-    PageLayout,
-    PageNavigation,
-    PageNavigationItem,
-    usePageNavSideBar
-} from '@ansible/ansible-ui-framework'
-import {Page, TextContent, Text, TextVariants} from '@patternfly/react-core'
+import {PageFramework, PageLayout, PageNavigation, PageNavigationItem, usePageNavSideBar} from '@ansible/ansible-ui-framework'
+import {Brand, Page, Text, TextContent, TextVariants} from '@patternfly/react-core'
 import {ReactNode, useMemo} from 'react'
 import {useTranslation} from 'react-i18next'
 import {createBrowserRouter, Navigate, Outlet, RouterProvider,} from 'react-router-dom'
-import {Brand} from "@patternfly/react-core";
 import LSLogo from "./lightspeed-logo.png"
 import './PageApp.css'
 
@@ -67,7 +60,7 @@ function LSBrand(props: { cName?: string }) {
             </TextContent>
         </div>
     )
-};
+}
 
 function PageSidebar(props: { navigation: PageNavigationItem[] }) {
     const navBar = usePageNavSideBar();
