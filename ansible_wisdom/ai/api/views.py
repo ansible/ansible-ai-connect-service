@@ -401,7 +401,9 @@ class ContentMatches(GenericAPIView):
             "organization_id": user.org_id,
             "suggestionId": suggestion_id,
         }
-        logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{content_match_data}")
+        logger.debug(
+            f"input to content matches for suggestion id {suggestion_id}:\n{content_match_data}"
+        )
 
         try:
             start_time = time.time()
