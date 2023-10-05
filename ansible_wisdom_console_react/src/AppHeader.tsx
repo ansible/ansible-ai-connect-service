@@ -20,8 +20,8 @@ export function AppHeader(props: AppHeaderProps) {
     return (
         <PageMasthead
             icon={<Brand alt="" widths={{default: '125px', md: '125px'}}>
-                        <source media="(min-width: 125px)" srcSet={RedHatLogo}/>
-                    </Brand>}
+                <source media="(min-width: 125px)" srcSet={RedHatLogo}/>
+            </Brand>}
             title=""
         >
             <ToolbarItem style={{flexGrow: 1}}/>
@@ -36,7 +36,8 @@ export function AppHeader(props: AppHeaderProps) {
                             id="logout"
                             label={t('Logout')}
                             onClick={logout}
-                            data-testid="app-header__logout">
+                            data-testid="app-header__logout"
+                        >
                             {t('Logout')}
                         </DropdownItem>
                     </PageMastheadDropdown>

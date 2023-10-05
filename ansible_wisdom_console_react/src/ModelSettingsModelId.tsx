@@ -71,14 +71,14 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
     return (
         <>
             <ErrorModal
-                message={t("ModelError")}
+                message={t("ModelIdError")}
                 hasError={modelIdError}
                 close={() => setModelIdError(NO_ERROR)}
             />
             <PageSection
-                data-testid={"model-settings-model-id__bread-crumbs"}
                 variant={PageSectionVariants.light}
                 isWidthLimited
+                data-testid={"model-settings-model-id__bread-crumbs"}
             >
                 <Stack hasGutter={true}>
                     <StackItem>
@@ -107,7 +107,11 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                             <Stack hasGutter={true}>
                                 {isModelIdInvalid && (
                                     <StackItem>
-                                        <Alert variant="warning" title={t("ModelIdInvalidAlert")}/>
+                                        <Alert
+                                            variant="warning"
+                                            title={t("ModelIdInvalidAlert")}
+                                            data-testid={"model-settings-model-id__alert-model-id-invalid"}
+                                        />
                                     </StackItem>
                                 )}
                                 <StackItem>
@@ -130,6 +134,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                                         aria-label={t("AddKey")}
                                         placeholder={t("PlaceholderModelId")}
                                         isDisabled={isSaving}
+                                        data-testid={"model-settings-model-id__model-id_textbox"}
                                     />
                                 </StackItem>
                                 <StackItem>
@@ -140,12 +145,21 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
                                                 icon={<CheckCircleIcon/>}
                                                 onClick={() => save(value)}
                                                 isBusy={isSaving}
-                                                isDisabled={isSaveDisabled}>
+                                                isDisabled={isSaveDisabled}
+                                                data-testid={"model-settings-model-id__save-button"}
+                                            >
                                                 {t("Save")}
                                             </BusyButton>
                                         </SplitItem>
                                         <SplitItem>
-                                            <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>
+                                            <Button
+                                                variant={"secondary"}
+                                                onClick={cancel}
+                                                isDisabled={isSaving}
+                                                data-testid={"model-settings-model-id__cancel-button"}
+                                            >
+                                                {t("Cancel")}
+                                            </Button>
                                         </SplitItem>
                                     </Split>
                                 </StackItem>

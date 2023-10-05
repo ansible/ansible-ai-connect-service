@@ -35,6 +35,7 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
                 }
                 key={key}
                 id={key.toString()}
+                data-testid={"alert"}
             >
             </Alert>,
             ...prevAlerts
