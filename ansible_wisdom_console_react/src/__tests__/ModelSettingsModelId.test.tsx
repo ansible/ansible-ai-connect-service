@@ -30,10 +30,10 @@ describe('ModelSettingsModelId',
                         cancel={mockCancel}
                     />
                 );
-                expect(await screen.findByTestId("model-settings-model-id__bread-crumbs")).toBeInTheDocument();
-                expect(await screen.findByTestId("model-settings-model-id__editor")).toBeInTheDocument();
-                expect(await screen.findByTestId("model-settings-model-id__save-button")).toBeInTheDocument();
-                expect(await screen.findByTestId("model-settings-model-id__cancel-button")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__bread-crumbs")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__editor")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__save-button")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__cancel-button")).toBeInTheDocument();
             });
 
         it('Click::Save::Success',
@@ -50,11 +50,11 @@ describe('ModelSettingsModelId',
                 );
 
                 // Emulate a key being entered
-                const keyTextbox = await screen.findByTestId("model-settings-model-id__model-id_textbox");
+                const keyTextbox = await screen.findByTestId("model-settings-editor__input");
                 await userEvent.type(keyTextbox, "a-new-key");
 
                 // Emulate click on "Save" button
-                const saveButton = await screen.findByTestId("model-settings-model-id__save-button");
+                const saveButton = await screen.findByTestId("model-settings-editor__save-button");
                 await userEvent.click(saveButton);
 
                 expect(mockReload).toBeCalled();
@@ -74,14 +74,14 @@ describe('ModelSettingsModelId',
                 );
 
                 // Emulate a key being entered
-                const keyTextbox = await screen.findByTestId("model-settings-model-id__model-id_textbox");
+                const keyTextbox = await screen.findByTestId("model-settings-editor__input");
                 await userEvent.type(keyTextbox, "a-new-key");
 
                 // Emulate click on "Save" button
-                const saveButton = await screen.findByTestId("model-settings-model-id__save-button");
+                const saveButton = await screen.findByTestId("model-settings-editor__save-button");
                 await userEvent.click(saveButton);
 
-                const alert = await screen.findByTestId("model-settings-model-id__alert-model-id-invalid");
+                const alert = await screen.findByTestId("model-settings-editor__alert-invalid");
                 expect(alert).toBeInTheDocument();
             });
 
@@ -99,11 +99,11 @@ describe('ModelSettingsModelId',
                 );
 
                 // Emulate a key being entered
-                const keyTextbox = await screen.findByTestId("model-settings-model-id__model-id_textbox");
+                const keyTextbox = await screen.findByTestId("model-settings-editor__input");
                 await userEvent.type(keyTextbox, "a-new-key");
 
                 // Emulate click on "Save" button
-                const saveButton = await screen.findByTestId("model-settings-model-id__save-button");
+                const saveButton = await screen.findByTestId("model-settings-editor__save-button");
                 await userEvent.click(saveButton);
 
                 // Modals are added to the 'document.body' so perform a basic check for a known field.
@@ -123,7 +123,7 @@ describe('ModelSettingsModelId',
                 );
 
                 // Emulate click on "Cancel" button
-                const cancelButton = await screen.findByTestId("model-settings-model-id__cancel-button");
+                const cancelButton = await screen.findByTestId("model-settings-editor__cancel-button");
                 await userEvent.click(cancelButton);
 
                 expect(mockCancel).toBeCalled();

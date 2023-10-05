@@ -70,7 +70,7 @@ describe('ModelSettings',
                 await userEvent.click(editButton);
 
                 // The ModelSettingsKey component should be rendered
-                expect(await screen.findByTestId("model-settings-key__editor")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__editor")).toBeInTheDocument();
             });
 
         it('Render::ModelSettingsModelId',
@@ -85,7 +85,7 @@ describe('ModelSettings',
                 await userEvent.click(editButton);
 
                 // The ModelSettingsModelId component should be rendered
-                expect(await screen.findByTestId("model-settings-model-id__editor")).toBeInTheDocument();
+                expect(await screen.findByTestId("model-settings-editor__editor")).toBeInTheDocument();
             });
 
     });
