@@ -369,7 +369,8 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def test_codematch(self):
         model_id = "sample_model_name"
         suggestions = [
-            "- name: install ffmpeg on Red Hat Enterprise Linux\n  ansible.builtin.package:\n    name:\n      - ffmpeg\n    state: present\n",
+            "- name: install ffmpeg on Red Hat Enterprise Linux\n  "
+            "ansible.builtin.package:\n    name:\n      - ffmpeg\n    state: present\n",
             "- name: This is another test",
         ]
 
