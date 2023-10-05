@@ -311,9 +311,25 @@ class FeedbackRequestSerializer(serializers.Serializer):
 
 class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['suggestion', 'suggestionId', 'model']
+        fields = ['suggestion', 'suggestionId']
 
     suggestion = serializers.CharField(trim_whitespace=False)
+    suggestionId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Suggestion ID",
+        help_text=(
+            "A UUID that identifies the particular suggestion"
+            " attribution data is being requested for."
+        ),
+    )
+
+
+class ContentMatchRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['suggestions', 'suggestionId', 'model']
+
+    suggestions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format='hex_verbose',
         required=False,
@@ -388,6 +404,30 @@ class AttributionResponseSerializer(serializers.Serializer):
         fields = ['attributions']
 
     attributions = serializers.ListField(child=AttributionSerializer())
+
+
+class ContentMatchSerializer(serializers.Serializer):
+    repo_name = serializers.CharField()
+    repo_url = serializers.URLField()
+    path = serializers.CharField(allow_blank=True)
+    license = serializers.CharField()
+    data_source = EnumField(choices=DataSource)
+    ansible_type = EnumField(choices=AnsibleType)
+    score = serializers.FloatField()
+
+
+class ContentMatchListSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['contentmatch']
+
+    contentmatch = serializers.ListField(child=ContentMatchSerializer())
+
+
+class ContentMatchResponseSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['contentmatches']
+
+    contentmatches = serializers.ListField(child=ContentMatchListSerializer())
 
 
 @extend_schema_serializer(

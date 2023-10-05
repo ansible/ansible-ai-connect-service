@@ -1239,40 +1239,29 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 
 @modify_settings()
-class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
-    @patch('ai.api.views.Attributions.perform_search')
-    def test_wca_attribution_with_no_seated_user(self, mock_perform_search):
+class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
+    def test_wca_contentmatch_with_no_seated_user(self):
         self.user.rh_user_has_seat = False
         self.client.force_authenticate(user=self.user)
         payload = {
-            "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
-            "tasks:\n    - name: Install Apache\n",
+            "suggestions": [
+                "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
+            ],
             "suggestionId": str(uuid.uuid4()),
         }
 
-        self.client.post(reverse('attributions'), payload)
-        mock_perform_search.assert_called_once()
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.NOT_IMPLEMENTED)
 
-    @patch('ai.api.views.Attributions.perform_content_matching')
-    def test_wca_attribution_high_level_with_seated_user(self, mock_perform_content_matching):
+    def test_wca_contentmatch_with_seated_user_single_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         payload = {
-            "suggestion": "---\n- hosts: all\n  become: yes\n\n  "
-            "tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        self.client.post(reverse('attributions'), payload)
-        mock_perform_content_matching.assert_called_once()
-
-    def test_wca_attribution_with_seated_user(self):
-        self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
-        self.client.force_authenticate(user=self.user)
-        payload = {
-            "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
-            "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "suggestions": [
+                "\n - name: install nginx on RHEL\n become: true\n "
+                "ansible.builtin.package:\n name: nginx\n state: present\n"
+            ],
             "suggestionId": str(uuid.uuid4()),
         }
 
@@ -1306,7 +1295,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('attributions'), payload)
+            r = self.client.post(reverse('contentmatches'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()
             self.assertEqual(
@@ -1317,19 +1306,118 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
 
-            self.assertEqual(r.data["attributions"][0]["repo_name"], repo_name)
-            self.assertEqual(r.data["attributions"][0]["repo_url"], repo_url)
-            self.assertEqual(r.data["attributions"][0]["path"], path)
-            self.assertEqual(r.data["attributions"][0]["license"], license)
-            self.assertEqual(r.data["attributions"][0]["data_source"], data_source)
+            content_match = r.data["contentmatches"][0]["contentmatch"][0]
 
-    def test_wca_attribution_with_seated_user_with_custom_model_id(self):
+            self.assertEqual(content_match["repo_name"], repo_name)
+            self.assertEqual(content_match["repo_url"], repo_url)
+            self.assertEqual(content_match["path"], path)
+            self.assertEqual(content_match["license"], license)
+            self.assertEqual(content_match["data_source"], data_source)
+
+    def test_wca_contentmatch_with_seated_user_multi_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
         payload = {
-            "suggestion": "\n - name: install nginx on RHEL\n become: true\n "
-            "ansible.builtin.package:\n name: nginx\n state: present\n",
+            "suggestions": [
+                "\n- name: install nginx on RHEL\n",
+                "\n- name: Copy Fathom config into place.\n",
+            ],
+            "suggestionId": str(uuid.uuid4()),
+        }
+
+        repo_name = "adfinis-sygroup.nginx"
+        repo_url = "https://galaxy.ansible.com/davidalger/nginx"
+        path = "tasks/main.yml"
+        license = "mit"
+        data_source = "Ansible Galaxy roles"
+
+        repo_name2 = "fiaasco.solr"
+        repo_url2 = "https://galaxy.ansible.com/fiaasco/solr"
+        path2 = "tasks/cores.yml"
+        license2 = "mit"
+        data_source2 = "Ansible Galaxy roles"
+
+        response = MockResponse(
+            json=[
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": "davidalger.nginx",
+                            "repo_url": "https://galaxy.ansible.com/davidalger/nginx",
+                            "path": "tasks/main.yml",
+                            "license": "mit",
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.83672893,
+                        },
+                        {
+                            "repo_name": repo_name,
+                            "repo_url": repo_url,
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.8233435,
+                        },
+                    ],
+                    "meta": {"encode_duration": 135.66, "search_duration": 145.81},
+                },
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": repo_name2,
+                            "repo_url": repo_url2,
+                            "path": path2,
+                            "license": license2,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.7182885,
+                        }
+                    ],
+                    "meta": {"encode_duration": 183.02, "search_duration": 31.97},
+                },
+            ],
+            status_code=200,
+        )
+        model_client = WCAClient(inference_url='https://wca_api_url')
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        model_client.get_api_key = Mock(return_value='org-api-key')
+        model_client.get_model_id = Mock(return_value='org-model-id')
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            r = self.client.post(reverse('contentmatches'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            model_client.get_token.assert_called_once()
+            self.assertEqual(
+                model_client.session.post.call_args.args[0],
+                "https://wca_api_url/v1/wca/codematch/ansible",
+            )
+            self.assertEqual(
+                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+            )
+
+            content_match = r.data["contentmatches"][0]["contentmatch"][1]
+            content_match2 = r.data["contentmatches"][1]["contentmatch"][0]
+
+            self.assertEqual(content_match["repo_name"], repo_name)
+            self.assertEqual(content_match["repo_url"], repo_url)
+            self.assertEqual(content_match["path"], path)
+            self.assertEqual(content_match["license"], license)
+            self.assertEqual(content_match["data_source"], data_source)
+
+            self.assertEqual(content_match2["repo_name"], repo_name2)
+            self.assertEqual(content_match2["repo_url"], repo_url2)
+            self.assertEqual(content_match2["path"], path2)
+            self.assertEqual(content_match2["license"], license2)
+            self.assertEqual(content_match2["data_source"], data_source2)
+
+    def test_wca_contentmatch_with_seated_user_with_custom_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "suggestions": [
+                "\n - name: install nginx on RHEL\n become: true\n "
+                "ansible.builtin.package:\n name: nginx\n state: present\n"
+            ],
             "suggestionId": str(uuid.uuid4()),
             "model": "org-model-id",
         }
@@ -1362,7 +1450,7 @@ class TestAttributionsWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('attributions'), payload)
+            r = self.client.post(reverse('contentmatches'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()
             self.assertEqual(
