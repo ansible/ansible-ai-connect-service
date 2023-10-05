@@ -44,9 +44,14 @@ class ARICaller:
         if suggestion:
             lines = suggestion.splitlines()
             first_line = lines[0]
-            suggestion_indent = len(first_line) - len(first_line.lstrip())
-            if suggestion_indent < prompt_indent + 2:
-                padding_level = (prompt_indent + 2) - suggestion_indent
+            first_line_lstrip = first_line.lstrip()
+            extra_indent = 0
+            if first_line_lstrip.startswith('- ') is False:
+                # single-line suggestions indent two extra spaces
+                extra_indent = 2
+            suggestion_indent = len(first_line) - len(first_line_lstrip)
+            if suggestion_indent < prompt_indent + extra_indent:
+                padding_level = (prompt_indent + extra_indent) - suggestion_indent
                 suggestion = cls.indent(suggestion, padding_level)
         return suggestion
 
@@ -61,6 +66,10 @@ class ARICaller:
         # **- name: sample propmt   <-- prompt_indent could be 0 for roles or any number
         #                               of spaces for playbook
         # ****ansible.builtin.debug:   <-- suggestion_indent should be prompt_indent + 2
+        #       msg: "test"
+        # **# sample prompt          <-- multi task prompt_indent
+        # **- name: sample propmt    <-- suggestion_indent should equal prompt_indent
+        # ****ansible.builtin.debug:
         #       msg: "test"
 
         prompt_indent = cls.get_indent_size(prompt)
