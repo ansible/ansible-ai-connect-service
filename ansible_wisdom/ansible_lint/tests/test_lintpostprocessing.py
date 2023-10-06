@@ -50,9 +50,14 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
         def run_lint():
             AnsibleLintCaller().run_linter(normal_sample_yaml)
 
-        with ThreadPool(5) as pool:
-            for _ in range(5):
-                pool.apply(run_lint)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            with ThreadPool(5) as pool:
+                for _ in range(5):
+                    pool.apply(run_lint)
+            self.assertNotInLog(
+                "RuntimeError: Task directory already exists",
+                log,
+            )
 
     def test_multi_thread_with_error(self):
         """Invoke AnsibleLintCaller in multi-thread with a fixed work directory."""
