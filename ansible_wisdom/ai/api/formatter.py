@@ -176,8 +176,8 @@ def extract_prompt_and_context(input):
     context = ''
     prompt = ''
     if input:
-        input = input.rstrip()
-        segs = input.rsplit('\n', 1)
+        _input = input.rstrip()
+        segs = _input.rsplit('\n', 1)
 
         if len(segs) == 2:
             context = segs[0] + '\n'

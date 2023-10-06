@@ -242,9 +242,11 @@ class AMSCheck(BaseCheck):
 
 class MockAlwaysTrueCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
         pass
 
     def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
@@ -259,9 +261,11 @@ class MockAlwaysTrueCheck(BaseCheck):
 
 class MockAlwaysFalseCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
         pass
 
     def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:

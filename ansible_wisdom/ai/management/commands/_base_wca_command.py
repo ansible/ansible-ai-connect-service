@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from ai.api.aws.wca_secret_manager import (
     Suffixes,
     WcaSecretManager,
@@ -30,8 +32,12 @@ class BaseWCACommand(BaseCommand):
         except WcaSecretManagerError as e:
             raise CommandError(e)
 
+    @abstractmethod
     def do_command(self, client, args, options):
+        # Abstract method
         pass
 
+    @abstractmethod
     def get_secret_suffix(self) -> Suffixes:
+        # Abstract method
         pass

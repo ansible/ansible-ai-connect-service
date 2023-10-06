@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
 
 from ai.api.data.data_model import APIPayload
@@ -15,8 +15,8 @@ class CompletionContext:
     payload: APIPayload = None
     original_indent: int = 0
 
-    predictions: dict[str, Union[list[str], str]] = None
-    anonymized_predictions: dict[str, Union[list[str], str]] = None
-    post_processed_predictions: dict[str, Union[list[str], str]] = None
+    predictions: dict[str, Union[list[str], str]] = field(default_factory=dict)
+    anonymized_predictions: dict[str, Union[list[str], str]] = field(default_factory=dict)
+    post_processed_predictions: dict[str, Union[list[str], str]] = field(default_factory=dict)
 
-    task_results: list[dict[str, str]] = None
+    task_results: list[dict[str, str]] = field(default_factory=list)
