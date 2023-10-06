@@ -372,7 +372,7 @@ class ContentMatches(GenericAPIView):
 
         if request.user.rh_user_has_seat:
             try:
-                response_serializer = self.perform_content_matching(
+                response_serializer = self.perform_content_matching_wca(
                     model_id, suggestion_id, request.user, request_data
                 )
                 return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
@@ -380,12 +380,18 @@ class ContentMatches(GenericAPIView):
                 logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
                 raise ServiceUnavailable
         else:
-            return Response(
-                {"message": "Not implemented"},
-                status=rest_framework_status.HTTP_501_NOT_IMPLEMENTED,
-            )
+            try:
+                response_serializer = self.perform_content_matching_opensearch(
+                    request_data, request.user
+                )
+                return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+            except Exception as exc:
+                logger.exception(
+                    f"error requesting content matches for suggestion {suggestion_id}: {exc}"
+                )
+                raise ServiceUnavailable
 
-    def perform_content_matching(
+    def perform_content_matching_wca(
         self,
         model_id: str,
         suggestion_id: str,
@@ -478,6 +484,49 @@ class ContentMatches(GenericAPIView):
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
             raise WcaEmptyResponseException
+        return response_serializer
+
+    def perform_content_matching_opensearch(self, request_data, user: User):
+        index = None
+        if settings.LAUNCHDARKLY_SDK_KEY:
+            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+            logger.debug(f"flag model_name has value {model_tuple}")
+            model_parts = model_tuple.split(':')
+            if len(model_parts) == 4:
+                *_, index = model_parts
+                logger.info(f"using index '{index}' for content matching")
+
+        response_data = {"contentmatches": []}
+
+        suggestion = request_data['suggestions'][0]
+        start_time = time.time()
+        data = ai_search.search(suggestion, index)
+        duration = round((time.time() - start_time) * 1000, 2)
+        content_match_data = {
+            "contentmatch": data['attributions'],
+            "meta": data['meta'],
+        }
+        response_data["contentmatches"].append(content_match_data)
+        content_match_meta_data = content_match_data["meta"]
+        suggestion_id = str(request_data.get('suggestionId', ''))
+        self._write_to_segment(
+            user,
+            suggestion_id,
+            duration,
+            content_match_meta_data.get("encode_duration", ""),
+            content_match_meta_data.get("search_duration", ""),
+            content_match_data,
+        )
+        try:
+            response_serializer = ContentMatchResponseSerializer(data=response_data)
+            response_serializer.is_valid(raise_exception=True)
+        except Exception:
+            process_error_count.labels(stage='response_serialization_validation').inc()
+            logger.exception(f"error serializing final response for suggestion {suggestion_id}")
+            raise InternalServerError
+        if not response_serializer.is_valid():
+            logging.error(response_serializer.errors)
+
         return response_serializer
 
     def _write_to_segment(
