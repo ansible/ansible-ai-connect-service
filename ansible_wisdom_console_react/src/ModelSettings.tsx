@@ -7,11 +7,16 @@ import {ModelSettingsOverview} from "./ModelSettingsOverview";
 import {useWcaKey} from "./hooks/useWcaKeyAPI";
 import {WcaKey, WcaModelId} from "./api/types";
 import {useWcaModelId} from "./hooks/useWcaModelIdAPI";
+import {UserNotAllowed} from "./UserNotAllowed";
 
-export type Mode = 'OVERVIEW' | 'SET_WCA_KEY' | 'SET_MODEL_ID';
+export type Mode = 'OVERVIEW' | 'SET_WCA_KEY' | 'SET_MODEL_ID' | 'NOT_ALLOWED';
 
-export function ModelSettings() {
-    const [mode, setMode] = useState<Mode>('OVERVIEW');
+export interface ModelSettingsProps {
+    isUserAllowed?: boolean
+}
+export function ModelSettings(props: ModelSettingsProps) {
+    const {isUserAllowed} = props;
+    const [mode, setMode] = useState<Mode>(isUserAllowed ? 'OVERVIEW': 'NOT_ALLOWED');
     const [reloadWcaKey, setReloadWcaKey] = useState<boolean>(true);
     const [reloadWcaModelId, setReloadWcaModelId] = useState<boolean>(true);
     const [wcaKey, setWcaKey] = useState<WcaKey>({status: "NOT_ASKED"});
@@ -29,6 +34,9 @@ export function ModelSettings() {
 
     return (
         <Page>
+            {mode === 'NOT_ALLOWED' && (
+                <UserNotAllowed/>
+            )}
             {mode === 'OVERVIEW' && (
                 <ModelSettingsOverview
                     wcaKey={wcaKey}

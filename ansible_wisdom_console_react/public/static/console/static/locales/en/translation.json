@@ -42,5 +42,7 @@
   "ErrorDetails": "Details",
   "Test": "Test",
   "Close": "Close",
-  "UnknownUser": "<Unknown>"
+  "UnknownUser": "<Unknown>",
+  "noPagePermissions": "You currently do not have permissions to access this page.",
+  "contactOrgText": "Please contact your organization if you need to receive these permissions."
 }

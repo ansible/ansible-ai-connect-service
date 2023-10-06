@@ -16,6 +16,7 @@ export function PageApp(props: {
     header?: ReactNode
 }) {
     const {navigationItems, basename, header} = props
+    // TODO: Do not allow certain navigation items if user not autz?
     const navigationItemsWithRoot = useMemo<PageNavigationItem[]>(
         () => [
             {

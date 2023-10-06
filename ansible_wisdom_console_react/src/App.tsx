@@ -7,12 +7,14 @@ import {PageApp} from "./PageApp";
 
 export interface AppProps {
     userName?: string
+    isUserAllowed?: boolean
 }
 
 export function App(props: AppProps) {
     const {t} = useTranslation();
-    const {userName} = props;
+    const {userName, isUserAllowed} = props;
 
+    // TODO: Do not allow certain navigation items if user not autz?
     const navigationItems = useMemo<PageNavigationItem[]>(
         () => [
             {
@@ -24,7 +26,7 @@ export function App(props: AppProps) {
                         // Model settings
                         label: t('ModelSettings'),
                         path: 'settings',
-                        element: <ModelSettings/>
+                        element: <ModelSettings isUserAllowed={isUserAllowed}/>
                     },
                 ],
             },
