@@ -10,7 +10,7 @@ import '../index.css'
 import {AppDenied} from "./AppDenied";
 
 const userName = document.getElementById('user_name')?.innerText ?? undefined;
-const hasSubscription = document.getElementById('has_subscription')?.innerText.toLowerCase() === 'true' ?? false
+const hasSubscription = document.getElementById('has_subscription')?.innerText.toLowerCase() === 'true';
 
 createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>

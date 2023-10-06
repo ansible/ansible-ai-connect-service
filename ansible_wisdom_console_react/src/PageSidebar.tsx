@@ -4,10 +4,18 @@ import {useTranslation} from 'react-i18next'
 import LSLogo from "./lightspeed-logo.png"
 import './PageApp.css'
 
-function LSBrand(props: { cName?: string }) {
+interface LSBrandProps {
+    cName?: string
+}
+
+function LSBrand(props: LSBrandProps) {
     const {t} = useTranslation();
+    const {cName} = props;
     return (
-        <div className={props.cName}>
+        <div
+            data-testid={"page-sidebar__brand"}
+            className={cName}
+        >
             <Brand alt="" widths={{default: '40px', md: '40px'}} className={'ansible-lightspeed-logo'}>
                 <source media="(min-width: 40px)" srcSet={LSLogo}/>
             </Brand>
@@ -20,15 +28,24 @@ function LSBrand(props: { cName?: string }) {
                 </Text>
             </TextContent>
         </div>
-    )
+    );
 }
 
-export function PageSidebar(props: { navigation: PageNavigationItem[] }) {
+interface PageSidebarProps {
+    navigation: PageNavigationItem[];
+}
+
+export function PageSidebar(props: PageSidebarProps) {
     const navBar = usePageNavSideBar();
+    const {navigation} = props;
     const barStateClassName = navBar.isOpen ? "pf-m-expanded" : "pf-m-collapsed";
     const groupClassName = ' pf-c-page__sidebar ' + barStateClassName;
-    return (<div className={groupClassName}>
-        <LSBrand cName={groupClassName} aria-hidden={!navBar.isOpen}/>
-        <PageNavigation navigation={props.navigation}/>
-    </div>)
+    return (
+        <div className={groupClassName}>
+            <LSBrand cName={groupClassName} aria-hidden={!navBar.isOpen}/>
+            <div data-testid={"page-sidebar__navigation"}>
+                <PageNavigation navigation={navigation}/>
+            </div>
+        </div>
+    );
 }
