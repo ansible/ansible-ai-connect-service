@@ -24,14 +24,25 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(r.template_name, ['console/console.html'])
 
-    # Mock Permissions not being satisfied
+    # Mock IsOrganisationAdministrator Permission not being satisfied
     @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=False)
-    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
-    def test_get_when_authenticated_missing_permission(self, *args):
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
+    def test_get_when_authenticated_missing_permission_administrator(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))
-        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(r.template_name, ['console/denied.html'])
+
+    # Mock IsOrganisationLightspeedSubscriber Permission not being satisfied
+    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
+    def test_get_when_authenticated_missing_permission_subscription(self, *args):
+        self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('console'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(r.template_name, ['console/denied.html'])
 
     def test_permission_classes(self, *args):
         url = reverse('console')
@@ -40,8 +51,6 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         required_permissions = [
             IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
-            IsOrganisationAdministrator,
-            IsOrganisationLightspeedSubscriber,
             AcceptedTermsPermission,
         ]
         self.assertEqual(len(view.permission_classes), len(required_permissions))
@@ -56,3 +65,4 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.assertIsInstance(response.context_data, dict)
         context = response.context_data
         self.assertEqual(context['user_name'], self.user.username)
+        self.assertEqual(context['rh_org_has_subscription'], self.user.rh_org_has_subscription)

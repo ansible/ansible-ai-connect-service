@@ -37,10 +37,10 @@ class ConsoleView(ProtectedTemplateView):
 
     def get_template_names(self):
         if not IsOrganisationAdministrator().has_permission(self.request, self):
-            return "console/denied.html"
+            return ["console/denied.html"]
 
         if not IsOrganisationLightspeedSubscriber().has_permission(self.request, self):
-            return "console/denied.html"
+            return ["console/denied.html"]
 
         return super().get_template_names()
 
