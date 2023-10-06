@@ -26,16 +26,27 @@ class LoginView(auth_views.LoginView):
 class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
 
+    # Permission checks for the following are handled when the template selection is made.
+    # - IsOrganisationAdministrator,
+    # - IsOrganisationLightspeedSubscriber,
     permission_classes = [
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsOrganisationAdministrator,
-        IsOrganisationLightspeedSubscriber,
         AcceptedTermsPermission,
     ]
+
+    def get_template_names(self):
+        if not IsOrganisationAdministrator().has_permission(self.request, self):
+            return ["console/denied.html"]
+
+        if not IsOrganisationLightspeedSubscriber().has_permission(self.request, self):
+            return ["console/denied.html"]
+
+        return super().get_template_names()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user:
             context["user_name"] = self.request.user.username
+            context["rh_org_has_subscription"] = self.request.user.rh_org_has_subscription
         return context
