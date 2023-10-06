@@ -25,9 +25,9 @@ class AnsibleLintCaller:
     def run_linter(
         self,
         inline_completion: str,
-    ):
+    ) -> str:
         with tempfile.TemporaryDirectory() as tmp_root:
-            self._run_linter(
+            return self._run_linter(
                 inline_completion,
                 tmp_root,
             )

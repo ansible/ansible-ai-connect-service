@@ -33,12 +33,14 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
 
     def test_ansible_lint_caller(self):
         """Run a normal case"""
-        self.ansibleLintCaller.run_linter(normal_sample_yaml)
+        result = self.ansibleLintCaller.run_linter(normal_sample_yaml)
+        self.assertIsNotNone(result)
 
     def test_ansible_lint_caller_with_error(self):
         """Run an error case"""
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.ansibleLintCaller.run_linter(error_sample_yaml)
+            result = self.ansibleLintCaller.run_linter(error_sample_yaml)
+            self.assertIsNotNone(result)
             self.assertInLog(
                 "ruamel.yaml.scanner.ScannerError: while scanning a simple key",
                 log,
