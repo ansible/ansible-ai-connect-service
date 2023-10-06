@@ -7,9 +7,9 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom";
 import {PageDenied} from "./PageDenied";
 
 interface PageAppDeniedProps {
-    header: ReactNode
-    navigationItems: PageNavigationItem[];
-    hasSubscription: boolean;
+    readonly header: ReactNode
+    readonly navigationItems: PageNavigationItem[];
+    readonly hasSubscription: boolean;
 }
 
 /**

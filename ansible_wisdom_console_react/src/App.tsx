@@ -6,7 +6,7 @@ import {PageNavigationItem} from "@ansible/ansible-ui-framework";
 import {PageApp} from "./PageApp";
 
 export interface AppProps {
-    userName?: string
+    readonly userName?: string
 }
 
 export function App(props: AppProps) {

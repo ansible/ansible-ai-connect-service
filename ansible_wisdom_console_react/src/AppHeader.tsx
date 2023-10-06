@@ -6,7 +6,7 @@ import {PageMastheadDropdown} from "./PageMastheadDropdown";
 import RedHatLogo from './redhat-logo.svg';
 
 export interface AppHeaderProps {
-    userName: string
+    readonly userName: string
 }
 
 export function AppHeader(props: AppHeaderProps) {
