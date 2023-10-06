@@ -33,12 +33,12 @@ export function PageDenied(props: PageDeniedProps) {
                                                 </Icon>
                                             </StackItem>
                                             <StackItem>
-                                                <TextContent>
+                                                <TextContent data-testid={"page-denied__title"}>
                                                     <Text component={TextVariants.h1}>{t(titleKey)}</Text>
                                                 </TextContent>
                                             </StackItem>
                                             <StackItem>
-                                                <TextContent>
+                                                <TextContent data-testid={"page-denied__caption"}>
                                                     <Text component={TextVariants.p}>{t(captionKey)}</Text>
                                                 </TextContent>
                                             </StackItem>
