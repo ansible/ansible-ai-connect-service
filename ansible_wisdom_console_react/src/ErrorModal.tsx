@@ -4,9 +4,9 @@ import {useTranslation} from "react-i18next";
 import './ErrorModal.css';
 
 interface ErrorModalProps {
-    message: string,
-    hasError: HasError,
-    close: () => void
+    readonly message: string,
+    readonly  hasError: HasError,
+    readonly close: () => void
 }
 
 export type HasError = { inError: false } | { inError: true, message: string };

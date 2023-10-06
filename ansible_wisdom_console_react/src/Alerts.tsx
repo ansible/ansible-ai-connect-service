@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import './ModelSettings.css';
 
 export type AlertsHandle = {
-    addAlert: (title: string) => void;
+    readonly addAlert: (title: string) => void;
 };
 
 type AlertsProps = {}

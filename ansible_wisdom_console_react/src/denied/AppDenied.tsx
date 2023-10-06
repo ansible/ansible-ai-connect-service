@@ -6,7 +6,7 @@ import {AppHeader} from "../AppHeader";
 import {AppProps} from "../App";
 
 interface AppDeniedProps extends AppProps {
-    hasSubscription: boolean
+    readonly hasSubscription: boolean
 }
 
 export function AppDenied(props: AppDeniedProps) {

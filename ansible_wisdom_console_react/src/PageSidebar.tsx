@@ -5,7 +5,7 @@ import LSLogo from "./lightspeed-logo.png"
 import './PageApp.css'
 
 interface LSBrandProps {
-    cName?: string
+    readonly   cName?: string
 }
 
 function LSBrand(props: LSBrandProps) {
@@ -32,7 +32,7 @@ function LSBrand(props: LSBrandProps) {
 }
 
 interface PageSidebarProps {
-    navigation: PageNavigationItem[];
+    readonly   navigation: PageNavigationItem[];
 }
 
 export function PageSidebar(props: PageSidebarProps) {

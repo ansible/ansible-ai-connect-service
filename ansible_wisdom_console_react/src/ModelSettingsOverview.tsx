@@ -11,10 +11,10 @@ import {Alerts, AlertsHandle} from "./Alerts";
 import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsOverviewProps {
-    wcaKey: WcaKey;
-    wcaModelId: WcaModelId;
-    setModeToKey: () => void
-    setModeToModelId: () => void
+    readonly   wcaKey: WcaKey;
+    readonly   wcaModelId: WcaModelId;
+    readonly    setModeToKey: () => void
+    readonly   setModeToModelId: () => void
 }
 
 export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {

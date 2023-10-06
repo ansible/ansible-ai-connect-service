@@ -4,8 +4,8 @@ import {ExclamationCircleIcon} from "@patternfly/react-icons";
 import {useTranslation} from "react-i18next";
 
 interface PageDeniedProps {
-    titleKey: string;
-    captionKey: string;
+    readonly titleKey: string;
+    readonly captionKey: string;
 }
 
 export function PageDenied(props: PageDeniedProps) {
@@ -20,9 +20,9 @@ export function PageDenied(props: PageDeniedProps) {
                 </TextContent>
             </PageSection>
             <PageSection>
-                <Panel variant={"bordered"} style={{height:"100%"}}>
-                    <PanelMain style={{height:"100%"}}>
-                        <PanelMainBody style={{height:"100%"}}>
+                <Panel variant={"bordered"} style={{height: "100%"}}>
+                    <PanelMain style={{height: "100%"}}>
+                        <PanelMainBody style={{height: "100%"}}>
                             <Bullseye>
                                 <EmptyState>
                                     <EmptyStateBody>

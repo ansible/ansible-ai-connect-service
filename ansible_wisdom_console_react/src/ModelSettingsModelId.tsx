@@ -7,9 +7,9 @@ import {DELAY} from "./api/globals";
 import {ModelSettingsEditor} from "./ModelSettingsEditor";
 
 interface ModelSettingsModelIdProps {
-    wcaModelId: WcaModelId;
-    cancel: () => void;
-    reload: () => void;
+    readonly   wcaModelId: WcaModelId;
+    readonly   cancel: () => void;
+    readonly   reload: () => void;
 }
 
 export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
