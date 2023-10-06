@@ -4,8 +4,8 @@
 {%  block header %}
     <meta charset="utf-8"/>
     <title>Ansible Wisdom Lightspeed - Admin Portal</title>
-    <script defer="defer" src="{% static '/console/static/js/index.js' %}"></script>
-    <link href="{% static '/console/static/css/index.css' %}" rel='stylesheet'>
+    <script defer="defer" src="{% static '/console/static/js/denied.js' %}"></script>
+    <link href="{% static '/console/static/css/denied.css' %}" rel='stylesheet'>
 {% endblock header %}
 
 {% block content %}
@@ -15,4 +15,5 @@
     <!-- It is safe to pass the value embedded in the host DOM -->
     <!-- as it is only used for display purposes and servers no other value -->
     <div id="user_name">{{user_name}}</div>
+    <div id="has_subscription">{{rh_org_has_subscription}}</div>
 {% endblock content %}

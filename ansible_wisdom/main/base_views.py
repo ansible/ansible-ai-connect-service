@@ -1,6 +1,7 @@
 import logging
 
 from django.core import exceptions as core_exceptions
+from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
 from rest_framework import exceptions
 from rest_framework.request import Request
@@ -41,6 +42,9 @@ class ProtectedTemplateView(TemplateView):
 
             # This is a TemplateResponse
             return handler(request, *args, **kwargs)
+
+        except exceptions.NotAuthenticated:
+            return HttpResponseRedirect("/login")
 
         except Exception as exc:
             # Map _internal_ errors to a generic PermissionDenied error
