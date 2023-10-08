@@ -35,7 +35,12 @@ from users.models import User
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
-from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
+from .data.data_model import (
+    AttributionsResponseDto,
+    BaseContentMatchResponseDto,
+    ContentMatchPayloadData,
+    ContentMatchResponseDto,
+)
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
 from .serializers import (
@@ -370,28 +375,19 @@ class ContentMatches(GenericAPIView):
         suggestion_id = str(request_data.get('suggestionId', ''))
         model_id = str(request_data.get('model', ''))
 
-        if request.user.rh_user_has_seat:
-            try:
-                response_serializer = self.perform_content_matching_wca(
+        try:
+            if request.user.rh_user_has_seat:
+                response_serializer = self.perform_content_matching(
                     model_id, suggestion_id, request.user, request_data
                 )
-                return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-            except Exception:
-                logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
-                raise ServiceUnavailable
-        else:
-            try:
-                response_serializer = self.perform_content_matching_opensearch(
-                    request_data, request.user
-                )
-                return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-            except Exception as exc:
-                logger.exception(
-                    f"error requesting content matches for suggestion {suggestion_id}: {exc}"
-                )
-                raise ServiceUnavailable
+            else:
+                response_serializer = self.perform_search(request_data, request.user)
+            return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+        except Exception:
+            logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
+            raise ServiceUnavailable
 
-    def perform_content_matching_wca(
+    def perform_content_matching(
         self,
         model_id: str,
         suggestion_id: str,
@@ -427,14 +423,7 @@ class ContentMatches(GenericAPIView):
                 attribution_encoding_hist.observe(content_match_dto.encode_duration / 1000)
                 attribution_search_hist.observe(content_match_dto.search_duration / 1000)
 
-                self._write_to_segment(
-                    user,
-                    suggestion_id,
-                    duration,
-                    content_match_dto.encode_duration,
-                    content_match_dto.search_duration,
-                    content_match_dto.content_matches,
-                )
+                self._write_to_segment(user, suggestion_id, duration, content_match_dto)
 
             try:
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
@@ -486,7 +475,7 @@ class ContentMatches(GenericAPIView):
             raise WcaEmptyResponseException
         return response_serializer
 
-    def perform_content_matching_opensearch(self, request_data, user: User):
+    def perform_search(self, request_data, user: User):
         index = None
         if settings.LAUNCHDARKLY_SDK_KEY:
             model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
@@ -497,26 +486,18 @@ class ContentMatches(GenericAPIView):
                 logger.info(f"using index '{index}' for content matching")
 
         response_data = {"contentmatches": []}
-
         suggestion = request_data['suggestions'][0]
+
         start_time = time.time()
-        data = ai_search.search(suggestion, index)
+
+        response_item = ai_search.search(suggestion, index)
+
         duration = round((time.time() - start_time) * 1000, 2)
-        content_match_data = {
-            "contentmatch": data['attributions'],
-            "meta": data['meta'],
-        }
-        response_data["contentmatches"].append(content_match_data)
-        content_match_meta_data = content_match_data["meta"]
+
+        attributions_dto = AttributionsResponseDto(**response_item)
+        response_data["contentmatches"].append(attributions_dto.content_matches)
         suggestion_id = str(request_data.get('suggestionId', ''))
-        self._write_to_segment(
-            user,
-            suggestion_id,
-            duration,
-            content_match_meta_data.get("encode_duration", ""),
-            content_match_meta_data.get("search_duration", ""),
-            content_match_data,
-        )
+        self._write_to_segment(user, suggestion_id, duration, attributions_dto)
         try:
             response_serializer = ContentMatchResponseSerializer(data=response_data)
             response_serializer.is_valid(raise_exception=True)
@@ -529,15 +510,12 @@ class ContentMatches(GenericAPIView):
 
         return response_serializer
 
-    def _write_to_segment(
-        self, user, suggestion_id, duration, encode_duration, search_duration, data
-    ):
-        contentmatch = data.get('contentmatch', [])
+    def _write_to_segment(self, user, suggestion_id, duration, data: BaseContentMatchResponseDto):
         event = {
             'suggestionId': suggestion_id,
             'duration': duration,
-            'encode_duration': encode_duration,
-            'search_duration': search_duration,
-            'contentmatch': contentmatch,
+            'encode_duration': data.encode_duration,
+            'search_duration': data.search_duration,
+            'contentmatch': data.content_matches,
         }
         send_segment_event(event, "contentmatch", user)
