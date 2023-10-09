@@ -6,6 +6,7 @@ from functools import cache
 from http import HTTPStatus
 
 import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +213,7 @@ class AMSCheck(BaseCheck):
 
     def rh_org_has_subscription(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"}
+        params = {"search": "sku = '" + settings.SKU + "' AND sku_count > 0"}
         self.update_bearer_token()
 
         try:
