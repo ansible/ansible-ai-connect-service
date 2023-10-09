@@ -46,7 +46,7 @@ class ContentMatchResponseData(BaseModel):
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source: Enum = DataSource.UNKNOWN
+    data_source: Enum = None
     ansible_type = -1
 
     def __init__(self, **data: Any):
