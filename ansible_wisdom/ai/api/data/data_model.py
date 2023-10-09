@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+from abc import abstractmethod
 from typing import Any, TypedDict, Union
 from uuid import UUID
 
@@ -45,17 +45,28 @@ class ContentMatchResponseData(BaseModel):
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source: Enum = DataSource.UNKNOWN
+    data_source = -2
     ansible_type = -1
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        self.data_source = DataSource[self.data_source_description.replace("-", "_").upper()]
+        # The following will be removed once IBM returns the datasource as required
+        if self.data_source == -2:
+            self.data_source = DataSource[
+                self.data_source_description.replace("-", "_").upper()
+            ].value
 
 
-class ContentMatchResponseDto(BaseModel):
-    code_matches: list[ContentMatchResponseData]
+class BaseContentMatchResponseDto(BaseModel):
     meta: dict
+
+    @abstractmethod
+    def data(self) -> dict:
+        pass
+
+    @property
+    def content_matches(self):
+        return {"contentmatch": self.data()}
 
     @property
     def encode_duration(self):
@@ -65,6 +76,16 @@ class ContentMatchResponseDto(BaseModel):
     def search_duration(self):
         return self.meta.get("search_duration", "")
 
-    @property
-    def content_matches(self):
-        return {"contentmatch": self.dict()["code_matches"]}
+
+class ContentMatchResponseDto(BaseContentMatchResponseDto):
+    code_matches: list[ContentMatchResponseData]
+
+    def data(self):
+        return self.dict()["code_matches"]
+
+
+class AttributionsResponseDto(BaseContentMatchResponseDto):
+    attributions: list[ContentMatchResponseData]
+
+    def data(self):
+        return self.dict()["attributions"]

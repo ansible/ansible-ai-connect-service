@@ -1240,8 +1240,33 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
-    def test_wca_contentmatch_with_no_seated_user(self):
+    @patch('ai.search.search')
+    def test_wca_contentmatch_with_no_seated_user(self, mock_search):
         self.user.rh_user_has_seat = False
+
+        repo_name = "robertdebock.nginx"
+        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
+        path = "tasks/main.yml"
+        license = "apache-2.0"
+
+        mock_search.return_value = {
+            'attributions': [
+                {
+                    'repo_name': repo_name,
+                    'repo_url': repo_url,
+                    'path': path,
+                    'license': license,
+                    'data_source': DataSource.GALAXY_R,
+                    'ansible_type': AnsibleType.UNKNOWN,
+                    'score': 0.0,
+                },
+            ],
+            'meta': {
+                'encode_duration': 1000,
+                'search_duration': 2000,
+            },
+        }
+
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1251,7 +1276,51 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         }
 
         r = self.client.post(reverse('contentmatches'), payload)
-        self.assertEqual(r.status_code, HTTPStatus.NOT_IMPLEMENTED)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+        content_match = r.data["contentmatches"][0]["contentmatch"][0]
+
+        self.assertEqual(content_match["repo_name"], repo_name)
+        self.assertEqual(content_match["repo_url"], repo_url)
+        self.assertEqual(content_match["path"], path)
+        self.assertEqual(content_match["license"], license)
+        self.assertEqual(content_match["data_source"], "Ansible Galaxy roles")
+
+    @patch('ai.search.search')
+    def test_wca_contentmatch_with_no_seated_user_verify_single_task(self, mock_search):
+        self.user.rh_user_has_seat = False
+        self.client.force_authenticate(user=self.user)
+
+        mock_search.return_value = {
+            'attributions': [
+                {
+                    'repo_name': 'repo_name',
+                    'repo_url': 'http://example.com',
+                    'path': '/path',
+                    'license': 'license',
+                    'data_source': DataSource.UNKNOWN,
+                    'ansible_type': AnsibleType.UNKNOWN,
+                    'score': 0.0,
+                },
+            ],
+            'meta': {
+                'encode_duration': 1000,
+                'search_duration': 2000,
+            },
+        }
+
+        payload = {
+            "suggestions": [
+                "\n- name: install nginx on RHEL\n",
+                "\n- name: Copy Fathom config into place.\n",
+            ],
+            "suggestionId": str(uuid.uuid4()),
+        }
+
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+        mock_search.assert_called_with(payload["suggestions"][0], None)
 
     def test_wca_contentmatch_with_seated_user_single_task(self):
         self.user.rh_user_has_seat = True
