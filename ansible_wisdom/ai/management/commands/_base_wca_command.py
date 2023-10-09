@@ -34,10 +34,8 @@ class BaseWCACommand(BaseCommand):
 
     @abstractmethod
     def do_command(self, client, args, options):
-        # Abstract method
         pass
 
     @abstractmethod
     def get_secret_suffix(self) -> Suffixes:
-        # Abstract method
         pass

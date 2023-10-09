@@ -12,5 +12,4 @@ class BaseWCAPostCommand(BaseWCACommand):
 
     @abstractmethod
     def get_success_message(self, org_id, key_name) -> str:
-        # Abstract method
         pass

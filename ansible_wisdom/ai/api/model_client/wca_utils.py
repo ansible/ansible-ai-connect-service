@@ -9,7 +9,6 @@ T = TypeVar('T')
 class Check(Generic[T]):
     @abstractmethod
     def check(self, context: T) -> Exception:
-        # Abstract method
         pass
 
 

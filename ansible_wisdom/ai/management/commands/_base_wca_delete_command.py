@@ -11,5 +11,4 @@ class BaseWCADeleteCommand(BaseWCACommand):
 
     @abstractmethod
     def get_success_message(self, org_id) -> str:
-        # Abstract method
         pass

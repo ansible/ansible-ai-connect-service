@@ -15,10 +15,8 @@ class BaseWCAGetCommand(BaseWCACommand):
 
     @abstractmethod
     def get_message_found(self, org_id, response) -> str:
-        # Abstract method
         pass
 
     @abstractmethod
     def get_message_not_found(self, org_id) -> str:
-        # Abstract method
         pass

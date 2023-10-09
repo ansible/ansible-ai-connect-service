@@ -18,7 +18,6 @@ process_error_count = Counter(
 class PipelineElement:
     @abstractmethod
     def process(self, context) -> None:
-        # Abstract method
         pass
 
 
@@ -33,7 +32,6 @@ class Pipeline(Generic[T, C]):
 
     @abstractmethod
     def execute(self) -> T:
-        # Abstract method
         pass
 
 
