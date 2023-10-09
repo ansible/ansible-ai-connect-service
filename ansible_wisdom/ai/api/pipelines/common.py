@@ -1,4 +1,5 @@
 import json
+from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from ai.api.model_client.exceptions import ModelTimeoutError, WcaException
@@ -15,6 +16,7 @@ process_error_count = Counter(
 
 
 class PipelineElement:
+    @abstractmethod
     def process(self, context) -> None:
         pass
 
@@ -28,6 +30,7 @@ class Pipeline(Generic[T, C]):
         self.pipeline = pipeline
         self.context = context
 
+    @abstractmethod
     def execute(self) -> T:
         pass
 

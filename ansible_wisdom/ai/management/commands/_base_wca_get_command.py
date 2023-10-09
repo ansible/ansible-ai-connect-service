@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from ai.management.commands._base_wca_command import BaseWCACommand
 
 
@@ -11,8 +13,10 @@ class BaseWCAGetCommand(BaseWCACommand):
 
         self.stdout.write(self.get_message_found(org_id, response))
 
+    @abstractmethod
     def get_message_found(self, org_id, response) -> str:
         pass
 
+    @abstractmethod
     def get_message_not_found(self, org_id) -> str:
         pass

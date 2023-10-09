@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from ai.management.commands._base_wca_command import BaseWCACommand
 
 
@@ -8,5 +10,6 @@ class BaseWCAPostCommand(BaseWCACommand):
         key_name = client.save_secret(org_id, self.get_secret_suffix(), secret)
         self.stdout.write(self.get_success_message(org_id, key_name))
 
+    @abstractmethod
     def get_success_message(self, org_id, key_name) -> str:
         pass

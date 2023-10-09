@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from .exceptions import WcaEmptyResponse, WcaInvalidModelId
@@ -6,6 +7,7 @@ T = TypeVar('T')
 
 
 class Check(Generic[T]):
+    @abstractmethod
     def check(self, context: T) -> Exception:
         pass
 
