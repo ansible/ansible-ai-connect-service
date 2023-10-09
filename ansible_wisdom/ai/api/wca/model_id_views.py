@@ -117,9 +117,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
                 logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
                 return Response(status=HTTP_204_NO_CONTENT)
 
-            return validate_and_respond(
-                request._request.user.rh_user_has_seat, api_key, model_id, save_and_respond
-            )
+            return validate_and_respond(api_key, model_id, save_and_respond)
         except WcaSecretManagerError as e:
             logger.error(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
@@ -156,7 +154,6 @@ class WCAModelIdValidatorView(RetrieveAPIView):
             api_key = get_api_key(secret_manager, org_id)
             model_id = get_model_id(secret_manager, org_id)
             return validate_and_respond(
-                request._request.user.rh_user_has_seat,
                 api_key,
                 model_id,
                 lambda: Response(status=HTTP_200_OK),
@@ -166,10 +163,9 @@ class WCAModelIdValidatorView(RetrieveAPIView):
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def validate_and_respond(rh_user_has_seat, api_key, model_id, on_success):
+def validate_and_respond(api_key, model_id, on_success):
     try:
         validate(
-            rh_user_has_seat,
             api_key,
             model_id,
         )
@@ -188,17 +184,16 @@ def validate_and_respond(rh_user_has_seat, api_key, model_id, on_success):
     return on_success()
 
 
-def validate(rh_user_has_seat, api_key, model_id):
-    if rh_user_has_seat:
-        if api_key is None:
-            logger.exception('User with a seat has no API key')
-            raise WcaKeyNotFound
-        if model_id is None:
-            logger.exception('User with a seat must have a Model Id')
-            raise WcaModelIdNotFound
-        if model_id is settings.ANSIBLE_WCA_FREE_MODEL_ID:
-            logger.exception('User with a seat cannot use the non-commercial Model Id')
-            raise WcaInvalidModelId
+def validate(api_key, model_id):
+    if api_key is None:
+        logger.exception('Mo API key specified.')
+        raise WcaKeyNotFound
+    if model_id is None:
+        logger.exception('No Model Id key specified.')
+        raise WcaModelIdNotFound
+    if model_id is settings.ANSIBLE_WCA_FREE_MODEL_ID:
+        logger.exception('Cannot a non-commercial Model Id')
+        raise WcaInvalidModelId
 
     # If no validation issues, let's infer (given an api_key and model_id)
     # and expect some prediction (result), otherwise an exception will be raised.

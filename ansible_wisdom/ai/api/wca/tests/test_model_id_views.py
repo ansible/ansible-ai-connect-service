@@ -189,10 +189,9 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
-# This test class checks that an org-admin, but with no-seat, works
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
-class TestWCAModelIdValidatorViewAsUserWithoutSeat(WisdomServiceAPITestCaseBase):
+class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
@@ -212,15 +211,6 @@ class TestWCAModelIdValidatorViewAsUserWithoutSeat(WisdomServiceAPITestCaseBase)
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
-    def test_validate_when_no_api_key(self, *args):
-        self.user.organization_id = '123'
-        self.client.force_authenticate(user=self.user)
-        self.mock_wca_client.infer = Mock(return_value={})
-        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
-
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
     def test_validate_error_authentication(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id_validator'))
@@ -228,6 +218,29 @@ class TestWCAModelIdValidatorViewAsUserWithoutSeat(WisdomServiceAPITestCaseBase)
 
     def test_validate_error_no_org_id(self, *args):
         self.client.force_authenticate(user=self.user)
+        r = self.client.get(reverse('wca_model_id_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_validate_error_no_api_key(self, *args):
+        self.user.organization_id = '123'
+        self.client.force_authenticate(user=self.user)
+        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
+        r = self.client.get(reverse('wca_model_id_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_validate_error_no_model_id(self, *args):
+        self.user.organization_id = '123'
+        self.client.force_authenticate(user=self.user)
+        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_model_id
+        r = self.client.get(reverse('wca_model_id_validator'))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
+    def test_validate_error_free_model_id(self, *args):
+        self.user.organization_id = '123'
+        self.user.rh_user_has_seat = True
+        self.client.force_authenticate(user=self.user)
+        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
@@ -239,7 +252,7 @@ class TestWCAModelIdValidatorViewAsUserWithoutSeat(WisdomServiceAPITestCaseBase)
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-    def test_validate_error_model_id_key_not_found(self, *args):
+    def test_validate_error_api_key_not_found(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
@@ -262,50 +275,6 @@ class TestWCAModelIdValidatorViewAsUserWithoutSeat(WisdomServiceAPITestCaseBase)
 
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-
-
-@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
-@patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
-class TestWCAModelIdValidatorViewOnUserWithSeat(WisdomServiceAPITestCaseBase):
-    def setUp(self):
-        super().setUp()
-        self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
-        )
-        self.mock_secret_manager = self.secret_manager_patcher.start()
-        self.wca_client_patcher = patch.object(
-            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
-        )
-        self.mock_wca_client = self.wca_client_patcher.start()
-
-    def test_validate(self, *args):
-        self.user.organization_id = '123'
-        self.client.force_authenticate(user=self.user)
-        self.mock_wca_client.infer = Mock(return_value={})
-
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
-    def test_error_no_api_key(self, *args):
-        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
-        self.assert_test_case(HTTPStatus.FORBIDDEN)
-
-    def test_error_no_model_id(self, *args):
-        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_model_id
-        self.assert_test_case(HTTPStatus.BAD_REQUEST)
-
-    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
-    def test_error_free_model_id(self, *args):
-        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
-        self.assert_test_case(HTTPStatus.BAD_REQUEST)
-
-    def assert_test_case(self, expected):
-        self.user.organization_id = '123'
-        self.user.rh_user_has_seat = True
-        self.client.force_authenticate(user=self.user)
-        self.mock_wca_client.infer = Mock(return_value={})
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, expected)
 
 
 def mock_get_secret_no_api_key(*args, **kwargs):
