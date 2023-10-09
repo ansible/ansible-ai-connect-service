@@ -1,6 +1,5 @@
 import logging
 from abc import abstractmethod
-from enum import Enum
 from typing import Any, TypedDict, Union
 from uuid import UUID
 
@@ -46,14 +45,16 @@ class ContentMatchResponseData(BaseModel):
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source: Enum = None
+    data_source = -2
     ansible_type = -1
 
     def __init__(self, **data: Any):
         super().__init__(**data)
         # The following will be removed once IBM returns the datasource as required
-        if not self.data_source:
-            self.data_source = DataSource[self.data_source_description.replace("-", "_").upper()]
+        if self.data_source == -2:
+            self.data_source = DataSource[
+                self.data_source_description.replace("-", "_").upper()
+            ].value
 
 
 class BaseContentMatchResponseDto(BaseModel):
