@@ -24,6 +24,7 @@ import {CheckCircleIcon, OutlinedQuestionCircleIcon} from "@patternfly/react-ico
 import './ModelSettings.css';
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {BusyButton} from "./BusyButton";
+import {SingleInlineEdit} from "./SingleInlineEdit";
 
 interface ModelSettingsEditorCaptionIds {
 
@@ -137,9 +138,8 @@ export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
                                     </TextContent>
                                 </StackItem>
                                 <StackItem>
-                                    <TextInput
+                                    <SingleInlineEdit
                                         value={value}
-                                        type="text"
                                         onChange={(value) => {
                                             setValue(value);
                                             clearInvalidState();
@@ -147,7 +147,6 @@ export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
                                         aria-label={t(fieldInputCaption)}
                                         placeholder={t(fieldInputPlaceholder)}
                                         isDisabled={isSaving}
-                                        data-testid={"model-settings-editor__input"}
                                     />
                                 </StackItem>
                                 <StackItem>
