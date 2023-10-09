@@ -3,7 +3,7 @@
 > **Note:** This repository is under active development and is not yet ready for production use.
 
 #### Wisdom Service
-This repository contains a Python/Django application under the `ansible-wisdom-service/ansible_wisdom` path. This application serves Ansible task suggestions for consumption by the Ansible VSCode
+This repository contains a Python/Django application under the `ansible-wisdom-service/ansible_wisdom` path. This application serves Ansible task suggestions for consumption by the Ansible VS Code
 extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint,
 etc.
 
@@ -201,7 +201,7 @@ Create a local admin user:
    > Skip this step if you already created the application.
 
    > Before running this step, make sure you set the `SOCIAL_AUTH_GITHUB_KEY` and `SOCIAL_AUTH_GITHUB_SECRET`
-   environment variables for VSCode connection.
+   environment variables for VS Code connection.
 
     ```bash
     make create-application
@@ -251,7 +251,7 @@ oc new-app wisdom-service
 ## Testing the completion API
 
 The sample request below tests the task suggestion prediction API provided by the Django application. This is the same
-request the VSCode extension will make.
+request the VS Code extension will make.
 
 Request:
 
@@ -276,9 +276,9 @@ Response:
 }
 ```
 
-## Using the VSCode extension
+## Using the VS Code extension
 
-Access the updated Ansible VSCode extension here:
+Access the updated Ansible VS Code extension here:
 https://drive.google.com/drive/u/1/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg
 
 In order to successfully connect to your local dev environment using
@@ -300,9 +300,9 @@ and then run the Django command to create the application:
 ```
 
 This sets up a matching client ID to the one that is coded directly
-into the VSCode extension.
+into the VS Code extension.
 
-Review the screen recording for instruction on configuring the VSCode
+Review the screen recording for instruction on configuring the VS Code
 extension to access your running wisdom service.
 
 Note: If, after running ```python manage.py runserver``` you encounter an AssertionError, use the following
@@ -326,7 +326,7 @@ compose [development environment](#development-environment) described below, put
 env vars in a .env file in the `tools/docker-compose` directory.
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
-authentication token that will be configured in VSCode (coming soon) to access the task prediction API.
+authentication token that will be configured in VS Code (coming soon) to access the task prediction API.
 
 > **Warning:** The Django `runserver` command launches `ansible-wisdom-service` as http://127.0.0.1:8000. It is important that the host name used in your browser and that configured in GitHub OAuth Authorization callback URL are identical. Should you use Django's link the GitHub OAuth Authorization callback URL will need to use `127.0.0.1` in lieu of `localhost` too.
 
