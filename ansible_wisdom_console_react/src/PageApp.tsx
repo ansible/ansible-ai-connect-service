@@ -44,7 +44,12 @@ export function PageApp(props: PageAppProps) {
     return <RouterProvider router={router}/>
 }
 
-function PageRouterLayout(props: { header?: ReactNode; navigationItems: PageNavigationItem[] }) {
+interface PageRouterLayoutProps {
+    header?: ReactNode;
+    navigationItems: PageNavigationItem[];
+}
+
+function PageRouterLayout(props: PageRouterLayoutProps) {
     const {header, navigationItems} = props
     return (
         <PageFramework>

@@ -4,10 +4,10 @@ import {useTranslation} from "react-i18next";
 
 export interface InlineTextInputProps {
     value: string;
-    onChange?: (value: string) => void;
-    'aria-label'?: string;
-    placeholder?: string | undefined;
-    isDisabled?: boolean;
+    onChange: (value: string) => void;
+    'aria-label': string;
+    placeholder: string;
+    isDisabled: boolean;
 }
 
 export const SingleInlineEdit = (props: InlineTextInputProps) => {

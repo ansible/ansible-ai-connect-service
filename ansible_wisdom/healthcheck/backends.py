@@ -7,6 +7,8 @@ from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
 from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
+ERROR_MESSAGE = "An error occurred"
+
 
 class WcaTokenRequestException(ServiceUnavailable):
     """There was an error trying to get a WCA token."""
@@ -53,7 +55,7 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
             else:
                 pass
         except Exception as e:
-            self.add_error(ServiceUnavailable('An error occurred'), e)
+            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
     def identifier(self):
         return self.__class__.__name__  # Display name on the endpoint.
@@ -68,7 +70,7 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
                 FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY
             )
         except Exception as e:
-            self.add_error(ServiceUnavailable('An error occurred'), e)
+            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
     def identifier(self):
         return self.__class__.__name__
@@ -89,10 +91,10 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
             )
         except WcaTokenFailure:
             # If there's a Token failure we'll also not be able to execute Model inference.
-            self.add_error(WcaTokenRequestException("An error occurred"))
-            self.add_error(WcaModelRequestException("An error occurred"))
+            self.add_error(WcaTokenRequestException(ERROR_MESSAGE))
+            self.add_error(WcaModelRequestException(ERROR_MESSAGE))
         except WcaInferenceFailure:
-            self.add_error(WcaModelRequestException("An error occurred"))
+            self.add_error(WcaModelRequestException(ERROR_MESSAGE))
 
     def pretty_status(self):
         token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
@@ -113,7 +115,7 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
         try:
             apps.get_app_config("ai").get_seat_checker().self_test()
         except Exception as e:
-            self.add_error(ServiceUnavailable('An error occurred'), e)
+            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
     def identifier(self):
         return self.__class__.__name__
