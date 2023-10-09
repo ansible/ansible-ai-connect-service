@@ -3,7 +3,7 @@ import {ReactNode, useCallback, useState} from 'react';
 import {useBreakpoint} from "@ansible/ansible-ui-framework";
 
 interface PageMastheadDropdownProps {
-    readonly    id: string;
+    readonly id: string;
     readonly icon: ReactNode;
     readonly label?: string;
     readonly children: ReactNode;

@@ -5,7 +5,7 @@ import LSLogo from "./lightspeed-logo.png"
 import './PageApp.css'
 
 interface LSBrandProps {
-    readonly   cName?: string
+    readonly cName?: string
 }
 
 function LSBrand(props: LSBrandProps) {

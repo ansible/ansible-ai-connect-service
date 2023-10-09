@@ -30,26 +30,26 @@ interface ModelSettingsEditorCaptionIds {
 
     readonly errorModalCaption: string;
     readonly invalidAlertCaption: string;
-    readonly  setValueTitle: string;
-    readonly  updateValueTitle: string;
-    readonly  fieldCaption: string;
-    readonly  fieldCaptionTooltip: string;
-    readonly  fieldInputCaption: string;
+    readonly setValueTitle: string;
+    readonly updateValueTitle: string;
+    readonly fieldCaption: string;
+    readonly fieldCaptionTooltip: string;
+    readonly fieldInputCaption: string;
     readonly fieldInputPlaceholder: string;
 
 }
 
 interface ModelSettingsEditorProps {
 
-    readonly   hasValue: boolean;
-    readonly   isSaving: boolean;
-    readonly   isValueInvalid: boolean;
-    readonly   clearInvalidState: () => void;
-    readonly   errorState: HasError;
-    readonly   setErrorState: (state: HasError) => void;
-    readonly  save: (value: string) => void;
-    readonly   cancel: () => void;
-    readonly   captions: ModelSettingsEditorCaptionIds
+    readonly hasValue: boolean;
+    readonly isSaving: boolean;
+    readonly isValueInvalid: boolean;
+    readonly clearInvalidState: () => void;
+    readonly errorState: HasError;
+    readonly setErrorState: (state: HasError) => void;
+    readonly save: (value: string) => void;
+    readonly cancel: () => void;
+    readonly captions: ModelSettingsEditorCaptionIds
 }
 
 export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {

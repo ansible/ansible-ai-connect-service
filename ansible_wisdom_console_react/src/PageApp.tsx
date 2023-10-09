@@ -6,9 +6,9 @@ import './PageApp.css'
 import {PageSidebar} from "./PageSidebar";
 
 interface PageAppProps {
-    readonly   basename: string;
-    readonly   header: ReactNode;
-    readonly  navigationItems: PageNavigationItem[];
+    readonly basename: string;
+    readonly header: ReactNode;
+    readonly navigationItems: PageNavigationItem[];
 }
 
 // This is copied from ansible/ansible-ui/framework and modified to support redirection
