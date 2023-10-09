@@ -17,6 +17,7 @@
   "ModelIdTooltip": "Used to control which Model is used for inference.",
   "ModelIdDescription": "The Id of the IBM watsonx Code Assistant Model to use for inference.",
   "NoModelId": "No Model Id has been submitted.",
+  "NoModelIdNoAPIKey": "It is not possible to set the Model Id as no API Key has been submitted. Please first set the API Key.",
   "AddModelId": "Add Model Id",
   "UpdateModelId": "Update Model Id",
   "AddKeyTitle": "Add IBM Cloud API Key",

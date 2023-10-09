@@ -117,9 +117,9 @@ describe('ModelSettingsOverview',
                 expect(setModeToKey).toBeCalled();
             });
 
-        it('Add::ModelId',
+        it('Add::ModelId::APIKeyFound',
             async () => {
-                const wcaKey: WcaKey = {status: "SUCCESS_NOT_FOUND"};
+                const wcaKey: WcaKey = {status: "SUCCESS", data: {lastUpdate: new Date()}};
                 const wcaModelId: WcaModelId = {status: "SUCCESS_NOT_FOUND"};
 
                 render(
@@ -136,6 +136,27 @@ describe('ModelSettingsOverview',
                 await userEvent.click(addModelIdButton);
 
                 expect(setModeToModelId).toBeCalled();
+            });
+
+        it('Add::ModelId::APIKeyNotFound',
+            async () => {
+                const wcaKey: WcaKey = {status: "SUCCESS_NOT_FOUND"};
+                const wcaModelId: WcaModelId = {status: "SUCCESS_NOT_FOUND"};
+
+                render(
+                    <ModelSettingsOverview
+                        wcaKey={wcaKey}
+                        wcaModelId={wcaModelId}
+                        setModeToKey={setModeToKey}
+                        setModeToModelId={setModeToModelId}
+                    />
+                );
+
+                const alert = await screen.findByTestId("model-settings-overview__model-id-set-api-key-first");
+                expect(alert).toHaveTextContent("NoModelIdNoAPIKey");
+
+                const addModelIdButton = await screen.findByTestId("model-settings-overview__add-model-id-button");
+                expect(addModelIdButton).toBeDisabled();
             });
 
         it('Update::ModelId',

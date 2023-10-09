@@ -11,10 +11,10 @@ import {Alerts, AlertsHandle} from "./Alerts";
 import {BusyButton} from "./BusyButton";
 
 interface ModelSettingsOverviewProps {
-    readonly   wcaKey: WcaKey;
-    readonly   wcaModelId: WcaModelId;
-    readonly    setModeToKey: () => void
-    readonly   setModeToModelId: () => void
+    readonly wcaKey: WcaKey;
+    readonly wcaModelId: WcaModelId;
+    readonly setModeToKey: () => void
+    readonly setModeToModelId: () => void
 }
 
 export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
@@ -221,6 +221,13 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                         />
                                     </StackItem>
                                 )}
+                                {isWcaModelIdNotFound && !isWcaKeyFound && !isWcaKeyLoading && !isWcaModelIdLoading && (
+                                    <Alert
+                                        variant="info"
+                                        title={t("NoModelIdNoAPIKey")}
+                                        data-testid={"model-settings-overview__model-id-set-api-key-first"}
+                                    />
+                                )}
                                 <StackItem>
                                     <TextContent>
                                         <Text component={"h3"}>
@@ -236,17 +243,17 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                 </StackItem>
                                 <StackItem>
                                     <StackItem>
-                                        {isWcaModelIdLoading && (
+                                        {(isWcaKeyLoading || isWcaModelIdLoading) && (
                                             <div className={"Loading"} data-testid={"model-settings-overview__model-id-loading"}>
                                                 <Skeleton height="100%" screenreaderText={t("Loading")}/>
                                             </div>
                                         )}
-                                        {isWcaModelIdNotFound && (
+                                        {isWcaModelIdNotFound && !isWcaKeyLoading && (
                                             <TextContent data-testid={"model-settings-overview__model-id-not-found"}>
                                                 <Text component={"p"}>{t("NoModelId")}</Text>
                                             </TextContent>
                                         )}
-                                        {isWcaModelIdFound && (
+                                        {isWcaModelIdFound && !isWcaKeyLoading && (
                                             <>
                                                 <TextContent data-testid={"model-settings-overview__model-id"}>
                                                     <Text component={"h3"}>{t("ModelId")}</Text>
@@ -280,17 +287,18 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                                     </StackItem>
                                 </StackItem>
                                 <StackItem>
-                                    {isWcaModelIdNotFound && (
+                                    {isWcaModelIdNotFound && !isWcaKeyLoading && (
                                         <Button
                                             variant={"primary"}
                                             icon={<PlusCircleIcon/>}
                                             onClick={setModeToModelId}
+                                            isDisabled={!isWcaKeyFound}
                                             data-testid={"model-settings-overview__add-model-id-button"}
                                         >
                                             {t("AddModelId")}
                                         </Button>
                                     )}
-                                    {isWcaModelIdFound && (
+                                    {isWcaModelIdFound && !isWcaKeyLoading && (
                                         <Button
                                             variant={"primary"}
                                             icon={<CheckCircleIcon/>}
