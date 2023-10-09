@@ -36,7 +36,7 @@ jobs:
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Compile
-        uses: icrawl/action-tsc@v1
+        run: npm run build
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Run linter

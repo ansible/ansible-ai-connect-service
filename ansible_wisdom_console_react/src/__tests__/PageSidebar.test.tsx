@@ -33,9 +33,11 @@ describe('PageSidebar',
                 expect(navigation).toBeInTheDocument();
 
                 // These are really horrible checks but <PageNavigation/> doesn't have much to query against.
+                // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
                 const navItemElement = container.querySelector(".pf-c-nav__link");
-                expect(navItemElement.getAttribute("id")).toEqual("nav-item__id");
-                expect(navItemElement.textContent).toEqual("nav-item__label");
+                expect(navItemElement).not.toBeNull();
+                expect(navItemElement?.getAttribute("id")).toEqual("nav-item__id");
+                expect(navItemElement?.textContent).toEqual("nav-item__label");
             });
 
         it('Rendering::ToggleState',
@@ -58,7 +60,7 @@ describe('PageSidebar',
                     </MemoryRouter>
                 );
                 // This is really horrible but <PageMasthead/> doesn't have much to query against.
-                const toggleButton = await screen.getByText((content, element) => element.tagName.toLowerCase() === "button");
+                const toggleButton = screen.getByText((content, element) => element?.tagName.toLowerCase() === "button");
 
                 // Emulate collapse
                 await userEvent.click(toggleButton);
@@ -66,6 +68,7 @@ describe('PageSidebar',
                 expect(brand.className).toContain("pf-m-collapsed");
 
                 let navigation = await screen.findByTestId("page-sidebar__navigation");
+                // eslint-disable-next-line testing-library/no-node-access
                 expect(navigation.children[0].className).toContain("pf-m-collapsed");
 
                 // Emulate expansion
@@ -74,6 +77,7 @@ describe('PageSidebar',
                 expect(brand.className).toContain("pf-m-collapsed");
 
                 navigation = await screen.findByTestId("page-sidebar__navigation");
+                // eslint-disable-next-line testing-library/no-node-access
                 expect(navigation.children[0].className).toContain("pf-m-collapsed");
             });
 
