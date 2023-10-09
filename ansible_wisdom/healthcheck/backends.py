@@ -89,12 +89,12 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
                 "",
                 "- name: install ffmpeg on Red Hat Enterprise Linux",
             )
-        except WcaTokenFailure:
+        except WcaTokenFailure as e:
             # If there's a Token failure we'll also not be able to execute Model inference.
-            self.add_error(WcaTokenRequestException(ERROR_MESSAGE))
-            self.add_error(WcaModelRequestException(ERROR_MESSAGE))
-        except WcaInferenceFailure:
-            self.add_error(WcaModelRequestException(ERROR_MESSAGE))
+            self.add_error(WcaTokenRequestException(ERROR_MESSAGE), e)
+            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
+        except WcaInferenceFailure as e:
+            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
 
     def pretty_status(self):
         token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
