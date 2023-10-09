@@ -192,7 +192,10 @@ def validate(api_key, model_id):
         logger.exception('No Model Id key specified.')
         raise WcaModelIdNotFound
     if model_id is settings.ANSIBLE_WCA_FREE_MODEL_ID:
-        logger.exception('Cannot a non-commercial Model Id')
+        logger.exception(
+            'Cannot use a non-commercial Model Id. '
+            'Please contact with your organization\'s system administration.'
+        )
         raise WcaInvalidModelId
 
     # If no validation issues, let's infer (given an api_key and model_id)

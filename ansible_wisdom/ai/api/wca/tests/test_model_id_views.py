@@ -224,6 +224,12 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
     def test_validate_error_no_api_key(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
+
+        def mock_get_secret_no_api_key(*args, **kwargs):
+            if args[1] == Suffixes.MODEL_ID:
+                return {'SecretString': 'some_model_id'}
+            return {'SecretString': None}
+
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -231,6 +237,12 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
     def test_validate_error_no_model_id(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
+
+        def mock_get_secret_no_model_id(*args, **kwargs):
+            if args[1] == Suffixes.API_KEY:
+                return {'SecretString': 'some_api_key'}
+            return {'SecretString': None}
+
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_model_id
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
@@ -238,8 +250,13 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
     def test_validate_error_free_model_id(self, *args):
         self.user.organization_id = '123'
-        self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
+
+        def mock_get_secret_free_model_id(*args, **kwargs):
+            if args[1] == Suffixes.API_KEY:
+                return {'SecretString': 'some_api_key'}
+            return {'SecretString': 'free_model_id'}
+
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
@@ -275,21 +292,3 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
 
         r = self.client.get(reverse('wca_model_id_validator'))
         self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-
-
-def mock_get_secret_no_api_key(*args, **kwargs):
-    if args[1] == Suffixes.MODEL_ID:
-        return {'SecretString': 'some_model_id'}
-    return {'SecretString': None}
-
-
-def mock_get_secret_no_model_id(*args, **kwargs):
-    if args[1] == Suffixes.API_KEY:
-        return {'SecretString': 'some_api_key'}
-    return {'SecretString': None}
-
-
-def mock_get_secret_free_model_id(*args, **kwargs):
-    if args[1] == Suffixes.API_KEY:
-        return {'SecretString': 'some_api_key'}
-    return {'SecretString': 'free_model_id'}
