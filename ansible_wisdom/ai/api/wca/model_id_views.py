@@ -186,12 +186,12 @@ def validate_and_respond(api_key, model_id, on_success):
 
 def validate(api_key, model_id):
     if api_key is None:
-        logger.exception('Mo API key specified.')
+        logger.exception('No API key specified.')
         raise WcaKeyNotFound
     if model_id is None:
         logger.exception('No Model Id key specified.')
         raise WcaModelIdNotFound
-    if model_id is settings.ANSIBLE_WCA_FREE_MODEL_ID:
+    if model_id == settings.ANSIBLE_WCA_FREE_MODEL_ID:
         logger.exception(
             'Cannot use a non-commercial Model Id. '
             'Please contact with your organization\'s system administration.'
