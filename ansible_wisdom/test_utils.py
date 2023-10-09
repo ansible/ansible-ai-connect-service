@@ -2,7 +2,7 @@ from ast import literal_eval
 from unittest import TestCase
 
 
-class WisdomLogWarenessMixin:
+class WisdomLogAwareMixin:
     @staticmethod
     def searchInLogOutput(s, logs):
         for log in logs.output:
@@ -36,5 +36,5 @@ class WisdomLogWarenessMixin:
             self.assertIsNotNone(event['timestamp'])
 
 
-class WisdomServiceLogAwareTestCase(TestCase, WisdomLogWarenessMixin):
+class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
     pass

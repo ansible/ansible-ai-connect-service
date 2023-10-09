@@ -20,7 +20,7 @@ from django.urls import reverse
 from requests import Response
 from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
-from test_utils import WisdomLogWarenessMixin
+from test_utils import WisdomLogAwareMixin
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def is_status_ok(status):
         return len(child_status) == len(status)
 
 
-class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
+class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
         self.wca_client_patcher = patch.object(
@@ -81,6 +81,28 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
         r = self.client.get(reverse('liveness_probe'), format='json')
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertJSONEqual(r.content, {"status": "ok"})
+
+    @staticmethod
+    def getHealthCheckErrorString(plugin_name, plugin_status):
+        return (
+            f'HEALTH CHECK ERROR: {{"name": "{plugin_name}", '
+            f'"status": {json.dumps(plugin_status)}, "time_taken":'
+        )
+
+    def assertHealthCheckErrorInLog(self, log, error_msg, plugin_name, plugin_status):
+        self.assertInLog(error_msg, log)
+        self.assertInLog(
+            self.getHealthCheckErrorString(plugin_name, plugin_status),
+            log,
+        )
+
+    def assertHealthCheckErrorNotInLog(self, log, error_msg, plugin_name, plugin_status):
+        logger.error('Dummy Error')  # assertLogs expects at least one log entry...
+        self.assertNotInLog(error_msg, log)
+        self.assertNotInLog(
+            self.getHealthCheckErrorString(plugin_name, plugin_status),
+            log,
+        )
 
     def assert_basic_data(self, r: Response, expected_status: str) -> (str, []):
         """
@@ -143,11 +165,11 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                     self.assertTrue(is_status_ok(dependency['status']))
                 self.assertGreaterEqual(dependency['time_taken'], 0)
 
-                self.assertInLog('Exception', log)
-                self.assertInLog(
-                    'HEALTH CHECK ERROR: {"name": "model-server", "status": '
-                    '"unavailable: An error occurred", "time_taken":',
+                self.assertHealthCheckErrorInLog(
                     log,
+                    'Exception',
+                    'model-server',
+                    'unavailable: An error occurred',
                 )
 
         time.sleep(1)
@@ -159,12 +181,11 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
             data = json.loads(r.content)
             self.assertEqual(timestamp, data['timestamp'])
 
-            logger.error('Dummy Error')  # assertLogs expects at least one log entry...
-            self.assertNotInLog('Exception', log)
-            self.assertNotInLog(
-                'HEALTH CHECK ERROR: {"name": "model-server", "status": '
-                '"unavailable: An error occurred", "time_taken":',
+            self.assertHealthCheckErrorNotInLog(
                 log,
+                'Exception',
+                'model-server',
+                'unavailable: An error occurred',
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -193,11 +214,11 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
 
-            self.assertInLog('unavailable: An error occurred', log)
-            self.assertInLog(
-                'HEALTH CHECK ERROR: {"name": "model-server", '
-                '"status": "unavailable: An error occurred", "time_taken":',
+            self.assertHealthCheckErrorInLog(
                 log,
+                'unavailable: An error occurred',
+                'model-server',
+                'unavailable: An error occurred',
             )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -252,11 +273,11 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
 
-            self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
-            self.assertInLog(
-                'HEALTH CHECK ERROR: {"name": "secret-manager", "status": '
-                '"unavailable: An error occurred", "time_taken":',
+            self.assertHealthCheckErrorInLog(
                 log,
+                'ai.api.aws.exceptions.WcaSecretManagerError',
+                'secret-manager',
+                'unavailable: An error occurred',
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -278,12 +299,14 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
 
-            self.assertInLog('ai.api.model_client.exceptions.WcaTokenFailure', log)
-            self.assertInLog(
-                'HEALTH CHECK ERROR: {"name": "wca", "status": '
-                '{"tokens": "unavailable: An error occurred", '
-                '"models": "unavailable: An error occurred"}, "time_taken":',
+            self.assertHealthCheckErrorInLog(
                 log,
+                'ai.api.model_client.exceptions.WcaTokenFailure',
+                'wca',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -305,12 +328,11 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                     self.assertTrue(is_status_ok(dependency['status']))
                 self.assertGreaterEqual(dependency['time_taken'], 0)
 
-            self.assertInLog('ai.api.model_client.exceptions.WcaInferenceFailure', log)
-            self.assertInLog(
-                'HEALTH CHECK ERROR: {"name": "wca", "status": '
-                '{"tokens": "ok", "models": "unavailable: An error occurred"}, '
-                '"time_taken":',
+            self.assertHealthCheckErrorInLog(
                 log,
+                'ai.api.model_client.exceptions.WcaInferenceFailure',
+                'wca',
+                {"tokens": "ok", "models": "unavailable: An error occurred"},
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -330,9 +352,9 @@ class TestHealthCheck(APITestCase, WisdomLogWarenessMixin):
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
 
-            self.assertInLog('requests.exceptions.HTTPError', log)
-            self.assertInLog(
-                'HEALTH CHECK ERROR: {"name": "authorization", '
-                '"status": "unavailable: An error occurred", "time_taken":',
+            self.assertHealthCheckErrorInLog(
                 log,
+                'requests.exceptions.HTTPError',
+                'authorization',
+                'unavailable: An error occurred',
             )
