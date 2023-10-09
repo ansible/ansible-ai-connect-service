@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from http import HTTPStatus
 from unittest import mock
@@ -19,6 +20,9 @@ from django.urls import reverse
 from requests import Response
 from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
+from test_utils import WisdomLogAwareMixin
+
+logger = logging.getLogger(__name__)
 
 
 def is_status_ok(status):
@@ -29,7 +33,7 @@ def is_status_ok(status):
         return len(child_status) == len(status)
 
 
-class TestHealthCheck(APITestCase):
+class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
         self.wca_client_patcher = patch.object(
@@ -77,6 +81,28 @@ class TestHealthCheck(APITestCase):
         r = self.client.get(reverse('liveness_probe'), format='json')
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertJSONEqual(r.content, {"status": "ok"})
+
+    @staticmethod
+    def getHealthCheckErrorString(plugin_name, plugin_status):
+        return (
+            f'HEALTH CHECK ERROR: {{"name": "{plugin_name}", '
+            f'"status": {json.dumps(plugin_status)}, "time_taken":'
+        )
+
+    def assertHealthCheckErrorInLog(self, log, error_msg, plugin_name, plugin_status):
+        self.assertInLog(error_msg, log)
+        self.assertInLog(
+            self.getHealthCheckErrorString(plugin_name, plugin_status),
+            log,
+        )
+
+    def assertHealthCheckErrorNotInLog(self, log, error_msg, plugin_name, plugin_status):
+        logger.error('Dummy Error')  # assertLogs expects at least one log entry...
+        self.assertNotInLog(error_msg, log)
+        self.assertNotInLog(
+            self.getHealthCheckErrorString(plugin_name, plugin_status),
+            log,
+        )
 
     def assert_basic_data(self, r: Response, expected_status: str) -> (str, []):
         """
@@ -127,23 +153,40 @@ class TestHealthCheck(APITestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_http_fail)
     def test_health_check_http_error(self, _):
         cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        timestamp, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'model-server':
-                self.assertTrue(dependency['status'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            timestamp, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'model-server':
+                    self.assertTrue(dependency['status'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+                self.assertHealthCheckErrorInLog(
+                    log,
+                    'Exception',
+                    'model-server',
+                    'unavailable: An error occurred',
+                )
 
         time.sleep(1)
 
         # Make sure the cached data is returned in the second call after 1 sec
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        data = json.loads(r.content)
-        self.assertEqual(timestamp, data['timestamp'])
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            data = json.loads(r.content)
+            self.assertEqual(timestamp, data['timestamp'])
+
+            self.assertHealthCheckErrorNotInLog(
+                log,
+                'Exception',
+                'model-server',
+                'unavailable: An error occurred',
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
@@ -161,14 +204,22 @@ class TestHealthCheck(APITestCase):
     @mock.patch('requests.get', side_effect=mocked_requests_grpc_fail)
     def test_health_check_grpc_error(self, _):
         cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        _, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'model-server':
-                self.assertTrue(dependency['status'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'model-server':
+                    self.assertTrue(dependency['status'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'unavailable: An error occurred',
+                'model-server',
+                'unavailable: An error occurred',
+            )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
@@ -211,15 +262,23 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         self.mock_secret_manager.get_secret = Mock(side_effect=WcaSecretManagerError)
 
-        r = self.client.get(reverse('health_check'))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
 
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        _, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'secret-manager':
-                self.assertTrue(dependency['status'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'secret-manager':
+                    self.assertTrue(dependency['status'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ai.api.aws.exceptions.WcaSecretManagerError',
+                'secret-manager',
+                'unavailable: An error occurred',
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -227,17 +286,28 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
 
-        r = self.client.get(reverse('health_check'))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
 
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        _, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'wca':
-                # If a Token cannot be retrieved we can also not execute Models
-                self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
-                self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    # If a Token cannot be retrieved we can also not execute Models
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ai.api.model_client.exceptions.WcaTokenFailure',
+                'wca',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -245,17 +315,25 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
 
-        r = self.client.get(reverse('health_check'))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
 
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        _, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'wca':
-                self.assertEqual('ok', dependency['status']['tokens'])
-                self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
-            self.assertGreaterEqual(dependency['time_taken'], 0)
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertEqual('ok', dependency['status']['tokens'])
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ai.api.model_client.exceptions.WcaInferenceFailure',
+                'wca',
+                {"tokens": "ok", "models": "unavailable: An error occurred"},
+            )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -263,12 +341,20 @@ class TestHealthCheck(APITestCase):
         cache.clear()
         self.seat_checker.self_test = Mock(side_effect=HTTPError)
 
-        r = self.client.get(reverse('health_check'))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
 
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-        _, dependencies = self.assert_basic_data(r, 'error')
-        for dependency in dependencies:
-            if dependency['name'] == 'authorization':
-                self.assertTrue(dependency['status'].startswith('unavailable:'))
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'authorization':
+                    self.assertTrue(dependency['status'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'requests.exceptions.HTTPError',
+                'authorization',
+                'unavailable: An error occurred',
+            )
