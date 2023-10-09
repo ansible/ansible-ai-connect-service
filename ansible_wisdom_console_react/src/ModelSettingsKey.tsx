@@ -15,7 +15,7 @@ interface ModelSettingsKeyProps {
 export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
     const {wcaKey, cancel, reload} = props;
 
-    const [isSaving, setSaving] = useState<boolean>(false);
+    const [saving, setSaving] = useState<boolean>(false);
     const hasWcaKey = useMemo(() => wcaKey?.status === "SUCCESS", [wcaKey]);
 
     const [isKeyInvalid, setIsKeyInvalid] = useState<boolean>(false);
@@ -46,7 +46,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
     return (
         <ModelSettingsEditor
             hasValue={hasWcaKey}
-            isSaving={isSaving}
+            isSaving={saving}
             isValueInvalid={isKeyInvalid}
             clearInvalidState={() => setIsKeyInvalid(false)}
             errorState={keyError}

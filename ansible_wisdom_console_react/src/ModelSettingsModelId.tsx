@@ -15,7 +15,7 @@ interface ModelSettingsModelIdProps {
 export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
     const {wcaModelId, cancel, reload} = props;
 
-    const [isSaving, setSaving] = useState(false);
+    const [saving, setSaving] = useState(false);
     const hasWcaModelId = useMemo(() => wcaModelId?.status === "SUCCESS", [wcaModelId]);
 
     const [isModelIdInvalid, setIsModelIdInvalid] = useState<boolean>(false);
@@ -46,7 +46,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
     return (
         <ModelSettingsEditor
             hasValue={hasWcaModelId}
-            isSaving={isSaving}
+            isSaving={saving}
             isValueInvalid={isModelIdInvalid}
             clearInvalidState={() => setIsModelIdInvalid(false)}
             errorState={modelIdError}

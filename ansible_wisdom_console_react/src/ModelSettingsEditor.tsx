@@ -16,7 +16,6 @@ import {
     StackItem,
     Text,
     TextContent,
-    TextInput,
     Tooltip
 } from "@patternfly/react-core";
 import {useTranslation} from "react-i18next";

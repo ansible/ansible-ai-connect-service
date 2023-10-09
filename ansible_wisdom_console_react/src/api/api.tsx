@@ -9,12 +9,11 @@ export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
 const readCookie = (name: string) => {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') {
+    for (let c of ca) {
+        while (c.startsWith(' ')) {
             c = c.substring(1, c.length);
         }
-        if (c.indexOf(nameEQ) === 0) {
+        if (c.startsWith(nameEQ)) {
             return c.substring(nameEQ.length, c.length);
         }
     }
