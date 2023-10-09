@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import {ModelSettingsOverview} from "../ModelSettingsOverview";
-import {Loading, WcaKey, WcaModelId} from "../api/types";
+import {WcaKey, WcaModelId} from "../api/types";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
 

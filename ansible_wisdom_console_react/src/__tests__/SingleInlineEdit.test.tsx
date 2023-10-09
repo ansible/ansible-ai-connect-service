@@ -8,10 +8,15 @@ describe('SingleInlineEdit',
 
         it('OnRender',
             async () => {
-                render(<SingleInlineEdit value={'test-value'}
-                                         aria-label={'test-aria-label'}
-                                         isDisabled={false}
-                                         placeholder={'test-placeholder'}/>);
+                render(
+                    <SingleInlineEdit
+                        value={'test-value'}
+                        aria-label={'test-aria-label'}
+                        isDisabled={false}
+                        placeholder={'test-placeholder'}
+                        onChange={jest.fn()}
+                    />
+                );
                 const textInputElement = screen.getByTestId("model-settings-editor__input");
                 expect(textInputElement).toBeInTheDocument();
                 expect(textInputElement).toHaveAttribute('type', 'text');
@@ -29,7 +34,15 @@ describe('SingleInlineEdit',
         it('OnTextChange',
             async () => {
                 const callback = jest.fn();
-                render(<SingleInlineEdit aria-label={'test-aria-label'} value={'test-value'} onChange={callback}/>);
+                render(
+                    <SingleInlineEdit
+                        aria-label={'test-aria-label'}
+                        value={'test-value'}
+                        onChange={callback}
+                        isDisabled={false}
+                        placeholder={'test-placeholder'}
+                    />
+                );
                 const textInputElement = screen.getByTestId("model-settings-editor__input");
                 expect(textInputElement).toBeInTheDocument();
                 expect(textInputElement).toHaveAttribute('value', 'test-value');
@@ -40,7 +53,15 @@ describe('SingleInlineEdit',
         it('OnClearButtonClick',
             async () => {
                 const callback = jest.fn();
-                render(<SingleInlineEdit aria-label={'test-aria-label'} value={'test-value'} onChange={callback}/>);
+                render(
+                    <SingleInlineEdit
+                        aria-label={'test-aria-label'}
+                        value={'test-value'}
+                        onChange={callback}
+                        isDisabled={false}
+                        placeholder={'test-placeholder'}
+                    />
+                );
                 const textInputElement = screen.getByTestId("model-settings-editor__input");
                 expect(textInputElement).toBeInTheDocument();
                 expect(textInputElement).toHaveAttribute('value', 'test-value')
@@ -53,7 +74,15 @@ describe('SingleInlineEdit',
         it('OnRenderDisabled',
             async () => {
                 const callback = jest.fn();
-                render(<SingleInlineEdit aria-label={'test-aria-label'} value={'test-value'} onChange={callback} isDisabled={true}/>);
+                render(
+                    <SingleInlineEdit
+                        aria-label={'test-aria-label'}
+                        value={'test-value'}
+                        onChange={callback}
+                        isDisabled={true}
+                        placeholder={'test-placeholder'}
+                    />
+                );
                 const textInputElement = screen.getByTestId("model-settings-editor__input");
                 expect(textInputElement).toBeInTheDocument();
                 expect(textInputElement).toHaveAttribute('value', 'test-value');
