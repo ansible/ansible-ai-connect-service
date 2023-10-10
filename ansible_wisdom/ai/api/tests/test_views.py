@@ -1351,7 +1351,31 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "license": license,
                             "data_source_description": "Galaxy-R",
                             "score": 0.94550663,
-                        }
+                        },
+                        {
+                            "repo_name": f"{repo_name}2",
+                            "repo_url": f"{repo_url}2",
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550662,
+                        },
+                        {
+                            "repo_name": f"{repo_name}3",
+                            "repo_url": f"{repo_url}3",
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550661,
+                        },
+                        {
+                            "repo_name": f"{repo_name}4",
+                            "repo_url": f"{repo_url}4",
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550660,
+                        },
                     ],
                     "meta": {"encode_duration": 367.3, "search_duration": 151.98},
                 }
@@ -1374,6 +1398,8 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
+
+            self.assertEqual(len(r.data["contentmatches"][0]["contentmatch"]), 3)
 
             content_match = r.data["contentmatches"][0]["contentmatch"][0]
 

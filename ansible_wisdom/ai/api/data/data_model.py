@@ -4,7 +4,7 @@ from typing import Any, TypedDict, Union
 from uuid import UUID
 
 from ai.api.serializers import DataSource
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,11 @@ class BaseContentMatchResponseDto(BaseModel):
 
 class ContentMatchResponseDto(BaseContentMatchResponseDto):
     code_matches: list[ContentMatchResponseData]
+
+    @validator('code_matches')
+    @classmethod
+    def trim_to_first_three(cls, v):
+        return v[:3]
 
     def data(self):
         return self.dict()["code_matches"]
