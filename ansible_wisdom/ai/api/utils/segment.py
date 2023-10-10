@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 from django.conf import settings
 from django.utils import timezone
 from healthcheck.version_info import VersionInfo
+from seated_users_allow_list import ALLOW_LIST
 from segment import analytics
 from users.models import User
 
@@ -45,7 +46,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
         analytics.track(
             str(user.uuid) if (user and getattr(user, 'uuid', None)) else 'unknown',
             event_name,
-            event,
+            event if not event['rh_user_has_seat'] else redact_seated_users_data(event, ALLOW_LIST),
         )
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
@@ -72,3 +73,27 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
                 "timestamp": timestamp,
             }
             send_segment_event(event, "segmentError", user)
+
+
+def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Copy a dictionary to another dictionary using a nested list of allowed keys.
+
+    Args:
+    - event (dict): The source dictionary to copy from.
+    - allow_list (dict): The nested dictionary containing allowed keys.
+
+    Returns:
+    - dict: A new dictionary containing only the allowed nested keys from the source dictionary.
+    """
+    redacted_event = {}
+    for key, sub_whitelist in allow_list.items():
+        if key in event:
+            if isinstance(sub_whitelist, dict):
+                if isinstance(event[key], dict):
+                    redacted_event[key] = redact_seated_users_data(event[key], sub_whitelist)
+                else:
+                    redacted_event[key] = event[key]
+            else:
+                redacted_event[key] = event[key]
+    return redacted_event
