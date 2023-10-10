@@ -48,7 +48,7 @@ def create_user(
     return user
 
 
-class TestUsers(APITransactionTestCase):
+class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
         self.password = "somepassword"
         self.user = create_user(
@@ -77,6 +77,11 @@ class TestUsers(APITransactionTestCase):
     def test_auth_keyword(self):
         bearer = BearerTokenAuthentication()
         self.assertEqual(bearer.keyword, "Bearer")
+
+    def test_users_audit_logging(self):
+        with self.assertLogs(logger='users.signals', level='INFO') as log:
+            self.client.login(username=self.user.username, password=self.password)
+            self.assertInLog('LOGIN successful', log)
 
 
 class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
