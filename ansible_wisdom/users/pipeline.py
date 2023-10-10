@@ -1,5 +1,6 @@
 import logging
 
+import jwt
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
@@ -73,9 +74,17 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     if not backend.id_token:
         logger.error("Missing id_token, cannot get the organization id.")
         return
+
+    payload = jwt.decode(response['access_token'], options={"verify_signature": False})
+    realm_access = payload.get("realm_access", {})
+    roles = realm_access.get("roles", [])
+    user.rh_user_is_org_admin = 'admin:org:all' in roles
     user.organization_id = backend.id_token['organization']['id']
     user.save()
-    return {'organization_id': backend.id_token['organization']['id']}
+    return {
+        'organization_id': user.organization_id,
+        'rh_user_is_org_admin': user.rh_user_is_org_admin,
+    }
 
 
 def _terms_of_service(strategy, user, backend, **kwargs):

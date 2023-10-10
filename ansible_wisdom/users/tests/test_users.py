@@ -2,6 +2,7 @@ import random
 import string
 from http import HTTPStatus
 from types import SimpleNamespace
+from typing import Optional
 from unittest import TestCase
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -32,6 +33,7 @@ def create_user(
     password: str = None,
     provider: str = None,
     social_auth_extra_data: any = {},
+    rh_user_is_org_admin: Optional[bool] = None,
 ):
     username = username or 'u' + "".join(random.choices(string.digits, k=5))
     password = password or 'secret'
@@ -45,6 +47,9 @@ def create_user(
     if provider:
         social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=str(uuid4()))
         social_auth.set_extra_data(social_auth_extra_data)
+        if rh_user_is_org_admin:
+            user.rh_user_is_org_admin = rh_user_is_org_admin
+            user.save()
     return user
 
 
@@ -320,22 +325,6 @@ class TestUserSeat(TestCase):
 
         self.assertTrue(user.rh_user_has_seat)
         self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
-
-
-class TestOrgAdmin(TestCase):
-    def test_rh_user_is_org_admin_with_no_rhsso_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
-        self.assertFalse(user.rh_user_is_org_admin)
-
-    @override_settings(AUTHZ_BACKEND_TYPE="mock_true")
-    def test_rh_user_is_org_admin_with_admin_rhsso_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.assertTrue(user.rh_user_is_org_admin)
-
-    @override_settings(AUTHZ_BACKEND_TYPE="mock_false")
-    def test_rh_user_is_org_admin_with_non_admin_rhsso_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.assertFalse(user.rh_user_is_org_admin)
 
 
 class TestUsername(WisdomServiceLogAwareTestCase):

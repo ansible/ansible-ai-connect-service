@@ -104,7 +104,7 @@ SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
-SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization']
+SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization', 'roles']
 SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
