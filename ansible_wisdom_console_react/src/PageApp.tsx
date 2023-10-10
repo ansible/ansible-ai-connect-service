@@ -45,8 +45,8 @@ export function PageApp(props: PageAppProps) {
 }
 
 interface PageRouterLayoutProps {
-    header?: ReactNode;
-    navigationItems: PageNavigationItem[];
+    readonly header?: ReactNode;
+    readonly navigationItems: PageNavigationItem[];
 }
 
 function PageRouterLayout(props: PageRouterLayoutProps) {

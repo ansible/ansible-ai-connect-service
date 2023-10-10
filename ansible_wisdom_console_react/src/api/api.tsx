@@ -10,10 +10,7 @@ const readCookie = (name: string) => {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
     for (let c of ca) {
-        while (c.startsWith(' ')) {
-            c = c.substring(1, c.length);
-        }
-        if (c.startsWith(nameEQ)) {
+        if (c.trimStart().startsWith(nameEQ)) {
             return c.substring(nameEQ.length, c.length);
         }
     }
