@@ -4,7 +4,7 @@
 aiohttp==3.8.5
 # Pin on 3.8.5 to
 ansible-anonymizer==1.4.2
-ansible-risk-insight==0.1.11
+ansible-risk-insight==0.2.2
 ansible-lint==6.19.0
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
