@@ -193,25 +193,25 @@ class SuggestionQualityFeedback(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'providedSuggestion', 'expectedSuggestion', 'additionalComment']
 
-    prompt = AnonymizedCharField(
+    prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='File Content used as context',
         help_text='File Content till end of task name description before cursor position.',
     )
-    providedSuggestion = AnonymizedCharField(
+    providedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Provided Model suggestion',
         help_text='Inline suggestion from model as shared by user for given prompt.',
     )
-    expectedSuggestion = AnonymizedCharField(
+    expectedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Expected Model suggestion',
         help_text='Suggestion expected by the user.',
     )
-    additionalComment = AnonymizedCharField(
+    additionalComment = serializers.CharField(
         trim_whitespace=False,
         required=False,
         label='Additional Comment',
@@ -226,7 +226,7 @@ class SentimentFeedback(serializers.Serializer):
 
     value = serializers.IntegerField(required=True, min_value=1, max_value=5)
 
-    feedback = AnonymizedCharField(
+    feedback = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Free form text feedback',
@@ -241,13 +241,13 @@ class IssueFeedback(serializers.Serializer):
         fields = ['type', 'title', 'description']
 
     type = serializers.ChoiceField(choices=ISSUE_TYPE, required=True)
-    title = AnonymizedCharField(
+    title = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Issue title',
         help_text='The title of the issue.',
     )
-    description = AnonymizedCharField(
+    description = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Issue description',
