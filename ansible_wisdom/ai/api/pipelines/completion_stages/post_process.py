@@ -228,12 +228,9 @@ def completion_post_process(context: CompletionContext):
     if ansible_lint_caller:
         start_time = time.time()
         try:
-            if postprocessed_yaml:
-                # Post-processing by running Ansible Lint to ARI processed yaml
-                postprocessed_yaml = ansible_lint_caller.run_linter(postprocessed_yaml)
-            else:
-                # Post-processing by running Ansible Lint to model server predictions
-                postprocessed_yaml = ansible_lint_caller.run_linter(recommendation_yaml)
+            # Ansible Lint the ARI processed yaml else the model prediction
+            input_yaml = postprocessed_yaml if postprocessed_yaml else recommendation_yaml
+            postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
                 postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
@@ -249,7 +246,7 @@ def completion_post_process(context: CompletionContext):
             write_to_segment(
                 user,
                 suggestion_id,
-                recommendation_yaml,
+                input_yaml,
                 truncated_yaml,
                 postprocessed_yaml,
                 None,
