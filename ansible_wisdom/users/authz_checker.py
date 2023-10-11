@@ -144,7 +144,7 @@ class AMSCheck(BaseCheck):
         try:
             return data["items"][0]["id"]
         except (IndexError, KeyError, ValueError):
-            logger.error("Unexpected organization answer from AMS: data=%s" % json.dumps(data))
+            logger.exception("Unexpected organization answer from AMS: data=%s" % json.dumps(data))
             return ""
 
     def self_test(self):
