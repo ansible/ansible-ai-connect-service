@@ -43,14 +43,14 @@ class WcaEmptyResponse(WcaException):
 
 @dataclass
 class WcaTokenFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to retrieve a WCA Token failed."""
 
 
 @dataclass
 class WcaInferenceFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to run a WCA inference failed."""
 
 
 @dataclass
 class WcaCodeMatchFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to run a WCA code match failed."""
