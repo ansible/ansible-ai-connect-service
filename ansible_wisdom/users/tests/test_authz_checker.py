@@ -151,7 +151,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertEqual(checker.get_ams_org("123"), "")
-            self.assertInLog('Unexpected organization answer from AMS: data={"items": []}', log)
+            self.assertInLog("Unexpected organization answer from AMS: data={'items': []}", log)
             self.assertInLog("IndexError: list index out of range", log)
 
     def test_ams_check(self):

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
@@ -144,7 +143,7 @@ class AMSCheck(BaseCheck):
         try:
             return data["items"][0]["id"]
         except (IndexError, KeyError, ValueError):
-            logger.exception("Unexpected organization answer from AMS: data=%s" % json.dumps(data))
+            logger.exception("Unexpected organization answer from AMS: data=%s" % data)
             return ""
 
     def self_test(self):
