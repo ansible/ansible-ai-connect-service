@@ -5,7 +5,7 @@ from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID
 
-from ai.api.serializers import CompletionRequestSerializer
+from ai.api.serializers import CompletionRequestSerializer, SuggestionQualityFeedback
 from django.test import override_settings
 from rest_framework import serializers
 
@@ -83,3 +83,16 @@ class CompletionRequestSerializerTest(TestCase):
         # model raises exception when no seat
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
+
+
+class SuggestionQualityFeedbackTest(TestCase):
+    def test_multitask_prompt_not_stripped(self):
+        data = {
+            "prompt": "---\n- name: Deploy AWS EC2\n  hosts: localhost\n  tasks:\n    # create vpc & create security group",  # noqa: E501
+            "providedSuggestion": "got this",
+            "expectedSuggestion": "wanted this",
+            "additionalComment": "p.s.",
+        }
+        serializer = SuggestionQualityFeedback(data=data)
+        self.assertTrue(serializer.is_valid())
+        self.assertIn("# create vpc & create security group", serializer.validated_data['prompt'])
