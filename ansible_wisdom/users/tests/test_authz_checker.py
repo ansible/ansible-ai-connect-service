@@ -97,6 +97,39 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertEqual(checker.get_ams_org("123"), "qwe")
         self.assertEqual(m_r.json.call_count, 0)
 
+    def test_ams_get_ams_org_with_500_status_code(self):
+        m_r = Mock()
+        m_r.json.return_value = {"items": [{"id": "qwe"}]}
+        m_r.status_code = 500
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertEqual(checker.get_ams_org("123"), "")
+            self.assertInLog("Unexpected error code (500) returned by AMS backend (org)", log)
+
+        # Ensure the second call is cached
+        m_r.json.reset_mock()
+        self.assertEqual(checker.get_ams_org("123"), "")
+        self.assertEqual(m_r.json.call_count, 0)
+
+    def test_ams_get_ams_org_with_empty_data(self):
+        m_r = Mock()
+        m_r.json.return_value = {"items": []}
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertEqual(checker.get_ams_org("123"), "")
+            self.assertInLog('Unexpected organization answer from AMS: data={"items": []}', log)
+
     def test_ams_check(self):
         m_r = Mock()
         m_r.json.side_effect = [{"items": [{"id": "qwe"}]}, {"items": [{"id": "asd"}]}]
@@ -233,7 +266,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
             self.assertInLog(
-                "Unexpected error code returned by AMS backend when listing role bindings", log
+                "Unexpected error code (500) returned by AMS backend when listing role bindings",
+                log,
             )
 
     def test_rh_org_has_subscription(self):
@@ -306,7 +340,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog(
-                "Unexpected error code returned by AMS backend when listing resource_quota", log
+                "Unexpected error code (500) returned by AMS backend when listing resource_quota",
+                log,
             )
 
     def test_rh_org_has_subscription_wrong_output(self):

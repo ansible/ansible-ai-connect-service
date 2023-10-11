@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
@@ -50,7 +51,7 @@ class Token:
             logger.error("Cannot reach the SSO backend in time")
             return None
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by SSO service")
+            logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
             return None
         data = r.json()
         self.access_token = data["access_token"]
@@ -95,7 +96,7 @@ class CIAMCheck(BaseCheck):
             logger.error("Cannot reach the CIAM backend in time")
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by CIAM backend")
+            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
             return False
         data = r.json()
         try:
@@ -136,14 +137,14 @@ class AMSCheck(BaseCheck):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return ""
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (org)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (org)" % r.status_code)
             return ""
         data = r.json()
 
         try:
             return data["items"][0]["id"]
         except (IndexError, KeyError, ValueError):
-            logger.error("Unexpected organization answer from AMS")
+            logger.error("Unexpected organization answer from AMS: data=%s" % json.dumps(data))
             return ""
 
     def self_test(self):
@@ -173,7 +174,7 @@ class AMSCheck(BaseCheck):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (sub)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
             return False
         data = r.json()
         try:
@@ -198,7 +199,10 @@ class AMSCheck(BaseCheck):
             return False
 
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend when listing role bindings")
+            logger.error(
+                "Unexpected error code (%s) returned by AMS backend when listing role bindings"
+                % r.status_code
+            )
             return False
 
         result = r.json()
@@ -230,7 +234,8 @@ class AMSCheck(BaseCheck):
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error(
-                "Unexpected error code returned by AMS backend when listing resource_quota"
+                "Unexpected error code (%s) returned by AMS backend when listing resource_quota"
+                % r.status_code
             )
             return False
         data = r.json()
