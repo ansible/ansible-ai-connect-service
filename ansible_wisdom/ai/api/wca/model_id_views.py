@@ -17,7 +17,6 @@ from ai.api.permissions import (
 from ai.api.serializers import WcaModelIdRequestSerializer
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
-from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -196,12 +195,6 @@ def validate(api_key, model_id):
     if model_id is None:
         logger.error('No Model Id key specified.')
         raise WcaModelIdNotFound
-    if model_id == settings.ANSIBLE_WCA_FREE_MODEL_ID:
-        logger.error(
-            'Cannot use a non-commercial Model Id. '
-            'Please contact with your organization\'s system administration.'
-        )
-        raise WcaInvalidModelId
 
     # If no validation issues, let's infer (given an api_key and model_id)
     # and expect some prediction (result), otherwise an exception will be raised.
