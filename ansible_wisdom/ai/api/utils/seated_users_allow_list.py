@@ -1,3 +1,8 @@
+"""
+List of parameters that are allowed to track for commercial users. Add new events and/or values
+there ONLY if parameters should be tracked for seated users.
+"""
+
 ALLOW_LIST = {
     'attribution': {
         'suggestionId': None,
@@ -18,26 +23,23 @@ ALLOW_LIST = {
     },
     'completion': {
         'duration': None,
-        'request': {
-            'prompt': None,
-            'context': None,
-        },
         'response': {
             'exception': None,
             'error_type': None,
             'message': None,
-            'predictions': None,
             'status_code': None,
             'status_text': None,
         },
         'suggestionId': None,
         'metadata': {
-            'documentUri': None,
             'activityId': None,
         },
         'modelName': None,
         'imageTags': None,
-        'tasks': None,
+        'tasks': {
+            'collection': None,
+            'module': None,
+        },
         'tasksCount': None,
         'promptType': None,
         'hostname': None,
@@ -58,7 +60,12 @@ ALLOW_LIST = {
             'rh_user_org_id': None,
             'suggestionId': None,
         },
-        'response': {},
+        'response': {
+            'exception': None,
+            'predictions': None,
+            'status_code': None,
+            'status_text': None,
+        },
         'suggestionId': None,
         'modelName': None,
         'imageTags': None,
@@ -72,8 +79,6 @@ ALLOW_LIST = {
         'exception': None,
         'problem': None,
         'duration': None,
-        'recommendation': None,
-        'postprocessed': None,
         'suggestionId': None,
         'modelName': None,
         'imageTags': None,
@@ -89,24 +94,7 @@ ALLOW_LIST = {
         'duration': None,
         'recommendation': None,
         'truncated': None,
-        'postprocessed': None,
-        'details': None,
         'suggestionId': None,
-        'modelName': None,
-        'imageTags': None,
-        'hostname': None,
-        'groups': None,
-        'rh_user_has_seat': None,
-        'rh_user_org_id': None,
-        'timestamp': None,
-    },
-    'inlineSuggestionFeedback': {
-        'action': None,
-        'activityId': None,
-        'exception': None,
-        'latency': None,
-        'suggestionId': None,
-        'userActionTime': None,
         'modelName': None,
         'imageTags': None,
         'hostname': None,
@@ -129,20 +117,6 @@ ALLOW_LIST = {
     'sentimentFeedback': {
         'value': None,
         'feedback': None,
-        'exception': None,
-        'modelName': None,
-        'imageTags': None,
-        'hostname': None,
-        'groups': None,
-        'rh_user_has_seat': None,
-        'rh_user_org_id': None,
-        'timestamp': None,
-    },
-    'ansibleContentFeedback': {
-        'content': None,
-        'documentUri': None,
-        'trigger': None,
-        'activityId': None,
         'exception': None,
         'modelName': None,
         'imageTags': None,

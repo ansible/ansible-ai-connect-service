@@ -5,9 +5,10 @@ from typing import Any, Dict, Union
 from django.conf import settings
 from django.utils import timezone
 from healthcheck.version_info import VersionInfo
-from seated_users_allow_list import ALLOW_LIST
 from segment import analytics
 from users.models import User
+
+from .seated_users_allow_list import ALLOW_LIST
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
