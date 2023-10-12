@@ -6,7 +6,7 @@ export const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
 export const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
 export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
 
-const readCookie = (name: string) => {
+export const readCookie = (name: string): string | null => {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
     for (let c of ca) {
