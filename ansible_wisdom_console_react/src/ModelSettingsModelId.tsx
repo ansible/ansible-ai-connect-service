@@ -31,10 +31,12 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
-                } else if (error.response?.status === 500) {
-                    setModelIdError({inError: true, message: error.response.data});
                 } else {
-                    setModelIdError({inError: true, message: error.message});
+                    setModelIdError({
+                        inError: true,
+                        message: error.message,
+                        detail: error.response?.data?.detail
+                    });
                 }
             })
             .finally(() => {

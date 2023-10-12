@@ -82,7 +82,7 @@ export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
     return (
         <>
             <ErrorModal
-                message={t(errorModalCaption)}
+                caption={t(errorModalCaption)}
                 hasError={errorState}
                 close={() => setErrorState(NO_ERROR)}
             />
