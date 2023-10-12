@@ -439,36 +439,31 @@ class ContentMatches(GenericAPIView):
             )
             raise ModelTimeoutException
 
-        except WcaBadRequest as e:
-            logger.error(e)
+        except WcaBadRequest:
             logger.exception(f"bad request for content matching suggestion {suggestion_id}")
             raise WcaBadRequestException
 
-        except WcaInvalidModelId as e:
-            logger.error(e)
+        except WcaInvalidModelId:
             logger.exception(
                 f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
             )
             raise WcaInvalidModelIdException
 
-        except WcaKeyNotFound as e:
-            logger.error(e)
+        except WcaKeyNotFound:
             logger.exception(
                 f"A WCA Api Key was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
             raise WcaKeyNotFoundException
 
-        except WcaModelIdNotFound as e:
-            logger.error(e)
+        except WcaModelIdNotFound:
             logger.exception(
                 f"A WCA Model ID was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException
 
-        except WcaEmptyResponse as e:
-            logger.error(e)
+        except WcaEmptyResponse:
             logger.exception(
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
