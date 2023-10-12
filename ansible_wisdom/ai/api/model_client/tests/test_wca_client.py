@@ -1,3 +1,4 @@
+from functools import wraps
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
@@ -18,7 +19,12 @@ from ai.api.model_client.exceptions import (
     WcaModelIdNotFound,
     WcaTokenFailure,
 )
-from ai.api.model_client.wca_client import WCAClient
+from ai.api.model_client.wca_client import (
+    WCAClient,
+    ibm_cloud_identity_token_hist,
+    wca_codegen_hist,
+    wca_codematch_hist,
+)
 from django.apps import apps
 from django.test import override_settings
 from requests.exceptions import HTTPError, ReadTimeout
@@ -61,6 +67,27 @@ def stub_wca_client(
     model_client.get_model_id = Mock(return_value=model_id)
     model_client.get_token = Mock(return_value={"access_token": "abc"})
     return model_id, model_client, model_input
+
+
+def assert_call_count_metrics(hist):
+    def count_metrics_decorator(func):
+        @wraps(func)
+        def wrapped_function(*args, **kwargs):
+            def get_count():
+                for metric in hist.collect():
+                    for sample in metric.samples:
+                        if sample.name.endswith("_count"):
+                            return sample.value
+                return 0.0
+
+            count_before = get_count()
+            func(*args, **kwargs)
+            count_after = get_count()
+            assert count_after > count_before
+
+        return wrapped_function
+
+    return count_metrics_decorator
 
 
 class TestWCAClient(WisdomServiceLogAwareTestCase):
@@ -180,6 +207,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.secret_manager_patcher.stop()
 
+    @assert_call_count_metrics(hist=ibm_cloud_identity_token_hist)
     def test_get_token(self):
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -208,12 +236,14 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             data=data,
         )
 
+    @assert_call_count_metrics(hist=ibm_cloud_identity_token_hist)
     def test_get_token_http_error(self):
         model_client = WCAClient(inference_url='http://example.com/')
         model_client.session.post = Mock(side_effect=HTTPError(404))
         with self.assertRaises(WcaTokenFailure):
             model_client.get_token("api-key")
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer(self):
         model_id = "zavala"
         context = "null"
@@ -266,6 +296,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         )
         self.assertEqual(result, predictions)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_timeout(self):
         model_id = "zavala"
         model_input = {
@@ -292,6 +323,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_http_error(self):
         model_id = "zavala"
         model_input = {
@@ -318,6 +350,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_garbage_model_id(self):
         stub = stub_wca_client(400, "zavala")
         model_id, model_client, model_input = stub
@@ -325,6 +358,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_invalid_model_id_for_api_key(self):
         stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
@@ -332,6 +366,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_empty_response(self):
         stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
@@ -339,6 +374,7 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             model_client.infer(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_preprocessed_multitask_prompt_error(self):
         # See https://issues.redhat.com/browse/AAP-16642
         stub = stub_wca_client(
@@ -366,6 +402,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.secret_manager_patcher.stop()
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch(self):
         model_id = "sample_model_name"
         suggestions = [
@@ -433,6 +470,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         )
         self.assertEqual(result, client_response)
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_timeout(self):
         model_id = "sample_model_name"
         suggestions = [
@@ -457,6 +495,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_http_error(self):
         model_id = "sample_model_name"
         model_input = {
@@ -482,6 +521,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_bad_model_id(self):
         stub = stub_wca_client(400, "sample_model_name")
         model_id, model_client, model_input = stub
@@ -489,6 +529,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_invalid_model_id_for_api_key(self):
         stub = stub_wca_client(403, "sample_model_name")
         model_id, model_client, model_input = stub
@@ -496,6 +537,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
 
+    @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_empty_response(self):
         stub = stub_wca_client(204, "sample_model_name")
         model_id, model_client, model_input = stub

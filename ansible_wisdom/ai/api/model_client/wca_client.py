@@ -12,6 +12,8 @@ from ai.api.model_client.wca_utils import (
 )
 from django.apps import apps
 from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Histogram
 from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
@@ -27,6 +29,22 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+wca_codegen_hist = Histogram(
+    'wca_codegen_latency_seconds',
+    "Histogram of WCA codegen API processing time",
+    namespace=NAMESPACE,
+)
+wca_codematch_hist = Histogram(
+    'wca_codematch_latency_seconds',
+    "Histogram of WCA codematch API processing time",
+    namespace=NAMESPACE,
+)
+ibm_cloud_identity_token_hist = Histogram(
+    'wca_ibm_identity_token_latency_seconds',
+    "Histogram of IBM Cloud identity token API processing time",
+    namespace=NAMESPACE,
+)
 
 
 class WCAClient(ModelMeshClient):
@@ -95,6 +113,7 @@ class WCAClient(ModelMeshClient):
         @backoff.on_exception(
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
         )
+        @wca_codegen_hist.time()
         def post_request():
             return self.session.post(
                 prediction_url,
@@ -126,6 +145,7 @@ class WCAClient(ModelMeshClient):
         @backoff.on_exception(
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
         )
+        @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
                 "https://iam.cloud.ibm.com/identity/token",
@@ -220,6 +240,7 @@ class WCAClient(ModelMeshClient):
             @backoff.on_exception(
                 backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
             )
+            @wca_codematch_hist.time()
             def post_request():
                 return self.session.post(
                     self._search_url,
