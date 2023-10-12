@@ -1,8 +1,7 @@
 """
 List of parameters that are allowed to track for commercial users. Add new events and/or values
 there ONLY if parameters should be tracked for seated users.
-See https://docs.google.com/document/d/1_PVARRMUxJZmG5dhqCivtXsYDVlDUsOaCRvvAaNX2mM for more
-details.
+See https://issues.redhat.com/browse/AAP-15568 for more details.
 """
 
 ALLOW_LIST = {

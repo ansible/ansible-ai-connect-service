@@ -61,7 +61,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
         )
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
-        if PermissionDenied == ex.__class__:
+        if isinstance(ex, PermissionDenied):
             raise PermissionDenied()
 
         logger.exception(
