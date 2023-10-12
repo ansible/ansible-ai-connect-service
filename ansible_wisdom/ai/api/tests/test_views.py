@@ -1240,6 +1240,53 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
+    DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+
+    @patch('ai.api.model_client.wca_client.WCAClient.codematch')
+    def test_wca_contentmatch_errors(self, mock_codematch):
+        for error, status_code_expected in [
+            (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
+            (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
+            (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
+            (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
+            (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
+        ]:
+            mock_codematch.side_effect = self._get_side_effect(error)
+            self._assert_status_code(status_code_expected)
+
+    def _assert_status_code(self, status_code_expected):
+        self.user.rh_user_has_seat = True
+        payload = {
+            "suggestions": [
+                "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
+            ],
+            "suggestionId": str(uuid.uuid4()),
+        }
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+        ):
+            with self.assertLogs(logger='root', level='DEBUG'):
+                r = self.client.post(reverse('contentmatches'), payload)
+                self.assertEqual(r.status_code, status_code_expected)
+
+    def _get_side_effect(self, error):
+        if isinstance(error, (WcaException, ModelTimeoutError)):
+            error.model_id = self.DUMMY_MODEL_ID
+        else:
+            request = requests.PreparedRequest()
+            body = {
+                "model_id": self.DUMMY_MODEL_ID,
+                "input": [
+                    "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
+                ],
+            }
+            request.body = json.dumps(body).encode("utf-8")
+            error.request = request
+        return error
+
     @patch('ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
         self.user.rh_user_has_seat = False

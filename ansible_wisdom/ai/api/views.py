@@ -375,17 +375,14 @@ class ContentMatches(GenericAPIView):
         suggestion_id = str(request_data.get('suggestionId', ''))
         model_id = str(request_data.get('model', ''))
 
-        try:
-            if request.user.rh_user_has_seat:
-                response_serializer = self.perform_content_matching(
-                    model_id, suggestion_id, request.user, request_data
-                )
-            else:
-                response_serializer = self.perform_search(request_data, request.user)
-            return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-        except Exception:
-            logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
-            raise ServiceUnavailable
+        if request.user.rh_user_has_seat:
+            response_serializer = self.perform_content_matching(
+                model_id, suggestion_id, request.user, request_data
+            )
+        else:
+            response_serializer = self.perform_search(request_data, request.user)
+
+        return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
     def perform_content_matching(
         self,
@@ -468,40 +465,50 @@ class ContentMatches(GenericAPIView):
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
             raise WcaEmptyResponseException
+        except Exception as e:
+            logger.error(e)
+            logger.exception(f"Error requesting content matching for suggestion {suggestion_id}")
+            raise ServiceUnavailable
+
         return response_serializer
 
     def perform_search(self, request_data, user: User):
-        index = None
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            model_parts = model_tuple.split(':')
-            if len(model_parts) == 4:
-                *_, index = model_parts
-                logger.info(f"using index '{index}' for content matching")
-
-        response_data = {"contentmatches": []}
-        suggestion = request_data['suggestions'][0]
-
-        start_time = time.time()
-
-        response_item = ai_search.search(suggestion, index)
-
-        duration = round((time.time() - start_time) * 1000, 2)
-
-        attributions_dto = AttributionsResponseDto(**response_item)
-        response_data["contentmatches"].append(attributions_dto.content_matches)
-        suggestion_id = str(request_data.get('suggestionId', ''))
-        self._write_to_segment(user, suggestion_id, duration, attributions_dto)
         try:
-            response_serializer = ContentMatchResponseSerializer(data=response_data)
-            response_serializer.is_valid(raise_exception=True)
-        except Exception:
-            process_error_count.labels(stage='response_serialization_validation').inc()
-            logger.exception(f"error serializing final response for suggestion {suggestion_id}")
-            raise InternalServerError
-        if not response_serializer.is_valid():
-            logging.error(response_serializer.errors)
+            index = None
+            if settings.LAUNCHDARKLY_SDK_KEY:
+                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+                logger.debug(f"flag model_name has value {model_tuple}")
+                model_parts = model_tuple.split(':')
+                if len(model_parts) == 4:
+                    *_, index = model_parts
+                    logger.info(f"using index '{index}' for content matching")
+
+            response_data = {"contentmatches": []}
+            suggestion = request_data['suggestions'][0]
+
+            start_time = time.time()
+
+            response_item = ai_search.search(suggestion, index)
+
+            duration = round((time.time() - start_time) * 1000, 2)
+
+            attributions_dto = AttributionsResponseDto(**response_item)
+            response_data["contentmatches"].append(attributions_dto.content_matches)
+            suggestion_id = str(request_data.get('suggestionId', ''))
+            self._write_to_segment(user, suggestion_id, duration, attributions_dto)
+            try:
+                response_serializer = ContentMatchResponseSerializer(data=response_data)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(stage='response_serialization_validation').inc()
+                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
+                raise InternalServerError
+            if not response_serializer.is_valid():
+                logging.error(response_serializer.errors)
+
+        except Exception as exc:
+            logger.error(f"Failed to search for contentmatches\nException:\n{exc}")
+            return Response({'message': "Unable to complete the request"}, status=503)
 
         return response_serializer
 
