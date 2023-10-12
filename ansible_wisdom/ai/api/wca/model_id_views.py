@@ -80,7 +80,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
                 data={'model_id': response['SecretString'], 'last_update': response['CreatedDate']},
             )
         except WcaSecretManagerError as e:
-            logger.error(e)
+            logger.exception(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(
@@ -119,7 +119,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
 
             return validate_and_respond(api_key, model_id, save_and_respond)
         except WcaSecretManagerError as e:
-            logger.error(e)
+            logger.exception(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -159,7 +159,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
                 lambda: Response(status=HTTP_200_OK),
             )
         except WcaSecretManagerError as e:
-            logger.error(e)
+            logger.exception(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -169,30 +169,35 @@ def validate_and_respond(api_key, model_id, on_success):
             api_key,
             model_id,
         )
-    except (WcaInvalidModelId, WcaModelIdNotFound, ValidationError, WcaTokenFailure) as e:
-        logger.error(e)
+    except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure) as e:
+        logger.exception(e)
+        return Response(status=HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        # Since a ValidationError contains the request data that might contain PII,
+        # log the class name only here.
+        logger.error(e.__class__.__name__)
         return Response(status=HTTP_400_BAD_REQUEST)
     except WcaKeyNotFound as e:
-        logger.error(e)
+        logger.exception(e)
         raise WcaKeyNotFoundException(cause=e)
     except WcaBadRequest as e:
-        logger.error(e)
+        logger.exception(e)
         raise WcaBadRequestException(cause=e)
     except Exception as e:
-        logger.error(e)
+        logger.exception(e)
         raise ServiceUnavailable(cause=e)
     return on_success()
 
 
 def validate(api_key, model_id):
     if api_key is None:
-        logger.exception('No API key specified.')
+        logger.error('No API key specified.')
         raise WcaKeyNotFound
     if model_id is None:
-        logger.exception('No Model Id key specified.')
+        logger.error('No Model Id key specified.')
         raise WcaModelIdNotFound
     if model_id == settings.ANSIBLE_WCA_FREE_MODEL_ID:
-        logger.exception(
+        logger.error(
             'Cannot use a non-commercial Model Id. '
             'Please contact with your organization\'s system administration.'
         )

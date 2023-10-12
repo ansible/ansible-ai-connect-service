@@ -103,19 +103,16 @@ class InferenceStage(PipelineElement):
 
         except WcaBadRequest as e:
             exception = e
-            logger.error(e)
             logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
             raise WcaBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e
-            logger.error(e)
             logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
             raise WcaInvalidModelIdException(cause=e)
 
         except WcaKeyNotFound as e:
             exception = e
-            logger.error(e)
             logger.exception(
                 f"A WCA Api Key was expected but "
                 f"not found for suggestion {payload.suggestionId}"
@@ -124,7 +121,6 @@ class InferenceStage(PipelineElement):
 
         except WcaModelIdNotFound as e:
             exception = e
-            logger.error(e)
             logger.exception(
                 f"A WCA Model ID was expected but "
                 f"not found for suggestion {payload.suggestionId}"
@@ -133,7 +129,6 @@ class InferenceStage(PipelineElement):
 
         except WcaEmptyResponse as e:
             exception = e
-            logger.error(e)
             logger.exception(
                 f"WCA returned an empty response for suggestion {payload.suggestionId}"
             )

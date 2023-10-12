@@ -17,11 +17,12 @@ from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
+from test_utils import WisdomLogAwareMixin
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
-class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
+class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
@@ -89,8 +90,10 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
-        r = self.client.get(reverse('wca_model_id'))
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id'))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
 
     def test_set_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
@@ -147,25 +150,30 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase):
 
         # Set ModelId
         self.mock_secret_manager.get_secret.return_value = {'SecretString': 'someAPIKey'}
-        self.mock_wca_client.infer_from_parameters.side_effect = ValidationError
-        r = self.client.post(
-            reverse('wca_model_id'),
-            data='{ "model_id": "secret_model_id" }',
-            content_type='application/json',
-        )
 
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.mock_wca_client.infer_from_parameters.side_effect = ValidationError
+            r = self.client.post(
+                reverse('wca_model_id'),
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("ValidationError", log)
 
     def test_set_model_id_throws_secret_manager_exception(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
-        r = self.client.post(
-            reverse('wca_model_id'),
-            data='{ "model_id": "secret_model_id" }',
-            content_type='application/json',
-        )
-        self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.post(
+                reverse('wca_model_id'),
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
 
     def test_set_model_id_throws_validation_exception(self, *args):
         self.user.organization_id = '123'
@@ -191,7 +199,7 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
-class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
+class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
@@ -231,8 +239,10 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
             return {'SecretString': None}
 
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
 
     def test_validate_error_no_model_id(self, *args):
         self.user.organization_id = '123'
@@ -244,8 +254,10 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
             return {'SecretString': None}
 
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_no_model_id
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("ai.api.model_client.exceptions.WcaModelIdNotFound", log)
 
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
     def test_validate_error_free_model_id(self, *args):
@@ -258,37 +270,47 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
             return {'SecretString': 'free_model_id'}
 
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("ai.api.model_client.exceptions.WcaInvalidModelId", log)
 
     def test_validate_error_wrong_model_id(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=ValidationError)
 
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("ValidationError", log)
 
     def test_validate_error_api_key_not_found(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
 
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
 
     def test_validate_error_model_id_bad_request(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaBadRequest)
 
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("ai.api.model_client.exceptions.WcaBadRequest", log)
 
     def test_validate_error_model_id_exception(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
 
-        r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+            self.assertInLog("Exception", log)
