@@ -39,7 +39,7 @@ from django.utils import timezone
 from requests.exceptions import ReadTimeout
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
-from test_utils import WisdomServiceLogAwareTestCase
+from test_utils import WisdomLogAwareMixin, WisdomServiceLogAwareTestCase
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -1555,3 +1555,81 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(
                 model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
             )
+
+
+class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
+    def setUp(self):
+        super().setUp()
+
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        self.payload = {
+            "suggestions": [
+                "\n - name: install nginx on RHEL\n become: true\n "
+                "ansible.builtin.package:\n name: nginx\n state: present\n"
+            ],
+            "suggestionId": str(uuid.uuid4()),
+            "model": "org-model-id",
+        }
+
+        repo_name = "robertdebock.nginx"
+        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
+        path = "tasks/main.yml"
+        license = "apache-2.0"
+
+        response = MockResponse(
+            json=[
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": repo_name,
+                            "repo_url": repo_url,
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.94550663,
+                        }
+                    ],
+                    "meta": {"encode_duration": 367.3, "search_duration": 151.98},
+                }
+            ],
+            status_code=200,
+        )
+        self.model_client = WCAClient(inference_url='https://wca_api_url')
+        self.model_client.session.post = Mock(return_value=response)
+        self.model_client.get_token = Mock(return_value={"access_token": "abc"})
+        self.model_client.get_api_key = Mock(return_value='org-api-key')
+        self.model_client.get_model_id = Mock(return_value='org-model-id')
+
+    def assertExceptionInLog(self, exception_name):
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+                r = self.client.post(reverse('contentmatches'), self.payload)
+                self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+            self.assertInLog(exception_name, log)
+
+    def test_wca_contentmatch_with_non_existing_wca_key(self):
+        self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
+        self.assertExceptionInLog("ai.api.pipelines.common.WcaKeyNotFoundException")
+
+    def test_wca_contentmatch_with_empty_response(self):
+        response = MockResponse(
+            json=[],
+            status_code=204,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self.assertExceptionInLog("ai.api.pipelines.common.WcaEmptyResponseException")
+
+    def test_wca_contentmatch_with_non_existing_model_id(self):
+        self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
+        self.assertExceptionInLog("ai.api.pipelines.common.WcaModelIdNotFoundException")
+
+    def test_wca_contentmatch_with_invalid_model_id(self):
+        self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
+        self.assertExceptionInLog("ai.api.pipelines.common.WcaInvalidModelIdException")
+
+    def test_wca_contentmatch_with_bad_request(self):
+        self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
+        self.assertExceptionInLog("ai.api.pipelines.common.WcaBadRequestException")
