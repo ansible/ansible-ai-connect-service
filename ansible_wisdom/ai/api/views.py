@@ -7,6 +7,7 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
 )
 from ai.api.pipelines.common import (
     InternalServerError,
@@ -17,6 +18,7 @@ from ai.api.pipelines.common import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaSuggestionIdCorrelationFailureException,
     process_error_count,
 )
 from ai.api.pipelines.completions import CompletionsPipeline
@@ -462,6 +464,13 @@ class ContentMatches(GenericAPIView):
                 f"content matching suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException
+
+        except WcaSuggestionIdCorrelationFailure:
+            logger.exception(
+                f"WCA Request/Response SuggestionId correlation failed "
+                f"for suggestion {suggestion_id}"
+            )
+            raise WcaSuggestionIdCorrelationFailureException
 
         except WcaEmptyResponse:
             logger.exception(

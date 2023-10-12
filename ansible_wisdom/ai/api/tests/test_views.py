@@ -21,7 +21,10 @@ from ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
 )
-from ai.api.model_client.tests.test_wca_client import MockResponse
+from ai.api.model_client.tests.test_wca_client import (
+    WCA_REQUEST_ID_HEADER,
+    MockResponse,
+)
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.pipelines.completion_stages.inference import get_model_client
@@ -40,6 +43,8 @@ from requests.exceptions import ReadTimeout
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
 from test_utils import WisdomLogAwareMixin, WisdomServiceLogAwareTestCase
+
+DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
 class DummyMeshClient(ModelMeshClient):
@@ -80,7 +85,7 @@ class DummyMeshClient(ModelMeshClient):
 
         self.response_data = response_data
 
-    def infer(self, data, model_id=None):
+    def infer(self, data, model_id=None, suggestion_id=None):
         if self.test_inference_match:
             self.test.assertEqual(data, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
@@ -119,14 +124,15 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
 @modify_settings()
 class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
-    def stub_wca_client(self, status_code, mock_api_key, mock_model_id):
+    def stub_wca_client(self, status_code, mock_api_key, mock_model_id, suggestion_id: uuid):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
+            "suggestionId": str(suggestion_id),
         }
         response = MockResponse(
             json={"predictions": [""]},
             status_code=status_code,
+            headers={WCA_REQUEST_ID_HEADER: str(suggestion_id)},
         )
         model_client = WCAClient(inference_url='https://wca_api_url')
         model_client.session.post = Mock(return_value=response)
@@ -157,7 +163,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -179,7 +188,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(side_effect=WcaKeyNotFound), Mock(return_value='org-model-id')
+            200,
+            Mock(side_effect=WcaKeyNotFound),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -195,7 +207,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(return_value='org-api-key'), Mock(side_effect=WcaModelIdNotFound)
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(side_effect=WcaModelIdNotFound),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -211,7 +226,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            400, Mock(return_value='org-api-key'), Mock(return_value='garbage')
+            400,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='garbage'),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -227,7 +245,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            403, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            403,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -243,7 +264,10 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            204, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            204,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -260,11 +284,14 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -280,12 +307,15 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
             "tasks:\n    # Install Apache & start Apache\n",
-            "suggestionId": str(uuid.uuid4()),
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
         with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
@@ -301,12 +331,15 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
-            200, Mock(return_value='org-api-key'), Mock(return_value='org-model-id')
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
             "tasks:\n    # Install Apache & start Apache\n",
-            "suggestionId": str(uuid.uuid4()),
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
         model_client.session.post = Mock(side_effect=ReadTimeout())
@@ -321,6 +354,44 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                         properties = event['properties']
                         self.assertTrue(properties['exception'])
                         self.assertEqual(properties['problem'], 'ModelTimeoutError')
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_completion_request_id_correlation_failure(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='org-model-id'),
+            DEFAULT_SUGGESTION_ID,
+        )
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  "
+            "tasks:\n    # Install Apache & start Apache\n",
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
+        }
+        response = MockResponse(
+            json={},
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: str(uuid.uuid4())},
+        )
+
+        model_client, _ = stub
+        model_client.session.post = Mock(return_value=response)
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    if event['event'] == 'prediction':
+                        properties = event['properties']
+                        self.assertTrue(properties['exception'])
+                        self.assertEqual(properties['problem'], 'WcaSuggestionIdCorrelationFailure')
 
 
 @modify_settings()

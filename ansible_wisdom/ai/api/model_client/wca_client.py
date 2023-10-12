@@ -25,8 +25,11 @@ from .exceptions import (
     WcaInferenceFailure,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
+
+WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,7 @@ class WCAClient(ModelMeshClient):
             # retry on all other errors (e.g. network)
             return False
 
-    def infer(self, model_input, model_id=None):
+    def infer(self, model_input, model_id=None, suggestion_id=None):
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -83,7 +86,7 @@ class WCAClient(ModelMeshClient):
         try:
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
             model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
-            result = self.infer_from_parameters(api_key, model_id, context, prompt)
+            result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
             response['model_id'] = model_id
@@ -93,7 +96,7 @@ class WCAClient(ModelMeshClient):
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt):
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
@@ -105,6 +108,7 @@ class WCAClient(ModelMeshClient):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
+            WCA_REQUEST_ID_HEADER: str(suggestion_id),
         }
         task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
@@ -124,6 +128,10 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
+            # request/payload suggestion_id is a UUID not a string whereas HTTP headers are strings.
+            if response.headers.get(WCA_REQUEST_ID_HEADER) != str(suggestion_id):
+                raise WcaSuggestionIdCorrelationFailure(model_id=model_id)
+
             context = InferenceContext(model_id, response, task_count > 1)
             InferenceResponseChecks().run_checks(context)
             response.raise_for_status()

@@ -54,3 +54,8 @@ class WcaInferenceFailure(WcaException):
 @dataclass
 class WcaCodeMatchFailure(WcaException):
     """An attempt to run a WCA code match failed."""
+
+
+@dataclass
+class WcaSuggestionIdCorrelationFailure(WcaException):
+    """WCA Request/Response Suggestion Id correlation failed."""

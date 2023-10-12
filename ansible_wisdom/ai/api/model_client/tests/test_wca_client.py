@@ -1,3 +1,4 @@
+import uuid
 from functools import wraps
 from http import HTTPStatus
 from unittest.mock import Mock, patch
@@ -17,9 +18,11 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
 from ai.api.model_client.wca_client import (
+    WCA_REQUEST_ID_HEADER,
     WCAClient,
     ibm_cloud_identity_token_hist,
     wca_codegen_hist,
@@ -30,11 +33,14 @@ from django.test import override_settings
 from requests.exceptions import HTTPError, ReadTimeout
 from test_utils import WisdomServiceLogAwareTestCase
 
+DEFAULT_SUGGESTION_ID = uuid.uuid4()
+
 
 class MockResponse:
-    def __init__(self, json, status_code):
+    def __init__(self, json, status_code, headers=None):
         self._json = json
         self.status_code = status_code
+        self.headers = {} if headers is None else headers
 
     def json(self):
         return self._json
@@ -60,6 +66,7 @@ def stub_wca_client(
     response = MockResponse(
         json=response_data,
         status_code=status_code,
+        headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
     )
     model_client = WCAClient(inference_url='https://wca_api_url')
     model_client.session.post = Mock(return_value=response)
@@ -273,11 +280,13 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         response = MockResponse(
             json=predictions,
             status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
 
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
+            WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID),
         }
 
         model_client = WCAClient(inference_url='https://example.com')
@@ -285,7 +294,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
 
-        result = model_client.infer(model_input=model_input, model_id=model_id)
+        result = model_client.infer(
+            model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+        )
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -320,7 +331,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(ModelTimeoutError) as e:
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
@@ -347,7 +360,38 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(WcaInferenceFailure) as e:
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
+        self.assertEqual(e.exception.model_id, model_id)
+
+    @assert_call_count_metrics(hist=wca_codegen_hist)
+    def test_infer_request_id_correlation_failure(self):
+        model_id = "zavala"
+        model_input = {
+            "instances": [
+                {
+                    "context": "",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.get_model_id = Mock(return_value=model_id)
+
+        with self.assertRaises(WcaSuggestionIdCorrelationFailure) as e:
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
@@ -355,7 +399,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(400, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
@@ -363,7 +409,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
@@ -371,7 +419,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse) as e:
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
@@ -388,7 +438,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse):
-            model_client.infer(model_input=model_input, model_id=model_id)
+            model_client.infer(
+                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            )
 
 
 class TestWCACodematch(WisdomServiceLogAwareTestCase):
@@ -444,10 +496,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
                 },
             ]
         }
-        response = MockResponse(
-            json=client_response,
-            status_code=200,
-        )
+        response = MockResponse(json=client_response, status_code=200)
 
         headers = {
             "Content-Type": "application/json",
