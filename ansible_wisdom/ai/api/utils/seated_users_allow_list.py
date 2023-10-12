@@ -42,7 +42,7 @@ ALLOW_LIST = {
             'collection': None,
             'module': None,
         },
-        'tasksCount': None,
+        'taskCount': None,
         'promptType': None,
         'hostname': None,
         'groups': None,
