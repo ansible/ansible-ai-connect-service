@@ -248,7 +248,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
-    def test_validate_error_free_model_id(self, *args):
+    def test_validate_ok_free_model_id(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
 
@@ -259,7 +259,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase):
 
         self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
         r = self.client.get(reverse('wca_model_id_validator'))
-        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
 
     def test_validate_error_wrong_model_id(self, *args):
         self.user.organization_id = '123'
