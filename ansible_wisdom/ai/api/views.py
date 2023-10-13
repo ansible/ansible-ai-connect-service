@@ -1,5 +1,6 @@
 import logging
 import time
+from http import HTTPStatus
 
 from ai.api.model_client.exceptions import (
     WcaBadRequest,
@@ -503,14 +504,14 @@ class ContentMatches(GenericAPIView):
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
                 process_error_count.labels(stage='response_serialization_validation').inc()
-                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
+                logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
-            if not response_serializer.is_valid():
-                logging.error(response_serializer.errors)
 
-        except Exception as exc:
-            logger.error(f"Failed to search for contentmatches\nException:\n{exc}")
-            return Response({'message': "Unable to complete the request"}, status=503)
+        except Exception:
+            logger.exception("Failed to search for attributions for content matching")
+            return Response(
+                {'message': "Unable to complete the request"}, status=HTTPStatus.SERVICE_UNAVAILABLE
+            )
 
         return response_serializer
 
