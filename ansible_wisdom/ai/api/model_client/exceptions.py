@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 
 
@@ -59,3 +60,7 @@ class WcaCodeMatchFailure(WcaException):
 @dataclass
 class WcaSuggestionIdCorrelationFailure(WcaException):
     """WCA Request/Response Suggestion Id correlation failed."""
+
+    def __init__(self, model_id, x_request_id: uuid.uuid4):
+        super().__init__(model_id)
+        self.x_request_id: uuid.uuid4 = x_request_id

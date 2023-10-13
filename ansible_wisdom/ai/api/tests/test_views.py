@@ -373,10 +373,11 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             "tasks:\n    # Install Apache & start Apache\n",
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
+        x_request_id = uuid.uuid4()
         response = MockResponse(
             json={},
             status_code=200,
-            headers={WCA_REQUEST_ID_HEADER: str(uuid.uuid4())},
+            headers={WCA_REQUEST_ID_HEADER: str(x_request_id)},
         )
 
         model_client, _ = stub
@@ -392,6 +393,8 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                         properties = event['properties']
                         self.assertTrue(properties['exception'])
                         self.assertEqual(properties['problem'], 'WcaSuggestionIdCorrelationFailure')
+                self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
+                self.assertInLog(f"x_request_id: '{x_request_id}'", log)
 
 
 @modify_settings()

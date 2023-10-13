@@ -133,8 +133,8 @@ class InferenceStage(PipelineElement):
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e
             logger.exception(
-                f"WCA Request/Response SuggestionId correlation "
-                f"failed for suggestion {suggestion_id}"
+                f"WCA Request/Response SuggestionId correlation failed for "
+                f"suggestion_id: '{suggestion_id}' and x_request_id: '{e.x_request_id}'."
             )
             raise WcaSuggestionIdCorrelationFailureException(cause=e)
 

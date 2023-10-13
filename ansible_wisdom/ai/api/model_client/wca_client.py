@@ -129,8 +129,11 @@ class WCAClient(ModelMeshClient):
         try:
             response = post_request()
             # request/payload suggestion_id is a UUID not a string whereas HTTP headers are strings.
-            if response.headers.get(WCA_REQUEST_ID_HEADER) != str(suggestion_id):
-                raise WcaSuggestionIdCorrelationFailure(model_id=model_id)
+            x_request_id = response.headers.get(WCA_REQUEST_ID_HEADER)
+            if x_request_id != str(suggestion_id):
+                raise WcaSuggestionIdCorrelationFailure(
+                    model_id=model_id, x_request_id=x_request_id
+                )
 
             context = InferenceContext(model_id, response, task_count > 1)
             InferenceResponseChecks().run_checks(context)

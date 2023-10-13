@@ -101,10 +101,7 @@ class WcaModelIdNotFoundException(BaseWisdomAPIException):
 
 class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
     status_code = 500
-    default_detail = {
-        "message": "WCA Request/Response Suggestion ID correlation failed. "
-        "Please contact your administrator."
-    }
+    default_detail = {"message": "WCA Request/Response Suggestion ID correlation failed."}
 
 
 class WcaEmptyResponseException(BaseWisdomAPIException):
