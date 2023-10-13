@@ -384,9 +384,9 @@ class ContentMatches(GenericAPIView):
             else:
                 response_serializer = self.perform_search(request_data, request.user)
             return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-        except Exception as e:
+        except Exception:
             logger.exception("Error requesting content matches")
-            raise e
+            raise
 
     def perform_content_matching(
         self,
