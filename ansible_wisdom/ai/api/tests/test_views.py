@@ -1557,7 +1557,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             )
 
 
-class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
+class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
 
@@ -1603,16 +1603,11 @@ class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAw
         self.model_client.get_api_key = Mock(return_value='org-api-key')
         self.model_client.get_model_id = Mock(return_value='org-model-id')
 
-    def assertExceptionInLog(self, exception_name):
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-                r = self.client.post(reverse('contentmatches'), self.payload)
-                self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-            self.assertInLog(exception_name, log)
-
     def test_wca_contentmatch_with_non_existing_wca_key(self):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaKeyNotFoundException")
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaKeyNotFoundException", HTTPStatus.FORBIDDEN
+        )
 
     def test_wca_contentmatch_with_empty_response(self):
         response = MockResponse(
@@ -1620,16 +1615,43 @@ class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAw
             status_code=204,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaEmptyResponseException")
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaEmptyResponseException", HTTPStatus.NO_CONTENT
+        )
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaModelIdNotFoundException")
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaModelIdNotFoundException", HTTPStatus.FORBIDDEN
+        )
 
     def test_wca_contentmatch_with_invalid_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaInvalidModelIdException")
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
+        )
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaBadRequestException")
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.BAD_REQUEST
+        )
+
+    def test_wca_contentmatch_with_model_timeout(self):
+        self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.ModelTimeoutException", HTTPStatus.NO_CONTENT
+        )
+
+    def test_wca_contentmatch_with_connection_error(self):
+        self.model_client.get_model_id = Mock(side_effect=ConnectionError)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.ServiceUnavailable", HTTPStatus.SERVICE_UNAVAILABLE
+        )
+
+    def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+                r = self.client.post(reverse('contentmatches'), self.payload)
+                self.assertEqual(r.status_code, status_code_expected)
+            self.assertInLog(exception_name, log)
