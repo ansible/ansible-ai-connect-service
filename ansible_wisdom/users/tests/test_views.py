@@ -39,18 +39,19 @@ class UserHomeTestAsAnonymous(TestCase):
 
 @patch.object(WcaSecretManager, "__init__", bypass_init)
 @patch.object(boto3, "client", Mock())
-@patch.object(users.models.User, "rh_user_is_org_admin", True)
 class UserHomeTestAsAdmin(TestCase):
     def setUp(self):
         self.client = Client()
+        self.user = create_user(provider="oidc", rh_user_is_org_admin=True)
+        self.client.force_login(self.user)
+
+    def tearDown(self):
+        self.user.delete()
 
     @patch.object(WcaSecretManager, "get_secret", no_secret)
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_seat_and_no_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
@@ -62,9 +63,6 @@ class UserHomeTestAsAdmin(TestCase):
     @patch.object(users.models.User, "rh_org_has_subscription", False)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_admin_without_seat_and_with_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
@@ -75,9 +73,6 @@ class UserHomeTestAsAdmin(TestCase):
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_a_seat_and_with_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
@@ -87,18 +82,19 @@ class UserHomeTestAsAdmin(TestCase):
 
 @patch.object(WcaSecretManager, "__init__", bypass_init)
 @patch.object(boto3, "client", Mock())
-@patch.object(users.models.User, "rh_user_is_org_admin", False)
 class UserHomeTestAsUser(TestCase):
     def setUp(self):
         self.client = Client()
+        self.user = create_user(provider="oidc", rh_user_is_org_admin=False)
+        self.client.force_login(self.user)
+
+    def tearDown(self):
+        self.user.delete()
 
     @patch.object(WcaSecretManager, "get_secret", with_secret)
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
@@ -110,9 +106,6 @@ class UserHomeTestAsUser(TestCase):
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_no_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: licensed user")
@@ -123,9 +116,6 @@ class UserHomeTestAsUser(TestCase):
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_with_secret(self):
-        user = create_user(provider="oidc")
-
-        self.client.force_login(user)
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: licensed user")
