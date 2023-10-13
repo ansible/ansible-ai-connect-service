@@ -375,14 +375,17 @@ class ContentMatches(GenericAPIView):
         suggestion_id = str(request_data.get('suggestionId', ''))
         model_id = str(request_data.get('model', ''))
 
-        if request.user.rh_user_has_seat:
-            response_serializer = self.perform_content_matching(
-                model_id, suggestion_id, request.user, request_data
-            )
-        else:
-            response_serializer = self.perform_search(request_data, request.user)
-
-        return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+        try:
+            if request.user.rh_user_has_seat:
+                response_serializer = self.perform_content_matching(
+                    model_id, suggestion_id, request.user, request_data
+                )
+            else:
+                response_serializer = self.perform_search(request_data, request.user)
+            return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("Error requesting content matches")
+            raise e
 
     def perform_content_matching(
         self,
@@ -465,9 +468,8 @@ class ContentMatches(GenericAPIView):
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
             raise WcaEmptyResponseException
-        except Exception as e:
-            logger.error(e)
-            logger.exception(f"Error requesting content matching for suggestion {suggestion_id}")
+        except Exception:
+            logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
             raise ServiceUnavailable
 
         return response_serializer
