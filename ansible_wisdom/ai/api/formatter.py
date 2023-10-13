@@ -66,20 +66,67 @@ Normalize by loading and re-serializing
 """
 
 
-def normalize_yaml(yaml_str):
+def normalize_yaml(yaml_str, ansible_file_type="playbook", additional_context={}):
     data = yaml.load(yaml_str, Loader=yaml.SafeLoader)
     if data is None:
         return None
+    if additional_context:
+        expand_vars_files(data, ansible_file_type, additional_context)
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
-def preprocess(context, prompt):
+def expand_vars_files(data, ansible_file_type, additional_context):
+    """Expand the vars_files element by loading each file and add/update the vars element"""
+
+    def load_and_merge_vars_in_context(vars_in_context):
+        merged_vars = {}
+        for v in vars_in_context:
+            # Merge the vars element and the dict loaded from a vars string
+            merged_vars |= yaml.load(v, Loader=yaml.SafeLoader)
+        return merged_vars
+
+    def insert_set_fact_task(data, merged_vars):
+        if len(merged_vars) > 0:
+            vars_task = {
+                "name": "Set variables from context",
+                "ansible.builtin.set_fact": merged_vars,
+            }
+            data.insert(0, vars_task)
+
+    # playbook
+    if ansible_file_type == "playbook":
+        playbook_context = additional_context.get("playbookContext", {})
+        var_infiles = list(playbook_context.get("varInfiles", {}).values())
+        include_vars = list(playbook_context.get("includeVars", {}).values())
+        merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
+        if len(merged_vars) > 0:
+            for d in data:
+                d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+    # tasks_in_role
+    elif ansible_file_type == "tasks_in_role":
+        role_context = additional_context.get("roleContext", {})
+        role_vars = list(role_context.get("roleVars", {}).get("vars", {}).values())
+        role_vars_defaults = list(role_context.get("roleVars", {}).get("defaults", {}).values())
+        include_vars = list(role_context.get("includeVars", {}).values())
+        merged_vars = load_and_merge_vars_in_context(role_vars_defaults + role_vars + include_vars)
+        if len(merged_vars) > 0:
+            insert_set_fact_task(data, merged_vars)
+    # tasks
+    elif ansible_file_type == "tasks":
+        standalone_task_context = additional_context.get("standaloneTaskContext", {})
+        include_vars = list(standalone_task_context.get("includeVars", {}).values())
+        merged_vars = load_and_merge_vars_in_context(include_vars)
+        if len(merged_vars) > 0:
+            insert_set_fact_task(data, merged_vars)
+
+
+def preprocess(context, prompt, ansible_file_type="playbook", additional_context=None):
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     Format and split off the last line as the prompt
     Append a newline to both context and prompt (as the model expects)
     """
-    formatted = normalize_yaml(f'{context}\n{prompt}')
+    formatted = normalize_yaml(f'{context}\n{prompt}', ansible_file_type, additional_context)
 
     if formatted is not None:
         logger.debug(f'initial user input {context}\n{prompt}')
@@ -92,7 +139,7 @@ def preprocess(context, prompt):
             context = ""
             prompt = segs[0]
         else:
-            logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
+            logger.warning(f"preprocess failed - too few new-lines in: {formatted}")
 
             logger.debug(f'preprocessed user input {context}\n{prompt}')
 
