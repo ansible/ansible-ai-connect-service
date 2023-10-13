@@ -55,7 +55,7 @@ class UserHomeTestAsAdmin(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
         self.assertContains(response, "pf-c-alert__title")
-        self.assertContains(response, "Model settings have not been defined")
+        self.assertContains(response, "model settings have not been configured")
         self.assertContains(response, "Admin Portal")
 
     @patch.object(WcaSecretManager, "get_secret", with_secret)
@@ -103,7 +103,7 @@ class UserHomeTestAsUser(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
         self.assertContains(response, "pf-c-alert__title")
-        self.assertContains(response, "You do not have a licensed seat for Lightspeed.")
+        self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertNotContains(response, "Admin Portal")
 
     @patch.object(WcaSecretManager, "get_secret", no_secret)
@@ -116,7 +116,7 @@ class UserHomeTestAsUser(TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: licensed user")
-        self.assertContains(response, "but your Admin has not configured the service")
+        self.assertContains(response, "but your administrator has not configured the service")
         self.assertNotContains(response, "Admin Portal")
 
     @patch.object(WcaSecretManager, "get_secret", with_secret)
