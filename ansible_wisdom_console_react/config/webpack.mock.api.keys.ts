@@ -1,4 +1,4 @@
-import {delay, DELAY_MS, ORG_ID} from './webpack.mock.globals';
+import {delay, DELAY_MS, ERROR_DESCRIPTION, ORG_ID} from './webpack.mock.globals';
 
 const webpackMockServer = require("webpack-mock-server");
 
@@ -31,7 +31,7 @@ export default webpackMockServer.add((app, helper) => {
                 const key = data[KEY_FIELD];
                 if (key === "error-test") {
                     // Emulate a server-side error
-                    res.sendStatus(500);
+                    res.status(500).json({detail: ERROR_DESCRIPTION});
                     return;
                 }
                 if (key === "invalid-test") {
@@ -49,7 +49,7 @@ export default webpackMockServer.add((app, helper) => {
             const key = _req.body['key'];
             if (key === "error") {
                 // Emulate a server-side error
-                res.sendStatus(500);
+                res.status(500).json({detail: ERROR_DESCRIPTION});
                 return;
             }
             if (key === "invalid") {

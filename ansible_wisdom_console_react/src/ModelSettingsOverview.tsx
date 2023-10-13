@@ -48,10 +48,12 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
-                } else if (error.response?.status === 500) {
-                    setKeyError({inError: true, message: error.response.data});
                 } else {
-                    setKeyError({inError: true, message: error.message});
+                    setKeyError({
+                        inError: true,
+                        message: error.message,
+                        detail: error.response?.data?.detail
+                    });
                 }
             })
             .finally(() => {
@@ -69,10 +71,12 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
-                } else if (error.response?.status === 500) {
-                    setModelIdError({inError: true, message: error.response.data});
                 } else {
-                    setModelIdError({inError: true, message: error.message});
+                    setModelIdError({
+                        inError: true,
+                        message: error.message,
+                        detail: error.response?.data?.detail
+                    });
                 }
             })
             .finally(() => {
@@ -84,12 +88,12 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
     return (
         <>
             <ErrorModal
-                message={t("KeyValidationError")}
+                caption={t("KeyValidationError")}
                 hasError={keyError}
                 close={() => setKeyError(NO_ERROR)}
             />
             <ErrorModal
-                message={t("ModelIdValidationError")}
+                caption={t("ModelIdValidationError")}
                 hasError={modelIdError}
                 close={() => setModelIdError(NO_ERROR)}
             />
