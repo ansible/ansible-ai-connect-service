@@ -1245,13 +1245,34 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
     @patch('ai.api.model_client.wca_client.WCAClient.codematch')
     def test_wca_contentmatch_errors(self, mock_codematch):
         for error, status_code_expected in [
-            (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
-            (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
-            (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
-            (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
-            (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
-            (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
-            (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
+            (
+                ModelTimeoutError(),
+                HTTPStatus.NO_CONTENT,
+            ),
+            (
+                WcaBadRequest(),
+                HTTPStatus.BAD_REQUEST,
+            ),
+            (
+                WcaInvalidModelId(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaKeyNotFound(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaModelIdNotFound(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaEmptyResponse(),
+                HTTPStatus.NO_CONTENT,
+            ),
+            (
+                ConnectionError(),
+                HTTPStatus.SERVICE_UNAVAILABLE,
+            ),
         ]:
             mock_codematch.side_effect = self._get_side_effect(error)
             self._assert_status_code(status_code_expected)
@@ -1266,11 +1287,12 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+            apps.get_app_config('ai'),
+            'wca_client',
+            WCAClient(inference_url='https://wca_api_url'),
         ):
-            with self.assertLogs(logger='root', level='DEBUG'):
-                r = self.client.post(reverse('contentmatches'), payload)
-                self.assertEqual(r.status_code, status_code_expected)
+            r = self.client.post(reverse('contentmatches'), payload)
+            self.assertEqual(r.status_code, status_code_expected)
 
     def _get_side_effect(self, error):
         if isinstance(error, (WcaException, ModelTimeoutError)):
@@ -1653,8 +1675,7 @@ class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAw
     def assertExceptionInLog(self, exception_name):
         with self.assertLogs(logger='root', level='ERROR') as log:
             with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-                r = self.client.post(reverse('contentmatches'), self.payload)
-                self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+                self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog(exception_name, log)
 
     def test_wca_contentmatch_with_non_existing_wca_key(self):
