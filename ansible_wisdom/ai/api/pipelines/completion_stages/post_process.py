@@ -96,6 +96,10 @@ def write_to_segment(
     send_segment_event(event, event_name, user)
 
 
+def trim_whitespace_lines(input: str):
+    return '\n'.join(line if line.strip() else '' for line in input.split('\n'))
+
+
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
     lines = recommendation_yaml.splitlines()
     lines = [line for line in lines if line.strip() != ""]
@@ -263,6 +267,14 @@ def completion_post_process(context: CompletionContext):
 
     # restore original indentation
     indented_yaml = fmtr.restore_indentation(indented_yaml, original_indent)
+
+    # blank any lines containing only whitespace
+    indented_yaml = trim_whitespace_lines(indented_yaml)
+
+    # add a newline to the end if there isn't one
+    if indented_yaml.endswith('\n') is False:
+        indented_yaml = f"{indented_yaml}\n"
+
     post_processed_predictions["predictions"][0] = indented_yaml
     logger.debug(f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}")
 
