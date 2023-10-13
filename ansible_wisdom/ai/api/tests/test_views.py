@@ -1240,75 +1240,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 @modify_settings()
 class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
-    DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
-
-    @patch('ai.api.model_client.wca_client.WCAClient.codematch')
-    def test_wca_contentmatch_errors(self, mock_codematch):
-        for error, status_code_expected in [
-            (
-                ModelTimeoutError(),
-                HTTPStatus.NO_CONTENT,
-            ),
-            (
-                WcaBadRequest(),
-                HTTPStatus.BAD_REQUEST,
-            ),
-            (
-                WcaInvalidModelId(),
-                HTTPStatus.FORBIDDEN,
-            ),
-            (
-                WcaKeyNotFound(),
-                HTTPStatus.FORBIDDEN,
-            ),
-            (
-                WcaModelIdNotFound(),
-                HTTPStatus.FORBIDDEN,
-            ),
-            (
-                WcaEmptyResponse(),
-                HTTPStatus.NO_CONTENT,
-            ),
-            (
-                ConnectionError(),
-                HTTPStatus.SERVICE_UNAVAILABLE,
-            ),
-        ]:
-            mock_codematch.side_effect = self._get_side_effect(error)
-            self._assert_status_code(status_code_expected)
-
-    def _assert_status_code(self, status_code_expected):
-        self.user.rh_user_has_seat = True
-        payload = {
-            "suggestions": [
-                "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
-            ],
-            "suggestionId": str(uuid.uuid4()),
-        }
-        self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config('ai'),
-            'wca_client',
-            WCAClient(inference_url='https://wca_api_url'),
-        ):
-            r = self.client.post(reverse('contentmatches'), payload)
-            self.assertEqual(r.status_code, status_code_expected)
-
-    def _get_side_effect(self, error):
-        if isinstance(error, (WcaException, ModelTimeoutError)):
-            error.model_id = self.DUMMY_MODEL_ID
-        else:
-            request = requests.PreparedRequest()
-            body = {
-                "model_id": self.DUMMY_MODEL_ID,
-                "input": [
-                    "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
-                ],
-            }
-            request.body = json.dumps(body).encode("utf-8")
-            error.request = request
-        return error
-
     @patch('ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
         self.user.rh_user_has_seat = False
@@ -1626,7 +1557,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             )
 
 
-class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
+class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
 
@@ -1672,15 +1603,46 @@ class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAw
         self.model_client.get_api_key = Mock(return_value='org-api-key')
         self.model_client.get_model_id = Mock(return_value='org-model-id')
 
-    def assertExceptionInLog(self, exception_name):
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-                self.client.post(reverse('contentmatches'), self.payload)
-            self.assertInLog(exception_name, log)
+    DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
+
+    @patch('ai.api.model_client.wca_client.WCAClient.codematch')
+    def test_wca_contentmatch_errors(self, mock_codematch):
+        for error, status_code_expected in [
+            (
+                ModelTimeoutError(),
+                HTTPStatus.NO_CONTENT,
+            ),
+            (
+                WcaBadRequest(),
+                HTTPStatus.BAD_REQUEST,
+            ),
+            (
+                WcaInvalidModelId(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaKeyNotFound(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaModelIdNotFound(),
+                HTTPStatus.FORBIDDEN,
+            ),
+            (
+                WcaEmptyResponse(),
+                HTTPStatus.NO_CONTENT,
+            ),
+            (
+                ConnectionError(),
+                HTTPStatus.SERVICE_UNAVAILABLE,
+            ),
+        ]:
+            mock_codematch.side_effect = self._get_side_effect(error)
+            self._assert_status_code(status_code_expected)
 
     def test_wca_contentmatch_with_non_existing_wca_key(self):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaKeyNotFoundException")
+        self._assert_exception_in_log("ai.api.pipelines.common.WcaKeyNotFoundException")
 
     def test_wca_contentmatch_with_empty_response(self):
         response = MockResponse(
@@ -1688,16 +1650,46 @@ class TestContentMatchesWCAViewLogging(WisdomServiceAPITestCaseBase, WisdomLogAw
             status_code=204,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaEmptyResponseException")
+        self._assert_exception_in_log("ai.api.pipelines.common.WcaEmptyResponseException")
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaModelIdNotFoundException")
+        self._assert_exception_in_log("ai.api.pipelines.common.WcaModelIdNotFoundException")
 
     def test_wca_contentmatch_with_invalid_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaInvalidModelIdException")
+        self._assert_exception_in_log("ai.api.pipelines.common.WcaInvalidModelIdException")
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
-        self.assertExceptionInLog("ai.api.pipelines.common.WcaBadRequestException")
+        self._assert_exception_in_log("ai.api.pipelines.common.WcaBadRequestException")
+
+    def _assert_status_code(self, status_code_expected):
+        with patch.object(
+            apps.get_app_config('ai'),
+            'wca_client',
+            WCAClient(inference_url='https://wca_api_url'),
+        ):
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertEqual(r.status_code, status_code_expected)
+
+    def _get_side_effect(self, error):
+        if isinstance(error, (WcaException, ModelTimeoutError)):
+            error.model_id = self.DUMMY_MODEL_ID
+        else:
+            request = requests.PreparedRequest()
+            body = {
+                "model_id": self.DUMMY_MODEL_ID,
+                "input": [
+                    "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
+                ],
+            }
+            request.body = json.dumps(body).encode("utf-8")
+            error.request = request
+        return error
+
+    def _assert_exception_in_log(self, exception_name):
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+                self.client.post(reverse('contentmatches'), self.payload)
+            self.assertInLog(exception_name, log)
