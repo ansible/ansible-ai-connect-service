@@ -24,6 +24,7 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
+from users.signals import user_set_wca_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,11 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             # Store the validated API Key
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
+
+            # Audit trail/logging
+            user_set_wca_api_key.send(
+                WCAApiKeyView.__class__, user=request._request.user, org_id=org_id, api_key=wca_key
+            )
             logger.info(f"Stored secret '{secret_name}' for org_id '{org_id}'")
 
         except WcaSecretManagerError as e:

@@ -108,23 +108,30 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
 
         # Set Key
         self.mock_wca_client.get_token.return_value = "token"
-        r = self.client.post(
-            reverse('wca_api_key'),
-            data='{ "key": "a-new-key" }',
-            content_type='application/json',
-        )
-        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-        self.mock_secret_manager.save_secret.assert_called_with(
-            '123', Suffixes.API_KEY, 'a-new-key'
-        )
+        with self.assertLogs(logger='users.signals', level='DEBUG') as log:
+            r = self.client.post(
+                reverse('wca_api_key'),
+                data='{ "key": "a-new-key" }',
+                content_type='application/json',
+            )
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.mock_secret_manager.save_secret.assert_called_with(
+                '123', Suffixes.API_KEY, 'a-new-key'
+            )
 
-        # Check Key was stored
-        self.mock_secret_manager.get_secret.return_value = {
-            'CreatedDate': timezone.now().isoformat()
-        }
-        r = self.client.get(reverse('wca_api_key'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
+            # Check Key was stored
+            self.mock_secret_manager.get_secret.return_value = {
+                'CreatedDate': timezone.now().isoformat()
+            }
+            r = self.client.get(reverse('wca_api_key'))
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
+
+            # Check audit entry
+            self.assertInLog(
+                f"User: '{self.user}' set WCA Key for Organisation '{self.user.organization_id}'",
+                log,
+            )
 
     def test_set_key_with_invalid_value(self, *args):
         self.user.organization_id = '123'
