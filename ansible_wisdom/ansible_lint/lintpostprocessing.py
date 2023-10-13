@@ -7,7 +7,7 @@ from ansiblelint.config import Options
 from ansiblelint.config import options as default_options
 from ansiblelint.constants import DEFAULT_RULESDIR
 from ansiblelint.rules import RulesCollection
-from ansiblelint.runner import LintResult, _get_matches
+from ansiblelint.runner import LintResult, get_matches
 from ansiblelint.transformer import Transformer
 from django.conf import settings
 
@@ -57,7 +57,7 @@ class AnsibleLintCaller:
                 temp_completion_path = temp_file.name
 
             self.config_options.lintables = [temp_completion_path]
-            result = _get_matches(rules=self.default_rules_collection, options=self.config_options)
+            result = get_matches(rules=self.default_rules_collection, options=self.config_options)
             self.run_transform(result, self.config_options)
 
             # read the transformed file
