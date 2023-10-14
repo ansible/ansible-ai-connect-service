@@ -10,7 +10,7 @@ class ModelMeshClient:
         self._timeout = int(i) if i is not None else None
 
     @abstractmethod
-    def infer(self, model_input, model_id="wisdom"):  # pragma: no cover
+    def infer(self, model_input, model_id="wisdom", suggestion_id=None):  # pragma: no cover
         pass
 
     def set_inference_url(self, inference_url):

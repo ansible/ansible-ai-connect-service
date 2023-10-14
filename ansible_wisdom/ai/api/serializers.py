@@ -60,6 +60,7 @@ class CompletionRequestSerializer(serializers.Serializer):
         required=False,
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
+        default=uuid.uuid4,
     )
     metadata = Metadata(required=False)
     model = serializers.CharField(required=False)

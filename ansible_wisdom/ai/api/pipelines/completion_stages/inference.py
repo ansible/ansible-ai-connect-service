@@ -10,6 +10,7 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
 )
 from ai.api.pipelines.common import (
     BaseWisdomAPIException,
@@ -21,6 +22,7 @@ from ai.api.pipelines.common import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaSuggestionIdCorrelationFailureException,
     process_error_count,
 )
 from ai.api.pipelines.completion_context import CompletionContext
@@ -71,6 +73,7 @@ class InferenceStage(PipelineElement):
         # - Public completion API uses 'model'
         # - Segment Events use 'modelName'
         model_id = model_name or payload.model
+        suggestion_id = payload.suggestionId
 
         model_mesh_payload = ModelMeshPayload(
             instances=[
@@ -80,24 +83,26 @@ class InferenceStage(PipelineElement):
                     "userId": str(payload.userId) if payload.userId else None,
                     "rh_user_has_seat": request._request.user.rh_user_has_seat,
                     "organization_id": request._request.user.org_id,
-                    "suggestionId": str(payload.suggestionId),
+                    "suggestionId": str(suggestion_id),
                 }
             ]
         )
         data = model_mesh_payload.dict()
-        logger.debug(f"input to inference for suggestion id {payload.suggestionId}:\n{data}")
+        logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{data}")
 
         predictions = None
         exception = None
         start_time = time.time()
         try:
-            predictions = model_mesh_client.infer(data, model_id=model_id)
+            predictions = model_mesh_client.infer(
+                data, model_id=model_id, suggestion_id=suggestion_id
+            )
             model_id = predictions.get("model_id", model_id)
         except ModelTimeoutError as e:
             exception = e
             logger.warning(
                 f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} "
-                f"seconds (per task) for suggestion {payload.suggestionId}"
+                f"seconds (per task) for suggestion {suggestion_id}"
             )
             raise ModelTimeoutException(cause=e)
 
@@ -114,18 +119,24 @@ class InferenceStage(PipelineElement):
         except WcaKeyNotFound as e:
             exception = e
             logger.exception(
-                f"A WCA Api Key was expected but "
-                f"not found for suggestion {payload.suggestionId}"
+                f"A WCA Api Key was expected but " f"not found for suggestion {suggestion_id}"
             )
             raise WcaKeyNotFoundException(cause=e)
 
         except WcaModelIdNotFound as e:
             exception = e
             logger.exception(
-                f"A WCA Model ID was expected but "
-                f"not found for suggestion {payload.suggestionId}"
+                f"A WCA Model ID was expected but " f"not found for suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaSuggestionIdCorrelationFailure as e:
+            exception = e
+            logger.exception(
+                f"WCA Request/Response SuggestionId correlation failed for "
+                f"suggestion_id: '{suggestion_id}' and x_request_id: '{e.x_request_id}'."
+            )
+            raise WcaSuggestionIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e
@@ -136,7 +147,7 @@ class InferenceStage(PipelineElement):
 
         except Exception as e:
             exception = e
-            logger.exception(f"error requesting completion for suggestion {payload.suggestionId}")
+            logger.exception(f"error requesting completion for suggestion {suggestion_id}")
             raise ServiceUnavailable(cause=e)
 
         finally:
@@ -162,13 +173,11 @@ class InferenceStage(PipelineElement):
                 "problem": None if exception is None else exception.__class__.__name__,
                 "request": data,
                 "response": anonymized_predictions,
-                "suggestionId": str(payload.suggestionId),
+                "suggestionId": str(suggestion_id),
             }
             send_segment_event(event, "prediction", request.user)
 
-        logger.debug(
-            f"response from inference for suggestion id {payload.suggestionId}:\n{predictions}"
-        )
+        logger.debug(f"response from inference for suggestion id {suggestion_id}:\n{predictions}")
 
         context.model_id = model_id
         context.predictions = predictions

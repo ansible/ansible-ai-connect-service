@@ -99,6 +99,11 @@ class WcaModelIdNotFoundException(BaseWisdomAPIException):
     }
 
 
+class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
+    status_code = 500
+    default_detail = {"message": "WCA Request/Response Suggestion ID correlation failed."}
+
+
 class WcaEmptyResponseException(BaseWisdomAPIException):
     status_code = 204
     default_detail = {"message": "WCA returned an empty response."}

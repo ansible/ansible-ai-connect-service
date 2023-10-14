@@ -17,7 +17,7 @@ class MockClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_id=None):
+    def infer(self, model_input, model_id=None, suggestion_id=None):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'mock' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
