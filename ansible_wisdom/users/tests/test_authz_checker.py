@@ -311,7 +311,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         m_r = Mock()
         m_r.json.side_effect = [
             {"items": [{"id": "rdgdfhbrdb"}]},
-            {"items": [{"subscription": {"status": "Active"}}], "total": 1},
+            {"items": [{"allowed": 10}], "total": 1},
         ]
         m_r.status_code = 200
 
@@ -324,9 +324,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
             ),
-            params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
+            params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
         )
 
@@ -347,9 +347,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
             ),
-            params={"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"},
+            params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
         )
 

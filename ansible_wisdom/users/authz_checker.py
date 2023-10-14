@@ -6,7 +6,6 @@ from functools import cache
 from http import HTTPStatus
 
 import requests
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -216,14 +215,14 @@ class AMSCheck(BaseCheck):
 
     def rh_org_has_subscription(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {"search": "sku = '" + settings.SKU + "' AND sku_count > 0"}
+        params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()
 
         try:
             r = self._session.get(
                 (
                     f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/resource_quota"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
                 ),
                 params=params,
                 timeout=0.8,
