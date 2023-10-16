@@ -50,31 +50,34 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
             apps.get_app_config('ai'), 'get_seat_checker', Mock(return_value=self.seat_checker)
         )
         self.get_seat_checker_patcher.start()
+        self.model_server_patcher = patch('healthcheck.backends.requests')
+        self.mock_requests = self.model_server_patcher.start()
+        self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
 
     def tearDown(self):
         self.wca_client_patcher.stop()
         self.secret_manager_patcher.stop()
         self.get_seat_checker_patcher.stop()
+        self.model_server_patcher.stop()
 
+    @staticmethod
     def mocked_requests_succeed(*args, **kwargs):
         r = Response()
         r.status_code = HTTPStatus.OK
         return r
 
+    @staticmethod
     def mocked_requests_http_fail(*args, **kwargs):
         r = Response()
         if len(args) > 0 and args[0].endswith('/ping'):
             r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
-        else:
-            r.status_code = HTTPStatus.OK
         return r
 
+    @staticmethod
     def mocked_requests_grpc_fail(*args, **kwargs):
         r = Response()
         if len(args) > 0 and args[0].endswith('/oauth/healthz'):
             r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
-        else:
-            r.status_code = HTTPStatus.OK
         return r
 
     def test_liveness_probe(self):
@@ -150,9 +153,9 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
-    @mock.patch('requests.get', side_effect=mocked_requests_http_fail)
-    def test_health_check_http_error(self, _):
+    def test_health_check_http_error(self):
         cache.clear()
+        self.mock_requests.get = TestHealthCheck.mocked_requests_http_fail
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
@@ -190,8 +193,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
-    def test_health_check_grpc(self, _):
+    def test_health_check_grpc(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -201,9 +203,9 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    @mock.patch('requests.get', side_effect=mocked_requests_grpc_fail)
-    def test_health_check_grpc_error(self, _):
+    def test_health_check_grpc_error(self):
         cache.clear()
+        self.mock_requests.get = TestHealthCheck.mocked_requests_grpc_fail
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -223,8 +225,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
-    def test_health_check_mock(self, _):
+    def test_health_check_mock(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -234,10 +235,9 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @mock.patch('requests.get', side_effect=mocked_requests_succeed)
     @mock.patch('healthcheck.views.get_feature_flags')
     @mock.patch('ldclient.get')
-    def test_health_check_mock_with_launchdarkly(self, ldclient_get, get_feature_flags, _):
+    def test_health_check_mock_with_launchdarkly(self, ldclient_get, get_feature_flags):
         class DummyClient:
             def variation(name, *args):
                 return 'server:port:model_name:index'
