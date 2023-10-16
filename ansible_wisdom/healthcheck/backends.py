@@ -1,3 +1,4 @@
+import ai.search
 import requests
 from ai.api.aws.wca_secret_manager import Suffixes
 from ai.api.model_client.wca_client import WcaInferenceFailure, WcaTokenFailure
@@ -114,6 +115,20 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
     def check_status(self):
         try:
             apps.get_app_config("ai").get_seat_checker().self_test()
+        except Exception as e:
+            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
+
+    def identifier(self):
+        return self.__class__.__name__
+
+
+class AttributionCheck(BaseLightspeedHealthCheck):
+    critical_service = False
+
+    def check_status(self):
+        try:
+            attributions = ai.search.search("aaa")["attributions"]
+            assert len(attributions) > 0, "No attribution found"
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
