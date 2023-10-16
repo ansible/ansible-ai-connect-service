@@ -29,6 +29,7 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
+from users.signals import user_set_wca_model_id
 
 from ..views import ServiceUnavailable, WcaBadRequestException, WcaKeyNotFoundException
 
@@ -113,7 +114,16 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
 
             def save_and_respond():
                 secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
+
+                # Audit trail/logging
+                user_set_wca_model_id.send(
+                    WCAModelIdView.__class__,
+                    user=request._request.user,
+                    org_id=org_id,
+                    model_id=model_id,
+                )
                 logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
+
                 return Response(status=HTTP_204_NO_CONTENT)
 
             return validate_and_respond(api_key, model_id, save_and_respond)

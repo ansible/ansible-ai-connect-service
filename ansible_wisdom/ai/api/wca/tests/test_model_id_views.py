@@ -117,26 +117,34 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
 
         # Set ModelId
         self.mock_secret_manager.get_secret.return_value = {'SecretString': 'someAPIKey'}
-        r = self.client.post(
-            reverse('wca_model_id'),
-            data='{ "model_id": "secret_model_id" }',
-            content_type='application/json',
-        )
+        with self.assertLogs(logger='users.signals', level='DEBUG') as log:
+            r = self.client.post(
+                reverse('wca_model_id'),
+                data='{ "model_id": "secret_model_id" }',
+                content_type='application/json',
+            )
 
-        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-        self.mock_secret_manager.save_secret.assert_called_with(
-            '123', Suffixes.MODEL_ID, 'secret_model_id'
-        )
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.mock_secret_manager.save_secret.assert_called_with(
+                '123', Suffixes.MODEL_ID, 'secret_model_id'
+            )
 
-        # Check ModelId was stored
-        self.mock_secret_manager.get_secret.return_value = {
-            'SecretString': 'secret_model_id',
-            'CreatedDate': timezone.now().isoformat(),
-        }
-        r = self.client.get(reverse('wca_model_id'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(r.data['model_id'], 'secret_model_id')
-        self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
+            # Check ModelId was stored
+            self.mock_secret_manager.get_secret.return_value = {
+                'SecretString': 'secret_model_id',
+                'CreatedDate': timezone.now().isoformat(),
+            }
+            r = self.client.get(reverse('wca_model_id'))
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertEqual(r.data['model_id'], 'secret_model_id')
+            self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
+
+            # Check audit entry
+            self.assertInLog(
+                f"User: '{self.user}' set WCA Model Id for "
+                f"Organisation '{self.user.organization_id}'",
+                log,
+            )
 
     def test_set_model_id_not_valid(self, *args):
         self.user.organization_id = '123'

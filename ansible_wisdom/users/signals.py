@@ -5,9 +5,12 @@ from django.contrib.auth.signals import (
     user_logged_out,
     user_login_failed,
 )
-from django.dispatch import receiver
+from django.dispatch import Signal, receiver
 
 logger = logging.getLogger(__name__)
+
+user_set_wca_api_key = Signal()
+user_set_wca_model_id = Signal()
 
 
 @receiver(user_logged_in)
@@ -29,3 +32,32 @@ def user_login_failed_log(sender, user=None, **kwargs):
 def user_logout_log(sender, user, **kwargs):
     """User logout log to user log"""
     logger.info(f"User: {user} LOGOUT successful")
+
+
+@receiver(user_set_wca_api_key)
+def user_set_wca_key_log(sender, user, org_id, api_key, **kwargs):
+    """User set WCA API Key"""
+    logger.info(
+        f"User: '{user}' set WCA Key for Organisation '{org_id}' to '{_obfuscate(api_key)}'."
+    )
+
+
+@receiver(user_set_wca_model_id)
+def user_set_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
+    """User set WCA Model Id"""
+    logger.info(
+        f"User: '{user}' set WCA Model Id for Organisation '{org_id}' to '{_obfuscate(model_id)}'."
+    )
+
+
+def _obfuscate(value: str) -> str:
+    if len(value) < 4:
+        return "*" * len(value)
+
+    retention = 1
+    if len(value) > 8:
+        retention = 2
+    if len(value) > 16:
+        retention = 4
+    repeat = len(value) - 2 * retention
+    return value[:retention] + ("*" * repeat) + value[retention + repeat :]
