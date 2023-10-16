@@ -747,7 +747,7 @@ components:
           readOnly: true
         rh_user_is_org_admin:
           type: boolean
-          readOnly: true
+          nullable: true
         external_username:
           type: string
           readOnly: true
@@ -761,7 +761,6 @@ components:
       - external_username
       - rh_org_has_subscription
       - rh_user_has_seat
-      - rh_user_is_org_admin
       - username
     WcaKeyRequest:
       type: object
