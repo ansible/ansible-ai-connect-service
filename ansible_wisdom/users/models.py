@@ -17,7 +17,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     community_terms_accepted = models.DateTimeField(default=None, null=True)
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = models.IntegerField(default=None, null=True)
-    rh_user_is_org_admin = models.BooleanField(default=None, null=True)
+    rh_user_is_org_admin = models.BooleanField(default=False)
 
     @property
     def org_id(self):

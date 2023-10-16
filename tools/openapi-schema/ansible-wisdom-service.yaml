@@ -747,7 +747,6 @@ components:
           readOnly: true
         rh_user_is_org_admin:
           type: boolean
-          nullable: true
         external_username:
           type: string
           readOnly: true

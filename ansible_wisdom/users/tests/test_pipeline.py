@@ -103,4 +103,4 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer is None
         assert self.rh_user.organization_id is None
-        assert self.rh_user.rh_user_is_org_admin is None
+        assert self.rh_user.rh_user_is_org_admin is False
