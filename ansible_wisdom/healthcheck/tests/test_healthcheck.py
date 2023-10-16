@@ -54,11 +54,16 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         self.mock_requests = self.model_server_patcher.start()
         self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
 
+        self.attribution_search_patcher = patch('ai.search.search')
+        self.mock_ai_search = self.attribution_search_patcher.start()
+        self.mock_ai_search.return_value = {"attributions": ["an attribution"]}
+
     def tearDown(self):
         self.wca_client_patcher.stop()
         self.secret_manager_patcher.stop()
         self.get_seat_checker_patcher.stop()
         self.model_server_patcher.stop()
+        self.attribution_search_patcher.stop()
 
     @staticmethod
     def mocked_requests_succeed(*args, **kwargs):
@@ -123,11 +128,19 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         self.assertIsNotNone(data['model_name'])
         self.assertIsNotNone(data['deployed_region'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(5, len(dependencies))
+        self.assertEqual(6, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency['name'],
-                ['cache', 'db', 'model-server', 'secret-manager', 'wca', 'authorization'],
+                [
+                    'cache',
+                    'db',
+                    'model-server',
+                    'secret-manager',
+                    'attribution',
+                    'wca',
+                    'authorization',
+                ],
             )
             self.assertGreaterEqual(dependency['time_taken'], 0)
 
@@ -358,3 +371,19 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
                 'authorization',
                 'unavailable: An error occurred',
             )
+
+    def test_health_check_attribution_error(self, *args):
+        cache.clear()
+
+        self.mock_ai_search.return_value = {"something": "is_wrong"}
+        r = self.client.get(reverse('health_check'))
+
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        attribution_result = None
+        for dependency in dependencies:
+            if dependency['name'] == 'attribution':
+                attribution_result = dependency
+                break
+
+        self.assertTrue(attribution_result['status'].startswith('unavailable:'))
