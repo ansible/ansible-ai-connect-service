@@ -252,6 +252,13 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer(self):
+        self._do_inference(DEFAULT_SUGGESTION_ID)
+
+    @assert_call_count_metrics(hist=wca_codegen_hist)
+    def test_infer_without_suggestion_id(self):
+        self._do_inference()
+
+    def _do_inference(self, suggestion_id=None):
         model_id = "zavala"
         context = "null"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
@@ -280,13 +287,13 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         response = MockResponse(
             json=predictions,
             status_code=200,
-            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)} if suggestion_id else {},
         )
 
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
-            WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID),
+            WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID) if suggestion_id else None,
         }
 
         model_client = WCAClient(inference_url='https://example.com')
@@ -295,7 +302,9 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
 
         result = model_client.infer(
-            model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+            model_input=model_input,
+            model_id=model_id,
+            suggestion_id=DEFAULT_SUGGESTION_ID if suggestion_id else None,
         )
 
         model_client.get_token.assert_called_once()
