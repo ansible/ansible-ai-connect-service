@@ -108,7 +108,7 @@ class WCAClient(ModelMeshClient):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
-            WCA_REQUEST_ID_HEADER: str(suggestion_id),
+            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
         task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
@@ -128,12 +128,15 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
-            # request/payload suggestion_id is a UUID not a string whereas HTTP headers are strings.
-            x_request_id = response.headers.get(WCA_REQUEST_ID_HEADER)
-            if x_request_id != str(suggestion_id):
-                raise WcaSuggestionIdCorrelationFailure(
-                    model_id=model_id, x_request_id=x_request_id
-                )
+
+            if suggestion_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                x_request_id = response.headers.get(WCA_REQUEST_ID_HEADER)
+                if x_request_id != str(suggestion_id):
+                    raise WcaSuggestionIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
 
             context = InferenceContext(model_id, response, task_count > 1)
             InferenceResponseChecks().run_checks(context)
