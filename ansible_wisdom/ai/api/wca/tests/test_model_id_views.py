@@ -60,7 +60,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "get_wca_model_id", None)
+            _assert_segment_log(self, log, "getWcaModelId", None)
 
     def test_permission_classes(self, *args):
         url = reverse('wca_model_id')
@@ -87,11 +87,19 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
-            _assert_segment_log(self, log, "get_wca_model_id", None)
+            _assert_segment_log(self, log, "getWcaModelId", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_get_model_id_when_defined(self, *args):
+        self._test_get_model_id_when_defined(False)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_get_model_id_when_defined_seated_user(self, *args):
+        self._test_get_model_id_when_defined(True)
+
+    def _test_get_model_id_when_defined(self, has_seat):
         self.user.organization_id = '123'
+        self.user.rh_user_has_seat = has_seat
         self.client.force_authenticate(user=self.user)
         date_time = timezone.now().isoformat()
         self.mock_secret_manager.get_secret.return_value = {
@@ -105,7 +113,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
             self.assertEqual(r.data['model_id'], 'secret_model_id')
             self.assertEqual(r.data['last_update'], date_time)
             self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
-            _assert_segment_log(self, log, "get_wca_model_id", None)
+            _assert_segment_log(self, log, "getWcaModelId", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_get_model_id_when_defined_throws_exception(self, *args):
@@ -117,7 +125,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
-            _assert_segment_log(self, log, "get_wca_model_id", "WcaSecretManagerError")
+            _assert_segment_log(self, log, "getWcaModelId", "WcaSecretManagerError")
 
     def test_set_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
@@ -131,11 +139,19 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "set_wca_model_id", None)
+            _assert_segment_log(self, log, "setWcaModelId", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id(self, *args):
+        self._test_set_model_id(False)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_set_model_id_seated_user(self, *args):
+        self._test_set_model_id(True)
+
+    def _test_set_model_id(self, has_seat):
         self.user.organization_id = '123'
+        self.user.rh_user_has_seat = has_seat
         self.client.force_authenticate(user=self.user)
 
         # ModelId should initially not exist
@@ -158,7 +174,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
                 self.mock_secret_manager.save_secret.assert_called_with(
                     '123', Suffixes.MODEL_ID, 'secret_model_id'
                 )
-                _assert_segment_log(self, log, "set_wca_model_id", None)
+                _assert_segment_log(self, log, "setWcaModelId", None)
 
             # Check audit entry
             self.assertInLog(
@@ -201,7 +217,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
             )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ValidationError", log)
-            _assert_segment_log(self, log, "set_wca_model_id", "ValidationError")
+            _assert_segment_log(self, log, "setWcaModelId", "ValidationError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id_throws_secret_manager_exception(self, *args):
@@ -217,7 +233,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
             )
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
-            _assert_segment_log(self, log, "set_wca_model_id", "WcaSecretManagerError")
+            _assert_segment_log(self, log, "setWcaModelId", "WcaSecretManagerError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id_throws_validation_exception(self, *args):
@@ -232,7 +248,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
                 content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "set_wca_model_id", "ValidationError")
+            _assert_segment_log(self, log, "setWcaModelId", "ValidationError")
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
@@ -279,7 +295,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "validate_wca_model_id", None)
+            _assert_segment_log(self, log, "validateWcaModelId", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_no_api_key(self, *args):
@@ -296,7 +312,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "WcaKeyNotFound")
+            _assert_segment_log(self, log, "validateWcaModelId", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_no_model_id(self, *args):
@@ -313,25 +329,32 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ai.api.model_client.exceptions.WcaModelIdNotFound", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "WcaModelIdNotFound")
+            _assert_segment_log(self, log, "validateWcaModelId", "WcaModelIdNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free_model_id')
-    def test_validate_ok_free_model_id(self, *args):
+    def test_validate_ok(self, *args):
+        self._test_validate_ok(False)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_validate_ok_seated_user(self, *args):
+        self._test_validate_ok(True)
+
+    def _test_validate_ok(self, has_seat):
         self.user.organization_id = '123'
+        self.user.rh_user_has_seat = has_seat
         self.client.force_authenticate(user=self.user)
 
-        def mock_get_secret_free_model_id(*args, **kwargs):
+        def mock_get_secret_model_id(*args, **kwargs):
             if args[1] == Suffixes.API_KEY:
                 return {'SecretString': 'some_api_key'}
-            return {'SecretString': 'free_model_id'}
+            return {'SecretString': 'model_id'}
 
-        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_free_model_id
+        self.mock_secret_manager.get_secret.side_effect = mock_get_secret_model_id
 
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            _assert_segment_log(self, log, "validate_wca_model_id", None)
+            _assert_segment_log(self, log, "validateWcaModelId", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_wrong_model_id(self, *args):
@@ -343,7 +366,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ValidationError", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "ValidationError")
+            _assert_segment_log(self, log, "validateWcaModelId", "ValidationError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_api_key_not_found(self, *args):
@@ -355,7 +378,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "WcaKeyNotFound")
+            _assert_segment_log(self, log, "validateWcaModelId", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_bad_request(self, *args):
@@ -367,7 +390,7 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ai.api.model_client.exceptions.WcaBadRequest", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "WcaBadRequest")
+            _assert_segment_log(self, log, "validateWcaModelId", "WcaBadRequest")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_exception(self, *args):
@@ -379,4 +402,4 @@ class TestWCAModelIdValidatorView(WisdomServiceAPITestCaseBase, WisdomLogAwareMi
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog("Exception", log)
-            _assert_segment_log(self, log, "validate_wca_model_id", "Exception")
+            _assert_segment_log(self, log, "validateWcaModelId", "Exception")

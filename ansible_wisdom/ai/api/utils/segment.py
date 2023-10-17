@@ -1,6 +1,6 @@
 import logging
 import platform
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from django.conf import settings
 from django.utils import timezone
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
-def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User, None]) -> None:
+def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
         return
@@ -32,13 +32,13 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
         event['hostname'] = platform.node()
 
     if 'groups' not in event:
-        event['groups'] = list(user.groups.values_list('name', flat=True)) if user else []
+        event['groups'] = list(user.groups.values_list('name', flat=True))
 
     if 'rh_user_has_seat' not in event:
-        event['rh_user_has_seat'] = getattr(user, 'rh_user_has_seat', False) if user else None
+        event['rh_user_has_seat'] = getattr(user, 'rh_user_has_seat', False)
 
     if 'rh_user_org_id' not in event:
-        event['rh_user_org_id'] = getattr(user, 'org_id', None) if user else None
+        event['rh_user_org_id'] = getattr(user, 'org_id', None)
 
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
@@ -55,7 +55,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
                 return
 
         analytics.track(
-            str(user.uuid) if (user and getattr(user, 'uuid', None)) else 'unknown',
+            str(user.uuid) if getattr(user, 'uuid', None) else 'unknown',
             event_name,
             event,
         )

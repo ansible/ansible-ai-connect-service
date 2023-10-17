@@ -35,6 +35,8 @@ from users.signals import user_set_wca_model_id
 
 from ..views import ServiceUnavailable, WcaBadRequestException, WcaKeyNotFoundException
 
+UNKNOWN_MODEL_ID = "Unknown"
+
 logger = logging.getLogger(__name__)
 
 PERMISSION_CLASSES = [
@@ -68,6 +70,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
 
         exception = None
         start_time = time.time()
+        model_id = UNKNOWN_MODEL_ID
         try:
             # An OrgId must be present
             # See https://issues.redhat.com/browse/AAP-16009
@@ -79,9 +82,11 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             response = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
             if response is None:
                 return Response(status=HTTP_200_OK)
+
+            model_id = response['SecretString']
             return Response(
                 status=HTTP_200_OK,
-                data={'model_id': response['SecretString'], 'last_update': response['CreatedDate']},
+                data={'model_id': model_id, 'last_update': response['CreatedDate']},
             )
 
         except WcaSecretManagerError as e:
@@ -95,8 +100,9 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
                 "duration": duration,
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
+                "modelName": model_id,
             }
-            send_segment_event(event, "get_wca_model_id", request.user)
+            send_segment_event(event, "getWcaModelId", request.user)
 
     @extend_schema(
         request=WcaModelIdRequestSerializer,
@@ -139,7 +145,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             return Response(status=HTTP_204_NO_CONTENT)
 
         return do_validated_operation(
-            request, get_api_key, get_model_id, on_success, "set_wca_model_id"
+            request, get_api_key, get_model_id, on_success, "setWcaModelId"
         )
 
 
@@ -176,7 +182,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
             return Response(status=HTTP_200_OK)
 
         return do_validated_operation(
-            request, get_api_key, get_model_id, on_success, "validate_wca_model_id"
+            request, get_api_key, get_model_id, on_success, "validateWcaModelId"
         )
 
 
@@ -199,6 +205,7 @@ def validate(api_key, model_id):
 def do_validated_operation(request, api_key_provider, model_id_provider, on_success, event_name):
     exception = None
     start_time = time.time()
+    model_id = UNKNOWN_MODEL_ID
     try:
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
@@ -251,6 +258,7 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
             "duration": duration,
             "exception": exception is not None,
             "problem": None if exception is None else exception.__class__.__name__,
+            "modelName": model_id,
         }
         send_segment_event(event, event_name, request.user)
 

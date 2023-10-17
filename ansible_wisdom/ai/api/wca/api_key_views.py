@@ -88,7 +88,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
             }
-            send_segment_event(event, "get_wca_api_key", request.user)
+            send_segment_event(event, "getWcaApiKey", request.user)
 
     @extend_schema(
         request=WcaKeyRequestSerializer,
@@ -162,7 +162,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
             }
-            send_segment_event(event, "set_wca_api_key", request.user)
+            send_segment_event(event, "setWcaApiKey", request.user)
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -227,6 +227,6 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
             }
-            send_segment_event(event, "validate_wca_api_key", request.user)
+            send_segment_event(event, "validateWcaApiKey", request.user)
 
         return Response(status=HTTP_200_OK)
