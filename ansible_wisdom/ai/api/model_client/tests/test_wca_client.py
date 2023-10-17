@@ -252,13 +252,19 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer(self):
-        self._do_inference(DEFAULT_SUGGESTION_ID)
+        self._do_inference(
+            suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=str(DEFAULT_SUGGESTION_ID)
+        )
 
     @assert_call_count_metrics(hist=wca_codegen_hist)
     def test_infer_without_suggestion_id(self):
-        self._do_inference()
+        self._do_inference(suggestion_id=None, request_id=str(DEFAULT_SUGGESTION_ID))
 
-    def _do_inference(self, suggestion_id=None):
+    @assert_call_count_metrics(hist=wca_codegen_hist)
+    def test_infer_without_request_id_header(self):
+        self._do_inference(suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=None)
+
+    def _do_inference(self, suggestion_id=None, request_id=None):
         model_id = "zavala"
         context = "null"
         prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
@@ -287,13 +293,13 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         response = MockResponse(
             json=predictions,
             status_code=200,
-            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)} if suggestion_id else {},
+            headers={WCA_REQUEST_ID_HEADER: request_id},
         )
 
-        headers = {
+        requestHeaders = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
-            WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID) if suggestion_id else None,
+            WCA_REQUEST_ID_HEADER: suggestion_id,
         }
 
         model_client = WCAClient(inference_url='https://example.com')
@@ -304,13 +310,13 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
         result = model_client.infer(
             model_input=model_input,
             model_id=model_id,
-            suggestion_id=DEFAULT_SUGGESTION_ID if suggestion_id else None,
+            suggestion_id=suggestion_id,
         )
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codegen/ansible",
-            headers=headers,
+            headers=requestHeaders,
             json=data,
             timeout=None,
         )
@@ -393,7 +399,14 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
+        predictions = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response = MockResponse(
+            json=predictions,
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: 'some-other-uuid'},
+        )
         model_client = WCAClient(inference_url='https://example.com')
+        model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
 
