@@ -28,6 +28,7 @@ from ai.api.model_client.tests.test_wca_client import (
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.pipelines.completion_stages.inference import get_model_client
+from ai.api.pipelines.completion_stages.post_process import trim_whitespace_lines
 from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
 from ai.api.pipelines.completion_stages.response import CompletionsPromptType
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
@@ -447,6 +448,14 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
+
+            # confirm prediction ends with newline
+            prediction = r.data['predictions'][0]
+            self.assertEqual(prediction[-1], '\n')
+
+            # confirm prediction has had whitespace lines trimmed
+            self.assertEqual(prediction, trim_whitespace_lines(prediction))
+
             self.assertSegmentTimestamp(log)
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
