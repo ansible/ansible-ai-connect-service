@@ -95,7 +95,7 @@ services:
     environment:
       - GF_LOG_LEVEL=warn
     ports:
-      - "3000:3000"
+      - "13000:3000"
     volumes:
       - $PWD/grafana:/var/lib/grafana
     networks:
