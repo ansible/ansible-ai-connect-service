@@ -83,6 +83,10 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
+DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
+COMMERCIAL_DOCUMENTATION_URL = os.getenv(
+    'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
+)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
