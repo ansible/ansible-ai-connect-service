@@ -1889,3 +1889,34 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
 
             self.assertTrue(event.items() <= actual_event.items())
             self.assertTrue(event_request.items() <= actual_event.get("request").items())
+
+    @patch('ai.api.views.send_segment_event')
+    def test_wca_contentmatch_segment_events_with_error(self, mock_send_segment_event):
+        self.user.rh_user_has_seat = True
+        self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
+
+        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+            event = {
+                'exception': True,
+                'modelName': 'org-model-id',
+                'problem': 'WcaInvalidModelId',
+                'response': {'contentmatches': []},
+                'metadata': [],
+            }
+
+            event_request = {
+                'suggestions': [
+                    '\n - name: install nginx on RHEL\n become: true\n '
+                    'ansible.builtin.package:\n name: nginx\n state: present\n'
+                ],
+                'rh_user_has_seat': True,
+                'organization_id': '1',
+            }
+
+            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+
+            self.assertTrue(event.items() <= actual_event.items())
+            self.assertTrue(event_request.items() <= actual_event.get("request").items())

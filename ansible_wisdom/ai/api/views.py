@@ -507,17 +507,16 @@ class ContentMatches(GenericAPIView):
                 )
                 if model_id_in_exception:
                     model_id = model_id_in_exception
-            event = {
-                "duration": duration,
-                "exception": exception is not None,
-                "modelName": model_id,
-                "problem": None if exception is None else exception.__class__.__name__,
-                "request": content_match_data,
-                "response": response_data,
-                "suggestionId": str(suggestion_id),
-                "metadata": metadata,
-            }
-            send_segment_event(event, "contentmatch", user)
+            self._write_to_segment(
+                content_match_data,
+                duration,
+                exception,
+                metadata,
+                model_id,
+                response_data,
+                suggestion_id,
+                user,
+            )
 
         return response_serializer
 
@@ -563,16 +562,38 @@ class ContentMatches(GenericAPIView):
             )
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
-            event = {
-                "duration": duration,
-                "exception": exception is not None,
-                "modelName": model_name,
-                "problem": None if exception is None else exception.__class__.__name__,
-                "request": request_data,
-                "response": response_data,
-                "suggestionId": str(suggestion_id),
-                "metadata": metadata,
-            }
-            send_segment_event(event, "contentmatch", user)
+            self._write_to_segment(
+                request_data,
+                duration,
+                exception,
+                metadata,
+                model_name,
+                response_data,
+                suggestion_id,
+                user,
+            )
 
         return response_serializer
+
+    def _write_to_segment(
+        self,
+        content_match_data,
+        duration,
+        exception,
+        metadata,
+        model_id,
+        response_data,
+        suggestion_id,
+        user,
+    ):
+        event = {
+            "duration": duration,
+            "exception": exception is not None,
+            "modelName": model_id,
+            "problem": None if exception is None else exception.__class__.__name__,
+            "request": content_match_data,
+            "response": response_data,
+            "suggestionId": str(suggestion_id),
+            "metadata": metadata,
+        }
+        send_segment_event(event, "contentmatch", user)
