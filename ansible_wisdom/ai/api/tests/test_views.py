@@ -1729,3 +1729,163 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
                 r = self.client.post(reverse('contentmatches'), self.payload)
                 self.assertEqual(r.status_code, status_code_expected)
             self.assertInLog(exception_name, log)
+
+
+class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        self.payload = {
+            "suggestions": [
+                "\n - name: install nginx on RHEL\n become: true\n "
+                "ansible.builtin.package:\n name: nginx\n state: present\n"
+            ],
+            "suggestionId": str(uuid.uuid4()),
+            "model": "org-model-id",
+        }
+
+        repo_name = "robertdebock.nginx"
+        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
+        path = "tasks/main.yml"
+        license = "apache-2.0"
+
+        wca_response = MockResponse(
+            json=[
+                {
+                    "code_matches": [
+                        {
+                            "repo_name": repo_name,
+                            "repo_url": repo_url,
+                            "path": path,
+                            "license": license,
+                            "data_source_description": "Galaxy-R",
+                            "score": 0.0,
+                        }
+                    ],
+                    "meta": {"encode_duration": 1000, "search_duration": 2000},
+                }
+            ],
+            status_code=200,
+        )
+
+        self.model_client = WCAClient(inference_url='https://wca_api_url')
+        self.model_client.session.post = Mock(return_value=wca_response)
+        self.model_client.get_token = Mock(return_value={"access_token": "abc"})
+        self.model_client.get_api_key = Mock(return_value='org-api-key')
+        self.model_client.get_model_id = Mock(return_value='org-model-id')
+
+        self.search_response = {
+            'attributions': [
+                {
+                    'repo_name': repo_name,
+                    'repo_url': repo_url,
+                    'path': path,
+                    'license': license,
+                    'data_source': DataSource.GALAXY_R,
+                    'ansible_type': AnsibleType.UNKNOWN,
+                    'score': 0.0,
+                },
+            ],
+            'meta': {
+                'encode_duration': 1000,
+                'search_duration': 2000,
+            },
+        }
+
+    @patch('ai.api.views.send_segment_event')
+    @patch('ai.search.search')
+    def test_wca_contentmatch_segment_events_with_no_seated_user(
+        self, mock_search, mock_send_segment_event
+    ):
+        self.user.rh_user_has_seat = False
+        mock_search.return_value = self.search_response
+        r = self.client.post(reverse('contentmatches'), self.payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+        event = {
+            'exception': False,
+            'modelName': '',
+            'problem': None,
+            'response': {
+                'contentmatches': [
+                    {
+                        'contentmatch': [
+                            {
+                                'repo_name': 'robertdebock.nginx',
+                                'repo_url': 'https://galaxy.ansible.com/robertdebock/nginx',
+                                'path': 'tasks/main.yml',
+                                'license': 'apache-2.0',
+                                'score': 0.0,
+                                'data_source_description': '',
+                                'data_source': DataSource.GALAXY_R,
+                                'ansible_type': AnsibleType.UNKNOWN,
+                            }
+                        ]
+                    }
+                ]
+            },
+            'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+        }
+
+        event_request = {
+            'suggestions': [
+                '\n - name: install nginx on RHEL\n become: true\n '
+                'ansible.builtin.package:\n name: nginx\n state: present\n'
+            ]
+        }
+
+        actual_event = mock_send_segment_event.call_args_list[0][0][0]
+
+        self.assertTrue(event.items() <= actual_event.items())
+        self.assertTrue(event_request.items() <= actual_event.get("request").items())
+
+    @patch('ai.api.views.send_segment_event')
+    def test_wca_contentmatch_segment_events_with_seated_user(self, mock_send_segment_event):
+        self.user.rh_user_has_seat = True
+
+        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            event = {
+                'exception': False,
+                'modelName': 'org-model-id',
+                'problem': None,
+                'response': {
+                    'contentmatches': [
+                        {
+                            'contentmatch': [
+                                {
+                                    'repo_name': 'robertdebock.nginx',
+                                    'repo_url': 'https://galaxy.ansible.com/robertdebock/nginx',
+                                    'path': 'tasks/main.yml',
+                                    'license': 'apache-2.0',
+                                    'score': 0.0,
+                                    'data_source_description': 'Galaxy-R',
+                                    'data_source': DataSource.GALAXY_R,
+                                    'ansible_type': AnsibleType.UNKNOWN,
+                                }
+                            ]
+                        }
+                    ]
+                },
+                'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+            }
+
+            event_request = {
+                'suggestions': [
+                    '\n - name: install nginx on RHEL\n become: true\n '
+                    'ansible.builtin.package:\n name: nginx\n state: present\n'
+                ],
+                'rh_user_has_seat': True,
+                'organization_id': '1',
+            }
+
+            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+
+            self.assertTrue(event.items() <= actual_event.items())
+            self.assertTrue(event_request.items() <= actual_event.get("request").items())
