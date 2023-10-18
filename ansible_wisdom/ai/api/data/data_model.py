@@ -82,8 +82,8 @@ class ContentMatchResponseDto(BaseContentMatchResponseDto):
 
     @validator('code_matches')
     @classmethod
-    def trim_to_first_three(cls, v):
-        return v[:3]
+    def trim_to_first_three(cls, items):
+        return items[:3]
 
     def data(self):
         return self.dict()["code_matches"]
