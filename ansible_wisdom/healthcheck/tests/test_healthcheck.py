@@ -350,6 +350,35 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    def test_health_check_wca_inference_generic_error(self, *args):
+        cache.clear()
+        self.mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'Exception',
+                'wca',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_authorization_error(self, *args):
         cache.clear()
         self.seat_checker.self_test = Mock(side_effect=HTTPError)
@@ -372,6 +401,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
                 'unavailable: An error occurred',
             )
 
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_health_check_attribution_error(self, *args):
         cache.clear()
 
