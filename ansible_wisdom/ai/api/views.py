@@ -423,11 +423,12 @@ class ContentMatches(GenericAPIView):
 
         exception = None
         start_time = time.time()
-        response_data = {"contentmatches": []}
+        response_serializer = None
         metadata = []
 
         try:
             client_response = wca_client.codematch(content_match_data, model_id)
+            response_data = {"contentmatches": []}
 
             for response_item in client_response:
                 content_match_dto = ContentMatchResponseDto(**response_item)
@@ -513,7 +514,7 @@ class ContentMatches(GenericAPIView):
                 exception,
                 metadata,
                 model_id,
-                response_data,
+                response_serializer.data if response_serializer else {},
                 suggestion_id,
                 user,
             )
@@ -522,7 +523,7 @@ class ContentMatches(GenericAPIView):
 
     def perform_search(self, request_data, user: User):
         suggestion_id = str(request_data.get('suggestionId', ''))
-        response_data = {"contentmatches": []}
+        response_serializer = None
 
         exception = None
         start_time = time.time()
@@ -543,6 +544,7 @@ class ContentMatches(GenericAPIView):
             response_item = ai_search.search(suggestion, index)
 
             attributions_dto = AttributionsResponseDto(**response_item)
+            response_data = {"contentmatches": []}
             response_data["contentmatches"].append(attributions_dto.content_matches)
             metadata.append(attributions_dto.meta)
 
@@ -568,7 +570,7 @@ class ContentMatches(GenericAPIView):
                 exception,
                 metadata,
                 model_name,
-                response_data,
+                response_serializer.data if response_serializer else {},
                 suggestion_id,
                 user,
             )

@@ -1367,7 +1367,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         self.assertEqual(content_match["repo_url"], repo_url)
         self.assertEqual(content_match["path"], path)
         self.assertEqual(content_match["license"], license)
-        self.assertEqual(content_match["data_source"], "Ansible Galaxy roles")
+        self.assertEqual(content_match["data_source_description"], "Ansible Galaxy roles")
 
     @patch('ai.search.search')
     def test_wca_contentmatch_with_no_seated_user_verify_single_task(self, mock_search):
@@ -1421,7 +1421,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
         path = "tasks/main.yml"
         license = "apache-2.0"
-        data_source = "Ansible Galaxy roles"
+        data_source_description = "Ansible Galaxy roles"
 
         response = MockResponse(
             json=[
@@ -1432,7 +1432,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": repo_url,
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description,
                             "score": 0.94550663,
                         },
                         {
@@ -1440,7 +1440,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": f"{repo_url}2",
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description,
                             "score": 0.94550662,
                         },
                         {
@@ -1448,7 +1448,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": f"{repo_url}3",
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description,
                             "score": 0.94550661,
                         },
                         {
@@ -1456,7 +1456,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": f"{repo_url}4",
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description,
                             "score": 0.94550660,
                         },
                     ],
@@ -1490,7 +1490,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(content_match["repo_url"], repo_url)
             self.assertEqual(content_match["path"], path)
             self.assertEqual(content_match["license"], license)
-            self.assertEqual(content_match["data_source"], data_source)
+            self.assertEqual(content_match["data_source_description"], data_source_description)
 
     def test_wca_contentmatch_with_seated_user_multi_task(self):
         self.user.rh_user_has_seat = True
@@ -1508,13 +1508,13 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         repo_url = "https://galaxy.ansible.com/davidalger/nginx"
         path = "tasks/main.yml"
         license = "mit"
-        data_source = "Ansible Galaxy roles"
+        data_source_description = "Ansible Galaxy roles"
 
         repo_name2 = "fiaasco.solr"
         repo_url2 = "https://galaxy.ansible.com/fiaasco/solr"
         path2 = "tasks/cores.yml"
         license2 = "mit"
-        data_source2 = "Ansible Galaxy roles"
+        data_source_description2 = "Ansible Galaxy roles"
 
         response = MockResponse(
             json=[
@@ -1525,7 +1525,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": "https://galaxy.ansible.com/davidalger/nginx",
                             "path": "tasks/main.yml",
                             "license": "mit",
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": "Ansible Galaxy roles",
                             "score": 0.83672893,
                         },
                         {
@@ -1533,7 +1533,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": repo_url,
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description,
                             "score": 0.8233435,
                         },
                     ],
@@ -1546,7 +1546,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
                             "repo_url": repo_url2,
                             "path": path2,
                             "license": license2,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": data_source_description2,
                             "score": 0.7182885,
                         }
                     ],
@@ -1579,13 +1579,13 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
             self.assertEqual(content_match["repo_url"], repo_url)
             self.assertEqual(content_match["path"], path)
             self.assertEqual(content_match["license"], license)
-            self.assertEqual(content_match["data_source"], data_source)
+            self.assertEqual(content_match["data_source_description"], data_source_description)
 
             self.assertEqual(content_match2["repo_name"], repo_name2)
             self.assertEqual(content_match2["repo_url"], repo_url2)
             self.assertEqual(content_match2["path"], path2)
             self.assertEqual(content_match2["license"], license2)
-            self.assertEqual(content_match2["data_source"], data_source2)
+            self.assertEqual(content_match2["data_source_description"], data_source_description2)
 
     def test_wca_contentmatch_with_seated_user_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
@@ -1771,7 +1771,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                             "repo_url": repo_url,
                             "path": path,
                             "license": license,
-                            "data_source_description": "Galaxy-R",
+                            "data_source_description": "Ansible Galaxy roles",
                             "score": 0.0,
                         }
                     ],
@@ -1829,9 +1829,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                                 'path': 'tasks/main.yml',
                                 'license': 'apache-2.0',
                                 'score': 0.0,
-                                'data_source_description': '',
-                                'data_source': DataSource.GALAXY_R,
-                                'ansible_type': AnsibleType.UNKNOWN,
+                                'data_source_description': 'Ansible Galaxy roles',
                             }
                         ]
                     }
@@ -1874,9 +1872,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                                     'path': 'tasks/main.yml',
                                     'license': 'apache-2.0',
                                     'score': 0.0,
-                                    'data_source_description': 'Galaxy-R',
-                                    'data_source': DataSource.GALAXY_R,
-                                    'ansible_type': AnsibleType.UNKNOWN,
+                                    'data_source_description': 'Ansible Galaxy roles',
                                 }
                             ]
                         }
@@ -1912,7 +1908,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                 'exception': True,
                 'modelName': 'org-model-id',
                 'problem': 'WcaInvalidModelId',
-                'response': {'contentmatches': []},
+                'response': {},
                 'metadata': [],
             }
 

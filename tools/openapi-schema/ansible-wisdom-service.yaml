@@ -565,16 +565,13 @@ components:
           type: string
         license:
           type: string
-        data_source:
-          type: string
-        ansible_type:
+        data_source_description:
           type: string
         score:
           type: number
           format: double
       required:
-      - ansible_type
-      - data_source
+      - data_source_description
       - license
       - path
       - repo_name
