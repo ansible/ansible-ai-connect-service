@@ -3,7 +3,6 @@ import platform
 from typing import Any, Dict, Union
 
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from healthcheck.version_info import VersionInfo
 from segment import analytics
@@ -51,8 +50,9 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
             if allow_list:
                 event = redact_seated_users_data(event, allow_list)
             else:
-                # If event missing in the allow_list for seated users 403 should be raised
-                raise PermissionDenied()
+                # If event should be tracked, please update ALLOW_LIST appropriately
+                logger.error(f'It is not allowed to track {event_name} events for seated users')
+                return
 
         analytics.track(
             str(user.uuid) if (user and getattr(user, 'uuid', None)) else 'unknown',
@@ -61,9 +61,6 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
         )
         logger.info("sent segment event: %s", event_name)
     except Exception as ex:
-        if isinstance(ex, PermissionDenied):
-            raise PermissionDenied()
-
         logger.exception(
             f"An exception {ex.__class__} occurred in sending event to segment: %s",
             event_name,

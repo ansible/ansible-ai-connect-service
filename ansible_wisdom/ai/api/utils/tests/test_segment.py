@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, Mock
 
 from ai.api.utils.seated_users_allow_list import ALLOW_LIST
 from ai.api.utils.segment import redact_seated_users_data, send_segment_event
-from django.core.exceptions import PermissionDenied
 from django.test import override_settings
 from segment import analytics
 
@@ -65,9 +64,13 @@ class TestSegment(TestCase):
             'rh_user_has_seat': True,
         }
 
-        self.assertRaises(
-            PermissionDenied, send_segment_event, event, 'inlineSuggestionFeedback', user
-        )
+        with self.assertLogs(logger='root') as log:
+            send_segment_event(event, 'inlineSuggestionFeedback', user)
+            self.assertEqual(
+                log.output[0],
+                'ERROR:ai.api.utils.segment:It is not allowed to track'
+                + ' inlineSuggestionFeedback events for seated users',
+            )
 
     @mock.patch("ai.api.utils.segment.analytics.track")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
