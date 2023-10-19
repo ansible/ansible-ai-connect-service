@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import boto3
 import users.models
 from ai.api.aws.wca_secret_manager import WcaSecretManager
-from django.test import Client, TestCase
+from ai.api.tests.test_views import APITransactionTestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from users.constants import (
+    USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+    USER_SOCIAL_AUTH_PROVIDER_OIDC,
+)
 from users.tests.test_users import create_user
 
 
@@ -124,3 +129,38 @@ class UserHomeTestAsUser(TestCase):
         )
         self.assertNotContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
+
+
+class TestHomeDocumentationUrl(APITransactionTestCase):
+    def setUp(self) -> None:
+        self.password = "somepassword"
+
+    @override_settings(COMMERCIAL_DOCUMENTATION_URL="https://official_docs")
+    @patch.object(users.models.User, "rh_user_has_seat", True)
+    def test_docs_url_for_seated_user(self):
+        self.user = create_user(
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+        )
+        self.client.login(username=self.user.username, password=self.password)
+        r = self.client.get(reverse('home'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIn("https://official_docs", str(r.content))
+
+    @override_settings(DOCUMENTATION_URL="https://community_docs")
+    @patch.object(users.models.User, "rh_user_has_seat", False)
+    def test_docs_url_for_unseated_user(self):
+        self.user = create_user(
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+        )
+        self.client.login(username=self.user.username, password=self.password)
+        r = self.client.get(reverse('home'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIn("https://community_docs", str(r.content))
+
+    @override_settings(DOCUMENTATION_URL="https://community_docs")
+    def test_docs_url_for_not_logged_in_user(self):
+        r = self.client.get(reverse('home'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIn("https://community_docs", str(r.content))
