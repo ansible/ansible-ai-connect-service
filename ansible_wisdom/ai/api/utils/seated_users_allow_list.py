@@ -37,10 +37,12 @@ ALLOW_LIST = {
         },
         'modelName': None,
         'imageTags': None,
-        'tasks': {
-            'collection': None,
-            'module': None,
-        },
+        'tasks': [
+            {
+                'collection': None,
+                'module': None,
+            },
+        ],
         'taskCount': None,
         'promptType': None,
         'hostname': None,

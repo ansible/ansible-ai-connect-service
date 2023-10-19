@@ -98,13 +98,19 @@ def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) 
     - dict: A new dictionary containing only the allowed nested keys from the source dictionary.
     """
     redacted_event = {}
-    for key, sub_whitelist in allow_list.items():
+    for key, sub_whitelist in (
+        allow_list.items() if isinstance(allow_list, dict) else allow_list[0].items()
+    ):
         if key in event:
             if isinstance(sub_whitelist, dict):
                 if isinstance(event[key], dict):
                     redacted_event[key] = redact_seated_users_data(event[key], sub_whitelist)
                 else:
                     redacted_event[key] = event[key]
+            elif isinstance(sub_whitelist, list):
+                redacted_event[key] = [
+                    redact_seated_users_data(item, sub_whitelist) for item in event[key]
+                ]
             else:
                 redacted_event[key] = event[key]
     return redacted_event
