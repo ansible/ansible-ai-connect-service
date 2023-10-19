@@ -5,7 +5,11 @@ from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID
 
-from ai.api.serializers import CompletionRequestSerializer, SuggestionQualityFeedback
+from ai.api.serializers import (
+    CompletionRequestSerializer,
+    FeedbackRequestSerializer,
+    SuggestionQualityFeedback,
+)
 from django.test import override_settings
 from rest_framework import serializers
 
@@ -96,3 +100,50 @@ class SuggestionQualityFeedbackTest(TestCase):
         serializer = SuggestionQualityFeedback(data=data)
         self.assertTrue(serializer.is_valid())
         self.assertIn("# create vpc & create security group", serializer.validated_data['prompt'])
+
+
+class FeedbackRequestSerializerTest(TestCase):
+    def test_commercial_user_no_implicit_feedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "inlineSuggestion": {
+                    "latency": 1000,
+                    "userActionTime": 5155,
+                    "action": "0",
+                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+                }
+            },
+        )
+
+        # inlineSuggestion feedback raises exception when seat
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "ansibleContent": {
+                    "content": "---\n- hosts: all\n  tasks:\n  - name: Install ssh\n",
+                    "documentUri": "file:///home/user/ansible/test.yaml",
+                    "trigger": "0",
+                }
+            },
+        )
+
+        # ansibleContent feedback raises exception when seat
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={"sentimentFeedback": {"value": 3, "feedback": "double meh"}},
+        )
+
+        # sentimentFeedback allowed regardless of seat
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
