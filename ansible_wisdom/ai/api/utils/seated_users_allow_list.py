@@ -22,6 +22,17 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
+    'contentmatch': {
+        'suggestionId': None,
+        'duration': None,
+        'exception': None,
+        'problem': None,
+        'metadata': {'encode_duration:': None, 'search_duration': None},
+        'modelName': None,
+        'rh_user_has_seat': None,
+        'rh_user_org_id': None,
+        'timestamp': None,
+    },
     'completion': {
         'duration': None,
         'response': {
