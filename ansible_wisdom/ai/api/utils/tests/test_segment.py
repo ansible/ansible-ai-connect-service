@@ -30,6 +30,74 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST['postprocess']), expected_result
         )
 
+    def test_redact_seated_users_data_with_array_parameter(self, *args):
+        test_data = {
+            # first level parameter should be redacted
+            'taskCount': 1,
+            'tasks': [
+                {
+                    'collection': 'ansible.builtin',
+                    'module': 'ansible.builtin.shell',
+                    'name': 'i*** r*** o*** r***',
+                    'prediction': '    ansible.builtin.shell: yum install -y cargo\n ',
+                }
+            ],
+        }
+
+        expected_result = {
+            'taskCount': 1,
+            'tasks': [
+                {
+                    'collection': 'ansible.builtin',
+                    'module': 'ansible.builtin.shell',
+                }
+            ],
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST['completion']), expected_result
+        )
+
+    def test_redact_seated_users_data_with_array_and_several_items_in_it_parameter(self, *args):
+        test_data = {
+            # first level parameter should be redacted
+            'taskCount': 1,
+            'tasks': [
+                {
+                    'collection': 'ansible.builtin',
+                    'module': 'ansible.builtin.shell',
+                    'name': 'i*** r*** o*** r***',
+                    'prediction': '    ansible.builtin.shell: yum install -y cargo',
+                },
+                {
+                    "collection": "ansible.builtin",
+                    "module": "ansible.builtin.shell",
+                    "name": "run an incremental deploy for ibm qradar",
+                    "prediction": "ansible.builtin.shell: \"cd {{ unarchive_dest }}",
+                },
+            ],
+            "suggestionId": "5e917739-3ba1-4253-9a06-00470e0d9977",
+        }
+
+        expected_result = {
+            'taskCount': 1,
+            'tasks': [
+                {
+                    'collection': 'ansible.builtin',
+                    'module': 'ansible.builtin.shell',
+                },
+                {
+                    'collection': 'ansible.builtin',
+                    'module': 'ansible.builtin.shell',
+                },
+            ],
+            "suggestionId": "5e917739-3ba1-4253-9a06-00470e0d9977",
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST['completion']), expected_result
+        )
+
     def test_redact_seated_users_data_nested_parameter(self, *args):
         test_data = {
             # nested parameter should be redacted
