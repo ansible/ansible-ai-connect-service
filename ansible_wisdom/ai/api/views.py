@@ -154,7 +154,9 @@ class Feedback(APIView):
         exception = None
         validated_data = {}
         try:
-            request_serializer = FeedbackRequestSerializer(data=request.data)
+            request_serializer = FeedbackRequestSerializer(
+                data=request.data, context={'request': request}
+            )
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             logger.info(f"feedback request payload from client: {validated_data}")
