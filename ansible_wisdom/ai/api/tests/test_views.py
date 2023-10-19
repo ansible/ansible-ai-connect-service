@@ -1879,15 +1879,15 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                     ]
                 },
                 'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+                'rh_user_has_seat': True,
+                'rh_user_org_id': '1',
             }
 
             event_request = {
                 'suggestions': [
                     '\n - name: install nginx on RHEL\n become: true\n '
                     'ansible.builtin.package:\n name: nginx\n state: present\n'
-                ],
-                'rh_user_has_seat': True,
-                'organization_id': '1',
+                ]
             }
 
             actual_event = mock_send_segment_event.call_args_list[0][0][0]
@@ -1910,15 +1910,15 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
                 'problem': 'WcaInvalidModelId',
                 'response': {},
                 'metadata': [],
+                'rh_user_has_seat': True,
+                'rh_user_org_id': '1',
             }
 
             event_request = {
                 'suggestions': [
                     '\n - name: install nginx on RHEL\n become: true\n '
                     'ansible.builtin.package:\n name: nginx\n state: present\n'
-                ],
-                'rh_user_has_seat': True,
-                'organization_id': '1',
+                ]
             }
 
             actual_event = mock_send_segment_event.call_args_list[0][0][0]

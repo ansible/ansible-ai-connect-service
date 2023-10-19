@@ -511,7 +511,7 @@ class ContentMatches(GenericAPIView):
                 if model_id_in_exception:
                     model_id = model_id_in_exception
             self._write_to_segment(
-                content_match_data,
+                request_data,
                 duration,
                 exception,
                 metadata,
@@ -581,7 +581,7 @@ class ContentMatches(GenericAPIView):
 
     def _write_to_segment(
         self,
-        content_match_data,
+        request_data,
         duration,
         exception,
         metadata,
@@ -595,9 +595,11 @@ class ContentMatches(GenericAPIView):
             "exception": exception is not None,
             "modelName": model_id,
             "problem": None if exception is None else exception.__class__.__name__,
-            "request": content_match_data,
+            "request": request_data,
             "response": response_data,
             "suggestionId": str(suggestion_id),
+            "rh_user_has_seat": user.rh_user_has_seat,
+            "rh_user_org_id": user.org_id,
             "metadata": metadata,
         }
         send_segment_event(event, "contentmatch", user)

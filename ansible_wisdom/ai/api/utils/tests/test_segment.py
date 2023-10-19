@@ -175,3 +175,38 @@ class TestSegment(TestCase):
 
         self.assertEqual(argument.get('details'), None)
         self.assertEqual(argument.get('exception'), 'SomeException')
+
+    def test_redact_contentmatches_response_data(self, *args):
+        test_data = {
+            'exception': False,
+            'modelName': 'org-model-id',
+            'problem': None,
+            'response': {
+                'contentmatches': [
+                    {
+                        'contentmatch': [
+                            {
+                                'repo_name': 'robertdebock.nginx',
+                                'repo_url': 'https://galaxy.ansible.com/robertdebock/nginx',
+                                'path': 'tasks/main.yml',
+                                'license': 'apache-2.0',
+                                'score': 0.0,
+                                'data_source_description': 'Ansible Galaxy roles',
+                            }
+                        ]
+                    }
+                ]
+            },
+            'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+        }
+
+        expected_result = {
+            'exception': False,
+            'modelName': 'org-model-id',
+            'problem': None,
+            'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST['contentmatch']), expected_result
+        )
