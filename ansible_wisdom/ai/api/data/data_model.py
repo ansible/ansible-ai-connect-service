@@ -45,16 +45,12 @@ class ContentMatchResponseData(BaseModel):
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source = -2
-    ansible_type = -1
+    data_source = -1
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        # The following will be removed once IBM returns the datasource as required
-        if self.data_source == -2:
-            self.data_source = DataSource[
-                self.data_source_description.replace("-", "_").upper()
-            ].value
+        if not self.data_source_description:
+            self.data_source_description = DataSource(self.data_source).label
 
 
 class BaseContentMatchResponseDto(BaseModel):
