@@ -1,7 +1,7 @@
 import ai.search
 import requests
 from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.model_client.wca_client import WcaInferenceFailure, WcaTokenFailure
+from ai.api.model_client.wca_client import WcaInferenceFailure
 from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
@@ -90,11 +90,11 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
                 "",
                 "- name: install ffmpeg on Red Hat Enterprise Linux",
             )
-        except WcaTokenFailure as e:
-            # If there's a Token failure we'll also not be able to execute Model inference.
-            self.add_error(WcaTokenRequestException(ERROR_MESSAGE), e)
-            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
         except WcaInferenceFailure as e:
+            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
+        except Exception as e:
+            # For any other failure we assume the whole WCA service is unavailable.
+            self.add_error(WcaTokenRequestException(ERROR_MESSAGE), e)
             self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
 
     def pretty_status(self):
