@@ -50,6 +50,7 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
             hasValue={hasWcaModelId}
             isSaving={saving}
             isValueInvalid={isModelIdInvalid}
+            isPassword={false}
             clearInvalidState={() => setIsModelIdInvalid(false)}
             errorState={modelIdError}
             setErrorState={setModelIdError}
