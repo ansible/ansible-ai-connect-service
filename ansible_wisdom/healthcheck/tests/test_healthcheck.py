@@ -53,7 +53,11 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         self.model_server_patcher = patch('healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
         self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
-
+        self.get_model_client_patcher = patch('healthcheck.backends.get_model_client')
+        self.get_model_client = self.get_model_client_patcher.start()
+        self.model_client = Mock()
+        self.model_client.infer = TestHealthCheck.mocked_requests_succeed
+        self.get_model_client.return_value = (self.model_client, '')
         self.attribution_search_patcher = patch('ai.search.search')
         self.mock_ai_search = self.attribution_search_patcher.start()
         self.mock_ai_search.return_value = {"attributions": ["an attribution"]}
@@ -63,6 +67,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         self.secret_manager_patcher.stop()
         self.get_seat_checker_patcher.stop()
         self.model_server_patcher.stop()
+        self.get_model_client_patcher.stop()
         self.attribution_search_patcher.stop()
 
     @staticmethod
@@ -79,11 +84,8 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         return r
 
     @staticmethod
-    def mocked_requests_grpc_fail(*args, **kwargs):
-        r = Response()
-        if len(args) > 0 and args[0].endswith('/oauth/healthz'):
-            r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
-        return r
+    def mocked_infer_grpc_fail(*args, **kwargs):
+        raise Exception()
 
     def test_liveness_probe(self):
         r = self.client.get(reverse('liveness_probe'), format='json')
@@ -218,7 +220,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     def test_health_check_grpc_error(self):
         cache.clear()
-        self.mock_requests.get = TestHealthCheck.mocked_requests_grpc_fail
+        self.model_client.infer = TestHealthCheck.mocked_infer_grpc_fail
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)

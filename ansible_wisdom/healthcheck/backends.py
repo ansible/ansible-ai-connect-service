@@ -1,14 +1,28 @@
+import logging
+import uuid
+
 import ai.search
 import requests
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.api.data.data_model import ModelMeshPayload
 from ai.api.model_client.wca_client import WcaInferenceFailure
+from ai.api.pipelines.completion_stages.inference import get_model_client
 from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
 from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
+logger = logging.getLogger(__name__)
+
 ERROR_MESSAGE = "An error occurred"
+
+
+class DummyUser:
+    rh_user_has_seat = False
+
+
+DUMMY_USER = DummyUser()
 
 
 class WcaTokenRequestException(ServiceUnavailable):
@@ -35,24 +49,39 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
         if self.api_type == 'http':
             self.url = f'{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping'
         elif self.api_type == 'grpc':
-            self.url = (
-                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL}://'
-                f'{settings.ANSIBLE_AI_MODEL_MESH_HOST}:'
-                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz'
-            )
+            self.url = '__DUMMY_VALUE__'
         else:  # 'mock' & 'wca'
             self.url = None
 
     def check_status(self):
         try:
             if self.url:
-                # As of today (2023-03-27) SSL Certificate Verification fails with
-                # the gRPC model server in the Staging environment.  The verify
-                # option in the following line is just TEMPORARY and will be removed
-                # as soon as the certificate is replaced with a valid one.
-                res = requests.get(self.url, verify=(self.api_type != 'grpc'))  # !!!!! TODO !!!!!
-                if res.status_code != 200:
-                    raise Exception()
+                if self.api_type == 'http':
+                    res = requests.get(self.url, verify=True)
+                    if res.status_code != 200:
+                        raise Exception()
+                elif self.api_type == 'grpc':
+                    model_mesh_client, model_name = get_model_client(
+                        apps.get_app_config("ai"), DUMMY_USER
+                    )
+                    suggestion_id = uuid.uuid4()
+                    model_mesh_payload = ModelMeshPayload(
+                        instances=[
+                            {
+                                "context": "",
+                                "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                                "userId": "",
+                                "suggestionId": str(suggestion_id),
+                                "organization_id": "",
+                                "rh_user_has_seat": False,
+                            }
+                        ]
+                    )
+                    data = model_mesh_payload.dict()
+                    response = model_mesh_client.infer(
+                        data, model_id=model_name, suggestion_id=suggestion_id
+                    )
+                    logger.debug("grpc check_status: %s", response)
             else:
                 pass
         except Exception as e:
