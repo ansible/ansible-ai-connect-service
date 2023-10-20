@@ -98,24 +98,63 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST['completion']), expected_result
         )
 
-    def test_redact_seated_users_data_nested_parameter(self, *args):
+    def test_redact_seated_users_data_with_nested_array_parameter(self, *args):
         test_data = {
-            # nested parameter should be redacted
-            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
-            'attributions': {
-                'repo_name': 'Repository_mock_name',
-                'path': '/some/path',
-                'ansible_type': 1,
-                'score': 1.5,
+            'request': {
+                'instances': [
+                    {
+                        'prompt': '- name: the task name',
+                        'organization_id': 876,
+                        'rh_user_has_seat': True,
+                        'context': '- hosts: all\n  tasks:\n',
+                        'suggestionId': '5ce0e9a5-5ffa-654b-cee0-1238041fb31a',
+                        'userId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
+                    }
+                ]
             },
         }
 
         expected_result = {
-            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
-            'attributions': {
-                'ansible_type': 1,
-                'score': 1.5,
+            'request': {
+                'instances': [
+                    {
+                        'organization_id': 876,
+                        'rh_user_has_seat': True,
+                        'suggestionId': '5ce0e9a5-5ffa-654b-cee0-1238041fb31a',
+                        'userId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
+                    }
+                ]
             },
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST['prediction']), expected_result
+        )
+
+    def test_redact_seated_users_data_nested_parameter(self, *args):
+        test_data = {
+            # nested parameter should not be redacted
+            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
+            'attributions': [
+                {
+                    'repo_name': 'Repository_mock_name',
+                    'path': '/some/path',
+                    'ansible_type': 1,
+                    'score': 1.5,
+                },
+            ],
+        }
+
+        expected_result = {
+            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
+            'attributions': [
+                {
+                    'ansible_type': 1,
+                    'score': 1.5,
+                    'repo_name': 'Repository_mock_name',
+                    'path': '/some/path',
+                },
+            ],
         }
 
         self.assertEqual(
