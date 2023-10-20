@@ -151,7 +151,6 @@ class InferenceStage(PipelineElement):
             raise ServiceUnavailable(cause=e)
 
         finally:
-            process_error_count.labels(stage='prediction').inc()
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
             value_template = Template("{{ _${variable_name}_ }}")
@@ -161,6 +160,7 @@ class InferenceStage(PipelineElement):
             # If an exception was thrown during the backend call, try to get the model ID
             # that is contained in the exception.
             if exception:
+                process_error_count.labels(stage='prediction').inc()
                 model_id_in_exception = BaseWisdomAPIException.get_model_id_from_exception(
                     exception
                 )
