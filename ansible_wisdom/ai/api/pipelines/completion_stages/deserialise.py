@@ -20,7 +20,7 @@ class DeserializeStage(PipelineElement):
             request_serializer.is_valid(raise_exception=True)
             request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
         except Exception as exc:
-            process_error_count.labels(stage='request_serialization_validation').inc()
+            process_error_count.labels(stage='completion-request_serialization_validation').inc()
             logger.warning(f'failed to validate request:\nException:\n{exc}')
             raise exc
 

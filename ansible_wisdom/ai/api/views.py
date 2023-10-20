@@ -444,7 +444,9 @@ class ContentMatches(GenericAPIView):
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
-                process_error_count.labels(stage='response_serialization_validation').inc()
+                process_error_count.labels(
+                    stage='contentmatch-response_serialization_validation'
+                ).inc()
                 logger.exception(f"error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
         except ModelTimeoutError as e:
@@ -554,7 +556,7 @@ class ContentMatches(GenericAPIView):
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
-                process_error_count.labels(stage='response_serialization_validation').inc()
+                process_error_count.labels(stage='attr-response_serialization_validation').inc()
                 logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
 
