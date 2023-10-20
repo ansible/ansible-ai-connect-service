@@ -9,6 +9,7 @@ from ai.api.model_client.wca_client import WcaInferenceFailure
 from ai.api.pipelines.completion_stages.inference import get_model_client
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
 from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
@@ -16,13 +17,6 @@ from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 logger = logging.getLogger(__name__)
 
 ERROR_MESSAGE = "An error occurred"
-
-
-class DummyUser:
-    rh_user_has_seat = False
-
-
-DUMMY_USER = DummyUser()
 
 
 class WcaTokenRequestException(ServiceUnavailable):
@@ -62,7 +56,7 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
                         raise Exception()
                 elif self.api_type == 'grpc':
                     model_mesh_client, model_name = get_model_client(
-                        apps.get_app_config("ai"), DUMMY_USER
+                        apps.get_app_config("ai"), AnonymousUser()
                     )
                     suggestion_id = uuid.uuid4()
                     model_mesh_payload = ModelMeshPayload(
