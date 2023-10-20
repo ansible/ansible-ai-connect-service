@@ -3,11 +3,12 @@ import {Button, InputGroup, TextInput} from "@patternfly/react-core";
 import {useTranslation} from "react-i18next";
 
 export interface InlineTextInputProps {
-    value: string;
-    onChange: (value: string) => void;
-    'aria-label': string;
-    placeholder: string;
-    isDisabled: boolean;
+    readonly value: string;
+    readonly onChange: (value: string) => void;
+    readonly 'aria-label': string;
+    readonly placeholder: string;
+    readonly isDisabled: boolean;
+    readonly isPassword: boolean;
 }
 
 export const SingleInlineEdit = (props: InlineTextInputProps) => {
@@ -16,7 +17,7 @@ export const SingleInlineEdit = (props: InlineTextInputProps) => {
         <InputGroup>
             <TextInput
                 value={props.value}
-                type="text"
+                type={props.isPassword ? "password" : "text"}
                 onChange={(value, event) => props.onChange?.(value)}
                 aria-label={props["aria-label"]}
                 placeholder={props.placeholder}

@@ -50,6 +50,7 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
             hasValue={hasWcaKey}
             isSaving={saving}
             isValueInvalid={isKeyInvalid}
+            isPassword={true}
             clearInvalidState={() => setIsKeyInvalid(false)}
             errorState={keyError}
             setErrorState={setKeyError}
