@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 ERROR_MESSAGE = "An error occurred"
 
 
+class UnseatedAnonymousUser(AnonymousUser):
+    rh_user_has_seat = False
+
+
 class WcaTokenRequestException(ServiceUnavailable):
     """There was an error trying to get a WCA token."""
 
@@ -56,7 +60,7 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
                         raise Exception()
                 elif self.api_type == 'grpc':
                     model_mesh_client, model_name = get_model_client(
-                        apps.get_app_config("ai"), AnonymousUser()
+                        apps.get_app_config("ai"), UnseatedAnonymousUser()
                     )
                     suggestion_id = uuid.uuid4()
                     model_mesh_payload = ModelMeshPayload(
