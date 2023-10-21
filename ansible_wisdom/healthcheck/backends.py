@@ -68,7 +68,7 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
                             {
                                 "context": "",
                                 "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
-                                "userId": "",
+                                "userId": None,
                                 "suggestionId": str(suggestion_id),
                                 "organization_id": "",
                                 "rh_user_has_seat": False,
