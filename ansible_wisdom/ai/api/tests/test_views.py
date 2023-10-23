@@ -1859,7 +1859,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
     @patch('ai.api.views.feature_flags.get')
     @patch('ai.api.views.send_segment_event')
     @patch('ai.search.search')
-    def test_wca_contentmatch_segment_events_with_no_seated_user(
+    def test_wca_contentmatch_segment_events_with_unseated_user(
         self, mock_search, mock_send_segment_event, mock_feature_flags_get
     ):
         self.user.rh_user_has_seat = False
