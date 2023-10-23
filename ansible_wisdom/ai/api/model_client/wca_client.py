@@ -71,6 +71,7 @@ class WCAClient(ModelMeshClient):
         self.session = requests.Session()
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
+        self.mock_wca = settings.MOCK_WCA_SECRETS_MANAGER
         self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
 
     @staticmethod
@@ -214,7 +215,7 @@ class WCAClient(ModelMeshClient):
 
     def get_api_key(self, rh_user_has_seat, organization_id):
         # use the shared API Key if the user has no seat
-        if not rh_user_has_seat or organization_id is None:
+        if not rh_user_has_seat or organization_id is None or self.mock_wca is True:
             return self.free_api_key
 
         try:
@@ -232,7 +233,7 @@ class WCAClient(ModelMeshClient):
         raise WcaKeyNotFound
 
     def get_model_id(self, rh_user_has_seat, organization_id, requested_model_id):
-        if not rh_user_has_seat or organization_id is None:
+        if not rh_user_has_seat or organization_id is None or self.mock_wca is True:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
                 logger.info(err_message)
