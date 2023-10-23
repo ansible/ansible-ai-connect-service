@@ -1856,23 +1856,21 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
             },
         }
 
-    @patch('ai.api.views.feature_flags.get')
     @patch('ai.api.views.send_segment_event')
     @patch('ai.search.search')
     def test_wca_contentmatch_segment_events_with_unseated_user(
-        self, mock_search, mock_send_segment_event, mock_feature_flags_get
+        self, mock_search, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = False
 
         mock_search.return_value = self.search_response
-        mock_feature_flags_get.return_value = "::model-id:index"
 
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
         event = {
             'exception': False,
-            'modelName': 'model-id',
+            'modelName': '',
             'problem': None,
             'response': {
                 'contentmatches': [
