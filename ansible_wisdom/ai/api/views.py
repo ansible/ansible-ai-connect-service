@@ -429,7 +429,9 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            client_response = wca_client.codematch(content_match_data, model_id)
+            resp_obj = wca_client.codematch(content_match_data, model_id)
+            model_id = next(resp_obj)
+            client_response = next(resp_obj)
             response_data = {"contentmatches": []}
 
             for response_item in client_response:
