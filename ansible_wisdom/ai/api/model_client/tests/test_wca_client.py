@@ -498,7 +498,8 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
-        client_response = {
+
+        code_matches = {
             "code_matches": [
                 {
                     "repo_name": "fiaasco.solr",
@@ -518,7 +519,9 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
                 },
             ]
         }
-        response = MockResponse(json=client_response, status_code=200)
+
+        client_response = (model_id, code_matches)
+        response = MockResponse(json=code_matches, status_code=200)
 
         headers = {
             "Content-Type": "application/json",
@@ -530,9 +533,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
 
-        response_obj = model_client.codematch(model_input=model_input)
-        result_model_id = next(response_obj)
-        result_response = next(response_obj)
+        result = model_client.codematch(model_input=model_input, model_id=model_id)
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -541,8 +542,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             json=data,
             timeout=None,
         )
-        self.assertEqual(result_response, client_response)
-        self.assertEqual(result_model_id, model_id)
+        self.assertEqual(result, client_response)
 
     @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_timeout(self):
@@ -566,11 +566,8 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(ModelTimeoutError) as e:
-            response_obj = model_client.codematch(model_input=model_input, model_id=model_id)
-            result_model_id = next(response_obj)
-            next(response_obj)
+            model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
-        self.assertEqual(result_model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_http_error(self):
@@ -595,41 +592,29 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
         with self.assertRaises(WcaCodeMatchFailure) as e:
-            response_obj = model_client.codematch(model_input=model_input, model_id=model_id)
-            result_model_id = next(response_obj)
-            next(response_obj)
+            model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
-        self.assertEqual(result_model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_bad_model_id(self):
         stub = stub_wca_client(400, "sample_model_name")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            response_obj = model_client.codematch(model_input=model_input)
-            result_model_id = next(response_obj)
-            next(response_obj)
+            model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
-        self.assertEqual(result_model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_invalid_model_id_for_api_key(self):
         stub = stub_wca_client(403, "sample_model_name")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            response_obj = model_client.codematch(model_input=model_input)
-            result_model_id = next(response_obj)
-            next(response_obj)
+            model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
-        self.assertEqual(result_model_id, model_id)
 
     @assert_call_count_metrics(hist=wca_codematch_hist)
     def test_codematch_empty_response(self):
         stub = stub_wca_client(204, "sample_model_name")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse) as e:
-            response_obj = model_client.codematch(model_input=model_input)
-            result_model_id = next(response_obj)
-            next(response_obj)
+            model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
-        self.assertEqual(result_model_id, model_id)

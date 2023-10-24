@@ -2029,7 +2029,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
 
             event = {
                 'exception': True,
-                'modelName': 'model-id',
+                'modelName': '',
                 'problem': 'WcaKeyNotFound',
                 'response': {},
                 'metadata': [],
