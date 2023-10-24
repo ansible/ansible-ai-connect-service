@@ -1706,7 +1706,7 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
                 "ansible.builtin.package:\n name: nginx\n state: present\n"
             ],
             "suggestionId": str(uuid.uuid4()),
-            "model": "org-model-id",
+            "model": "model-id",
         }
 
         repo_name = "robertdebock.nginx"
@@ -1736,10 +1736,10 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
         self.model_client.session.post = Mock(return_value=response)
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value='org-api-key')
-        self.model_client.get_model_id = Mock(return_value='org-model-id')
 
     def test_wca_contentmatch_with_non_existing_wca_key(self):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
+        self.model_client.get_model_id = Mock(return_value='model-id')
         self._assert_exception_in_log_and_status_code(
             "ai.api.pipelines.common.WcaKeyNotFoundException", HTTPStatus.FORBIDDEN
         )
@@ -1760,11 +1760,17 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
             "ai.api.pipelines.common.WcaModelIdNotFoundException", HTTPStatus.FORBIDDEN
         )
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_with_invalid_model_id(self):
-        self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
+        response = MockResponse(
+            json=[],
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
             "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
         )
+        self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
@@ -1790,6 +1796,11 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
                 r = self.client.post(reverse('contentmatches'), self.payload)
                 self.assertEqual(r.status_code, status_code_expected)
             self.assertInLog(exception_name, log)
+
+    def _assert_model_id_in_exception(self, expected_model_id):
+        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertEqual(r.data["model"], expected_model_id)
 
 
 class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
@@ -1836,7 +1847,6 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         self.model_client.session.post = Mock(return_value=wca_response)
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value='org-api-key')
-        self.model_client.get_model_id = Mock(return_value='model-id')
 
         self.search_response = {
             'attributions': [
@@ -1856,6 +1866,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
             },
         }
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
     @patch('ai.search.search')
     def test_wca_contentmatch_segment_events_with_unseated_user(
@@ -1903,9 +1914,11 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         self.assertTrue(event.items() <= actual_event.items())
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_seated_user(self, mock_send_segment_event):
         self.user.rh_user_has_seat = True
+        self.model_client.get_model_id = Mock(return_value='model-id')
 
         with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
             r = self.client.post(reverse('contentmatches'), self.payload)
@@ -1948,12 +1961,18 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
             self.assertTrue(event.items() <= actual_event.items())
             self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_invalid_modelid_error(
         self, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = True
-        self.model_client.get_model_id = Mock(side_effect=WcaInvalidModelId)
+        self.payload["model"] = 'invalid-model-id'
+        response = MockResponse(
+            json=[],
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        self.model_client.session.post = Mock(return_value=response)
 
         with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
             r = self.client.post(reverse('contentmatches'), self.payload)
@@ -1961,7 +1980,7 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
 
             event = {
                 'exception': True,
-                'modelName': '',
+                'modelName': 'invalid-model-id',
                 'problem': 'WcaInvalidModelId',
                 'response': {},
                 'metadata': [],
@@ -1981,11 +2000,14 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
             self.assertTrue(event.items() <= actual_event.items())
             self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_empty_response_error(
         self, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = True
+        self.model_client.get_model_id = Mock(return_value='model-id')
+
         response = MockResponse(
             json=[],
             status_code=HTTPStatus.NO_CONTENT,
@@ -2018,10 +2040,12 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
             self.assertTrue(event.items() <= actual_event.items())
             self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_key_error(self, mock_send_segment_event):
         self.user.rh_user_has_seat = True
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
+        self.model_client.get_model_id = Mock(return_value='model-id')
 
         with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
             r = self.client.post(reverse('contentmatches'), self.payload)
