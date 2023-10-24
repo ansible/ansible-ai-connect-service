@@ -7,6 +7,7 @@ from uuid import UUID
 
 from ai.api.serializers import (
     CompletionRequestSerializer,
+    ContentMatchRequestSerializer,
     FeedbackRequestSerializer,
     SuggestionQualityFeedback,
 )
@@ -25,6 +26,17 @@ class CompletionRequestSerializerTest(TestCase):
         serializer.validate(data)
         self.assertIsNotNone(data['suggestionId'])
         self.assertTrue(isinstance(data['suggestionId'], UUID))
+
+    def test_ignore_empty_model(self):
+        user = Mock(rh_user_has_seat=False)
+        request = Mock(user=user)
+        serializer = CompletionRequestSerializer(context={'request': request})
+        data = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "model": "    ",
+        }
+        serializer.validate(data)
+        self.assertIsNone(data.get('model'))
 
     def test_validate_raises_exception(self):
         user = Mock(rh_user_has_seat=False)
@@ -89,10 +101,35 @@ class CompletionRequestSerializerTest(TestCase):
             serializer.is_valid(raise_exception=True)
 
 
+class ContentMatchRequestSerializerTest(TestCase):
+    def test_validate(self):
+        serializer = ContentMatchRequestSerializer()
+        data = {
+            "suggestions": "---\n- hosts: all\n  become: yes\n\n"
+            "tasks:\n    - name: Install Apache\n",
+            "model": "my-model",
+            "suggestionId": "fe0ec82d-e71f-47eb-97da-0a2b32ceb344",
+        }
+        serializer.validate(data)
+        self.assertTrue(data['suggestionId'])
+
+    def test_ignore_empty_model(self):
+        serializer = ContentMatchRequestSerializer()
+        data = {
+            "suggestions": "---\n- hosts: all\n  become: yes\n\n"
+            "tasks:\n    - name: Install Apache\n",
+            "model": "   ",
+            "suggestionId": "fe0ec82d-e71f-47eb-97da-0a2b32ceb344",
+        }
+        serializer.validate(data)
+        self.assertIsNone(data.get("model"))
+
+
 class SuggestionQualityFeedbackTest(TestCase):
     def test_multitask_prompt_not_stripped(self):
         data = {
-            "prompt": "---\n- name: Deploy AWS EC2\n  hosts: localhost\n  tasks:\n    # create vpc & create security group",  # noqa: E501
+            "prompt": "---\n- name: Deploy AWS EC2\n  hosts: localhost\n  tasks:\n"
+            "# create vpc & create security group",
             "providedSuggestion": "got this",
             "expectedSuggestion": "wanted this",
             "additionalComment": "p.s.",
