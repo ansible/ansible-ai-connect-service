@@ -507,7 +507,8 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
-        client_response = {
+
+        code_matches = {
             "code_matches": [
                 {
                     "repo_name": "fiaasco.solr",
@@ -527,7 +528,9 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
                 },
             ]
         }
-        response = MockResponse(json=client_response, status_code=200)
+
+        client_response = (model_id, code_matches)
+        response = MockResponse(json=code_matches, status_code=200)
 
         headers = {
             "Content-Type": "application/json",
