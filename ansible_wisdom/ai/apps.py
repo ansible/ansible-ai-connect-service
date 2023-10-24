@@ -1,6 +1,5 @@
 import logging
 
-import torch
 from ansible_lint import lintpostprocessing
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
@@ -34,10 +33,6 @@ class AiConfig(AppConfig):
     _ansible_lint_caller = UNINITIALIZED
 
     def ready(self) -> None:
-        if torch.cuda.is_available():
-            logger.info('GPU is available')
-        else:
-            logger.error('GPU is not available')
         self.wca_client = WCAClient(
             inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
         )
