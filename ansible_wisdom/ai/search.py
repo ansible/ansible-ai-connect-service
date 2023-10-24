@@ -36,7 +36,9 @@ def initialize_OpenSearch():
             pool_maxsize=20,
         )
 
-        model = SentenceTransformer(f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}")
+        model = SentenceTransformer(
+            f"sentence-transformers/{settings.ANSIBLE_AI_SEARCH['MODEL']}", device="cpu"
+        )
     else:
         client = None
         model = None
