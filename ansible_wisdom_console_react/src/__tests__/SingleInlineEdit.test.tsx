@@ -51,6 +51,9 @@ describe('SingleInlineEdit',
                         expect(textInputElement).toHaveAttribute('aria-label', 'test-aria-label');
                         expect(textInputElement).toHaveAttribute('placeholder', 'test-placeholder');
                         expect(textInputElement).not.toBeDisabled();
+                        const toggleViewElement = screen.getByTestId("model-settings-editor__toggleView");
+                        expect(toggleViewElement).toBeInTheDocument();
+                        expect(toggleViewElement).toHaveAttribute('aria-label', 'ShowText');
                         const clearButtonElement = screen.getByTestId("model-settings-editor__clear-button");
                         expect(clearButtonElement).toBeInTheDocument();
                         expect(clearButtonElement).toHaveAttribute('aria-label', 'ClearText');
@@ -98,6 +101,31 @@ describe('SingleInlineEdit',
                 expect(clearButtonElement).toBeInTheDocument();
                 await userEvent.click(clearButtonElement);
                 expect(callback).toBeCalledWith('');
+            });
+
+        it('OnToggleViewClick',
+            async () => {
+                const callback = jest.fn();
+                render(
+                    <SingleInlineEdit
+                        aria-label={'test-aria-label'}
+                        value={'test-value'}
+                        onChange={callback}
+                        isDisabled={false}
+                        isPassword={true}
+                        placeholder={'test-placeholder'}
+                    />
+                );
+                const textInputElement = screen.getByTestId("model-settings-editor__input");
+                expect(textInputElement).toBeInTheDocument();
+                expect(textInputElement).toHaveAttribute('type', 'password');
+                expect(textInputElement).toHaveAttribute('value', 'test-value')
+                const toggleViewElement = screen.getByTestId("model-settings-editor__toggleView");
+                expect(toggleViewElement).toBeInTheDocument();
+                expect(toggleViewElement).toHaveAttribute('aria-label', 'ShowText');
+                await userEvent.click(toggleViewElement);
+                expect(textInputElement).toHaveAttribute('type', 'text');
+                expect(toggleViewElement).toHaveAttribute('aria-label', 'HideText');
             });
 
         it('OnRenderDisabled',
