@@ -57,12 +57,16 @@ def generate_query(encoded):
     }
 
 
-def search(suggestion, index=None):
+def search(suggestion, index=None, pre_encoded=None):
     if client is None:
         raise Exception('AI Search is not initialized.')
 
     start_time = time.time()
-    encoded = model.encode(sentences=suggestion, batch_size=16)
+    encoded = (
+        pre_encoded
+        if (pre_encoded is not None)
+        else model.encode(sentences=suggestion, batch_size=16)
+    )
     encode_duration = round((time.time() - start_time) * 1000, 2)
 
     query = generate_query(encoded)

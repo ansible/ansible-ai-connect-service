@@ -1,4 +1,8 @@
+import base64
+import io
+
 import ai.search
+import numpy as np
 import requests
 from ai.api.aws.wca_secret_manager import Suffixes
 from ai.api.model_client.wca_client import WcaInferenceFailure
@@ -9,6 +13,34 @@ from health_check.exceptions import ServiceUnavailable
 from users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 ERROR_MESSAGE = "An error occurred"
+
+PRE_DEFINED_SEARCH_STRING = 'aaa'
+
+# See the TestSearchWithPreEncoded class in test_backends.py on how these lines were generated.
+PRE_ENCODED_QUERY = '''\
+k05VTVBZAQB2AHsnZGVzY3InOiAnPGY0JywgJ2ZvcnRyYW5fb3JkZXInOiBGYWxzZSwgJ3NoYXBlJzogKDM4NCwpLCB9ICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAp7Gx+9+pWUPS5AqTxoh4c8EYA0vZ0J
+dTzfeuQ8Zt1fPH5YmTzOXxs97wNeO8fgU70Ljx29VLH/urosmjrE1E68zqVLvX2mSrq0rvq99kPJvCyvvTy7Mq09a7KBPXg47jyn
+lH66xv7sPHBOgrz2E7w9D22EvGaAMr1+Yjo85AMePbuGDD4GLJm6cQABPE295rxtLYU6BPqkPJgKCz2HKnu8ugPOPKmr0LtANwg9
+N6EbPF3r1jzCvwM9Pw2FPSWvXD1noC09+1zIPeZsaD3tfrW9W4HNvLhpRjxeb409jD5CPZPbVrzU4448UBJLPab5WbwtMo28KRBN
+Oy/vib12FbE8qgPjvFNKQL3rTTg7jIlTvEbWlLxGOe68Ec3ZPPuDuLxj3Ww8syTru7aHLbwToCY8+mlJPX84jL1dHJs8KmEOvNQ5
+IDwXoQ+9JFfKvDZ+D70Fb5o9+u8DvUbkRz0d0gg7caGbvPzTkj3G+u69NckQPQdgvz11ww29efdzvds0h7tx+c+8HmEHvbp3Mr6H
+7YM+UKhlPRFdzTtOh408HIC1PMKVL7q47L+8wRPNOg+ReDvsYP28Nw+vPcLJpzzQYhm8lJm0vbiXjLxiLq251jwTPSfXl70OGIQ8
+LTWyPYRHBL0N34G9aJL6vKkcwDy0ML08BbouvXWNHL1a+Qe92Xf2idqV7rxqBZ8723WQvUmZVj0n09O8pacyOtcrD7gArBg9dQvy
+vIZ5hj2kkoW9Umy3PeY5ATw4ubU76woAPrmeqjz8GjI8mixZPbJixrpg9Zw86mNQvfMVzbzY5Io7hryWPTvsA7zjrhK8lgTYPHhM
+7b2C9sE9nXcsPCL6Zjw2G3k9XBggvTG3ib3V9lw8runLvN3SKj2H5ks8QwFbvaoYgb0bGBy9aCS6POXjz732swY9Bc4fPfTYEj0c
+gbe8DGdvvacd9Tz6O0A9yKpUu1Fgqbx1g8+9XaSfPJxZcb08BAe9O+pfvf+KHD3QA248xLKlvAuOjz1ynbE9ztUJvckJUTzAujI8
+ARNMvCL6jbyvCVO9yKDYPAGWprwfPUm9YfMmvZktzT1U5Mo8dlgDvQwMPrzDW429a/rGO8Y2aDzD+X+9F7oHvUNREDz5IKs8Ot/O
+vMx3Cjtoywa7L1A+vXogcL1zTgY9qzvhvOMcOL2HVHW7qOsOPVpaczz8OWK9TaK1CWGmRD1NuA696IWsuwUz/bxNkJA8sCO2vB3W
+O7zKWCA8kcdivVVxXr1es9e8WUDiuz/ZyzylsBg9mxr4PED5I71k9QU9s5mivD9xZj3GUBA9A1o/PUZBEr0GEog9IhcvPbYsT705
+DbU8aeipPQdMHL0YQXE965xjvat2Sj2w+jM9wocVPAZUtDz0c2K9tkW9PTFyMjzSbIG7SShavUhzz7xgOjk9cotUuF/UE70zkQw+
+kuXyvFcuKj04IA88670yPUsrDr2el509Og5avfZH0LzEMq28sGhlvYNuTDze/pk89pXcPDc3xr16UDK917jHvDv+Zz2ZeRI9rfge
+vQZ0Dz3G48i9ddrSO6A3HDwaxYq60QmYvVD2MT24suw9FVKCPW5ZA77QWHC9ZUI/vRkM4bvyK8Q8YDDHPNeLDb0AAZ69cY9evQa3
+kT2wyuY7W70JPmLBpDzB0LO83fqePVFgejyWO4e91j+pPTdsljyTT6K8kR2YPNEO5zz9qi291HZxsh7h5Lx00zQ9BYWrPI78HL3t
+bDU9Nqo+Pd/Rxb0PZEg9iIGUPWn1mrwnFy68ZtYWPJoLurtCooA9jxBgPYbTUT2gSYe9m+gLu4iDPr0ycvQ8ZjevvVO5zDvFc/y8
+VmcOPaMgOrxChyy9SUEYvdZXvT1+JxC9IOJfPWqU9LuewRU+bIuXvGy7zbwM17w8mWaxvQvyjj1MFYG4mfSAvRs2073FDwe9fTxf
+vdOcuDxIt2q9VlXduuDAATtvsnY90EKxvTkWKb0ecNi8Xuu6vN1EhTuR0bO8HQzBPduJMjxDI+S84agQvexxbb0rBUi9EoAdPcdU
+bT47ORm8wK89Pamqubw='''
 
 
 class WcaTokenRequestException(ServiceUnavailable):
@@ -125,9 +157,16 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
 class AttributionCheck(BaseLightspeedHealthCheck):
     critical_service = False
 
+    def __init__(self):
+        decoded = base64.b64decode(PRE_ENCODED_QUERY)
+        f = io.BytesIO(decoded)
+        self.pre_encoded_query = np.load(f)
+
     def check_status(self):
         try:
-            attributions = ai.search.search("aaa")["attributions"]
+            attributions = ai.search.search(
+                PRE_DEFINED_SEARCH_STRING, index=None, pre_encoded=self.pre_encoded_query
+            )["attributions"]
             assert len(attributions) > 0, "No attribution found"
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
