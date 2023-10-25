@@ -75,7 +75,14 @@ key:
 export SECRET_KEY=somesecretvalue
 ```
 
-Then, set environment variables for access to AWS:
+For most development usages it is enough to use the mock of WCA.
+
+```bash
+export MOCK_WCA_SECRETS_MANAGER=True
+```
+
+For deployment and RH SSO integration test/development, set
+environment variables for access to AWS:
 
 ```bash
 export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
