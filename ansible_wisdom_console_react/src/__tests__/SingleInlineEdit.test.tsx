@@ -13,6 +13,7 @@ describe('SingleInlineEdit',
                         value={'test-value'}
                         aria-label={'test-aria-label'}
                         isDisabled={false}
+                        isPassword={false}
                         placeholder={'test-placeholder'}
                         onChange={jest.fn()}
                     />
@@ -31,6 +32,32 @@ describe('SingleInlineEdit',
                 expect(clearButtonElement).not.toBeDisabled();
             });
 
+            it('OnRender::Password',
+                async () => {
+                        render(
+                            <SingleInlineEdit
+                                value={'test-value'}
+                                aria-label={'test-aria-label'}
+                                isDisabled={false}
+                                isPassword={true}
+                                placeholder={'test-placeholder'}
+                                onChange={jest.fn()}
+                            />
+                        );
+                        const textInputElement = screen.getByTestId("model-settings-editor__input");
+                        expect(textInputElement).toBeInTheDocument();
+                        expect(textInputElement).toHaveAttribute('type', 'password');
+                        expect(textInputElement).toHaveAttribute('value', 'test-value');
+                        expect(textInputElement).toHaveAttribute('aria-label', 'test-aria-label');
+                        expect(textInputElement).toHaveAttribute('placeholder', 'test-placeholder');
+                        expect(textInputElement).not.toBeDisabled();
+                        const clearButtonElement = screen.getByTestId("model-settings-editor__clear-button");
+                        expect(clearButtonElement).toBeInTheDocument();
+                        expect(clearButtonElement).toHaveAttribute('aria-label', 'ClearText');
+                        expect(clearButtonElement).toHaveAttribute('title', 'ClearText');
+                        expect(clearButtonElement).not.toBeDisabled();
+                });
+
         it('OnTextChange',
             async () => {
                 const callback = jest.fn();
@@ -40,6 +67,7 @@ describe('SingleInlineEdit',
                         value={'test-value'}
                         onChange={callback}
                         isDisabled={false}
+                        isPassword={false}
                         placeholder={'test-placeholder'}
                     />
                 );
@@ -59,6 +87,7 @@ describe('SingleInlineEdit',
                         value={'test-value'}
                         onChange={callback}
                         isDisabled={false}
+                        isPassword={false}
                         placeholder={'test-placeholder'}
                     />
                 );
@@ -80,6 +109,7 @@ describe('SingleInlineEdit',
                         value={'test-value'}
                         onChange={callback}
                         isDisabled={true}
+                        isPassword={false}
                         placeholder={'test-placeholder'}
                     />
                 );

@@ -143,6 +143,15 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(False, None, None)
         self.assertEqual(model_id, 'free')
 
+    def test_seated_with_empty_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        self.mock_secret_manager.get_secret.return_value = {"SecretString": "sec"}
+        model_id = wca_client.get_model_id(
+            rh_user_has_seat=True, organization_id=123, requested_model_id=''
+        )
+        self.mock_secret_manager.get_secret.assert_called_once_with(123, Suffixes.MODEL_ID)
+        self.assertEqual(model_id, 'sec')
+
     def test_seatless_cannot_pick_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaBadRequest):
@@ -498,7 +507,8 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             "expiration": 1691445310,
             "scope": "ibm openid",
         }
-        client_response = {
+
+        code_matches = {
             "code_matches": [
                 {
                     "repo_name": "fiaasco.solr",
@@ -518,7 +528,9 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
                 },
             ]
         }
-        response = MockResponse(json=client_response, status_code=200)
+
+        client_response = (model_id, code_matches)
+        response = MockResponse(json=code_matches, status_code=200)
 
         headers = {
             "Content-Type": "application/json",

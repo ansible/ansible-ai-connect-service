@@ -233,6 +233,7 @@ class WCAClient(ModelMeshClient):
         organization_id = model_input.get("organization_id", None)
 
         model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+
         data = {
             "model_id": model_id,
             "input": suggestions,
@@ -270,7 +271,8 @@ class WCAClient(ModelMeshClient):
 
             response = result.json()
             logger.debug(f"Codematch API response: {response}")
-            return response
+
+            return model_id, response
 
         except HTTPError:
             raise WcaCodeMatchFailure(model_id=model_id)

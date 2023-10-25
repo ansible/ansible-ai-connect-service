@@ -43,12 +43,13 @@ interface ModelSettingsEditorProps {
     readonly hasValue: boolean;
     readonly isSaving: boolean;
     readonly isValueInvalid: boolean;
+    readonly isPassword: boolean;
     readonly clearInvalidState: () => void;
     readonly errorState: HasError;
     readonly setErrorState: (state: HasError) => void;
     readonly save: (value: string) => void;
     readonly cancel: () => void;
-    readonly captions: ModelSettingsEditorCaptionIds
+    readonly captions: ModelSettingsEditorCaptionIds;
 }
 
 export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
@@ -62,7 +63,8 @@ export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
         setErrorState,
         save,
         cancel,
-        captions
+        captions,
+        isPassword
     } = props;
 
     const {
@@ -146,6 +148,7 @@ export const ModelSettingsEditor = (props: ModelSettingsEditorProps) => {
                                         aria-label={t(fieldInputCaption)}
                                         placeholder={t(fieldInputPlaceholder)}
                                         isDisabled={isSaving}
+                                        isPassword={isPassword}
                                     />
                                 </StackItem>
                                 <StackItem>

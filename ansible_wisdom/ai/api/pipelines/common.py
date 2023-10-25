@@ -11,7 +11,9 @@ completions_return_code = Counter(
     'model_prediction_return_code', 'The return code of model prediction requests', ['code']
 )
 process_error_count = Counter(
-    'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
+    'wisdom_service_processing_error',
+    "Error counts at pre-process/prediction/post-process etc stages",
+    ['stage'],
 )
 
 

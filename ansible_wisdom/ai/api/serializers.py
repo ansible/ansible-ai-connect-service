@@ -71,7 +71,7 @@ class CompletionRequestSerializer(serializers.Serializer):
         default=uuid.uuid4,
     )
     metadata = Metadata(required=False)
-    model = serializers.CharField(required=False)
+    model = serializers.CharField(required=False, allow_blank=True)
 
     @staticmethod
     def validate_extracted_prompt(prompt, user):
@@ -115,6 +115,9 @@ class CompletionRequestSerializer(serializers.Serializer):
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
             data['suggestionId'] = uuid.uuid4()
+
+        if "model" in data and not data["model"].strip():
+            del data["model"]
         return data
 
 
@@ -360,7 +363,13 @@ class ContentMatchRequestSerializer(serializers.Serializer):
             " attribution data is being requested for."
         ),
     )
-    model = serializers.CharField(required=False)
+    model = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        data = super().validate(data)
+        if "model" in data and not data["model"].strip():
+            del data["model"]
+        return data
 
 
 class DataSource(models.IntegerChoices):

@@ -429,7 +429,8 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            client_response = wca_client.codematch(content_match_data, model_id)
+            model_id, client_response = wca_client.codematch(content_match_data, model_id)
+
             response_data = {"contentmatches": []}
 
             for response_item in client_response:
@@ -444,7 +445,9 @@ class ContentMatches(GenericAPIView):
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
-                process_error_count.labels(stage='response_serialization_validation').inc()
+                process_error_count.labels(
+                    stage='contentmatch-response_serialization_validation'
+                ).inc()
                 logger.exception(f"error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
         except ModelTimeoutError as e:
@@ -453,19 +456,19 @@ class ContentMatches(GenericAPIView):
                 f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
                 f" for suggestion {suggestion_id}"
             )
-            raise ModelTimeoutException
+            raise ModelTimeoutException(cause=e)
 
         except WcaBadRequest as e:
             exception = e
             logger.exception(f"bad request for content matching suggestion {suggestion_id}")
-            raise WcaBadRequestException
+            raise WcaBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e
             logger.exception(
                 f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
             )
-            raise WcaInvalidModelIdException
+            raise WcaInvalidModelIdException(cause=e)
 
         except WcaKeyNotFound as e:
             exception = e
@@ -473,7 +476,7 @@ class ContentMatches(GenericAPIView):
                 f"A WCA Api Key was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
-            raise WcaKeyNotFoundException
+            raise WcaKeyNotFoundException(cause=e)
 
         except WcaModelIdNotFound as e:
             exception = e
@@ -481,7 +484,7 @@ class ContentMatches(GenericAPIView):
                 f"A WCA Model ID was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
-            raise WcaModelIdNotFoundException
+            raise WcaModelIdNotFoundException(cause=e)
 
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e
@@ -489,18 +492,18 @@ class ContentMatches(GenericAPIView):
                 f"WCA Request/Response SuggestionId correlation failed "
                 f"for suggestion {suggestion_id}"
             )
-            raise WcaSuggestionIdCorrelationFailureException
+            raise WcaSuggestionIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e
             logger.exception(
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
-            raise WcaEmptyResponseException
+            raise WcaEmptyResponseException(cause=e)
         except Exception as e:
             exception = e
             logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
-            raise ServiceUnavailable
+            raise ServiceUnavailable(cause=e)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
@@ -554,7 +557,7 @@ class ContentMatches(GenericAPIView):
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
-                process_error_count.labels(stage='response_serialization_validation').inc()
+                process_error_count.labels(stage='attr-response_serialization_validation').inc()
                 logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
 
