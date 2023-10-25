@@ -30,7 +30,9 @@ class Metadata(serializers.Serializer):
         help_text="A UUID that identifies a user activity session within a given document.",
     )
     ansibleFileType = serializers.CharField(
-        required=False, label="Ansible File Type", help_text="Ansible file type (playbook)"
+        required=False,
+        label="Ansible File Type",
+        help_text="Ansible file type (playbook/tasks_in_role/tasks)",
     )
     additionalContext = serializers.DictField(
         required=False,

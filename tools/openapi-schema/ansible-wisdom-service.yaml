@@ -685,7 +685,7 @@ components:
         ansibleFileType:
           type: string
           title: Ansible File Type
-          description: Ansible file type (playbook)
+          description: Ansible file type (playbook/tasks_in_role/tasks)
         additionalContext:
           type: object
           additionalProperties: {}
