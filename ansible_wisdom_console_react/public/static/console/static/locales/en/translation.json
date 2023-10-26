@@ -24,6 +24,8 @@
   "UpdateKeyTitle": "Update IBM Cloud API Key",
   "PlaceholderKey": "Paste new IBM Cloud API Key here",
   "ClearText": "Clear text",
+  "ShowText": "Show",
+  "HideText": "Hide",
   "KeyInvalidAlert": "IBM Cloud API key is invalid. Update the key to a valid value or your organisation will be unable to use IBM watsonx Code Assistant.",
   "KeyError": "The key could not be saved.",
   "KeyValidationError": "The key could not be validated.",
