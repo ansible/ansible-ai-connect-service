@@ -38,13 +38,14 @@ if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Lightspeed with IBM watsonx Code Assistant.',
         'DESCRIPTION': 'Equip the automation developer at Lightspeed.',
-        'VERSION': '0.0.7',
+        'VERSION': '1.0.0',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
         'TAGS': [
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
             {"name": "check", "description": "Health check"},
+            {"name": "wca", "description": "watsonx Code Assistant"},
         ],
         'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     }
