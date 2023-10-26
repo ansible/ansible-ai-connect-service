@@ -789,3 +789,5 @@ tags:
   description: Authenticated user information
 - name: check
   description: Health check
+- name: wca
+  description: watsonx Code Assistant
