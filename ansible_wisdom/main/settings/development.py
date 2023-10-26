@@ -38,7 +38,7 @@ if DEBUG:
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Ansible Lightspeed with IBM watsonx Code Assistant.',
         'DESCRIPTION': 'Equip the automation developer at Lightspeed.',
-        'VERSION': '1.0.0',
+        'VERSION': '0.0.7',
         'SERVE_INCLUDE_SCHEMA': False,
         # OTHER SETTINGS
         'TAGS': [

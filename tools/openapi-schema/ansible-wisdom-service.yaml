@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Lightspeed with IBM watsonx Code Assistant.
-  version: 1.0.0
+  version: 0.0.7
   description: Equip the automation developer at Lightspeed.
 paths:
   /api/v0/ai/attributions/:
