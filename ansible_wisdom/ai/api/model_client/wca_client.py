@@ -233,7 +233,7 @@ class WCAClient(ModelMeshClient):
         raise WcaKeyNotFound
 
     def get_model_id(self, rh_user_has_seat, organization_id, requested_model_id):
-        if not rh_user_has_seat or organization_id is None or self.mock_wca is True:
+        if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
                 logger.info(err_message)
@@ -245,6 +245,9 @@ class WCAClient(ModelMeshClient):
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
+
+        if self.mock_wca is True:
+            return self.free_model_id
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()

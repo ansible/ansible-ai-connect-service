@@ -137,6 +137,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         api_key = model_client.get_api_key(True, None)
         self.assertEqual(api_key, 'abcdef')
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_get_api_key_from_aws(self):
         secret_value = '12345'
         self.mock_secret_manager.get_secret.return_value = {
@@ -148,6 +149,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(api_key, secret_value)
         self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.API_KEY)
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_get_api_key_from_aws_error(self):
         self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError
         model_client = WCAClient(inference_url='http://example.com/')
@@ -167,6 +169,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(False, None, None)
         self.assertEqual(model_id, 'free')
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_seated_with_empty_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         self.mock_secret_manager.get_secret.return_value = {"SecretString": "sec"}
@@ -181,6 +184,7 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaBadRequest):
             wca_client.get_model_id(False, None, 'some-model')
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_seated_get_org_default_model(self):
         self.mock_secret_manager.get_secret.return_value = {
             "SecretString": "org-model",
@@ -196,12 +200,14 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
         self.assertEqual(model_id, 'model-i-pick')
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_seated_cannot_have_no_key(self):
         self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaKeyNotFound):
             wca_client.get_api_key(True, '123')
 
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=False)
     def test_seated_cannot_have_no_model(self):
         self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')

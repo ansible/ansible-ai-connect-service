@@ -75,7 +75,9 @@ key:
 export SECRET_KEY=somesecretvalue
 ```
 
-For most development usages it is enough to use the mock of WCA.
+For most development usages, you can skip the call to AWS Secrets Manager
+and always use the `ANSIBLE_WCA_FREE_API_KEY`
+and `ANSIBLE_WCA_FREE_MODEL_ID` values.
 
 ```bash
 export MOCK_WCA_SECRETS_MANAGER=True
