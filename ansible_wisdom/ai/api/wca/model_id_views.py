@@ -102,7 +102,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
                 "problem": None if exception is None else exception.__class__.__name__,
                 "modelName": model_id,
             }
-            send_segment_event(event, "getWcaModelId", request.user)
+            send_segment_event(event, "modelIdGet", request.user)
 
     @extend_schema(
         request=WcaModelIdRequestSerializer,
@@ -144,9 +144,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
             return Response(status=HTTP_204_NO_CONTENT)
 
-        return do_validated_operation(
-            request, get_api_key, get_model_id, on_success, "setWcaModelId"
-        )
+        return do_validated_operation(request, get_api_key, get_model_id, on_success, "modelIdSet")
 
 
 class WCAModelIdValidatorView(RetrieveAPIView):
@@ -182,7 +180,7 @@ class WCAModelIdValidatorView(RetrieveAPIView):
             return Response(status=HTTP_200_OK)
 
         return do_validated_operation(
-            request, get_api_key, get_model_id, on_success, "validateWcaModelId"
+            request, get_api_key, get_model_id, on_success, "modelIdValidate"
         )
 
 

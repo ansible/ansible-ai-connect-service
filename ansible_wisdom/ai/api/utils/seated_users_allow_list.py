@@ -180,7 +180,7 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
-    'getWcaApiKey': {
+    'modelApiKeyGet': {
         'duration': None,
         'exception': None,
         'problem': None,
@@ -191,7 +191,7 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
-    'setWcaApiKey': {
+    'modelApiKeySet': {
         'duration': None,
         'exception': None,
         'problem': None,
@@ -202,7 +202,7 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
-    'validateWcaApiKey': {
+    'modelApiKeyValidate': {
         'duration': None,
         'exception': None,
         'problem': None,
@@ -213,19 +213,7 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
-    'getWcaModelId': {
-        'duration': None,
-        'exception': None,
-        'problem': None,
-        'modelName': None,
-        'imageTags': None,
-        'hostname': None,
-        'groups': None,
-        'rh_user_has_seat': None,
-        'rh_user_org_id': None,
-        'timestamp': None,
-    },
-    'setWcaModelId': {
+    'modelIdGet': {
         'duration': None,
         'exception': None,
         'problem': None,
@@ -237,7 +225,19 @@ ALLOW_LIST = {
         'rh_user_org_id': None,
         'timestamp': None,
     },
-    'validateWcaModelId': {
+    'modelIdSet': {
+        'duration': None,
+        'exception': None,
+        'problem': None,
+        'modelName': None,
+        'imageTags': None,
+        'hostname': None,
+        'groups': None,
+        'rh_user_has_seat': None,
+        'rh_user_org_id': None,
+        'timestamp': None,
+    },
+    'modelIdValidate': {
         'duration': None,
         'exception': None,
         'problem': None,
