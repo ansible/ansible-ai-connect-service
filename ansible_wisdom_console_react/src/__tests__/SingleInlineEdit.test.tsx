@@ -47,7 +47,7 @@ describe('SingleInlineEdit',
                         const textInputElement = screen.getByTestId("model-settings-editor__input");
                         expect(textInputElement).toBeInTheDocument();
                         expect(textInputElement).toHaveAttribute('type', 'password');
-                        expect(textInputElement).toHaveAttribute('value', 'test-value');
+                        expect(textInputElement).not.toHaveAttribute('value', 'test-value');
                         expect(textInputElement).toHaveAttribute('aria-label', 'test-aria-label');
                         expect(textInputElement).toHaveAttribute('placeholder', 'test-placeholder');
                         expect(textInputElement).not.toBeDisabled();
@@ -119,7 +119,7 @@ describe('SingleInlineEdit',
                 const textInputElement = screen.getByTestId("model-settings-editor__input");
                 expect(textInputElement).toBeInTheDocument();
                 expect(textInputElement).toHaveAttribute('type', 'password');
-                expect(textInputElement).toHaveAttribute('value', 'test-value')
+                expect(textInputElement).not.toHaveAttribute('value', 'test-value')
                 const toggleViewElement = screen.getByTestId("model-settings-editor__toggleView");
                 expect(toggleViewElement).toBeInTheDocument();
                 expect(toggleViewElement).toHaveAttribute('aria-label', 'ShowText');
