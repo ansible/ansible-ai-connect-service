@@ -16,15 +16,19 @@ class FeatureFlags:
     def __init__(self):
         if settings.LAUNCHDARKLY_SDK_KEY:
             import ldclient
-            import uwsgidecorators
             from ldclient.config import Config
 
-            @uwsgidecorators.postfork
             def create_ld_client():
                 ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
                 client = ldclient.get()
                 logger.info("feature flag client initialized")
                 return client
+
+            try:
+                import uwsgidecorators
+                uwsgidecorators.postfork(create_ld_client)
+            except ImportError:
+                pass
 
             self.client = create_ld_client()
         else:
