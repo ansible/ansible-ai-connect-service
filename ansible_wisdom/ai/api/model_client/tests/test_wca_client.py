@@ -37,13 +37,17 @@ DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
 class MockResponse:
-    def __init__(self, json, status_code, headers=None):
+    def __init__(self, json, status_code, headers=None, text=None):
         self._json = json
         self.status_code = status_code
         self.headers = {} if headers is None else headers
+        self.text = text
 
     def json(self):
         return self._json
+
+    def text(self):
+        return self.text
 
     def raise_for_status(self):
         return

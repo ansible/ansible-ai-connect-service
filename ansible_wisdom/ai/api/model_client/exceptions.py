@@ -48,6 +48,11 @@ class WcaTokenFailure(WcaException):
 
 
 @dataclass
+class WcaCloudflareRejection(WcaException):
+    """Cloudflare rejected the request."""
+
+
+@dataclass
 class WcaInferenceFailure(WcaException):
     """An attempt to run a WCA inference failed."""
 
