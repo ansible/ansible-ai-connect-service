@@ -45,7 +45,7 @@ if DEBUG:
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
             {"name": "check", "description": "Health check"},
-            {"name": "wca", "description": "IBM watsonx Code Assistant related operations"},
+            {"name": "wca", "description": "watsonx Code Assistant"},
         ],
         'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
     }

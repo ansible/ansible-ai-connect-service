@@ -799,4 +799,4 @@ tags:
 - name: check
   description: Health check
 - name: wca
-  description: IBM watsonx Code Assistant related operations
+  description: watsonx Code Assistant
