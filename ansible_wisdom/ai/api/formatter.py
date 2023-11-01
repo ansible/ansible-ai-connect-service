@@ -75,23 +75,25 @@ def normalize_yaml(yaml_str, ansible_file_type="playbook", additional_context={}
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
+def load_and_merge_vars_in_context(vars_in_context):
+    merged_vars = {}
+    for v in vars_in_context:
+        # Merge the vars element and the dict loaded from a vars string
+        merged_vars |= yaml.load(v, Loader=yaml.SafeLoader)
+    return merged_vars
+
+
+def insert_set_fact_task(data, merged_vars):
+    if len(merged_vars) > 0:
+        vars_task = {
+            "name": "Set variables from context",
+            "ansible.builtin.set_fact": merged_vars,
+        }
+        data.insert(0, vars_task)
+
+
 def expand_vars_files(data, ansible_file_type, additional_context):
     """Expand the vars_files element by loading each file and add/update the vars element"""
-
-    def load_and_merge_vars_in_context(vars_in_context):
-        merged_vars = {}
-        for v in vars_in_context:
-            # Merge the vars element and the dict loaded from a vars string
-            merged_vars |= yaml.load(v, Loader=yaml.SafeLoader)
-        return merged_vars
-
-    def insert_set_fact_task(data, merged_vars):
-        if len(merged_vars) > 0:
-            vars_task = {
-                "name": "Set variables from context",
-                "ansible.builtin.set_fact": merged_vars,
-            }
-            data.insert(0, vars_task)
 
     # playbook
     if ansible_file_type == "playbook":
