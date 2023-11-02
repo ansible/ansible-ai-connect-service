@@ -66,7 +66,7 @@ Normalize by loading and re-serializing
 """
 
 
-def normalize_yaml(yaml_str, ansible_file_type="playbook", additional_context={}):
+def normalize_yaml(yaml_str, ansible_file_type="playbook", additional_context=None):
     data = yaml.load(yaml_str, Loader=yaml.SafeLoader)
     if data is None:
         return None
@@ -84,7 +84,7 @@ def load_and_merge_vars_in_context(vars_in_context):
 
 
 def insert_set_fact_task(data, merged_vars):
-    if len(merged_vars) > 0:
+    if merged_vars:
         vars_task = {
             "name": "Set variables from context",
             "ansible.builtin.set_fact": merged_vars,
@@ -92,34 +92,42 @@ def insert_set_fact_task(data, merged_vars):
         data.insert(0, vars_task)
 
 
+def expand_vars_playbook(data, additional_context):
+    playbook_context = additional_context.get("playbookContext", {})
+    var_infiles = list(playbook_context.get("varInfiles", {}).values())
+    include_vars = list(playbook_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
+    if len(merged_vars) > 0:
+        for d in data:
+            d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+
+
+def expand_vars_tasks_in_role(data, additional_context):
+    role_context = additional_context.get("roleContext", {})
+    role_vars = list(role_context.get("roleVars", {}).get("vars", {}).values())
+    role_vars_defaults = list(role_context.get("roleVars", {}).get("defaults", {}).values())
+    include_vars = list(role_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(role_vars_defaults + role_vars + include_vars)
+    if len(merged_vars) > 0:
+        insert_set_fact_task(data, merged_vars)
+
+
+def expand_vars_tasks(data, additional_context):
+    standalone_task_context = additional_context.get("standaloneTaskContext", {})
+    include_vars = list(standalone_task_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(include_vars)
+    if len(merged_vars) > 0:
+        insert_set_fact_task(data, merged_vars)
+
+
 def expand_vars_files(data, ansible_file_type, additional_context):
     """Expand the vars_files element by loading each file and add/update the vars element"""
-
-    # playbook
-    if ansible_file_type == "playbook":
-        playbook_context = additional_context.get("playbookContext", {})
-        var_infiles = list(playbook_context.get("varInfiles", {}).values())
-        include_vars = list(playbook_context.get("includeVars", {}).values())
-        merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
-        if len(merged_vars) > 0:
-            for d in data:
-                d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
-    # tasks_in_role
-    elif ansible_file_type == "tasks_in_role":
-        role_context = additional_context.get("roleContext", {})
-        role_vars = list(role_context.get("roleVars", {}).get("vars", {}).values())
-        role_vars_defaults = list(role_context.get("roleVars", {}).get("defaults", {}).values())
-        include_vars = list(role_context.get("includeVars", {}).values())
-        merged_vars = load_and_merge_vars_in_context(role_vars_defaults + role_vars + include_vars)
-        if len(merged_vars) > 0:
-            insert_set_fact_task(data, merged_vars)
-    # tasks
-    elif ansible_file_type == "tasks":
-        standalone_task_context = additional_context.get("standaloneTaskContext", {})
-        include_vars = list(standalone_task_context.get("includeVars", {}).values())
-        merged_vars = load_and_merge_vars_in_context(include_vars)
-        if len(merged_vars) > 0:
-            insert_set_fact_task(data, merged_vars)
+    expand_vars_files = {
+        "playbook": expand_vars_playbook,
+        "tasks_in_role": expand_vars_tasks_in_role,
+        "tasks": expand_vars_tasks,
+    }
+    expand_vars_files[ansible_file_type](data, additional_context)
 
 
 def preprocess(context, prompt, ansible_file_type="playbook", additional_context=None):
