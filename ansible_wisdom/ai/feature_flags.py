@@ -26,6 +26,7 @@ class FeatureFlags:
 
             try:
                 import uwsgidecorators
+
                 uwsgidecorators.postfork(create_ld_client)
             except ImportError:
                 pass
