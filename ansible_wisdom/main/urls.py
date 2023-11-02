@@ -52,7 +52,6 @@ urlpatterns = [
         LoginView.as_view(
             extra_context={
                 'use_github_team': settings.USE_GITHUB_TEAM,
-                'use_redhat_sso': bool(settings.SOCIAL_AUTH_OIDC_OIDC_ENDPOINT),
             },
         ),
         name='login',

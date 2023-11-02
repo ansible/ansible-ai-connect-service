@@ -1,10 +1,10 @@
 import logging
-from enum import Enum
+from abc import abstractmethod
 from typing import Any, TypedDict, Union
 from uuid import UUID
 
 from ai.api.serializers import DataSource
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 logger = logging.getLogger(__name__)
 
@@ -30,28 +30,63 @@ class ModelMeshPayload(BaseModel):
     instances: list[ModelMeshData]
 
 
-class AttributionData(BaseModel):
+class ContentMatchPayloadData(TypedDict):
+    suggestions: list[str]
+    user_id: Union[str, None]
+    rh_user_has_seat: bool
+    organization_id: Union[str, None]
+    suggestionId: Union[str, None]
+
+
+class ContentMatchResponseData(BaseModel):
     repo_name: str = ''
     repo_url: str = ""
     path: str = ""
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source: Enum = ""
-    ansible_type = -1
+    data_source = -1
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        self.data_source = DataSource[self.data_source_description.replace("-", "_").upper()]
+        if not self.data_source_description:
+            self.data_source_description = DataSource(self.data_source).label
 
 
-class AttributionDataTransformer(BaseModel):
-    code_matches: list[AttributionData]
+class BaseContentMatchResponseDto(BaseModel):
     meta: dict
 
-    def values(self):
-        return (
-            self.meta.get("encode_duration", ""),
-            self.meta.get("search_duration", ""),
-            self.dict().get("code_matches", ""),
-        )
+    @abstractmethod
+    def data(self) -> dict:
+        pass
+
+    @property
+    def content_matches(self):
+        return {"contentmatch": self.data()}
+
+    @property
+    def encode_duration(self):
+        return self.meta.get("encode_duration", "")
+
+    @property
+    def search_duration(self):
+        return self.meta.get("search_duration", "")
+
+
+class ContentMatchResponseDto(BaseContentMatchResponseDto):
+    code_matches: list[ContentMatchResponseData]
+
+    @validator('code_matches')
+    @classmethod
+    def trim_to_first_three(cls, items):
+        return items[:3]
+
+    def data(self):
+        return self.dict()["code_matches"]
+
+
+class AttributionsResponseDto(BaseContentMatchResponseDto):
+    attributions: list[ContentMatchResponseData]
+
+    def data(self):
+        return self.dict()["attributions"]

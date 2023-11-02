@@ -1,23 +1,29 @@
 import React, {useMemo} from 'react';
-import {Button, ExpandableSection, Modal, ModalVariant} from '@patternfly/react-core';
+import {Button, ExpandableSection, Modal, ModalVariant, Text, TextContent} from '@patternfly/react-core';
 import {useTranslation} from "react-i18next";
 import './ErrorModal.css';
 
 interface ErrorModalProps {
-    message: string,
-    hasError: HasError,
-    close: () => void
+    readonly caption: string,
+    readonly  hasError: HasError,
+    readonly close: () => void
 }
 
-export type HasError = { inError: false } | { inError: true, message: string };
+export type HasError = { inError: false } | { inError: true, message: string, detail: string };
 export const NO_ERROR: HasError = {inError: false};
 
 export const ErrorModal = (props: ErrorModalProps) => {
     const {t} = useTranslation();
-    const {message, hasError, close} = props;
+    const {caption, hasError, close} = props;
     const _error = useMemo<string>(() => {
         if ('message' in hasError) {
             return hasError.message;
+        }
+        return "";
+    }, [hasError]);
+    const _detail = useMemo<string>(() => {
+        if ('detail' in hasError) {
+            return hasError.detail;
         }
         return "";
     }, [hasError]);
@@ -27,7 +33,7 @@ export const ErrorModal = (props: ErrorModalProps) => {
             className={"Error-Modal"}
             variant={ModalVariant.small}
             title={t("Error")}
-            description={message}
+            description={caption}
             titleIconVariant="danger"
             isOpen={hasError.inError}
             onClose={close}
@@ -37,8 +43,15 @@ export const ErrorModal = (props: ErrorModalProps) => {
                 </Button>,
             ]}
         >
-            <ExpandableSection className={"Error-Modal-Detail"} toggleText={t("ErrorDetails")}>
-                <pre>{_error}</pre>
+            <ExpandableSection toggleText={t("ErrorDetails")} className={"Error-Modal__container"}>
+                <TextContent>
+                    <Text component={"pre"} className={"Error-Model__detail"}>
+                        {_error}
+                    </Text>
+                    <Text component={"pre"} className={"Error-Model__detail"}>
+                        {_detail}
+                    </Text>
+                </TextContent>
             </ExpandableSection>
         </Modal>
     );

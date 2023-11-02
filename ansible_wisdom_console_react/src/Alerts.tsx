@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import './ModelSettings.css';
 
 export type AlertsHandle = {
-    addAlert: (title: string) => void;
+    readonly addAlert: (title: string) => void;
 };
 
 type AlertsProps = {}
@@ -35,6 +35,7 @@ export const Alerts = forwardRef<AlertsHandle, AlertsProps>((props, ref) => {
                 }
                 key={key}
                 id={key.toString()}
+                data-testid={"alert"}
             >
             </Alert>,
             ...prevAlerts

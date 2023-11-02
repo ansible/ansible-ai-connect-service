@@ -3,9 +3,9 @@
 
 {%  block header %}
     <meta charset="utf-8"/>
-    <title>Ansible Wisdom Lightspeed - Console</title>
-    <script defer="defer" src="{% static '/console/static/js/main.js' %}"></script>
-    <link href="{% static '/console/static/css/main.css' %}" rel='stylesheet'>
+    <title>Ansible Wisdom Lightspeed - Admin Portal</title>
+    <script defer="defer" src="{% static '/console/static/js/index.js' %}"></script>
+    <link href="{% static '/console/static/css/index.css' %}" rel='stylesheet'>
 {% endblock header %}
 
 {% block content %}
@@ -14,5 +14,5 @@
     <!-- The Admin Portal needs to show the userName -->
     <!-- It is safe to pass the value embedded in the host DOM -->
     <!-- as it is only used for display purposes and servers no other value -->
-    <div id="userName">{{user_name}}</div>
+    <div id="user_name" hidden>{{user_name}}</div>
 {% endblock content %}

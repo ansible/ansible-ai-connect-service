@@ -200,7 +200,10 @@ module.exports = function (webpackEnv) {
       : isEnvDevelopment && 'cheap-module-source-map',
     // These are the "entry points" to our application.
     // This means they will be the "root" imports that are included in JS bundle.
-    entry: paths.appIndexJs,
+    entry: {
+      index: paths.appIndexJs,
+      denied: paths.appDeniedJs,
+    },
     output: {
       // The build folder.
       path: paths.appBuild,
@@ -210,8 +213,7 @@ module.exports = function (webpackEnv) {
       // In development, it does not produce real files.
       filename: isEnvProduction
         ? 'static/js/[name].js'
-        : isEnvDevelopment && 'static/js/bundle.js',
-      // There are also additional JS chunk files if you use code splitting.
+        : isEnvDevelopment && 'static/js/[name].bundle.js',
       chunkFilename: isEnvProduction
         ? 'static/js/[name].chunk.js'
         : isEnvDevelopment && 'static/js/[name].chunk.js',
@@ -455,7 +457,7 @@ module.exports = function (webpackEnv) {
                 cacheCompression: false,
 
                 // Babel sourcemaps are needed for debugging into node_modules
-                // code.  Without the options below, debuggers like VSCode
+                // code.  Without the options below, debuggers like VS Code
                 // show incorrect code and set breakpoints on the wrong lines.
                 sourceMaps: shouldUseSourceMap,
                 inputSourceMap: shouldUseSourceMap,
@@ -567,11 +569,13 @@ module.exports = function (webpackEnv) {
       new HtmlWebpackPlugin(
         Object.assign(
           {},
-          {
-            inject: true,
-            template: paths.appHtml,
-          },
-          isEnvProduction
+                {
+                  inject: true,
+                  chunks: ['index'],
+                  template: paths.appHtml,
+                  filename: 'index.html'
+                },
+                isEnvProduction
             ? {
                 minify: {
                   removeComments: true,
@@ -588,6 +592,34 @@ module.exports = function (webpackEnv) {
               }
             : undefined
         )
+      ),
+      // Generates an `denied.html` file with the <script> injected.
+      new HtmlWebpackPlugin(
+              Object.assign(
+                      {},
+                      {
+                        inject: true,
+                        chunks: ['denied'],
+                        template: paths.appDeniedHtml,
+                        filename: 'denied.html',
+                      },
+                      isEnvProduction
+                              ? {
+                                minify: {
+                                  removeComments: true,
+                                  collapseWhitespace: true,
+                                  removeRedundantAttributes: true,
+                                  useShortDoctype: true,
+                                  removeEmptyAttributes: true,
+                                  removeStyleLinkTypeAttributes: true,
+                                  keepClosingSlash: true,
+                                  minifyJS: true,
+                                  minifyCSS: true,
+                                  minifyURLs: true,
+                                },
+                              }
+                              : undefined
+              )
       ),
       // Inlines the webpack runtime script. This script is too small to warrant
       // a network request.
@@ -642,10 +674,11 @@ module.exports = function (webpackEnv) {
             manifest[file.name] = file.path;
             return manifest;
           }, seed);
-          const entrypointFiles = entrypoints.main.filter(
-            fileName => !fileName.endsWith('.map')
-          );
-
+          let entrypointFiles = [];
+          for (let [entryFile, fileName] of Object.entries(entrypoints)) {
+            let notMapFiles = fileName.filter(fileName => !fileName.endsWith('.map'));
+            entrypointFiles = entrypointFiles.concat(notMapFiles);
+          }
           return {
             files: manifestFiles,
             entrypoints: entrypointFiles,

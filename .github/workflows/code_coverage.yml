@@ -47,6 +47,11 @@ jobs:
     ##############
     # Python tests
     ##############
+    - name: Setup Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
@@ -55,7 +60,7 @@ jobs:
 
     - name: Retrieve ari knowledge base from s3
       run: |
-        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.11
+        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.12-all-slim
         aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
         aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
       env:

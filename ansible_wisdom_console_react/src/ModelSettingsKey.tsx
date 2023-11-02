@@ -1,47 +1,22 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {
-    Alert,
-    Breadcrumb,
-    BreadcrumbItem,
-    Button,
-    Icon,
-    PageSection,
-    PageSectionVariants,
-    Panel,
-    PanelMain,
-    PanelMainBody,
-    Split,
-    SplitItem,
-    Stack,
-    StackItem,
-    Text,
-    TextContent,
-    TextInput,
-    Tooltip
-} from "@patternfly/react-core";
-import {useTranslation} from "react-i18next";
-import {CheckCircleIcon, OutlinedQuestionCircleIcon} from "@patternfly/react-icons";
 import './ModelSettings.css';
 import {WcaKey, WcaKeyRequest} from "./api/types";
 import {saveWcaKey} from "./api/api";
-import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
+import {HasError, NO_ERROR} from "./ErrorModal";
 import {DELAY} from "./api/globals";
-import {BusyButton} from "./BusyButton";
+import {ModelSettingsEditor} from "./ModelSettingsEditor";
 
 interface ModelSettingsKeyProps {
-    wcaKey: WcaKey | undefined;
-    cancel: () => void;
-    reload: () => void;
+    readonly wcaKey: WcaKey | undefined;
+    readonly cancel: () => void;
+    readonly reload: () => void;
 }
 
 export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
-    const {t} = useTranslation();
     const {wcaKey, cancel, reload} = props;
 
-    const [value, setValue] = useState<string>("");
-    const [isSaving, setSaving] = useState<boolean>(false);
-    const isSaveDisabled: boolean = useMemo(() => value?.trim().length === 0 || isSaving, [value, isSaving]);
-    const hasWcaKey = useMemo(() => wcaKey !== undefined, [wcaKey]);
+    const [saving, setSaving] = useState<boolean>(false);
+    const hasWcaKey = useMemo(() => wcaKey?.status === "SUCCESS", [wcaKey]);
 
     const [isKeyInvalid, setIsKeyInvalid] = useState<boolean>(false);
     const [keyError, setKeyError] = useState<HasError>(NO_ERROR);
@@ -56,10 +31,12 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsKeyInvalid(true);
-                } else if (error.response?.status === 500) {
-                    setKeyError({inError: true, message: error.response.data});
                 } else {
-                    setKeyError({inError: true, message: error.message});
+                    setKeyError({
+                        inError: true,
+                        message: error.message,
+                        detail: error.response?.data?.detail
+                    });
                 }
             })
             .finally(() => {
@@ -69,89 +46,28 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
     }, [reload]);
 
     return (
-        <>
-            <ErrorModal
-                message={t("KeyError")}
-                hasError={keyError}
-                close={() => setKeyError(NO_ERROR)}
-            />
-            <PageSection variant={PageSectionVariants.light} isWidthLimited>
-                <Stack hasGutter={true}>
-                    <StackItem>
-                        <Breadcrumb>
-                            <BreadcrumbItem to="/console/admin/settings">{t("ModelSettings")}</BreadcrumbItem>
-                            <BreadcrumbItem isActive>{t("AddKeyTitle")}</BreadcrumbItem>
-                        </Breadcrumb>
-                    </StackItem>
-                    <StackItem>
-                        <TextContent>
-                            {!hasWcaKey && (
-                                <Text component="h1">{t("AddKeyTitle")}</Text>
-                            )}
-                            {hasWcaKey && (
-                                <Text component="h1">{t("UpdateKeyTitle")}</Text>
-                            )}
-                        </TextContent>
-                    </StackItem>
-                </Stack>
-            </PageSection>
-            <PageSection>
-                <Panel variant={"bordered"}>
-                    <PanelMain>
-                        <PanelMainBody>
-                            <Stack hasGutter={true}>
-                                {isKeyInvalid && (
-                                    <StackItem>
-                                        <Alert variant="warning" title={t("KeyInvalidAlert")}/>
-                                    </StackItem>
-                                )}
-                                <StackItem>
-                                    <TextContent>
-                                        <Text component={"h3"}>
-                                            {t("APIKey")}
-                                            <Tooltip aria="none" aria-live="polite" content={t("APIKeyTooltip")}>
-                                                <Icon>
-                                                    <OutlinedQuestionCircleIcon className={"Info-icon"}/>
-                                                </Icon>
-                                            </Tooltip>
-                                        </Text>
-                                    </TextContent>
-                                </StackItem>
-                                <StackItem>
-                                    <TextInput
-                                        value={value}
-                                        type="text"
-                                        onChange={(value) => {
-                                            setValue(value);
-                                            setIsKeyInvalid(false);
-                                        }}
-                                        aria-label={t("AddKey")}
-                                        placeholder={t("PlaceholderKey")}
-                                        isDisabled={isSaving}
-                                    />
-                                </StackItem>
-                                <StackItem>
-                                    <Split hasGutter={true}>
-                                        <SplitItem>
-                                            <BusyButton
-                                                variant={"primary"}
-                                                icon={<CheckCircleIcon/>}
-                                                onClick={() => save(value)}
-                                                isBusy={isSaving}
-                                                isDisabled={isSaveDisabled}>
-                                                {t("Save")}
-                                            </BusyButton>
-                                        </SplitItem>
-                                        <SplitItem>
-                                            <Button variant={"secondary"} onClick={cancel} isDisabled={isSaving}>{t("Cancel")}</Button>
-                                        </SplitItem>
-                                    </Split>
-                                </StackItem>
-                            </Stack>
-                        </PanelMainBody>
-                    </PanelMain>
-                </Panel>
-            </PageSection>
-        </>
+        <ModelSettingsEditor
+            hasValue={hasWcaKey}
+            isSaving={saving}
+            isValueInvalid={isKeyInvalid}
+            isPassword={true}
+            clearInvalidState={() => setIsKeyInvalid(false)}
+            errorState={keyError}
+            setErrorState={setKeyError}
+            save={save}
+            cancel={cancel}
+            captions={
+                {
+                    errorModalCaption: "KeyError",
+                    invalidAlertCaption: "KeyInvalidAlert",
+                    setValueTitle: "AddKeyTitle",
+                    updateValueTitle: "UpdateKeyTitle",
+                    fieldCaption: "APIKey",
+                    fieldCaptionTooltip: "APIKeyTooltip",
+                    fieldInputCaption: "AddKey",
+                    fieldInputPlaceholder: "PlaceholderKey"
+                }
+            }
+        />
     )
 }

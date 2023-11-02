@@ -1,7 +1,7 @@
 import {Button, ButtonProps} from "@patternfly/react-core";
 
 export interface BusyButtonProps extends ButtonProps {
-    isBusy: boolean;
+    readonly isBusy: boolean;
 
 }
 

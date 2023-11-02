@@ -1,4 +1,5 @@
 import json
+from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from ai.api.model_client.exceptions import ModelTimeoutError, WcaException
@@ -10,11 +11,14 @@ completions_return_code = Counter(
     'model_prediction_return_code', 'The return code of model prediction requests', ['code']
 )
 process_error_count = Counter(
-    'process_error', "Error counts at pre-process/prediction/post-process stages", ['stage']
+    'wisdom_service_processing_error',
+    "Error counts at pre-process/prediction/post-process etc stages",
+    ['stage'],
 )
 
 
 class PipelineElement:
+    @abstractmethod
     def process(self, context) -> None:
         pass
 
@@ -28,6 +32,7 @@ class Pipeline(Generic[T, C]):
         self.pipeline = pipeline
         self.context = context
 
+    @abstractmethod
     def execute(self) -> T:
         pass
 
@@ -94,6 +99,11 @@ class WcaModelIdNotFoundException(BaseWisdomAPIException):
     default_detail = {
         "message": "A WCA Model ID was expected but not found. Please contact your administrator."
     }
+
+
+class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
+    status_code = 500
+    default_detail = {"message": "WCA Request/Response Suggestion ID correlation failed."}
 
 
 class WcaEmptyResponseException(BaseWisdomAPIException):

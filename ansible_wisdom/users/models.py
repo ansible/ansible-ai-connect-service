@@ -17,6 +17,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     community_terms_accepted = models.DateTimeField(default=None, null=True)
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = models.IntegerField(default=None, null=True)
+    rh_user_is_org_admin = models.BooleanField(default=False)
 
     @property
     def org_id(self):
@@ -50,18 +51,6 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         uid = self.social_auth.values()[0]["uid"]
         rh_org_id = self.organization_id
         return seat_checker.check(uid, self.external_username, rh_org_id)
-
-    @cached_property
-    def rh_user_is_org_admin(self) -> bool:
-        """True if the user comes from RHSSO and is admin of the organization."""
-        if not self.is_oidc_user():
-            return False
-
-        seat_checker = apps.get_app_config("ai").get_seat_checker()
-        if not seat_checker:
-            return False
-        rh_org_id = self.organization_id
-        return seat_checker.rh_user_is_org_admin(self.external_username, rh_org_id)
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:

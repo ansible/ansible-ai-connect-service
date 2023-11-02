@@ -6,7 +6,7 @@ import {PageMastheadDropdown} from "./PageMastheadDropdown";
 import RedHatLogo from './redhat-logo.svg';
 
 export interface AppHeaderProps {
-    userName: string
+    readonly userName: string
 }
 
 export function AppHeader(props: AppHeaderProps) {
@@ -20,8 +20,8 @@ export function AppHeader(props: AppHeaderProps) {
     return (
         <PageMasthead
             icon={<Brand alt="" widths={{default: '125px', md: '125px'}}>
-                        <source media="(min-width: 125px)" srcSet={RedHatLogo}/>
-                    </Brand>}
+                <source media="(min-width: 125px)" srcSet={RedHatLogo}/>
+            </Brand>}
             title=""
         >
             <ToolbarItem style={{flexGrow: 1}}/>
@@ -32,7 +32,12 @@ export function AppHeader(props: AppHeaderProps) {
                         icon={<UserCircleIcon size="md"/>}
                         label={userName}
                     >
-                        <DropdownItem id="logout" label={t('Logout')} onClick={logout}>
+                        <DropdownItem
+                            id="logout"
+                            label={t('Logout')}
+                            onClick={logout}
+                            data-testid="app-header__logout"
+                        >
                             {t('Logout')}
                         </DropdownItem>
                     </PageMastheadDropdown>

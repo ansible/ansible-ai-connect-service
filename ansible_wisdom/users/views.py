@@ -22,15 +22,22 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["documentation_url"] = settings.DOCUMENTATION_URL
+
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         except WcaSecretManagerMissingCredentialsError:
             return context
+
         if self.request.user.is_authenticated and self.request.user.rh_org_has_subscription:
             org_has_api_key = bool(
                 secret_manager.get_secret(self.request.user.organization_id, Suffixes.API_KEY)
             )
             context["org_has_api_key"] = org_has_api_key
+
+        if self.request.user.is_authenticated and self.request.user.rh_user_has_seat:
+            context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
+
         return context
 
 

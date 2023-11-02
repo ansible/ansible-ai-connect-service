@@ -1,4 +1,4 @@
-import {delay, DELAY_MS, ORG_ID} from './webpack.mock.globals';
+import {delay, DELAY_MS, ERROR_DESCRIPTION, ORG_ID} from './webpack.mock.globals';
 
 const webpackMockServer = require("webpack-mock-server");
 export default webpackMockServer.add((app, helper) => {
@@ -27,7 +27,7 @@ export default webpackMockServer.add((app, helper) => {
                 const modelId = data[MODEL_ID_FIELD];
                 if (modelId === "error-test") {
                     // Emulate a server-side error
-                    res.sendStatus(500);
+                    res.status(500).json({detail: ERROR_DESCRIPTION});
                     return;
                 }
                 if (modelId === "invalid-test") {
@@ -42,10 +42,10 @@ export default webpackMockServer.add((app, helper) => {
     app.post("/api/v0/wca/modelid/",
         async (_req, res) => {
             await delay(DELAY_MS);
-            const modelId = _req.body['model_id'];
+            const modelId = _req.body[MODEL_ID_FIELD];
             if (modelId === "error") {
                 // Emulate a server-side error
-                res.sendStatus(500);
+                res.status(500).json({detail: ERROR_DESCRIPTION});
                 return;
             }
             if (modelId === "invalid") {

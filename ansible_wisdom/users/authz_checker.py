@@ -49,7 +49,7 @@ class Token:
             logger.error("Cannot reach the SSO backend in time")
             return None
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by SSO service")
+            logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
             return None
         data = r.json()
         self.access_token = data["access_token"]
@@ -94,7 +94,7 @@ class CIAMCheck(BaseCheck):
             logger.error("Cannot reach the CIAM backend in time")
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by CIAM backend")
+            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
             return False
         data = r.json()
         try:
@@ -135,14 +135,14 @@ class AMSCheck(BaseCheck):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return ""
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (org)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (org)" % r.status_code)
             return ""
         data = r.json()
 
         try:
             return data["items"][0]["id"]
         except (IndexError, KeyError, ValueError):
-            logger.error("Unexpected organization answer from AMS")
+            logger.exception("Unexpected organization answer from AMS: data=%s" % data)
             return ""
 
     def self_test(self):
@@ -172,7 +172,7 @@ class AMSCheck(BaseCheck):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (sub)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
             return False
         data = r.json()
         try:
@@ -197,7 +197,10 @@ class AMSCheck(BaseCheck):
             return False
 
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend when listing role bindings")
+            logger.error(
+                "Unexpected error code (%s) returned by AMS backend when listing role bindings"
+                % r.status_code
+            )
             return False
 
         result = r.json()
@@ -212,14 +215,14 @@ class AMSCheck(BaseCheck):
 
     def rh_org_has_subscription(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {"search": "sku = 'FakeAnsibleWisdom' AND sku_count > 0"}
+        params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()
 
         try:
             r = self._session.get(
                 (
                     f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/resource_quota"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
                 ),
                 params=params,
                 timeout=0.8,
@@ -229,7 +232,8 @@ class AMSCheck(BaseCheck):
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error(
-                "Unexpected error code returned by AMS backend when listing resource_quota"
+                "Unexpected error code (%s) returned by AMS backend when listing resource_quota"
+                % r.status_code
             )
             return False
         data = r.json()
@@ -242,9 +246,11 @@ class AMSCheck(BaseCheck):
 
 class MockAlwaysTrueCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
         pass
 
     def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
@@ -259,9 +265,11 @@ class MockAlwaysTrueCheck(BaseCheck):
 
 class MockAlwaysFalseCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
         pass
 
     def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:

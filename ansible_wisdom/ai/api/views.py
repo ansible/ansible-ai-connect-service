@@ -1,5 +1,6 @@
 import logging
 import time
+from http import HTTPStatus
 
 from ai.api.model_client.exceptions import (
     WcaBadRequest,
@@ -7,6 +8,7 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
 )
 from ai.api.pipelines.common import (
     InternalServerError,
@@ -17,6 +19,7 @@ from ai.api.pipelines.common import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaSuggestionIdCorrelationFailureException,
     process_error_count,
 )
 from ai.api.pipelines.completions import CompletionsPipeline
@@ -35,15 +38,22 @@ from users.models import User
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
-from .data.data_model import AttributionDataTransformer, ModelMeshPayload
+from .data.data_model import (
+    AttributionsResponseDto,
+    ContentMatchPayloadData,
+    ContentMatchResponseDto,
+)
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import AcceptedTermsPermission
+from .pipelines.common import BaseWisdomAPIException
 from .serializers import (
     AnsibleContentFeedback,
     AttributionRequestSerializer,
     AttributionResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
+    ContentMatchRequestSerializer,
+    ContentMatchResponseSerializer,
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
@@ -64,6 +74,17 @@ attribution_encoding_hist = Histogram(
 attribution_search_hist = Histogram(
     'model_attribution_search_latency_seconds',
     "Histogram of model attribution search processing time",
+    namespace=NAMESPACE,
+)
+
+contentmatch_encoding_hist = Histogram(
+    'model_contentmatch_encoding_latency_seconds',
+    "Histogram of model contentmatch encoding processing time",
+    namespace=NAMESPACE,
+)
+contentmatch_search_hist = Histogram(
+    'model_contentmatch_search_latency_seconds',
+    "Histogram of model contentmatch search processing time",
     namespace=NAMESPACE,
 )
 
@@ -133,7 +154,9 @@ class Feedback(APIView):
         exception = None
         validated_data = {}
         try:
-            request_serializer = FeedbackRequestSerializer(data=request.data)
+            request_serializer = FeedbackRequestSerializer(
+                data=request.data, context={'request': request}
+            )
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             logger.info(f"feedback request payload from client: {validated_data}")
@@ -274,29 +297,15 @@ class Attributions(GenericAPIView):
 
         request_data = request_serializer.validated_data
         suggestion_id = str(request_data.get('suggestionId', ''))
-        model_id = str(request_data.get('model', ''))
 
         start_time = time.time()
-        if request.user.rh_user_has_seat:
-            try:
-                (
-                    encode_duration,
-                    search_duration,
-                    response_serializer,
-                ) = self.perform_content_matching(
-                    model_id, suggestion_id, request.user, request_data
-                )
-            except Exception:
-                logger.exception(f"error requesting content matches for suggestion {suggestion_id}")
-                raise ServiceUnavailable
-        else:
-            try:
-                encode_duration, search_duration, response_serializer = self.perform_search(
-                    request_serializer, request.user
-                )
-            except Exception as exc:
-                logger.error(f"Failed to search for attributions\nException:\n{exc}")
-                return Response({'message': "Unable to complete the request"}, status=503)
+        try:
+            encode_duration, search_duration, response_serializer = self.perform_search(
+                request_serializer, request.user
+            )
+        except Exception as exc:
+            logger.error(f"Failed to search for attributions\nException:\n{exc}")
+            return Response({'message': "Unable to complete the request"}, status=503)
 
         duration = round((time.time() - start_time) * 1000, 2)
         attribution_encoding_hist.observe(encode_duration / 1000)
@@ -313,88 +322,6 @@ class Attributions(GenericAPIView):
         )
 
         return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-
-    def perform_content_matching(
-        self,
-        model_id: str,
-        suggestion_id: str,
-        user: User,
-        request_data,
-    ):
-        wca_client = apps.get_app_config("ai").wca_client
-        user_id = user.uuid
-        model_mesh_payload = ModelMeshPayload(
-            instances=[
-                {
-                    "prompt": request_data.get('suggestion', ''),
-                    "userId": str(user_id) if user_id else None,
-                    "rh_user_has_seat": user.rh_user_has_seat,
-                    "organization_id": user.organization_id,
-                    "suggestionId": suggestion_id,
-                    "context": "",
-                }
-            ]
-        )
-        data = model_mesh_payload.dict()
-        logger.debug(f"input to inference for suggestion id {suggestion_id}:\n{data}")
-        attributions = None
-        try:
-            client_response = wca_client.codematch(data, model_id)
-            encode_duration, search_duration, attributions = AttributionDataTransformer(
-                **client_response[0]
-            ).values()
-            try:
-                response_data = {
-                    "attributions": attributions,
-                }
-                response_serializer = AttributionResponseSerializer(data=response_data)
-                response_serializer.is_valid(raise_exception=True)
-            except Exception:
-                process_error_count.labels(stage='response_serialization_validation').inc()
-                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
-                raise InternalServerError
-        except ModelTimeoutError:
-            logger.warn(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
-                f" for suggestion {suggestion_id}"
-            )
-            raise ModelTimeoutException
-
-        except WcaBadRequest as e:
-            logger.error(e)
-            logger.exception(f"bad request for content matching suggestion {suggestion_id}")
-            raise WcaBadRequestException
-
-        except WcaInvalidModelId as e:
-            logger.error(e)
-            logger.exception(
-                f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
-            )
-            raise WcaInvalidModelIdException
-
-        except WcaKeyNotFound as e:
-            logger.error(e)
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"content matching suggestion {suggestion_id}"
-            )
-            raise WcaKeyNotFoundException
-
-        except WcaModelIdNotFound as e:
-            logger.error(e)
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"content matching suggestion {suggestion_id}"
-            )
-            raise WcaModelIdNotFoundException
-
-        except WcaEmptyResponse as e:
-            logger.error(e)
-            logger.exception(
-                f"WCA returned an empty response for content matching suggestion {suggestion_id}"
-            )
-            raise WcaEmptyResponseException
-        return encode_duration, search_duration, response_serializer
 
     def perform_search(self, serializer, user: User):
         index = None
@@ -424,3 +351,258 @@ class Attributions(GenericAPIView):
             'attributions': attributions,
         }
         send_segment_event(event, "attribution", user)
+
+
+class ContentMatches(GenericAPIView):
+    """
+    Returns content matches that were the highest likelihood sources for a given code suggestion.
+    """
+
+    serializer_class = ContentMatchRequestSerializer
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_contentmatches'
+
+    @extend_schema(
+        request=ContentMatchRequestSerializer,
+        responses={
+            200: ContentMatchResponseSerializer,
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Code suggestion attributions",
+    )
+    def post(self, request) -> Response:
+        request_serializer = self.get_serializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+
+        request_data = request_serializer.validated_data
+        suggestion_id = str(request_data.get('suggestionId', ''))
+        model_id = str(request_data.get('model', ''))
+
+        try:
+            if request.user.rh_user_has_seat:
+                response_serializer = self.perform_content_matching(
+                    model_id, suggestion_id, request.user, request_data
+                )
+            else:
+                response_serializer = self.perform_search(request_data, request.user)
+            return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
+        except Exception:
+            logger.exception("Error requesting content matches")
+            raise
+
+    def perform_content_matching(
+        self,
+        model_id: str,
+        suggestion_id: str,
+        user: User,
+        request_data,
+    ):
+        wca_client = apps.get_app_config("ai").wca_client
+        user_id = user.uuid
+        content_match_data: ContentMatchPayloadData = {
+            "suggestions": request_data.get('suggestions', []),
+            "user_id": str(user_id) if user_id else None,
+            "rh_user_has_seat": user.rh_user_has_seat,
+            "organization_id": user.org_id,
+            "suggestionId": suggestion_id,
+        }
+        logger.debug(
+            f"input to content matches for suggestion id {suggestion_id}:\n{content_match_data}"
+        )
+
+        exception = None
+        start_time = time.time()
+        response_serializer = None
+        metadata = []
+
+        try:
+            model_id, client_response = wca_client.codematch(content_match_data, model_id)
+
+            response_data = {"contentmatches": []}
+
+            for response_item in client_response:
+                content_match_dto = ContentMatchResponseDto(**response_item)
+                response_data["contentmatches"].append(content_match_dto.content_matches)
+                metadata.append(content_match_dto.meta)
+
+                contentmatch_encoding_hist.observe(content_match_dto.encode_duration / 1000)
+                contentmatch_search_hist.observe(content_match_dto.search_duration / 1000)
+
+            try:
+                response_serializer = ContentMatchResponseSerializer(data=response_data)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(
+                    stage='contentmatch-response_serialization_validation'
+                ).inc()
+                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
+                raise InternalServerError
+        except ModelTimeoutError as e:
+            exception = e
+            logger.warn(
+                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                f" for suggestion {suggestion_id}"
+            )
+            raise ModelTimeoutException(cause=e)
+
+        except WcaBadRequest as e:
+            exception = e
+            logger.exception(f"bad request for content matching suggestion {suggestion_id}")
+            raise WcaBadRequestException(cause=e)
+
+        except WcaInvalidModelId as e:
+            exception = e
+            logger.exception(
+                f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
+            )
+            raise WcaInvalidModelIdException(cause=e)
+
+        except WcaKeyNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Api Key was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
+            )
+            raise WcaKeyNotFoundException(cause=e)
+
+        except WcaModelIdNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Model ID was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
+            )
+            raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaSuggestionIdCorrelationFailure as e:
+            exception = e
+            logger.exception(
+                f"WCA Request/Response SuggestionId correlation failed "
+                f"for suggestion {suggestion_id}"
+            )
+            raise WcaSuggestionIdCorrelationFailureException(cause=e)
+
+        except WcaEmptyResponse as e:
+            exception = e
+            logger.exception(
+                f"WCA returned an empty response for content matching suggestion {suggestion_id}"
+            )
+            raise WcaEmptyResponseException(cause=e)
+        except Exception as e:
+            exception = e
+            logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
+            raise ServiceUnavailable(cause=e)
+
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            if exception:
+                model_id_in_exception = BaseWisdomAPIException.get_model_id_from_exception(
+                    exception
+                )
+                if model_id_in_exception:
+                    model_id = model_id_in_exception
+            self._write_to_segment(
+                request_data,
+                duration,
+                exception,
+                metadata,
+                model_id,
+                response_serializer.data if response_serializer else {},
+                suggestion_id,
+                user,
+            )
+
+        return response_serializer
+
+    def perform_search(self, request_data, user: User):
+        suggestion_id = str(request_data.get('suggestionId', ''))
+        response_serializer = None
+
+        exception = None
+        start_time = time.time()
+        metadata = []
+        model_name = ""
+
+        try:
+            index = None
+            if settings.LAUNCHDARKLY_SDK_KEY:
+                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
+                logger.debug(f"flag model_name has value {model_tuple}")
+                model_parts = model_tuple.split(':')
+                if len(model_parts) == 4:
+                    *_, model_name, index = model_parts
+                    logger.info(f"using index '{index}' for content matching")
+
+            suggestion = request_data['suggestions'][0]
+            response_item = ai_search.search(suggestion, index)
+
+            attributions_dto = AttributionsResponseDto(**response_item)
+            response_data = {"contentmatches": []}
+            response_data["contentmatches"].append(attributions_dto.content_matches)
+            metadata.append(attributions_dto.meta)
+
+            try:
+                response_serializer = ContentMatchResponseSerializer(data=response_data)
+                response_serializer.is_valid(raise_exception=True)
+            except Exception:
+                process_error_count.labels(stage='attr-response_serialization_validation').inc()
+                logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
+                raise InternalServerError
+
+        except Exception as e:
+            exception = e
+            logger.exception("Failed to search for attributions for content matching")
+            return Response(
+                {'message': "Unable to complete the request"}, status=HTTPStatus.SERVICE_UNAVAILABLE
+            )
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            self._write_to_segment(
+                request_data,
+                duration,
+                exception,
+                metadata,
+                model_name,
+                response_serializer.data if response_serializer else {},
+                suggestion_id,
+                user,
+            )
+
+        return response_serializer
+
+    def _write_to_segment(
+        self,
+        request_data,
+        duration,
+        exception,
+        metadata,
+        model_id,
+        response_data,
+        suggestion_id,
+        user,
+    ):
+        event = {
+            "duration": duration,
+            "exception": exception is not None,
+            "modelName": model_id,
+            "problem": None if exception is None else exception.__class__.__name__,
+            "request": request_data,
+            "response": response_data,
+            "suggestionId": str(suggestion_id),
+            "rh_user_has_seat": user.rh_user_has_seat,
+            "rh_user_org_id": user.org_id,
+            "metadata": metadata,
+        }
+        send_segment_event(event, "contentmatch", user)

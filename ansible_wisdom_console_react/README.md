@@ -12,12 +12,21 @@ In the project directory, you can run:
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:8888/console](http://localhost:8888/console) to view it in the browser.\
+Runs the app in the development mode.
+
+Two entry-points are configured:
+
+#### Admin Portal
+
+Open [http://localhost:8888/console](http://localhost:8888/console) to view the Admin Portal in the browser.\
 This uses a mock TypeScript service and not the _real_ Django service.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
+
+#### [Access] Denied
+
+Open [http://localhost:8888/static/console/denied.html](http://localhost:8888/static/console/denied.html) to view the alternative application that is served if the User lacks certain access permissions ("Organisation Administrator" and "Ansible Lightspeed License") but was able to log in and authenticate.
 
 ### `npm run build`
 

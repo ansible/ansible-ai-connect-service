@@ -4,9 +4,16 @@ import logging
 import backoff
 import requests
 from ai.api.formatter import get_task_names_from_prompt
-from ai.api.model_client.wca_utils import InferenceContext, InferenceResponseChecks
+from ai.api.model_client.wca_utils import (
+    ContentMatchContext,
+    ContentMatchResponseChecks,
+    InferenceContext,
+    InferenceResponseChecks,
+)
 from django.apps import apps
 from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Histogram
 from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
@@ -18,17 +25,29 @@ from .exceptions import (
     WcaInferenceFailure,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
 
+WCA_REQUEST_ID_HEADER = "X-Request-ID"
+
 logger = logging.getLogger(__name__)
-inference_response_checks = InferenceResponseChecks()
 
-
-def raise_for_wca_response(model_id, result, is_multi_task_prompt):
-    """Maps WCA responses to those we want to present to Users"""
-    context = InferenceContext(model_id, result, is_multi_task_prompt)
-    inference_response_checks.run_checks(context)
+wca_codegen_hist = Histogram(
+    'wca_codegen_latency_seconds',
+    "Histogram of WCA codegen API processing time",
+    namespace=NAMESPACE,
+)
+wca_codematch_hist = Histogram(
+    'wca_codematch_latency_seconds',
+    "Histogram of WCA codematch API processing time",
+    namespace=NAMESPACE,
+)
+ibm_cloud_identity_token_hist = Histogram(
+    'wca_ibm_identity_token_latency_seconds',
+    "Histogram of IBM Cloud identity token API processing time",
+    namespace=NAMESPACE,
+)
 
 
 class WCAClient(ModelMeshClient):
@@ -52,7 +71,7 @@ class WCAClient(ModelMeshClient):
             # retry on all other errors (e.g. network)
             return False
 
-    def infer(self, model_input, model_id=None):
+    def infer(self, model_input, model_id=None, suggestion_id=None):
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -67,7 +86,7 @@ class WCAClient(ModelMeshClient):
         try:
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
             model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
-            result = self.infer_from_parameters(api_key, model_id, context, prompt)
+            result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
             response['model_id'] = model_id
@@ -77,7 +96,7 @@ class WCAClient(ModelMeshClient):
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt):
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
@@ -89,6 +108,7 @@ class WCAClient(ModelMeshClient):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
+            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
         task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
@@ -97,6 +117,7 @@ class WCAClient(ModelMeshClient):
         @backoff.on_exception(
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
         )
+        @wca_codegen_hist.time()
         def post_request():
             return self.session.post(
                 prediction_url,
@@ -107,7 +128,18 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
-            raise_for_wca_response(model_id, response, task_count > 1)
+
+            x_request_id = response.headers.get(WCA_REQUEST_ID_HEADER)
+            if suggestion_id and x_request_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                if x_request_id != str(suggestion_id):
+                    raise WcaSuggestionIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
+
+            context = InferenceContext(model_id, response, task_count > 1)
+            InferenceResponseChecks().run_checks(context)
             response.raise_for_status()
 
         except HTTPError as e:
@@ -127,6 +159,7 @@ class WCAClient(ModelMeshClient):
         @backoff.on_exception(
             backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
         )
+        @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
                 "https://iam.cloud.ibm.com/identity/token",
@@ -167,7 +200,7 @@ class WCAClient(ModelMeshClient):
         if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
-                logger.error(err_message)
+                logger.info(err_message)
                 raise WcaBadRequest(model_id=requested_model_id)
             return self.free_model_id
 
@@ -195,14 +228,15 @@ class WCAClient(ModelMeshClient):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
-        prompt = model_input.get("instances", [{}])[0].get("prompt", "")
-        rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
-        organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
+        suggestions = model_input.get("suggestions", "")
+        rh_user_has_seat = model_input.get("rh_user_has_seat", False)
+        organization_id = model_input.get("organization_id", None)
 
         model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+
         data = {
             "model_id": model_id,
-            "input": [f"{prompt}"],
+            "input": suggestions,
         }
 
         logger.debug(f"Codematch API request payload: {data}")
@@ -216,23 +250,29 @@ class WCAClient(ModelMeshClient):
                 "Authorization": f"Bearer {token['access_token']}",
             }
 
-            task_count = len(get_task_names_from_prompt(prompt))
+            suggestion_count = len(suggestions)
 
             @backoff.on_exception(
                 backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
             )
+            @wca_codematch_hist.time()
             def post_request():
                 return self.session.post(
-                    self._search_url, headers=headers, json=data, timeout=self.timeout(task_count)
+                    self._search_url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.timeout(suggestion_count),
                 )
 
             result = post_request()
-            raise_for_wca_response(model_id, result, task_count > 1)
+            context = ContentMatchContext(model_id, result, suggestion_count > 1)
+            ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
 
             response = result.json()
             logger.debug(f"Codematch API response: {response}")
-            return response
+
+            return model_id, response
 
         except HTTPError:
             raise WcaCodeMatchFailure(model_id=model_id)

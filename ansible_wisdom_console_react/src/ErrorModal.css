@@ -1,6 +1,7 @@
-.Error-Modal {
+.Error-Modal__container {
+    height: 200px;
 }
 
-.Error-Modal-Detail {
-    height: 200px;
+.Error-Model__detail {
+    white-space: pre-wrap;
 }

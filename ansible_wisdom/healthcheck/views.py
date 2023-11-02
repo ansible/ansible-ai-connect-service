@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 from ai.api.views import feature_flags
@@ -19,6 +20,7 @@ from rest_framework.views import APIView
 
 from .version_info import VersionInfo
 
+logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 30
 
 
@@ -33,6 +35,7 @@ class HealthCheckCustomView(MainView):
         'AWSSecretManagerHealthCheck': 'secret-manager',
         'WCAHealthCheck': 'wca',
         'AuthorizationHealthCheck': 'authorization',
+        'AttributionCheck': 'attribution',
     }
 
     _version_info = VersionInfo()
@@ -68,9 +71,10 @@ class HealthCheckCustomView(MainView):
             else:
                 plugin_status = str(p.pretty_status()) if p.errors else 'ok'
             time_taken = round(p.time_taken * 1000, 3)
-            dependencies.append(
-                {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}
-            )
+            plugin_data = {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}
+            if not p.status:
+                logger.error(f"HEALTH CHECK ERROR: {json.dumps(plugin_data)}")
+            dependencies.append(plugin_data)
 
         data['dependencies'] = dependencies
 

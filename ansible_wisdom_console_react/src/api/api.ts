@@ -6,16 +6,13 @@ export const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
 export const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
 export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
 
-const readCookie = (name: string) => {
+export const readCookie = (name: string): string | null => {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') {
-            c = c.substring(1, c.length);
-        }
-        if (c.indexOf(nameEQ) === 0) {
-            return c.substring(nameEQ.length, c.length);
+    for (let c of ca) {
+        const cookie = c.trim();
+        if (cookie.startsWith(nameEQ)) {
+            return cookie.substring(nameEQ.length, cookie.length);
         }
     }
     return null;

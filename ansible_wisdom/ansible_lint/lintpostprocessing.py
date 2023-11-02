@@ -7,7 +7,7 @@ from ansiblelint.config import Options
 from ansiblelint.config import options as default_options
 from ansiblelint.constants import DEFAULT_RULESDIR
 from ansiblelint.rules import RulesCollection
-from ansiblelint.runner import LintResult, _get_matches
+from ansiblelint.runner import LintResult, get_matches
 from ansiblelint.transformer import Transformer
 from django.conf import settings
 
@@ -26,16 +26,27 @@ class AnsibleLintCaller:
         self,
         inline_completion: str,
     ) -> str:
+        with tempfile.TemporaryDirectory() as tmp_root:
+            return self._run_linter(
+                inline_completion,
+                tmp_root,
+            )
+
+    def _run_linter(
+        self,
+        inline_completion: str,
+        tmp_root: str,
+    ) -> str:
         """Runs the Runner to populate a LintResult for a given snippet."""
-        tmp_dir = None
-        temp_completion_path = None
         try:
             transformed_completion = inline_completion
             # Since the suggestions are tasks, for ansible-lint to run in write mode correctly it
             # needs to identity the temporary file as tasks file, and for that to happen the
             # temporary file needs to be be under tasks folder. Thus, creating a temporary file
             # under tasks folder.
-            tmp_dir = os.path.join(tempfile.gettempdir(), TEMP_TASK_FOLDER)
+            tmp_dir = os.path.join(tmp_root, TEMP_TASK_FOLDER)
+            if os.path.isdir(tmp_dir):
+                raise RuntimeError("Task directory already exists")
             os.mkdir(tmp_dir)
             with tempfile.NamedTemporaryFile(
                 suffix='.yml', dir=tmp_dir, mode="w", delete=False
@@ -46,7 +57,7 @@ class AnsibleLintCaller:
                 temp_completion_path = temp_file.name
 
             self.config_options.lintables = [temp_completion_path]
-            result = _get_matches(rules=self.default_rules_collection, options=self.config_options)
+            result = get_matches(rules=self.default_rules_collection, options=self.config_options)
             self.run_transform(result, self.config_options)
 
             # read the transformed file
@@ -54,10 +65,6 @@ class AnsibleLintCaller:
                 transformed_completion = yaml_file.read()
         except Exception as exc:
             logger.exception(f'Lint Post-Processing resulted into exception: {exc}')
-        finally:
-            # delete the temporary file and tasks directory
-            os.remove(temp_completion_path)
-            os.rmdir(tmp_dir)
         return transformed_completion
 
     def run_transform(self, lint_result: LintResult, config_options: Options):

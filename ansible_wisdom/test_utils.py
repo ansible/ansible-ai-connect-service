@@ -2,7 +2,7 @@ from ast import literal_eval
 from unittest import TestCase
 
 
-class WisdomServiceLogAwareTestCase(TestCase):
+class WisdomLogAwareMixin:
     @staticmethod
     def searchInLogOutput(s, logs):
         for log in logs.output:
@@ -34,3 +34,7 @@ class WisdomServiceLogAwareTestCase(TestCase):
         segment_events = self.extractSegmentEventsFromLog(log)
         for event in segment_events:
             self.assertIsNotNone(event['timestamp'])
+
+
+class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
+    pass

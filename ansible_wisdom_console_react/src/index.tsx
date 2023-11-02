@@ -9,7 +9,7 @@ import {App} from './App'
 import './i18n'
 import './index.css'
 
-const userName = document.getElementById('userName')?.innerText ?? undefined;
+const userName = document.getElementById('user_name')?.innerText ?? undefined;
 
 createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>

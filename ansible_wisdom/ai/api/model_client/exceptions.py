@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 
 
@@ -43,14 +44,23 @@ class WcaEmptyResponse(WcaException):
 
 @dataclass
 class WcaTokenFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to retrieve a WCA Token failed."""
 
 
 @dataclass
 class WcaInferenceFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to run a WCA inference failed."""
 
 
 @dataclass
 class WcaCodeMatchFailure(WcaException):
-    """An attempt to retrieve a WCA Toke failed."""
+    """An attempt to run a WCA code match failed."""
+
+
+@dataclass
+class WcaSuggestionIdCorrelationFailure(WcaException):
+    """WCA Request/Response Suggestion Id correlation failed."""
+
+    def __init__(self, model_id, x_request_id: uuid.uuid4):
+        super().__init__(model_id)
+        self.x_request_id: uuid.uuid4 = x_request_id
