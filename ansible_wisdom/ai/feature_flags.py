@@ -24,6 +24,13 @@ class FeatureFlags:
                 logger.info("feature flag client initialized")
                 return client
 
+            try:
+                import uwsgidecorators
+
+                uwsgidecorators.postfork(create_ld_client)
+            except ImportError:
+                pass
+
             self.client = create_ld_client()
         else:
             self.client = None
