@@ -93,7 +93,7 @@ dill==0.3.6
     # via
     #   datasets
     #   multiprocess
-django==4.2.3
+django==4.2.7
     # via
     #   -r requirements.in
     #   django-allow-cidr
