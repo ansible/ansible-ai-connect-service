@@ -148,13 +148,14 @@ def completion_post_process(context: CompletionContext):
             f"unexpected predictions array length {len(post_processed_predictions['predictions'])}"
         )
 
+    anonymized_recommendation_yaml = post_processed_predictions["predictions"][0]
     recommendation_yaml = fmtr.apply_tasks_from_multi_task_prompt(
-        post_processed_predictions["predictions"][0], original_prompt
+        anonymized_recommendation_yaml, original_prompt
     )
     recommendation_problem = None
     truncated_yaml = None
     postprocessed_yaml = None
-    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(original_prompt)]
+    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(prompt)]
     ari_results = None
 
     # check if the recommendation_yaml is a valid YAML
@@ -222,7 +223,7 @@ def completion_post_process(context: CompletionContext):
             write_to_segment(
                 user,
                 suggestion_id,
-                recommendation_yaml,
+                anonymized_recommendation_yaml,
                 truncated_yaml,
                 postprocessed_yaml,
                 postprocess_details,
@@ -252,10 +253,13 @@ def completion_post_process(context: CompletionContext):
                 f'context {payload_context} and model recommendation {post_processed_predictions}'
             )
         finally:
+            anonymized_input_yaml = (
+                postprocessed_yaml if postprocessed_yaml else anonymized_recommendation_yaml
+            )
             write_to_segment(
                 user,
                 suggestion_id,
-                input_yaml,
+                anonymized_input_yaml,
                 truncated_yaml,
                 postprocessed_yaml,
                 None,
