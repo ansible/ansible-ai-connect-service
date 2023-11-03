@@ -1,4 +1,5 @@
 import logging
+import re
 from io import StringIO
 
 import yaml
@@ -130,7 +131,13 @@ def expand_vars_files(data, ansible_file_type, additional_context):
     expand_vars_files[ansible_file_type](data, additional_context)
 
 
-def preprocess(context, prompt, ansible_file_type="playbook", additional_context=None):
+def preprocess(
+    context,
+    prompt,
+    ansible_file_type="playbook",
+    additional_context=None,
+    do_handle_spaces_and_casing=True,
+):
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     Format and split off the last line as the prompt
@@ -153,7 +160,8 @@ def preprocess(context, prompt, ansible_file_type="playbook", additional_context
 
             logger.debug(f'preprocessed user input {context}\n{prompt}')
 
-        prompt = handle_spaces_and_casing(prompt)
+        if do_handle_spaces_and_casing:
+            prompt = handle_spaces_and_casing(prompt)
 
         # Make sure the prompt is in the form "  - name: a string description."
         prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
@@ -292,3 +300,15 @@ def get_task_names_from_tasks(tasks):
     for task in task_list:
         names.append(task["name"])
     return names
+
+
+def restore_original_task_names(output_yaml, prompt):
+    if output_yaml and is_multi_task_prompt(prompt):
+        prompt_tasks = get_task_names_from_prompt(prompt)
+        matches = re.finditer(r"(- name:\s+)(.*)", output_yaml, re.M)
+        for i, match in enumerate(matches):
+            task_line = match.group(0)
+            task = match.group(2)
+            restored_task_line = task_line.replace(task, prompt_tasks[i])
+            output_yaml = output_yaml.replace(task_line, restored_task_line)
+    return output_yaml

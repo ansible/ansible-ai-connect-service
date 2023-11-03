@@ -154,9 +154,8 @@ class InferenceStage(PipelineElement):
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
-            value_template = Template("{{ _${variable_name}_ }}")
             anonymized_predictions = anonymizer.anonymize_struct(
-                predictions, value_template=value_template
+                predictions, value_template=Template("{{ _${variable_name}_ }}")
             )
             # If an exception was thrown during the backend call, try to get the model ID
             # that is contained in the exception.
