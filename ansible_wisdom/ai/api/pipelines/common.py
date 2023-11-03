@@ -111,6 +111,13 @@ class WcaEmptyResponseException(BaseWisdomAPIException):
     default_detail = {"message": "WCA returned an empty response."}
 
 
+class WcaCloudflareRejectionException(BaseWisdomAPIException):
+    status_code = 400
+    default_detail = {
+        "message": "Cloudflare rejected the request. Please contact your administrator."
+    }
+
+
 class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
     default_detail = {"message": "An error occurred attempting to complete the request"}

@@ -15,6 +15,7 @@ from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
+    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaException,
     WcaInvalidModelId,
@@ -276,6 +277,25 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 self.assertInLog("WCA returned an empty response", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_cloudflare_rejection(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            403,
+            Mock(return_value='org-api-key'),
+            Mock(side_effect=WcaCloudflareRejection),
+            DEFAULT_SUGGESTION_ID,
+        )
+        model_client, model_input = stub
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assertInLog("Cloudflare rejected the request", log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
@@ -1777,6 +1797,19 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
         self._assert_exception_in_log_and_status_code(
             "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.BAD_REQUEST
         )
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_contentmatch_cloudflare_rejection(self):
+        response = MockResponse(
+            json=[],
+            text="cloudflare rejection",
+            status_code=HTTPStatus.FORBIDDEN,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaCloudflareRejectionException", HTTPStatus.BAD_REQUEST
+        )
+        self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_model_timeout(self):
         self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)

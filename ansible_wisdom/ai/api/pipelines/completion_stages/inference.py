@@ -6,6 +6,7 @@ from ai.api.data.data_model import ModelMeshPayload
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
+    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -18,6 +19,7 @@ from ai.api.pipelines.common import (
     PipelineElement,
     ServiceUnavailable,
     WcaBadRequestException,
+    WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
@@ -144,6 +146,11 @@ class InferenceStage(PipelineElement):
                 f"WCA returned an empty response for suggestion {payload.suggestionId}"
             )
             raise WcaEmptyResponseException(cause=e)
+
+        except WcaCloudflareRejection as e:
+            exception = e
+            logger.exception(f"Cloudflare rejected the request for {payload.suggestionId}")
+            raise WcaCloudflareRejectionException(cause=e)
 
         except Exception as e:
             exception = e
