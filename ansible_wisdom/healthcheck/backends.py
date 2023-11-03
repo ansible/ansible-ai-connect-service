@@ -20,7 +20,11 @@ class WcaModelRequestException(ServiceUnavailable):
 
 
 class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
+    enabled = True
+
     def pretty_status(self):
+        if not self.enabled:
+            return "disabled"
         return str(super().pretty_status()) if self.errors else 'ok'
 
 
@@ -44,6 +48,10 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
             self.url = None
 
     def check_status(self):
+        self.enabled = settings.ENABLE_HEALTHCHECK_MODEL_MESH
+        if not self.enabled:
+            return
+
         try:
             if self.url:
                 # As of today (2023-03-27) SSL Certificate Verification fails with
@@ -66,6 +74,10 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
     critical_service = True
 
     def check_status(self):
+        self.enabled = settings.ENABLE_HEALTHCHECK_SECRET_MANAGER
+        if not self.enabled:
+            return
+
         try:
             apps.get_app_config("ai").get_wca_secret_manager().get_secret(
                 FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY
@@ -81,6 +93,10 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
     critical_service = True
 
     def check_status(self):
+        self.enabled = settings.ENABLE_HEALTHCHECK_WCA
+        if not self.enabled:
+            return
+
         free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
         try:
@@ -98,6 +114,12 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
             self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
 
     def pretty_status(self):
+        if not self.enabled:
+            return {
+                "tokens": "disabled",
+                "models": "disabled",
+            }
+
         token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
         model_error = [item for item in self.errors if isinstance(item, WcaModelRequestException)]
         return {
@@ -113,6 +135,10 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
     critical_service = True
 
     def check_status(self):
+        self.enabled = settings.ENABLE_HEALTHCHECK_AUTHORIZATION
+        if not self.enabled:
+            return
+
         try:
             apps.get_app_config("ai").get_seat_checker().self_test()
         except Exception as e:
@@ -126,6 +152,10 @@ class AttributionCheck(BaseLightspeedHealthCheck):
     critical_service = False
 
     def check_status(self):
+        self.enabled = settings.ENABLE_HEALTHCHECK_ATTRIBUTION
+        if not self.enabled:
+            return
+
         try:
             attributions = ai.search.search("aaa")["attributions"]
             assert len(attributions) > 0, "No attribution found"

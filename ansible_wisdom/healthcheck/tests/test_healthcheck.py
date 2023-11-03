@@ -148,7 +148,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
-    def test_health_check(self):
+    def test_health_check_all_healthy(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -166,7 +166,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
-    def test_health_check_http_error(self):
+    def test_health_check_model_mesh_http_error(self):
         cache.clear()
         self.mock_requests.get = TestHealthCheck.mocked_requests_http_fail
 
@@ -206,7 +206,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    def test_health_check_grpc(self):
+    def test_health_check_model_mesh_grpc(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -216,7 +216,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
-    def test_health_check_grpc_error(self):
+    def test_health_check_model_mesh_grpc_error(self):
         cache.clear()
         self.mock_requests.get = TestHealthCheck.mocked_requests_grpc_fail
         with self.assertLogs(logger='root', level='ERROR') as log:
@@ -238,7 +238,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    def test_health_check_mock(self):
+    def test_health_check_model_mesh_mock(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -250,7 +250,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @mock.patch('healthcheck.views.get_feature_flags')
     @mock.patch('ldclient.get')
-    def test_health_check_mock_with_launchdarkly(self, ldclient_get, get_feature_flags):
+    def test_health_check_model_mesh_mock_with_launchdarkly(self, ldclient_get, get_feature_flags):
         class DummyClient:
             def variation(name, *args):
                 return 'server:port:model_name:index'
@@ -264,6 +264,20 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         _, dependencies = self.assert_basic_data(r, 'ok')
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ENABLE_HEALTHCHECK_MODEL_MESH=False)
+    def test_health_check_model_mesh_mock_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'model-server':
+                self.assertEqual(dependency['status'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
 
     def test_get_feature_flags(self):
         healthcheck_views.feature_flags = "return this"
@@ -292,6 +306,20 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
                 'secret-manager',
                 'unavailable: An error occurred',
             )
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    @override_settings(ENABLE_HEALTHCHECK_SECRET_MANAGER=False)
+    def test_health_check_aws_secret_manager_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'secret-manager':
+                self.assertEqual(dependency['status'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
@@ -379,6 +407,21 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    @override_settings(ENABLE_HEALTHCHECK_WCA=False)
+    def test_health_check_wca_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca':
+                self.assertEqual(dependency['status']['tokens'], 'disabled')
+                self.assertEqual(dependency['status']['models'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_authorization_error(self, *args):
         cache.clear()
         self.seat_checker.self_test = Mock(side_effect=HTTPError)
@@ -402,6 +445,20 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    @override_settings(ENABLE_HEALTHCHECK_AUTHORIZATION=False)
+    def test_health_check_authorization_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'authorization':
+                self.assertEqual(dependency['status'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_health_check_attribution_error(self, *args):
         cache.clear()
 
@@ -417,3 +474,16 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
                 break
 
         self.assertTrue(attribution_result['status'].startswith('unavailable:'))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ENABLE_HEALTHCHECK_ATTRIBUTION=False)
+    def test_health_check_attribution_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'attribution':
+                self.assertEqual(dependency['status'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
