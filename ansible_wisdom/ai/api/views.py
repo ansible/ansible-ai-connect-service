@@ -1,6 +1,7 @@
 import logging
 import time
 from http import HTTPStatus
+from string import Template
 
 from ai.api.model_client.exceptions import (
     WcaBadRequest,
@@ -414,8 +415,11 @@ class ContentMatches(GenericAPIView):
     ):
         wca_client = apps.get_app_config("ai").get_wca_client()
         user_id = user.uuid
+        anonymized_suggestions = anonymizer.anonymize_struct(
+            request_data.get('suggestions', []), value_template=Template("{{ _${variable_name}_ }}")
+        )
         content_match_data: ContentMatchPayloadData = {
-            "suggestions": request_data.get('suggestions', []),
+            "suggestions": anonymized_suggestions,
             "user_id": str(user_id) if user_id else None,
             "rh_user_has_seat": user.rh_user_has_seat,
             "organization_id": user.org_id,

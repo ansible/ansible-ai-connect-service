@@ -128,8 +128,9 @@ def completion_post_process(context: CompletionContext):
     user = context.request.user
     model_id = context.model_id
     suggestion_id = context.payload.suggestionId
-    cp = context.payload.prompt
-    cc = context.payload.context
+    prompt = context.payload.prompt
+    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
+    payload_context = context.payload.context
     original_indent = context.original_indent
     post_processed_predictions = context.anonymized_predictions.copy()
 
@@ -147,11 +148,13 @@ def completion_post_process(context: CompletionContext):
             f"unexpected predictions array length {len(post_processed_predictions['predictions'])}"
         )
 
-    recommendation_yaml = post_processed_predictions["predictions"][0]
+    recommendation_yaml = fmtr.apply_tasks_from_multi_task_prompt(
+        post_processed_predictions["predictions"][0], original_prompt
+    )
     recommendation_problem = None
     truncated_yaml = None
     postprocessed_yaml = None
-    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(cp)]
+    tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(original_prompt)]
     ari_results = None
 
     # check if the recommendation_yaml is a valid YAML
@@ -191,7 +194,9 @@ def completion_post_process(context: CompletionContext):
                 f"suggestion id: {suggestion_id}, "
                 f"original recommendation: \n{recommendation_yaml}"
             )
-            postprocessed_yaml, ari_results = ari_caller.postprocess(recommendation_yaml, cp, cc)
+            postprocessed_yaml, ari_results = ari_caller.postprocess(
+                recommendation_yaml, original_prompt, payload_context
+            )
             logger.debug(
                 f"suggestion id: {suggestion_id}, "
                 f"post-processed recommendation: \n{postprocessed_yaml}"
@@ -210,8 +215,8 @@ def completion_post_process(context: CompletionContext):
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {cp} '
-                f'context {cc} and model recommendation {post_processed_predictions}'
+                f'failed to postprocess recommendation with prompt {prompt} '
+                f'context {payload_context} and model recommendation {post_processed_predictions}'
             )
         finally:
             write_to_segment(
@@ -243,8 +248,8 @@ def completion_post_process(context: CompletionContext):
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {cp} '
-                f'context {cc} and model recommendation {post_processed_predictions}'
+                f'failed to postprocess recommendation with prompt {prompt} '
+                f'context {payload_context} and model recommendation {post_processed_predictions}'
             )
         finally:
             write_to_segment(
@@ -280,7 +285,7 @@ def completion_post_process(context: CompletionContext):
 
     # gather data for completion segment event
     for i, task in enumerate(tasks):
-        if fmtr.is_multi_task_prompt(cp):
+        if fmtr.is_multi_task_prompt(prompt):
             task["prediction"] = fmtr.extract_task(
                 post_processed_predictions["predictions"][0], task["name"]
             )

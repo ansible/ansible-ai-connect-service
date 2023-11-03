@@ -135,13 +135,14 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         status_code=None,
         mock_api_key=Mock(return_value='org-api-key'),
         mock_model_id=Mock(return_value='org-model-id'),
+        predictions="",
     ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         response = MockResponse(
-            json={"predictions": [""]},
+            json={"predictions": [predictions]},
             status_code=status_code,
             headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
@@ -348,6 +349,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
+            predictions="- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "
+            "state: present\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n"
+            "    state: started\n    enabled: true\n",
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -524,14 +528,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
+        pii_task = "say hello fred@redhat.com"
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & say hello fred@redhat.com\n",  # noqa: E501
+            "prompt": f"---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & {pii_task}\n",  # noqa: E501
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
             "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
-                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello test@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
         }
         self.user.rh_user_has_seat = True
@@ -547,6 +552,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
+            self.assertIn(pii_task.capitalize(), r.data['predictions'][0])
             self.assertSegmentTimestamp(log)
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)

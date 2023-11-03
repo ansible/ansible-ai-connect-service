@@ -292,3 +292,12 @@ def get_task_names_from_tasks(tasks):
     for task in task_list:
         names.append(task["name"])
     return names
+
+
+def apply_tasks_from_multi_task_prompt(output_yaml, prompt):
+    if output_yaml and is_multi_task_prompt(prompt):
+        tasks = get_task_names_from_tasks(output_yaml)
+        prompt_tasks = get_task_names_from_prompt(prompt)
+        for i, task in enumerate(tasks):
+            output_yaml = output_yaml.replace(task, prompt_tasks[i])
+    return output_yaml

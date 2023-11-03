@@ -41,5 +41,6 @@ class DeserializeStage(PipelineElement):
 
         payload = APIPayload(**request_serializer.validated_data)
         payload.userId = request.user.uuid
+        payload.original_prompt = request.data.get("prompt", "")
 
         context.payload = payload
