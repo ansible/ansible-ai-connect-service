@@ -14,6 +14,7 @@ class WisdomFlags(str, Enum):
 
 class FeatureFlags:
     def __init__(self):
+        self.client = None
         if settings.LAUNCHDARKLY_SDK_KEY:
             import ldclient
             from ldclient.config import Config
@@ -27,13 +28,10 @@ class FeatureFlags:
             try:
                 import uwsgidecorators
 
-                uwsgidecorators.postfork(create_ld_client)
+                self.client = uwsgidecorators.postfork(create_ld_client)
             except ImportError:
                 pass
-
-            self.client = create_ld_client()
-        else:
-            self.client = None
+            self.client = self.client or create_ld_client()
 
     def get(self, name: str, user: User, default: str):
         if self.client:
