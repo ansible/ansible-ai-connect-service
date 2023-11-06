@@ -10,7 +10,7 @@ boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==41.0.4
 datasets==2.10.1
-Django==4.2.3
+Django==4.2.7
 django-extensions==3.2.1
 django-health-check==3.17.0
 django-import-export==3.2.0
