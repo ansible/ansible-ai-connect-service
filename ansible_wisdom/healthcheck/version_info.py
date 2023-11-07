@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+import json
 from pathlib import Path
 
 
@@ -8,12 +8,11 @@ class VersionInfo:
 
     def __init__(self):
         try:
-            ini_file = Path(__file__).parent.parent / 'version_info.ini'
-            with open(ini_file) as INI:
-                configparser = ConfigParser()
-                configparser.read_file(INI)
-                self._image_tags = configparser['ansible-wisdom-service']['IMAGE_TAGS']
-                self._git_commit = configparser['ansible-wisdom-service']['GIT_COMMIT']
+            version_info_file = Path(__file__).parent.parent / 'version_info.json'
+            with open(version_info_file) as info:
+                info_json = json.load(info)
+                self._image_tags = info_json.imageTags
+                self._git_commit = info_json.gitCommit
         except Exception:
             pass
 
