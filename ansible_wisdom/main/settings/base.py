@@ -421,3 +421,17 @@ CSP_INCLUDE_NONCE_IN = ['script-src-elem']
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
 DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')
+
+# Support to disable health checks. The default is that they are enabled.
+# The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
+ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv('ENABLE_HEALTHCHECK_MODEL_MESH', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_SECRET_MANAGER = (
+    os.getenv('ENABLE_HEALTHCHECK_SECRET_MANAGER', 'True').lower() == 'true'
+)
+ENABLE_HEALTHCHECK_WCA = os.getenv('ENABLE_HEALTHCHECK_WCA', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_AUTHORIZATION = (
+    os.getenv('ENABLE_HEALTHCHECK_AUTHORIZATION', 'True').lower() == 'true'
+)
+ENABLE_HEALTHCHECK_ATTRIBUTION = (
+    os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
+)
