@@ -1,14 +1,14 @@
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from .exceptions import WcaEmptyResponse, WcaInvalidModelId
+from .exceptions import WcaCloudflareRejection, WcaEmptyResponse, WcaInvalidModelId
 
 T = TypeVar('T')
 
 
 class Check(Generic[T]):
     @abstractmethod
-    def check(self, context: T) -> Exception:
+    def check(self, context: T):
         pass
 
 
@@ -20,9 +20,7 @@ class Checks(Generic[T]):
 
     def run_checks(self, context: T):
         for check in self.checks:
-            e = check.check(context)
-            if e:
-                raise e
+            check.check(context)
 
 
 class InferenceContext:
@@ -60,12 +58,21 @@ class InferenceResponseChecks(Checks[InferenceContext]):
             if context.result.status_code == 403:
                 raise WcaInvalidModelId(model_id=context.model_id)
 
+    class ResponseStatusCode403Cloudflare(Check[InferenceContext]):
+        def check(self, context: InferenceContext):
+            if context.result.status_code == 403:
+                text = context.result.text
+                if text and "cloudflare" in text.lower():
+                    raise WcaCloudflareRejection(model_id=context.model_id)
+
     def __init__(self):
         super().__init__(
             [
+                # The ordering of these checks is important!
                 InferenceResponseChecks.ResponseStatusCode204(),
                 InferenceResponseChecks.ResponseStatusCode400SingleTask(),
                 InferenceResponseChecks.ResponseStatusCode400MultiTask(),
+                InferenceResponseChecks.ResponseStatusCode403Cloudflare(),
                 InferenceResponseChecks.ResponseStatusCode403(),
             ]
         )
@@ -103,12 +110,21 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
             if context.result.status_code == 403:
                 raise WcaInvalidModelId(model_id=context.model_id)
 
+    class ResponseStatusCode403Cloudflare(Check[InferenceContext]):
+        def check(self, context: ContentMatchContext):
+            if context.result.status_code == 403:
+                text = context.result.text
+                if text and "cloudflare" in text.lower():
+                    raise WcaCloudflareRejection(model_id=context.model_id)
+
     def __init__(self):
         super().__init__(
             [
+                # The ordering of these checks is important!
                 ContentMatchResponseChecks.ResponseStatusCode204(),
                 ContentMatchResponseChecks.ResponseStatusCode400SingleTask(),
                 ContentMatchResponseChecks.ResponseStatusCode400MultiTask(),
+                ContentMatchResponseChecks.ResponseStatusCode403Cloudflare(),
                 ContentMatchResponseChecks.ResponseStatusCode403(),
             ]
         )

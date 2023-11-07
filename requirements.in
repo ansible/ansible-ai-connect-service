@@ -10,7 +10,7 @@ boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==41.0.4
 datasets==2.10.1
-Django==4.2.3
+Django==4.2.7
 django-extensions==3.2.1
 django-health-check==3.17.0
 django-import-export==3.2.0
@@ -40,6 +40,8 @@ sentence-transformers==2.2.2
 https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
 social-auth-core[openidconnect]==4.4.2
 # UPDATED MANUALLY: waiting for parent package to be updated
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
 transformers==4.30.0
 tqdm==4.64.1
 urllib3==1.26.18

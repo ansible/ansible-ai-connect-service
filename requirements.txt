@@ -69,8 +69,6 @@ click==8.1.3
     # via
     #   black
     #   nltk
-cmake==3.27.2
-    # via triton
 cryptography==41.0.4
     # via
     #   -r requirements.in
@@ -95,7 +93,7 @@ dill==0.3.6
     # via
     #   datasets
     #   multiprocess
-django==4.2.3
+django==4.2.7
     # via
     #   -r requirements.in
     #   django-allow-cidr
@@ -142,7 +140,6 @@ filelock==3.12.0
     #   huggingface-hub
     #   torch
     #   transformers
-    #   triton
 frozenlist==1.3.3
     # via
     #   aiohttp
@@ -199,8 +196,6 @@ launchdarkly-server-sdk==8.1.1
     # via -r requirements.in
 levenshtein==0.21.1
     # via ansible-risk-insight
-lit==16.0.6
-    # via triton
 markdown-it-py==3.0.0
     # via rich
 markuppy==1.14
@@ -237,31 +232,6 @@ numpy==1.24.3
     #   sentence-transformers
     #   torchvision
     #   transformers
-nvidia-cublas-cu11==11.10.3.66
-    # via
-    #   nvidia-cudnn-cu11
-    #   nvidia-cusolver-cu11
-    #   torch
-nvidia-cuda-cupti-cu11==11.7.101
-    # via torch
-nvidia-cuda-nvrtc-cu11==11.7.99
-    # via torch
-nvidia-cuda-runtime-cu11==11.7.99
-    # via torch
-nvidia-cudnn-cu11==8.5.0.96
-    # via torch
-nvidia-cufft-cu11==10.9.0.58
-    # via torch
-nvidia-curand-cu11==10.2.10.91
-    # via torch
-nvidia-cusolver-cu11==11.4.0.1
-    # via torch
-nvidia-cusparse-cu11==11.7.4.91
-    # via torch
-nvidia-nccl-cu11==2.14.3
-    # via torch
-nvidia-nvtx-cu11==11.7.91
-    # via torch
 oauthlib==3.2.2
     # via
     #   django-oauth-toolkit
@@ -465,13 +435,15 @@ tokenizers==0.13.3
     # via transformers
 tomli==2.0.1
     # via black
-torch==2.0.1
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
+    #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-    #   triton
-torchvision==0.15.2
-    # via sentence-transformers
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
+    # via
+    #   -r requirements.in
+    #   sentence-transformers
 tqdm==4.64.1
     # via
     #   -r requirements.in
@@ -488,8 +460,6 @@ transformers==4.30.0
     # via
     #   -r requirements.in
     #   sentence-transformers
-triton==2.0.0
-    # via torch
 typing-extensions==4.6.2
     # via
     #   ansible-compat
@@ -519,14 +489,6 @@ wcmatch==8.5
     # via ansible-lint
 wcwidth==0.2.6
     # via prompt-toolkit
-wheel==0.41.2
-    # via
-    #   nvidia-cublas-cu11
-    #   nvidia-cuda-cupti-cu11
-    #   nvidia-cuda-runtime-cu11
-    #   nvidia-curand-cu11
-    #   nvidia-cusparse-cu11
-    #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via deprecated
 xlrd==2.0.1
@@ -539,6 +501,3 @@ yamllint==1.32.0
     # via ansible-lint
 yarl==1.9.2
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
