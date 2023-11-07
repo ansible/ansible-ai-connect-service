@@ -20,7 +20,7 @@ from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 class Metadata(serializers.Serializer):
     class Meta:
-        fields = ['documentUri', 'activityId']
+        fields = ['documentUri', 'activityId', 'ansibleFileType', 'additionalContext']
 
     documentUri = AnonymizedCharField(required=False)
     activityId = serializers.UUIDField(
@@ -28,6 +28,16 @@ class Metadata(serializers.Serializer):
         required=False,
         label="Activity ID",
         help_text="A UUID that identifies a user activity session within a given document.",
+    )
+    ansibleFileType = serializers.CharField(
+        required=False,
+        label="Ansible File Type",
+        help_text="Ansible file type (playbook/tasks_in_role/tasks)",
+    )
+    additionalContext = serializers.DictField(
+        required=False,
+        label="Additional Context",
+        help_text="Additional context for completion API",
     )
 
 

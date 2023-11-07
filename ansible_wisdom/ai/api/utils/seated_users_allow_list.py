@@ -55,6 +55,7 @@ ALLOW_LIST = {
         'suggestionId': None,
         'metadata': {
             'activityId': None,
+            'ansibleFileType': None,
         },
         'modelName': None,
         'imageTags': None,

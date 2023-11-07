@@ -275,6 +275,31 @@ class AnsibleDumperTestCase(TestCase):
         with self.assertRaises(Exception, msg="unexpected tasks yaml"):
             fmtr.get_task_names_from_tasks("not well-formed tasks yaml")
 
+    def test_load_and_merge_vars_in_context(self):
+        vars_in_context = [
+            '''\
+var1: value1
+var2:
+  key: value2
+''',
+            '''\
+var3: value3
+''',
+        ]
+        expected = {'var1': 'value1', 'var2': {'key': 'value2'}, 'var3': 'value3'}
+        returned = fmtr.load_and_merge_vars_in_context(vars_in_context)
+        self.assertEqual(expected, returned)
+
+    def test_insert_set_fact_task(self):
+        data = [{"dummy data"}]
+        merged_vars = {'var1': 'value1', 'var2': {'key': 'value2'}, 'var3': 'value3'}
+        fmtr.insert_set_fact_task(data, merged_vars)
+        self.assertEqual(2, len(data))
+        self.assertTrue('name' in data[0])
+        self.assertEqual(data[0]['name'], 'Set variables from context')
+        self.assertTrue('ansible.builtin.set_fact' in data[0])
+        self.assertEqual(data[0]['ansible.builtin.set_fact'], merged_vars)
+
 
 if __name__ == "__main__":
     tests = AnsibleDumperTestCase()
@@ -297,3 +322,5 @@ if __name__ == "__main__":
     tests.test_get_task_names_from_tasks()
     tests.test_get_task_names_single()
     tests.test_get_task_names_multi()
+    tests.test_load_and_merge_vars_in_context()
+    tests.test_insert_set_fact_task()

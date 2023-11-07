@@ -4,6 +4,7 @@ import time
 from ai.api import formatter as fmtr
 from ai.api.pipelines.common import PipelineElement, process_error_count
 from ai.api.pipelines.completion_context import CompletionContext
+from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from rest_framework.response import Response
@@ -20,18 +21,37 @@ preprocess_hist = Histogram(
 def completion_pre_process(context: CompletionContext):
     cp = context.payload.prompt
     cc = context.payload.context
-    if fmtr.is_multi_task_prompt(cp):
-        # Hold the original indent so that we can restore indentation in postprocess
-        original_indent = cp.find('#')
-    else:
-        # once we switch completely to WCA, we should be able to remove this entirely
-        # since they're doing the same preprocessing on their side
-        original_indent = cp.find("name")
-        cc, cp = fmtr.preprocess(cc, cp)
 
-    context.payload.prompt = cp
-    context.payload.context = cc
-    context.original_indent = original_indent
+    # Additional context (variables) is supported when
+    #
+    #   1. ENABLE_ADDITIONAL_CONTEXT setting is set to True, and
+    #   2. The user has a seat (=she/he is a commercial user).
+    #
+    user = context.request.user
+    is_commercial = user.rh_user_has_seat
+    if settings.ENABLE_ADDITIONAL_CONTEXT and is_commercial:
+        additionalContext = context.metadata.get("additionalContext", {})
+    else:
+        additionalContext = {}
+
+    multi_task = fmtr.is_multi_task_prompt(cp)
+    context.original_indent = cp.find('#' if multi_task else "name")
+
+    # fmtr.preprocess() performs:
+    #
+    #   1. Insert additional context (variables), and
+    #   2. Formatting prompt/context YAML data,
+    #
+    # When non-empty additional context is given, fmtr.preprocess() needs to
+    # be called. Otherwise, it is called when a non-multi task prompt is
+    # specified because multi-task prompts are supported by WCA only and WCA
+    # contains its own formatter for 2.
+    #
+    if additionalContext or not multi_task:
+        ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
+        context.payload.context, context.payload.prompt = fmtr.preprocess(
+            cc, cp, ansibleFileType, additionalContext
+        )
 
 
 class PreProcessStage(PipelineElement):

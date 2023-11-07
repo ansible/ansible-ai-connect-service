@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Any, Union
 
 from ai.api.data.data_model import APIPayload
 from rest_framework.request import Request
@@ -10,6 +10,8 @@ from rest_framework.response import Response
 class CompletionContext:
     request: Request
     response: Response = None
+
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     model_id: str = ""
     payload: APIPayload = None

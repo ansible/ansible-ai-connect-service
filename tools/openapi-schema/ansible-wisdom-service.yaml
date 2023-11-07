@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible Lightspeed with IBM watsonx Code Assistant.
-  version: 0.0.7
+  version: 0.0.8
   description: Equip the automation developer at Lightspeed.
 paths:
   /api/v0/ai/attributions/:
@@ -682,6 +682,15 @@ components:
           title: Activity ID
           description: A UUID that identifies a user activity session within a given
             document.
+        ansibleFileType:
+          type: string
+          title: Ansible File Type
+          description: Ansible file type (playbook/tasks_in_role/tasks)
+        additionalContext:
+          type: object
+          additionalProperties: {}
+          title: Additional Context
+          description: Additional context for completion API
     SentimentFeedback:
       type: object
       properties:
