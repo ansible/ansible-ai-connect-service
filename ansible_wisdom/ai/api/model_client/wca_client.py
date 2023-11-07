@@ -13,7 +13,7 @@ from ai.api.model_client.wca_utils import (
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
-from prometheus_client import Histogram
+from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
@@ -48,6 +48,21 @@ ibm_cloud_identity_token_hist = Histogram(
     "Histogram of IBM Cloud identity token API processing time",
     namespace=NAMESPACE,
 )
+wca_codegen_retry_counter = Counter(
+    'wca_codegen_retries',
+    "Counter of WCA codegen API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_codematch_retry_counter = Counter(
+    'wca_codematch_retries',
+    "Counter of WCA codematch API invocation retries",
+    namespace=NAMESPACE,
+)
+ibm_cloud_identity_token_retry_counter = Counter(
+    'ibm_cloud_identity_token_retries',
+    "Counter of IBM Cloud identity token API invocation retries",
+    namespace=NAMESPACE,
+)
 
 
 class WCAClient(ModelMeshClient):
@@ -70,6 +85,18 @@ class WCAClient(ModelMeshClient):
         else:
             # retry on all other errors (e.g. network)
             return False
+
+    @staticmethod
+    def on_backoff_inference(details):
+        wca_codegen_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_codematch(details):
+        wca_codematch_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_ibm_cloud_identity_token(details):
+        ibm_cloud_identity_token_retry_counter.inc()
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
         logger.debug(f"Input prompt: {model_input}")
@@ -115,7 +142,11 @@ class WCAClient(ModelMeshClient):
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         @backoff.on_exception(
-            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_inference,
         )
         @wca_codegen_hist.time()
         def post_request():
@@ -157,7 +188,11 @@ class WCAClient(ModelMeshClient):
         data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": api_key}
 
         @backoff.on_exception(
-            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_ibm_cloud_identity_token,
         )
         @ibm_cloud_identity_token_hist.time()
         def post_request():
@@ -253,7 +288,11 @@ class WCAClient(ModelMeshClient):
             suggestion_count = len(suggestions)
 
             @backoff.on_exception(
-                backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=self.fatal_exception,
+                on_backoff=self.on_backoff_codematch,
             )
             @wca_codematch_hist.time()
             def post_request():
