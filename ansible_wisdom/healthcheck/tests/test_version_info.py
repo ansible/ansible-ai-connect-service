@@ -9,7 +9,7 @@ class TestVersionInfo(TestCase):
         self.assertIsNotNone(version_info.image_tags)
         self.assertIsNotNone(version_info.git_commit)
 
-    @mock.patch('configparser.ConfigParser.read_file', side_effect=Exception)
+    @mock.patch('json.load', side_effect=Exception)
     def test_version_info_error(self, _):
         version_info = VersionInfo()
         self.assertIsNotNone(version_info.image_tags)

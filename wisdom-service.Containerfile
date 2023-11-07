@@ -45,10 +45,11 @@ RUN mkdir /var/run/uwsgi
 
 COPY ansible_wisdom /var/www/ansible_wisdom
 RUN echo -e "\
-[ansible-wisdom-service]\n\
-IMAGE_TAGS = ${IMAGE_TAGS}\n\
-GIT_COMMIT = ${GIT_COMMIT}\n\
-" > /var/www/ansible_wisdom/version_info.ini
+{\n\
+  \"imageTags\": \"${IMAGE_TAGS}\", \n\
+  \"gitCommit\": \"${GIT_COMMIT}\" \n\
+}\n\
+" > /var/www/ansible_wisdom/version_info.json
 
 # Compile React/TypeScript Console application
 # Copy each source folder individually to avoid copying 'node_modules'
