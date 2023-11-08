@@ -11,8 +11,8 @@ class VersionInfo:
             version_info_file = Path(__file__).parent.parent / 'version_info.json'
             with open(version_info_file) as info:
                 info_json = json.load(info)
-                self._image_tags = info_json.imageTags
-                self._git_commit = info_json.gitCommit
+                self._image_tags = info_json["imageTags"]
+                self._git_commit = info_json["gitCommit"]
         except Exception:
             pass
 
