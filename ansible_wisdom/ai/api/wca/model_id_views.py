@@ -1,4 +1,5 @@
 import logging
+import time
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
@@ -15,6 +16,7 @@ from ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ai.api.serializers import WcaModelIdRequestSerializer
+from ai.api.utils.segment import send_segment_event
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -32,6 +34,8 @@ from rest_framework.status import (
 from users.signals import user_set_wca_model_id
 
 from ..views import ServiceUnavailable, WcaBadRequestException, WcaKeyNotFoundException
+
+UNKNOWN_MODEL_ID = "Unknown"
 
 logger = logging.getLogger(__name__)
 
@@ -64,24 +68,41 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("WCA Model Id:: GET handler")
 
-        # An OrgId must be present
-        # See https://issues.redhat.com/browse/AAP-16009
-        org_id = request._request.user.organization_id
-        if not is_org_id_valid(org_id):
-            return Response(status=HTTP_400_BAD_REQUEST)
-
+        exception = None
+        start_time = time.time()
+        model_id = UNKNOWN_MODEL_ID
         try:
+            # An OrgId must be present
+            # See https://issues.redhat.com/browse/AAP-16009
+            org_id = request._request.user.organization_id
+            if not is_org_id_valid(org_id):
+                return Response(status=HTTP_400_BAD_REQUEST)
+
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             response = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
             if response is None:
                 return Response(status=HTTP_200_OK)
+
+            model_id = response['SecretString']
             return Response(
                 status=HTTP_200_OK,
-                data={'model_id': response['SecretString'], 'last_update': response['CreatedDate']},
+                data={'model_id': model_id, 'last_update': response['CreatedDate']},
             )
+
         except WcaSecretManagerError as e:
+            exception = e
             logger.exception(e)
             return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            event = {
+                "duration": duration,
+                "exception": exception is not None,
+                "problem": None if exception is None else exception.__class__.__name__,
+                "modelName": model_id,
+            }
+            send_segment_event(event, "modelIdGet", request.user)
 
     @extend_schema(
         request=WcaModelIdRequestSerializer,
@@ -98,38 +119,32 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     )
     def post(self, request, *args, **kwargs):
         logger.debug("WCA Model Id:: POST handler")
-
-        # An OrgId must be present
-        # See https://issues.redhat.com/browse/AAP-16009
-        org_id = request._request.user.organization_id
-        if not is_org_id_valid(org_id):
-            return Response(status=HTTP_400_BAD_REQUEST)
-
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
-        try:
+
+        def get_api_key(org_id):
+            api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+            return get_secret_value(api_key)
+
+        def get_model_id(*_):
+            model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
             model_id_serializer.is_valid(raise_exception=True)
-            model_id = model_id_serializer.validated_data['model_id']
-            api_key = get_api_key(secret_manager, org_id)
+            return model_id_serializer.validated_data['model_id']
 
-            def save_and_respond():
-                secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
+        def on_success(org_id, model_id):
+            secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
 
-                # Audit trail/logging
-                user_set_wca_model_id.send(
-                    WCAModelIdView.__class__,
-                    user=request._request.user,
-                    org_id=org_id,
-                    model_id=model_id,
-                )
-                logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
+            # Audit trail/logging
+            user_set_wca_model_id.send(
+                WCAModelIdView.__class__,
+                user=request._request.user,
+                org_id=org_id,
+                model_id=model_id,
+            )
 
-                return Response(status=HTTP_204_NO_CONTENT)
+            logger.info(f"Stored Secret '{secret_name}' for org_id '{org_id}'")
+            return Response(status=HTTP_204_NO_CONTENT)
 
-            return validate_and_respond(api_key, model_id, save_and_respond)
-        except WcaSecretManagerError as e:
-            logger.exception(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+        return do_validated_operation(request, get_api_key, get_model_id, on_success, "modelIdSet")
 
 
 class WCAModelIdValidatorView(RetrieveAPIView):
@@ -151,51 +166,22 @@ class WCAModelIdValidatorView(RetrieveAPIView):
     )
     def get(self, request, *args, **kwargs):
         logger.debug("WCA Model Id Validator:: GET handler")
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
 
-        # An OrgId must be present
-        # See https://issues.redhat.com/browse/AAP-16009
-        org_id = request._request.user.organization_id
-        if not is_org_id_valid(org_id):
-            return Response(status=HTTP_400_BAD_REQUEST)
+        def get_api_key(org_id):
+            api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+            return get_secret_value(api_key)
 
-        try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            api_key = get_api_key(secret_manager, org_id)
-            model_id = get_model_id(secret_manager, org_id)
-            return validate_and_respond(
-                api_key,
-                model_id,
-                lambda: Response(status=HTTP_200_OK),
-            )
-        except WcaSecretManagerError as e:
-            logger.exception(e)
-            return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+        def get_model_id(org_id):
+            model_id = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
+            return get_secret_value(model_id)
 
+        def on_success(*_):
+            return Response(status=HTTP_200_OK)
 
-def validate_and_respond(api_key, model_id, on_success):
-    try:
-        validate(
-            api_key,
-            model_id,
+        return do_validated_operation(
+            request, get_api_key, get_model_id, on_success, "modelIdValidate"
         )
-    except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure) as e:
-        logger.exception(e)
-        return Response(status=HTTP_400_BAD_REQUEST)
-    except ValidationError as e:
-        # Since a ValidationError contains the request data that might contain PII,
-        # log the class name only here.
-        logger.error(e.__class__.__name__)
-        return Response(status=HTTP_400_BAD_REQUEST)
-    except WcaKeyNotFound as e:
-        logger.exception(e)
-        raise WcaKeyNotFoundException(cause=e)
-    except WcaBadRequest as e:
-        logger.exception(e)
-        raise WcaBadRequestException(cause=e)
-    except Exception as e:
-        logger.exception(e)
-        raise ServiceUnavailable(cause=e)
-    return on_success()
 
 
 def validate(api_key, model_id):
@@ -214,14 +200,65 @@ def validate(api_key, model_id):
     )
 
 
-def get_api_key(secret_manager, organization_id):
-    api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
-    return get_secret_value(api_key)
+def do_validated_operation(request, api_key_provider, model_id_provider, on_success, event_name):
+    exception = None
+    start_time = time.time()
+    model_id = UNKNOWN_MODEL_ID
+    try:
+        # An OrgId must be present
+        # See https://issues.redhat.com/browse/AAP-16009
+        org_id = request._request.user.organization_id
+        if not is_org_id_valid(org_id):
+            return Response(status=HTTP_400_BAD_REQUEST)
 
+        api_key = api_key_provider(org_id)
+        model_id = model_id_provider(org_id)
 
-def get_model_id(secret_manager, organization_id):
-    model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
-    return get_secret_value(model_id)
+        validate(api_key, model_id)
+
+        return on_success(org_id, model_id)
+
+    except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure) as e:
+        exception = e
+        logger.info(e, exc_info=True)
+        return Response(status=HTTP_400_BAD_REQUEST)
+
+    except ValidationError as e:
+        # Since a ValidationError contains the request data that might contain PII,
+        # log the class name only here.
+        exception = e
+        logger.info(e.__class__.__name__)
+        return Response(status=HTTP_400_BAD_REQUEST)
+
+    except WcaKeyNotFound as e:
+        exception = e
+        logger.info(e, exc_info=True)
+        raise WcaKeyNotFoundException(cause=e)
+
+    except WcaBadRequest as e:
+        exception = e
+        logger.info(e, exc_info=True)
+        raise WcaBadRequestException(cause=e)
+
+    except WcaSecretManagerError as e:
+        exception = e
+        logger.exception(e)
+        return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        exception = e
+        logger.exception(e)
+        raise ServiceUnavailable(cause=e)
+
+    finally:
+        duration = round((time.time() - start_time) * 1000, 2)
+        event = {
+            "duration": duration,
+            "exception": exception is not None,
+            "problem": None if exception is None else exception.__class__.__name__,
+            "modelName": model_id,
+        }
+        send_segment_event(event, event_name, request.user)
 
 
 def get_secret_value(secret):

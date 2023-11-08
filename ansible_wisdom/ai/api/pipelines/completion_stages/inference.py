@@ -110,31 +110,27 @@ class InferenceStage(PipelineElement):
 
         except WcaBadRequest as e:
             exception = e
-            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            logger.info(f"bad request for completion for suggestion {payload.suggestionId}")
             raise WcaBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e
-            logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
+            logger.info(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
             raise WcaInvalidModelIdException(cause=e)
 
         except WcaKeyNotFound as e:
             exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but " f"not found for suggestion {suggestion_id}"
-            )
+            logger.info(f"A WCA Api Key was expected but not found for suggestion {suggestion_id}")
             raise WcaKeyNotFoundException(cause=e)
 
         except WcaModelIdNotFound as e:
             exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but " f"not found for suggestion {suggestion_id}"
-            )
+            logger.info(f"A WCA Model ID was expected but not found for suggestion {suggestion_id}")
             raise WcaModelIdNotFoundException(cause=e)
 
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e
-            logger.exception(
+            logger.info(
                 f"WCA Request/Response SuggestionId correlation failed for "
                 f"suggestion_id: '{suggestion_id}' and x_request_id: '{e.x_request_id}'."
             )
@@ -142,9 +138,7 @@ class InferenceStage(PipelineElement):
 
         except WcaEmptyResponse as e:
             exception = e
-            logger.exception(
-                f"WCA returned an empty response for suggestion {payload.suggestionId}"
-            )
+            logger.info(f"WCA returned an empty response for suggestion {payload.suggestionId}")
             raise WcaEmptyResponseException(cause=e)
 
         except WcaCloudflareRejection as e:
