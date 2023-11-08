@@ -231,7 +231,7 @@ class TestWCAModelIdView(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
                 data='{ "model_id": "secret_model_id" }',
                 content_type='application/json',
             )
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
             _assert_segment_log(self, log, "modelIdSet", "WcaSecretManagerError")
 

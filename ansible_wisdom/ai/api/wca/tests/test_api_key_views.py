@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes, WcaSecretManager
-from ai.api.model_client.exceptions import WcaTokenFailure
+from ai.api.model_client.exceptions import WcaTokenFailure, WcaTokenFailureApiKeyError
 from ai.api.model_client.wca_client import WCAClient
 from ai.api.permissions import (
     AcceptedTermsPermission,
@@ -194,7 +194,9 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
         self.mock_secret_manager.get_secret.assert_called_with('123', Suffixes.API_KEY)
 
         # Set Key
-        self.mock_wca_client.get_token.side_effect = WcaTokenFailure('Something went wrong')
+        self.mock_wca_client.get_token.side_effect = WcaTokenFailureApiKeyError(
+            'Something went wrong'
+        )
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(
                 reverse('wca_api_key'),
@@ -203,7 +205,7 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.mock_secret_manager.save_secret.assert_not_called()
-            _assert_segment_log(self, log, "modelApiKeySet", "WcaTokenFailure")
+            _assert_segment_log(self, log, "modelApiKeySet", "WcaTokenFailureApiKeyError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_key_throws_secret_manager_exception(self, *args):
@@ -222,18 +224,17 @@ class TestWCAApiKeyView(WisdomServiceAPITestCaseBase):
             _assert_segment_log(self, log, "modelApiKeySet", "WcaSecretManagerError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_set_key_throws_wca_client_exception(self, *args):
+    def test_set_key_throws_http_exception(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.get_token.side_effect = WcaTokenFailure()
-
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(
                 reverse('wca_api_key'),
                 data='{ "key": "a-new-key" }',
                 content_type='application/json',
             )
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             _assert_segment_log(self, log, "modelApiKeySet", "WcaTokenFailure")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -315,12 +316,36 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
             _assert_segment_log(self, log, "modelApiKeyValidate", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_validate_key_with_missing_value(self, *args):
+        self.user.organization_id = '123'
+        self.client.force_authenticate(user=self.user)
+        self.mock_secret_manager.get_secret.return_value = None
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.get(reverse('wca_api_key_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            _assert_segment_log(self, log, "modelApiKeyValidate", None)
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_key_with_invalid_value(self, *args):
+        self.user.organization_id = '123'
+        self.client.force_authenticate(user=self.user)
+        self.mock_wca_client.get_token.side_effect = WcaTokenFailureApiKeyError(
+            'Something went wrong'
+        )
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.get(reverse('wca_api_key_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            _assert_segment_log(self, log, "modelApiKeyValidate", "WcaTokenFailureApiKeyError")
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_validate_key_throws_http_exception(self, *args):
         self.user.organization_id = '123'
         self.client.force_authenticate(user=self.user)
         self.mock_wca_client.get_token.side_effect = WcaTokenFailure('Something went wrong')
 
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_api_key_validator'))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             _assert_segment_log(self, log, "modelApiKeyValidate", "WcaTokenFailure")

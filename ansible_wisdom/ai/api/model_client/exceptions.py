@@ -48,6 +48,11 @@ class WcaTokenFailure(WcaException):
 
 
 @dataclass
+class WcaTokenFailureApiKeyError(WcaException):
+    """An attempt to retrieve a WCA Token failed due to a problem with the provided API Key."""
+
+
+@dataclass
 class WcaCloudflareRejection(WcaException):
     """Cloudflare rejected the request."""
 

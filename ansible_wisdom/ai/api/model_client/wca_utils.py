@@ -1,7 +1,12 @@
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from .exceptions import WcaCloudflareRejection, WcaEmptyResponse, WcaInvalidModelId
+from .exceptions import (
+    WcaCloudflareRejection,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaTokenFailureApiKeyError,
+)
 
 T = TypeVar('T')
 
@@ -21,6 +26,34 @@ class Checks(Generic[T]):
     def run_checks(self, context: T):
         for check in self.checks:
             check.check(context)
+
+
+class TokenContext:
+    def __init__(self, result):
+        self.result = result
+
+
+class TokenResponseChecks(Checks[TokenContext]):
+    class ResponseStatusCode400Missing(Check[TokenContext]):
+        def check(self, context: TokenContext):
+            if context.result.status_code == 400:
+                if "Property missing or empty" in context.result.json()["errorMessage"]:
+                    raise WcaTokenFailureApiKeyError()
+
+    class ResponseStatusCode400NotFound(Check[TokenContext]):
+        def check(self, context: TokenContext):
+            if context.result.status_code == 400:
+                if "Provided API key could not be found" in context.result.json()["errorMessage"]:
+                    raise WcaTokenFailureApiKeyError()
+
+    def __init__(self):
+        super().__init__(
+            [
+                # The ordering of these checks is important!
+                TokenResponseChecks.ResponseStatusCode400Missing(),
+                TokenResponseChecks.ResponseStatusCode400NotFound(),
+            ]
+        )
 
 
 class InferenceContext:
