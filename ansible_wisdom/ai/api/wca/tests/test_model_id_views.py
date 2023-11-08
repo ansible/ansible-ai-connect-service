@@ -21,7 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from test_utils import WisdomLogAwareMixin
 
 
-def _assert_segment_log(test, log, event: str, problem: Union[str | None]):
+def _assert_segment_log(test, log, event: str, problem: Union[str, None]):
     segment_events = test.extractSegmentEventsFromLog(log)
     test.assertTrue(len(segment_events) == 1)
     test.assertEqual(segment_events[0]["event"], event)

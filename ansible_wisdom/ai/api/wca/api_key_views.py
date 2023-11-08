@@ -143,9 +143,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         except WcaTokenFailure as e:
             exception = e
             logger.info(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
-                if org_id
-                else "An error occurred trying to retrieve a WCA Token for Organisation.",
+                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
                 exc_info=True,
             )
             return Response(status=HTTP_400_BAD_REQUEST)
@@ -213,9 +211,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         except WcaTokenFailure as e:
             exception = e
             logger.info(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'."
-                if org_id
-                else "An error occurred trying to retrieve a WCA Token for Organisation.",
+                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
                 exc_info=True,
             )
             return Response(status=HTTP_400_BAD_REQUEST)
