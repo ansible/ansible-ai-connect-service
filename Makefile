@@ -26,6 +26,7 @@ ifeq ($(ENVIRONMENT),development)
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
 	export DJANGO_SUPERUSER_PASSWORD := somesecret
+	export MOCK_WCA_SECRETS_MANAGER=True
 
 	ifeq ($(wildcard $(PWD)/.env/.),)
 		ifneq ($(wildcard $(PWD)/.env),)
@@ -117,6 +118,7 @@ create-application: create-superuser
 
 .PHONY: test
 test:
+	export MOCK_WCA_SECRETS_MANAGER=False && \
 	python ansible_wisdom/manage.py test
 
 .PHONY: code-coverage
