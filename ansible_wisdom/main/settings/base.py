@@ -416,6 +416,7 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
+MOCK_WCA_SECRETS_MANAGER = os.environ.get("MOCK_WCA_SECRETS_MANAGER", "False") == "True"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")

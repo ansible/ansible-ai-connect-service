@@ -75,7 +75,16 @@ key:
 export SECRET_KEY=somesecretvalue
 ```
 
-Then, set environment variables for access to AWS:
+For most development usages, you can skip the call to AWS Secrets Manager
+and always use the `ANSIBLE_WCA_FREE_API_KEY`
+and `ANSIBLE_WCA_FREE_MODEL_ID` values.
+
+```bash
+export MOCK_WCA_SECRETS_MANAGER=True
+```
+
+For deployment and RH SSO integration test/development, set
+environment variables for access to AWS:
 
 ```bash
 export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
@@ -520,10 +529,14 @@ Note that this `.env` file assumes that the Django
 service is executed in the `ansible_wisdom` subdirectory
 as `ARI_KB_PATH` is defined as `../ari/kb`.
 
-If you want to run unit tests from command line,
-export those variables as environment variables.
-If variables are defined in `.env` file,
-it can be done with following commands:
+It is recommended to use `make` to run unit tests since it helps to configure default values:
+
+```bash
+make test
+```
+
+Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.
+It can be done with following commands:
 
 ```bash
 set -o allexport
@@ -531,19 +544,11 @@ source .env
 set +o allexport
 ```
 
-After environment variables are set, you can issue following commands
+After that, it is possible to run tests using standard django test mechanism:
 
 ```bash
 cd ansible_wisdom
 python3 manage.py test
-```
-
-to run unit tests.
-
-Alternatively you can run the following command to run tests:
-
-```bash
-make test
 ```
 
 #### Measuring Code Coverage from Command Line

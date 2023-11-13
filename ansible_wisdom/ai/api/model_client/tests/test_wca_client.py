@@ -124,6 +124,13 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         api_key = model_client.get_api_key(False, None)
         self.assertEqual(api_key, 'abcdef')
 
+    @override_settings(ANSIBLE_WCA_FREE_API_KEY='free')
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=True)
+    def test_mock_wca_get_api_key(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, 'non_empty')
+        self.assertEqual(api_key, 'free')
+
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_with_seat_without_org_id(self):
         model_client = WCAClient(inference_url='http://example.com/')
@@ -146,6 +153,13 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         model_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaSecretManagerError):
             model_client.get_api_key(True, '123')
+
+    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
+    @override_settings(MOCK_WCA_SECRETS_MANAGER=True)
+    def test_mock_wca_get_free_model(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, 'non-empty', None)
+        self.assertEqual(model_id, 'free')
 
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
     def test_seatless_get_free_model(self):
