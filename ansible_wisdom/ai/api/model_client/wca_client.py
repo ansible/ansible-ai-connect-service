@@ -9,6 +9,8 @@ from ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
     InferenceContext,
     InferenceResponseChecks,
+    TokenContext,
+    TokenResponseChecks,
 )
 from django.apps import apps
 from django.conf import settings
@@ -205,6 +207,8 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
+            context = TokenContext(response)
+            TokenResponseChecks().run_checks(context)
             response.raise_for_status()
 
         except HTTPError as e:

@@ -3,7 +3,7 @@ import time
 
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.model_client.exceptions import WcaTokenFailure
+from ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -140,7 +140,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             logger.info(e, exc_info=True)
             return Response(status=HTTP_400_BAD_REQUEST)
 
-        except WcaTokenFailure as e:
+        except WcaTokenFailureApiKeyError as e:
             exception = e
             logger.info(
                 f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
@@ -148,10 +148,10 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             )
             return Response(status=HTTP_400_BAD_REQUEST)
 
-        except WcaSecretManagerError as e:
+        except Exception as e:
             exception = e
             logger.exception(e)
-            raise ServiceUnavailable
+            raise ServiceUnavailable(cause=e)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
@@ -199,22 +199,24 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             model_mesh_client = apps.get_app_config("ai").wca_client
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
-            token = model_mesh_client.get_token(api_key['SecretString'])
+            if api_key is None:
+                return Response(status=HTTP_400_BAD_REQUEST)
+            token = model_mesh_client.get_token(api_key)
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-        except WcaSecretManagerError as e:
-            exception = e
-            logger.exception(e)
-            raise ServiceUnavailable
-
-        except WcaTokenFailure as e:
+        except WcaTokenFailureApiKeyError as e:
             exception = e
             logger.info(
                 f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
                 exc_info=True,
             )
             return Response(status=HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            exception = e
+            logger.exception(e)
+            raise ServiceUnavailable(cause=e)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

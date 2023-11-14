@@ -240,11 +240,6 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
         logger.info(e, exc_info=True)
         raise WcaBadRequestException(cause=e)
 
-    except WcaSecretManagerError as e:
-        exception = e
-        logger.exception(e)
-        return Response(status=HTTP_500_INTERNAL_SERVER_ERROR)
-
     except Exception as e:
         exception = e
         logger.exception(e)
