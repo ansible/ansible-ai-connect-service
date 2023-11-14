@@ -1,11 +1,14 @@
 name: Create Ops PR
 on:
-  workflow_run:
-    workflows: [ "Code Coverage" ]
+  #workflow_run:
+  #  workflows: [ "Code Coverage" ]
+   # branches:
+   #   - '!main'
+   # types:
+   #   - completed
+  pull_request:
     branches:
-      - '!main'
-    types:
-      - completed
+      - main
 
 jobs:
   build:
