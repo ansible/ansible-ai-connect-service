@@ -16,6 +16,6 @@ Jira Issue: <https://issues.redhat.com/browse/AAP-NNNN>
 <!-- Describe the scenarios you've already manually verified, if applicable. -->
 
 ## Production deployment
-<!-- Check the appropriate box. Document any pre-reqs, co-reqs, secrets, configmaps, etc that need to be considered or prepared ahead of a deployment to production. -->
+<!-- Check the appropriate box. Document any pre-reqs, co-reqs, secrets, configmaps, etc that need to be considered or prepared ahead of a deployment to production. Include links to any related PRs, e.g. in ansible-wisdom-ops. -->
 - [ ] This code change is ready for production on its own
 - [ ] This code change requires the following considerations before going to production:
