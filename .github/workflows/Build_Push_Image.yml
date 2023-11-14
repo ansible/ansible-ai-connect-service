@@ -30,7 +30,8 @@ jobs:
         elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "IMAGE_TAGS=${{ github.ref_name }}-$( git rev-parse --short HEAD ).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
         else
-          echo "IMAGE_TAGS=latest $(cat ./.version).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+          echo "IMAGE_VERSION=latest $(cat ./.version).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAGS=latest ${IMAGE_VERSION}" >> $GITHUB_OUTPUT
         fi
         echo "sha-short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo "sha-long=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
