@@ -2,8 +2,8 @@ name: Create Ops PR
 on:
   workflow_run:
     workflows:
-      #- Code Coverage
-      - Build and Push Image
+      - Code Coverage
+      #- Build and Push Image
     branches-ignore:
       - main
     types:
