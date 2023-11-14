@@ -12,18 +12,18 @@ on:
 
 jobs:
   build:
-    name: Build and push image
+    name: Create Ops PR
     runs-on: ubuntu-20.04
 
     permissions:
       contents: write
 
     steps:
-      - name: Checkout tools repo
+      - name: Checkout Ops repo
         uses: actions/checkout@v4
         with:
           repository: ansible/ansible-wisdom-ops
-          path: main
+          ref: main
 
       - name: Create commits
         run: |
