@@ -80,8 +80,7 @@ class InferenceStage(PipelineElement):
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
-                    "prompt": payload.prompt,
-                    "context": payload.context,
+                    "prompt": payload.context + payload.prompt + "\n",
                     "userId": str(payload.userId) if payload.userId else None,
                     "rh_user_has_seat": request._request.user.rh_user_has_seat,
                     "organization_id": request._request.user.org_id,
