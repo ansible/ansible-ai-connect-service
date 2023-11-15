@@ -28,6 +28,10 @@ opensearch-py==2.1.1
 pillow==10.0.1
 protobuf==4.22.1
 psycopg[binary]==3.1.8
+# pin pyarrow on 14.0.1 to address GHSA-5wvp-7f3h-6wmm
+# remove this once datasets is updated to properly pull
+# a version of pyarrow > 14.0.1.
+pyarrow==14.0.1
 pydantic==1.10.2
 pytz
 pyOpenSSL==23.2.0

@@ -288,8 +288,10 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==12.0.0
-    # via datasets
+pyarrow==14.0.1
+    # via
+    #   -r requirements.in
+    #   datasets
 pyasn1==0.5.0
     # via
     #   python-jose
