@@ -201,7 +201,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
             if api_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
-            token = model_mesh_client.get_token(api_key)
+            token = model_mesh_client.get_token(api_key['SecretString'])
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 

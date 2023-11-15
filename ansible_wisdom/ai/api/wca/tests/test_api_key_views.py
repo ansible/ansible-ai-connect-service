@@ -308,7 +308,7 @@ class TestWCAApiKeyValidatorView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         self.mock_wca_client.get_token.return_value = "token"
-        self.mock_wca_client.get_api_key.return_value = "wca_key"
+        self.mock_secret_manager.get_secret.return_value = {"SecretString": "wca_key"}
 
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_api_key_validator'))
