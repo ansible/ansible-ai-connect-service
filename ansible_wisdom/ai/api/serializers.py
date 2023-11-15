@@ -149,7 +149,7 @@ class CompletionResponseSerializer(serializers.Serializer):
 
 
 class InlineSuggestionFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (('0', 'ACCEPT'), ('1', 'IGNORE'))
+    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
 
     class Meta:
         fields = [
