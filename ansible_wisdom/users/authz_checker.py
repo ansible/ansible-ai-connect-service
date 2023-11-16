@@ -6,6 +6,7 @@ from functools import cache
 from http import HTTPStatus
 
 import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +245,7 @@ class AMSCheck(BaseCheck):
             return False
 
 
-class MockAlwaysTrueCheck(BaseCheck):
+class MockerCheck(BaseCheck):
     def __init__(self, *kargs):
         # Zero parameter constructor
         pass
@@ -253,30 +254,12 @@ class MockAlwaysTrueCheck(BaseCheck):
         # Always passes. No exception raised.
         pass
 
-    def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
-        return True
+    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+        seated_user = settings.AUTHZ_MOCKER_USERS_WITH_SEAT.split(",")
+        if not self.rh_org_has_subscription(organization_id):
+            return False
+        return username in seated_user
 
-    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
-        return True
-
-    def rh_org_has_subscription(self, _organization_id: str) -> bool:
-        return True
-
-
-class MockAlwaysFalseCheck(BaseCheck):
-    def __init__(self, *kargs):
-        # Zero parameter constructor
-        pass
-
-    def self_test(self):
-        # Always passes. No exception raised.
-        pass
-
-    def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
-        return False
-
-    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
-        return False
-
-    def rh_org_has_subscription(self, _organization_id: str) -> bool:
-        return False
+    def rh_org_has_subscription(self, organization_id: int) -> bool:
+        orgs_with_subscription = settings.AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION.split(",")
+        return str(organization_id) in orgs_with_subscription

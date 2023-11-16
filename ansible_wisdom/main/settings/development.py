@@ -60,3 +60,9 @@ if DEBUG:
         MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
 
 CSP_REPORT_ONLY = True
+AUTHZ_BACKEND_TYPE = os.getenv("AUTHZ_BACKEND_TYPE") or "mocker"
+AUTHZ_MOCKER_USERS_WITH_SEAT = os.getenv("AUTHZ_MOCKER_USERS_WITH_SEAT") or ""
+AUTHZ_MOCKER_RH_ORG_ADMINS = os.getenv("AUTHZ_MOCKER_RH_ORG_ADMINS") or ""
+# You can get your account number on this page
+# https://www.redhat.com/wapps/ugc/protected/account.html
+AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION = os.getenv("AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION") or ""

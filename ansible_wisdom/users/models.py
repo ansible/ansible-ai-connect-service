@@ -18,6 +18,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = models.IntegerField(default=None, null=True)
     rh_user_is_org_admin = models.BooleanField(default=False)
+    external_username = models.CharField(default="", null=False)
 
     @property
     def org_id(self):
@@ -63,17 +64,3 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return False
         rh_org_id = self.organization_id
         return seat_checker.rh_org_has_subscription(rh_org_id)
-
-    @cached_property
-    def external_username(self) -> str:
-        return self._extra_data().get('login', '')
-
-    def _extra_data(self) -> dict:
-        try:
-            extra_data = self.social_auth.values()[0].get('extra_data') or {}
-            if not isinstance(extra_data, dict):
-                logger.error("Unexpected extra_data=`%s', user=`%s'", extra_data, self.username)
-                raise ValueError
-        except (KeyError, AttributeError, IndexError, ValueError):
-            extra_data = {}
-        return extra_data
