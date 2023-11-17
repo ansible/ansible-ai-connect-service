@@ -176,7 +176,7 @@ class AMSCheck(BaseCheck):
             return False
         data = r.json()
         try:
-            return len(data["items"]) == 1
+            return len(data["items"]) > 0
         except (KeyError, ValueError):
             logger.error("Unexpected subscription answer from AMS")
             return False

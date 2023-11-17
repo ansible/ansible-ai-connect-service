@@ -173,6 +173,28 @@ class TestToken(WisdomServiceLogAwareTestCase):
             timeout=0.8,
         )
 
+    def test_ams_check_multiple_seats(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "qwe"}, {"id": "rty"}]},
+            {"items": [{"id": "asd"}, {"id": "fgh"}]},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+        self.assertTrue(checker.check("my_id", "my_name", "123"))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            params={
+                'search': "plan.id = 'AnsibleWisdom' AND status = 'Active' "
+                "AND creator.username = 'my_name' AND organization_id='qwe'"
+            },
+            timeout=0.8,
+        )
+
     def test_ams_check_with_500_status_code(self):
         m_r = Mock()
         m_r.status_code = 500
