@@ -1,4 +1,4 @@
-name: pip-audit
+name: wisdom-service - pip-audit
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
     #   - v*
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   pull_request:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
 permissions:
   contents: read
 
@@ -30,4 +34,6 @@ jobs:
           ignore-vulns: |
             GHSA-282v-666c-3fvg
             GHSA-jh3w-4vvf-mjgr
+            GHSA-ww3m-ffrm-qvqv
             PYSEC-2023-100
+            GHSA-mq26-g339-26xf

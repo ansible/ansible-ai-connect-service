@@ -1,4 +1,4 @@
-name: pre-commit
+name: wisdom-service - pre-commit
 
 on:
   push:
@@ -6,9 +6,13 @@ on:
     #   - v*
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
   pull_request:
     branches:
       - main
+    paths:
+      - ansible_wisdom/**
 permissions:
   contents: read
 

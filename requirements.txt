@@ -15,9 +15,16 @@ ansible==8.0.0
     # via ansible-risk-insight
 ansible-anonymizer==1.4.2
     # via -r requirements.in
+ansible-compat==4.1.10
+    # via ansible-lint
 ansible-core==2.15.0
-    # via ansible
-ansible-risk-insight==0.1.11
+    # via
+    #   ansible
+    #   ansible-compat
+    #   ansible-lint
+ansible-lint==6.20.3
+    # via -r requirements.in
+ansible-risk-insight==0.2.2
     # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
@@ -35,12 +42,16 @@ backcall==0.2.0
     # via ipython
 backoff==2.2.1
     # via segment-analytics-python
+black==23.7.0
+    # via ansible-lint
 boto3==1.26.84
     # via -r requirements.in
 botocore==1.29.143
     # via
     #   boto3
     #   s3transfer
+bracex==2.3.post1
+    # via wcmatch
 certifi==2023.7.22
     # via
     #   launchdarkly-server-sdk
@@ -55,11 +66,12 @@ charset-normalizer==2.1.1
     #   aiohttp
     #   requests
 click==8.1.3
-    # via nltk
-cmake==3.26.4
-    # via triton
-cryptography==41.0.3
     # via
+    #   black
+    #   nltk
+cryptography==41.0.4
+    # via
+    #   -r requirements.in
     #   ansible-core
     #   jwcrypto
     #   pyopenssl
@@ -123,11 +135,11 @@ expiringdict==1.2.2
     # via launchdarkly-server-sdk
 filelock==3.12.0
     # via
+    #   ansible-lint
     #   ansible-risk-insight
     #   huggingface-hub
     #   torch
     #   transformers
-    #   triton
 frozenlist==1.3.3
     # via
     #   aiohttp
@@ -173,21 +185,26 @@ joblib==1.2.0
 jsonpickle==3.0.1
     # via ansible-risk-insight
 jsonschema==4.17.3
-    # via drf-spectacular
+    # via
+    #   ansible-compat
+    #   ansible-lint
+    #   drf-spectacular
 jwcrypto==1.5.0
     # via django-oauth-toolkit
 launchdarkly-server-sdk==8.1.1
     # via -r requirements.in
 levenshtein==0.21.1
     # via ansible-risk-insight
-lit==16.0.5.post0
-    # via triton
+markdown-it-py==3.0.0
+    # via rich
 markuppy==1.14
     # via tablib
 markupsafe==2.1.2
     # via jinja2
 matplotlib-inline==0.1.6
     # via ipython
+mdurl==0.1.2
+    # via markdown-it-py
 monotonic==1.6
     # via segment-analytics-python
 mpmath==1.3.0
@@ -198,6 +215,8 @@ multidict==6.0.4
     #   yarl
 multiprocess==0.70.14
     # via datasets
+mypy-extensions==1.0.0
+    # via black
 networkx==3.1
     # via torch
 nltk==3.8.1
@@ -212,31 +231,6 @@ numpy==1.24.3
     #   sentence-transformers
     #   torchvision
     #   transformers
-nvidia-cublas-cu11==11.10.3.66
-    # via
-    #   nvidia-cudnn-cu11
-    #   nvidia-cusolver-cu11
-    #   torch
-nvidia-cuda-cupti-cu11==11.7.101
-    # via torch
-nvidia-cuda-nvrtc-cu11==11.7.99
-    # via torch
-nvidia-cuda-runtime-cu11==11.7.99
-    # via torch
-nvidia-cudnn-cu11==8.5.0.96
-    # via torch
-nvidia-cufft-cu11==10.9.0.58
-    # via torch
-nvidia-curand-cu11==10.2.10.91
-    # via torch
-nvidia-cusolver-cu11==11.4.0.1
-    # via torch
-nvidia-cusparse-cu11==11.7.4.91
-    # via torch
-nvidia-nccl-cu11==2.14.3
-    # via torch
-nvidia-nvtx-cu11==11.7.91
-    # via torch
 oauthlib==3.2.2
     # via
     #   django-oauth-toolkit
@@ -250,7 +244,10 @@ opensearch-py==2.1.1
     # via -r requirements.in
 packaging==23.1
     # via
+    #   ansible-compat
     #   ansible-core
+    #   ansible-lint
+    #   black
     #   datasets
     #   django-allow-cidr
     #   huggingface-hub
@@ -259,12 +256,21 @@ pandas==2.0.2
     # via datasets
 parso==0.8.3
     # via jedi
+pathspec==0.11.2
+    # via
+    #   ansible-lint
+    #   black
+    #   yamllint
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.5.0
-    # via torchvision
+pillow==10.0.1
+    # via
+    #   -r requirements.in
+    #   torchvision
+platformdirs==3.10.0
+    # via black
 prometheus-client==0.17.0
     # via django-prometheus
 prompt-toolkit==3.0.38
@@ -292,7 +298,9 @@ pydantic==1.10.2
 pygit2==1.12.1
     # via ansible-risk-insight
 pygments==2.15.1
-    # via ipython
+    # via
+    #   ipython
+    #   rich
 pyjwt==2.7.0
     # via social-auth-core
 pyopenssl==23.2.0
@@ -319,13 +327,16 @@ pytz==2023.3
 pyyaml==6.0
     # via
     #   -r requirements.in
+    #   ansible-compat
     #   ansible-core
+    #   ansible-lint
     #   ansible-risk-insight
     #   datasets
     #   drf-spectacular
     #   huggingface-hub
     #   tablib
     #   transformers
+    #   yamllint
 rapidfuzz==3.2.0
     # via levenshtein
 regex==2023.5.5
@@ -335,6 +346,7 @@ regex==2023.5.5
 requests==2.31.0
     # via
     #   -r requirements.in
+    #   ansible-lint
     #   ansible-risk-insight
     #   datasets
     #   django-oauth-toolkit
@@ -354,14 +366,20 @@ resolvelib==1.0.1
     # via ansible-core
 responses==0.18.0
     # via datasets
+rich==13.5.2
+    # via ansible-lint
 rsa==4.9
     # via python-jose
 ruamel-yaml==0.17.31
-    # via ansible-risk-insight
+    # via
+    #   ansible-lint
+    #   ansible-risk-insight
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.1
     # via boto3
+safetensors==0.3.3
+    # via transformers
 scikit-learn==1.2.2
     # via sentence-transformers
 scipy==1.11.1
@@ -395,6 +413,10 @@ sqlparse==0.4.4
     # via django
 stack-data==0.6.2
     # via ipython
+subprocess-tee==0.4.1
+    # via
+    #   ansible-compat
+    #   ansible-lint
 sympy==1.12
     # via torch
 tablib[html,ods,xls,xlsx,yaml]==3.4.0
@@ -405,13 +427,17 @@ threadpoolctl==3.1.0
     # via scikit-learn
 tokenizers==0.13.3
     # via transformers
-torch==2.0.1
+tomli==2.0.1
+    # via black
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
+    #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-    #   triton
-torchvision==0.15.2
-    # via sentence-transformers
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
+    # via
+    #   -r requirements.in
+    #   sentence-transformers
 tqdm==4.64.1
     # via
     #   -r requirements.in
@@ -424,13 +450,15 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-transformers==4.29.2
-    # via sentence-transformers
-triton==2.0.0
-    # via torch
+transformers==4.30.0
+    # via
+    #   -r requirements.in
+    #   sentence-transformers
 typing-extensions==4.6.2
     # via
+    #   ansible-compat
     #   asgiref
+    #   black
     #   huggingface-hub
     #   psycopg
     #   pydantic
@@ -439,8 +467,9 @@ tzdata==2023.3
     # via pandas
 uritemplate==4.1.1
     # via drf-spectacular
-urllib3==1.26.16
+urllib3==1.26.18
     # via
+    #   -r requirements.in
     #   botocore
     #   launchdarkly-server-sdk
     #   opensearch-py
@@ -450,16 +479,10 @@ uwsgi==2.0.22
     # via -r requirements.in
 uwsgi-readiness-check==0.2.0
     # via -r requirements.in
+wcmatch==8.5
+    # via ansible-lint
 wcwidth==0.2.6
     # via prompt-toolkit
-wheel==0.40.0
-    # via
-    #   nvidia-cublas-cu11
-    #   nvidia-cuda-cupti-cu11
-    #   nvidia-cuda-runtime-cu11
-    #   nvidia-curand-cu11
-    #   nvidia-cusparse-cu11
-    #   nvidia-nvtx-cu11
 wrapt==1.15.0
     # via deprecated
 xlrd==2.0.1
@@ -468,8 +491,7 @@ xlwt==1.3.0
     # via tablib
 xxhash==3.2.0
     # via datasets
+yamllint==1.32.0
+    # via ansible-lint
 yarl==1.9.2
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools

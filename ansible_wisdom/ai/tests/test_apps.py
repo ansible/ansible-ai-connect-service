@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from ai.api.model_client.grpc_client import GrpcClient
 from ai.api.model_client.http_client import HttpClient
 from ai.api.model_client.mock_client import MockClient
@@ -46,20 +44,14 @@ class TestAiApp(APITestCase):
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='mock')
-    @patch("torch.cuda.is_available")
-    @patch("ai.apps.logger.info")
-    def test_gpu_available(self, logger, is_available):
-        is_available.return_value = True
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_enable_ansible_lint(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        logger.assert_called_once_with("GPU is available")
+        self.assertIsNotNone(app_config.get_ansible_lint_caller())
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='mock')
-    @patch("torch.cuda.is_available")
-    @patch("ai.apps.logger.error")
-    def test_gpu_unavailable(self, logger, is_available):
-        is_available.return_value = False
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    def test_disable_ansible_lint(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        logger.assert_called_once_with("GPU is not available")
+        self.assertIsNone(app_config.get_ansible_lint_caller())

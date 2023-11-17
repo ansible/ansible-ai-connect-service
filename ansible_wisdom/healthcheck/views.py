@@ -1,5 +1,5 @@
 import json
-import re
+import logging
 from datetime import datetime
 
 from ai.api.views import feature_flags
@@ -14,11 +14,13 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 from health_check.views import MainView
+from healthcheck.backends import BaseLightspeedHealthCheck
 from rest_framework import permissions
 from rest_framework.views import APIView
 
 from .version_info import VersionInfo
 
+logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 30
 
 
@@ -30,6 +32,10 @@ class HealthCheckCustomView(MainView):
     _plugin_name_map = {
         'DatabaseBackend': 'db',
         'ModelServerHealthCheck': 'model-server',
+        'AWSSecretManagerHealthCheck': 'secret-manager',
+        'WCAHealthCheck': 'wca',
+        'AuthorizationHealthCheck': 'authorization',
+        'AttributionCheck': 'attribution',
     }
 
     _version_info = VersionInfo()
@@ -41,6 +47,7 @@ class HealthCheckCustomView(MainView):
 
     def render_to_response_json(self, plugins, status, user):  # customize JSON output
         model_name = settings.ANSIBLE_AI_MODEL_NAME
+        deployed_region = settings.DEPLOYED_REGION
         if settings.LAUNCHDARKLY_SDK_KEY:
             feature_flags = get_feature_flags()
             model_tuple = feature_flags.get("model_name", user, f".:.:{model_name}:.")
@@ -54,15 +61,20 @@ class HealthCheckCustomView(MainView):
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
             'model_name': model_name,
+            'deployed_region': deployed_region,
         }
         dependencies = []
         for p in plugins:
             plugins_id = self._plugin_name_map.get(p.identifier(), 'unknown')
-            plugin_status = str(p.pretty_status()) if p.errors else 'ok'
+            if isinstance(p, BaseLightspeedHealthCheck):
+                plugin_status = p.pretty_status()
+            else:
+                plugin_status = str(p.pretty_status()) if p.errors else 'ok'
             time_taken = round(p.time_taken * 1000, 3)
-            dependencies.append(
-                {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}
-            )
+            plugin_data = {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}
+            if not p.status:
+                logger.error(f"HEALTH CHECK ERROR: {json.dumps(plugin_data)}")
+            dependencies.append(plugin_data)
 
         data['dependencies'] = dependencies
 
@@ -94,6 +106,7 @@ class WisdomServiceHealthView(APIView):
                     "version": "latest 0.1.202303131417",
                     "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
                     "model_name": "ansible-wisdom-v09",
+                    "deployed_region": "dev",
                     "dependencies": [
                         {"name": "db", "status": "ok", "time_taken": 233.538},
                         {"name": "model-server", "status": "ok", "time_taken": 0.001},

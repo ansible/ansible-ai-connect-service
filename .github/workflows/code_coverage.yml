@@ -23,6 +23,7 @@ jobs:
       ARI_KB_PATH: ../ari/kb/
       DJANGO_SETTINGS_MODULE: main.settings.development
       ENABLE_ARI_POSTPROCESS: True
+      ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
       SECRET_KEY: somesecret
 
@@ -43,6 +44,14 @@ jobs:
       with:
         fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+    ##############
+    # Python tests
+    ##############
+    - name: Setup Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
@@ -51,7 +60,7 @@ jobs:
 
     - name: Retrieve ari knowledge base from s3
       run: |
-        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.11
+        KB_ARI_PATH=s3://rhaw-knowledgebase-868937679750-us-east-1/ari/v0.0.12-all-slim
         aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
         aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
       env:
@@ -81,8 +90,40 @@ jobs:
       run: |
         sed -i 's/\/home\/runner\/work\/ansible-wisdom-service\/ansible-wisdom-service\//\/github\/workspace\//g' ansible_wisdom/coverage.xml
 
+    ##################
+    # TypeScript tests
+    ##################
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: ./ansible_wisdom_console_react/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+      working-directory: ./ansible_wisdom_console_react
+
+    - name: Run tests
+      run: npm run test
+      working-directory: ./ansible_wisdom_console_react
+
+    #####################
+    # SonarCloud coverage
+    #####################
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    ####################
+    # OpenAPI file check
+    ####################
+    - name: Ensure the OpenAPI file is up to date
+      run: |
+        make run-server &
+        sleep 10
+        make create-cachetable
+        make update-openapi-schema
+        git diff --exit-code -- tools/openapi-schema/ansible-wisdom-service.yaml

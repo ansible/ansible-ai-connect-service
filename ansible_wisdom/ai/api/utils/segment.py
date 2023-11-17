@@ -8,6 +8,8 @@ from healthcheck.version_info import VersionInfo
 from segment import analytics
 from users.models import User
 
+from .seated_users_allow_list import ALLOW_LIST
+
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
@@ -20,6 +22,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
     timestamp = timezone.now().isoformat()
 
     if 'modelName' not in event:
+        # we should probably fail this, it shouldn't happen, right?
         event['modelName'] = settings.ANSIBLE_AI_MODEL_NAME
 
     if 'imageTags' not in event:
@@ -31,10 +34,26 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
     if 'groups' not in event:
         event['groups'] = list(user.groups.values_list('name', flat=True)) if user else []
 
+    if 'rh_user_has_seat' not in event:
+        event['rh_user_has_seat'] = getattr(user, 'rh_user_has_seat', False)
+
+    if 'rh_user_org_id' not in event:
+        event['rh_user_org_id'] = getattr(user, 'org_id', None)
+
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
     try:
+        if event['rh_user_has_seat']:
+            allow_list = ALLOW_LIST.get(event_name)
+
+            if allow_list:
+                event = redact_seated_users_data(event, allow_list)
+            else:
+                # If event should be tracked, please update ALLOW_LIST appropriately
+                logger.error(f'It is not allowed to track {event_name} events for seated users')
+                return
+
         analytics.track(
             str(user.uuid) if (user and getattr(user, 'uuid', None)) else 'unknown',
             event_name,
@@ -65,3 +84,33 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: Union[User,
                 "timestamp": timestamp,
             }
             send_segment_event(event, "segmentError", user)
+
+
+def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Copy a dictionary to another dictionary using a nested list of allowed keys.
+
+    Args:
+    - event (dict): The source dictionary to copy from.
+    - allow_list (dict): The nested dictionary containing allowed keys.
+
+    Returns:
+    - dict: A new dictionary containing only the allowed nested keys from the source dictionary.
+    """
+    redacted_event = {}
+    for key, sub_whitelist in (
+        allow_list.items() if isinstance(allow_list, dict) else allow_list[0].items()
+    ):
+        if key in event:
+            if isinstance(sub_whitelist, dict):
+                if isinstance(event[key], dict):
+                    redacted_event[key] = redact_seated_users_data(event[key], sub_whitelist)
+                else:
+                    redacted_event[key] = event[key]
+            elif isinstance(sub_whitelist, list):
+                redacted_event[key] = [
+                    redact_seated_users_data(item, sub_whitelist) for item in event[key]
+                ]
+            else:
+                redacted_event[key] = event[key]
+    return redacted_event

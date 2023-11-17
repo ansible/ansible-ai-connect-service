@@ -134,3 +134,22 @@ code-coverage:
 	coverage run --rcfile=../setup.cfg manage.py test && \
 	coverage html && \
 	google-chrome htmlcov/index.html
+
+# ============================
+# Admin Portal related commands
+# ============================
+
+# Compile and bundle Admin Portal into Django application
+.PHONY: admin-portal-bundle
+admin-portal-bundle:
+	npm --prefix ./ansible_wisdom_console_react run build
+
+# Run tests for Admin Portal
+.PHONY: admin-portal-test
+admin-portal-test:
+	npm --prefix ./ansible_wisdom_console_react run test
+
+# Run lint checks for Admin Portal
+.PHONY: admin-portal-lint
+admin-portal-lint:
+	npm --prefix ./ansible_wisdom_console_react run lint

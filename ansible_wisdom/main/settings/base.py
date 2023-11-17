@@ -22,8 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
 # WCA
-ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
-ANSIBLE_AI_MODEL_WCA_INFERENCE_URL = os.getenv("ANSIBLE_AI_MODEL_WCA_INFERENCE_URL")
+ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
+ANSIBLE_WCA_FREE_API_KEY = os.getenv("ANSIBLE_WCA_FREE_API_KEY")
+ANSIBLE_WCA_FREE_MODEL_ID = os.getenv("ANSIBLE_WCA_FREE_MODEL_ID")
+ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
+
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
@@ -79,13 +82,11 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
-# To be updated with URL to pilot test plan
-PILOT_DOCS_URL = os.environ.get(
-    'PILOT_DOCS_URL', 'https://drive.google.com/drive/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg'
-)
-PILOT_CONTACT = os.environ.get('PILOT_CONTACT', '#ansible-wisdom-pilot on Internal Red Hat Slack')
-
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
+DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
+COMMERCIAL_DOCUMENTATION_URL = os.getenv(
+    'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
+)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
@@ -94,18 +95,21 @@ if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
     SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
     SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID', 7188893)
     SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
+    SOCIAL_AUTH_GITHUB_TEAM_EXTRA_DATA = ['login']
 else:
     USE_GITHUB_TEAM = False
     SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
     SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
     SOCIAL_AUTH_GITHUB_SCOPE = [""]
+    SOCIAL_AUTH_GITHUB_EXTRA_DATA = ['login']
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
-SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization']
+SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization', 'roles']
+SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
 AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
@@ -126,6 +130,7 @@ SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
 ]
 SOCIAL_AUTH_PIPELINE = (
+    'users.pipeline.block_auth_users',
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
@@ -137,6 +142,7 @@ SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
+    'users.pipeline.load_extra_data',
     'users.pipeline.terms_of_service',
 )
 
@@ -158,6 +164,7 @@ OAUTH2_PROVIDER = {
         'vscodium',
         'vscode-insiders',
         'code-oss',
+        'checode',
     ],
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
     'REFRESH_TOKEN_EXPIRE_SECONDS': 1_209_600,  # = 2 weeks
@@ -170,6 +177,8 @@ OAUTH2_PROVIDER = {
 
 COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
+
+MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -186,6 +195,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
 
 ROOT_URLCONF = "main.urls"
@@ -315,7 +325,10 @@ MOCK_MODEL_RESPONSE_BODY = os.environ.get(
         '  update_cache: true\\n  state: present\\n"]}'
     ),
 )
-MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_MSEC', 3000))
+
+MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
+    os.environ.get('MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000)
+)
 MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
     os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
 )
@@ -359,6 +372,12 @@ if 'ARI_RULES' in os.environ:
     ARI_RULES = os.environ['ARI_RULES'].split(',')
 ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
 
+ENABLE_ANSIBLE_LINT_POSTPROCESS = (
+    os.getenv('ENABLE_ANSIBLE_LINT_POSTPROCESS', 'False').lower() == 'true'
+)
+
+ANSIBLE_LINT_TRANSFORM_RULES = ["all"]
+
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
 
 ANSIBLE_AI_SEARCH = {
@@ -399,3 +418,6 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_INCLUDE_NONCE_IN = ['script-src-elem']
+
+# Region for where the service is deployed. Used by the Health Check endpoint.
+DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')

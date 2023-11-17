@@ -12,31 +12,29 @@
                     <div class="pf-l-bullseye pf-u-p-xl" style="padding: 20px">
                         <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="Ansible Lightspeed logo"/>
                     </div>
-                    <h1 class="pf-c-title pf-m-lg">Log in to Ansible Lightspeed with Watson Code Assistant</h1>
+                    <h1 class="pf-c-title pf-m-lg">Log in to Ansible Lightspeed with IBM watsonx Code Assistant</h1>
                     {% if not user.is_authenticated %}
-                    <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using one of the buttons below.</div>
-                    {% endif %}
+                    <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
 
                     <div style="margin-top: 25px">
-                    {% if use_redhat_sso %}
                     <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat</a>
                     </div>
-                    <div style="margin-top: 10px">
                     {% endif %}
-                    <a class="pf-c-button {% if use_redhat_sso %}pf-m-secondary{% else %}pf-m-primary{% endif %}"
-                    {% if use_github_team %}
-                        href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in
-                        with GitHub</a>
-                    {% else %}
-                        href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in
-                        with GitHub</a>
-                    {% endif %}
-                    </div>
 
           <div class="pf-l-level" style="margin-top: 60px">
             <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
             <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
             <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+            {% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+            <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+            {% endif %}
+            {% if not user.is_authenticated %}
+            {% if use_github_team %}
+            <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+            {% else %}
+            <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+            {% endif %}
+            {% endif %}
           </div>
 
                 </div>

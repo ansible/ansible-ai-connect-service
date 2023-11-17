@@ -10,9 +10,6 @@ logger = logging.getLogger(__name__)
 
 class WisdomFlags(str, Enum):
     MODEL_NAME = "model_name"  # model name selection
-    WCA_API = "wca-api"  # WCA cloud endpoint
-    WCA_KEY_API = "wca-key-api"  # WCA Key management API
-    WCA_MODEL_ID_API = "wca-model-id-api"  # WCA Model ID management API
 
 
 class FeatureFlags:

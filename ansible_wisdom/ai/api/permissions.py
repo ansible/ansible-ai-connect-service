@@ -1,19 +1,15 @@
-from ai.feature_flags import FeatureFlags, WisdomFlags
-from django.conf import settings
 from rest_framework import permissions
-
-feature_flags = FeatureFlags()
 
 
 class AcceptedTermsPermission(permissions.BasePermission):
     """
-    Allow access only to users who have accepted terms and conditions.
+    Allow access only to users who have accepted terms and conditions or paid users.
     """
 
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            if user.commercial_terms_accepted or user.community_terms_accepted:
+            if user.community_terms_accepted or user.rh_user_has_seat:
                 return True
         return False
 
@@ -25,36 +21,14 @@ class IsOrganisationAdministrator(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        return user.is_org_admin
+        return user.rh_user_is_org_admin
 
 
 class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     """
-    Allow access only to users who have a Light Speed subscripton.
+    Allow access only to users who have a Light Speed subscription.
     """
 
     def has_permission(self, request, view):
         user = request.user
-        return user.is_org_lightspeed_subscriber
-
-
-class IsWCAKeyApiFeatureFlagOn(permissions.BasePermission):
-    """
-    Allow access only to users allowed by feature flag
-    """
-
-    def has_permission(self, request, view):
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            return feature_flags.get(WisdomFlags.WCA_KEY_API, request.user, "")
-        return False
-
-
-class IsWCAModelIdApiFeatureFlagOn(permissions.BasePermission):
-    """
-    Allow access only to users allowed by feature flag
-    """
-
-    def has_permission(self, request, view):
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            return feature_flags.get(WisdomFlags.WCA_MODEL_ID_API, request.user, "")
-        return False
+        return user.rh_org_has_subscription

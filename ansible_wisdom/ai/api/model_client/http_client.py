@@ -2,8 +2,8 @@ import json
 import logging
 
 import requests
-from rest_framework import status
-from rest_framework.response import Response
+from ai.api.formatter import get_task_names_from_prompt
+from django.conf import settings
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
@@ -17,14 +17,23 @@ class HttpClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_name="wisdom"):
-        self._prediction_url = f"{self._inference_url}/predictions/{model_name}"
+    def infer(self, model_input, model_id=None, suggestion_id=None):
+        model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
+        self._prediction_url = f"{self._inference_url}/predictions/{model_id}"
+
+        prompt = model_input.get("instances", [{}])[0].get("prompt", "")
 
         try:
+            task_count = len(get_task_names_from_prompt(prompt))
             result = self.session.post(
-                self._prediction_url, headers=self.headers, json=model_input, timeout=self.timeout
+                self._prediction_url,
+                headers=self.headers,
+                json=model_input,
+                timeout=self.timeout(task_count),
             )
             result.raise_for_status()
-            return json.loads(result.text)
-        except requests.exceptions.ReadTimeout:
+            response = json.loads(result.text)
+            response['model_id'] = model_id
+            return response
+        except requests.exceptions.Timeout:
             raise ModelTimeoutError

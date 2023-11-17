@@ -1,4 +1,3 @@
-import os.path
 import platform
 import uuid
 from http import HTTPStatus
@@ -7,6 +6,7 @@ from urllib.parse import urlencode
 
 from ai.api.tests.test_views import DummyMeshClient, WisdomServiceAPITestCaseBase
 from django.apps import apps
+from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
@@ -14,6 +14,7 @@ from segment import analytics
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_full_payload(self):
         suggestionId = str(uuid.uuid4())
@@ -37,7 +38,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": activityId,
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
@@ -63,14 +67,25 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     properties = event['properties']
                     self.assertTrue('modelName' in properties)
+                    self.assertEqual(properties['modelName'], settings.ANSIBLE_AI_MODEL_NAME)
                     self.assertTrue('imageTags' in properties)
                     self.assertTrue('groups' in properties)
                     self.assertTrue('Group 1' in properties['groups'])
                     self.assertTrue('Group 2' in properties['groups'])
+                    self.assertTrue('rh_user_has_seat' in properties)
+                    self.assertTrue('rh_user_org_id' in properties)
                     self.assertEqual(hostname, properties['hostname'])
                     if event['event'] == 'completion':
-                        self.assertEqual('ansible.builtin.package', properties['module'])
-                        self.assertEqual('ansible.builtin', properties['collection'])
+                        self.assertEqual(
+                            'ansible.builtin.package', properties['tasks'][0]['module']
+                        )
+                        self.assertEqual('ansible.builtin', properties['tasks'][0]['collection'])
+                        self.assertIsNotNone(properties['tasks'][0]['prediction'])
+                        self.assertEqual(
+                            'install apache for james8@example.com', properties['tasks'][0]['name']
+                        )
+                        self.assertEqual(1, properties['taskCount'])
+                        self.assertEqual('SINGLETASK', properties['promptType'])
                     self.assertIsNotNone(event['timestamp'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -105,7 +120,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.fmtr.preprocess', side_effect=Exception)
+    @patch('ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess', side_effect=Exception)
     def test_preprocess_error(self, preprocess):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
@@ -115,7 +130,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.post(reverse('completions'), payload, format='json')
-            self.assertInLog("ERROR:ai.api.views:failed to preprocess:", log)
+            self.assertInLog(
+                "ERROR:ai.api.pipelines.completion_stages.pre_process:failed to preprocess:", log
+            )
             self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -128,7 +145,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": str(uuid.uuid4()),
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
 
         # Override properties of Segment client to cause an error
@@ -197,7 +217,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 "activityId": str(uuid.uuid4()),
             },
         }
-        response_data = {"predictions": ["      ansible.builtin.apt:\n        name: apache2"]}
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
         self.client.force_authenticate(user=self.user)
 
         with patch.object(

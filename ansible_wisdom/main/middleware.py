@@ -9,6 +9,7 @@ from django.conf import settings
 from django.http import QueryDict
 from django.urls import reverse
 from healthcheck.version_info import VersionInfo
+from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
@@ -74,23 +75,25 @@ class SegmentMiddleware:
 
                 # this modelName default will be correct unless we're using launchdarkly
                 # but needs to be revisited with commercial multimodel.
-                modelName = settings.ANSIBLE_AI_MODEL_NAME
-                fqcn_module = None
-                collection = None
+                model_name = settings.ANSIBLE_AI_MODEL_NAME
 
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')
                     message = response_data.get('message')
-                    modelName = response_data.get('modelName')
-                    fqcn_module = getattr(response, 'fqcn_module', None)
-                    if fqcn_module is not None:
-                        index = fqcn_module.rfind(".")
-                        if index != -1:
-                            collection = fqcn_module[:index]
+                    if isinstance(message, ErrorDetail):
+                        message = str(message)
+                    model_name = response_data.get('model', model_name)
+                    # Clean up response.data for 204
+                    if response.status_code == 204:
+                        response.data = None
+                    # For other error cases, remove 'model' in response data
+                    elif response.status_code >= 400:
+                        response_data.pop('model', None)
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
 
                 duration = round((time.time() - start_time) * 1000, 2)
+                tasks = getattr(response, 'tasks', [])
                 event = {
                     "duration": duration,
                     "request": {"context": context, "prompt": prompt},
@@ -104,10 +107,11 @@ class SegmentMiddleware:
                     },
                     "suggestionId": suggestion_id,
                     "metadata": metadata,
-                    "modelName": modelName,
+                    "modelName": model_name,
                     "imageTags": version_info.image_tags,
-                    "collection": collection,
-                    "module": fqcn_module,
+                    "tasks": tasks,
+                    "promptType": getattr(response, 'promptType', None),
+                    "taskCount": len(tasks),
                 }
 
                 send_segment_event(event, "completion", request.user)

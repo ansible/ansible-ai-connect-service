@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from abc import abstractmethod
 from datetime import datetime, timedelta
 from functools import cache
 from http import HTTPStatus
@@ -7,6 +8,20 @@ from http import HTTPStatus
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+class BaseCheck:
+    @abstractmethod
+    def self_test(self):
+        """
+        Check the health of the underlying authentication service.
+        Any exception signifies a failure of the underlying service.
+        """
+        pass
+
+    @abstractmethod
+    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+        pass
 
 
 class Token:
@@ -34,7 +49,7 @@ class Token:
             logger.error("Cannot reach the SSO backend in time")
             return None
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by SSO service")
+            logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
             return None
         data = r.json()
         self.access_token = data["access_token"]
@@ -47,11 +62,19 @@ class Token:
         return self.access_token
 
 
-class CIAMCheck:
+class CIAMCheck(BaseCheck):
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
         self._api_server = api_server
+
+    def self_test(self):
+        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
+        r = self._session.post(
+            self._api_server + "/v1alpha/healthcheck",
+            timeout=0.8,
+        )
+        r.raise_for_status()
 
     def check(self, user_id, _username, org_id) -> bool:
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
@@ -71,7 +94,7 @@ class CIAMCheck:
             logger.error("Cannot reach the CIAM backend in time")
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by CIAM backend")
+            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
             return False
         data = r.json()
         try:
@@ -81,7 +104,7 @@ class CIAMCheck:
             return False
 
 
-class AMSCheck:
+class AMSCheck(BaseCheck):
     ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time"
 
     def __init__(self, client_id, client_secret, sso_server, api_server):
@@ -112,15 +135,24 @@ class AMSCheck:
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return ""
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (org)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (org)" % r.status_code)
             return ""
         data = r.json()
 
         try:
             return data["items"][0]["id"]
-        except (KeyError, ValueError):
-            logger.error("Unexpected organization answer from AMS")
+        except (IndexError, KeyError, ValueError):
+            logger.exception("Unexpected organization answer from AMS: data=%s" % data)
             return ""
+
+    def self_test(self):
+        self.update_bearer_token()
+        r = self._session.get(
+            # A _basic_ call that needs no parameters.
+            self._api_server + "/api/accounts_mgmt/v1/metrics",
+            timeout=0.8,
+        )
+        r.raise_for_status()
 
     def check(self, _user_id: str, username: str, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
@@ -140,7 +172,7 @@ class AMSCheck:
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend (sub)")
+            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
             return False
         data = r.json()
         try:
@@ -149,7 +181,7 @@ class AMSCheck:
             logger.error("Unexpected subscription answer from AMS")
             return False
 
-    def is_org_admin(self, username: str, organization_id: str):
+    def rh_user_is_org_admin(self, username: str, organization_id: str):
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
@@ -165,7 +197,10 @@ class AMSCheck:
             return False
 
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend when listing role bindings")
+            logger.error(
+                "Unexpected error code (%s) returned by AMS backend when listing role bindings"
+                % r.status_code
+            )
             return False
 
         result = r.json()
@@ -178,17 +213,17 @@ class AMSCheck:
 
         return False
 
-    def is_org_lightspeed_subscriber(self, organization_id: str) -> bool:
+    def rh_org_has_subscription(self, organization_id: str) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {
-            "search": f"plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
-            f"organization_id='{ams_org_id}'"
-        }
+        params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()
 
         try:
             r = self._session.get(
-                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
+                (
+                    f"{self._api_server}"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
+                ),
                 params=params,
                 timeout=0.8,
             )
@@ -196,39 +231,52 @@ class AMSCheck:
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code returned by AMS backend when listing subscriptions")
+            logger.error(
+                "Unexpected error code (%s) returned by AMS backend when listing resource_quota"
+                % r.status_code
+            )
             return False
         data = r.json()
         try:
-            return len(data["items"]) > 0
+            return data["total"] > 0
         except (KeyError, ValueError):
-            logger.error("Unexpected subscription answer from AMS")
+            logger.error("Unexpected resource_quota answer from AMS")
             return False
 
 
-class MockAlwaysTrueCheck:
+class MockAlwaysTrueCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
+        pass
+
+    def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return True
 
-    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
         return True
 
-    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
+    def rh_org_has_subscription(self, _organization_id: str) -> bool:
         return True
 
 
-class MockAlwaysFalseCheck:
+class MockAlwaysFalseCheck(BaseCheck):
     def __init__(self, *kargs):
+        # Zero parameter constructor
+        pass
+
+    def self_test(self):
+        # Always passes. No exception raised.
         pass
 
     def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
         return False
 
-    def is_org_admin(self, _username: str, _organization_id: str) -> bool:
+    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
         return False
 
-    def is_org_lightspeed_subscriber(self, _organization_id: str) -> bool:
+    def rh_org_has_subscription(self, _organization_id: str) -> bool:
         return False

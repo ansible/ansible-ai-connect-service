@@ -1,6 +1,6 @@
 import logging
 
-import torch
+from ansible_lint import lintpostprocessing
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
@@ -30,14 +30,11 @@ class AiConfig(AppConfig):
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
+    _ansible_lint_caller = UNINITIALIZED
 
     def ready(self) -> None:
-        if torch.cuda.is_available():
-            logger.info('GPU is available')
-        else:
-            logger.error('GPU is not available')
         self.wca_client = WCAClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
         )
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
             from .api.model_client.grpc_client import GrpcClient
@@ -128,3 +125,19 @@ class AiConfig(AppConfig):
             )
 
         return self._wca_secret_manager
+
+    def get_ansible_lint_caller(self):
+        if self._ansible_lint_caller:
+            return self._ansible_lint_caller
+        if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:
+            logger.info("Ansible Lint Postprocessing is disabled.")
+            return None
+        if self._ansible_lint_caller is FAILED:
+            return None
+        try:
+            self._ansible_lint_caller = lintpostprocessing.AnsibleLintCaller()
+            logger.info("Ansible Lint Postprocessing is enabled.")
+        except Exception as ex:
+            logger.exception(f"Failed to initialize Ansible Lint with exception: {ex}")
+            self._ansible_lint_caller = FAILED
+        return self._ansible_lint_caller

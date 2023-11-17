@@ -4,6 +4,7 @@ DRF Serializer classes for input/output validations and OpenAPI document generat
 import re
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import (
@@ -13,7 +14,8 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers
 
-from .fields import AnonymizedCharField
+from . import formatter as fmtr
+from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 
 class Metadata(serializers.Serializer):
@@ -45,9 +47,9 @@ class Metadata(serializers.Serializer):
 )
 class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['prompt', 'suggestionId', 'metadata']
+        fields = ['prompt', 'suggestionId', 'metadata', 'model']
 
-    prompt = AnonymizedCharField(
+    prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
         required=True,
         label='Prompt',
@@ -58,42 +60,57 @@ class CompletionRequestSerializer(serializers.Serializer):
         required=False,
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
+        default=uuid.uuid4,
     )
     metadata = Metadata(required=False)
+    model = serializers.CharField(required=False, allow_blank=True)
+
+    @staticmethod
+    def validate_extracted_prompt(prompt, user):
+        if fmtr.is_multi_task_prompt(prompt):
+            # Multi-task is commercial-only
+            if user.rh_user_has_seat is False:
+                raise serializers.ValidationError(
+                    {"prompt": "requested prompt format is not supported"}
+                )
+
+            if '&&' in prompt:
+                raise serializers.ValidationError(
+                    {"prompt": "multiple task requests should be separated by a single '&'"}
+                )
+
+            task_count = fmtr.get_task_count_from_prompt(prompt)
+            if task_count > int(settings.MULTI_TASK_MAX_REQUESTS):
+                raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})
+        else:
+            # Confirm the prompt contains some flavor of '- name:'
+            match = re.search(r"^[\s]*-[\s]+name[\s]*:", prompt)
+            if not match:
+                raise serializers.ValidationError(
+                    {"prompt": "prompt does not contain the name parameter"}
+                )
+
+    def validate_model(self, value):
+        user = self.context.get('request').user
+        if user.rh_user_has_seat is False:
+            raise serializers.ValidationError("user is not entitled to customized model")
+        return value
 
     def validate(self, data):
         data = super().validate(data)
-        CompletionRequestSerializer.extract_prompt_and_context(data)
+
+        data['prompt'], data['context'] = fmtr.extract_prompt_and_context(data['prompt'])
+        CompletionRequestSerializer.validate_extracted_prompt(
+            data['prompt'], self.context.get('request').user
+        )
+
         # If suggestion ID was not included in the request, set a random UUID to it.
         if data.get('suggestionId') is None:
             data['suggestionId'] = uuid.uuid4()
+
+        if "model" in data and not data["model"].strip():
+            del data["model"]
         return data
-
-    @staticmethod
-    def extract_prompt_and_context(data):
-        #
-        # Set the last line as prompt and the rest as context.
-        # Note that usually both prompt and context end with '\n'.
-        #
-        extracted_prompt = ''
-        extracted_context = ''
-        prompt_in_request = data['prompt']
-        if prompt_in_request:
-            s = prompt_in_request[:-1].rpartition('\n')
-            if s[1] == '\n':
-                extracted_prompt = s[2] + prompt_in_request[-1]
-                extracted_context = s[0] + s[1]
-            else:
-                extracted_prompt = prompt_in_request
-                extracted_context = ''
-
-        # Confirm the prompt contains some flavor of '- name:'
-        match = re.search(r"^[\s]*-[\s]+name[\s]*:", extracted_prompt)
-        if not match:
-            raise serializers.ValidationError("prompt does not contain the name parameter")
-
-        data['prompt'] = extracted_prompt
-        data['context'] = extracted_context
 
 
 @extend_schema_serializer(
@@ -114,9 +131,9 @@ class CompletionRequestSerializer(serializers.Serializer):
 )
 class CompletionResponseSerializer(serializers.Serializer):
     class Meta:
-        fields = ['predictions', 'suggestionId', 'modelName']
+        fields = ['predictions', 'suggestionId', 'model']
 
-    modelName = serializers.CharField(required=False)
+    model = serializers.CharField(required=False)
     suggestionId = serializers.UUIDField(required=False)
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
 
@@ -180,25 +197,25 @@ class SuggestionQualityFeedback(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'providedSuggestion', 'expectedSuggestion', 'additionalComment']
 
-    prompt = AnonymizedCharField(
+    prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='File Content used as context',
         help_text='File Content till end of task name description before cursor position.',
     )
-    providedSuggestion = AnonymizedCharField(
+    providedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Provided Model suggestion',
         help_text='Inline suggestion from model as shared by user for given prompt.',
     )
-    expectedSuggestion = AnonymizedCharField(
+    expectedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Expected Model suggestion',
         help_text='Suggestion expected by the user.',
     )
-    additionalComment = AnonymizedCharField(
+    additionalComment = serializers.CharField(
         trim_whitespace=False,
         required=False,
         label='Additional Comment',
@@ -213,7 +230,7 @@ class SentimentFeedback(serializers.Serializer):
 
     value = serializers.IntegerField(required=True, min_value=1, max_value=5)
 
-    feedback = AnonymizedCharField(
+    feedback = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Free form text feedback',
@@ -228,13 +245,13 @@ class IssueFeedback(serializers.Serializer):
         fields = ['type', 'title', 'description']
 
     type = serializers.ChoiceField(choices=ISSUE_TYPE, required=True)
-    title = AnonymizedCharField(
+    title = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Issue title',
         help_text='The title of the issue.',
     )
-    description = AnonymizedCharField(
+    description = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label='Issue description',
@@ -295,6 +312,18 @@ class FeedbackRequestSerializer(serializers.Serializer):
     sentimentFeedback = SentimentFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
 
+    def validate_commercial_user_feedback(self, value):
+        user = self.context.get('request').user
+        if user.rh_user_has_seat is True:
+            raise serializers.ValidationError("invalid feedback type for user")
+        return value
+
+    def validate_inlineSuggestion(self, value):
+        return self.validate_commercial_user_feedback(value)
+
+    def validate_ansibleContent(self, value):
+        return self.validate_commercial_user_feedback(value)
+
 
 class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
@@ -310,6 +339,29 @@ class AttributionRequestSerializer(serializers.Serializer):
             " attribution data is being requested for."
         ),
     )
+
+
+class ContentMatchRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['suggestions', 'suggestionId', 'model']
+
+    suggestions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+    suggestionId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Suggestion ID",
+        help_text=(
+            "A UUID that identifies the particular suggestion"
+            " attribution data is being requested for."
+        ),
+    )
+    model = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        data = super().validate(data)
+        if "model" in data and not data["model"].strip():
+            del data["model"]
+        return data
 
 
 class DataSource(models.IntegerChoices):
@@ -362,7 +414,7 @@ class EnumField(serializers.Field):
 class AttributionSerializer(serializers.Serializer):
     repo_name = serializers.CharField()
     repo_url = serializers.URLField()
-    path = serializers.CharField()
+    path = serializers.CharField(allow_blank=True)
     license = serializers.CharField()
     data_source = EnumField(choices=DataSource)
     ansible_type = EnumField(choices=AnsibleType)
@@ -374,6 +426,29 @@ class AttributionResponseSerializer(serializers.Serializer):
         fields = ['attributions']
 
     attributions = serializers.ListField(child=AttributionSerializer())
+
+
+class ContentMatchSerializer(serializers.Serializer):
+    repo_name = serializers.CharField()
+    repo_url = serializers.URLField()
+    path = serializers.CharField(allow_blank=True)
+    license = serializers.CharField()
+    data_source_description = serializers.CharField()
+    score = serializers.FloatField()
+
+
+class ContentMatchListSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['contentmatch']
+
+    contentmatch = serializers.ListField(child=ContentMatchSerializer())
+
+
+class ContentMatchResponseSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['contentmatches']
+
+    contentmatches = serializers.ListField(child=ContentMatchListSerializer())
 
 
 @extend_schema_serializer(

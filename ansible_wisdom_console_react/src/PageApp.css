@@ -1,0 +1,18 @@
+.ansible-lightspeed-logo {
+    margin: 15px;
+}
+
+.ansible-lightspeed-w {
+    color: #FFFFFF;
+    float: right;
+    font-family: RedHatDisplay, sans-serif;
+    font-size: 18px;
+    line-height: 27px;
+    width: 200px;
+    text-align: left;
+    margin: 10px;
+}
+
+.ansible-lightspeed-t {
+    display: table-row;
+}

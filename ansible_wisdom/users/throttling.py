@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework.throttling import BaseThrottle, UserRateThrottle
+from rest_framework.throttling import UserRateThrottle
 
 
 class GroupSpecificThrottle(UserRateThrottle):

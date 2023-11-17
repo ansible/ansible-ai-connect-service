@@ -2,6 +2,39 @@
 {% load static %}
 
 {% block content %}
+
+{% if user.is_authenticated and user.rh_org_has_subscription %}
+  {% if user.rh_user_is_org_admin %}
+    {% if not org_has_api_key %}
+<div class="pf-c-alert pf-m-warning" aria-label="Warning alert">
+  <div class="pf-c-alert__icon">
+    <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
+  </div>
+  <p class="pf-c-alert__title">
+    You are a Red Hat organization administrator for Ansible Lightspeed. IBM watsonx Code Assistant model settings have not been configured for your organization.
+    <a href="/console">Click here</a> to access the Lightspeed admin portal to complete configuration.
+  </p>
+</div>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% if user.is_authenticated %}
+  {% if user.rh_org_has_subscription %}
+    {% if not user.rh_user_has_seat %}
+<div class="pf-c-alert pf-m-info" aria-label="Information alert">
+  <div class="pf-c-alert__icon">
+    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+  </div>
+  <p class="pf-c-alert__title">
+    You do not have a licensed seat for Ansible Lightspeed. You will be limited to features of the Lightspeed tech preview until you are assigned a named seat.
+    Contact your Red Hat account organization administrator for more information on how to assign a named seat.
+  </p>
+</div>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
 <section class="pf-c-page__main-section pf-m-light">
   <div class="pf-l-bullseye">
 
@@ -9,16 +42,43 @@
       <div class="pf-c-empty-state">
         <div class="pf-c-empty-state__content">
 
+{% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_has_seat and not org_has_api_key and not user.rh_user_is_org_admin %}
+          <span class="pf-c-icon pf-m-xl pf-m-inline">
+            <span class="pf-c-icon__content  pf-m-danger">
+              <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+            </span>
+          </span>
+
+          <h1 class="pf-c-title pf-m-lg">
+              You are a licensed Lightspeed user but your administrator has not configured the service for your organization.
+              Contact your organization administrator to have them complete Lightspeed configuration.
+          </h1>
+             <div style="padding: 15px">
+              <p>Contact your Red Hat Organization's administrator for more information.
+            </div>
+
+{% else %}
           <div class="pf-l-bullseye pf-u-p-xl" style="padding: 20px">
             <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="Ansible Lightspeed logo"/>
           </div>
-          <h1 class="pf-c-title pf-m-lg">Red Hat Ansible Lightspeed with IBM Watson Code Assistant</h1>
+
+          <h1 class="pf-c-title pf-m-lg">Red Hat Ansible Lightspeed with IBM watsonx Code Assistant</h1>
+{% endif %}
+
+
+
           {% if user.is_authenticated %}
             <div style="padding: 15px">
-              <p>{{ user.username }} {% if user.has_seat %}(Commercial user){% endif %}
+              <p>{% firstof user.external_username user.username %}
+              {% if user.rh_org_has_subscription %}
+              {% if user.rh_user_is_org_admin or user.rh_user_has_seat %}
+              <p>Role: {% if user.rh_user_is_org_admin %}administrator{% endif %}{% if user.rh_user_is_org_admin and user.rh_user_has_seat %}, {% endif %}{% if user.rh_user_has_seat %}licensed user{% endif %}
+              {% endif %}
+              {% endif %}
             </div>
 
             <a class="pf-c-button pf-m-secondary" type="button" href="{% url 'logout' %}">Log out</a>
+
           {% else %}
             <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
             <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
@@ -26,8 +86,12 @@
 
           <div class="pf-l-level" style="margin-top: 60px">
             <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
-            <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+            <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
             <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+
+            {% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+            <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+            {% endif %}
           </div>
 
         </div>

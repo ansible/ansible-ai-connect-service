@@ -1,6 +1,8 @@
 import logging
-from datetime import datetime
 
+from ai.api.aws.exceptions import WcaSecretManagerMissingCredentialsError
+from ai.api.aws.wca_secret_manager import Suffixes
+from django.apps import apps
 from django.conf import settings
 from django.forms import Form
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
@@ -17,7 +19,26 @@ logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = 'users/home.html'
-    extra_context = {'pilot_docs_url': settings.PILOT_DOCS_URL}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["documentation_url"] = settings.DOCUMENTATION_URL
+
+        try:
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        except WcaSecretManagerMissingCredentialsError:
+            return context
+
+        if self.request.user.is_authenticated and self.request.user.rh_org_has_subscription:
+            org_has_api_key = bool(
+                secret_manager.get_secret(self.request.user.organization_id, Suffixes.API_KEY)
+            )
+            context["org_has_api_key"] = org_has_api_key
+
+        if self.request.user.is_authenticated and self.request.user.rh_user_has_seat:
+            context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
+
+        return context
 
 
 class UnauthorizedView(TemplateView):
