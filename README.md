@@ -325,6 +325,8 @@ The wisdom service supports both GitHub and Red Hat authentication. GitHub authe
 GitHub users, or limited to a specific team. The following directions are for configuring the service to grant
 access to any GitHub user.
 
+### Authenticate with GitHub
+
 To test GitHub authentication locally, you will need to create a new OAuth App at
 https://github.com/settings/developers. Provide an Authorization callback URL of
 http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` and
@@ -333,6 +335,24 @@ http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` a
 both of which are provided after creating a new OAuth App. If you are running with the
 compose [development environment](#development-environment) described below, put these
 env vars in a .env file in the `tools/docker-compose` directory.
+
+### Authenticate with Red Hat
+
+To test Red Hat authentication locally, you will need to export 3 variables before start the application.
+
+```bash
+export SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="https://sso.redhat.com/auth/realms/redhat-external"
+export SOCIAL_AUTH_OIDC_KEY="ansible-wisdom-staging"
+export SOCIAL_AUTH_OIDC_SECRET=secret_value
+```
+
+If, to run the application, you are using Makefile first two variables will be set automatically.
+Third one should be set manually in either way: you are using Makefile or running
+application directly. To get the secret value go to [AWS Secret Manager](https://auth.redhat.com/auth/realms/EmployeeIDP/protocol/saml/clients/itaws)
+select `it-cloud-aws-ansible-wisdom-staging` to log in. Click on `Secrets Manager` than `wisdom` and at last
+`Retrieve secret value` than copy value of `SOCIAL_AUTH_OIDC_SECRET`.
+
+### After authentication
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
 authentication token that will be configured in VS Code (coming soon) to access the task prediction API.
