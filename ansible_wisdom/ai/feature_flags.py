@@ -15,23 +15,22 @@ class WisdomFlags(str, Enum):
 class FeatureFlags:
     def __init__(self):
         self.client = None
+
+        try:
+            import uwsgidecorators
+
+            uwsgidecorators.postfork(self.init_client)
+        except ImportError:
+            self.init_client()
+
+    def init_client(self):
         if settings.LAUNCHDARKLY_SDK_KEY:
             import ldclient
             from ldclient.config import Config
 
-            def create_ld_client():
-                ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
-                client = ldclient.get()
-                logger.info("feature flag client initialized")
-                return client
-
-            try:
-                import uwsgidecorators
-
-                self.client = uwsgidecorators.postfork(create_ld_client)
-            except ImportError:
-                pass
-            self.client = self.client or create_ld_client()
+            ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
+            self.client = ldclient.get()
+            logger.info("feature flag client initialized")
 
     def get(self, name: str, user: User, default: str):
         if self.client:
