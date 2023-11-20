@@ -167,7 +167,7 @@ OAUTH2_PROVIDER = {
         'checode',
     ],
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 1_209_600,  # = 2 weeks
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 864_000,  # = 10 days
 }
 
 # OAUTH: todo
