@@ -26,6 +26,8 @@ ifeq ($(ENVIRONMENT),development)
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
 	export DJANGO_SUPERUSER_PASSWORD := somesecret
+	export SOCIAL_AUTH_OIDC_OIDC_ENDPOINT := https://sso.redhat.com/auth/realms/redhat-external
+	export SOCIAL_AUTH_OIDC_KEY := ansible-wisdom-staging
 
 	ifeq ($(wildcard $(PWD)/.env/.),)
 		ifneq ($(wildcard $(PWD)/.env),)
