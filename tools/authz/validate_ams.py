@@ -74,7 +74,7 @@ def check(username: str, organization_id: str) -> bool:
     )
 
     items = r.json().get("items")
-    return len(items) == 1
+    return len(items) > 0
 
 
 def rh_user_is_org_admin(username: str, organization_id: str) -> bool:
