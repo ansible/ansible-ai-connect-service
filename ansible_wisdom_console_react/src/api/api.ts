@@ -1,10 +1,11 @@
-import {WcaKeyRequest, WcaModelIdRequest} from "./types";
+import {TelemetryRequest, WcaKeyRequest, WcaModelIdRequest} from "./types";
 import axios from "axios";
 
 export const API_WCA_KEY_PATH = "/api/v0/wca/apikey/";
 export const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
 export const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
 export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
+export const API_TELEMETRY_PATH = "/api/v0/telemetry/";
 
 export const readCookie = (name: string): string | null => {
     const nameEQ = name + "=";
@@ -42,4 +43,13 @@ export const saveWcaModelId = (wcaModelId: WcaModelIdRequest) => {
 
 export const testWcaModelId = () => {
     return axios.get(API_WCA_MODEL_ID_TEST_PATH);
+};
+
+export const getTelemetrySettings = () => {
+    return axios.get(API_TELEMETRY_PATH);
+};
+
+export const saveTelemetrySettings = (telemetry: TelemetryRequest) => {
+    const csrfToken = readCookie('csrftoken');
+    return axios.post(API_TELEMETRY_PATH, telemetry, {headers: {"X-CSRFToken": csrfToken}});
 };

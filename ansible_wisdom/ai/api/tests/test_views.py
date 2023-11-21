@@ -40,6 +40,7 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from organizations.models import Organization
 from requests.exceptions import ReadTimeout
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
@@ -154,7 +155,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
     def test_seated_got_wca(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
         self.assertTrue(isinstance(model_client, WCAClient))
@@ -170,7 +171,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -193,7 +194,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_seated_user_missing_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -219,7 +220,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_missing_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -236,7 +237,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_garbage_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -253,7 +254,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -269,7 +270,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_empty_response(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -285,7 +286,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_cloudflare_rejection(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -304,7 +305,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_model_id_error(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -323,7 +324,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -343,7 +344,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -364,7 +365,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_timed_out(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -393,7 +394,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_request_id_correlation_failure(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -433,7 +434,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -1463,7 +1464,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
     def test_wca_contentmatch_with_seated_user_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1550,7 +1551,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
     def test_wca_contentmatch_with_seated_user_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1645,7 +1646,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
     def test_wca_contentmatch_with_seated_user_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1697,7 +1698,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
     def test_wca_contentmatch_with_seated_user_without_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1756,7 +1757,7 @@ class TestContentMatchesWCAViewErrors(
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -1895,7 +1896,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -2033,7 +2034,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             },
             'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
             'rh_user_has_seat': True,
-            'rh_user_org_id': '1',
+            'rh_user_org_id': 1,
         }
 
         event_request = {
@@ -2072,7 +2073,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             'response': {},
             'metadata': [],
             'rh_user_has_seat': True,
-            'rh_user_org_id': '1',
+            'rh_user_org_id': 1,
         }
 
         event_request = {
@@ -2114,7 +2115,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             'response': {},
             'metadata': [],
             'rh_user_has_seat': True,
-            'rh_user_org_id': '1',
+            'rh_user_org_id': 1,
         }
 
         event_request = {
@@ -2149,7 +2150,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             'response': {},
             'metadata': [],
             'rh_user_has_seat': True,
-            'rh_user_org_id': '1',
+            'rh_user_org_id': 1,
         }
 
         event_request = {

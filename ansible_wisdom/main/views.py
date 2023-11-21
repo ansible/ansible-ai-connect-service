@@ -7,6 +7,7 @@ from ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect
 from main.base_views import ProtectedTemplateView
@@ -49,4 +50,5 @@ class ConsoleView(ProtectedTemplateView):
         if self.request.user:
             context["user_name"] = self.request.user.username
             context["rh_org_has_subscription"] = self.request.user.rh_org_has_subscription
+            context["telemetry_opt_enabled"] = settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED
         return context

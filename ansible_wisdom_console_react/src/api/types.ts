@@ -8,6 +8,7 @@ export type SuccessNotFound = { status: "SUCCESS_NOT_FOUND" };
 
 export type WcaKey = NotAsked | Loading | Failure | Success<WcaKeyResponse> | SuccessNotFound;
 export type WcaModelId = NotAsked | Loading | Failure | Success<WcaModelIdResponse> | SuccessNotFound;
+export type Telemetry = NotAsked | Loading | Failure | Success<TelemetryResponse> | SuccessNotFound;
 
 // Request objects for the REST [GET] APIs
 export interface WcaKeyRequest {
@@ -26,4 +27,12 @@ export interface WcaKeyResponse {
 export interface WcaModelIdResponse {
     model_id: string;
     lastUpdate: Date;
+}
+
+export interface TelemetryRequest {
+    optOut: boolean
+}
+
+export interface TelemetryResponse {
+    optOut: boolean
 }

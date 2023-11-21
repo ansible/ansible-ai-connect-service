@@ -90,7 +90,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             'rh_user_is_org_admin': True,
             'external_username': "jean-michel",
         }
-        assert self.rh_user.organization_id == 345
+        assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
         assert self.rh_user.external_username == "jean-michel"
 
@@ -107,7 +107,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             'rh_user_is_org_admin': False,
             'external_username': "yves",
         }
-        assert self.rh_user.organization_id == 345
+        assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is False
         assert self.rh_user.external_username == "yves"
 
@@ -118,7 +118,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             backend=DummyGithubBackend(), user=self.github_user, response=response
         )
         assert answer is None
-        assert self.rh_user.organization_id is None
+        assert self.rh_user.organization is None
         assert self.rh_user.rh_user_is_org_admin is False
 
     @override_settings(AUTHZ_DUMMY_RH_ORG_ADMINS="yves")
@@ -135,7 +135,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             'rh_user_is_org_admin': True,
             'external_username': "yves",
         }
-        assert self.rh_user.organization_id == 345
+        assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
         assert self.rh_user.external_username == "yves"
 
@@ -153,7 +153,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             'rh_user_is_org_admin': True,
             'external_username': "yves",
         }
-        assert self.rh_user.organization_id == 345
+        assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
         assert self.rh_user.external_username == "yves"
 
@@ -175,6 +175,6 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             'rh_user_is_org_admin': False,
             'external_username': "yves",
         }
-        assert self.rh_user.organization_id == 345
+        assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is False
         assert self.rh_user.external_username == "yves"

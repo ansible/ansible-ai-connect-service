@@ -96,6 +96,7 @@ django==4.2.7
     #   -r requirements.in
     #   django-allow-cidr
     #   django-csp
+    #   django-deprecate-fields
     #   django-extensions
     #   django-health-check
     #   django-import-export
@@ -106,6 +107,8 @@ django==4.2.7
 django-allow-cidr==0.6.0
     # via -r requirements.in
 django-csp==3.7
+    # via -r requirements.in
+django-deprecate-fields==0.1.1
     # via -r requirements.in
 django-extensions==3.2.1
     # via -r requirements.in

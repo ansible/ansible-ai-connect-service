@@ -20,7 +20,7 @@ from django.urls import reverse
 from requests import Response
 from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
-from test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
+from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def is_status_ok(status):
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin):
+class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.mock_wca_client_with(Mock(spec=WCAClient))

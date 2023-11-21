@@ -3,9 +3,9 @@ import {useTranslation} from 'react-i18next'
 import {PageNavigationItem} from "@ansible/ansible-ui-framework";
 import {PageAppDenied} from "./PageAppDenied";
 import {AppHeader} from "../AppHeader";
-import {AppProps} from "../App";
 
-interface AppDeniedProps extends AppProps {
+interface AppDeniedProps {
+    readonly userName?: string
     readonly hasSubscription: boolean
 }
 

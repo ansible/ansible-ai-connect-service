@@ -10,6 +10,7 @@ boto3==1.26.84
 cryptography==41.0.6
 datasets==2.10.1
 Django==4.2.7
+django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
 django-import-export==3.2.0

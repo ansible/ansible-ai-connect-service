@@ -105,6 +105,10 @@ create-superuser-containerized:
 migrate:
 	python ansible_wisdom/manage.py migrate
 
+.PHONY: makemigrations
+makemigrations:
+	python ansible_wisdom/manage.py makemigrations
+
 .PHONY: create-cachetable
 create-cachetable: migrate
 	python ansible_wisdom/manage.py createcachetable
