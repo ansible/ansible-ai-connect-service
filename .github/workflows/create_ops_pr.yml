@@ -3,8 +3,8 @@ on:
   workflow_run:
     workflows:
       - Code Coverage
-      #- Build and Push Image
-    branches-ignore:
+      - Build and Push Image
+    branches:
       - main
     types:
       - completed
@@ -38,7 +38,7 @@ jobs:
             fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/build_data.zip`, Buffer.from(download.data));
 
       - name: Unzip artifact
-        run: unzip context.zip
+        run: unzip build_data.zip
       - name: Return Parsed JSON
         uses: actions/github-script@v6
         id: return-parsed-json
@@ -50,8 +50,7 @@ jobs:
     outputs:
       image_version: ${{ fromJSON(steps.return-parsed-json.outputs.result).image_version }}
 
-  create_ops_pr:
-    name: Create Ops PR
+  create_pr:
     runs-on: ubuntu-20.04
     needs: download_build_data_artifact
 
@@ -63,15 +62,23 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ansible/ansible-wisdom-ops
-          ref: main
+          ref: refs/heads/main
+          token: ${{ secrets.GH_PAT }}
 
       - name: Apply changes
         run: |
-          echo "${{ needs.download_build_data_artifact.outputs.image_version }}" > test.txt
+          updateTag(){
+            file="./argocd/$1/wisdom-bot/kustomization.yaml"
+            currentTag="$(sed -n 's/newTag: \(.*\)/\1/p' $file | sed -e 's/^[[:space:]]*//')"
+            sed -i -e  "s/$currentTag/${{ needs.download_build_data_artifact.outputs.image_version }}/g" $file
+          }
+          updateTag "prod2-east"
+          updateTag "prod2-west"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
+          token: ${{ secrets.GH_PAT }}
           commit-message: Update image tag and revision for prod upgrade
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
