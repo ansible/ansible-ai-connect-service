@@ -15,7 +15,6 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -23,7 +22,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
-from main.views import ConsoleView, LoginView
+from main.views import ConsoleView, LoginView, LogoutView
 from oauth2_provider.urls import app_name, base_urlpatterns
 from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
 
@@ -56,7 +55,7 @@ urlpatterns = [
         ),
         name='login',
     ),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('console/', ConsoleView.as_view(), name='console'),
     path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
     path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),

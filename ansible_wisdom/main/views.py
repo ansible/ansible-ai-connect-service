@@ -23,6 +23,17 @@ class LoginView(auth_views.LoginView):
         return super().dispatch(request, *args, **kwargs)
 
 
+class LogoutView(auth_views.LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        self.next_page = self.get_next_page(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_next_page(self, request):
+        rht = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
+        rht += f'?redirect_uri={request.get_host()}'
+        return rht if request.user.is_oidc_user() else 'https://github.com/logout'
+
+
 class ConsoleView(ProtectedTemplateView):
     template_name = 'console/console.html'
 

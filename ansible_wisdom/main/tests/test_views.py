@@ -3,7 +3,44 @@
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase
-from main.views import LoginView
+from main.views import LoginView, LogoutView
+
+
+class RequestMock:
+    user = None
+    host = "localhost"
+
+    def get_host(self):
+        return self.host
+
+
+class UserMock:
+    is_oidc = False
+
+    def is_oidc_user(self):
+        return self.is_oidc
+
+
+class LogoutTest(TestCase):
+    request = RequestMock()
+    user = UserMock()
+    view = LogoutView()
+
+    def test_rht_sso_redirect(self):
+        self.user.is_oidc = True
+        self.request.user = self.user
+
+        self.assertEqual(
+            self.view.get_next_page(self.request),
+            'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid'
+            '-connect/logout?redirect_uri=localhost',
+        )
+
+    def test_gh_sso_redirect(self):
+        self.user.is_oidc = False
+        self.request.user = self.user
+
+        self.assertEqual(self.view.get_next_page(self.request), 'https://github.com/logout')
 
 
 class AlreadyAuth(TestCase):
