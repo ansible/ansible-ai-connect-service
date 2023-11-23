@@ -5,7 +5,7 @@ on:
       - Code Coverage
       - Build and Push Image
     branches:
-      - main
+      - story/AAP-17849-test
     types:
       - completed
 
