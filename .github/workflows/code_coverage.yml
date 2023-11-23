@@ -2,10 +2,10 @@ name: Code Coverage
 on:
   push:
     branches:
-      - main
+      - story/AAP-17849
   pull_request:
     branches:
-      - main
+      - story/AAP-17849
   # have the ability to trigger this workflow manually
   workflow_dispatch:
 

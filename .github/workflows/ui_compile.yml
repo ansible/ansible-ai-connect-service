@@ -8,7 +8,7 @@ on:
       - ansible_wisdom_console_react/**
   pull_request:
     branches:
-      - main
+      - story/AAP-17849
     paths:
       - ansible_wisdom_console_react/**
 

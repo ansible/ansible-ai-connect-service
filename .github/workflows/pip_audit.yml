@@ -10,7 +10,7 @@ on:
       - ansible_wisdom/**
   pull_request:
     branches:
-      - main
+      - story/AAP-17849
     paths:
       - ansible_wisdom/**
 permissions:
