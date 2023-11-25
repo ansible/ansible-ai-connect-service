@@ -14,7 +14,7 @@ class GetWcaKeyCommandTestCase(TestCase):
         ):
             call_command('get_wca_key')
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_key_found(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = {"CreatedDate": "xxx"}
@@ -27,7 +27,7 @@ class GetWcaKeyCommandTestCase(TestCase):
                 "API Key for orgId 'mock_org_id' found. Last updated: xxx", captured_output
             )
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_key_not_found(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = None

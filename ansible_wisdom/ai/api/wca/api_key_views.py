@@ -14,6 +14,7 @@ from ai.api.utils.segment import send_segment_event
 from ai.api.views import ServiceUnavailable
 from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -122,7 +123,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             wca_key = key_serializer.validated_data['key']
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").wca_client
+            model_mesh_client = apps.get_app_config("ai").get_wca_client()
             model_mesh_client.get_token(wca_key)
 
             # Store the validated API Key
@@ -196,11 +197,17 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").wca_client
+            model_mesh_client = apps.get_app_config("ai").get_wca_client()
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+
             if api_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
+            if settings.WCA_SECRET_BACKEND_TYPE == "mocker":
+                if api_key["SecretString"] == "valid":
+                    return Response(status=HTTP_200_OK)
+                else:
+                    return Response(status=HTTP_400_BAD_REQUEST)
             token = model_mesh_client.get_token(api_key['SecretString'])
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)

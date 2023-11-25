@@ -261,5 +261,7 @@ class MockerCheck(BaseCheck):
         return username in seated_user
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
-        orgs_with_subscription = settings.AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION.split(",")
-        return str(organization_id) in orgs_with_subscription
+        orgs_with_subscription = [
+            int(i) for i in settings.AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION.split(",") if i
+        ]
+        return organization_id in orgs_with_subscription

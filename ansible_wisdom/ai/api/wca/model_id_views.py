@@ -194,7 +194,7 @@ def validate(api_key, model_id):
 
     # If no validation issues, let's infer (given an api_key and model_id)
     # and expect some prediction (result), otherwise an exception will be raised.
-    model_mesh_client = apps.get_app_config("ai").wca_client
+    model_mesh_client = apps.get_app_config("ai").get_wca_client()
     model_mesh_client.infer_from_parameters(
         api_key, model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
     )

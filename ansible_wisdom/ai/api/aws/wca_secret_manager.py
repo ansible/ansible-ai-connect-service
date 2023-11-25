@@ -1,8 +1,11 @@
 import logging
 from enum import Enum
+from typing import Any, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from django.conf import settings
+from django.utils import timezone
 
 from .exceptions import WcaSecretManagerError, WcaSecretManagerMissingCredentialsError
 
@@ -16,7 +19,53 @@ class Suffixes(Enum):
     MODEL_ID = 'model_id'
 
 
-class WcaSecretManager:
+class BaseSecretManager:
+    def save_secret(self, org_id: int, suffix: Suffixes, secret):
+        raise NotImplementedError
+
+    def delete_secret(self, org_id: int, suffix: Suffixes) -> None:
+        raise NotImplementedError
+
+    def get_secret(self, org_id: int, suffix: Suffixes) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:
+        raise NotImplementedError
+
+
+class MockSecretEntry(dict):
+    @staticmethod
+    def from_string(secret_string):
+        return MockSecretEntry(
+            {"SecretString": secret_string, "CreatedDate": timezone.now().isoformat()}
+        )
+
+
+class MockerSecretManager(BaseSecretManager):
+    def __init__(self, *args, **kwargs):
+        self._secrets: dict[int, MockSecretEntry] = MockerSecretManager.load_secrets(
+            settings.WCA_SECRET_MOCKER_SECRETS
+        )
+
+    @staticmethod
+    def load_secrets(from_settings: str):
+        splitted_per_org = [i.split(":", 1) for i in from_settings.split(",") if i]
+        return {int(j[0]): MockSecretEntry.from_string(j[1]) for j in splitted_per_org if j}
+
+    def save_secret(self, org_id: int, suffix: Suffixes, secret) -> None:
+        logger.debug("I'm fake: Secret won't be saved")
+
+    def delete_secret(self, org_id: int, suffix: Suffixes) -> None:
+        logger.debug("I'm fake: Secret won't be deleted")
+
+    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[MockSecretEntry]:
+        return self._secrets.get(org_id)
+
+    def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:
+        return bool(self._secrets.get(org_id))
+
+
+class AWSSecretManager(BaseSecretManager):
     def __init__(
         self,
         aws_access_key_id,
@@ -47,10 +96,10 @@ class WcaSecretManager:
         return self._client
 
     @staticmethod
-    def get_secret_id(org_id, suffix: Suffixes):
+    def get_secret_id(org_id: int, suffix: Suffixes):
         return f"{SECRET_KEY_PREFIX}/{org_id}/{suffix.value}"
 
-    def save_secret(self, org_id, suffix: Suffixes, secret):
+    def save_secret(self, org_id: int, suffix: Suffixes, secret: str):
         """
         Stores or updates the Secret for a given org_id and suffix.
         """
@@ -115,7 +164,7 @@ class WcaSecretManager:
             logger.error("Error removing Secret for org_id '%s' with suffix '%s'.", org_id, suffix)
             raise WcaSecretManagerError(e)
 
-    def get_secret(self, org_id, suffix: Suffixes):
+    def get_secret(self, org_id: int, suffix: Suffixes):
         """
         Returns the Secret for the given org_id and suffix or None if not found
         """
@@ -129,7 +178,7 @@ class WcaSecretManager:
             logger.error("Error reading Secret for org_id '%s' with suffix '%s'.", org_id, suffix)
             raise WcaSecretManagerError(e)
 
-    def secret_exists(self, org_id, suffix: Suffixes):
+    def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:
         """
         Returns True if a Secret exists for the given org_id and suffix.
         """

@@ -100,7 +100,7 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
         free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
         try:
-            apps.get_app_config("ai").wca_client.infer_from_parameters(
+            apps.get_app_config("ai").get_wca_client().infer_from_parameters(
                 free_api_key,
                 free_model_id,
                 "",
