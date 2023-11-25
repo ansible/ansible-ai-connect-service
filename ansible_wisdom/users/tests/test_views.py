@@ -4,10 +4,10 @@ from unittest.mock import Mock, patch
 
 import boto3
 import users.models
-from ai.api.aws.wca_secret_manager import WcaSecretManager
 from ai.api.tests.test_views import APITransactionTestCase
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from test_utils import WisdomAppsBackendMocking
 from users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -15,22 +15,15 @@ from users.constants import (
 from users.tests.test_users import create_user
 
 
-def no_secret(*args, **kwargs):
-    return ""
-
-
-def with_secret(*args, **kwargs):
-    return "my-secret"
-
-
 def bypass_init(*args, **kwargs):
     return None
 
 
-@patch.object(WcaSecretManager, "__init__", bypass_init)
+@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
 @patch.object(boto3, "client", Mock())
-class UserHomeTestAsAnonymous(TestCase):
+class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
+        super().setUp()
         self.client = Client()
 
     def test_unauthorized(self):
@@ -42,18 +35,19 @@ class UserHomeTestAsAnonymous(TestCase):
         self.assertNotContains(response, "Admin Portal")
 
 
-@patch.object(WcaSecretManager, "__init__", bypass_init)
-@patch.object(boto3, "client", Mock())
-class UserHomeTestAsAdmin(TestCase):
+@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
+@override_settings(WCA_SECRET_MOCKER_SECRETS='')
+class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
+        super().setUp()
         self.client = Client()
         self.user = create_user(provider="oidc", rh_user_is_org_admin=True)
         self.client.force_login(self.user)
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
-    @patch.object(WcaSecretManager, "get_secret", no_secret)
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_seat_and_no_secret(self):
@@ -64,7 +58,6 @@ class UserHomeTestAsAdmin(TestCase):
         self.assertContains(response, "model settings have not been configured")
         self.assertContains(response, "Admin Portal")
 
-    @patch.object(WcaSecretManager, "get_secret", with_secret)
     @patch.object(users.models.User, "rh_org_has_subscription", False)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_admin_without_seat_and_with_secret(self):
@@ -74,7 +67,7 @@ class UserHomeTestAsAdmin(TestCase):
         self.assertNotContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
-    @patch.object(WcaSecretManager, "get_secret", with_secret)
+    @override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:valid')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_a_seat_and_with_secret(self):
@@ -85,18 +78,21 @@ class UserHomeTestAsAdmin(TestCase):
         self.assertContains(response, "Admin Portal")
 
 
-@patch.object(WcaSecretManager, "__init__", bypass_init)
+@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
+@override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:valid')
 @patch.object(boto3, "client", Mock())
-class UserHomeTestAsUser(TestCase):
+class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
+        super().setUp()
         self.client = Client()
         self.user = create_user(provider="oidc", rh_user_is_org_admin=False)
         self.client.force_login(self.user)
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
-    @patch.object(WcaSecretManager, "get_secret", with_secret)
+    @override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:none')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret(self):
@@ -107,7 +103,7 @@ class UserHomeTestAsUser(TestCase):
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertNotContains(response, "Admin Portal")
 
-    @patch.object(WcaSecretManager, "get_secret", no_secret)
+    @override_settings(WCA_SECRET_MOCKER_SECRETS='')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_no_secret(self):
@@ -117,7 +113,6 @@ class UserHomeTestAsUser(TestCase):
         self.assertContains(response, "but your administrator has not configured the service")
         self.assertNotContains(response, "Admin Portal")
 
-    @patch.object(WcaSecretManager, "get_secret", with_secret)
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_with_secret(self):
@@ -131,8 +126,10 @@ class UserHomeTestAsUser(TestCase):
         self.assertNotContains(response, "Admin Portal")
 
 
-class TestHomeDocumentationUrl(APITransactionTestCase):
+@override_settings(AUTHZ_BACKEND_TYPE='mocker')
+class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         self.password = "somepassword"
 
     @override_settings(COMMERCIAL_DOCUMENTATION_URL="https://official_docs")

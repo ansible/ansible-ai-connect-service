@@ -5,8 +5,9 @@ from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
 
+import ai.apps
 import healthcheck.views as healthcheck_views
-from ai.api.aws.wca_secret_manager import WcaSecretManager, WcaSecretManagerError
+from ai.api.aws.wca_secret_manager import WcaSecretManagerError
 from ai.api.model_client.wca_client import (
     WCAClient,
     WcaInferenceFailure,
@@ -20,7 +21,7 @@ from django.urls import reverse
 from requests import Response
 from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
-from test_utils import WisdomLogAwareMixin
+from test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
 
 logger = logging.getLogger(__name__)
 
@@ -33,18 +34,13 @@ def is_status_ok(status):
         return len(child_status) == len(status)
 
 
-class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(WCA_SECRET_BACKEND_TYPE="mocker")
+class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
-        self.wca_client_patcher = patch.object(
-            apps.get_app_config('ai'), 'wca_client', spec=WCAClient
-        )
-        self.mock_wca_client = self.wca_client_patcher.start()
-        self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
-        )
-        self.mock_secret_manager = self.secret_manager_patcher.start()
-        self.mock_secret_manager.get_secret.return_value = None
+        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher.start()
         self.seat_checker = Mock()
         self.get_seat_checker_patcher = patch.object(
             apps.get_app_config('ai'), 'get_seat_checker', Mock(return_value=self.seat_checker)
@@ -60,7 +56,6 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
 
     def tearDown(self):
         self.wca_client_patcher.stop()
-        self.secret_manager_patcher.stop()
         self.get_seat_checker_patcher.stop()
         self.model_server_patcher.stop()
         self.attribution_search_patcher.stop()
@@ -147,7 +142,7 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
         return timestamp, dependencies
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mocker")
     def test_health_check_all_healthy(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -287,7 +282,8 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_aws_secret_manager_error(self):
         cache.clear()
-        self.mock_secret_manager.get_secret = Mock(side_effect=WcaSecretManagerError)
+        mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        mock_secret_manager.get_secret = Mock(side_effect=WcaSecretManagerError)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
@@ -325,7 +321,8 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_wca_token_error(self, *args):
         cache.clear()
-        self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
@@ -354,7 +351,8 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_wca_inference_error(self, *args):
         cache.clear()
-        self.mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))
@@ -380,7 +378,8 @@ class TestHealthCheck(APITestCase, WisdomLogAwareMixin):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_wca_inference_generic_error(self, *args):
         cache.clear()
-        self.mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))

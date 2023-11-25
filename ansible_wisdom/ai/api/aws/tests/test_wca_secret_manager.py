@@ -4,7 +4,7 @@ from ai.api.aws.exceptions import (
     WcaSecretManagerError,
     WcaSecretManagerMissingCredentialsError,
 )
-from ai.api.aws.wca_secret_manager import SECRET_KEY_PREFIX, Suffixes, WcaSecretManager
+from ai.api.aws.wca_secret_manager import SECRET_KEY_PREFIX, AWSSecretManager, Suffixes
 from botocore.exceptions import ClientError
 from rest_framework.test import APITestCase
 from test_utils import WisdomServiceLogAwareTestCase
@@ -30,12 +30,12 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         self.m_boto3_client.exceptions.ResourceNotFoundException = MockResourceNotFoundException
         self.m_boto3_client.exceptions.InvalidParameterException = MockInvalidParameterException
 
-        self.c = WcaSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+        self.c = AWSSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
         self.c._client = self.m_boto3_client
 
     def test_get_secret_name(self):
         self.assertEqual(
-            WcaSecretManager.get_secret_id(ORG_ID, Suffixes.API_KEY),
+            AWSSecretManager.get_secret_id(ORG_ID, Suffixes.API_KEY),
             f'{SECRET_KEY_PREFIX}/{ORG_ID}/{Suffixes.API_KEY.value}',
         )
 
@@ -128,6 +128,6 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
                 self.assertInLog(f"Error removing Secret for org_id '{ORG_ID}'", log)
 
     def test_missing_creds_exception(self):
-        c = WcaSecretManager('dummy', None, 'dummy', 'dummy', [])
+        c = AWSSecretManager('dummy', None, 'dummy', 'dummy', [])
         with self.assertRaises(WcaSecretManagerMissingCredentialsError):
             c.get_client()
