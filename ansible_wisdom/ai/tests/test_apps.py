@@ -14,11 +14,12 @@ class TestAiApp(APITestCase):
         app_config.ready()
         self.assertIsInstance(app_config.model_mesh_client, GrpcClient)
 
+    @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
     def test_wca_client(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, WCAClient)
+        self.assertIsInstance(app_config.get_wca_client(), WCAClient)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='http')
     def test_http_client(self):

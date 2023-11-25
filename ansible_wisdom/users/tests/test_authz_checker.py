@@ -4,9 +4,10 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import requests
+from django.test import TestCase, override_settings
 from requests.exceptions import HTTPError
 from test_utils import WisdomServiceLogAwareTestCase
-from users.authz_checker import AMSCheck, CIAMCheck, Token
+from users.authz_checker import AMSCheck, CIAMCheck, MockerCheck, Token
 
 
 class TestToken(WisdomServiceLogAwareTestCase):
@@ -419,3 +420,44 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog("Unexpected resource_quota answer from AMS", log)
+
+
+class TestMocker(TestCase):
+    def setUp(self):
+        self.checker = MockerCheck()
+
+    def test_self_test(self):
+        self.assertIsNone(self.checker.self_test())
+
+    @override_settings(AUTHZ_MOCKER_USERS_WITH_SEAT="yves")
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_seat(self):
+        self.assertTrue(self.checker.check(None, "yves", 123))
+
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_no_seat(self):
+        self.assertFalse(self.checker.check(None, "noseat", 123))
+
+    @override_settings(AUTHZ_MOCKER_USERS_WITH_SEAT="*")
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_wildcard(self):
+        self.assertTrue(self.checker.check(None, "rose", 123))
+
+    @override_settings(AUTHZ_MOCKER_USERS_WITH_SEAT="yves")
+    def test_check_with_no_sub(self):
+        self.assertFalse(self.checker.check(None, "noseat", 123))
+
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="123")
+    def test_rh_org_has_subscription_with_sub(self):
+        self.assertTrue(self.checker.rh_org_has_subscription(123))
+
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="123")
+    def test_rh_org_has_subscription_with_param_as_string(self):
+        self.assertFalse(self.checker.rh_org_has_subscription("123"))
+
+    def test_rh_org_has_subscription_no_sub(self):
+        self.assertFalse(self.checker.rh_org_has_subscription(13))
+
+    @override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="*")
+    def test_rh_org_has_subscription_all(self):
+        self.assertTrue(self.checker.rh_org_has_subscription(56))

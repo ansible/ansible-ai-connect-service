@@ -1,0 +1,29 @@
+name: wisdom-service - pyright
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ansible_wisdom/ai/api/aws/wca_secret_manager.py
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ansible_wisdom/ai/api/aws/wca_secret_manager.py
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - name: install
+      run: |
+        pip install pyright -rrequirements.txt
+        pyright ansible_wisdom/ai/api/aws/wca_secret_manager.py

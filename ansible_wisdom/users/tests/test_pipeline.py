@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import jwt
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from social_django.models import UserSocialAuth
 from test_utils import WisdomServiceLogAwareTestCase
 from users.pipeline import load_extra_data, redhat_organization
@@ -42,7 +42,7 @@ class DummyRHBackend:
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="mocker")
-class TestExtraData(TestCase, WisdomServiceLogAwareTestCase):
+class TestExtraData(WisdomServiceLogAwareTestCase):
     def setUp(self):
         self.rh_user = get_user_model().objects.create_user(
             username="rh-user",
@@ -139,6 +139,24 @@ class TestExtraData(TestCase, WisdomServiceLogAwareTestCase):
         assert self.rh_user.rh_user_is_org_admin is True
         assert self.rh_user.external_username == "yves"
 
+    @override_settings(AUTHZ_MOCKER_RH_ORG_ADMINS="*")
+    def test_redhat_organization_with_AUTHZ_MOCKER_wildcard(self):
+        response = {
+            "access_token": build_access_token(
+                {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"}
+            )
+        }
+
+        answer = redhat_organization(backend=DummyRHBackend(), user=self.rh_user, response=response)
+        assert answer == {
+            'organization_id': 345,
+            'rh_user_is_org_admin': True,
+            'external_username': "yves",
+        }
+        assert self.rh_user.organization_id == 345
+        assert self.rh_user.rh_user_is_org_admin is True
+        assert self.rh_user.external_username == "yves"
+
     @override_settings(AUTHZ_MOCKER_RH_ORG_ADMINS=1)
     def test_redhat_organization_with_invalid_AUTHZ_MOCKER_parameter(self):
         response = {
@@ -150,7 +168,7 @@ class TestExtraData(TestCase, WisdomServiceLogAwareTestCase):
             answer = redhat_organization(
                 backend=DummyRHBackend(), user=self.rh_user, response=response
             )
-            self.assertInLog("'int' object has no attribute 'split'", log)
+            self.assertInLog("AUTHZ_MOCKER_RH_ORG_ADMINS has an invalid format.", log)
 
         assert answer == {
             'organization_id': 345,
