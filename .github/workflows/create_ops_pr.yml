@@ -68,10 +68,11 @@ jobs:
       - name: Apply changes
         run: |
           updateTag(){
-            file="./argocd/$1/wisdom-bot/kustomization.yaml"
+            file="./argocd/$1/wisdom-service/kustomization.yaml"
             currentTag="$(sed -n 's/newTag: \(.*\)/\1/p' $file | sed -e 's/^[[:space:]]*//')"
             sed -i -e  "s/$currentTag/${{ needs.download_build_data_artifact.outputs.image_version }}/g" $file
           }
+
           updateTag "prod2-east"
           updateTag "prod2-west"
 
@@ -79,8 +80,29 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GH_PAT }}
-          commit-message: Update image tag and revision for prod upgrade
+          commit-message: Update image tag for prod upgrade
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           branch: prod-upgrade-${{ needs.download_build_data_artifact.outputs.image_version }}
           title: '[Automated PR] Update image tag and revision for prod upgrade'
+
+      - name: Update target revision
+        uses: actions/checkout@v4
+        with:
+          repository: ansible/ansible-wisdom-ops
+          ref: refs/heads/prod-upgrade-${{ needs.download_build_data_artifact.outputs.image_version }}
+          token: ${{ secrets.GH_PAT }}
+        run: |
+          updateRevision(){
+            file="./argocd/$1/wisdom-service-$(printf '%s\n' "${1//[[:digit:]]/}").yml"
+            currentRevision="$(sed -n 's/targetRevision: \(.*\)/\1/p' $file | sed -e 's/^[[:space:]]*//')"
+            sed -i -e  "s/$currentRevision/$2/g" $file
+          }
+
+          revision=$(git rev-parse HEAD)
+
+          updateRevision "prod2-east" $revision
+          updateRevision "prod2-west" $revision
+
+          git commit -am "Update target revision"
+          git push origin prod-upgrade-${{ needs.download_build_data_artifact.outputs.image_version }}
