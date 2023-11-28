@@ -120,7 +120,7 @@ create-application: create-superuser
 .PHONY: test
 test:
 	export MOCK_WCA_SECRETS_MANAGER=False && \
-	python ansible_wisdom/manage.py test $$TEST
+	python ansible_wisdom/manage.py test $$WISDOM_TEST
 
 .PHONY: code-coverage
 # Run unit tests, calculate code coverage and display results in chrome

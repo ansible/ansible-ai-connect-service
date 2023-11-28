@@ -554,7 +554,7 @@ If you want to execute only specific file/class/method you can use $TEST variabl
 
 ```bash
 make test
-TEST="main.tests.test_views.LogoutTest" make test
+WISDOM_TEST="main.tests.test_views.LogoutTest" make test
 ```
 
 Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.
