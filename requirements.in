@@ -1,7 +1,7 @@
 # pin aiohttp on 3.8.6 to address GHSA-gfw2-4jvh-wgfg
 # remove this once datasets or fsspec is updated
 # to properly pull a version of aiohttp > 3.8.5.
-aiohttp==3.8.6
+aiohttp==3.9.0
 ansible-anonymizer==1.4.2
 ansible-risk-insight==0.2.2
 ansible-lint==6.20.3
