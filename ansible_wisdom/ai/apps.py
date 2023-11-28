@@ -4,12 +4,7 @@ from ansible_lint import lintpostprocessing
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
-from users.authz_checker import (
-    AMSCheck,
-    CIAMCheck,
-    MockAlwaysFalseCheck,
-    MockAlwaysTrueCheck,
-)
+from users.authz_checker import AMSCheck, CIAMCheck, MockerCheck
 
 from ari import postprocessing
 
@@ -91,8 +86,7 @@ class AiConfig(AppConfig):
         backends = {
             "ams": AMSCheck,
             "ciam": CIAMCheck,
-            "mock_true": MockAlwaysTrueCheck,
-            "mock_false": MockAlwaysFalseCheck,
+            "mocker": MockerCheck,
         }
         if not settings.AUTHZ_BACKEND_TYPE:
             self._seat_checker = UNINITIALIZED

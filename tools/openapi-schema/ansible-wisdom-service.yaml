@@ -755,7 +755,6 @@ components:
           type: boolean
         external_username:
           type: string
-          readOnly: true
         username:
           type: string
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
@@ -763,7 +762,6 @@ components:
           pattern: ^[\w.@+-]+$
           maxLength: 150
       required:
-      - external_username
       - rh_org_has_subscription
       - rh_user_has_seat
       - username
