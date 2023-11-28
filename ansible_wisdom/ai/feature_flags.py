@@ -3,8 +3,8 @@ from enum import Enum
 
 from django.conf import settings
 from ldclient import Context
-from ldclient.config import Config
 from ldclient.client import LDClient
+from ldclient.config import Config
 from users.models import User
 
 logger = logging.getLogger(__name__)

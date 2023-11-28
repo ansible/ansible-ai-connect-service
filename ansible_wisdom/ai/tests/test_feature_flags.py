@@ -1,9 +1,8 @@
 from unittest.mock import patch
 
+import ai.feature_flags as feature_flags
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.test import override_settings
-
-import ai.feature_flags as feature_flags
 from ldclient.config import Config
 
 
