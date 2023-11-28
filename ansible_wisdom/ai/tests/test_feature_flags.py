@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import ai.feature_flags as feature_flags
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from django.conf import settings
 from django.test import override_settings
 from ldclient.config import Config
 
@@ -23,6 +24,11 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         value = ff.get('model_name', self.user, 'default_value')
 
         self.assertEqual(value, 'server:port:model_name:index')
+        LDClient.assert_called_once()
+        _, config_arg, kwargs = LDClient.mock_calls[0]
+        self.assertIsInstance(config_arg[0], Config)
+        self.assertEqual(config_arg[0].sdk_key, 'dummy_key')
+        self.assertEqual(kwargs['start_wait'], settings.LAUNCHDARKLY_SDK_TIMEOUT)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @override_settings(LAUNCHDARKLY_SDK_TIMEOUT=40)
