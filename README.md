@@ -550,7 +550,7 @@ service is executed in the `ansible_wisdom` subdirectory
 as `ARI_KB_PATH` is defined as `../ari/kb`.
 
 It is recommended to use `make` to run unit tests since it helps to configure default values.
-If you want to execute only specific file/class/method you can use $TEST variable:
+If you want to execute only specific file/class/method you can use $WISDOM_TEST variable:
 
 ```bash
 make test
