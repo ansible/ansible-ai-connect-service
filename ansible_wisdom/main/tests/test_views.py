@@ -8,10 +8,10 @@ from main.views import LoginView, LogoutView
 
 class RequestMock:
     user = None
-    host = "localhost"
+    host = "http://localhost"
 
-    def get_host(self):
-        return self.host
+    def build_absolute_uri(self, path):
+        return self.host + path
 
 
 class UserMock:
@@ -33,14 +33,14 @@ class LogoutTest(TestCase):
         self.assertEqual(
             self.view.get_next_page(self.request),
             'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid'
-            '-connect/logout?redirect_uri=localhost',
+            '-connect/logout?redirect_uri=http://localhost/',
         )
 
     def test_gh_sso_redirect(self):
         self.user.is_oidc = False
         self.request.user = self.user
 
-        self.assertEqual(self.view.get_next_page(self.request), 'https://github.com/logout')
+        self.assertEqual(self.view.get_next_page(self.request), None)
 
 
 class AlreadyAuth(TestCase):

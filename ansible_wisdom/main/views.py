@@ -30,8 +30,8 @@ class LogoutView(auth_views.LogoutView):
 
     def get_next_page(self, request):
         rht = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
-        rht += f'?redirect_uri={request.get_host()}'
-        return rht if request.user.is_oidc_user() else 'https://github.com/logout'
+        rht += f'?redirect_uri={request.build_absolute_uri("/")}'
+        return rht if request.user.is_oidc_user() else None
 
 
 class ConsoleView(ProtectedTemplateView):
