@@ -549,10 +549,12 @@ Note that this `.env` file assumes that the Django
 service is executed in the `ansible_wisdom` subdirectory
 as `ARI_KB_PATH` is defined as `../ari/kb`.
 
-It is recommended to use `make` to run unit tests since it helps to configure default values:
+It is recommended to use `make` to run unit tests since it helps to configure default values.
+If you want to execute only specific file/class/method you can use $TEST variable:
 
 ```bash
 make test
+TEST="main.tests.test_views.LogoutTest" make test
 ```
 
 Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.
