@@ -149,7 +149,7 @@ def completion_post_process(context: CompletionContext):
         )
 
     anonymized_recommendation_yaml = post_processed_predictions["predictions"][0]
-    recommendation_yaml = fmtr.apply_tasks_from_multi_task_prompt(
+    recommendation_yaml = fmtr.restore_original_task_names(
         anonymized_recommendation_yaml, original_prompt
     )
     recommendation_problem = None

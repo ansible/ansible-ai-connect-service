@@ -304,7 +304,7 @@ var3: value3
         self.assertTrue('ansible.builtin.set_fact' in data[0])
         self.assertEqual(data[0]['ansible.builtin.set_fact'], merged_vars)
 
-    def test_apply_tasks_from_multi_task_prompt(self):
+    def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
 
@@ -326,17 +326,17 @@ var3: value3
 
         self.assertEqual(
             expected_multi_task_yaml,
-            fmtr.apply_tasks_from_multi_task_prompt(multi_task_yaml, multi_task_prompt),
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
         )
 
         self.assertEqual(
             single_task_yaml,
-            fmtr.apply_tasks_from_multi_task_prompt(single_task_yaml, single_task_prompt),
+            fmtr.restore_original_task_names(single_task_yaml, single_task_prompt),
         )
 
         self.assertEqual(
             "",
-            fmtr.apply_tasks_from_multi_task_prompt("", multi_task_prompt),
+            fmtr.restore_original_task_names("", multi_task_prompt),
         )
 
 
@@ -363,4 +363,4 @@ if __name__ == "__main__":
     tests.test_get_task_names_multi()
     tests.test_load_and_merge_vars_in_context()
     tests.test_insert_set_fact_task()
-    tests.test_apply_tasks_from_multi_task_prompt()
+    tests.test_restore_original_task_names()
