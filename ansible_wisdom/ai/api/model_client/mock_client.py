@@ -23,5 +23,6 @@ class MockClient(ModelMeshClient):
         logger.debug("!!!! Mocking Model response !!!!")
         jitter = random.random() if settings.MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER else 1
         time.sleep((settings.MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter) / 1000)
-        settings.MOCK_MODEL_RESPONSE_BODY['model_id'] = '_'
-        return json.loads(settings.MOCK_MODEL_RESPONSE_BODY)
+        response_body = json.loads(settings.MOCK_MODEL_RESPONSE_BODY)
+        response_body['model_id'] = '_'
+        return response_body
