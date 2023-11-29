@@ -7,7 +7,7 @@ ansible-risk-insight==0.2.4
 ansible-lint==6.20.3
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
-cryptography==41.0.4
+cryptography==41.0.6
 datasets==2.10.1
 Django==4.2.7
 django-extensions==3.2.1
