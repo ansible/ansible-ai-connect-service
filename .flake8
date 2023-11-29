@@ -40,7 +40,9 @@ extend-ignore =
   # Safeguard neutering of flake8-quotes : https://github.com/zheller/flake8-quotes/issues/105
   Q,
   # annoy black by allowing white space before : https://github.com/psf/black/issues/315
-  E203
+  E203,
+  E221,
+  E231
 
 # Accessibility/large fonts and PEP8 unfriendly:
 max-line-length = 100
