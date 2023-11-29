@@ -1,7 +1,6 @@
 import logging
 from enum import Enum
 
-from ai.api import formatter as fmtr
 from ai.api.pipelines.common import (
     InternalServerError,
     PipelineElement,
@@ -48,10 +47,5 @@ class ResponseStage(PipelineElement):
         # The tasks array added to the completion event is representative of the first (only)
         # entry in the predictions array
         response.tasks = tasks_results
-        response.promptType = (
-            CompletionsPromptType.MULTITASK.value
-            if fmtr.is_multi_task_prompt(payload.prompt)
-            else CompletionsPromptType.SINGLETASK.value
-        )
 
         context.response = response

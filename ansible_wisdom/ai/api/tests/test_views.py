@@ -417,6 +417,39 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
             self.assertInLog(f"x_request_id: '{x_request_id}'", log)
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('ai.api.utils.segment.send_segment_event')
+    def test_wca_compeletion_segment_event_with_invalid_modelid_error(
+        self, mock_send_segment_event
+    ):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            400,
+            Mock(return_value='org-api-key'),
+            Mock(return_value='garbage'),
+            DEFAULT_SUGGESTION_ID,
+        )
+        model_client, model_input = stub
+        model_input[
+            'prompt'
+        ] = '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
+        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+                self.assertInLog("WCA Model ID is invalid", log)
+
+            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+            self.assertTrue(actual_event.get("response").get("exception"))
+            self.assertEqual(
+                actual_event.get("response").get("message"),
+                'WCA Model ID is invalid. Please contact your administrator.',
+            )
+            self.assertEqual(actual_event.get("promptType"), 'MULTITASK')
+
 
 @modify_settings()
 class TestCompletionView(WisdomServiceAPITestCaseBase):

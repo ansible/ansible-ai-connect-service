@@ -68,6 +68,7 @@ class SegmentMiddleware:
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
                 metadata = request_data.get('metadata', {})
+                promptType = request._prompt_type
 
                 predictions = None
                 message = None
@@ -110,7 +111,7 @@ class SegmentMiddleware:
                     "modelName": model_name,
                     "imageTags": version_info.image_tags,
                     "tasks": tasks,
-                    "promptType": getattr(response, 'promptType', None),
+                    "promptType": promptType,
                     "taskCount": len(tasks),
                 }
 
