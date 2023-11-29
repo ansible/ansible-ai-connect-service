@@ -15,7 +15,6 @@ from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
-    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaException,
     WcaInvalidModelId,
@@ -131,15 +130,20 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @modify_settings()
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
-    def stub_wca_client(self, status_code, mock_api_key, mock_model_id, suggestion_id: uuid):
+    def stub_wca_client(
+        self,
+        status_code=None,
+        mock_api_key=Mock(return_value='org-api-key'),
+        mock_model_id=Mock(return_value='org-model-id'),
+    ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(suggestion_id),
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         response = MockResponse(
             json={"predictions": [""]},
             status_code=status_code,
-            headers={WCA_REQUEST_ID_HEADER: str(suggestion_id)},
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
         model_client = WCAClient(inference_url='https://wca_api_url')
         model_client.session.post = Mock(return_value=response)
@@ -171,9 +175,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -197,8 +198,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         stub = self.stub_wca_client(
             200,
             Mock(side_effect=WcaKeyNotFound),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -215,9 +214,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(side_effect=WcaModelIdNotFound),
-            DEFAULT_SUGGESTION_ID,
+            mock_model_id=Mock(side_effect=WcaModelIdNotFound),
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -234,9 +231,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             400,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='garbage'),
-            DEFAULT_SUGGESTION_ID,
+            mock_model_id=Mock(return_value='garbage'),
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -253,9 +248,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             403,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -272,9 +264,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             204,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -289,18 +278,36 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.user.organization_id = "1"
         self.client.force_authenticate(user=self.user)
 
-        stub = self.stub_wca_client(
-            403,
-            Mock(return_value='org-api-key'),
-            Mock(side_effect=WcaCloudflareRejection),
-            DEFAULT_SUGGESTION_ID,
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json=[],
+            text="cloudflare rejection",
+            status_code=HTTPStatus.FORBIDDEN,
         )
-        model_client, model_input = stub
+        model_client.session.post = Mock(return_value=response)
         self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("Cloudflare rejected the request", log)
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_model_id_error(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization_id = "1"
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
@@ -311,9 +318,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -334,9 +338,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -358,9 +359,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -390,9 +388,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -1815,6 +1810,18 @@ class TestContentMatchesWCAViewErrors(
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
             "ai.api.pipelines.common.WcaCloudflareRejectionException", HTTPStatus.BAD_REQUEST
+        )
+        self._assert_model_id_in_exception(self.payload["model"])
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_contentmatch_model_id_error(self):
+        response = MockResponse(
+            json={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
         )
         self._assert_model_id_in_exception(self.payload["model"])
 
