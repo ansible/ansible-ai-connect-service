@@ -76,7 +76,7 @@ class DummyWCAClient:
 
     def get_token(self, api_key):
         if api_key != "valid":
-            raise WcaTokenFailure("I'm a fake WCA client and the only token I accept is 'valid'")
+            raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
         return ""
 
     def infer(self, *args, suggestion_id=None, **kwargs):
