@@ -1,6 +1,6 @@
+from ai.api.model_client.dummy_client import DummyClient
 from ai.api.model_client.grpc_client import GrpcClient
 from ai.api.model_client.http_client import HttpClient
-from ai.api.model_client.mock_client import MockClient
 from ai.api.model_client.wca_client import WCAClient
 from django.apps.config import AppConfig
 from django.test import override_settings
@@ -27,11 +27,11 @@ class TestAiApp(APITestCase):
         app_config.ready()
         self.assertIsInstance(app_config.model_mesh_client, HttpClient)
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='mock')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='dummy')
     def test_mock_client(self):
         app_config = AppConfig.create('ai')
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, MockClient)
+        self.assertIsInstance(app_config.model_mesh_client, DummyClient)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     def test_enable_ari(self):

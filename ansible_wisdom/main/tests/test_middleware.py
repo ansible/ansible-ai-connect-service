@@ -4,7 +4,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
 
-from ai.api.tests.test_views import DummyMeshClient, WisdomServiceAPITestCaseBase
+from ai.api.tests.test_views import MockedMeshClient, WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
@@ -46,7 +46,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, expected, response_data),
+            MockedMeshClient(self, expected, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload, format='json')
@@ -163,7 +163,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                MockedMeshClient(self, payload, response_data),
             ):
                 with self.assertLogs(logger='root', level='DEBUG') as log:
                     r = self.client.post(reverse('completions'), payload, format='json')
@@ -226,7 +226,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 self.client.post(reverse('completions'), payload, format='json')

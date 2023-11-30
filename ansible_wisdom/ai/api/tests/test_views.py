@@ -52,7 +52,7 @@ from test_utils import (
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
-class DummyMeshClient(ModelMeshClient):
+class MockedMeshClient(ModelMeshClient):
     def __init__(
         self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
     ):
@@ -462,7 +462,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -486,7 +486,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         self.client.force_authenticate(user=self.user)
         mock_get_model_client.return_value = (
-            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            MockedMeshClient(self, payload, response_data, rh_user_has_seat=True),
             None,
         )
 
@@ -528,7 +528,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         # test_inference_match=False because anonymizer changes the prompt before calling WCA
         mock_get_model_client.return_value = (
-            DummyMeshClient(
+            MockedMeshClient(
                 self, payload, response_data, test_inference_match=False, rh_user_has_seat=True
             ),
             None,
@@ -560,7 +560,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -583,7 +583,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -604,7 +604,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -632,7 +632,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -653,7 +653,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -674,7 +674,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -697,7 +697,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -724,7 +724,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                MockedMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -748,7 +748,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                MockedMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -777,7 +777,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                MockedMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -810,7 +810,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data),
+                MockedMeshClient(self, payload, response_data),
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -831,7 +831,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -860,7 +860,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_client',
-            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            MockedMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -885,7 +885,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             '_wca_client',
-            DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
+            MockedMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -980,7 +980,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config('ai'),
                 'model_mesh_client',
-                DummyMeshClient(self, payload, response_data, False),
+                MockedMeshClient(self, payload, response_data, False),
             ):
                 self.client.post(reverse('completions'), payload)
                 self.assertInLog('Create an account for james8@example.com', log)
@@ -999,7 +999,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, payload, response_data),
+            MockedMeshClient(self, payload, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)

@@ -9,6 +9,7 @@ from users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 from ari import postprocessing
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
+from .api.model_client.dummy_client import DummyClient
 from .api.model_client.wca_client import DummyWCAClient, WCAClient
 
 logger = logging.getLogger(__name__)
@@ -42,10 +43,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = HttpClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
-            from .api.model_client.mock_client import MockClient
-
-            self.model_mesh_client = MockClient(
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["dummy", "mock"]:
+            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
+                logger.error(
+                    'ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock" is deprecated, use "dummy" instead'
+                )
+            self.model_mesh_client = DummyClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         else:
