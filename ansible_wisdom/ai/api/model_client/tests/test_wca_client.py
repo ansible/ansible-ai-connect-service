@@ -8,8 +8,8 @@ import django.utils.timezone
 import requests
 from ai.api.aws.wca_secret_manager import (
     AWSSecretManager,
-    MockerSecretManager,
-    MockSecretEntry,
+    DummySecretEntry,
+    DummySecretManager,
     Suffixes,
     WcaSecretManagerError,
 )
@@ -111,6 +111,7 @@ def assert_call_count_metrics(metric):
     return count_metrics_decorator
 
 
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -241,7 +242,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
-@override_settings(WCA_SECRET_BACKEND_TYPE="mocker")
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
     def test_get_token(self):
@@ -650,7 +651,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
 
 
-class TestMockerSecretManager(TestCase):
+class TestDummySecretManager(TestCase):
     def setUp(self):
         super().setUp()
         self.now_patcher = patch.object(django.utils.timezone, 'now', return_value=datetime.now())
@@ -661,13 +662,13 @@ class TestMockerSecretManager(TestCase):
 
     def test_load_secrets(self):
         expectation = {
-            123123: MockSecretEntry.from_string("valid"),
-            23421344: MockSecretEntry.from_string("whatever"),
+            123123: DummySecretEntry.from_string("valid"),
+            23421344: DummySecretEntry.from_string("whatever"),
         }
-        got = MockerSecretManager.load_secrets("123123:valid,23421344:whatever")
+        got = DummySecretManager.load_secrets("123123:valid,23421344:whatever")
         self.assertEqual(got, expectation)
 
-    @override_settings(WCA_SECRET_MOCKER_SECRETS='123:abcdef,12353:efreg')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:abcdef,12353:efreg')
     def test_get_secret(self):
-        sm = MockerSecretManager()
+        sm = DummySecretManager()
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")

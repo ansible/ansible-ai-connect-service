@@ -82,14 +82,14 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     user.external_username = payload.get("preferred_username")
     user.rh_user_is_org_admin = 'admin:org:all' in roles
 
-    if settings.AUTHZ_BACKEND_TYPE == "mocker":
-        if settings.AUTHZ_MOCKER_RH_ORG_ADMINS == "*":
+    if settings.AUTHZ_BACKEND_TYPE == "dummy":
+        if settings.AUTHZ_DUMMY_RH_ORG_ADMINS == "*":
             user.rh_user_is_org_admin |= True
-        elif isinstance(settings.AUTHZ_MOCKER_RH_ORG_ADMINS, str):
-            org_admin_users = settings.AUTHZ_MOCKER_RH_ORG_ADMINS.split(",")
+        elif isinstance(settings.AUTHZ_DUMMY_RH_ORG_ADMINS, str):
+            org_admin_users = settings.AUTHZ_DUMMY_RH_ORG_ADMINS.split(",")
             user.rh_user_is_org_admin |= user.external_username in org_admin_users
         else:
-            logger.error("AUTHZ_MOCKER_RH_ORG_ADMINS has an invalid format.")
+            logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
     user.organization_id = backend.id_token['organization']['id']
     user.save()

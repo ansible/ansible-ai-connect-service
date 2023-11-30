@@ -4,12 +4,12 @@ from ansible_lint import lintpostprocessing
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
-from users.authz_checker import AMSCheck, CIAMCheck, MockerCheck
+from users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
 from ari import postprocessing
 
-from .api.aws.wca_secret_manager import AWSSecretManager, MockerSecretManager
-from .api.model_client.wca_client import MockerWCAClient, WCAClient
+from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
+from .api.model_client.wca_client import DummyWCAClient, WCAClient
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class AiConfig(AppConfig):
     def get_wca_client(self):
         backends = {
             "wcaclient": WCAClient,
-            "mocker": MockerWCAClient,
+            "dummy": DummyWCAClient,
         }
         if not settings.WCA_CLIENT_BACKEND_TYPE:
             self._wca_client = UNINITIALIZED
@@ -109,7 +109,7 @@ class AiConfig(AppConfig):
         backends = {
             "ams": AMSCheck,
             "ciam": CIAMCheck,
-            "mocker": MockerCheck,
+            "dummy": DummyCheck,
         }
         if not settings.AUTHZ_BACKEND_TYPE:
             self._seat_checker = UNINITIALIZED
@@ -134,7 +134,7 @@ class AiConfig(AppConfig):
     def get_wca_secret_manager(self):
         backends = {
             "aws_sm": AWSSecretManager,
-            "mocker": MockerSecretManager,
+            "dummy": DummySecretManager,
         }
 
         try:

@@ -245,7 +245,7 @@ class AMSCheck(BaseCheck):
             return False
 
 
-class MockerCheck(BaseCheck):
+class DummyCheck(BaseCheck):
     def __init__(self, *kargs):
         # Zero parameter constructor
         pass
@@ -257,15 +257,15 @@ class MockerCheck(BaseCheck):
     def check(self, _user_id: str, username: str, organization_id: str) -> bool:
         if not self.rh_org_has_subscription(organization_id):
             return False
-        if settings.AUTHZ_MOCKER_USERS_WITH_SEAT == "*":
+        if settings.AUTHZ_DUMMY_USERS_WITH_SEAT == "*":
             return True
-        seated_user = settings.AUTHZ_MOCKER_USERS_WITH_SEAT.split(",")
+        seated_user = settings.AUTHZ_DUMMY_USERS_WITH_SEAT.split(",")
         return username in seated_user
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
-        if settings.AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION == "*":
+        if settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION == "*":
             return True
         orgs_with_subscription = [
-            int(i) for i in settings.AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION.split(",") if i
+            int(i) for i in settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION.split(",") if i
         ]
         return organization_id in orgs_with_subscription

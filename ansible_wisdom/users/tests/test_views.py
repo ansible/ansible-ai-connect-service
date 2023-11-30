@@ -19,7 +19,7 @@ def bypass_init(*args, **kwargs):
     return None
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
@@ -35,8 +35,8 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Admin Portal")
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
-@override_settings(WCA_SECRET_MOCKER_SECRETS='')
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='')
 class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
         super().setUp()
@@ -67,7 +67,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_a_seat_and_with_secret(self):
@@ -78,8 +78,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "Admin Portal")
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='mocker')
-@override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:valid')
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
@@ -92,7 +92,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.user.delete()
         super().tearDown()
 
-    @override_settings(WCA_SECRET_MOCKER_SECRETS='1234567:none')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:none')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret(self):
@@ -103,7 +103,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(WCA_SECRET_MOCKER_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_no_secret(self):
@@ -126,7 +126,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Admin Portal")
 
 
-@override_settings(AUTHZ_BACKEND_TYPE='mocker')
+@override_settings(AUTHZ_BACKEND_TYPE='dummy')
 class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase):
     def setUp(self) -> None:
         super().setUp()

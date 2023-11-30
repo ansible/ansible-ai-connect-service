@@ -290,9 +290,9 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             self.assertInLog('GET TermsOfService was invoked without partial_token', log)
 
 
-@override_settings(AUTHZ_BACKEND_TYPE="mocker")
-@override_settings(AUTHZ_MOCKER_USERS_WITH_SEAT="seated")
-@override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="1981")
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
+@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
 class TestUserSeat(WisdomAppsBackendMocking):
     def test_rh_user_has_seat_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
@@ -358,8 +358,8 @@ class TestUsername(WisdomServiceLogAwareTestCase):
         self.assertEqual(self.local_user.external_username, "")
 
 
-@override_settings(AUTHZ_BACKEND_TYPE="mocker")
-@override_settings(AUTHZ_MOCKER_ORGS_WITH_SUBSCRIPTION="1981")
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
 class TestIsOrgLightspeedSubscriber(TestCase):
     def test_rh_org_has_subscription_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)

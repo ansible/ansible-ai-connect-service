@@ -33,25 +33,25 @@ class BaseSecretManager:
         raise NotImplementedError
 
 
-class MockSecretEntry(dict):
+class DummySecretEntry(dict):
     @staticmethod
     def from_string(secret_string):
-        return MockSecretEntry(
+        return DummySecretEntry(
             {"SecretString": secret_string, "CreatedDate": timezone.now().isoformat()}
         )
 
 
-class MockerSecretManager(BaseSecretManager):
+class DummySecretManager(BaseSecretManager):
     def __init__(self, *args, **kwargs):
-        self._secrets: dict[int, MockSecretEntry] = MockerSecretManager.load_secrets(
-            settings.WCA_SECRET_MOCKER_SECRETS
+        self._secrets: dict[int, DummySecretEntry] = DummySecretManager.load_secrets(
+            settings.WCA_SECRET_DUMMY_SECRETS
         )
 
     @staticmethod
     def load_secrets(from_settings: str):
         splitted_per_org = [i.split(":", 1) for i in from_settings.split(",") if i]
         return {
-            int(j[0]): MockSecretEntry.from_string(j[1] if len(j) > 1 else "valid")
+            int(j[0]): DummySecretEntry.from_string(j[1] if len(j) > 1 else "valid")
             for j in splitted_per_org
             if j
         }
@@ -62,7 +62,7 @@ class MockerSecretManager(BaseSecretManager):
     def delete_secret(self, org_id: int, suffix: Suffixes) -> None:
         logger.debug("I'm fake: Secret won't be deleted")
 
-    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[MockSecretEntry]:
+    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[DummySecretEntry]:
         return self._secrets.get(org_id)
 
     def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:

@@ -67,7 +67,7 @@ ibm_cloud_identity_token_retry_counter = Counter(
 )
 
 
-class MockerWCAClient:
+class DummyWCAClient:
     def __init__(self, inference_url):
         self.inference_url = inference_url
 
