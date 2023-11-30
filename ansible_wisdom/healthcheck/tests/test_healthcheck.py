@@ -39,8 +39,8 @@ def is_status_ok(status):
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
-        apps.get_app_config('ai')._wca_client = Mock(spec=WCAClient)
-        apps.get_app_config('ai')._seat_checker = Mock()
+        self.mock_wca_client_with(Mock(spec=WCAClient))
+        self.mock_seat_checker_with(Mock())
         self.model_server_patcher = patch('healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
         self.mock_requests.get = TestHealthCheck.mocked_requests_succeed

@@ -62,3 +62,19 @@ class WisdomAppsBackendMocking(TestCase):
         for patcher in self.backend_patchers.values():
             patcher.stop()
         super().tearDown()
+
+    @staticmethod
+    def mock_wca_client_with(mocked):
+        apps.get_app_config('ai')._wca_client = mocked
+
+    @staticmethod
+    def mock_ari_caller_with(mocked):
+        apps.get_app_config('ai')._ari_caller = mocked
+
+    @staticmethod
+    def mock_seat_checker_with(mocked):
+        apps.get_app_config('ai')._seat_checker = mocked
+
+    @staticmethod
+    def mock_wca_secret_manager_with(mocked):
+        apps.get_app_config('ai')._wca_secret_manager = mocked
