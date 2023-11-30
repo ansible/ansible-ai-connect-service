@@ -37,13 +37,15 @@ class TokenResponseChecks(Checks[TokenContext]):
     class ResponseStatusCode400Missing(Check[TokenContext]):
         def check(self, context: TokenContext):
             if context.result.status_code == 400:
-                if "Property missing or empty" in context.result.json()["errorMessage"]:
+                payload_error = context.result.json().get("errorMessage")
+                if payload_error and "property missing or empty" in payload_error.lower():
                     raise WcaTokenFailureApiKeyError()
 
     class ResponseStatusCode400NotFound(Check[TokenContext]):
         def check(self, context: TokenContext):
             if context.result.status_code == 400:
-                if "Provided API key could not be found" in context.result.json()["errorMessage"]:
+                payload_error = context.result.json().get("errorMessage")
+                if payload_error and "provided api key could not be found" in payload_error.lower():
                     raise WcaTokenFailureApiKeyError()
 
     def __init__(self):
@@ -69,6 +71,19 @@ class InferenceResponseChecks(Checks[InferenceContext]):
             if context.result.status_code == 204:
                 raise WcaEmptyResponse(model_id=context.model_id)
 
+    class ResponseStatusCode400WCABadRequestModelId(Check[InferenceContext]):
+        def check(self, context: InferenceContext):
+            if context.result.status_code == 400:
+                payload_json = context.result.json()
+                if isinstance(payload_json, dict):
+                    payload_error = payload_json.get("error")
+                    if (
+                        payload_error
+                        and "bad request" in payload_error.lower()
+                        and "('body', 'model_id')" in payload_error.lower()
+                    ):
+                        raise WcaInvalidModelId(model_id=context.model_id)
+
     class ResponseStatusCode400SingleTask(Check[InferenceContext]):
         def check(self, context: InferenceContext):
             if context.is_multi_task_prompt:
@@ -81,7 +96,8 @@ class InferenceResponseChecks(Checks[InferenceContext]):
             if not context.is_multi_task_prompt:
                 return
             if context.result.status_code == 400:
-                if "Failed to preprocess the prompt" in context.result.json()["detail"]:
+                payload_detail = context.result.json().get("detail")
+                if payload_detail and "failed to preprocess the prompt" in payload_detail.lower():
                     raise WcaEmptyResponse(model_id=context.model_id)
                 else:
                     raise WcaInvalidModelId(model_id=context.model_id)
@@ -103,6 +119,7 @@ class InferenceResponseChecks(Checks[InferenceContext]):
             [
                 # The ordering of these checks is important!
                 InferenceResponseChecks.ResponseStatusCode204(),
+                InferenceResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
                 InferenceResponseChecks.ResponseStatusCode400SingleTask(),
                 InferenceResponseChecks.ResponseStatusCode400MultiTask(),
                 InferenceResponseChecks.ResponseStatusCode403Cloudflare(),
@@ -123,6 +140,19 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
         def check(self, context: ContentMatchContext):
             if context.result.status_code == 204:
                 raise WcaEmptyResponse(model_id=context.model_id)
+
+    class ResponseStatusCode400WCABadRequestModelId(Check[ContentMatchContext]):
+        def check(self, context: ContentMatchContext):
+            if context.result.status_code == 400:
+                payload_json = context.result.json()
+                if isinstance(payload_json, dict):
+                    payload_error = payload_json.get("error")
+                    if (
+                        payload_error
+                        and "bad request" in payload_error.lower()
+                        and "('body', 'model_id')" in payload_error.lower()
+                    ):
+                        raise WcaInvalidModelId(model_id=context.model_id)
 
     class ResponseStatusCode400SingleTask(Check[ContentMatchContext]):
         def check(self, context: ContentMatchContext):
@@ -155,6 +185,7 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
             [
                 # The ordering of these checks is important!
                 ContentMatchResponseChecks.ResponseStatusCode204(),
+                ContentMatchResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
                 ContentMatchResponseChecks.ResponseStatusCode400SingleTask(),
                 ContentMatchResponseChecks.ResponseStatusCode400MultiTask(),
                 ContentMatchResponseChecks.ResponseStatusCode403Cloudflare(),
