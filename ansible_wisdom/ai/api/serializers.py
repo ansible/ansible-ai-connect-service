@@ -355,7 +355,7 @@ class ContentMatchRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['suggestions', 'suggestionId', 'model']
 
-    suggestions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+    suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format='hex_verbose',
         required=False,
