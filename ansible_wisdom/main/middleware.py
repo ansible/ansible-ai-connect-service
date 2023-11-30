@@ -68,7 +68,7 @@ class SegmentMiddleware:
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
                 metadata = request_data.get('metadata', {})
-                promptType = request._prompt_type
+                promptType = getattr(request, '_prompt_type', None)
 
                 predictions = None
                 message = None
