@@ -374,6 +374,7 @@ class TestIsOrgLightspeedSubscriber(TestCase):
         self.assertFalse(user.rh_org_has_subscription)
 
 
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestThirdPartyAuthentication(APITransactionTestCase):
     def test_github_user_external_username(self):
         external_username = "github_username"
