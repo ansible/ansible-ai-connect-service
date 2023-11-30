@@ -10,7 +10,7 @@ from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
@@ -57,6 +57,7 @@ def create_user(
     return user
 
 
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
         self.password = "somepassword"
@@ -360,7 +361,7 @@ class TestUsername(WisdomServiceLogAwareTestCase):
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
-class TestIsOrgLightspeedSubscriber(TestCase):
+class TestIsOrgLightspeedSubscriber(WisdomAppsBackendMocking):
     def test_rh_org_has_subscription_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_org_has_subscription)
@@ -375,7 +376,7 @@ class TestIsOrgLightspeedSubscriber(TestCase):
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
-class TestThirdPartyAuthentication(APITransactionTestCase):
+class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestCase):
     def test_github_user_external_username(self):
         external_username = "github_username"
         user = create_user(
