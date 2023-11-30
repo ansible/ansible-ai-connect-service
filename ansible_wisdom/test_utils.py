@@ -55,9 +55,8 @@ class WisdomAppsBackendMocking(TestCase):
             key: patch.object(apps.get_app_config('ai'), key, None)
             for key in ["_wca_client", "_ari_caller", "_seat_checker", "_wca_secret_manager"]
         }
-        self.mocked_backends = {
-            key[1:]: mocker.start() for key, mocker in self.backend_patchers.items()
-        }
+        for key, mocker in self.backend_patchers.items():
+            key[1:]: mocker.start()
 
     def tearDown(self):
         for patcher in self.backend_patchers.values():

@@ -5,7 +5,6 @@ from http import HTTPStatus
 from unittest import mock
 from unittest.mock import Mock, patch
 
-import ai.apps
 import healthcheck.views as healthcheck_views
 from ai.api.aws.wca_secret_manager import WcaSecretManagerError
 from ai.api.model_client.wca_client import (
@@ -39,13 +38,8 @@ def is_status_ok(status):
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin):
     def setUp(self):
         super().setUp()
-        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
-        self.wca_client_patcher.start()
-        self.seat_checker = Mock()
-        self.get_seat_checker_patcher = patch.object(
-            apps.get_app_config('ai'), 'get_seat_checker', Mock(return_value=self.seat_checker)
-        )
-        self.get_seat_checker_patcher.start()
+        apps.get_app_config('ai')._wca_client = Mock(spec=WCAClient)
+        apps.get_app_config('ai')._seat_checker = Mock()
         self.model_server_patcher = patch('healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
         self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
@@ -55,8 +49,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin
         self.mock_ai_search.return_value = {"attributions": ["an attribution"]}
 
     def tearDown(self):
-        self.wca_client_patcher.stop()
-        self.get_seat_checker_patcher.stop()
         self.model_server_patcher.stop()
         self.attribution_search_patcher.stop()
 
@@ -142,7 +134,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin
         return timestamp, dependencies
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mocker")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_all_healthy(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -423,7 +415,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomLogAwareMixin
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="mock")
     def test_health_check_authorization_error(self, *args):
         cache.clear()
-        self.seat_checker.self_test = Mock(side_effect=HTTPError)
+        apps.get_app_config('ai')._seat_checker.self_test = Mock(side_effect=HTTPError)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.get(reverse('health_check'))

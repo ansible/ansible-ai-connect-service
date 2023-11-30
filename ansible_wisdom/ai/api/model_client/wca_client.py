@@ -74,8 +74,8 @@ class MockerWCAClient:
     def infer_from_parameters(self, *args, **kwargs):
         return ""
 
-    def get_token(self, token):
-        if token != "valid":
+    def get_token(self, api_key):
+        if api_key != "valid":
             raise WcaTokenFailure("I'm a fake WCA client and the only token I accept is 'valid'")
         return ""
 
