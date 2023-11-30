@@ -75,12 +75,6 @@ jobs:
         coverage xml
         coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
 
-    - name: Add Coverage PR Comment
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: ansible_wisdom/code-coverage-results.md
-      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-
     # See https://sonarsource.atlassian.net/browse/SONARPY-1203
     - name: Fix paths in coverage file
       run: |
