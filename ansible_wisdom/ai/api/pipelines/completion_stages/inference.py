@@ -28,7 +28,7 @@ from ai.api.pipelines.common import (
     process_error_count,
 )
 from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.utils.segment import send_segment_event
+from ai.api.utils.segment import prediction_event_context_prompt, send_segment_event
 from ai.feature_flags import FeatureFlags, WisdomFlags
 from ansible_anonymizer import anonymizer
 from django.apps import apps
@@ -80,7 +80,7 @@ class InferenceStage(PipelineElement):
         model_mesh_payload = ModelMeshPayload(
             instances=[
                 {
-                    "prompt": payload.context + payload.prompt + "\n",
+                    "prompt": prediction_event_context_prompt(payload.context, payload.prompt),
                     "userId": str(payload.userId) if payload.userId else None,
                     "rh_user_has_seat": request._request.user.rh_user_has_seat,
                     "organization_id": request._request.user.org_id,

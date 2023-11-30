@@ -2,7 +2,11 @@ from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
 
 from ai.api.utils.seated_users_allow_list import ALLOW_LIST
-from ai.api.utils.segment import redact_seated_users_data, send_segment_event
+from ai.api.utils.segment import (
+    prediction_event_context_prompt,
+    redact_seated_users_data,
+    send_segment_event,
+)
 from django.test import override_settings
 from segment import analytics
 
@@ -12,6 +16,10 @@ class TestSegment(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         analytics.send = False  # do not send data to segment from unit tests
+
+    def test_merge_context_prompt(self):
+        self.assertEqual(prediction_event_context_prompt('start', 'end'), 'startend\n')
+        self.assertEqual(prediction_event_context_prompt('start', 'end\n'), 'startend\n')
 
     def test_redact_seated_users_data_first_level_parameter(self, *args):
         test_data = {

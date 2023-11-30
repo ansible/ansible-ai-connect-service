@@ -14,6 +14,13 @@ logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
+def prediction_event_context_prompt(context, prompt):
+    result = context + prompt
+
+    # WCA codegen endpoint requires prompt to end with \n
+    return result if result.endswith('\n') else f'{result}\n'
+
+
 def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")

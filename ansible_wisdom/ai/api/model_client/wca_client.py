@@ -12,6 +12,7 @@ from ai.api.model_client.wca_utils import (
     TokenContext,
     TokenResponseChecks,
 )
+from ai.api.utils.segment import prediction_event_context_prompt
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
@@ -128,10 +129,6 @@ class WCAClient(ModelMeshClient):
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
 
-        # WCA codegen endpoint requires prompt to end with \n
-        if prompt.endswith('\n') is False:
-            prompt = f"{prompt}\n"
-
         try:
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
             model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
@@ -148,7 +145,7 @@ class WCAClient(ModelMeshClient):
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         data = {
             "model_id": model_id,
-            "prompt": f"{context}{prompt}",
+            "prompt": prediction_event_context_prompt(context, prompt),
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
