@@ -1,5 +1,8 @@
 from ast import literal_eval
-from unittest import TestCase
+from unittest.mock import patch
+
+from django.apps import apps
+from django.test import TestCase
 
 
 class WisdomLogAwareMixin:
@@ -38,3 +41,40 @@ class WisdomLogAwareMixin:
 
 class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
     pass
+
+
+class WisdomAppsBackendMocking(TestCase):
+    """
+    Ensure that the apps backend are properly reinitialized between each tests and avoid
+    potential side-effects.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.backend_patchers = {
+            key: patch.object(apps.get_app_config('ai'), key, None)
+            for key in ["_wca_client", "_ari_caller", "_seat_checker", "_wca_secret_manager"]
+        }
+        for key, mocker in self.backend_patchers.items():
+            mocker.start()
+
+    def tearDown(self):
+        for patcher in self.backend_patchers.values():
+            patcher.stop()
+        super().tearDown()
+
+    @staticmethod
+    def mock_wca_client_with(mocked):
+        apps.get_app_config('ai')._wca_client = mocked
+
+    @staticmethod
+    def mock_ari_caller_with(mocked):
+        apps.get_app_config('ai')._ari_caller = mocked
+
+    @staticmethod
+    def mock_seat_checker_with(mocked):
+        apps.get_app_config('ai')._seat_checker = mocked
+
+    @staticmethod
+    def mock_wca_secret_manager_with(mocked):
+        apps.get_app_config('ai')._wca_secret_manager = mocked

@@ -1,12 +1,16 @@
 import uuid
+from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
+import django.utils.timezone
 import requests
 from ai.api.aws.wca_secret_manager import (
+    AWSSecretManager,
+    DummySecretEntry,
+    DummySecretManager,
     Suffixes,
-    WcaSecretManager,
     WcaSecretManagerError,
 )
 from ai.api.model_client.exceptions import (
@@ -32,10 +36,10 @@ from ai.api.model_client.wca_client import (
     wca_codematch_retry_counter,
 )
 from django.apps import apps
-from django.test import override_settings
+from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError, ReadTimeout
-from test_utils import WisdomServiceLogAwareTestCase
+from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
@@ -107,11 +111,12 @@ def assert_call_count_metrics(metric):
     return count_metrics_decorator
 
 
-class TestWCAClient(WisdomServiceLogAwareTestCase):
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
+            apps.get_app_config('ai'), '_wca_secret_manager', spec=AWSSecretManager
         )
         self.mock_secret_manager = self.secret_manager_patcher.start()
 
@@ -236,17 +241,9 @@ class TestWCAClient(WisdomServiceLogAwareTestCase):
         self.assertTrue(b)
 
 
-class TestWCACodegen(WisdomServiceLogAwareTestCase):
-    def setUp(self):
-        super().setUp()
-        self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
-        )
-        self.mock_secret_manager = self.secret_manager_patcher.start()
-
-    def tearDown(self):
-        self.secret_manager_patcher.stop()
-
+@override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
     def test_get_token(self):
         headers = {
@@ -503,13 +500,11 @@ class TestWCACodegen(WisdomServiceLogAwareTestCase):
 class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
-        self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=WcaSecretManager
-        )
-        self.mock_secret_manager = self.secret_manager_patcher.start()
+        self.now_patcher = patch.object(django.utils.timezone, 'now', return_value=datetime.now())
+        self.mocked_now = self.now_patcher.start()
 
     def tearDown(self):
-        self.secret_manager_patcher.stop()
+        self.now_patcher.stop()
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
     def test_codematch(self):
@@ -654,3 +649,26 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaEmptyResponse) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
+
+
+class TestDummySecretManager(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.now_patcher = patch.object(django.utils.timezone, 'now', return_value=datetime.now())
+        self.mocked_now = self.now_patcher.start()
+
+    def tearDown(self):
+        self.now_patcher.stop()
+
+    def test_load_secrets(self):
+        expectation = {
+            123123: DummySecretEntry.from_string("valid"),
+            23421344: DummySecretEntry.from_string("whatever"),
+        }
+        got = DummySecretManager.load_secrets("123123:valid,23421344:whatever")
+        self.assertEqual(got, expectation)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:abcdef,12353:efreg')
+    def test_get_secret(self):
+        sm = DummySecretManager()
+        self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")

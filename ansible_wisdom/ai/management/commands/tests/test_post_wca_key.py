@@ -14,7 +14,7 @@ class PostWcaKeyCommandTestCase(TestCase):
         ):
             call_command('post_wca_key')
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_key_saved(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.save_secret.return_value = "mock_key_name"

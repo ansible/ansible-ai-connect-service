@@ -67,6 +67,25 @@ ibm_cloud_identity_token_retry_counter = Counter(
 )
 
 
+class DummyWCAClient:
+    def __init__(self, inference_url):
+        self.inference_url = inference_url
+
+    def infer_from_parameters(self, *args, **kwargs):
+        return ""
+
+    def get_token(self, api_key):
+        if api_key != "valid":
+            raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
+        return ""
+
+    def infer(self, *args, suggestion_id=None, **kwargs):
+        return {
+            "model_id": "mocked_wca_client",
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
+
+
 class WCAClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)

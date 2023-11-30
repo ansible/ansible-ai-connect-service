@@ -14,7 +14,7 @@ class DeleteWcaModelIdCommandTestCase(TestCase):
         ):
             call_command('delete_wca_model_id')
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_model_id_deleted(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
 
