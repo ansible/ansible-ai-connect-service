@@ -6,10 +6,14 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.functional import cached_property
 from django_prometheus.models import ExportModelOperationsMixin
-
 from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
 logger = logging.getLogger(__name__)
+
+
+class RHOrganization(models.Model):
+    id = models.IntegerField(primary_key=True)
+    telemetry_opt_out = models.BooleanField(default=False)
 
 
 class User(ExportModelOperationsMixin('user'), AbstractUser):
@@ -19,7 +23,13 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     organization_id = models.IntegerField(default=None, null=True)
     rh_user_is_org_admin = models.BooleanField(default=False)
     external_username = models.CharField(default="", null=False)
-
+    rhorganization = models.ForeignKey(
+        RHOrganization,
+        default=None,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    
     @property
     def org_id(self):
         if self.groups.filter(name='Commercial').exists():
@@ -64,3 +74,5 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return False
         rh_org_id = self.organization_id
         return seat_checker.rh_org_has_subscription(rh_org_id)
+
+
