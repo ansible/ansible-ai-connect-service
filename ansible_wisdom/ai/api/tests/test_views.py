@@ -137,7 +137,6 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
 
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
-@modify_settings()
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def stub_wca_client(
         self,
@@ -177,6 +176,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.assertFalse(isinstance(model_client, WCAClient))
         self.assertIsNone(model_name)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion(self):
         self.user.rh_user_has_seat = True
@@ -199,6 +199,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
         )
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_seated_user_missing_api_key(self):
@@ -226,6 +227,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                 elif event['event'] == 'prediction':
                     self.assertEqual(properties['problem'], 'WcaKeyNotFound')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_missing_model_id(self):
         self.user.rh_user_has_seat = True
@@ -243,6 +245,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("A WCA Model ID was expected but not found", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_garbage_model_id(self):
         self.user.rh_user_has_seat = True
@@ -260,6 +263,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("WCA Model ID is invalid", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
@@ -276,6 +280,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("WCA Model ID is invalid", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_empty_response(self):
         self.user.rh_user_has_seat = True
@@ -292,6 +297,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             self.assertInLog("WCA returned an empty response", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_cloudflare_rejection(self):
         self.user.rh_user_has_seat = True
@@ -311,6 +317,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("Cloudflare rejected the request", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_model_id_error(self):
         self.user.rh_user_has_seat = True
@@ -329,6 +336,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("WCA Model ID is invalid", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_single_task(self):
@@ -349,6 +357,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_multi_task(self):
@@ -373,6 +382,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_timed_out(self):
@@ -402,6 +412,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                     self.assertTrue(properties['exception'])
                     self.assertEqual(properties['problem'], 'ModelTimeoutError')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_request_id_correlation_failure(self):
@@ -440,6 +451,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
             self.assertInLog(f"x_request_id: '{x_request_id}'", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('main.middleware.send_segment_event')
     def test_wca_compeletion_segment_event_with_invalid_modelid_error(
