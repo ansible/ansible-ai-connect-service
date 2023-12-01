@@ -1341,7 +1341,7 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertInLog('Failed to search for attributions', log)
 
 
-@modify_settings()
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @patch('ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
@@ -1712,6 +1712,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         )
 
 
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewErrors(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
 ):
@@ -1850,6 +1851,7 @@ class TestContentMatchesWCAViewErrors(
         self.assertEqual(r.data["model"], expected_model_id)
 
 
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewSegmentEvents(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
@@ -2064,7 +2066,9 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.session.post = Mock(return_value=response)
 
         self.mock_wca_client_with(self.model_client)
-        r = self.client.post(reverse('contentmatches'), self.payload)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertInLog("WCA returned an empty response.", log)
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
 
         event = {
@@ -2097,7 +2101,9 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.get_model_id = Mock(return_value='model-id')
 
         self.mock_wca_client_with(self.model_client)
-        r = self.client.post(reverse('contentmatches'), self.payload)
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertInLog("A WCA Api Key was expected but not found.", log)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
         event = {
