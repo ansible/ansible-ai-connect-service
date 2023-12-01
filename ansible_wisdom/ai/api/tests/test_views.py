@@ -1140,7 +1140,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/rbobbitt/ansible.yaml",
-                "action": "2",  # invalid choice for action
+                "action": "3",  # invalid choice for action
                 "suggestionId": str(uuid.uuid4()),
             }
         }
