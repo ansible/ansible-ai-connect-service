@@ -25,7 +25,7 @@ jobs:
       id: tag_name
       run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
-          echo "IMAGE_TAGS=pr-${{ github.event.pull_request.number }}.$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAGS=pr-${{ github.event.pull_request.number }}.$(date +'%Y%m%d%H%M') pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           echo "LABEL quay.expires-after=3d" >> ./wisdom-service.Containerfile # tag expires in 3 days
         elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "IMAGE_TAGS=${{ github.ref_name }}-$( git rev-parse --short HEAD ).$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
