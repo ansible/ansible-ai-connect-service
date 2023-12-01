@@ -30,8 +30,8 @@ class HomeView(TemplateView):
             return context
 
         if self.request.user.is_authenticated and self.request.user.rh_org_has_subscription:
-            org_has_api_key = bool(
-                secret_manager.get_secret(self.request.user.organization_id, Suffixes.API_KEY)
+            org_has_api_key = secret_manager.secret_exists(
+                self.request.user.organization_id, Suffixes.API_KEY
             )
             context["org_has_api_key"] = org_has_api_key
 

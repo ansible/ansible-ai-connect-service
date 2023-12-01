@@ -79,7 +79,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='')
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
@@ -92,7 +92,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.user.delete()
         super().tearDown()
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:none')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret(self):
@@ -113,6 +113,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "but your administrator has not configured the service")
         self.assertNotContains(response, "Admin Portal")
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @patch.object(users.models.User, "rh_org_has_subscription", True)
     @patch.object(users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_with_secret(self):
@@ -122,6 +123,17 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(
             response, "Red Hat Ansible Lightspeed with IBM watsonx Code Assistant</h1>"
         )
+        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertNotContains(response, "Admin Portal")
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+    @patch.object(users.models.User, "rh_org_has_subscription", True)
+    @patch.object(users.models.User, "rh_user_has_seat", False)
+    def test_rh_user_with_no_seat_and_with_secret(self):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Role: licensed user")
+        self.assertContains(response, "and your organization is using the paid")
         self.assertNotContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 

@@ -19,9 +19,10 @@
   {% endif %}
 {% endif %}
 
+
 {% if user.is_authenticated %}
   {% if user.rh_org_has_subscription %}
-    {% if not user.rh_user_has_seat %}
+    {% if not user.rh_user_has_seat and not org_has_api_key %}
 <div class="pf-c-alert pf-m-info" aria-label="Information alert">
   <div class="pf-c-alert__icon">
     <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
@@ -42,7 +43,22 @@
       <div class="pf-c-empty-state">
         <div class="pf-c-empty-state__content">
 
-{% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_has_seat and not org_has_api_key and not user.rh_user_is_org_admin %}
+{# https://issues.redhat.com/browse/AAP-18386 #}
+{% if user.is_authenticated and user.rh_org_has_subscription and not user.rh_user_is_org_admin and org_has_api_key and not user.rh_user_has_seat %}
+          <span class="pf-c-icon pf-m-xl pf-m-inline">
+            <span class="pf-c-icon__content  pf-m-danger">
+              <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+            </span>
+          </span>
+
+          <h1 class="pf-c-title pf-m-lg">
+            You do not have a licensed seat for Ansible Lightspeed and your organization has configured a commercial model.
+          </h1>
+             <div style="padding: 15px">
+              <p>Contact your Red Hat Organization's administrator for more information on how to get a licensed seat.
+            </div>
+
+{% elif user.is_authenticated and user.rh_org_has_subscription and user.rh_user_has_seat and not org_has_api_key and not user.rh_user_is_org_admin %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
