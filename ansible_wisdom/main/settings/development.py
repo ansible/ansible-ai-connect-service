@@ -80,4 +80,4 @@ WCA_SECRET_BACKEND_TYPE = os.getenv("WCA_SECRET_BACKEND_TYPE") or "dummy"  # or 
 # a valid string. e.g:
 # WCA_SECRET_DUMMY_SECRETS=1009103:valid,11009104:not-valid
 WCA_SECRET_DUMMY_SECRETS = os.getenv("WCA_SECRET_DUMMY_SECRETS") or ""
-WCA_CLIENT_BACKEND_TYPE = os.getenv("WCA_SECRET_BACKEND_TYPE") or "dummy"  # or wcaclient
+WCA_CLIENT_BACKEND_TYPE = os.getenv("WCA_CLIENT_BACKEND_TYPE") or "dummy"  # or wcaclient
