@@ -129,7 +129,7 @@ def completion_post_process(context: CompletionContext):
     model_id = context.model_id
     suggestion_id = context.payload.suggestionId
     prompt = context.payload.prompt
-    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
+    original_prompt = context.payload.original_prompt
     payload_context = context.payload.context
     original_indent = context.original_indent
     post_processed_predictions = context.anonymized_predictions.copy()

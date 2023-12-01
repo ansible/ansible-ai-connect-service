@@ -22,7 +22,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
-            "    - name: Install Apache for foo@ansible.com\n",
+            "  - name: Install Apache for foo@ansible.com\n",
             "suggestionId": suggestionId,
             "metadata": {
                 "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
@@ -46,7 +46,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, expected, response_data),
+            DummyMeshClient(self, expected, response_data, original_payload=payload),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload, format='json')

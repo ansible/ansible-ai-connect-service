@@ -19,8 +19,9 @@ preprocess_hist = Histogram(
 
 
 def completion_pre_process(context: CompletionContext):
-    cp = context.payload.prompt
-    cc = context.payload.context
+    prompt = context.payload.prompt
+    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
+    payload_context = context.payload.context
 
     # Additional context (variables) is supported when
     #
@@ -34,8 +35,8 @@ def completion_pre_process(context: CompletionContext):
     else:
         additionalContext = {}
 
-    multi_task = fmtr.is_multi_task_prompt(cp)
-    context.original_indent = cp.find('#' if multi_task else "name")
+    multi_task = fmtr.is_multi_task_prompt(prompt)
+    context.original_indent = prompt.find('#' if multi_task else "name")
 
     # fmtr.preprocess() performs:
     #
@@ -49,8 +50,15 @@ def completion_pre_process(context: CompletionContext):
     #
     if additionalContext or not multi_task:
         ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
+        _, context.payload.original_prompt = fmtr.preprocess(
+            payload_context,
+            original_prompt,
+            ansibleFileType,
+            additionalContext,
+            do_handle_spaces_and_casing=False,
+        )
         context.payload.context, context.payload.prompt = fmtr.preprocess(
-            cc, cp, ansibleFileType, additionalContext
+            payload_context, prompt, ansibleFileType, additionalContext
         )
 
 

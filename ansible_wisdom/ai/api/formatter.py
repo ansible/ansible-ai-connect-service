@@ -131,7 +131,13 @@ def expand_vars_files(data, ansible_file_type, additional_context):
     expand_vars_files[ansible_file_type](data, additional_context)
 
 
-def preprocess(context, prompt, ansible_file_type="playbook", additional_context=None):
+def preprocess(
+    context,
+    prompt,
+    ansible_file_type="playbook",
+    additional_context=None,
+    do_handle_spaces_and_casing=True,
+):
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     Format and split off the last line as the prompt
@@ -154,7 +160,8 @@ def preprocess(context, prompt, ansible_file_type="playbook", additional_context
 
             logger.debug(f'preprocessed user input {context}\n{prompt}')
 
-        prompt = handle_spaces_and_casing(prompt)
+        if do_handle_spaces_and_casing:
+            prompt = handle_spaces_and_casing(prompt)
 
         # Make sure the prompt is in the form "  - name: a string description."
         prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)

@@ -54,7 +54,13 @@ DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 class DummyMeshClient(ModelMeshClient):
     def __init__(
-        self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
+        self,
+        test,
+        payload,
+        response_data,
+        original_payload=None,
+        test_inference_match=True,
+        rh_user_has_seat=False,
     ):
         super().__init__(inference_url='dummy inference url')
         self.test = test
@@ -67,9 +73,16 @@ class DummyMeshClient(ModelMeshClient):
                 serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
+                api_payload = APIPayload(prompt=data.get("prompt"), context=data.get("context"))
+
+                if original_payload:
+                    api_payload.original_prompt = original_payload.get("prompt", "")
+                else:
+                    api_payload.original_prompt = api_payload.prompt
+
                 context = CompletionContext(
                     request=request,
-                    payload=APIPayload(prompt=data.get("prompt"), context=data.get("context")),
+                    payload=api_payload,
                 )
                 completion_pre_process(context)
 
