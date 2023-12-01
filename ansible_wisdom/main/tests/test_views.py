@@ -3,7 +3,14 @@
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
+from main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from main.views import LoginView, LogoutView
+from users.constants import (
+    USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+    USER_SOCIAL_AUTH_PROVIDER_OIDC,
+)
+from users.tests.test_users import create_user
 
 
 class RequestMock:
@@ -23,24 +30,37 @@ class UserMock:
 
 class LogoutTest(TestCase):
     request = RequestMock()
-    user = UserMock()
+    user = None
     view = LogoutView()
 
     def test_rht_sso_redirect(self):
-        self.user.is_oidc = True
-        self.request.user = self.user
+        self.user = create_user(
+            username='test_user_name',
+            password='test_passwords',
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            external_username='anexternalusername',
+        )
+        self.client.force_login(self.user)
 
+        response = self.client.get(reverse('logout'))
         self.assertEqual(
-            self.view.get_next_page(self.request),
+            response.url,
             'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid'
-            '-connect/logout?redirect_uri=http://localhost/',
+            '-connect/logout?post_logout_redirect_uri=http://testserver/'
+            f'&client_id={SOCIAL_AUTH_OIDC_KEY}',
         )
 
     def test_gh_sso_redirect(self):
-        self.user.is_oidc = False
-        self.request.user = self.user
+        self.user = create_user(
+            username='test_user_name',
+            password='test_passwords',
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            external_username='anexternalusername',
+        )
+        self.client.force_login(self.user)
 
-        self.assertEqual(self.view.get_next_page(self.request), None)
+        response = self.client.get(reverse('logout'))
+        self.assertEqual(response.url, '/')
 
 
 class AlreadyAuth(TestCase):

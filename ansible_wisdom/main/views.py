@@ -10,6 +10,7 @@ from ai.api.permissions import (
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponseRedirect
 from main.base_views import ProtectedTemplateView
+from main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
@@ -29,8 +30,12 @@ class LogoutView(auth_views.LogoutView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_next_page(self, request):
-        rht = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
-        rht += f'?redirect_uri={request.build_absolute_uri("/")}'
+        rht = (
+            'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
+            f'?post_logout_redirect_uri={request.build_absolute_uri("/")}'
+            f'&client_id={SOCIAL_AUTH_OIDC_KEY}'
+        )
+
         return rht if request.user.is_oidc_user() else None
 
 
