@@ -67,16 +67,13 @@ class SegmentMiddleware:
                     suggestion_id = str(uuid.uuid4())
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
+                model_name = request_data.get('model', '')
                 metadata = request_data.get('metadata', {})
                 promptType = getattr(request, '_prompt_type', None)
 
                 predictions = None
                 message = None
                 response_data = getattr(response, 'data', {})
-
-                # this modelName default will be correct unless we're using launchdarkly
-                # but needs to be revisited with commercial multimodel.
-                model_name = settings.ANSIBLE_AI_MODEL_NAME
 
                 if isinstance(response_data, dict):
                     predictions = response_data.get('predictions')

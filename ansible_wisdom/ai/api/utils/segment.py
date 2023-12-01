@@ -22,8 +22,8 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     timestamp = timezone.now().isoformat()
 
     if 'modelName' not in event:
-        # we should probably fail this, it shouldn't happen, right?
-        event['modelName'] = settings.ANSIBLE_AI_MODEL_NAME
+        # Set an empty string if model name is not found in the event
+        event['modelName'] = ''
 
     if 'imageTags' not in event:
         event['imageTags'] = version_info.image_tags

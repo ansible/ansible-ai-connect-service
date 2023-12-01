@@ -190,6 +190,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         )
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_seated_user_missing_api_key(self):
         self.user.rh_user_has_seat = True
         self.user.organization_id = "1"
@@ -205,6 +206,15 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("A WCA Api Key was expected but not found", log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                properties = event['properties']
+                self.assertEqual(properties['modelName'], '')
+                if event['event'] == 'completion':
+                    self.assertEqual(properties['response']['status_code'], 403)
+                elif event['event'] == 'prediction':
+                    self.assertEqual(properties['problem'], 'WcaKeyNotFound')
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_missing_model_id(self):
