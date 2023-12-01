@@ -46,7 +46,10 @@ from .data.data_model import (
     ContentMatchResponseDto,
 )
 from .model_client.exceptions import ModelTimeoutError
-from .permissions import AcceptedTermsPermission
+from .permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationLightspeedSubscriberFullySetup,
+)
 from .pipelines.common import BaseWisdomAPIException
 from .serializers import (
     AnsibleContentFeedback,
@@ -103,6 +106,7 @@ class Completions(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        IsOrganisationLightspeedSubscriberFullySetup,
     ]
     required_scopes = ['read', 'write']
 
