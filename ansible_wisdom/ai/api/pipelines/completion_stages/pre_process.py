@@ -60,6 +60,8 @@ def completion_pre_process(context: CompletionContext):
         context.payload.context, context.payload.prompt = fmtr.preprocess(
             payload_context, prompt, ansibleFileType, additionalContext
         )
+    else:
+        context.payload.original_prompt = original_prompt
 
 
 class PreProcessStage(PipelineElement):
