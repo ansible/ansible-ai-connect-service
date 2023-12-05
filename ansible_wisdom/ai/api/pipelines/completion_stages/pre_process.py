@@ -40,18 +40,17 @@ def completion_pre_process(context: CompletionContext):
     # fmtr.preprocess() performs:
     #
     #   1. Insert additional context (variables), and
-    #   2. Formatting prompt/context YAML data,
+    #   2. Formatting/normalizing prompt/context YAML data,
     #
-    # When non-empty additional context is given, fmtr.preprocess() needs to
-    # be called. Otherwise, it is called when a non-multi task prompt is
-    # specified because multi-task prompts are supported by WCA only and WCA
-    # contains its own formatter for 2.
+    # Calling fmtr.preprocess for of (2) is redundant in WCA case
+    # because WCA is already doing this. However, enhanced context
+    # support also relies on this preprocess step, so we will
+    # always call fmtr.preprocess, regardless of model server.
     #
-    if additionalContext or not multi_task:
-        ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
-        context.payload.context, context.payload.prompt = fmtr.preprocess(
-            cc, cp, ansibleFileType, additionalContext
-        )
+    ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
+    context.payload.context, context.payload.prompt = fmtr.preprocess(
+        cc, cp, ansibleFileType, additionalContext
+    )
 
 
 class PreProcessStage(PipelineElement):
