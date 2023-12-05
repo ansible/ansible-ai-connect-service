@@ -46,7 +46,11 @@ from .data.data_model import (
     ContentMatchResponseDto,
 )
 from .model_client.exceptions import ModelTimeoutError
-from .permissions import AcceptedTermsPermission, BlockUserWithoutSeatAndWCAReadyOrg
+from .permissions import (
+    AcceptedTermsPermission,
+    BlockUserWithoutSeatAndWCAReadyOrg,
+    BlockUserWithSeatButWCANotReady,
+)
 from .pipelines.common import BaseWisdomAPIException
 from .serializers import (
     AnsibleContentFeedback,
@@ -104,6 +108,7 @@ class Completions(APIView):
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
         BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
     ]
     required_scopes = ['read', 'write']
 
