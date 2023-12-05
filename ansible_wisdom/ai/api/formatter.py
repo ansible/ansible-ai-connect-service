@@ -7,6 +7,18 @@ from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
 
+"""
+The code below causes any yaml.dump calls to dump None
+as blank rather than "null"
+"""
+
+
+def represent_none(self, _):
+    return self.represent_scalar('tag:yaml.org,2002:null', '')
+
+
+yaml.add_representer(type(None), represent_none)
+
 
 class AnsibleDumper(yaml.Dumper):
     """
@@ -136,45 +148,62 @@ def preprocess(
     prompt,
     ansible_file_type="playbook",
     additional_context=None,
-    do_handle_spaces_and_casing=True,
 ):
     """
+    Formatting and normalization performed in this function is redundant in WCA case because
+    it is already handled on the WCA side. We can safely skip it for multitask scenarios,
+    which we know are WCA. No need to adopt to suppot both single and multitask.
+
+    We call normalize_yaml regardless of single or multi in order to process the
+    additional_context content. We need to hold the original multi-task prompt because
+    pyyaml does not preserve comments.
+    """
+    multi_task = is_multi_task_prompt(prompt)
+    original_multi_task_prompt = prompt
+
+    """
     Add a newline between the input context and prompt in case context doesn't end with one
-    Format and split off the last line as the prompt
-    Append a newline to both context and prompt (as the model expects)
     """
     formatted = normalize_yaml(f'{context}\n{prompt}', ansible_file_type, additional_context)
 
     if formatted is not None:
         logger.debug(f'initial user input {context}\n{prompt}')
 
-        segs = formatted.rsplit('\n', 2)  # Last will be the final newline
-        if len(segs) == 3:
-            context = segs[0] + '\n'
-            prompt = segs[1]
-        elif len(segs) == 2:  # Context is empty
-            context = ""
-            prompt = segs[0]
+        if multi_task:
+            context = formatted
+            prompt = original_multi_task_prompt
         else:
-            logger.warning(f"preprocess failed - too few new-lines in: {formatted}")
+            """
+            Format and split off the last line as the prompt
+            Append a newline to both context and prompt (as the model expects)
+            """
+            segs = formatted.rsplit('\n', 2)  # Last will be the final newline
+            if len(segs) == 3:
+                context = segs[0] + '\n'
+                prompt = segs[1]
+            elif len(segs) == 2:  # Context is empty
+                context = ""
+                prompt = segs[0]
+            else:
+                logger.warning(f"preprocess failed - too few new-lines in: {formatted}")
 
-            logger.debug(f'preprocessed user input {context}\n{prompt}')
-
-        if do_handle_spaces_and_casing:
             prompt = handle_spaces_and_casing(prompt)
 
-        # Make sure the prompt is in the form "  - name: a string description."
-        prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
-        if (
-            not isinstance(prompt_list, list)
-            or len(prompt_list) != 1
-            or not isinstance(prompt_list[0], dict)
-            or len(prompt_list[0]) != 1
-            or 'name' not in prompt_list[0]
-            or not isinstance(prompt_list[0]['name'], str)
-        ):
-            raise InvalidPromptException()
+            # TODO - We can probably ditch this since it's covered by
+            # CompletionRequestSerializer.validate_extracted_prompt
+            # Make sure the prompt is in the form "  - name: a string description."
+            prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
+            if (
+                not isinstance(prompt_list, list)
+                or len(prompt_list) != 1
+                or not isinstance(prompt_list[0], dict)
+                or len(prompt_list[0]) != 1
+                or 'name' not in prompt_list[0]
+                or not isinstance(prompt_list[0]['name'], str)
+            ):
+                raise InvalidPromptException()
 
+        logger.debug(f'preprocessed user input {context}\n{prompt}')
     return context, prompt
 
 

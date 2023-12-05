@@ -309,7 +309,6 @@ class CompletionPreProcessTest(TestCase):
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
     def test_additional_context_with_commercial_user_and_multi_task_prompt(self):
         payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
-        payload["metadata"]["additionalContext"] = {}
         # Replace the last line of the prompt with a multi-task prompt that includes '&'
         payload["prompt"] = (
             "\n".join(payload["prompt"].split("\n")[:-2]) + "\n    # do this & do that\n"
@@ -317,7 +316,7 @@ class CompletionPreProcessTest(TestCase):
         self.call_completion_pre_process(
             payload,
             True,
-            PLAYBOOK_CONTEXT_WITHOUT_FORMATTING,
+            PLAYBOOK_CONTEXT_WITH_VARS,
         )
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
