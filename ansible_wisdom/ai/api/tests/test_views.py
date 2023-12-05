@@ -58,7 +58,6 @@ class DummyMeshClient(ModelMeshClient):
         test,
         payload,
         response_data,
-        original_payload=None,
         test_inference_match=True,
         rh_user_has_seat=False,
     ):
@@ -74,11 +73,7 @@ class DummyMeshClient(ModelMeshClient):
                 data = serializer.validate(payload.copy())
 
                 api_payload = APIPayload(prompt=data.get("prompt"), context=data.get("context"))
-
-                if original_payload:
-                    api_payload.original_prompt = original_payload.get("prompt", "")
-                else:
-                    api_payload.original_prompt = api_payload.prompt
+                api_payload.original_prompt = payload["prompt"]
 
                 context = CompletionContext(
                     request=request,
@@ -362,7 +357,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            predictions="- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "
+            predictions="- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "  # noqa: E501
             "state: present\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n"
             "    state: started\n    enabled: true\n",
         )

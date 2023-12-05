@@ -46,7 +46,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, expected, response_data, original_payload=payload),
+            DummyMeshClient(self, expected, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload, format='json')
