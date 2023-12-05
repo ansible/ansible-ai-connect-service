@@ -3,6 +3,7 @@ A custom OAuth2 application that allows wildcard for redirect_uris
 
 https://github.com/jazzband/django-oauth-toolkit/issues/443#issuecomment-420255286
 """
+import ipaddress
 import re
 from urllib.parse import parse_qsl, unquote, urlparse
 
@@ -22,7 +23,24 @@ def validate_uris(value):
             raise ValidationError('Redirect URI scheme is not allowed.')
         if not obj.netloc:
             raise ValidationError('Redirect URI must contain a domain.')
+        if not is_acceptable_netloc(obj.netloc):
+            raise ValidationError('Redirect URI is not acceptable.')
 
+def wildcard_string_to_regex(value):
+    return re.escape(value).replace('\\*', '[^\\/]*')
+
+def is_acceptable_netloc(value):
+    if '*' not in value:
+        return True
+    else:
+        return re.fullmatch(r'.*\.[^\.\*]+\.[^\.\*]+', value) != None
+
+def is_ip_address(address):
+    try:
+        ipaddress.ip_address(address)
+        return True
+    except ValueError:
+        return False
 
 class Application(AbstractApplication):
     """Subclass of application to allow for regular expressions for the redirect uri."""
@@ -31,13 +49,21 @@ class Application(AbstractApplication):
     def _uri_is_allowed(allowed_uri, uri):
         """Check that the URI conforms to these rules."""
         schemes_match = allowed_uri.scheme == uri.scheme
-        netloc_matches_pattern = re.fullmatch(allowed_uri.netloc, uri.netloc)
+
+        # Wildcards ('*') in netloc is supposed to be matched to a hostname,
+        # not an ip address.
+        if '*' in allowed_uri.netloc and is_ip_address(uri.hostname):
+            netloc_matches_pattern = None
+        else:
+            regex = wildcard_string_to_regex(allowed_uri.netloc)
+            netloc_matches_pattern = re.fullmatch(regex, uri.netloc)
 
         # The original code allowed only fixed paths only with:
         #   paths_match = allowed_uri.path == uri.path
         # However, since paths can contain variable portions (e.g. code-server),
         # code was modified to support regex patterns in paths as well.
-        paths_match = re.fullmatch(allowed_uri.path, uri.path)
+        regex = wildcard_string_to_regex(allowed_uri.path)
+        paths_match = re.fullmatch(regex, uri.path)
 
         return all([schemes_match, netloc_matches_pattern, paths_match])
 
