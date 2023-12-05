@@ -55,3 +55,23 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_has_api_key = secret_manager.secret_exists(user.organization_id, Suffixes.API_KEY)
         return not org_has_api_key
+
+
+# See: https://issues.redhat.com/browse/AAP-18386
+class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
+    """
+    Block access to seated users if the WCA key was not set yet.
+    """
+
+    code = 'permission_denied__org_not_ready_because_wca_not_configured'
+    message = "The IBM watsonx Code Assistant model is not configured yet."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if user.organization_id is None:
+            # We accept the Community users, the won't have access to WCA
+            return True
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+
+        org_has_api_key = secret_manager.secret_exists(user.organization_id, Suffixes.API_KEY)
+        return user.rh_user_has_seat and org_has_api_key
