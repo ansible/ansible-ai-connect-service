@@ -1,8 +1,8 @@
 import re
+from urllib.parse import urlparse
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from urllib.parse import urlparse
 
 from ..models import (
     Application,
@@ -16,6 +16,7 @@ redirect_uris = [
     'https://*.github.dev/extension-auth-callback?*',
     'http://127.0.0.1:8000/*/callback?*',
 ]
+
 
 class WildcardOAuth2Test(TestCase):
     def setUp(self):
@@ -54,9 +55,11 @@ class WildcardOAuth2Test(TestCase):
 
 class ValidateUrisTest(TestCase):
     def test_uri_no_error(self):
-        validate_uris('https://example.com/callback '
-                      'https://*.github.dev/extension-auth-callback?.* '
-                      'http://127.0.0.1:8000/.*?.*')
+        validate_uris(
+            'https://example.com/callback '
+            'https://*.github.dev/extension-auth-callback?.* '
+            'http://127.0.0.1:8000/.*?.*'
+        )
 
     def test_uri_containing_fragment(self):
         try:
@@ -106,10 +109,9 @@ class AcceptableNetlocTest(TestCase):
 
 class WildcardStringToRegExTest(TestCase):
     def test_wildcard_string_to_regex(self):
-        self.assertEqual(wildcard_string_to_regex('*'),
-                         '[^\\/]*')
+        self.assertEqual(wildcard_string_to_regex('*'), '[^\\/]*')
         p = wildcard_string_to_regex('*sub*.sub.example.com')
-        self.assertEqual(p,'[^\\/]*sub[^\\/]*\\.sub\\.example\\.com')
+        self.assertEqual(p, '[^\\/]*sub[^\\/]*\\.sub\\.example\\.com')
         self.assertTrue(re.match(p, 'sub.sub.example.com'))
         self.assertTrue(re.match(p, 'abcsubxyz.sub.example.com'))
         self.assertTrue(re.match(p, 'abc.sub.sub.example.com'))

@@ -26,14 +26,17 @@ def validate_uris(value):
         if not is_acceptable_netloc(obj.netloc):
             raise ValidationError('Redirect URI is not acceptable.')
 
+
 def wildcard_string_to_regex(value):
     return re.escape(value).replace('\\*', '[^\\/]*')
 
+
 def is_acceptable_netloc(value):
-    if '*' not in value:
-        return True
+    if '*' in value:
+        return re.fullmatch(r'.*\.[^\.\*]+\.[^\.\*]+', value) is not None
     else:
-        return re.fullmatch(r'.*\.[^\.\*]+\.[^\.\*]+', value) != None
+        return True
+
 
 def is_ip_address(address):
     try:
@@ -41,6 +44,7 @@ def is_ip_address(address):
         return True
     except ValueError:
         return False
+
 
 class Application(AbstractApplication):
     """Subclass of application to allow for regular expressions for the redirect uri."""
