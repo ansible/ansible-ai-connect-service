@@ -111,7 +111,10 @@ def expand_vars_playbook(data, additional_context):
     merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
     if len(merged_vars) > 0:
         for d in data:
+            tasks = d.pop("tasks", None)  # tasks needs to be last for proper placement with prompt
             d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+            if tasks:
+                d["tasks"] = tasks
 
 
 def expand_vars_tasks_in_role(data, additional_context):
