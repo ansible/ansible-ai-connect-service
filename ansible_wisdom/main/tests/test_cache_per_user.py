@@ -23,13 +23,13 @@ class TestCachePerUser(TestCase):
     def test_cache_per_user(self):
         view = TestCachePerUser.TestView()
 
-        def mock_user_request(username):
+        def mock_user_request(user_uuid):
             """
             Some nasty hackery to avoid Django handling the (Test) View invocation.
             Django ordinarily handles caching as part of it's URL lookup, dispatch
             and response mechanism. We however don't have a _real_ route mapping
             to this (Test) View.
-            :param username:
+            :param user_uuid:
             :return:
             """
             request = Request(HttpRequest())
@@ -37,20 +37,19 @@ class TestCachePerUser(TestCase):
             request.META["SERVER_NAME"] = "localhost"
             request.META["SERVER_PORT"] = 8080
             user = Mock()
-            user.is_authenticated = Mock(return_value=True)
-            user.username = username
+            user.uuid = user_uuid
             request._user = user
             return request
 
         # Check caching for user1
-        request_user1 = mock_user_request("user1")
+        request_user1 = mock_user_request("uuid1")
         response_user1 = view.get(request_user1).render().content
         self.assertEqual(view.get(request_user1).render().content, response_user1)
 
         time.sleep(1)
 
         # Check caching for user2
-        request_user2 = mock_user_request("user2")
+        request_user2 = mock_user_request("uuid2")
         response_user2 = view.get(request_user2).render().content
         self.assertEqual(view.get(request_user2).render().content, response_user2)
         self.assertNotEqual(response_user1, response_user2)

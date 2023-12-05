@@ -7,11 +7,8 @@ def cache_per_user(timeout):
     def decorator(view_func):
         @wraps(view_func)
         def wrapped_view(request, *args, **kwargs):
-            username = 'unknown'
-            if request.user.is_authenticated:
-                username = request.user.username
-
-            return cache_page(timeout, key_prefix=f"_user_{username}_")(view_func)(
+            user_uuid = request.user.uuid
+            return cache_page(timeout, key_prefix=f"_user_{user_uuid}_")(view_func)(
                 request, *args, **kwargs
             )
 
