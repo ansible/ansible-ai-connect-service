@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class APIPayload(BaseModel):
     model: str = ''
     prompt: str = ""
+    original_prompt: str = ""
     context: str = ""
     userId: Union[UUID, None]
     suggestionId: Union[UUID, None]

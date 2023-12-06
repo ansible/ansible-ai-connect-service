@@ -19,8 +19,9 @@ preprocess_hist = Histogram(
 
 
 def completion_pre_process(context: CompletionContext):
-    cp = context.payload.prompt
-    cc = context.payload.context
+    prompt = context.payload.prompt
+    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
+    payload_context = context.payload.context
 
     # Additional context (variables) is supported when
     #
@@ -34,8 +35,8 @@ def completion_pre_process(context: CompletionContext):
     else:
         additionalContext = {}
 
-    multi_task = fmtr.is_multi_task_prompt(cp)
-    context.original_indent = cp.find('#' if multi_task else "name")
+    multi_task = fmtr.is_multi_task_prompt(prompt)
+    context.original_indent = prompt.find('#' if multi_task else "name")
 
     # fmtr.preprocess() performs:
     #
@@ -49,8 +50,18 @@ def completion_pre_process(context: CompletionContext):
     #
     ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
     context.payload.context, context.payload.prompt = fmtr.preprocess(
-        cc, cp, ansibleFileType, additionalContext
+        payload_context, prompt, ansibleFileType, additionalContext
     )
+    if not multi_task:
+        # We are currently more forgiving on leading spacing of single task
+        # prompts than multi task prompts. In order to use the "original"
+        # single task prompt successfull in post-processing, we need to
+        # ensure its spacing aligns with the normalized context we got
+        # back from preprocess. We can calculate the proper spacing from the
+        # normalized prompt.
+        normalized_indent = len(context.payload.prompt) - len(context.payload.prompt.lstrip())
+        original_prompt = " " * normalized_indent + original_prompt.lstrip()
+    context.payload.original_prompt = original_prompt
 
 
 class PreProcessStage(PipelineElement):

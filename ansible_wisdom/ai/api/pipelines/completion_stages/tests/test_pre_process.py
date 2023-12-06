@@ -361,13 +361,18 @@ TASKS_CONTEXT_WITHOUT_VARS = "\n".join(TASKS_PAYLOAD["prompt"].split("\n")[1:-2]
 @modify_settings()
 class CompletionPreProcessTest(TestCase):
     def call_completion_pre_process(self, payload, is_commercial_user, expected_context):
+        original_prompt = payload.get("prompt")
         user = Mock(rh_user_has_seat=is_commercial_user)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={'request': request})
         data = serializer.validate(payload.copy())
         context = CompletionContext(
             request=request,
-            payload=APIPayload(prompt=data.get("prompt"), context=data.get("context")),
+            payload=APIPayload(
+                prompt=data.get("prompt"),
+                original_prompt=original_prompt,
+                context=data.get("context"),
+            ),
             metadata=data.get("metadata"),
         )
         completion_pre_process(context)

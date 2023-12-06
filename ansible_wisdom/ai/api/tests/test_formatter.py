@@ -266,7 +266,11 @@ class AnsibleDumperTestCase(TestCase):
         )
 
     def test_get_task_names_from_tasks(self):
-        tasks_txt = "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+        tasks_txt = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    "
+            "state: latest\n- name:  say hello fred@example.com\n"
+            "  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
         self.assertEqual(
             ['Install Apache', 'say hello fred@example.com'],
             fmtr.get_task_names_from_tasks(tasks_txt),
@@ -300,6 +304,41 @@ var3: value3
         self.assertTrue('ansible.builtin.set_fact' in data[0])
         self.assertEqual(data[0]['ansible.builtin.set_fact'], merged_vars)
 
+    def test_restore_original_task_names(self):
+        single_task_prompt = "- name: Install ssh\n"
+        multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
+
+        multi_task_yaml = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
+            "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+        single_task_yaml = (
+            "  ansible.builtin.package:\n    name: openssh-server\n    state: present\n  when:\n"
+            "    - enable_ssh | bool\n    - ansible_distribution == 'Ubuntu'"
+        )
+
+        expected_multi_task_yaml = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
+            "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
+        )
+
+        self.assertEqual(
+            single_task_yaml,
+            fmtr.restore_original_task_names(single_task_yaml, single_task_prompt),
+        )
+
+        self.assertEqual(
+            "",
+            fmtr.restore_original_task_names("", multi_task_prompt),
+        )
+
 
 if __name__ == "__main__":
     tests = AnsibleDumperTestCase()
@@ -324,3 +363,4 @@ if __name__ == "__main__":
     tests.test_get_task_names_multi()
     tests.test_load_and_merge_vars_in_context()
     tests.test_insert_set_fact_task()
+    tests.test_restore_original_task_names()
