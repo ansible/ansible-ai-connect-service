@@ -41,27 +41,27 @@ def completion_pre_process(context: CompletionContext):
     # fmtr.preprocess() performs:
     #
     #   1. Insert additional context (variables), and
-    #   2. Formatting prompt/context YAML data,
+    #   2. Formatting/normalizing prompt/context YAML data,
     #
-    # When non-empty additional context is given, fmtr.preprocess() needs to
-    # be called. Otherwise, it is called when a non-multi task prompt is
-    # specified because multi-task prompts are supported by WCA only and WCA
-    # contains its own formatter for 2.
+    # Calling fmtr.preprocess for of (2) is redundant in WCA case
+    # because WCA is already doing this. However, enhanced context
+    # support also relies on this preprocess step, so we will
+    # always call fmtr.preprocess, regardless of model server.
     #
-    if additionalContext or not multi_task:
-        ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
-        _, context.payload.original_prompt = fmtr.preprocess(
-            payload_context,
-            original_prompt,
-            ansibleFileType,
-            additionalContext,
-            do_handle_spaces_and_casing=False,
-        )
-        context.payload.context, context.payload.prompt = fmtr.preprocess(
-            payload_context, prompt, ansibleFileType, additionalContext
-        )
-    else:
-        context.payload.original_prompt = original_prompt
+    ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
+    context.payload.context, context.payload.prompt = fmtr.preprocess(
+        payload_context, prompt, ansibleFileType, additionalContext
+    )
+    if not multi_task:
+        # We are currently more forgiving on leading spacing of single task
+        # prompts than multi task prompts. In order to use the "original"
+        # single task prompt successfull in post-processing, we need to
+        # ensure its spacing aligns with the normalized context we got
+        # back from preprocess. We can calculate the proper spacing from the
+        # normalized prompt.
+        normalized_indent = len(context.payload.prompt) - len(context.payload.prompt.lstrip())
+        original_prompt = " " * normalized_indent + original_prompt.lstrip()
+    context.payload.original_prompt = original_prompt
 
 
 class PreProcessStage(PipelineElement):
