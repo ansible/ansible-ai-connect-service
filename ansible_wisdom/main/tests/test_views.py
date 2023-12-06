@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from main.settings.base import SOCIAL_AUTH_OIDC_KEY
-from main.views import LoginView, LogoutView
+from main.views import LoginView
 from users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -13,34 +13,19 @@ from users.constants import (
 from users.tests.test_users import create_user
 
 
-class RequestMock:
-    user = None
-    host = "http://localhost"
-
-    def build_absolute_uri(self, path):
-        return self.host + path
-
-
-class UserMock:
-    is_oidc = False
-
-    def is_oidc_user(self):
-        return self.is_oidc
+def create_user_with_provider(user_provider):
+    return create_user(
+        username='test_user_name',
+        password='test_passwords',
+        provider=user_provider,
+        external_username='anexternalusername',
+    )
 
 
 class LogoutTest(TestCase):
-    request = RequestMock()
-    user = None
-    view = LogoutView()
-
     def test_rht_sso_redirect(self):
-        self.user = create_user(
-            username='test_user_name',
-            password='test_passwords',
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            external_username='anexternalusername',
-        )
-        self.client.force_login(self.user)
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
 
         response = self.client.get(reverse('logout'))
         self.assertEqual(
@@ -51,13 +36,8 @@ class LogoutTest(TestCase):
         )
 
     def test_gh_sso_redirect(self):
-        self.user = create_user(
-            username='test_user_name',
-            password='test_passwords',
-            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
-            external_username='anexternalusername',
-        )
-        self.client.force_login(self.user)
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_GITHUB)
+        self.client.force_login(user)
 
         response = self.client.get(reverse('logout'))
         self.assertEqual(response.url, '/')
