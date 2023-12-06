@@ -56,6 +56,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
@@ -99,6 +100,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
@@ -113,6 +115,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("'event': 'prediction',", log)
                 self.assertNotInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertSegmentTimestamp(log)
 

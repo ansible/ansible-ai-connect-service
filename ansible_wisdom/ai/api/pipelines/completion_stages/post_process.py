@@ -202,16 +202,18 @@ def completion_post_process(context: CompletionContext):
                 f"suggestion id: {suggestion_id}, "
                 f"post-processed recommendation: \n{postprocessed_yaml}"
             )
-            logger.debug(
-                f"suggestion id: {suggestion_id}, "
-                f"post-process detail: {json.dumps(ari_results)}"
-            )
+
             post_processed_predictions["predictions"][0] = postprocessed_yaml
-            for ari_result in ari_results:
+            for index, ari_result in enumerate(ari_results):
+                # Use the anonymized task name in the postprocess segment event
                 postprocess_details.append(
-                    {"name": ari_result["name"], "rule_details": ari_result["rule_details"]}
+                    {"name": tasks[index]["name"], "rule_details": ari_result["rule_details"]}
                 )
 
+            logger.debug(
+                f"suggestion id: {suggestion_id}, "
+                f"post-process detail: {json.dumps(postprocess_details)}"
+            )
         except Exception as exc:
             exception = exc
             # return the original recommendation if we failed to postprocess
