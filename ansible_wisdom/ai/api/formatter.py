@@ -68,6 +68,10 @@ class AnsibleDumper(yaml.Dumper):
             return "'"
         return self.preferred_quote_
 
+    # Prevent aliases when enhanced context adds same vars to multiple plays
+    def ignore_aliases(self, data):
+        return True
+
 
 class InvalidPromptException(Exception):
     pass
@@ -111,7 +115,10 @@ def expand_vars_playbook(data, additional_context):
     merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
     if len(merged_vars) > 0:
         for d in data:
+            tasks = d.pop("tasks", None)  # tasks needs to be last for proper placement with prompt
             d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+            if tasks:
+                d["tasks"] = tasks
 
 
 def expand_vars_tasks_in_role(data, additional_context):
@@ -147,7 +154,7 @@ def preprocess(context, prompt, ansible_file_type="playbook", additional_context
     """
     Formatting and normalization performed in this function is redundant in WCA case because
     it is already handled on the WCA side. We can safely skip it for multitask scenarios,
-    which we know are WCA. No need to adopt to suppot both single and multitask.
+    which we know are WCA. No need to adopt to support both single and multitask.
 
     We call normalize_yaml regardless of single or multi in order to process the
     additional_context content. We need to hold the original multi-task prompt because
