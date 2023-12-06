@@ -46,7 +46,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
-            DummyMeshClient(self, expected, response_data, original_payload=payload),
+            DummyMeshClient(self, expected, response_data),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload, format='json')
@@ -56,6 +56,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
@@ -99,6 +100,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
@@ -113,6 +115,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("'event': 'prediction',", log)
                 self.assertNotInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
+                self.assertNotInLog("foo@ansible.com", log)
                 self.assertNotInLog("username", log)
                 self.assertSegmentTimestamp(log)
 
