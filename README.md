@@ -141,6 +141,26 @@ write temporary data in it:
 chmod -R 777 ari/
 ```
 
+If your django container build fails with the following error, you've
+probably run out of memory running webpack.
+```bash
+STEP 30/46: RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+
+> admin-portal@0.1.0 build
+> node scripts/build.js
+
+Creating an optimized production build...
+npm ERR! path /tmp/ansible_wisdom_console_react
+npm ERR! command failed
+npm ERR! signal SIGKILL
+npm ERR! command sh -c -- node scripts/build.js
+```
+You can increase the memory of your existing podman machine
+by issuing the following:
+```bash
+podman machine set --memory 8192
+```
+
 Recreating the dev containers might be useful:
 
 ```bash
