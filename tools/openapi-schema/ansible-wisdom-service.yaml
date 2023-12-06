@@ -217,8 +217,73 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
           description: ''
+  /api/v0/telemetry/:
+    get:
+      operationId: telemetry_settings_get
+      summary: Get the telemetry settings for an Organisation
+      tags:
+      - telemetry
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '429':
+          description: Request was throttled
+        '500':
+          description: Internal service error
+    post:
+      operationId: telemetry_settings_set
+      summary: Set the Telemetry settings for an Organisation
+      tags:
+      - telemetry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetrySettingsRequest'
+            examples:
+              ValidExample:
+                value:
+                  optOut: 'true'
+                summary: Request Telemetry settings
+                description: A valid request to set the Telemetry settings.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TelemetrySettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TelemetrySettingsRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Empty response
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '429':
+          description: Request was throttled
+        '500':
+          description: Internal service error
   /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
@@ -732,6 +797,15 @@ components:
       - expectedSuggestion
       - prompt
       - providedSuggestion
+    TelemetrySettingsRequest:
+      type: object
+      properties:
+        optOut:
+          type: boolean
+          description: Indicates whether the Red Hat Organization opts out of telemetry
+            collection.
+      required:
+      - optOut
     TriggerEnum:
       enum:
       - '0'
@@ -743,7 +817,7 @@ components:
       - bug-report
       - feature-request
       type: string
-    User:
+    UserResponse:
       type: object
       properties:
         rh_org_has_subscription:
@@ -758,10 +832,9 @@ components:
           type: string
         username:
           type: string
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
           maxLength: 150
+        org_telemetry_opt_out:
+          type: boolean
       required:
       - rh_org_has_subscription
       - rh_user_has_seat

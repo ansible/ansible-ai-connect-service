@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from ai.api.telemetry.api_telemetry_settings_views import TelemetrySettingsView
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
@@ -61,6 +62,15 @@ urlpatterns = [
     path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
     path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
+
+if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
+    urlpatterns += [
+        path(
+            f'api/{WISDOM_API_VERSION}/telemetry/',
+            TelemetrySettingsView.as_view(),
+            name='telemetry_settings',
+        ),
+    ]
 
 if settings.DEBUG:
     urlpatterns += [

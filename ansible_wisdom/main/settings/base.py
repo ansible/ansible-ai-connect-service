@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "social_django",
     "users",
+    "organizations",
     "ai",
     "django_prometheus",
     "drf_spectacular",
@@ -176,6 +177,7 @@ OAUTH2_PROVIDER = {
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
 COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
+ME_USER_RATE_THROTTLE = os.environ.get('ME_USER_RATE_THROTTLE') or '50/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
 
 MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
@@ -186,6 +188,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': COMPLETION_USER_RATE_THROTTLE,
         'test': "100000/minute",
+        'me': ME_USER_RATE_THROTTLE,
     },
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [

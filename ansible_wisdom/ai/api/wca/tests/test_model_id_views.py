@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Union
 from unittest.mock import Mock, patch
 
 import ai.api.aws.wca_secret_manager
@@ -18,17 +17,10 @@ from django.test import override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from organizations.models import Organization
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
-
-
-def _assert_segment_log(test, log, event: str, problem: Union[str, None]):
-    segment_events = test.extractSegmentEventsFromLog(log)
-    test.assertTrue(len(segment_events) == 1)
-    test.assertEqual(segment_events[0]["event"], event)
-    test.assertEqual(segment_events[0]["properties"]["problem"], problem)
-    test.assertEqual(segment_events[0]["properties"]["exception"], True if problem else False)
 
 
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
@@ -65,7 +57,7 @@ class TestWCAModelIdView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "modelIdGet", None)
+            self.assert_segment_log(log, "modelIdGet", None)
 
     def test_permission_classes(self, *args):
         url = reverse('wca_model_id')
@@ -84,7 +76,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_get_model_id_when_undefined(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret.return_value = None
@@ -92,8 +84,8 @@ class TestWCAModelIdView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
-            _assert_segment_log(self, log, "modelIdGet", None)
+            mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
+            self.assert_segment_log(log, "modelIdGet", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_get_model_id_when_defined(self, *args):
@@ -104,7 +96,7 @@ class TestWCAModelIdView(
         self._test_get_model_id_when_defined(True)
 
     def _test_get_model_id_when_defined(self, has_seat):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
@@ -119,12 +111,12 @@ class TestWCAModelIdView(
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data['model_id'], 'secret_model_id')
             self.assertEqual(r.data['last_update'], date_time)
-            mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
-            _assert_segment_log(self, log, "modelIdGet", None)
+            mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
+            self.assert_segment_log(log, "modelIdGet", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_get_model_id_when_defined_throws_exception(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret.side_effect = WcaSecretManagerError('Test')
@@ -133,7 +125,7 @@ class TestWCAModelIdView(
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
-            _assert_segment_log(self, log, "modelIdGet", "WcaSecretManagerError")
+            self.assert_segment_log(log, "modelIdGet", "WcaSecretManagerError")
 
     def test_set_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
@@ -147,7 +139,7 @@ class TestWCAModelIdView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "modelIdSet", None)
+            self.assert_segment_log(log, "modelIdSet", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id(self, *args):
@@ -158,7 +150,7 @@ class TestWCAModelIdView(
         self._test_set_model_id(True)
 
     def _test_set_model_id(self, has_seat):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
@@ -167,7 +159,7 @@ class TestWCAModelIdView(
         mock_secret_manager.get_secret.return_value = None
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
+        mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
         # Set ModelId
         mock_secret_manager.get_secret.return_value = {'SecretString': 'someAPIKey'}
@@ -181,14 +173,14 @@ class TestWCAModelIdView(
 
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 mock_secret_manager.save_secret.assert_called_with(
-                    '123', Suffixes.MODEL_ID, 'secret_model_id'
+                    123, Suffixes.MODEL_ID, 'secret_model_id'
                 )
-                _assert_segment_log(self, log, "modelIdSet", None)
+                self.assert_segment_log(log, "modelIdSet", None)
 
             # Check audit entry
             self.assertInLog(
                 f"User: '{self.user}' set WCA Model Id for "
-                f"Organisation '{self.user.organization_id}'",
+                f"Organisation '{self.user.organization.id}'",
                 signals,
             )
 
@@ -200,11 +192,11 @@ class TestWCAModelIdView(
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(r.data['model_id'], 'secret_model_id')
-        mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
+        mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id_not_valid(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
@@ -214,7 +206,7 @@ class TestWCAModelIdView(
 
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        mock_secret_manager.get_secret.assert_called_with('123', Suffixes.MODEL_ID)
+        mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
         # Set ModelId
         mock_secret_manager.get_secret.return_value = {'SecretString': 'someAPIKey'}
@@ -229,11 +221,11 @@ class TestWCAModelIdView(
             mock_wca_client.infer_from_parameters.assert_called()
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ValidationError", log)
-            _assert_segment_log(self, log, "modelIdSet", "ValidationError")
+            self.assert_segment_log(log, "modelIdSet", "ValidationError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id_throws_secret_manager_exception(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
@@ -246,11 +238,11 @@ class TestWCAModelIdView(
             )
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
-            _assert_segment_log(self, log, "modelIdSet", "WcaSecretManagerError")
+            self.assert_segment_log(log, "modelIdSet", "WcaSecretManagerError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_model_id_throws_validation_exception(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
@@ -262,14 +254,14 @@ class TestWCAModelIdView(
                 content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "modelIdSet", "ValidationError")
+            self.assert_segment_log(log, "modelIdSet", "ValidationError")
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
 class TestWCAModelIdViewAsNonSubscriber(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_get_model_id_as_non_subscriber(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_model_id'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -298,7 +290,7 @@ class TestWCAModelIdValidatorView(
         super().tearDown()
 
     def test_validate(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         mock_wca_client.infer = Mock(return_value={})
@@ -318,11 +310,11 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            _assert_segment_log(self, log, "modelIdValidate", None)
+            self.assert_segment_log(log, "modelIdValidate", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_no_api_key(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -336,11 +328,11 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
-            _assert_segment_log(self, log, "modelIdValidate", "WcaKeyNotFound")
+            self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_no_model_id(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -354,7 +346,7 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ai.api.model_client.exceptions.WcaModelIdNotFound", log)
-            _assert_segment_log(self, log, "modelIdValidate", "WcaModelIdNotFound")
+            self.assert_segment_log(log, "modelIdValidate", "WcaModelIdNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_ok(self, *args):
@@ -365,7 +357,7 @@ class TestWCAModelIdValidatorView(
         self._test_validate_ok(True)
 
     def _test_validate_ok(self, has_seat):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
@@ -380,11 +372,11 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            _assert_segment_log(self, log, "modelIdValidate", None)
+            self.assert_segment_log(log, "modelIdValidate", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_wrong_model_id(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=ValidationError)
@@ -393,11 +385,11 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ValidationError", log)
-            _assert_segment_log(self, log, "modelIdValidate", "ValidationError")
+            self.assert_segment_log(log, "modelIdValidate", "ValidationError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_api_key_not_found(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
@@ -406,11 +398,11 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
-            _assert_segment_log(self, log, "modelIdValidate", "WcaKeyNotFound")
+            self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_bad_request(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaBadRequest)
@@ -419,11 +411,11 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ai.api.model_client.exceptions.WcaBadRequest", log)
-            _assert_segment_log(self, log, "modelIdValidate", "WcaBadRequest")
+            self.assert_segment_log(log, "modelIdValidate", "WcaBadRequest")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_exception(self, *args):
-        self.user.organization_id = '123'
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
@@ -432,4 +424,4 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog("Exception", log)
-            _assert_segment_log(self, log, "modelIdValidate", "Exception")
+            self.assert_segment_log(log, "modelIdValidate", "Exception")

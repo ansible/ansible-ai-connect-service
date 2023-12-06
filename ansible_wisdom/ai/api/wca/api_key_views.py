@@ -12,7 +12,6 @@ from ai.api.permissions import (
 from ai.api.serializers import WcaKeyRequestSerializer
 from ai.api.utils.segment import send_segment_event
 from ai.api.views import ServiceUnavailable
-from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -64,12 +63,12 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         try:
             # An OrgId must be present
             # See https://issues.redhat.com/browse/AAP-16009
-            org_id = request._request.user.organization_id
-            if not is_org_id_valid(org_id):
+            organization = request._request.user.organization
+            if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            wca_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
+            wca_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if wca_key is None:
                 return Response(status=HTTP_200_OK)
             # Once written the Key value is never returned to the User,
@@ -106,14 +105,14 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: POST handler")
 
-        org_id = None
+        organization = None
         exception = None
         start_time = time.time()
         try:
             # An OrgId must be present
             # See https://issues.redhat.com/browse/AAP-16009
-            org_id = request._request.user.organization_id
-            if not is_org_id_valid(org_id):
+            organization = request._request.user.organization
+            if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             # Extract API Key from request
@@ -127,13 +126,16 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
             # Store the validated API Key
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            secret_name = secret_manager.save_secret(org_id, Suffixes.API_KEY, wca_key)
+            secret_name = secret_manager.save_secret(organization.id, Suffixes.API_KEY, wca_key)
 
             # Audit trail/logging
             user_set_wca_api_key.send(
-                WCAApiKeyView.__class__, user=request._request.user, org_id=org_id, api_key=wca_key
+                WCAApiKeyView.__class__,
+                user=request._request.user,
+                org_id=organization.id,
+                api_key=wca_key,
             )
-            logger.info(f"Stored secret '{secret_name}' for org_id '{org_id}'")
+            logger.info(f"Stored secret '{secret_name}' for org_id '{organization.id}'")
 
         except ValidationError as e:
             exception = e
@@ -143,7 +145,8 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
         except WcaTokenFailureApiKeyError as e:
             exception = e
             logger.info(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
+                f"An error occurred trying to retrieve a WCA Token for "
+                f"Organisation '{organization.id}'.",
                 exc_info=True,
             )
             return Response(status=HTTP_400_BAD_REQUEST)
@@ -185,21 +188,20 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("WCA API Key Validator:: GET handler")
 
-        org_id = None
+        organization = None
         exception = None
         start_time = time.time()
         try:
             # An OrgId must be present
             # See https://issues.redhat.com/browse/AAP-16009
-            org_id = request._request.user.organization_id
-            if not is_org_id_valid(org_id):
+            organization = request._request.user.organization
+            if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             # Validate API Key
             model_mesh_client = apps.get_app_config("ai").get_wca_client()
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
-
+            api_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if api_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
             token = model_mesh_client.get_token(api_key['SecretString'])
@@ -209,7 +211,8 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         except WcaTokenFailureApiKeyError as e:
             exception = e
             logger.info(
-                f"An error occurred trying to retrieve a WCA Token for Organisation '{org_id}'.",
+                f"An error occurred trying to retrieve a WCA Token for "
+                f"Organisation '{organization.id}'.",
                 exc_info=True,
             )
             return Response(status=HTTP_400_BAD_REQUEST)

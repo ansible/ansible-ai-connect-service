@@ -1,4 +1,5 @@
 from ast import literal_eval
+from typing import Union
 from unittest.mock import patch
 
 from django.apps import apps
@@ -27,6 +28,8 @@ class WisdomLogAwareMixin:
                 events.append(obj)
         return events
 
+
+class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
     def assertInLog(self, s, logs):
         self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
@@ -38,9 +41,14 @@ class WisdomLogAwareMixin:
         for event in segment_events:
             self.assertIsNotNone(event['timestamp'])
 
-
-class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
-    pass
+    def assert_segment_log(self, log, event: str, problem: Union[str, None], **kwargs):
+        segment_events = self.extractSegmentEventsFromLog(log)
+        self.assertTrue(len(segment_events) == 1)
+        self.assertEqual(segment_events[0]["event"], event)
+        self.assertEqual(segment_events[0]["properties"]["problem"], problem)
+        self.assertEqual(segment_events[0]["properties"]["exception"], True if problem else False)
+        for key, value in kwargs.items():
+            self.assertEqual(segment_events[0]["properties"][key], value)
 
 
 class WisdomAppsBackendMocking(TestCase):

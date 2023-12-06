@@ -6,13 +6,20 @@ from typing import Optional
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
+from ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
 from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from organizations.models import Organization
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
@@ -36,7 +43,9 @@ def create_user(
     rh_user_is_org_admin: Optional[bool] = None,
     rh_user_id: str = None,
     rh_org_id: int = 1234567,
+    org_opt_out: bool = False,
 ):
+    (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
     username = username or 'u' + "".join(random.choices(string.digits, k=5))
     password = password or 'secret'
     email = username + '@example.com'
@@ -44,7 +53,7 @@ def create_user(
         username=username,
         email=email,
         password=password,
-        organization_id=int(rh_org_id) if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
+        organization=org if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
     )
     if provider:
         rh_user_id = rh_user_id or str(uuid4())
@@ -66,6 +75,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
             external_username="anexternalusername",
         )
+        cache.clear()
 
     def test_users(self):
         self.client.force_authenticate(user=self.user)
@@ -141,6 +151,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.user = Mock(
             community_terms_accepted=None, commercial_terms_accepted=None, rh_user_has_seat=False
         )
+        cache.clear()
 
     def test_terms_of_service_community_first_call(self):
         _terms_of_service(
@@ -295,6 +306,10 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
 class TestUserSeat(WisdomAppsBackendMocking):
+    def setUp(self) -> None:
+        super().setUp()
+        cache.clear()
+
     def test_rh_user_has_seat_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_user_has_seat)
@@ -349,6 +364,7 @@ class TestUsername(WisdomServiceLogAwareTestCase):
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
             external_username="babar",
         )
+        cache.clear()
 
     def tearDown(self) -> None:
         self.local_user.delete()
@@ -362,6 +378,10 @@ class TestUsername(WisdomServiceLogAwareTestCase):
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
 class TestIsOrgLightspeedSubscriber(WisdomAppsBackendMocking):
+    def setUp(self) -> None:
+        super().setUp()
+        cache.clear()
+
     def test_rh_org_has_subscription_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_org_has_subscription)
@@ -377,6 +397,10 @@ class TestIsOrgLightspeedSubscriber(WisdomAppsBackendMocking):
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        cache.clear()
+
     def test_github_user_external_username(self):
         external_username = "github_username"
         user = create_user(
@@ -445,6 +469,9 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
 
 
 class TestUserModelMetrics(APITransactionTestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
     def test_user_model_metrics(self):
         def get_user_count():
             r = self.client.get(reverse('prometheus-django-metrics'))
@@ -468,3 +495,93 @@ class TestUserModelMetrics(APITransactionTestCase):
 
         # Make sure that the user count incremented
         self.assertEqual(1, get_user_count() - before)
+
+
+class TestTelemetryOptInOut(APITransactionTestCase):
+    def setUp(self) -> None:
+        cache.clear()
+
+    def test_github_user(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
+            social_auth_extra_data={"login": "github_username"},
+            external_username="github_username",
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNone(r.data.get('org_telemetry_opt_out'))
+
+    def test_rhsso_user_with_telemetry_opted_in(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=False,
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+
+    def test_rhsso_user_with_telemetry_opted_out(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=True,
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+
+    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    def test_rhsso_user_with_telemetry_feature_disabled(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=True,
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNone(r.data.get('org_telemetry_opt_out'))
+
+    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
+    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
+    @patch.object(AcceptedTermsPermission, 'has_permission', return_value=True)
+    def test_rhsso_user_caching(self, *args):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+        )
+        self.client.force_authenticate(user=user)
+
+        # Default is False
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+
+        # Update to True
+        r = self.client.post(
+            reverse('telemetry_settings'),
+            data='{ "optOut": "True" }',
+            content_type='application/json',
+        )
+        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+
+        # Cached value should persist
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+
+        # Emulate cache expiring
+        cache.clear()
+
+        # Cache should update
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertTrue(r.data.get('org_telemetry_opt_out'))

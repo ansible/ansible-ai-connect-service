@@ -7,13 +7,18 @@ from django.conf import settings
 from django.forms import Form
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
+from main.cache.cache_per_user import cache_per_user
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from social_django.utils import load_strategy
 
-from .serializers import UserSerializer
+from .serializers import UserResponseSerializer
 
+ME_CACHE_TIMEOUT = 30
 logger = logging.getLogger(__name__)
 
 
@@ -29,9 +34,13 @@ class HomeView(TemplateView):
         except WcaSecretManagerMissingCredentialsError:
             return context
 
-        if self.request.user.is_authenticated and self.request.user.rh_org_has_subscription:
+        if (
+            self.request.user.is_authenticated
+            and self.request.user.rh_org_has_subscription
+            and self.request.user.organization
+        ):
             org_has_api_key = bool(
-                secret_manager.get_secret(self.request.user.organization_id, Suffixes.API_KEY)
+                secret_manager.get_secret(self.request.user.organization.id, Suffixes.API_KEY)
             )
             context["org_has_api_key"] = org_has_api_key
 
@@ -47,11 +56,33 @@ class UnauthorizedView(TemplateView):
 
 
 class CurrentUserView(RetrieveAPIView):
+    class MeRateThrottle(UserRateThrottle):
+        scope = "me"
+
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerializer
+    serializer_class = UserResponseSerializer
+    throttle_classes = [MeRateThrottle]
+
+    @method_decorator(cache_per_user(ME_CACHE_TIMEOUT))
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
     def get_object(self):
         return self.request.user
+
+    def retrieve(self, request, *args, **kwargs):
+        # User data and use Django to serialise it into a dict
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        user_data = serializer.data
+
+        # Enrich with Organisational data, if necessary
+        if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
+            organization = self.request.user.organization
+            if organization:
+                user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
+
+        return Response(user_data)
 
 
 class TermsOfService(TemplateView):

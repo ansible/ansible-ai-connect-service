@@ -511,3 +511,28 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
         label='Model Id',
         help_text='WCA Model Id.',
     )
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Valid example',
+            summary='Request Telemetry settings',
+            description='A valid request to set the Telemetry settings.',
+            value={
+                'optOut': 'true',
+            },
+            request_only=True,
+            response_only=False,
+        ),
+    ]
+)
+class TelemetrySettingsRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['optOut']
+
+    optOut = serializers.BooleanField(
+        required=True,
+        label='OptOut',
+        help_text='Indicates whether the Red Hat Organization opts out of telemetry collection.',
+    )

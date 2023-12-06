@@ -17,7 +17,6 @@ from ai.api.permissions import (
 )
 from ai.api.serializers import WcaModelIdRequestSerializer
 from ai.api.utils.segment import send_segment_event
-from ai.api.wca.utils import is_org_id_valid
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -74,12 +73,12 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         try:
             # An OrgId must be present
             # See https://issues.redhat.com/browse/AAP-16009
-            org_id = request._request.user.organization_id
-            if not is_org_id_valid(org_id):
+            organization = request._request.user.organization
+            if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            response = secret_manager.get_secret(org_id, Suffixes.MODEL_ID)
+            response = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
             if response is None:
                 return Response(status=HTTP_200_OK)
 
@@ -207,16 +206,16 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
     try:
         # An OrgId must be present
         # See https://issues.redhat.com/browse/AAP-16009
-        org_id = request._request.user.organization_id
-        if not is_org_id_valid(org_id):
+        organization = request._request.user.organization
+        if not organization:
             return Response(status=HTTP_400_BAD_REQUEST)
 
-        api_key = api_key_provider(org_id)
-        model_id = model_id_provider(org_id)
+        api_key = api_key_provider(organization.id)
+        model_id = model_id_provider(organization.id)
 
         validate(api_key, model_id)
 
-        return on_success(org_id, model_id)
+        return on_success(organization.id, model_id)
 
     except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure) as e:
         exception = e

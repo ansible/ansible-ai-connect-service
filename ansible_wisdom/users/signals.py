@@ -1,3 +1,4 @@
+import json
 import logging
 
 from django.contrib.auth.signals import (
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 user_set_wca_api_key = Signal()
 user_set_wca_model_id = Signal()
+user_set_telemetry_settings = Signal()
 
 
 @receiver(user_logged_in)
@@ -47,6 +49,15 @@ def user_set_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
     """User set WCA Model Id"""
     logger.info(
         f"User: '{user}' set WCA Model Id for Organisation '{org_id}' to '{_obfuscate(model_id)}'."
+    )
+
+
+@receiver(user_set_telemetry_settings)
+def user_set_telemetry_settings_log(sender, user, org_id, settings, **kwargs):
+    """User set Telemetry settings"""
+    logger.info(
+        f"User: '{user}' set Telemetry settings for Organisation "
+        f"'{org_id}' to '{json.dumps(settings, indent = 2) }'."
     )
 
 

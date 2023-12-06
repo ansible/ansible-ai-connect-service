@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
+from organizations.models import Organization
 from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
@@ -91,10 +92,12 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         else:
             logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
-    user.organization_id = backend.id_token['organization']['id']
+    user.organization = Organization.objects.get_or_create(
+        id=backend.id_token['organization']['id']
+    )[0]
     user.save()
     return {
-        'organization_id': user.organization_id,
+        'organization_id': user.organization.id,
         'rh_user_is_org_admin': user.rh_user_is_org_admin,
         'external_username': user.external_username,
     }
