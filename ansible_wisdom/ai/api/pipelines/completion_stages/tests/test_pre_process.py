@@ -345,3 +345,13 @@ class CompletionPreProcessTest(TestCase):
             True,
             TASKS_CONTEXT_WITHOUT_VARS,
         )
+
+    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
+    def test_other_ansible_type(self):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload["metadata"]["ansibleFileType"] = "other"
+        self.call_completion_pre_process(
+            payload,
+            True,
+            TASKS_CONTEXT_WITHOUT_VARS,
+        )
