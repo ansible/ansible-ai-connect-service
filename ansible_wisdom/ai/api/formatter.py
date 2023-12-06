@@ -139,7 +139,8 @@ def expand_vars_files(data, ansible_file_type, additional_context):
         "tasks_in_role": expand_vars_tasks_in_role,
         "tasks": expand_vars_tasks,
     }
-    expand_vars_files[ansible_file_type](data, additional_context)
+    if ansible_file_type in expand_vars_files:
+        expand_vars_files[ansible_file_type](data, additional_context)
 
 
 def preprocess(context, prompt, ansible_file_type="playbook", additional_context=None):
