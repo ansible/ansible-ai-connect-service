@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -170,6 +171,18 @@ OAUTH2_PROVIDER = {
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
     'REFRESH_TOKEN_EXPIRE_SECONDS': 864_000,  # = 10 days
 }
+
+#
+# We need to run 'manage.py migrate' before adding our own OAuth2 application model.
+# See https://django-oauth-toolkit.readthedocs.io/en/latest/advanced_topics.html
+# #extending-the-application-model
+#
+# Also, if these lines are executed in testing, test fails with:
+#   django.db.utils.ProgrammingError: relation "users_user" does not exist
+#
+if sys.argv[1:2] not in [['migrate'], ['test']]:
+    INSTALLED_APPS.append('wildcard_oauth2')
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
 
 # OAUTH: todo
 # - remove ansible_wisdom/users/auth.py module
