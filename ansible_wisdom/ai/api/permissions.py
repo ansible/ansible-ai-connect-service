@@ -47,13 +47,14 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        if user.organization_id is None:
+        if user.organization is None:
             # We accept the Community users, the won't have access to WCA
             return True
         if user.rh_user_has_seat is True:
             return True
+
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_has_api_key = secret_manager.secret_exists(user.organization_id, Suffixes.API_KEY)
+        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
         return not org_has_api_key
 
 
@@ -68,10 +69,12 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        if user.organization_id is None:
+        if user.organization is None:
             # We accept the Community users, the won't have access to WCA
             return True
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        if user.rh_user_has_seat is not True:
+            return True
 
-        org_has_api_key = secret_manager.secret_exists(user.organization_id, Suffixes.API_KEY)
-        return user.rh_user_has_seat and org_has_api_key
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        return org_has_api_key

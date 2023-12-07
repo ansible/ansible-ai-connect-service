@@ -1,9 +1,14 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+from django.test import override_settings
 from django.urls import reverse
+from test_utils import WisdomAppsBackendMocking
+from users.tests.test_users import create_user
 
 from ..permissions import (
+    BlockUserWithoutSeatAndWCAReadyOrg,
+    BlockUserWithSeatButWCANotReady,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -72,3 +77,55 @@ class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+class TestBlockUserWithoutSeatAndWCAReadyOrg(WisdomAppsBackendMocking):
+    def setUp(self):
+        super().setUp()
+        self.user = create_user(provider="oidc")
+        self.request = Mock()
+        self.request.user = self.user
+        self.p = BlockUserWithoutSeatAndWCAReadyOrg()
+
+    def tearDown(self):
+        self.user.delete()
+
+    def test_ensure_user_with_no_org_are_allowed(self):
+        self.user.organization = None
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    def test_ensure_seated_user_are_allowed(self):
+        self.user.rh_user_has_seat = True
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    def test_ensure_unseated_user_are_blocked(self):
+        self.user.rh_user_has_seat = False
+        self.assertFalse(self.p.has_permission(self.request, None))
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
+    def setUp(self):
+        super().setUp()
+        self.user = create_user(provider="oidc")
+        self.request = Mock()
+        self.request.user = self.user
+        self.p = BlockUserWithSeatButWCANotReady()
+
+    def tearDown(self):
+        self.user.delete()
+
+    def test_non_redhat_users_are_allowed(self):
+        self.user.organization = None
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    def test_non_seated_users_are_allowed(self):
+        self.user.rh_user_has_seat = False
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    def test_ensure_seated_user_are_blocked(self):
+        self.user.rh_user_has_seat = True
+        self.assertFalse(self.p.has_permission(self.request, None))
