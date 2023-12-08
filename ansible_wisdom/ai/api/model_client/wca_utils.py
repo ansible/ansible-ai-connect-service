@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from .exceptions import (
+    WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaInvalidModelId,
@@ -84,23 +85,10 @@ class InferenceResponseChecks(Checks[InferenceContext]):
                     ):
                         raise WcaInvalidModelId(model_id=context.model_id)
 
-    class ResponseStatusCode400SingleTask(Check[InferenceContext]):
+    class ResponseStatusCode400(Check[InferenceContext]):
         def check(self, context: InferenceContext):
-            if context.is_multi_task_prompt:
-                return
             if context.result.status_code == 400:
-                raise WcaInvalidModelId(model_id=context.model_id)
-
-    class ResponseStatusCode400MultiTask(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if not context.is_multi_task_prompt:
-                return
-            if context.result.status_code == 400:
-                payload_detail = context.result.json().get("detail")
-                if payload_detail and "failed to preprocess the prompt" in payload_detail.lower():
-                    raise WcaEmptyResponse(model_id=context.model_id)
-                else:
-                    raise WcaInvalidModelId(model_id=context.model_id)
+                raise WcaBadRequest(model_id=context.model_id, json_response=context.result.json())
 
     class ResponseStatusCode403(Check[InferenceContext]):
         def check(self, context: InferenceContext):
@@ -120,8 +108,7 @@ class InferenceResponseChecks(Checks[InferenceContext]):
                 # The ordering of these checks is important!
                 InferenceResponseChecks.ResponseStatusCode204(),
                 InferenceResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
-                InferenceResponseChecks.ResponseStatusCode400SingleTask(),
-                InferenceResponseChecks.ResponseStatusCode400MultiTask(),
+                InferenceResponseChecks.ResponseStatusCode400(),
                 InferenceResponseChecks.ResponseStatusCode403Cloudflare(),
                 InferenceResponseChecks.ResponseStatusCode403(),
             ]
@@ -154,19 +141,10 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
                     ):
                         raise WcaInvalidModelId(model_id=context.model_id)
 
-    class ResponseStatusCode400SingleTask(Check[ContentMatchContext]):
+    class ResponseStatusCode400(Check[ContentMatchContext]):
         def check(self, context: ContentMatchContext):
-            if context.is_multi_task_suggestion:
-                return
             if context.result.status_code == 400:
-                raise WcaInvalidModelId(model_id=context.model_id)
-
-    class ResponseStatusCode400MultiTask(Check[ContentMatchContext]):
-        def check(self, context: ContentMatchContext):
-            if not context.is_multi_task_suggestion:
-                return
-            if context.result.status_code == 400:
-                raise WcaInvalidModelId(model_id=context.model_id)
+                raise WcaBadRequest(model_id=context.model_id, json_response=context.result.json())
 
     class ResponseStatusCode403(Check[ContentMatchContext]):
         def check(self, context: ContentMatchContext):
@@ -186,8 +164,7 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
                 # The ordering of these checks is important!
                 ContentMatchResponseChecks.ResponseStatusCode204(),
                 ContentMatchResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
-                ContentMatchResponseChecks.ResponseStatusCode400SingleTask(),
-                ContentMatchResponseChecks.ResponseStatusCode400MultiTask(),
+                ContentMatchResponseChecks.ResponseStatusCode400(),
                 ContentMatchResponseChecks.ResponseStatusCode403Cloudflare(),
                 ContentMatchResponseChecks.ResponseStatusCode403(),
             ]

@@ -4,7 +4,6 @@ import time
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import Suffixes
 from ai.api.model_client.exceptions import (
-    WcaBadRequest,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -32,7 +31,7 @@ from rest_framework.status import (
 )
 from users.signals import user_set_wca_model_id
 
-from ..views import ServiceUnavailable, WcaBadRequestException, WcaKeyNotFoundException
+from ..views import ServiceUnavailable, WcaKeyNotFoundException
 
 UNKNOWN_MODEL_ID = "Unknown"
 
@@ -233,11 +232,6 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
         exception = e
         logger.info(e, exc_info=True)
         raise WcaKeyNotFoundException(cause=e)
-
-    except WcaBadRequest as e:
-        exception = e
-        logger.info(e, exc_info=True)
-        raise WcaBadRequestException(cause=e)
 
     except Exception as e:
         exception = e

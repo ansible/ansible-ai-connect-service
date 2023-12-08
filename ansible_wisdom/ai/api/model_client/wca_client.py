@@ -22,8 +22,8 @@ from requests.exceptions import HTTPError
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
 from .exceptions import (
+    CustomModelBadRequest,
     ModelTimeoutError,
-    WcaBadRequest,
     WcaCodeMatchFailure,
     WcaInferenceFailure,
     WcaKeyNotFound,
@@ -263,9 +263,13 @@ class WCAClient(ModelMeshClient):
     ):
         if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
-                err_message = "User is not entitled to customized model ID"
+                # Note: I don't believe we ever actually make it into this flow.
+                # Completion catches this in the serializer and content match
+                # wouldn't use WCA for an unseated user. This can likely be
+                # removed when we simplify our code post-tech-preview.
+                err_message = "User is not entitled to customized model"
                 logger.info(err_message)
-                raise WcaBadRequest(model_id=requested_model_id)
+                raise CustomModelBadRequest(model_id=requested_model_id)
             return self.free_model_id
 
         # from here on, user has a seat

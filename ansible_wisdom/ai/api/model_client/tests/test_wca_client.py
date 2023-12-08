@@ -13,6 +13,7 @@ from ai.api.aws.wca_secret_manager import (
     WcaSecretManagerError,
 )
 from ai.api.model_client.exceptions import (
+    CustomModelBadRequest,
     ModelTimeoutError,
     WcaBadRequest,
     WcaCodeMatchFailure,
@@ -167,7 +168,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
     def test_seatless_cannot_pick_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaBadRequest):
+        with self.assertRaises(CustomModelBadRequest):
             wca_client.get_model_id(False, None, 'some-model')
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>org-model')
@@ -430,7 +431,11 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_garbage_model_id(self):
-        stub = stub_wca_client(400, "zavala")
+        stub = stub_wca_client(
+            400,
+            "zavala",
+            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+        )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
             model_client.infer(
@@ -471,7 +476,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             },
         )
         model_id, model_client, model_input = stub
-        with self.assertRaises(WcaEmptyResponse):
+        with self.assertRaises(WcaBadRequest):
             model_client.infer(
                 model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
             )
@@ -608,7 +613,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
     def test_codematch_bad_model_id(self):
-        stub = stub_wca_client(400, "sample_model_name")
+        stub = stub_wca_client(
+            400,
+            "sample_model_name",
+            response_data={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
+        )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)

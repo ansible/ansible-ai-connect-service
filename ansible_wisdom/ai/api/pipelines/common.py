@@ -78,8 +78,13 @@ class ModelTimeoutException(BaseWisdomAPIException):
 
 
 class WcaBadRequestException(BaseWisdomAPIException):
+    status_code = 204
+    default_detail = {"message": "WCA returned a bad request response."}
+
+
+class CustomModelBadRequestException(BaseWisdomAPIException):
     status_code = 400
-    default_detail = {"message": "Bad request for WCA"}
+    default_detail = {"message": "A WCA Model ID override was specified by an unlicensed user."}
 
 
 class WcaInvalidModelIdException(BaseWisdomAPIException):
