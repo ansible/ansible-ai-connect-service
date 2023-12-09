@@ -3,7 +3,10 @@ import logging
 
 import backoff
 import requests
-from ai.api.formatter import get_task_names_from_prompt
+from ai.api.formatter import (
+    get_task_names_from_prompt,
+    strip_task_preamble_from_multi_task_prompt,
+)
 from ai.api.model_client.wca_utils import (
     ContentMatchContext,
     ContentMatchResponseChecks,
@@ -127,6 +130,10 @@ class WCAClient(ModelMeshClient):
         context = model_input.get("instances", [{}])[0].get("context", "")
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
+
+        # WCA codegen fails if a multitask prompt includes the task preamble
+        # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
+        prompt = strip_task_preamble_from_multi_task_prompt(prompt)
 
         # WCA codegen endpoint requires prompt to end with \n
         if prompt.endswith('\n') is False:
