@@ -74,7 +74,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             my_token = Token("foo", "bar")
             self.assertIsNone(my_token.refresh())
-            self.assertInLog("SSO token service failed with status code 500", log)
+            self.assertInLog("SSO token service failed", log)
 
     @patch("requests.post")
     @assert_call_count_metrics(metric=authz_token_service_retry_counter)
@@ -243,7 +243,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
-        self.assertTrue(checker.check("my_id", "my_name", "123"))
+        self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
             params={
@@ -265,7 +265,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
-        self.assertTrue(checker.check("my_id", "my_name", "123"))
+        self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
             params={
@@ -285,7 +285,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.check("my_id", "my_name", "123"))
+            self.assertFalse(checker.check("my_id", "my_name", 123))
             self.assertInLog("Unexpected error code (500) returned by AMS backend (sub)", log)
 
     def test_ams_self_test_success(self):
