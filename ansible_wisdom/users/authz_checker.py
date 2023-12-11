@@ -164,7 +164,7 @@ class AMSCheck(BaseCheck):
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    def get_ams_org(self, rh_org_id: str) -> str:
+    def get_ams_org(self, rh_org_id: int) -> str:
         if not rh_org_id:
             logger.error(f"Unexpected value for rh_org_id: {rh_org_id}")
             return ""
@@ -215,6 +215,12 @@ class AMSCheck(BaseCheck):
         }
         self.update_bearer_token()
 
+        if not self.user_is_active(username, ams_org_id):
+            logger.debug(
+                "username=%s from org=%d is not active anymore" % (username, organization_id)
+            )
+            return False
+
         try:
             r = self._session.get(
                 self._api_server + "/api/accounts_mgmt/v1/subscriptions",
@@ -234,7 +240,36 @@ class AMSCheck(BaseCheck):
             logger.error("Unexpected subscription answer from AMS")
             return False
 
-    def rh_user_is_org_admin(self, username: str, organization_id: str):
+    def user_is_active(self, username: str, ams_org_id: str) -> bool:
+        params = {
+            "search": f"account.username = '{username}' "
+            "AND organization.id='{ams_org_id}' "
+            "AND banned = 'false'"
+        }
+        try:
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/accounts",
+                params=params,
+                timeout=0.8,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            return False
+
+        if r.status_code != HTTPStatus.OK:
+            logger.error(
+                "Unexpected error code (%s) returned by AMS backend when searching for account"
+                % r.status_code
+            )
+            return False
+
+        result = r.json()
+        try:
+            return len(result["items"]) > 1
+        except (KeyError, ValueError):
+            return False
+
+    def rh_user_is_org_admin(self, username: str, organization_id: int):
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
@@ -266,7 +301,7 @@ class AMSCheck(BaseCheck):
 
         return False
 
-    def rh_org_has_subscription(self, organization_id: str) -> bool:
+    def rh_org_has_subscription(self, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()

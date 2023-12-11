@@ -6,7 +6,7 @@ from http import HTTPStatus
 from unittest.mock import Mock, PropertyMock, patch
 
 import requests
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 from test_utils import WisdomServiceLogAwareTestCase
@@ -43,9 +43,6 @@ def assert_call_count_metrics(metric):
 
 
 class TestToken(WisdomServiceLogAwareTestCase):
-    def get_default_ams_checker(self):
-        return AMSCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-
     @patch("requests.post")
     def test_token_refresh(self, m_post):
         m_r = Mock()
@@ -121,6 +118,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         b = Token.fatal_exception(exc)
         self.assertTrue(b)
 
+
+class TestCIAM(WisdomServiceLogAwareTestCase):
     def test_ciam_check(self):
         m_r = Mock()
         m_r.json.return_value = {"result": True}
@@ -180,6 +179,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertRaises(HTTPError):
             checker.self_test()
 
+
+class TestAMS(WisdomServiceLogAwareTestCase):
+    def get_default_ams_checker(self):
+        return AMSCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
+
     def test_ams_get_ams_org(self):
         m_r = Mock()
         m_r.json.return_value = {"items": [{"id": "qwe"}]}
@@ -231,6 +235,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
+        checker.user_is_active = Mock(return_value=True)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertEqual(checker.get_ams_org("123"), "")
@@ -246,6 +251,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
+        checker.user_is_active = Mock(return_value=True)
         self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
@@ -268,6 +274,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
+        checker.user_is_active = Mock(return_value=True)
         self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
             'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
@@ -286,6 +293,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
+        checker.user_is_active = Mock(return_value=True)
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.check("my_id", "my_name", 123))
@@ -385,13 +393,10 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
 
     def test_rh_user_is_org_admin_timeout(self):
-        def side_effect(*args, **kwargs):
-            raise requests.exceptions.Timeout()
-
         checker = self.get_default_ams_checker()
         checker._token = Mock()
         checker._session = Mock()
-        checker._session.get.side_effect = side_effect
+        checker._session.get.side_effect = requests.exceptions.Timeout
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", "123"))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
@@ -459,13 +464,10 @@ class TestToken(WisdomServiceLogAwareTestCase):
         )
 
     def test_rh_org_has_subscription_timeout(self):
-        def side_effect(*args, **kwargs):
-            raise requests.exceptions.Timeout()
-
         checker = self.get_default_ams_checker()
         checker._token = Mock()
         checker._session = Mock()
-        checker._session.get.side_effect = side_effect
+        checker._session.get.side_effect = requests.exceptions.Timeout
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
@@ -503,8 +505,68 @@ class TestToken(WisdomServiceLogAwareTestCase):
             self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog("Unexpected resource_quota answer from AMS", log)
 
+    def test_user_is_active(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "fooo"}]},
+        ]
+        m_r.status_code = 200
 
-class TestDummy(TestCase):
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertTrue(checker.user_is_active("jean-pierre", 123))
+
+    def test_user_is_not_active(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": []},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertFalse(checker.user_is_active("jean-pierre", 123))
+
+    def test_user_is_active_with_api_timeout(self):
+        checker = self.get_default_ams_checker()
+        checker._session = Mock()
+        checker._session.get.side_effect = requests.exceptions.Timeout
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.user_is_active("jean-pierre", 123))
+            self.assertInLog("Cannot reach the AMS backend in time", log)
+
+    def test_user_is_active_with_err_500(self):
+        checker = self.get_default_ams_checker()
+        checker._session = Mock()
+        r = requests.Response()
+        r.status_code = 500
+        checker._session.get.return_value = r
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.user_is_active("jean-pierre", 123))
+            self.assertInLog("Unexpected error code (500) returned", log)
+
+    def test_ams_check_with_inactive_user(self):
+        checker = self.get_default_ams_checker()
+        checker._session = Mock()
+        r = requests.Response()
+        r.status_code = 500
+        checker._session.get.return_value = r
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            self.assertFalse(checker.check(321, "jean-pierre", 123))
+            self.assertInLog("Unexpected error code (500) returned", log)
+            self.assertInLog("username=jean-pierre from org=123 is not active anymore", log)
+
+
+class TestDummy(WisdomServiceLogAwareTestCase):
     def setUp(self):
         self.checker = DummyCheck()
 
