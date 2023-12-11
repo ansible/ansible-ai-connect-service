@@ -26,7 +26,7 @@ class BaseSecretManager:
     def delete_secret(self, org_id: int, suffix: Suffixes) -> None:
         raise NotImplementedError
 
-    def get_secret(self, org_id: int, suffix: Suffixes) -> dict[str, Any]:
+    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[dict[str, Any]]:
         raise NotImplementedError
 
     def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:
@@ -62,7 +62,7 @@ class DummySecretManager(BaseSecretManager):
     def delete_secret(self, org_id: int, suffix: Suffixes) -> None:
         logger.debug("I'm fake: Secret won't be deleted")
 
-    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[DummySecretEntry]:
+    def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[dict[str, Any]]:
         return self._secrets.get(org_id)
 
     def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:

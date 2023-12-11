@@ -25,3 +25,13 @@ skip-string-normalization = true
 
 [tool.isort]
 profile = "black"
+
+[tool.pyright]
+include = ["ansible_wisdom/ai/api/aws/wca_secret_manager.py", "ansible_wisdom/users/authz_checker.py"]
+exclude = ["**/test_*.py", "ansible_wisdom/*/migrations/*.py"]
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+pythonVersion = "3.11"
+pythonPlatform = "Linux"

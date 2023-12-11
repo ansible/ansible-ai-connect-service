@@ -31,7 +31,7 @@ class BaseCheck:
         pass
 
     @abstractmethod
-    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+    def check(self, _user_id: str, username: str, organization_id: int) -> bool:
         pass
 
 
@@ -46,14 +46,14 @@ class Token:
         self.timeout = settings.AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT
 
     @staticmethod
-    def fatal_exception(exc):
+    def fatal_exception(exc) -> bool:
         """Determine if an exception is fatal or not"""
         if isinstance(exc, requests.RequestException):
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
             # retry on server errors and client errors
             # with 429 status code (rate limited),
             # don't retry on other client errors
-            return status_code and (400 <= status_code < 500) and status_code != 429
+            return bool(status_code and (400 <= status_code < 500) and status_code != 429)
         else:
             # retry on all other errors (e.g. network)
             return False
@@ -87,10 +87,10 @@ class Token:
 
             r = post_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the SSO backend in time")
+            logger.exception("Cannot reach the SSO backend in time")
             return None
-        except HTTPError as e:
-            logger.error(f"SSO token service failed with status code {e.response.status_code}")
+        except HTTPError:
+            logger.exception("SSO token service failed")
             return None
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
@@ -120,7 +120,7 @@ class CIAMCheck(BaseCheck):
         )
         r.raise_for_status()
 
-    def check(self, user_id, _username, org_id) -> bool:
+    def check(self, user_id, username, organization_id) -> bool:
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
         try:
             r = self._session.post(
@@ -129,7 +129,7 @@ class CIAMCheck(BaseCheck):
                     "subject": str(user_id),
                     "operation": "access",
                     "resourcetype": "license",
-                    "resourceid": f"{org_id}/smarts",
+                    "resourceid": f"{organization_id}/smarts",
                 },
                 # Note: A ping from France against the preprod env, is slightly below 300ms
                 timeout=0.8,
@@ -198,7 +198,7 @@ class AMSCheck(BaseCheck):
         )
         r.raise_for_status()
 
-    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+    def check(self, user_id: str, username: str, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
         params = {
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
@@ -297,7 +297,7 @@ class DummyCheck(BaseCheck):
         # Always passes. No exception raised.
         pass
 
-    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+    def check(self, _user_id: str, username: str, organization_id: int) -> bool:
         if not self.rh_org_has_subscription(organization_id):
             return False
         if settings.AUTHZ_DUMMY_USERS_WITH_SEAT == "*":
