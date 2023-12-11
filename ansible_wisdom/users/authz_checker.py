@@ -192,7 +192,7 @@ class AMSCheck(BaseCheck):
 
         try:
             result = data["items"][0]["id"]
-            cache.set(cache_key, result, 60 * 60 * 24)  # cache for one day
+            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
             return result
         except (IndexError, KeyError, ValueError):
             logger.exception("Unexpected organization answer from AMS: data=%s" % data)
