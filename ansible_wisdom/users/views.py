@@ -18,7 +18,7 @@ from social_django.utils import load_strategy
 
 from .serializers import UserResponseSerializer
 
-ME_CACHE_TIMEOUT = 30
+ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +63,7 @@ class CurrentUserView(RetrieveAPIView):
     serializer_class = UserResponseSerializer
     throttle_classes = [MeRateThrottle]
 
-    @method_decorator(cache_per_user(ME_CACHE_TIMEOUT))
+    @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 

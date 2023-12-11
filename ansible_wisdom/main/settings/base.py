@@ -190,6 +190,7 @@ if sys.argv[1:2] not in [['migrate'], ['test']]:
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
 COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
+ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get('ME_USER_CACHE_TIMEOUT_SEC', 30))
 ME_USER_RATE_THROTTLE = os.environ.get('ME_USER_RATE_THROTTLE') or '50/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
 
