@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Python 3.9
+    - name: Setup Python 3.11
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: install
       run: |
-        pip install pyright -rrequirements.txt
-        pyright ansible_wisdom/ai/api/aws/wca_secret_manager.py
+        pip install pyright django boto3 requests prometheus_client backoff django_prometheus
+        pyright
