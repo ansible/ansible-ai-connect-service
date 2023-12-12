@@ -49,12 +49,29 @@ class DummySecretManager(BaseSecretManager):
 
     @staticmethod
     def load_secrets(from_settings: str):
-        splitted_per_org = [i.split(":", 1) for i in from_settings.split(",") if i]
-        return {
-            int(j[0]): DummySecretEntry.from_string(j[1] if len(j) > 1 else "valid")
-            for j in splitted_per_org
-            if j
-        }
+        output: dict[int, Any] = {}
+
+        for i in from_settings.split(","):
+            values = i.split(":", 1)
+
+            if len(values) < 2 or not (values[0] or values[1]):
+                continue
+
+            org_id = int(values[0])
+
+            fields = values[1].split("<|sepofid|>", 1)
+            if len(fields) == 1 and fields[0]:
+                output[org_id] = {
+                    Suffixes.API_KEY: DummySecretEntry.from_string("some-key"),
+                    Suffixes.MODEL_ID: DummySecretEntry.from_string(fields[0]),
+                }
+            elif len(fields) == 2 and fields[0] and fields[1]:
+                output[org_id] = {
+                    Suffixes.API_KEY: DummySecretEntry.from_string(fields[0]),
+                    Suffixes.MODEL_ID: DummySecretEntry.from_string(fields[1]),
+                }
+
+        return output
 
     def save_secret(self, org_id: int, suffix: Suffixes, secret) -> None:
         logger.debug("I'm fake: Secret won't be saved")
@@ -63,10 +80,13 @@ class DummySecretManager(BaseSecretManager):
         logger.debug("I'm fake: Secret won't be deleted")
 
     def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[dict[str, Any]]:
-        return self._secrets.get(org_id)
+        try:
+            return self._secrets[org_id][suffix]
+        except KeyError:
+            return None
 
     def secret_exists(self, org_id: int, suffix: Suffixes) -> bool:
-        return bool(self._secrets.get(org_id))
+        return bool(self.get_secret(org_id, suffix))
 
 
 class AWSSecretManager(BaseSecretManager):

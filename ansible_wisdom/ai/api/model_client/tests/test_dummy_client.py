@@ -10,8 +10,8 @@ body = {"test": "true"}
 random_value = 1000
 
 
-@override_settings(MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC=latency)
-@override_settings(MOCK_MODEL_RESPONSE_BODY=body)
+@override_settings(DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC=latency)
+@override_settings(DUMMY_MODEL_RESPONSE_BODY=body)
 class TestDummyClient(SimpleTestCase):
     def test_init(self):
         url = "https://redhat.com"

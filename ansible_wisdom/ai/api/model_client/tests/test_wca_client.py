@@ -7,7 +7,6 @@ from unittest.mock import Mock, patch
 import django.utils.timezone
 import requests
 from ai.api.aws.wca_secret_manager import (
-    AWSSecretManager,
     DummySecretEntry,
     DummySecretManager,
     Suffixes,
@@ -35,7 +34,6 @@ from ai.api.model_client.wca_client import (
     wca_codematch_hist,
     wca_codematch_retry_counter,
 )
-from django.apps import apps
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError, ReadTimeout
@@ -111,29 +109,19 @@ def assert_call_count_metrics(metric):
     return count_metrics_decorator
 
 
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
-    def setUp(self):
-        super().setUp()
-        self.secret_manager_patcher = patch.object(
-            apps.get_app_config('ai'), '_wca_secret_manager', spec=AWSSecretManager
-        )
-        self.mock_secret_manager = self.secret_manager_patcher.start()
-
-    def tearDown(self):
-        self.secret_manager_patcher.stop()
-
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_without_seat(self):
         model_client = WCAClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(False, None)
         self.assertEqual(api_key, 'abcdef')
 
-    @override_settings(ANSIBLE_WCA_FREE_API_KEY='free')
-    @override_settings(MOCK_WCA_SECRETS_MANAGER=True)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:free<|sepofid|>free')
     def test_mock_wca_get_api_key(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, 'non_empty')
+        api_key = model_client.get_api_key(True, 11009103)
         self.assertEqual(api_key, 'free')
 
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
@@ -142,28 +130,25 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         api_key = model_client.get_api_key(True, None)
         self.assertEqual(api_key, 'abcdef')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:12345<|sepofid|>my-model')
     def test_get_api_key_from_aws(self):
         secret_value = '12345'
-        self.mock_secret_manager.get_secret.return_value = {
-            "SecretString": secret_value,
-            "CreatedDate": "xxx",
-        }
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, '123')
+        api_key = model_client.get_api_key(True, 123)
         self.assertEqual(api_key, secret_value)
-        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.API_KEY)
 
     def test_get_api_key_from_aws_error(self):
-        self.mock_secret_manager.get_secret.side_effect = WcaSecretManagerError
+        m = Mock()
+        m.get_secret.side_effect = WcaSecretManagerError
+        self.mock_wca_secret_manager_with(m)
         model_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaSecretManagerError):
             model_client.get_api_key(True, '123')
 
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
-    @override_settings(MOCK_WCA_SECRETS_MANAGER=True)
     def test_mock_wca_get_free_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, 'non-empty', None)
+        model_id = wca_client.get_model_id(False, None, None)
         self.assertEqual(model_id, 'free')
 
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
@@ -172,13 +157,12 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(False, None, None)
         self.assertEqual(model_id, 'free')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>sec')
     def test_seated_with_empty_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        self.mock_secret_manager.get_secret.return_value = {"SecretString": "sec"}
         model_id = wca_client.get_model_id(
             rh_user_has_seat=True, organization_id=123, requested_model_id=''
         )
-        self.mock_secret_manager.get_secret.assert_called_once_with(123, Suffixes.MODEL_ID)
         self.assertEqual(model_id, 'sec')
 
     def test_seatless_cannot_pick_model(self):
@@ -186,32 +170,28 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaBadRequest):
             wca_client.get_model_id(False, None, 'some-model')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>org-model')
     def test_seated_get_org_default_model(self):
-        self.mock_secret_manager.get_secret.return_value = {
-            "SecretString": "org-model",
-            "CreatedDate": "xxx",
-        }
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, '123', None)
+        model_id = wca_client.get_model_id(True, 123, None)
         self.assertEqual(model_id, 'org-model')
-        self.mock_secret_manager.get_secret.assert_called_once_with('123', Suffixes.MODEL_ID)
 
     def test_seated_can_pick_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, '123', 'model-i-pick')
+        model_id = wca_client.get_model_id(True, 123, 'model-i-pick')
         self.assertEqual(model_id, 'model-i-pick')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:')
     def test_seated_cannot_have_no_key(self):
-        self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaKeyNotFound):
-            wca_client.get_api_key(True, '123')
+            wca_client.get_api_key(True, 123)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
     def test_seated_cannot_have_no_model(self):
-        self.mock_secret_manager.get_secret.return_value = None
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaModelIdNotFound):
-            wca_client.get_model_id(True, '123', None)
+            wca_client.get_model_id(True, 123, None)
 
     def test_fatal_exception(self):
         """Test the logic to determine if an exception is fatal or not"""
@@ -662,13 +642,21 @@ class TestDummySecretManager(TestCase):
 
     def test_load_secrets(self):
         expectation = {
-            123123: DummySecretEntry.from_string("valid"),
-            23421344: DummySecretEntry.from_string("whatever"),
+            123123: {
+                Suffixes.API_KEY: DummySecretEntry.from_string("some-key"),
+                Suffixes.MODEL_ID: DummySecretEntry.from_string("valid"),
+            },
+            23421344: {
+                Suffixes.API_KEY: DummySecretEntry.from_string("some-key"),
+                Suffixes.MODEL_ID: DummySecretEntry.from_string("whatever"),
+            },
         }
         got = DummySecretManager.load_secrets("123123:valid,23421344:whatever")
         self.assertEqual(got, expectation)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:abcdef,12353:efreg')
+    @override_settings(
+        WCA_SECRET_DUMMY_SECRETS='123:abcdef<|sepofid|>sec,12353:efreg<|sepofid|>sec'
+    )
     def test_get_secret(self):
         sm = DummySecretManager()
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")

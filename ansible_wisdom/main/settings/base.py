@@ -337,19 +337,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = True
 
-MOCK_MODEL_RESPONSE_BODY = os.environ.get(
-    'MOCK_MODEL_RESPONSE_BODY',
+DUMMY_MODEL_RESPONSE_BODY = os.environ.get(
+    'DUMMY_MODEL_RESPONSE_BODY',
     (
         '{"predictions":["ansible.builtin.apt:\\n  name: nginx\\n'
         '  update_cache: true\\n  state: present\\n"]}'
     ),
 )
 
-MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
-    os.environ.get('MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000)
+DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
+    os.environ.get('DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000)
 )
-MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
-    os.environ.get('MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
+DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
+    os.environ.get('DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
 )
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
@@ -439,7 +439,6 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
-MOCK_WCA_SECRETS_MANAGER = os.environ.get("MOCK_WCA_SECRETS_MANAGER", "False") == "True"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")

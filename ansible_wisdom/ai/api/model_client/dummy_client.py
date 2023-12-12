@@ -21,11 +21,11 @@ class DummyClient(ModelMeshClient):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
-        if settings.MOCK_MODEL_RESPONSE_LATENCY_USE_JITTER:
+        if settings.DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER:
             jitter: float = secrets.randbelow(1000) * 0.001
         else:
-            jitter: float = 1.0
-        time.sleep((settings.MOCK_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter) / 1000)
-        response_body = json.loads(settings.MOCK_MODEL_RESPONSE_BODY)
+            jitter: float = 0.001
+        time.sleep(settings.DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter)
+        response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
         response_body['model_id'] = '_'
         return response_body

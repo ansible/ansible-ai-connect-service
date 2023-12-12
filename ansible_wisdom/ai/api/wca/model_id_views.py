@@ -120,7 +120,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         logger.debug("WCA Model Id:: POST handler")
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
 
-        def get_api_key(org_id):
+        def get_api_key(org_id: int):
             api_key = secret_manager.get_secret(org_id, Suffixes.API_KEY)
             return get_secret_value(api_key)
 

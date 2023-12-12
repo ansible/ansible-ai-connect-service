@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 import backoff
 import requests
@@ -92,7 +93,6 @@ class WCAClient(ModelMeshClient):
         self.session = requests.Session()
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
-        self.mock_wca = settings.MOCK_WCA_SECRETS_MANAGER
         self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
 
     @staticmethod
@@ -236,9 +236,9 @@ class WCAClient(ModelMeshClient):
 
         return response.json()
 
-    def get_api_key(self, rh_user_has_seat, organization_id):
+    def get_api_key(self, rh_user_has_seat: bool, organization_id: int):
         # use the shared API Key if the user has no seat
-        if not rh_user_has_seat or organization_id is None or self.mock_wca is True:
+        if not rh_user_has_seat or organization_id is None:
             return self.free_api_key
 
         try:
@@ -255,7 +255,12 @@ class WCAClient(ModelMeshClient):
         logger.error("Seated user's organization doesn't have default API Key set")
         raise WcaKeyNotFound
 
-    def get_model_id(self, rh_user_has_seat, organization_id, requested_model_id):
+    def get_model_id(
+        self,
+        rh_user_has_seat: bool,
+        organization_id: Optional[int],
+        requested_model_id: Optional[str],
+    ):
         if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
                 err_message = "User is not entitled to customized model ID"
@@ -268,9 +273,6 @@ class WCAClient(ModelMeshClient):
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
-
-        if self.mock_wca is True:
-            return self.free_model_id
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
