@@ -5,9 +5,20 @@ from datetime import datetime, timedelta
 from functools import cache
 from http import HTTPStatus
 
+import backoff
 import requests
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Counter
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
+
+authz_token_service_retry_counter = Counter(
+    'authz_sso_token_service_retries',
+    "Counter of Red Hat SSO token service retries",
+    namespace=NAMESPACE,
+)
 
 
 class BaseCheck:
@@ -31,6 +42,25 @@ class Token:
         self._server = server
         self.expiration_date = datetime.fromtimestamp(0)
         self.access_token: str = ""
+        self.retries = settings.AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT
+        self.timeout = settings.AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT
+
+    @staticmethod
+    def fatal_exception(exc):
+        """Determine if an exception is fatal or not"""
+        if isinstance(exc, requests.RequestException):
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            # retry on server errors and client errors
+            # with 429 status code (rate limited),
+            # don't retry on other client errors
+            return status_code and (400 <= status_code < 500) and status_code != 429
+        else:
+            # retry on all other errors (e.g. network)
+            return False
+
+    @staticmethod
+    def on_backoff(details):
+        authz_token_service_retry_counter.inc()
 
     def refresh(self) -> None:
         data = {
@@ -40,13 +70,27 @@ class Token:
             "scope": "api.iam.access",
         }
         try:
-            r = requests.post(
-                f"{self._server}/auth/realms/redhat-external/protocol/openid-connect/token",
-                data=data,
-                timeout=0.8,
+
+            @backoff.on_exception(
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=self.fatal_exception,
+                on_backoff=self.on_backoff,
             )
+            def post_request():
+                return requests.post(
+                    f"{self._server}/auth/realms/redhat-external/protocol/openid-connect/token",
+                    data=data,
+                    timeout=self.timeout,
+                )
+
+            r = post_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error("Cannot reach the SSO backend in time")
+            return None
+        except HTTPError as e:
+            logger.error(f"SSO token service failed with status code {e.response.status_code}")
             return None
         if r.status_code != HTTPStatus.OK:
             logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
@@ -176,7 +220,7 @@ class AMSCheck(BaseCheck):
             return False
         data = r.json()
         try:
-            return len(data["items"]) == 1
+            return len(data["items"]) > 0
         except (KeyError, ValueError):
             logger.error("Unexpected subscription answer from AMS")
             return False
@@ -244,7 +288,7 @@ class AMSCheck(BaseCheck):
             return False
 
 
-class MockAlwaysTrueCheck(BaseCheck):
+class DummyCheck(BaseCheck):
     def __init__(self, *kargs):
         # Zero parameter constructor
         pass
@@ -253,30 +297,18 @@ class MockAlwaysTrueCheck(BaseCheck):
         # Always passes. No exception raised.
         pass
 
-    def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
-        return True
+    def check(self, _user_id: str, username: str, organization_id: str) -> bool:
+        if not self.rh_org_has_subscription(organization_id):
+            return False
+        if settings.AUTHZ_DUMMY_USERS_WITH_SEAT == "*":
+            return True
+        seated_user = settings.AUTHZ_DUMMY_USERS_WITH_SEAT.split(",")
+        return username in seated_user
 
-    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
-        return True
-
-    def rh_org_has_subscription(self, _organization_id: str) -> bool:
-        return True
-
-
-class MockAlwaysFalseCheck(BaseCheck):
-    def __init__(self, *kargs):
-        # Zero parameter constructor
-        pass
-
-    def self_test(self):
-        # Always passes. No exception raised.
-        pass
-
-    def check(self, _user_id: str, _username: str, _organization_id: str) -> bool:
-        return False
-
-    def rh_user_is_org_admin(self, _username: str, _organization_id: str) -> bool:
-        return False
-
-    def rh_org_has_subscription(self, _organization_id: str) -> bool:
-        return False
+    def rh_org_has_subscription(self, organization_id: int) -> bool:
+        if settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION == "*":
+            return True
+        orgs_with_subscription = [
+            int(i) for i in settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION.split(",") if i
+        ]
+        return organization_id in orgs_with_subscription

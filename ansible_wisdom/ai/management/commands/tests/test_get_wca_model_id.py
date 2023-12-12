@@ -14,7 +14,7 @@ class GetWcaModelIdCommandTestCase(TestCase):
         ):
             call_command('get_wca_model_id')
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_model_id_found(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = {"model_id": "mock_model_id", "CreatedDate": "xxx"}
@@ -28,7 +28,7 @@ class GetWcaModelIdCommandTestCase(TestCase):
                 captured_output,
             )
 
-    @patch("ai.management.commands._base_wca_command.WcaSecretManager")
+    @patch("ai.management.commands._base_wca_command.AWSSecretManager")
     def test_model_id_not_found(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = None

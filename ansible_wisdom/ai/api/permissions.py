@@ -1,3 +1,5 @@
+from ai.api.aws.wca_secret_manager import Suffixes
+from django.apps import apps
 from rest_framework import permissions
 
 
@@ -32,3 +34,47 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return user.rh_org_has_subscription
+
+
+# See: https://issues.redhat.com/browse/AAP-18386
+class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
+    """
+    Block access to seat-less user from of WCA-ready Commercial Org.
+    """
+
+    code = 'permission_denied__org_ready_user_has_no_seat'
+    message = "Org's LightSpeed subscription is active but user has no seat."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if user.organization is None:
+            # We accept the Community users, the won't have access to WCA
+            return True
+        if user.rh_user_has_seat is True:
+            return True
+
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        return not org_has_api_key
+
+
+# See: https://issues.redhat.com/browse/AAP-18386
+class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
+    """
+    Block access to seated users if the WCA key was not set yet.
+    """
+
+    code = 'permission_denied__org_not_ready_because_wca_not_configured'
+    message = "The IBM watsonx Code Assistant model is not configured yet."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if user.organization is None:
+            # We accept the Community users, the won't have access to WCA
+            return True
+        if user.rh_user_has_seat is not True:
+            return True
+
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        return org_has_api_key

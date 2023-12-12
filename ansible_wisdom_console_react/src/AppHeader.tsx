@@ -30,7 +30,7 @@ export function AppHeader(props: AppHeaderProps) {
                     <PageMastheadDropdown
                         id="account-menu"
                         icon={<UserCircleIcon size="md"/>}
-                        label={userName}
+                        userName={userName}
                     >
                         <DropdownItem
                             id="logout"

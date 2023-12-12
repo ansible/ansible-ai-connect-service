@@ -6,6 +6,7 @@ from ai.api.data.data_model import ModelMeshPayload
 from ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
+    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -18,6 +19,7 @@ from ai.api.pipelines.common import (
     PipelineElement,
     ServiceUnavailable,
     WcaBadRequestException,
+    WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
@@ -47,7 +49,7 @@ completions_hist = Histogram(
 
 def get_model_client(wisdom_app, user):
     if user.rh_user_has_seat:
-        return wisdom_app.wca_client, None
+        return wisdom_app.get_wca_client(), None
 
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
@@ -108,31 +110,27 @@ class InferenceStage(PipelineElement):
 
         except WcaBadRequest as e:
             exception = e
-            logger.exception(f"bad request for completion for suggestion {payload.suggestionId}")
+            logger.info(f"bad request for completion for suggestion {payload.suggestionId}")
             raise WcaBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e
-            logger.exception(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
+            logger.info(f"WCA Model ID is invalid for suggestion {payload.suggestionId}")
             raise WcaInvalidModelIdException(cause=e)
 
         except WcaKeyNotFound as e:
             exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but " f"not found for suggestion {suggestion_id}"
-            )
+            logger.info(f"A WCA Api Key was expected but not found for suggestion {suggestion_id}")
             raise WcaKeyNotFoundException(cause=e)
 
         except WcaModelIdNotFound as e:
             exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but " f"not found for suggestion {suggestion_id}"
-            )
+            logger.info(f"A WCA Model ID was expected but not found for suggestion {suggestion_id}")
             raise WcaModelIdNotFoundException(cause=e)
 
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e
-            logger.exception(
+            logger.info(
                 f"WCA Request/Response SuggestionId correlation failed for "
                 f"suggestion_id: '{suggestion_id}' and x_request_id: '{e.x_request_id}'."
             )
@@ -140,10 +138,13 @@ class InferenceStage(PipelineElement):
 
         except WcaEmptyResponse as e:
             exception = e
-            logger.exception(
-                f"WCA returned an empty response for suggestion {payload.suggestionId}"
-            )
+            logger.info(f"WCA returned an empty response for suggestion {payload.suggestionId}")
             raise WcaEmptyResponseException(cause=e)
+
+        except WcaCloudflareRejection as e:
+            exception = e
+            logger.exception(f"Cloudflare rejected the request for {payload.suggestionId}")
+            raise WcaCloudflareRejectionException(cause=e)
 
         except Exception as e:
             exception = e
@@ -153,9 +154,8 @@ class InferenceStage(PipelineElement):
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds
-            value_template = Template("{{ _${variable_name}_ }}")
             anonymized_predictions = anonymizer.anonymize_struct(
-                predictions, value_template=value_template
+                predictions, value_template=Template("{{ _${variable_name}_ }}")
             )
             # If an exception was thrown during the backend call, try to get the model ID
             # that is contained in the exception.

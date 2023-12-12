@@ -1,9 +1,11 @@
 import logging
 
 import jwt
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
+from organizations.models import Organization
 from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
@@ -78,12 +80,26 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     payload = jwt.decode(response['access_token'], options={"verify_signature": False})
     realm_access = payload.get("realm_access", {})
     roles = realm_access.get("roles", [])
+    user.external_username = payload.get("preferred_username")
     user.rh_user_is_org_admin = 'admin:org:all' in roles
-    user.organization_id = backend.id_token['organization']['id']
+
+    if settings.AUTHZ_BACKEND_TYPE == "dummy":
+        if settings.AUTHZ_DUMMY_RH_ORG_ADMINS == "*":
+            user.rh_user_is_org_admin |= True
+        elif isinstance(settings.AUTHZ_DUMMY_RH_ORG_ADMINS, str):
+            org_admin_users = settings.AUTHZ_DUMMY_RH_ORG_ADMINS.split(",")
+            user.rh_user_is_org_admin |= user.external_username in org_admin_users
+        else:
+            logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
+
+    user.organization = Organization.objects.get_or_create(
+        id=backend.id_token['organization']['id']
+    )[0]
     user.save()
     return {
-        'organization_id': user.organization_id,
+        'organization_id': user.organization.id,
         'rh_user_is_org_admin': user.rh_user_is_org_admin,
+        'external_username': user.external_username,
     }
 
 
@@ -120,18 +136,6 @@ def terms_of_service(strategy, details, backend, user=None, is_new=False, *args,
     return _terms_of_service(strategy, user, backend, **kwargs)
 
 
-def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
-    """Similar to the original load_extra_data, but with a filter on the fields to keep"""
-    accepted_extra_data = ["login"]
-    social = kwargs.get("social") or backend.strategy.storage.user.get_social_auth(
-        backend.name, uid
-    )
-    if social:
-        extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
-        extra_data = {k: v for k, v in extra_data.items() if k in accepted_extra_data}
-        social.set_extra_data(extra_data)
-
-
 class AuthAlreadyLoggedIn(AuthException):
     def __str__(self):
         return "User already logged in"
@@ -141,3 +145,13 @@ def block_auth_users(backend=None, details=None, response=None, user=None, *args
     """Safeguard to be sure user won't get multiple providers"""
     if user:
         raise AuthAlreadyLoggedIn(backend)
+
+
+def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
+    social = kwargs.get("social") or backend.strategy.storage.user.get_social_auth(
+        backend.name, uid
+    )
+    if social:
+        extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
+        user.external_username = extra_data.get("login")
+        user.save()

@@ -5,14 +5,14 @@ import {useBreakpoint} from "@ansible/ansible-ui-framework";
 interface PageMastheadDropdownProps {
     readonly id: string;
     readonly icon: ReactNode;
-    readonly label?: string;
+    readonly userName: string;
     readonly children: ReactNode;
 }
 
 export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
     const isSmallOrLarger = useBreakpoint('sm');
     const [open, setOpen] = useState(false);
-    const {id, icon, label, children} = props;
+    const {id, icon, userName, children} = props;
     const onSelect = useCallback(() => setOpen((open) => !open), []);
     const onToggle = useCallback(() => setOpen((open) => !open), []);
     const _children = Array.isArray(children) ? children : [children];
@@ -32,7 +32,7 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
                         spaceItems={{default: 'spaceItemsSm'}}
                     >
                         <FlexItem>{icon}</FlexItem>
-                        {isSmallOrLarger && <FlexItem wrap="nowrap">{label}</FlexItem>}
+                        {isSmallOrLarger && <FlexItem wrap="nowrap">{userName}</FlexItem>}
                     </Flex>
                 </DropdownToggle>
             }

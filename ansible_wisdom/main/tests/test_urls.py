@@ -28,3 +28,20 @@ class TestUrls(TestCase):
             "style-src 'self' 'unsafe-inline'", response.headers.get('Content-Security-Policy')
         )
         self.assertIn("default-src 'self' data:", response.headers.get('Content-Security-Policy'))
+
+    def test_telemetry_patterns_when_enabled(self):
+        reload(main.urls)
+        r = compile("api/v0/telemetry/")
+        patterns = list(
+            filter(r.match, [str(pattern.pattern) for pattern in main.urls.urlpatterns])
+        )
+        self.assertEqual(1, len(patterns))
+
+    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    def test_telemetry_patterns_when_disabled(self):
+        reload(main.urls)
+        r = compile("api/v0/telemetry/")
+        patterns = list(
+            filter(r.match, [str(pattern.pattern) for pattern in main.urls.urlpatterns])
+        )
+        self.assertEqual(0, len(patterns))

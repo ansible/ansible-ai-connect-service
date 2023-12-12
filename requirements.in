@@ -1,16 +1,16 @@
-# pin aiohttp on 3.8.5 to address CVE-2023-30589
+# pin aiohttp on 3.8.6 to address GHSA-gfw2-4jvh-wgfg
 # remove this once datasets or fsspec is updated
-# to properly pull a version of aiohttp > 3.8.4.
-aiohttp==3.8.5
-# Pin on 3.8.5 to
+# to properly pull a version of aiohttp > 3.8.5.
+aiohttp==3.9.0
 ansible-anonymizer==1.4.2
-ansible-risk-insight==0.2.2
+ansible-risk-insight==0.2.4
 ansible-lint==6.20.3
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
-cryptography==41.0.4
+cryptography==41.0.6
 datasets==2.10.1
-Django==4.2.3
+Django==4.2.7
+django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
 django-import-export==3.2.0
@@ -28,6 +28,10 @@ opensearch-py==2.1.1
 pillow==10.0.1
 protobuf==4.22.1
 psycopg[binary]==3.1.8
+# pin pyarrow on 14.0.1 to address GHSA-5wvp-7f3h-6wmm
+# remove this once datasets is updated to properly pull
+# a version of pyarrow > 14.0.1.
+pyarrow==14.0.1
 pydantic==1.10.2
 pytz
 pyOpenSSL==23.2.0

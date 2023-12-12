@@ -7,6 +7,7 @@ from ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from django.test import override_settings
 from django.urls import resolve, reverse
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
@@ -67,3 +68,20 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         context = response.context_data
         self.assertEqual(context['user_name'], self.user.username)
         self.assertEqual(context['rh_org_has_subscription'], self.user.rh_org_has_subscription)
+        self.assertTrue(context['telemetry_opt_enabled'])
+
+    def test_extra_data_telemetry_opt_in(self, *args):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse('console'))
+        self.assertIsInstance(response.context_data, dict)
+        context = response.context_data
+        # The default setting for tests is True
+        self.assertTrue(context['telemetry_opt_enabled'])
+
+    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    def test_extra_data_telemetry_opt_out(self, *args):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse('console'))
+        self.assertIsInstance(response.context_data, dict)
+        context = response.context_data
+        self.assertFalse(context['telemetry_opt_enabled'])

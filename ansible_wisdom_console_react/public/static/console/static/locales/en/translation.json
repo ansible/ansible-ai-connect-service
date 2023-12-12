@@ -46,9 +46,14 @@
   "ErrorDetails": "Details",
   "Test": "Test",
   "Close": "Close",
-  "UnknownUser": "<Unknown>",
   "NoPermissionsTitle": "You currently do not have permissions to access this page.",
   "NoPermissionsContactOrgCaption": "Please contact your organization if you need to receive these permissions.",
   "NoPermissionsNoSubscriptionTitle": "You currently do not have a subscription to Ansible Lightspeed with IBM watsonx Code Assistant.",
-  "NoPermissionsNoSubscriptionContactOrgCaption": "Please contact your organization to receive an Ansible Lightspeed with IBM watsonx Code Assistant subscription."
+  "NoPermissionsNoSubscriptionContactOrgCaption": "Please contact your organization to receive an Ansible Lightspeed with IBM watsonx Code Assistant subscription.",
+  "Telemetry": "Telemetry",
+  "TelemetrySettings": "Telemetry settings",
+  "TelemetryOptOut": "Opt out",
+  "TelemetryOptOutTooltip": "Opt out of gathering additional telemetry.",
+  "TelemetryOptOutDescription": "Opt out of additional telemetry data being collected for analysis.",
+  "TelemetryError": "The telemetry settings could not be saved."
 }

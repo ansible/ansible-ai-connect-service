@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 from ai.api.model_client.exceptions import (
     WcaBadRequest,
+    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -15,6 +16,7 @@ from ai.api.pipelines.common import (
     ModelTimeoutException,
     ServiceUnavailable,
     WcaBadRequestException,
+    WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
@@ -44,7 +46,11 @@ from .data.data_model import (
     ContentMatchResponseDto,
 )
 from .model_client.exceptions import ModelTimeoutError
-from .permissions import AcceptedTermsPermission
+from .permissions import (
+    AcceptedTermsPermission,
+    BlockUserWithoutSeatAndWCAReadyOrg,
+    BlockUserWithSeatButWCANotReady,
+)
 from .pipelines.common import BaseWisdomAPIException
 from .serializers import (
     AnsibleContentFeedback,
@@ -101,6 +107,8 @@ class Completions(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
     ]
     required_scopes = ['read', 'write']
 
@@ -410,7 +418,7 @@ class ContentMatches(GenericAPIView):
         user: User,
         request_data,
     ):
-        wca_client = apps.get_app_config("ai").wca_client
+        wca_client = apps.get_app_config("ai").get_wca_client()
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get('suggestions', []),
@@ -450,6 +458,7 @@ class ContentMatches(GenericAPIView):
                 ).inc()
                 logger.exception(f"error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
+
         except ModelTimeoutError as e:
             exception = e
             logger.warn(
@@ -500,6 +509,12 @@ class ContentMatches(GenericAPIView):
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
             raise WcaEmptyResponseException(cause=e)
+
+        except WcaCloudflareRejection as e:
+            exception = e
+            logger.exception(f"Cloudflare rejected the request for {suggestion_id}")
+            raise WcaCloudflareRejectionException(cause=e)
+
         except Exception as e:
             exception = e
             logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")

@@ -127,7 +127,8 @@ module.exports = function (proxy, allowedHost) {
         logResponses: false,
         entry: [
           "config/webpack.mock.api.keys.ts",
-          "config/webpack.mock.api.modelids.ts"
+          "config/webpack.mock.api.modelids.ts",
+          "config/webpack.mock.api.telemetry.ts"
         ]
       })
     },

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "social_django",
     "users",
+    "organizations",
     "ai",
     "django_prometheus",
     "drf_spectacular",
@@ -116,6 +118,8 @@ AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
 AUTHZ_SSO_CLIENT_SECRET = os.environ.get("AUTHZ_SSO_CLIENT_SECRET")
 AUTHZ_SSO_SERVER = os.environ.get("AUTHZ_SSO_SERVER")
 AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
+AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT", "3"))
+AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
@@ -167,8 +171,20 @@ OAUTH2_PROVIDER = {
         'checode',
     ],
     # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 1_209_600,  # = 2 weeks
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 864_000,  # = 10 days
 }
+
+#
+# We need to run 'manage.py migrate' before adding our own OAuth2 application model.
+# See https://django-oauth-toolkit.readthedocs.io/en/latest/advanced_topics.html
+# #extending-the-application-model
+#
+# Also, if these lines are executed in testing, test fails with:
+#   django.db.utils.ProgrammingError: relation "users_user" does not exist
+#
+if sys.argv[1:2] not in [['migrate'], ['test']]:
+    INSTALLED_APPS.append('wildcard_oauth2')
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
 
 # OAUTH: todo
 # - remove ansible_wisdom/users/auth.py module
@@ -176,6 +192,8 @@ OAUTH2_PROVIDER = {
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
 COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
+ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get('ME_USER_CACHE_TIMEOUT_SEC', 30))
+ME_USER_RATE_THROTTLE = os.environ.get('ME_USER_RATE_THROTTLE') or '50/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
 
 MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
@@ -186,6 +204,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': COMPLETION_USER_RATE_THROTTLE,
         'test': "100000/minute",
+        'me': ME_USER_RATE_THROTTLE,
     },
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -378,7 +397,10 @@ ENABLE_ANSIBLE_LINT_POSTPROCESS = (
 
 ANSIBLE_LINT_TRANSFORM_RULES = ["all"]
 
+ENABLE_ADDITIONAL_CONTEXT = os.getenv('ENABLE_ADDITIONAL_CONTEXT', 'False').lower() == 'true'
+
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
+LAUNCHDARKLY_SDK_TIMEOUT = os.getenv('LAUNCHDARKLY_SDK_TIMEOUT', 20)
 
 ANSIBLE_AI_SEARCH = {
     'HOST': os.getenv('ANSIBLE_AI_SEARCH_HOST', ''),
@@ -407,6 +429,9 @@ CACHES = {
     }
 }
 
+WCA_CLIENT_BACKEND_TYPE = "wcaclient"
+WCA_SECRET_BACKEND_TYPE = "aws_sm"
+
 WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_ACCESS_KEY', '')
 WCA_SECRET_MANAGER_SECRET_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_SECRET_ACCESS_KEY', '')
 WCA_SECRET_MANAGER_KMS_KEY_ID = os.getenv('WCA_SECRET_MANAGER_KMS_KEY_ID', '')
@@ -414,6 +439,7 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
+MOCK_WCA_SECRETS_MANAGER = os.environ.get("MOCK_WCA_SECRETS_MANAGER", "False") == "True"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
@@ -421,3 +447,17 @@ CSP_INCLUDE_NONCE_IN = ['script-src-elem']
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
 DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')
+
+# Support to disable health checks. The default is that they are enabled.
+# The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
+ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv('ENABLE_HEALTHCHECK_MODEL_MESH', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_SECRET_MANAGER = (
+    os.getenv('ENABLE_HEALTHCHECK_SECRET_MANAGER', 'True').lower() == 'true'
+)
+ENABLE_HEALTHCHECK_WCA = os.getenv('ENABLE_HEALTHCHECK_WCA', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_AUTHORIZATION = (
+    os.getenv('ENABLE_HEALTHCHECK_AUTHORIZATION', 'True').lower() == 'true'
+)
+ENABLE_HEALTHCHECK_ATTRIBUTION = (
+    os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
+)

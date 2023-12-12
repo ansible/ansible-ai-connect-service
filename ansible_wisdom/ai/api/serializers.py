@@ -20,7 +20,7 @@ from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 class Metadata(serializers.Serializer):
     class Meta:
-        fields = ['documentUri', 'activityId']
+        fields = ['documentUri', 'activityId', 'ansibleFileType', 'additionalContext']
 
     documentUri = AnonymizedCharField(required=False)
     activityId = serializers.UUIDField(
@@ -28,6 +28,16 @@ class Metadata(serializers.Serializer):
         required=False,
         label="Activity ID",
         help_text="A UUID that identifies a user activity session within a given document.",
+    )
+    ansibleFileType = serializers.CharField(
+        required=False,
+        label="Ansible File Type",
+        help_text="Ansible file type (playbook/tasks_in_role/tasks)",
+    )
+    additionalContext = serializers.DictField(
+        required=False,
+        label="Additional Context",
+        help_text="Additional context for completion API",
     )
 
 
@@ -139,7 +149,7 @@ class CompletionResponseSerializer(serializers.Serializer):
 
 
 class InlineSuggestionFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (('0', 'ACCEPT'), ('1', 'IGNORE'))
+    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
 
     class Meta:
         fields = [
@@ -345,7 +355,7 @@ class ContentMatchRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['suggestions', 'suggestionId', 'model']
 
-    suggestions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
+    suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format='hex_verbose',
         required=False,
@@ -500,4 +510,29 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
         required=True,
         label='Model Id',
         help_text='WCA Model Id.',
+    )
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Valid example',
+            summary='Request Telemetry settings',
+            description='A valid request to set the Telemetry settings.',
+            value={
+                'optOut': 'true',
+            },
+            request_only=True,
+            response_only=False,
+        ),
+    ]
+)
+class TelemetrySettingsRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['optOut']
+
+    optOut = serializers.BooleanField(
+        required=True,
+        label='OptOut',
+        help_text='Indicates whether the Red Hat Organization opts out of telemetry collection.',
     )

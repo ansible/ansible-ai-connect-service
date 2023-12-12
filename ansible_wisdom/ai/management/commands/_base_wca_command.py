@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
 from ai.api.aws.wca_secret_manager import (
+    AWSSecretManager,
     Suffixes,
-    WcaSecretManager,
     WcaSecretManagerError,
 )
 from django.conf import settings
@@ -14,7 +14,7 @@ class BaseWCACommand(BaseCommand):
         parser.add_argument("org_id", type=str, help="The Red Hat OrgId.")
 
     def handle(self, *args, **options):
-        client = WcaSecretManager(
+        client = AWSSecretManager(
             settings.WCA_SECRET_MANAGER_ACCESS_KEY,
             settings.WCA_SECRET_MANAGER_SECRET_ACCESS_KEY,
             settings.WCA_SECRET_MANAGER_KMS_KEY_ID,

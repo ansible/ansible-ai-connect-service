@@ -4,6 +4,7 @@ import time
 from ai.api import formatter as fmtr
 from ai.api.pipelines.common import PipelineElement, process_error_count
 from ai.api.pipelines.completion_context import CompletionContext
+from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from rest_framework.response import Response
@@ -18,20 +19,49 @@ preprocess_hist = Histogram(
 
 
 def completion_pre_process(context: CompletionContext):
-    cp = context.payload.prompt
-    cc = context.payload.context
-    if fmtr.is_multi_task_prompt(cp):
-        # Hold the original indent so that we can restore indentation in postprocess
-        original_indent = cp.find('#')
-    else:
-        # once we switch completely to WCA, we should be able to remove this entirely
-        # since they're doing the same preprocessing on their side
-        original_indent = cp.find("name")
-        cc, cp = fmtr.preprocess(cc, cp)
+    prompt = context.payload.prompt
+    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
+    payload_context = context.payload.context
 
-    context.payload.prompt = cp
-    context.payload.context = cc
-    context.original_indent = original_indent
+    # Additional context (variables) is supported when
+    #
+    #   1. ENABLE_ADDITIONAL_CONTEXT setting is set to True, and
+    #   2. The user has a seat (=she/he is a commercial user).
+    #
+    user = context.request.user
+    is_commercial = user.rh_user_has_seat
+    if settings.ENABLE_ADDITIONAL_CONTEXT and is_commercial:
+        additionalContext = context.metadata.get("additionalContext", {})
+    else:
+        additionalContext = {}
+
+    multi_task = fmtr.is_multi_task_prompt(prompt)
+    context.original_indent = prompt.find('#' if multi_task else "name")
+
+    # fmtr.preprocess() performs:
+    #
+    #   1. Insert additional context (variables), and
+    #   2. Formatting/normalizing prompt/context YAML data,
+    #
+    # Calling fmtr.preprocess for of (2) is redundant in WCA case
+    # because WCA is already doing this. However, enhanced context
+    # support also relies on this preprocess step, so we will
+    # always call fmtr.preprocess, regardless of model server.
+    #
+    ansibleFileType = context.metadata.get("ansibleFileType", "playbook")
+    context.payload.context, context.payload.prompt = fmtr.preprocess(
+        payload_context, prompt, ansibleFileType, additionalContext
+    )
+    if not multi_task:
+        # We are currently more forgiving on leading spacing of single task
+        # prompts than multi task prompts. In order to use the "original"
+        # single task prompt successfull in post-processing, we need to
+        # ensure its spacing aligns with the normalized context we got
+        # back from preprocess. We can calculate the proper spacing from the
+        # normalized prompt.
+        normalized_indent = len(context.payload.prompt) - len(context.payload.prompt.lstrip())
+        original_prompt = " " * normalized_indent + original_prompt.lstrip()
+    context.payload.original_prompt = original_prompt
 
 
 class PreProcessStage(PipelineElement):

@@ -1,7 +1,8 @@
 version: "3.8"
 services:
-  django: &django
+  django:
     user: "1000"
+    platform: linux/amd64
     build:
       context: $PWD
       dockerfile: wisdom-service.Containerfile
@@ -48,15 +49,21 @@ services:
       - SOCIAL_AUTH_OIDC_KEY=${SOCIAL_AUTH_OIDC_KEY}
       - SOCIAL_AUTH_OIDC_SECRET=${SOCIAL_AUTH_OIDC_SECRET}
       - AUTHZ_BACKEND_TYPE=${AUTHZ_BACKEND_TYPE}
+      - AUTHZ_DUMMY_USERS_WITH_SEAT=${AUTHZ_DUMMY_USERS_WITH_SEAT}
+      - AUTHZ_DUMMY_RH_ORG_ADMINS=${AUTHZ_DUMMY_RH_ORG_ADMINS}
+      - AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION=${AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION}
       - AUTHZ_SSO_CLIENT_ID=${AUTHZ_SSO_CLIENT_ID}
       - AUTHZ_SSO_CLIENT_SECRET=${AUTHZ_SSO_CLIENT_SECRET}
       - AUTHZ_SSO_SERVER=${AUTHZ_SSO_SERVER}
       - AUTHZ_API_SERVER=${AUTHZ_API_SERVER}
+      - WCA_CLIENT_BACKEND_TYPE=${WCA_CLIENT_BACKEND_TYPE}
       - WCA_SECRET_MANAGER_ACCESS_KEY=${WCA_SECRET_MANAGER_ACCESS_KEY}
       - WCA_SECRET_MANAGER_KMS_KEY_ID=${WCA_SECRET_MANAGER_KMS_KEY_ID}
       - WCA_SECRET_MANAGER_PRIMARY_REGION=${WCA_SECRET_MANAGER_PRIMARY_REGION}
       - WCA_SECRET_MANAGER_REPLICA_REGIONS=${WCA_SECRET_MANAGER_REPLICA_REGIONS}
       - WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=${WCA_SECRET_MANAGER_SECRET_ACCESS_KEY}
+      - WCA_SECRET_BACKEND_TYPE=${WCA_SECRET_BACKEND_TYPE}
+      - WCA_SECRET_DUMMY_SECRETS=${WCA_SECRET_DUMMY_SECRETS}
       - ANSIBLE_WCA_INFERENCE_URL=${ANSIBLE_WCA_INFERENCE_URL}
       - ANSIBLE_WCA_FREE_API_KEY=${ANSIBLE_WCA_FREE_API_KEY}
       - ANSIBLE_WCA_FREE_MODEL_ID=${ANSIBLE_WCA_FREE_MODEL_ID}
@@ -65,6 +72,7 @@ services:
     networks:
       - dbnet
   db:
+    platform: linux/amd64
     image: docker.io/library/postgres:alpine
     environment:
       - POSTGRES_PASSWORD=wisdom
@@ -80,6 +88,7 @@ services:
     ports:
       - "5432:5432"
   prometheus:
+    platform: linux/amd64
     image: docker.io/prom/prometheus
     command:
       - --config.file=/opt/prometheus/prometheus.yaml
@@ -91,6 +100,7 @@ services:
     networks:
       - dbnet
   grafana:
+    platform: linux/amd64
     image: docker.io/grafana/grafana:7.5.17
     environment:
       - GF_LOG_LEVEL=warn

@@ -3,6 +3,8 @@ from enum import Enum
 
 from django.conf import settings
 from ldclient import Context
+from ldclient.client import LDClient
+from ldclient.config import Config
 from users.models import User
 
 logger = logging.getLogger(__name__)
@@ -14,15 +16,12 @@ class WisdomFlags(str, Enum):
 
 class FeatureFlags:
     def __init__(self):
+        self.client = None
         if settings.LAUNCHDARKLY_SDK_KEY:
-            import ldclient
-            from ldclient.config import Config
-
-            ldclient.set_config(Config(settings.LAUNCHDARKLY_SDK_KEY))
-            self.client = ldclient.get()
+            self.client = LDClient(
+                Config(settings.LAUNCHDARKLY_SDK_KEY), start_wait=settings.LAUNCHDARKLY_SDK_TIMEOUT
+            )
             logger.info("feature flag client initialized")
-        else:
-            self.client = None
 
     def get(self, name: str, user: User, default: str):
         if self.client:

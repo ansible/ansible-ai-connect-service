@@ -40,17 +40,27 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from organizations.models import Organization
 from requests.exceptions import ReadTimeout
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
-from test_utils import WisdomLogAwareMixin, WisdomServiceLogAwareTestCase
+from test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomLogAwareMixin,
+    WisdomServiceLogAwareTestCase,
+)
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
 class DummyMeshClient(ModelMeshClient):
     def __init__(
-        self, test, payload, response_data, test_inference_match=True, rh_user_has_seat=False
+        self,
+        test,
+        payload,
+        response_data,
+        test_inference_match=True,
+        rh_user_has_seat=False,
     ):
         super().__init__(inference_url='dummy inference url')
         self.test = test
@@ -63,9 +73,12 @@ class DummyMeshClient(ModelMeshClient):
                 serializer = CompletionRequestSerializer(context={'request': request})
                 data = serializer.validate(payload.copy())
 
+                api_payload = APIPayload(prompt=data.get("prompt"), context=data.get("context"))
+                api_payload.original_prompt = payload["prompt"]
+
                 context = CompletionContext(
                     request=request,
-                    payload=APIPayload(prompt=data.get("prompt"), context=data.get("context")),
+                    payload=api_payload,
                 )
                 completion_pre_process(context)
 
@@ -123,17 +136,23 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         self.client.login(username=self.username, password=self.password)
 
 
-@modify_settings()
-class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
-    def stub_wca_client(self, status_code, mock_api_key, mock_model_id, suggestion_id: uuid):
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+    def stub_wca_client(
+        self,
+        status_code=None,
+        mock_api_key=Mock(return_value='org-api-key'),
+        mock_model_id=Mock(return_value='org-model-id'),
+        predictions="",
+    ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(suggestion_id),
+            "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         response = MockResponse(
-            json={"predictions": [""]},
+            json={"predictions": [predictions]},
             status_code=status_code,
-            headers={WCA_REQUEST_ID_HEADER: str(suggestion_id)},
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
         model_client = WCAClient(inference_url='https://wca_api_url')
         model_client.session.post = Mock(return_value=response)
@@ -144,7 +163,7 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
     def test_seated_got_wca(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
         self.assertTrue(isinstance(model_client, WCAClient))
@@ -157,161 +176,200 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         self.assertFalse(isinstance(model_client, WCAClient))
         self.assertIsNone(model_name)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('completions'), model_input)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codegen/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
-            )
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('completions'), model_input)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "https://wca_api_url/v1/wca/codegen/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+        )
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_seated_user_missing_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
             Mock(side_effect=WcaKeyNotFound),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), model_input)
-                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-                self.assertInLog("A WCA Api Key was expected but not found", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("A WCA Api Key was expected but not found", log)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                properties = event['properties']
+                self.assertEqual(properties['modelName'], '')
+                if event['event'] == 'completion':
+                    self.assertEqual(properties['response']['status_code'], 403)
+                elif event['event'] == 'prediction':
+                    self.assertEqual(properties['problem'], 'WcaKeyNotFound')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_missing_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(side_effect=WcaModelIdNotFound),
-            DEFAULT_SUGGESTION_ID,
+            mock_model_id=Mock(side_effect=WcaModelIdNotFound),
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), model_input)
-                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-                self.assertInLog("A WCA Model ID was expected but not found", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("A WCA Model ID was expected but not found", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_garbage_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             400,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='garbage'),
-            DEFAULT_SUGGESTION_ID,
+            mock_model_id=Mock(return_value='garbage'),
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), model_input)
-                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-                self.assertInLog("WCA Model ID is invalid", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             403,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), model_input)
-                self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-                self.assertInLog("WCA Model ID is invalid", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_empty_response(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             204,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         model_client, model_input = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), model_input)
-                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                self.assertInLog("WCA returned an empty response", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.assertInLog("WCA returned an empty response", log)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_cloudflare_rejection(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json=[],
+            text="cloudflare rejection",
+            status_code=HTTPStatus.FORBIDDEN,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertInLog("Cloudflare rejected the request", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_model_id_error(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('completions'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
+            predictions="- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "  # noqa: E501
+            "state: present\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n"
+            "    state: started\n    enabled: true\n",
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -319,23 +377,21 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('completions'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('completions'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_timed_out(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -344,30 +400,28 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
         }
         model_client, _ = stub
         model_client.session.post = Mock(side_effect=ReadTimeout())
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event['event'] == 'prediction':
-                        properties = event['properties']
-                        self.assertTrue(properties['exception'])
-                        self.assertEqual(properties['problem'], 'ModelTimeoutError')
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'prediction':
+                    properties = event['properties']
+                    self.assertTrue(properties['exception'])
+                    self.assertEqual(properties['problem'], 'ModelTimeoutError')
 
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_request_id_correlation_failure(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
             200,
-            Mock(return_value='org-api-key'),
-            Mock(return_value='org-model-id'),
-            DEFAULT_SUGGESTION_ID,
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -383,19 +437,46 @@ class TestCompletionWCAView(WisdomServiceAPITestCaseBase):
 
         model_client, _ = stub
         model_client.session.post = Mock(return_value=response)
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event['event'] == 'prediction':
-                        properties = event['properties']
-                        self.assertTrue(properties['exception'])
-                        self.assertEqual(properties['problem'], 'WcaSuggestionIdCorrelationFailure')
-                self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
-                self.assertInLog(f"x_request_id: '{x_request_id}'", log)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), payload)
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                if event['event'] == 'prediction':
+                    properties = event['properties']
+                    self.assertTrue(properties['exception'])
+                    self.assertEqual(properties['problem'], 'WcaSuggestionIdCorrelationFailure')
+            self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
+            self.assertInLog(f"x_request_id: '{x_request_id}'", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @patch('main.middleware.send_segment_event')
+    def test_wca_compeletion_segment_event_with_invalid_modelid_error(
+        self, mock_send_segment_event
+    ):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(return_value='garbage'),
+        )
+        model_client, model_input = stub
+        model_input[
+            'prompt'
+        ] = '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
+
+            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+            self.assertEqual(actual_event.get("promptType"), 'MULTITASK')
 
 
 @modify_settings()
@@ -468,14 +549,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
+        pii_task = "say hello fred@redhat.com"
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & say hello fred@redhat.com\n",  # noqa: E501
+            "prompt": f"---\n- hosts: all\n  become: yes\n\n  tasks:\n    #Install Apache & {pii_task}\n",  # noqa: E501
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
             "model_id": settings.ANSIBLE_AI_MODEL_NAME,
             "predictions": [
-                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello test@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
         }
         self.user.rh_user_has_seat = True
@@ -491,6 +573,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data['predictions'])
+            self.assertIn(pii_task.capitalize(), r.data['predictions'][0])
             self.assertSegmentTimestamp(log)
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -813,7 +896,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_client',
+            '_wca_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -838,7 +921,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config('ai'),
-            'wca_client',
+            '_wca_client',
             DummyMeshClient(self, payload, response_data, rh_user_has_seat=True),
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -885,7 +968,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-            apps.get_app_config('ai'), 'wca_client', WCAClient(inference_url='https://wca_api_url')
+            apps.get_app_config('ai'), '_wca_client', WCAClient(inference_url='https://wca_api_url')
         ):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
@@ -1094,7 +1177,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/rbobbitt/ansible.yaml",
-                "action": "2",  # invalid choice for action
+                "action": "3",  # invalid choice for action
                 "suggestionId": str(uuid.uuid4()),
             }
         }
@@ -1321,8 +1404,8 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertInLog('Failed to search for attributions', log)
 
 
-@modify_settings()
-class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @patch('ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
         self.user.rh_user_has_seat = False
@@ -1407,7 +1490,7 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
 
     def test_wca_contentmatch_with_seated_user_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1470,31 +1553,31 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('contentmatches'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codematch/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
-            )
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "https://wca_api_url/v1/wca/codematch/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+        )
 
-            self.assertEqual(len(r.data["contentmatches"][0]["contentmatch"]), 3)
+        self.assertEqual(len(r.data["contentmatches"][0]["contentmatch"]), 3)
 
-            content_match = r.data["contentmatches"][0]["contentmatch"][0]
+        content_match = r.data["contentmatches"][0]["contentmatch"][0]
 
-            self.assertEqual(content_match["repo_name"], repo_name)
-            self.assertEqual(content_match["repo_url"], repo_url)
-            self.assertEqual(content_match["path"], path)
-            self.assertEqual(content_match["license"], license)
-            self.assertEqual(content_match["data_source_description"], data_source_description)
+        self.assertEqual(content_match["repo_name"], repo_name)
+        self.assertEqual(content_match["repo_url"], repo_url)
+        self.assertEqual(content_match["path"], path)
+        self.assertEqual(content_match["license"], license)
+        self.assertEqual(content_match["data_source_description"], data_source_description)
 
     def test_wca_contentmatch_with_seated_user_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1560,36 +1643,36 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('contentmatches'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codematch/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
-            )
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "https://wca_api_url/v1/wca/codematch/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+        )
 
-            content_match = r.data["contentmatches"][0]["contentmatch"][1]
-            content_match2 = r.data["contentmatches"][1]["contentmatch"][0]
+        content_match = r.data["contentmatches"][0]["contentmatch"][1]
+        content_match2 = r.data["contentmatches"][1]["contentmatch"][0]
 
-            self.assertEqual(content_match["repo_name"], repo_name)
-            self.assertEqual(content_match["repo_url"], repo_url)
-            self.assertEqual(content_match["path"], path)
-            self.assertEqual(content_match["license"], license)
-            self.assertEqual(content_match["data_source_description"], data_source_description)
+        self.assertEqual(content_match["repo_name"], repo_name)
+        self.assertEqual(content_match["repo_url"], repo_url)
+        self.assertEqual(content_match["path"], path)
+        self.assertEqual(content_match["license"], license)
+        self.assertEqual(content_match["data_source_description"], data_source_description)
 
-            self.assertEqual(content_match2["repo_name"], repo_name2)
-            self.assertEqual(content_match2["repo_url"], repo_url2)
-            self.assertEqual(content_match2["path"], path2)
-            self.assertEqual(content_match2["license"], license2)
-            self.assertEqual(content_match2["data_source_description"], data_source_description2)
+        self.assertEqual(content_match2["repo_name"], repo_name2)
+        self.assertEqual(content_match2["repo_url"], repo_url2)
+        self.assertEqual(content_match2["path"], path2)
+        self.assertEqual(content_match2["license"], license2)
+        self.assertEqual(content_match2["data_source_description"], data_source_description2)
 
     def test_wca_contentmatch_with_seated_user_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1627,21 +1710,21 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('contentmatches'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codematch/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
-            )
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "https://wca_api_url/v1/wca/codematch/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+        )
 
     def test_wca_contentmatch_with_seated_user_without_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -1679,25 +1762,28 @@ class TestContentMatchesWCAView(WisdomServiceAPITestCaseBase):
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        with patch.object(apps.get_app_config('ai'), 'wca_client', model_client):
-            r = self.client.post(reverse('contentmatches'), payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codematch/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
-            )
+        self.mock_wca_client_with(model_client)
+        r = self.client.post(reverse('contentmatches'), payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "https://wca_api_url/v1/wca/codematch/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs['json']['model_id'], 'org-model-id'
+        )
 
 
-class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwareMixin):
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+class TestContentMatchesWCAViewErrors(
+    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
+):
     def setUp(self):
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -1778,6 +1864,31 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
             "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.BAD_REQUEST
         )
 
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_contentmatch_cloudflare_rejection(self):
+        response = MockResponse(
+            json=[],
+            text="cloudflare rejection",
+            status_code=HTTPStatus.FORBIDDEN,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaCloudflareRejectionException", HTTPStatus.BAD_REQUEST
+        )
+        self._assert_model_id_in_exception(self.payload["model"])
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_contentmatch_model_id_error(self):
+        response = MockResponse(
+            json={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
+        )
+        self._assert_model_id_in_exception(self.payload["model"])
+
     def test_wca_contentmatch_with_model_timeout(self):
         self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)
         self._assert_exception_in_log_and_status_code(
@@ -1792,23 +1903,26 @@ class TestContentMatchesWCAViewErrors(WisdomServiceAPITestCaseBase, WisdomLogAwa
 
     def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
         with self.assertLogs(logger='root', level='ERROR') as log:
-            with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-                r = self.client.post(reverse('contentmatches'), self.payload)
-                self.assertEqual(r.status_code, status_code_expected)
+            self.mock_wca_client_with(self.model_client)
+            r = self.client.post(reverse('contentmatches'), self.payload)
+            self.assertEqual(r.status_code, status_code_expected)
             self.assertInLog(exception_name, log)
 
     def _assert_model_id_in_exception(self, expected_model_id):
-        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-            r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.data["model"], expected_model_id)
+        self.mock_wca_client_with(self.model_client)
+        r = self.client.post(reverse('contentmatches'), self.payload)
+        self.assertEqual(r.data["model"], expected_model_id)
 
 
-class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+class TestContentMatchesWCAViewSegmentEvents(
+    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
     def setUp(self):
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization_id = "1"
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -1920,46 +2034,46 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-            r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.mock_wca_client_with(self.model_client)
+        r = self.client.post(reverse('contentmatches'), self.payload)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
 
-            event = {
-                'exception': False,
-                'modelName': 'model-id',
-                'problem': None,
-                'response': {
-                    'contentmatches': [
-                        {
-                            'contentmatch': [
-                                {
-                                    'repo_name': 'robertdebock.nginx',
-                                    'repo_url': 'https://galaxy.ansible.com/robertdebock/nginx',
-                                    'path': 'tasks/main.yml',
-                                    'license': 'apache-2.0',
-                                    'score': 0.0,
-                                    'data_source_description': 'Ansible Galaxy roles',
-                                }
-                            ]
-                        }
-                    ]
-                },
-                'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
-                'rh_user_has_seat': True,
-                'rh_user_org_id': '1',
-            }
-
-            event_request = {
-                'suggestions': [
-                    '\n - name: install nginx on RHEL\n become: true\n '
-                    'ansible.builtin.package:\n name: nginx\n state: present\n'
+        event = {
+            'exception': False,
+            'modelName': 'model-id',
+            'problem': None,
+            'response': {
+                'contentmatches': [
+                    {
+                        'contentmatch': [
+                            {
+                                'repo_name': 'robertdebock.nginx',
+                                'repo_url': 'https://galaxy.ansible.com/robertdebock/nginx',
+                                'path': 'tasks/main.yml',
+                                'license': 'apache-2.0',
+                                'score': 0.0,
+                                'data_source_description': 'Ansible Galaxy roles',
+                            }
+                        ]
+                    }
                 ]
-            }
+            },
+            'metadata': [{'encode_duration': 1000, 'search_duration': 2000}],
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 1,
+        }
 
-            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+        event_request = {
+            'suggestions': [
+                '\n - name: install nginx on RHEL\n become: true\n '
+                'ansible.builtin.package:\n name: nginx\n state: present\n'
+            ]
+        }
 
-            self.assertTrue(event.items() <= actual_event.items())
-            self.assertTrue(event_request.items() <= actual_event.get("request").items())
+        actual_event = mock_send_segment_event.call_args_list[0][0][0]
+
+        self.assertTrue(event.items() <= actual_event.items())
+        self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
@@ -1974,31 +2088,31 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
-            r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.mock_wca_client_with(self.model_client)
+        r = self.client.post(reverse('contentmatches'), self.payload)
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
-            event = {
-                'exception': True,
-                'modelName': 'invalid-model-id',
-                'problem': 'WcaInvalidModelId',
-                'response': {},
-                'metadata': [],
-                'rh_user_has_seat': True,
-                'rh_user_org_id': '1',
-            }
+        event = {
+            'exception': True,
+            'modelName': 'invalid-model-id',
+            'problem': 'WcaInvalidModelId',
+            'response': {},
+            'metadata': [],
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 1,
+        }
 
-            event_request = {
-                'suggestions': [
-                    '\n - name: install nginx on RHEL\n become: true\n '
-                    'ansible.builtin.package:\n name: nginx\n state: present\n'
-                ]
-            }
+        event_request = {
+            'suggestions': [
+                '\n - name: install nginx on RHEL\n become: true\n '
+                'ansible.builtin.package:\n name: nginx\n state: present\n'
+            ]
+        }
 
-            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+        actual_event = mock_send_segment_event.call_args_list[0][0][0]
 
-            self.assertTrue(event.items() <= actual_event.items())
-            self.assertTrue(event_request.items() <= actual_event.get("request").items())
+        self.assertTrue(event.items() <= actual_event.items())
+        self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
@@ -2014,31 +2128,33 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+        self.mock_wca_client_with(self.model_client)
+        with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.assertInLog("WCA returned an empty response.", log)
+        self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
 
-            event = {
-                'exception': True,
-                'modelName': 'model-id',
-                'problem': 'WcaEmptyResponse',
-                'response': {},
-                'metadata': [],
-                'rh_user_has_seat': True,
-                'rh_user_org_id': '1',
-            }
+        event = {
+            'exception': True,
+            'modelName': 'model-id',
+            'problem': 'WcaEmptyResponse',
+            'response': {},
+            'metadata': [],
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 1,
+        }
 
-            event_request = {
-                'suggestions': [
-                    '\n - name: install nginx on RHEL\n become: true\n '
-                    'ansible.builtin.package:\n name: nginx\n state: present\n'
-                ]
-            }
+        event_request = {
+            'suggestions': [
+                '\n - name: install nginx on RHEL\n become: true\n '
+                'ansible.builtin.package:\n name: nginx\n state: present\n'
+            ]
+        }
 
-            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+        actual_event = mock_send_segment_event.call_args_list[0][0][0]
 
-            self.assertTrue(event.items() <= actual_event.items())
-            self.assertTrue(event_request.items() <= actual_event.get("request").items())
+        self.assertTrue(event.items() <= actual_event.items())
+        self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ai.api.views.send_segment_event')
@@ -2047,28 +2163,30 @@ class TestContentMatchesWCAViewSegmentEvents(WisdomServiceAPITestCaseBase):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        with patch.object(apps.get_app_config('ai'), 'wca_client', self.model_client):
+        self.mock_wca_client_with(self.model_client)
+        with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("A WCA Api Key was expected but not found.", log)
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
-            event = {
-                'exception': True,
-                'modelName': '',
-                'problem': 'WcaKeyNotFound',
-                'response': {},
-                'metadata': [],
-                'rh_user_has_seat': True,
-                'rh_user_org_id': '1',
-            }
+        event = {
+            'exception': True,
+            'modelName': '',
+            'problem': 'WcaKeyNotFound',
+            'response': {},
+            'metadata': [],
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 1,
+        }
 
-            event_request = {
-                'suggestions': [
-                    '\n - name: install nginx on RHEL\n become: true\n '
-                    'ansible.builtin.package:\n name: nginx\n state: present\n'
-                ]
-            }
+        event_request = {
+            'suggestions': [
+                '\n - name: install nginx on RHEL\n become: true\n '
+                'ansible.builtin.package:\n name: nginx\n state: present\n'
+            ]
+        }
 
-            actual_event = mock_send_segment_event.call_args_list[0][0][0]
+        actual_event = mock_send_segment_event.call_args_list[0][0][0]
 
-            self.assertTrue(event.items() <= actual_event.items())
-            self.assertTrue(event_request.items() <= actual_event.get("request").items())
+        self.assertTrue(event.items() <= actual_event.items())
+        self.assertTrue(event_request.items() <= actual_event.get("request").items())

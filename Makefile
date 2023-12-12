@@ -27,6 +27,8 @@ ifeq ($(ENVIRONMENT),development)
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
 	export DJANGO_SUPERUSER_PASSWORD := somesecret
+	export SOCIAL_AUTH_OIDC_OIDC_ENDPOINT := https://sso.redhat.com/auth/realms/redhat-external
+	export SOCIAL_AUTH_OIDC_KEY := ansible-wisdom-staging
 
 	ifeq ($(wildcard $(PWD)/.env/.),)
 		ifneq ($(wildcard $(PWD)/.env),)
@@ -110,6 +112,10 @@ create-superuser-containerized:
 migrate:
 	python ansible_wisdom/manage.py migrate
 
+.PHONY: makemigrations
+makemigrations:
+	python ansible_wisdom/manage.py makemigrations
+
 .PHONY: create-cachetable
 create-cachetable: migrate
 	python ansible_wisdom/manage.py createcachetable
@@ -124,7 +130,8 @@ create-application: create-superuser
 
 .PHONY: test
 test:
-	python ansible_wisdom/manage.py test
+	export MOCK_WCA_SECRETS_MANAGER=False && \
+	python ansible_wisdom/manage.py test $$WISDOM_TEST
 
 .PHONY: code-coverage
 # Run unit tests, calculate code coverage and display results in chrome

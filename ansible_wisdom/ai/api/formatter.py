@@ -1,10 +1,23 @@
 import logging
+import re
 from io import StringIO
 
 import yaml
 from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
+
+"""
+The code below causes any yaml.dump calls to dump None
+as blank rather than "null"
+"""
+
+
+def represent_none(self, _):
+    return self.represent_scalar('tag:yaml.org,2002:null', '')
+
+
+yaml.add_representer(type(None), represent_none)
 
 
 class AnsibleDumper(yaml.Dumper):
@@ -56,6 +69,10 @@ class AnsibleDumper(yaml.Dumper):
             return "'"
         return self.preferred_quote_
 
+    # Prevent aliases when enhanced context adds same vars to multiple plays
+    def ignore_aliases(self, data):
+        return True
+
 
 class InvalidPromptException(Exception):
     pass
@@ -66,50 +83,135 @@ Normalize by loading and re-serializing
 """
 
 
-def normalize_yaml(yaml_str):
+def normalize_yaml(yaml_str, ansible_file_type="playbook", additional_context=None):
     data = yaml.load(yaml_str, Loader=yaml.SafeLoader)
     if data is None:
         return None
+    if additional_context:
+        expand_vars_files(data, ansible_file_type, additional_context)
     return yaml.dump(data, Dumper=AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000)
 
 
-def preprocess(context, prompt):
+def load_and_merge_vars_in_context(vars_in_context):
+    merged_vars = {}
+    for v in vars_in_context:
+        # Merge the vars element and the dict loaded from a vars string
+        merged_vars |= yaml.load(v, Loader=yaml.SafeLoader)
+    return merged_vars
+
+
+def insert_set_fact_task(data, merged_vars):
+    if merged_vars:
+        vars_task = {
+            "name": "Set variables from context",
+            "ansible.builtin.set_fact": merged_vars,
+        }
+        data.insert(0, vars_task)
+
+
+def expand_vars_playbook(data, additional_context):
+    playbook_context = additional_context.get("playbookContext", {})
+    var_infiles = list(playbook_context.get("varInfiles", {}).values())
+    include_vars = list(playbook_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(var_infiles + include_vars)
+    if len(merged_vars) > 0:
+        for d in data:
+            tasks = d.pop("tasks", None)  # tasks needs to be last for proper placement with prompt
+            d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+            if tasks:
+                d["tasks"] = tasks
+
+
+def expand_vars_tasks_in_role(data, additional_context):
+    role_context = additional_context.get("roleContext", {})
+    role_vars = list(role_context.get("roleVars", {}).get("vars", {}).values())
+    role_vars_defaults = list(role_context.get("roleVars", {}).get("defaults", {}).values())
+    include_vars = list(role_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(role_vars_defaults + role_vars + include_vars)
+    if len(merged_vars) > 0:
+        insert_set_fact_task(data, merged_vars)
+
+
+def expand_vars_tasks(data, additional_context):
+    standalone_task_context = additional_context.get("standaloneTaskContext", {})
+    include_vars = list(standalone_task_context.get("includeVars", {}).values())
+    merged_vars = load_and_merge_vars_in_context(include_vars)
+    if len(merged_vars) > 0:
+        insert_set_fact_task(data, merged_vars)
+
+
+def expand_vars_files(data, ansible_file_type, additional_context):
+    """Expand the vars_files element by loading each file and add/update the vars element"""
+    expand_vars_files = {
+        "playbook": expand_vars_playbook,
+        "tasks_in_role": expand_vars_tasks_in_role,
+        "tasks": expand_vars_tasks,
+    }
+    if ansible_file_type in expand_vars_files:
+        expand_vars_files[ansible_file_type](data, additional_context)
+
+
+def preprocess(
+    context,
+    prompt,
+    ansible_file_type="playbook",
+    additional_context=None,
+):
+    """
+    Formatting and normalization performed in this function is redundant in WCA case because
+    it is already handled on the WCA side. We can safely skip it for multitask scenarios,
+    which we know are WCA. No need to adopt to support both single and multitask.
+
+    We call normalize_yaml regardless of single or multi in order to process the
+    additional_context content. We need to hold the original multi-task prompt because
+    pyyaml does not preserve comments.
+    """
+    multi_task = is_multi_task_prompt(prompt)
+    original_multi_task_prompt = prompt
+
     """
     Add a newline between the input context and prompt in case context doesn't end with one
-    Format and split off the last line as the prompt
-    Append a newline to both context and prompt (as the model expects)
     """
-    formatted = normalize_yaml(f'{context}\n{prompt}')
+    formatted = normalize_yaml(f'{context}\n{prompt}', ansible_file_type, additional_context)
 
     if formatted is not None:
         logger.debug(f'initial user input {context}\n{prompt}')
 
-        segs = formatted.rsplit('\n', 2)  # Last will be the final newline
-        if len(segs) == 3:
-            context = segs[0] + '\n'
-            prompt = segs[1]
-        elif len(segs) == 2:  # Context is empty
-            context = ""
-            prompt = segs[0]
+        if multi_task:
+            context = formatted
+            prompt = original_multi_task_prompt
         else:
-            logger.warn(f"preprocess failed - too few new-lines in: {formatted}")
+            """
+            Format and split off the last line as the prompt
+            Append a newline to both context and prompt (as the model expects)
+            """
+            segs = formatted.rsplit('\n', 2)  # Last will be the final newline
+            if len(segs) == 3:
+                context = segs[0] + '\n'
+                prompt = segs[1]
+            elif len(segs) == 2:  # Context is empty
+                context = ""
+                prompt = segs[0]
+            else:
+                logger.warning(f"preprocess failed - too few new-lines in: {formatted}")
 
-            logger.debug(f'preprocessed user input {context}\n{prompt}')
+            prompt = handle_spaces_and_casing(prompt)
 
-        prompt = handle_spaces_and_casing(prompt)
+            # TODO - We can probably ditch this since it's covered by
+            # CompletionRequestSerializer.validate_extracted_prompt
+            # Make sure the prompt is in the form "  - name: a string description."
+            prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
+            if (
+                not isinstance(prompt_list, list)
+                or len(prompt_list) != 1
+                or not isinstance(prompt_list[0], dict)
+                or len(prompt_list[0]) != 1
+                or 'name' not in prompt_list[0]
+                or not isinstance(prompt_list[0]['name'], str)
+            ):
+                raise InvalidPromptException()
 
-        # Make sure the prompt is in the form "  - name: a string description."
-        prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
-        if (
-            not isinstance(prompt_list, list)
-            or len(prompt_list) != 1
-            or not isinstance(prompt_list[0], dict)
-            or len(prompt_list[0]) != 1
-            or 'name' not in prompt_list[0]
-            or not isinstance(prompt_list[0]['name'], str)
-        ):
-            raise InvalidPromptException()
-
+        logger.debug(f'preprocessed user input {context}\n{prompt}')
     return context, prompt
 
 
@@ -235,3 +337,15 @@ def get_task_names_from_tasks(tasks):
     for task in task_list:
         names.append(task["name"])
     return names
+
+
+def restore_original_task_names(output_yaml, prompt):
+    if output_yaml and is_multi_task_prompt(prompt):
+        prompt_tasks = get_task_names_from_prompt(prompt)
+        matches = re.finditer(r"(- name:\s+)(.*)", output_yaml, re.M)
+        for i, match in enumerate(matches):
+            task_line = match.group(0)
+            task = match.group(2)
+            restored_task_line = task_line.replace(task, prompt_tasks[i])
+            output_yaml = output_yaml.replace(task_line, restored_task_line)
+    return output_yaml

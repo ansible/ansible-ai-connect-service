@@ -75,7 +75,16 @@ key:
 export SECRET_KEY=somesecretvalue
 ```
 
-Then, set environment variables for access to AWS:
+For most development usages, you can skip the call to AWS Secrets Manager
+and always use the `ANSIBLE_WCA_FREE_API_KEY`
+and `ANSIBLE_WCA_FREE_MODEL_ID` values.
+
+```bash
+export MOCK_WCA_SECRETS_MANAGER=True
+```
+
+For deployment and RH SSO integration test/development, set
+environment variables for access to AWS:
 
 ```bash
 export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
@@ -130,6 +139,26 @@ write temporary data in it:
 
 ```bash
 chmod -R 777 ari/
+```
+
+If your django container build fails with the following error, you've
+probably run out of memory running webpack.
+```bash
+STEP 30/46: RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+
+> admin-portal@0.1.0 build
+> node scripts/build.js
+
+Creating an optimized production build...
+npm ERR! path /tmp/ansible_wisdom_console_react
+npm ERR! command failed
+npm ERR! signal SIGKILL
+npm ERR! command sh -c -- node scripts/build.js
+```
+You can increase the memory of your existing podman machine
+by issuing the following:
+```bash
+podman machine set --memory 8192
 ```
 
 Recreating the dev containers might be useful:
@@ -316,6 +345,8 @@ The wisdom service supports both GitHub and Red Hat authentication. GitHub authe
 GitHub users, or limited to a specific team. The following directions are for configuring the service to grant
 access to any GitHub user.
 
+### Authenticate with GitHub
+
 To test GitHub authentication locally, you will need to create a new OAuth App at
 https://github.com/settings/developers. Provide an Authorization callback URL of
 http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` and
@@ -324,6 +355,24 @@ http://localhost:8000/complete/github/. Export Update `SOCIAL_AUTH_GITHUB_KEY` a
 both of which are provided after creating a new OAuth App. If you are running with the
 compose [development environment](#development-environment) described below, put these
 env vars in a .env file in the `tools/docker-compose` directory.
+
+### Authenticate with Red Hat
+
+To test Red Hat authentication locally, you will need to export 3 variables before start the application.
+
+```bash
+export SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="https://sso.redhat.com/auth/realms/redhat-external"
+export SOCIAL_AUTH_OIDC_KEY="ansible-wisdom-staging"
+export SOCIAL_AUTH_OIDC_SECRET=secret_value
+```
+
+If, to run the application, you are using Makefile first two variables will be set automatically.
+Third one should be set manually in either way: you are using Makefile or running
+application directly. To get the secret value go to [AWS Secret Manager](https://auth.redhat.com/auth/realms/EmployeeIDP/protocol/saml/clients/itaws)
+select `it-cloud-aws-ansible-wisdom-staging` to log in. Click on `Secrets Manager` than `wisdom` and at last
+`Retrieve secret value` than copy value of `SOCIAL_AUTH_OIDC_SECRET`.
+
+### After authentication
 
 Once you start the app, navigate to http://localhost:8000/ to log in. Once authenticated, you will be presented with an
 authentication token that will be configured in VS Code (coming soon) to access the task prediction API.
@@ -520,10 +569,16 @@ Note that this `.env` file assumes that the Django
 service is executed in the `ansible_wisdom` subdirectory
 as `ARI_KB_PATH` is defined as `../ari/kb`.
 
-If you want to run unit tests from command line,
-export those variables as environment variables.
-If variables are defined in `.env` file,
-it can be done with following commands:
+It is recommended to use `make` to run unit tests since it helps to configure default values.
+If you want to execute only specific file/class/method you can use $WISDOM_TEST variable:
+
+```bash
+make test
+WISDOM_TEST="main.tests.test_views.LogoutTest" make test
+```
+
+Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.
+It can be done with following commands:
 
 ```bash
 set -o allexport
@@ -531,19 +586,11 @@ source .env
 set +o allexport
 ```
 
-After environment variables are set, you can issue following commands
+After that, it is possible to run tests using standard django test mechanism:
 
 ```bash
 cd ansible_wisdom
 python3 manage.py test
-```
-
-to run unit tests.
-
-Alternatively you can run the following command to run tests:
-
-```bash
-make test
 ```
 
 #### Measuring Code Coverage from Command Line

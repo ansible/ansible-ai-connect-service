@@ -9,11 +9,13 @@ from ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
     InferenceContext,
     InferenceResponseChecks,
+    TokenContext,
+    TokenResponseChecks,
 )
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
-from prometheus_client import Histogram
+from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
@@ -48,6 +50,40 @@ ibm_cloud_identity_token_hist = Histogram(
     "Histogram of IBM Cloud identity token API processing time",
     namespace=NAMESPACE,
 )
+wca_codegen_retry_counter = Counter(
+    'wca_codegen_retries',
+    "Counter of WCA codegen API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_codematch_retry_counter = Counter(
+    'wca_codematch_retries',
+    "Counter of WCA codematch API invocation retries",
+    namespace=NAMESPACE,
+)
+ibm_cloud_identity_token_retry_counter = Counter(
+    'ibm_cloud_identity_token_retries',
+    "Counter of IBM Cloud identity token API invocation retries",
+    namespace=NAMESPACE,
+)
+
+
+class DummyWCAClient:
+    def __init__(self, inference_url):
+        self.inference_url = inference_url
+
+    def infer_from_parameters(self, *args, **kwargs):
+        return ""
+
+    def get_token(self, api_key):
+        if api_key != "valid":
+            raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
+        return ""
+
+    def infer(self, *args, suggestion_id=None, **kwargs):
+        return {
+            "model_id": "mocked_wca_client",
+            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+        }
 
 
 class WCAClient(ModelMeshClient):
@@ -56,6 +92,7 @@ class WCAClient(ModelMeshClient):
         self.session = requests.Session()
         self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
         self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
+        self.mock_wca = settings.MOCK_WCA_SECRETS_MANAGER
         self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
 
     @staticmethod
@@ -70,6 +107,18 @@ class WCAClient(ModelMeshClient):
         else:
             # retry on all other errors (e.g. network)
             return False
+
+    @staticmethod
+    def on_backoff_inference(details):
+        wca_codegen_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_codematch(details):
+        wca_codematch_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_ibm_cloud_identity_token(details):
+        ibm_cloud_identity_token_retry_counter.inc()
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
         logger.debug(f"Input prompt: {model_input}")
@@ -115,7 +164,11 @@ class WCAClient(ModelMeshClient):
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         @backoff.on_exception(
-            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_inference,
         )
         @wca_codegen_hist.time()
         def post_request():
@@ -157,7 +210,11 @@ class WCAClient(ModelMeshClient):
         data = {"grant_type": "urn:ibm:params:oauth:grant-type:apikey", "apikey": api_key}
 
         @backoff.on_exception(
-            backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_ibm_cloud_identity_token,
         )
         @ibm_cloud_identity_token_hist.time()
         def post_request():
@@ -169,6 +226,8 @@ class WCAClient(ModelMeshClient):
 
         try:
             response = post_request()
+            context = TokenContext(response)
+            TokenResponseChecks().run_checks(context)
             response.raise_for_status()
 
         except HTTPError as e:
@@ -179,7 +238,7 @@ class WCAClient(ModelMeshClient):
 
     def get_api_key(self, rh_user_has_seat, organization_id):
         # use the shared API Key if the user has no seat
-        if not rh_user_has_seat or organization_id is None:
+        if not rh_user_has_seat or organization_id is None or self.mock_wca is True:
             return self.free_api_key
 
         try:
@@ -209,6 +268,9 @@ class WCAClient(ModelMeshClient):
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
+
+        if self.mock_wca is True:
+            return self.free_model_id
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -253,7 +315,11 @@ class WCAClient(ModelMeshClient):
             suggestion_count = len(suggestions)
 
             @backoff.on_exception(
-                backoff.expo, Exception, max_tries=self.retries + 1, giveup=self.fatal_exception
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=self.fatal_exception,
+                on_backoff=self.on_backoff_codematch,
             )
             @wca_codematch_hist.time()
             def post_request():

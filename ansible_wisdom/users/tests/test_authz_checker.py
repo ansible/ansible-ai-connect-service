@@ -1,12 +1,45 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from functools import wraps
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import requests
+from django.test import TestCase, override_settings
+from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 from test_utils import WisdomServiceLogAwareTestCase
-from users.authz_checker import AMSCheck, CIAMCheck, Token
+from users.authz_checker import (
+    AMSCheck,
+    CIAMCheck,
+    DummyCheck,
+    Token,
+    authz_token_service_retry_counter,
+)
+
+
+def assert_call_count_metrics(metric):
+    def count_metrics_decorator(func):
+        @wraps(func)
+        def wrapped_function(*args, **kwargs):
+            def get_count():
+                for m in metric.collect():
+                    for sample in m.samples:
+                        if isinstance(metric, Histogram) and sample.name.endswith("_count"):
+                            return sample.value
+                        if isinstance(metric, Counter) and sample.name.endswith("_total"):
+                            return sample.value
+                return 0.0
+
+            count_before = get_count()
+            func(*args, **kwargs)
+            count_after = get_count()
+            assert count_after > count_before
+
+        return wrapped_function
+
+    return count_metrics_decorator
 
 
 class TestToken(WisdomServiceLogAwareTestCase):
@@ -31,15 +64,62 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertEqual(m_r.json.call_count, 0)
 
     @patch("requests.post")
+    @assert_call_count_metrics(metric=authz_token_service_retry_counter)
+    @override_settings(AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT=1)
     def test_token_refresh_with_500_status_code(self, m_post):
-        m_r = Mock()
-        m_r.status_code = 500
-        m_post.return_value = m_r
+        m_post.side_effect = HTTPError(
+            "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
+        )
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             my_token = Token("foo", "bar")
             self.assertIsNone(my_token.refresh())
-            self.assertInLog("Unexpected error code (500) returned by SSO service", log)
+            self.assertInLog("SSO token service failed with status code 500", log)
+
+    @patch("requests.post")
+    @assert_call_count_metrics(metric=authz_token_service_retry_counter)
+    @override_settings(AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT=1)
+    def test_token_refresh_success_on_retry(self, m_post):
+        fail_side_effect = HTTPError(
+            "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
+        )
+        success_mock = Mock()
+        success_mock.json.return_value = {"access_token": "foo_bar", "expires_in": 900}
+        success_mock.status_code = 200
+
+        m_post.side_effect = [fail_side_effect, success_mock]
+
+        my_token = Token("foo", "bar")
+        my_token.refresh()
+        self.assertGreater(my_token.expiration_date, datetime.utcnow())
+        self.assertEqual(my_token.access_token, "foo_bar")
+
+    def test_fatal_exception(self):
+        """Test the logic to determine if an exception is fatal or not"""
+        exc = Exception()
+        b = Token.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+        exc.response = response
+        b = Token.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.TOO_MANY_REQUESTS
+        exc.response = response
+        b = Token.fatal_exception(exc)
+        self.assertFalse(b)
+
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = HTTPStatus.BAD_REQUEST
+        exc.response = response
+        b = Token.fatal_exception(exc)
+        self.assertTrue(b)
 
     def test_ciam_check(self):
         m_r = Mock()
@@ -157,6 +237,28 @@ class TestToken(WisdomServiceLogAwareTestCase):
     def test_ams_check(self):
         m_r = Mock()
         m_r.json.side_effect = [{"items": [{"id": "qwe"}]}, {"items": [{"id": "asd"}]}]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+        self.assertTrue(checker.check("my_id", "my_name", "123"))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            params={
+                'search': "plan.id = 'AnsibleWisdom' AND status = 'Active' "
+                "AND creator.username = 'my_name' AND organization_id='qwe'"
+            },
+            timeout=0.8,
+        )
+
+    def test_ams_check_multiple_seats(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"id": "qwe"}, {"id": "rty"}]},
+            {"items": [{"id": "asd"}, {"id": "fgh"}]},
+        ]
         m_r.status_code = 200
 
         checker = self.get_default_ams_checker()
@@ -397,3 +499,44 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_org_has_subscription("123"))
             self.assertInLog("Unexpected resource_quota answer from AMS", log)
+
+
+class TestDummy(TestCase):
+    def setUp(self):
+        self.checker = DummyCheck()
+
+    def test_self_test(self):
+        self.assertIsNone(self.checker.self_test())
+
+    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="yves")
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_seat(self):
+        self.assertTrue(self.checker.check(None, "yves", 123))
+
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_no_seat(self):
+        self.assertFalse(self.checker.check(None, "noseat", 123))
+
+    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="*")
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
+    def test_check_with_wildcard(self):
+        self.assertTrue(self.checker.check(None, "rose", 123))
+
+    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="yves")
+    def test_check_with_no_sub(self):
+        self.assertFalse(self.checker.check(None, "noseat", 123))
+
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
+    def test_rh_org_has_subscription_with_sub(self):
+        self.assertTrue(self.checker.rh_org_has_subscription(123))
+
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
+    def test_rh_org_has_subscription_with_param_as_string(self):
+        self.assertFalse(self.checker.rh_org_has_subscription("123"))
+
+    def test_rh_org_has_subscription_no_sub(self):
+        self.assertFalse(self.checker.rh_org_has_subscription(13))
+
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
+    def test_rh_org_has_subscription_all(self):
+        self.assertTrue(self.checker.rh_org_has_subscription(56))
