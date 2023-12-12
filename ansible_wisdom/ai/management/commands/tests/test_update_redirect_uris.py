@@ -39,6 +39,11 @@ class UpdateRedirectURICommandTest(TestCase):
         obj = Application.objects.get(client_id=self.client_id)
         self.assertEqual(obj.redirect_uris, NEW_REDIRECT_URIS)
 
+    def test_success_with_no_change(self):
+        call_command("update_redirect_uris", client_id=self.client_id, redirect_uris=REDIRECT_URIS)
+        obj = Application.objects.get(client_id=self.client_id)
+        self.assertEqual(obj.redirect_uris, REDIRECT_URIS)
+
     def test_application_not_found(self):
         with self.assertRaises(Exception) as exc:
             call_command(

@@ -21,5 +21,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         obj = Application.objects.get(client_id=options["client_id"])
-        obj.redirect_uris = options["redirect_uris"]
-        obj.save()
+        current_uris = obj.redirect_uris
+        if current_uris != options["redirect_uris"]:
+            obj.redirect_uris = options["redirect_uris"]
+            obj.save()
+            print(f'Updated redirect URIs from "{current_uris}" to "{obj.redirect_uris}".')
+        else:
+            print(f'Specified redirect URIs "{current_uris}" is already set.')
