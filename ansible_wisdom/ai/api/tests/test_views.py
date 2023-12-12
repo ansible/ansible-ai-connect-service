@@ -336,7 +336,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("WCA Model ID is invalid", log)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid<|sepofid|>valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_single_task(self):
@@ -357,7 +357,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid<|sepofid|>valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_multi_task(self):
@@ -382,7 +382,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid<|sepofid|>valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_completion_timed_out(self):

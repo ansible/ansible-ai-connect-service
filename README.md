@@ -76,12 +76,17 @@ export SECRET_KEY=somesecretvalue
 ```
 
 For most development usages, you can skip the call to AWS Secrets Manager
-and always use the `ANSIBLE_WCA_FREE_API_KEY`
-and `ANSIBLE_WCA_FREE_MODEL_ID` values.
+and always use the dummy `WCA_SECRET_BACKEND_TYPE`:
 
 ```bash
-export MOCK_WCA_SECRETS_MANAGER=True
+export WCA_SECRET_BACKEND_TYPE="dummy"
+export WCA_SECRET_DUMMY_SECRETS="11009103:valid"
 ```
+In this example, `11009103`` is your organization id. In this case the model is set to `valid`.
+You can also use the following syntax to set both the model and set key_id:
+`WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>sec'`
+
+
 
 For deployment and RH SSO integration test/development, set
 environment variables for access to AWS:
