@@ -2,7 +2,6 @@ import secrets
 import string
 
 from django.core.management import call_command
-from django.db.models import ObjectDoesNotExist
 from django.test import TestCase
 from oauth2_provider.models import get_application_model
 
