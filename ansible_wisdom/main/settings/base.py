@@ -182,7 +182,7 @@ OAUTH2_PROVIDER = {
 # Also, if these lines are executed in testing, test fails with:
 #   django.db.utils.ProgrammingError: relation "users_user" does not exist
 #
-if sys.argv[1:2] not in [['migrate'], ['test']]:
+if sys.argv[1:2] not in [['migrate'], ['test'], ['update_redirect_uris']]:
     INSTALLED_APPS.append('wildcard_oauth2')
     OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
 
