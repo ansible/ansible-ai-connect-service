@@ -15,7 +15,7 @@ redirect_uris = [
     'vscode://redhat.ansible',
     'https://*.github.dev/extension-auth-callback',
     'http://127.0.0.1:8080/*/callback',
-    'https://*.openshiftapps.com/*/*/*/*/callback'
+    'https://*.openshiftapps.com/*/*/*/*/callback',
 ]
 
 
