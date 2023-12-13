@@ -10,7 +10,8 @@ import './i18n'
 import './index.css'
 
 const userName = document.getElementById('user_name')?.innerText ?? "undefined";
-const telemetryOptEnabled = Boolean(document.getElementById('telemetry_opt_enabled')?.innerText);
+const telemetryOptEnabledInnerText = document.getElementById('telemetry_opt_enabled')?.innerText;
+const telemetryOptEnabled = telemetryOptEnabledInnerText?.toLowerCase()==="true";
 
 createRoot(document.getElementById('root') as HTMLElement).render(
     <StrictMode>
