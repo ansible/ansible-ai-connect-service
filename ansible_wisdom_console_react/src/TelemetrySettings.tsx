@@ -1,36 +1,57 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {Checkbox, Icon, Page, PageSection, PageSectionVariants, Panel, PanelMain, PanelMainBody, Skeleton, Stack, StackItem, Text, TextContent, Tooltip} from "@patternfly/react-core";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Button, Icon, Page, PageSection, PageSectionVariants, Panel, PanelMain, PanelMainBody, Radio, Skeleton, Split, SplitItem, Stack, StackItem, Text, TextContent} from "@patternfly/react-core";
 import './ModelSettings.css';
 import {Success, Telemetry, TelemetryRequest, TelemetryResponse} from "./api/types";
-import {OutlinedQuestionCircleIcon} from "@patternfly/react-icons";
+import {CheckCircleIcon, ExternalLinkAltIcon} from "@patternfly/react-icons";
 import {useTranslation} from "react-i18next";
 import {DELAY} from "./api/globals";
 import {saveTelemetrySettings} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {useTelemetry} from "./hooks/useTelemetryAPI";
+import {BusyButton} from "./BusyButton";
+import {Alerts, AlertsHandle} from "./Alerts";
 
 export function TelemetrySettings() {
     const {t} = useTranslation();
 
     const [telemetry, setTelemetry] = useState<Telemetry>({status: "NOT_ASKED"});
+    const [telemetryOptOut, setTelemetryOptOut] = useState<boolean>(false);
     const _telemetry = useTelemetry();
 
     const [saving, setSaving] = useState<boolean>(false);
     const [telemetrySettingsError, setTelemetrySettingsError] = useState<HasError>(NO_ERROR);
-    const isTelemetryLoading: boolean = useMemo(() => telemetry.status === "NOT_ASKED" || telemetry.status === "LOADING", [telemetry]);
-    const isTelemetryFound: boolean = useMemo(() => telemetry.status === "SUCCESS", [telemetry]);
+    const isTelemetryLoading: boolean = useMemo(() => _telemetry.status === "NOT_ASKED" || _telemetry.status === "LOADING", [_telemetry]);
+    const isTelemetryFound: boolean = useMemo(() => _telemetry.status === "SUCCESS", [_telemetry]);
+
+    const alertsRef = useRef<AlertsHandle>(null);
 
     useEffect(() => {
         setTelemetry(_telemetry);
+        if (_telemetry.status === "SUCCESS") {
+            const optOut: boolean = (_telemetry as Success<TelemetryResponse>).data.optOut;
+            setTelemetryOptOut(optOut);
+        }
     }, [_telemetry]);
 
-    const save = useCallback((optOut: boolean) => {
+    const optInOutChanged = useMemo(() => {
+        if (telemetry.status === "SUCCESS") {
+            return ((telemetry as Success<TelemetryResponse>).data.optOut) !== telemetryOptOut;
+        }
+        return false;
+    }, [telemetry, telemetryOptOut])
+
+    const save = useCallback(() => {
         const timeoutId = setTimeout(() => setSaving(true), DELAY);
-        const telemetryRequest: TelemetryRequest = {optOut: optOut};
+        const telemetryRequest: TelemetryRequest = {optOut: telemetryOptOut};
         saveTelemetrySettings(telemetryRequest)
             .then((_) => {
-                setSaving(false)
+                setSaving(false);
                 setTelemetry({status: "SUCCESS", data: telemetryRequest});
+                if (telemetryOptOut) {
+                    alertsRef.current?.addAlert(t("TelemetryOptOutSaveSuccessAlert"));
+                } else {
+                    alertsRef.current?.addAlert(t("TelemetryOptInSaveSuccessAlert"));
+                }
             })
             .catch((error) => {
                 setTelemetrySettingsError({
@@ -43,7 +64,15 @@ export function TelemetrySettings() {
                 setSaving(false);
                 clearTimeout(timeoutId);
             });
-    }, []);
+    }, [t, telemetryOptOut]);
+
+    const cancel = useCallback(() => {
+        setSaving(false);
+        if (telemetry.status === "SUCCESS") {
+            const optOut: boolean = (_telemetry as Success<TelemetryResponse>).data.optOut;
+            setTelemetryOptOut(optOut);
+        }
+    }, [_telemetry, telemetry])
 
     return (
         <Page>
@@ -54,6 +83,7 @@ export function TelemetrySettings() {
             />
             <PageSection variant={PageSectionVariants.light} isWidthLimited>
                 <TextContent>
+                    <Alerts ref={alertsRef}/>
                     <Text component="h1">{t("TelemetrySettings")}</Text>
                 </TextContent>
             </PageSection>
@@ -65,12 +95,21 @@ export function TelemetrySettings() {
                                 <StackItem>
                                     <TextContent>
                                         <Text component={"h3"}>
-                                            {t("TelemetryOptOut")}
-                                            <Tooltip aria="none" aria-live="polite" content={t("TelemetryOptOutTooltip")}>
-                                                <Icon>
-                                                    <OutlinedQuestionCircleIcon className={"Info-icon"}/>
+                                            {t("TelemetryManageUsage")}
+                                        </Text>
+                                        <Text component={"p"}>
+                                            {t("TelemetryManageUsageDescription")}
+                                            <a href={t("TelemetryManageUsageAdminDashboardURL")}>
+                                                {t("TelemetryManageUsageAdminDashboardURLText")}
+                                            </a>
+                                        </Text>
+                                        <Text component={"p"}>
+                                            <a href={t("TelemetryManageUsageLearnMoreURL")}>
+                                                {t("TelemetryManageUsageLearnMoreURLText")}
+                                                <Icon size="md">
+                                                    <ExternalLinkAltIcon style={{color: "var(--pf-c-content--a--Color)"}}/>
                                                 </Icon>
-                                            </Tooltip>
+                                            </a>
                                         </Text>
                                     </TextContent>
                                 </StackItem>
@@ -81,18 +120,59 @@ export function TelemetrySettings() {
                                         </div>
                                     )}
                                     {isTelemetryFound && (
-                                        <>
-                                            {/*This is a safe cast as 'isTelemetryFound' is true*/}
-                                            <Checkbox
-                                                label={t("TelemetryOptOutDescription")}
-                                                isChecked={(telemetry as Success<TelemetryResponse>).data.optOut}
-                                                onChange={save}
-                                                isDisabled={saving}
-                                                id="optOut"
-                                                name="outOut"
-                                                data-testid={"telemetry-settings__opt_out_checkbox"}
-                                            />
-                                        </>
+                                        <Stack hasGutter={true}>
+                                            <StackItem>
+                                                {/*This is a safe cast as 'isTelemetryFound' is true*/}
+                                                <Radio
+                                                    id="optInRadio"
+                                                    name="optInOutRadio"
+                                                    label={t("TelemetryOptInLabel")}
+                                                    description={t("TelemetryOptInDescription")}
+                                                    isChecked={!telemetryOptOut}
+                                                    onChange={() => setTelemetryOptOut(false)}
+                                                    isDisabled={saving}
+                                                    data-testid={"telemetry-settings__opt_in_radiobutton"}
+                                                />
+                                            </StackItem>
+                                            <StackItem>
+                                                <Radio
+                                                    id="optOutRadio"
+                                                    name="optInOutRadio"
+                                                    label={t("TelemetryOptOutLabel")}
+                                                    description={t("TelemetryOptOutDescription")}
+                                                    isChecked={telemetryOptOut}
+                                                    onChange={() => setTelemetryOptOut(true)}
+                                                    isDisabled={saving}
+                                                    data-testid={"telemetry-settings__opt_out_radiobutton"}
+                                                />
+                                            </StackItem>
+                                            <StackItem>
+                                                <Split hasGutter={true}>
+                                                    <SplitItem>
+                                                        <BusyButton
+                                                            variant={"primary"}
+                                                            icon={<CheckCircleIcon/>}
+                                                            onClick={save}
+                                                            isBusy={saving}
+                                                            isDisabled={saving}
+                                                            data-testid={"telemetry-settings__save-button"}
+                                                        >
+                                                            {t("Save")}
+                                                        </BusyButton>
+                                                    </SplitItem>
+                                                    <SplitItem>
+                                                        <Button
+                                                            variant={"secondary"}
+                                                            onClick={cancel}
+                                                            isDisabled={saving || !optInOutChanged}
+                                                            data-testid={"telemetry-settings__cancel-button"}
+                                                        >
+                                                            {t("Cancel")}
+                                                        </Button>
+                                                    </SplitItem>
+                                                </Split>
+                                            </StackItem>
+                                        </Stack>
                                     )}
                                 </StackItem>
                             </Stack>
