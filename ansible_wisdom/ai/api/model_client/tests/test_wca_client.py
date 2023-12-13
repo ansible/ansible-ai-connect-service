@@ -295,10 +295,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def test_infer_without_request_id_header(self):
         self._do_inference(suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=None)
 
-    def _do_inference(self, suggestion_id=None, request_id=None):
+    def _do_inference(self, suggestion_id=None, request_id=None, prompt=None, codegen_prompt=None):
         model_id = "zavala"
-        context = "null"
-        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+        context = ""
+        prompt = prompt if prompt else "- name: install ffmpeg on Red Hat Enterprise Linux"
 
         model_input = {
             "instances": [
@@ -308,9 +308,9 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 }
             ]
         }
-        data = {
+        codegen_data = {
             "model_id": model_id,
-            "prompt": f"{context}{prompt}\n",
+            "prompt": codegen_prompt if codegen_prompt else f"{context}{prompt}\n",
         }
         token = {
             "access_token": "access_token",
@@ -348,7 +348,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codegen/ansible",
             headers=requestHeaders,
-            json=data,
+            json=codegen_data,
             timeout=None,
         )
         self.assertEqual(result, predictions)
@@ -495,6 +495,15 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             model_client.infer(
                 model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
             )
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_multitask_with_task_preamble(self):
+        self._do_inference(
+            suggestion_id=str(DEFAULT_SUGGESTION_ID),
+            request_id=str(DEFAULT_SUGGESTION_ID),
+            prompt="# - name: install ffmpeg on Red Hat Enterprise Linux",
+            codegen_prompt="# install ffmpeg on Red Hat Enterprise Linux\n",
+        )
 
 
 class TestWCACodematch(WisdomServiceLogAwareTestCase):

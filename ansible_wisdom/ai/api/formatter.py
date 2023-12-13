@@ -307,8 +307,6 @@ def is_multi_task_prompt(prompt):
     return False
 
 
-# WCA codegen fails if a multitask prompt includes the task preamble
-# https://github.com/rh-ibm-synergy/wca-feedback/issues/34
 def strip_task_preamble_from_multi_task_prompt(prompt):
     if is_multi_task_prompt(prompt):
         prompt_split = prompt.split('#', 1)
@@ -328,8 +326,6 @@ def get_task_names_from_prompt(prompt):
         prompt = prompt.split('#', 1)[1].strip()
         split_list = prompt.split('&')
         trimmed_list = [task_prompt.strip() for task_prompt in split_list]
-        # strip task preamble if present
-        # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         fixed_list = [
             trimmed_prompt.replace('- name:', '', 1).strip()
             if trimmed_prompt.startswith('- name:')
