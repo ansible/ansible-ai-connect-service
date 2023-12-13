@@ -165,7 +165,7 @@ class AMSCheck(BaseCheck):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
     def get_ams_org(self, rh_org_id: str) -> str:
-        if rh_org_id is None or not bool(str(rh_org_id).strip()):
+        if not rh_org_id:
             logger.error(f"Unexpected value for rh_org_id: {rh_org_id}")
             return ""
         cache_key = f"rh_org_{rh_org_id}"

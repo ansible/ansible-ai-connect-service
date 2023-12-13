@@ -203,6 +203,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     def test_ams_get_ams_org_with_500_status_code(self):
         m_r = Mock()
+        # use a PropertyMock to verify that the property was accessed
+        # https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock
         p = PropertyMock(return_value=500)
         type(m_r).status_code = p
 
