@@ -269,6 +269,31 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_not_quite_valid_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(
+                return_value='\\b8a86397-ef64-4ddb-bbf4-a2fd164577bb<|sepofid|>granite-3b'
+            ),
+            response_data={
+                "detail": "Failed to parse space ID and model ID: Input should be a valid UUID,"
+                " invalid character: expected an optional prefix of `urn:uuid:`"
+                " followed by [0-9a-fA-F-], found `\\` at 1"
+            },
+        )
+        model_client, model_input = stub
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]

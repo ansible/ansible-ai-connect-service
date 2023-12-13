@@ -84,6 +84,12 @@ class InferenceResponseChecks(Checks[InferenceContext]):
                         and "('body', 'model_id')" in payload_error.lower()
                     ):
                         raise WcaInvalidModelId(model_id=context.model_id)
+                    payload_detail = payload_json.get("detail")
+                    if (
+                        payload_detail
+                        and "failed to parse space id and model id" in payload_detail.lower()
+                    ):
+                        raise WcaInvalidModelId(model_id=context.model_id)
 
     class ResponseStatusCode400(Check[InferenceContext]):
         def check(self, context: InferenceContext):
