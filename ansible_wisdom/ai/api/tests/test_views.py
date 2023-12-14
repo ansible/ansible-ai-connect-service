@@ -32,6 +32,7 @@ from ai.api.pipelines.completion_stages.post_process import trim_whitespace_line
 from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
 from ai.api.pipelines.completion_stages.response import CompletionsPromptType
 from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
+from ai.api.utils import segment_analytics_telemetry
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -112,6 +113,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
     def setUpClass(cls):
         super().setUpClass()
         analytics.send = False  # do not send data to segment from unit tests
+        segment_analytics_telemetry.send = False  # do not send data to segment from unit tests
 
     def setUp(self):
         self.username = 'u' + "".join(random.choices(string.digits, k=5))

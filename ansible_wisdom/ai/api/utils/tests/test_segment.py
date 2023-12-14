@@ -1,8 +1,14 @@
 from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
 
+from ai.api.utils import segment_analytics_telemetry
 from ai.api.utils.seated_users_allow_list import ALLOW_LIST
-from ai.api.utils.segment import redact_seated_users_data, send_segment_event
+from ai.api.utils.segment import (
+    base_send_segment_event,
+    redact_seated_users_data,
+    send_segment_event,
+)
+from ai.api.utils.segment_analytics_telemetry import get_segment_analytics_client
 from django.test import override_settings
 from segment import analytics
 
@@ -249,3 +255,19 @@ class TestSegment(TestCase):
         self.assertEqual(
             redact_seated_users_data(test_data, ALLOW_LIST['contentmatch']), expected_result
         )
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_segment_client_in_use(self):
+        g = Mock()
+        g.values_list = MagicMock(return_value=[])
+        user = Mock(rh_user_has_seat=False, groups=g)
+        event = {
+            'rh_user_has_seat': False,
+            'exception': 'SomeException',
+            'details': 'Some details',
+        }
+        segment_analytics_telemetry.write_key = "testWriteKey"
+        client = Mock(wraps=get_segment_analytics_client())
+        base_send_segment_event(event, 'postprocess', user, client)
+        client.track.assert_called()

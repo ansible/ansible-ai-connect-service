@@ -66,7 +66,13 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
+from .utils.analytics_telemetry_model import (
+    AnalyticsProductFeedback,
+    AnalyticsRecommendationAction,
+    AnalyticsTelemetryEvents,
+)
 from .utils.segment import send_segment_event
+from .utils.segment_analytics_telemetry import send_segment_analytics_event
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +212,15 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "inlineSuggestionFeedback", user)
+            send_segment_analytics_event(
+                AnalyticsTelemetryEvents.RECOMMENDATION_ACTION,
+                lambda: AnalyticsRecommendationAction(
+                    action=inline_suggestion_data.get('action'),
+                    suggestion_id=inline_suggestion_data.get('suggestionId', ''),
+                    rh_user_org_id=getattr(user, 'org_id', None),
+                ),
+                user,
+            )
         if ansible_content_data:
             event = {
                 "content": ansible_content_data.get('content'),
@@ -231,6 +246,14 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "sentimentFeedback", user)
+            send_segment_analytics_event(
+                AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
+                lambda: AnalyticsProductFeedback(
+                    value=sentiment_feedback_data.get('value'),
+                    rh_user_org_id=getattr(user, 'org_id', None),
+                ),
+                user,
+            )
         if issue_feedback_data:
             event = {
                 "type": issue_feedback_data.get('type'),
