@@ -33,11 +33,11 @@ def send_segment_analytics_event(event_enum, event_payload_supplier, user: User)
         logger.info("Analytics telemetry not active.")
         return
     organization = user.organization
-    opt_out = None if organization is None else organization.telemetry_opt_out
-    if not opt_out:
-        logger.info(
-            "Analytics telemetry not active for organization, or no organization assigned for user."
-        )
+    if not organization:
+        logger.info("Analytics telemetry not active, because of no organization assigned for user.")
+        return
+    if organization.telemetry_opt_out:
+        logger.info("Analytics telemetry not active for organization.")
         return
 
     event_name = event_enum.value

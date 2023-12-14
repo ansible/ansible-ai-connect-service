@@ -26,7 +26,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
         super().setUp()
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        self.user.organization.telemetry_opt_out = True
+        self.user.organization.telemetry_opt_out = False
 
     @staticmethod
     def on_segment_error(self, error, items):
@@ -138,7 +138,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     def test_send_segment_analytics_event_error_no_org_telemetry_enabled(
         self, base_send_segment_event
     ):
-        self.user.organization.telemetry_opt_out = False
+        self.user.organization.telemetry_opt_out = True
         self._assert_event_not_sent(base_send_segment_event)
 
     def _assert_event_not_sent(self, base_send_segment_event):
