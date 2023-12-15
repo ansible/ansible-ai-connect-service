@@ -2,12 +2,12 @@
 import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
-from functools import cache
 from http import HTTPStatus
 
 import backoff
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Counter
 from requests.exceptions import HTTPError
@@ -164,8 +164,15 @@ class AMSCheck(BaseCheck):
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    @cache
     def get_ams_org(self, rh_org_id: str) -> str:
+        if not rh_org_id:
+            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}")
+            return ""
+        cache_key = f"rh_org_{rh_org_id}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
         params = {"search": f"external_id='{rh_org_id}'"}
         self.update_bearer_token()
 
@@ -184,7 +191,9 @@ class AMSCheck(BaseCheck):
         data = r.json()
 
         try:
-            return data["items"][0]["id"]
+            result = data["items"][0]["id"]
+            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
+            return result
         except (IndexError, KeyError, ValueError):
             logger.exception("Unexpected organization answer from AMS: data=%s" % data)
             return ""

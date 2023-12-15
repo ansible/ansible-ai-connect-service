@@ -3,7 +3,7 @@
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import requests
 from django.test import TestCase, override_settings
@@ -203,7 +203,10 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     def test_ams_get_ams_org_with_500_status_code(self):
         m_r = Mock()
-        m_r.status_code = 500
+        # use a PropertyMock to verify that the property was accessed
+        # https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock
+        p = PropertyMock(return_value=500)
+        type(m_r).status_code = p
 
         checker = self.get_default_ams_checker()
         checker._token = Mock()
@@ -213,11 +216,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertEqual(checker.get_ams_org("123"), "")
             self.assertInLog("Unexpected error code (500) returned by AMS backend (org)", log)
-
-        # Ensure the second call is cached
-        m_r.json.reset_mock()
-        self.assertEqual(checker.get_ams_org("123"), "")
-        self.assertEqual(m_r.json.call_count, 0)
+            p.assert_called()
+            # Ensure the second call is NOT cached
+            p.reset_mock()
+            self.assertEqual(checker.get_ams_org("123"), "")
+            p.assert_called()
 
     def test_ams_get_ams_org_with_empty_data(self):
         m_r = Mock()
