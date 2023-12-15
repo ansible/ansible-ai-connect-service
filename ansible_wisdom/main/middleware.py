@@ -3,7 +3,14 @@ import logging
 import time
 import uuid
 
+from ai.api.utils import segment_analytics_telemetry
+from ai.api.utils.analytics_telemetry_model import (
+    AnalyticsRecommendationGenerated,
+    AnalyticsRecommendationTask,
+    AnalyticsTelemetryEvents,
+)
 from ai.api.utils.segment import send_segment_event
+from ai.api.utils.segment_analytics_telemetry import send_segment_analytics_event
 from ansible_anonymizer import anonymizer
 from django.conf import settings
 from django.http import QueryDict
@@ -19,6 +26,10 @@ version_info = VersionInfo()
 
 def on_segment_error(error, _):
     logger.error(f'An error occurred in sending data to Segment: {error}')
+
+
+def on_segment_analytics_error(error, _):
+    logger.error(f'An error occurred in sending analytics data to Segment: {error}')
 
 
 def anonymize_request_data(data):
@@ -37,6 +48,14 @@ class SegmentMiddleware:
 
     def __call__(self, request):
         start_time = time.time()
+
+        if settings.SEGMENT_ANALYTICS_WRITE_KEY:
+            if not segment_analytics_telemetry.write_key:
+                segment_analytics_telemetry.write_key = settings.SEGMENT_ANALYTICS_WRITE_KEY
+                segment_analytics_telemetry.debug = settings.DEBUG
+                segment_analytics_telemetry.gzip = True  # Enable gzip compression
+                # segment_analytics_telemetry.send = False # for code development only
+                segment_analytics_telemetry.on_error = on_segment_analytics_error
 
         if settings.SEGMENT_WRITE_KEY:
             if not analytics.write_key:
@@ -62,9 +81,11 @@ class SegmentMiddleware:
 
         if settings.SEGMENT_WRITE_KEY:
             if request.path == reverse('completions') and request.method == 'POST':
-                suggestion_id = getattr(request, '_suggestion_id', request_data.get('suggestionId'))
-                if not suggestion_id:
-                    suggestion_id = str(uuid.uuid4())
+                request_suggestion_id = getattr(
+                    request, '_suggestion_id', request_data.get('suggestionId')
+                )
+                if not request_suggestion_id:
+                    request_suggestion_id = str(uuid.uuid4())
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
                 model_name = request_data.get('model', '')
@@ -103,7 +124,7 @@ class SegmentMiddleware:
                         "status_code": response.status_code,
                         "status_text": getattr(response, 'status_text', None),
                     },
-                    "suggestionId": suggestion_id,
+                    "suggestionId": request_suggestion_id,
                     "metadata": metadata,
                     "modelName": model_name,
                     "imageTags": version_info.image_tags,
@@ -113,6 +134,25 @@ class SegmentMiddleware:
                 }
 
                 send_segment_event(event, "completion", request.user)
+
+                # Collect analytics telemetry, when tasks exist.
+                if len(tasks) > 0:
+                    send_segment_analytics_event(
+                        AnalyticsTelemetryEvents.RECOMMENDATION_GENERATED,
+                        lambda: AnalyticsRecommendationGenerated(
+                            tasks=[
+                                AnalyticsRecommendationTask(
+                                    collection=task.get('collection', ''),
+                                    module=task.get('module', ''),
+                                )
+                                for task in tasks
+                            ],
+                            rh_user_org_id=getattr(request.user, 'org_id', None),
+                            suggestion_id=request_suggestion_id,
+                            model_name=model_name,
+                        ),
+                        request.user,
+                    )
 
         return response
 

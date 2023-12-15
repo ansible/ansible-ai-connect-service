@@ -155,6 +155,7 @@ SOCIAL_AUTH_PIPELINE = (
 
 # Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
+SEGMENT_ANALYTICS_WRITE_KEY = os.environ.get("SEGMENT_ANALYTICS_WRITE_KEY")
 
 OAUTH2_PROVIDER = {
     'SCOPES': {

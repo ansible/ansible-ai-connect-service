@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 from healthcheck.version_info import VersionInfo
 from segment import analytics
+from segment.analytics import Client
 from users.models import User
 
 from .seated_users_allow_list import ALLOW_LIST
@@ -43,18 +44,23 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
+    if event['rh_user_has_seat']:
+        allow_list = ALLOW_LIST.get(event_name)
+
+        if allow_list:
+            event = redact_seated_users_data(event, allow_list)
+        else:
+            # If event should be tracked, please update ALLOW_LIST appropriately
+            logger.error(f'It is not allowed to track {event_name} events for seated users')
+            return
+    base_send_segment_event(event, event_name, user, analytics)
+
+
+def base_send_segment_event(
+    event: Dict[str, Any], event_name: str, user: User, client: Client
+) -> None:
     try:
-        if event['rh_user_has_seat']:
-            allow_list = ALLOW_LIST.get(event_name)
-
-            if allow_list:
-                event = redact_seated_users_data(event, allow_list)
-            else:
-                # If event should be tracked, please update ALLOW_LIST appropriately
-                logger.error(f'It is not allowed to track {event_name} events for seated users')
-                return
-
-        analytics.track(
+        client.track(
             str(user.uuid) if getattr(user, 'uuid', None) else 'unknown',
             event_name,
             event,
@@ -81,7 +87,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
                     "event_name": event_name,
                     "msg_len": msg_len,
                 },
-                "timestamp": timestamp,
+                "timestamp": event['timestamp'],
             }
             send_segment_event(event, "segmentError", user)
 
