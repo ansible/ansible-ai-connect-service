@@ -13,6 +13,7 @@ import requests
 from ai.api.data.data_model import APIPayload
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
+    CustomModelBadRequest,
     ModelTimeoutError,
     WcaBadRequest,
     WcaEmptyResponse,
@@ -145,14 +146,14 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         status_code=None,
         mock_api_key=Mock(return_value='org-api-key'),
         mock_model_id=Mock(return_value='org-model-id'),
-        predictions="",
+        response_data: dict = {"predictions": ['']},
     ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         response = MockResponse(
-            json={"predictions": [predictions]},
+            json=response_data,
             status_code=status_code,
             headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
@@ -257,6 +258,32 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         stub = self.stub_wca_client(
             400,
             mock_model_id=Mock(return_value='garbage'),
+            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+        )
+        model_client, model_input = stub
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_not_quite_valid_model_id(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(
+                return_value='\\b8a86397-ef64-4ddb-bbf4-a2fd164577bb<|sepofid|>granite-3b'
+            ),
+            response_data={
+                "detail": "Failed to parse space ID and model ID: Input should be a valid UUID,"
+                " invalid character: expected an optional prefix of `urn:uuid:`"
+                " followed by [0-9a-fA-F-], found `\\` at 1"
+            },
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -369,9 +396,13 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            predictions="- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "  # noqa: E501
-            "state: present\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n"
-            "    state: started\n    enabled: true\n",
+            response_data={
+                "predictions": [
+                    "- name:  Install Apache\n  ansible.builtin.package:\n    name: apache2\n    "  # noqa: E501
+                    "state: present\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n"  # noqa: E501
+                    "    state: started\n    enabled: true\n"
+                ],
+            },
         )
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  "
@@ -466,6 +497,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         stub = self.stub_wca_client(
             400,
             mock_model_id=Mock(return_value='garbage'),
+            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
         )
         model_client, model_input = stub
         model_input[
@@ -945,7 +977,8 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         """Run WCA client error scenarios for various errors."""
         for error, status_code_expected in [
             (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
-            (WcaBadRequest(), HTTPStatus.BAD_REQUEST),
+            (CustomModelBadRequest(), HTTPStatus.BAD_REQUEST),
+            (WcaBadRequest(), HTTPStatus.NO_CONTENT),
             (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
             (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
             (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
@@ -1851,7 +1884,7 @@ class TestContentMatchesWCAViewErrors(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_with_invalid_model_id(self):
         response = MockResponse(
-            json=[],
+            json={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)
@@ -1863,7 +1896,7 @@ class TestContentMatchesWCAViewErrors(
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.BAD_REQUEST
+            "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.NO_CONTENT
         )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -2085,7 +2118,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.user.rh_user_has_seat = True
         self.payload["model"] = 'invalid-model-id'
         response = MockResponse(
-            json=[],
+            json={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)

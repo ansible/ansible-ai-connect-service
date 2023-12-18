@@ -14,11 +14,17 @@ class WcaException(Exception):
     """Base WCA Exception"""
 
     model_id: str = ''
+    json_response: dict = None
 
 
 @dataclass
 class WcaBadRequest(WcaException):
     """Bad request to WCA"""
+
+
+@dataclass
+class CustomModelBadRequest(WcaException):
+    """Unentitled user requested custom model"""
 
 
 @dataclass

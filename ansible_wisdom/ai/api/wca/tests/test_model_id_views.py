@@ -5,7 +5,8 @@ import ai.api.aws.wca_secret_manager
 import ai.apps
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ai.api.model_client.wca_client import WcaBadRequest, WCAClient, WcaKeyNotFound
+from ai.api.model_client.exceptions import WcaInvalidModelId
+from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -405,13 +406,13 @@ class TestWCAModelIdValidatorView(
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
         self.client.force_authenticate(user=self.user)
-        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaBadRequest)
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInvalidModelId)
 
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assertInLog("ai.api.model_client.exceptions.WcaBadRequest", log)
-            self.assert_segment_log(log, "modelIdValidate", "WcaBadRequest")
+            self.assertInLog("ai.api.model_client.exceptions.WcaInvalidModelId", log)
+            self.assert_segment_log(log, "modelIdValidate", "WcaInvalidModelId")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_exception(self, *args):
