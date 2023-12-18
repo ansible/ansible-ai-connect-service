@@ -64,6 +64,11 @@ class WcaCloudflareRejection(WcaException):
 
 
 @dataclass
+class WcaUserTrialExpired(WcaException):
+    """WCA notifies that user's trial has expired."""
+
+
+@dataclass
 class WcaInferenceFailure(WcaException):
     """An attempt to run a WCA inference failed."""
 

@@ -123,6 +123,16 @@ class WcaCloudflareRejectionException(BaseWisdomAPIException):
     }
 
 
+class WcaUserTrialExpiredException(BaseWisdomAPIException):
+    status_code = 403
+    default_code = "permission_denied__user_trial_expired"
+    default_detail = {
+        # VSCode relies on the code in the data payload.
+        "code": "permission_denied__user_trial_expired",
+        "message": "User trial expired. Please contact your administrator.",
+    }
+
+
 class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
     default_detail = {"message": "An error occurred attempting to complete the request"}
