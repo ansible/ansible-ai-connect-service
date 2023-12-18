@@ -339,6 +339,24 @@ var3: value3
             fmtr.restore_original_task_names("", multi_task_prompt),
         )
 
+    def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
+        prompt = "    # install ffmpeg"
+        self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
+
+    def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_single(self):
+        prompt = "    - name: install ffmpeg"
+        self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
+
+    def test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed(self):
+        before = "    # - name: install ffmpeg"
+        after = "    # install ffmpeg"
+        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+
+    def test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed(self):
+        before = "    # - name: install ffmpeg & - name: start ffmpeg"
+        after = "    # install ffmpeg & start ffmpeg"
+        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+
 
 if __name__ == "__main__":
     tests = AnsibleDumperTestCase()
@@ -364,3 +382,7 @@ if __name__ == "__main__":
     tests.test_load_and_merge_vars_in_context()
     tests.test_insert_set_fact_task()
     tests.test_restore_original_task_names()
+    tests.test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi()
+    tests.test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_single()
+    tests.test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed()
+    tests.test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed()
