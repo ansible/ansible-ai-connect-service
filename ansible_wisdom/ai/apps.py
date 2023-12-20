@@ -43,6 +43,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = HttpClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "llamacpp":
+            from .api.model_client.llamacpp_client import LlamaCPPClient
+
+            self.model_mesh_client = LlamaCPPClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["dummy", "mock"]:
             if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
                 logger.error(
