@@ -357,6 +357,24 @@ TASKS_CONTEXT_WITH_VARS = f'''\
 #
 TASKS_CONTEXT_WITHOUT_VARS = "\n".join(TASKS_PAYLOAD["prompt"].split("\n")[1:-2]) + "\n"
 
+TASKS_PAYLOAD_PROMPT_WITH_QUOTED_TASKS = '''\
+---
+- name: "import assert.yml"
+  ansible.builtin.import_tasks: assert.yml
+  run_once: true
+  delegate_to: localhost
+
+- name: "install openvpn packages"
+'''
+
+TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK = '''\
+- name: import assert.yml
+  ansible.builtin.import_tasks: assert.yml
+  run_once: true
+  delegate_to: localhost
+
+'''
+
 
 @modify_settings()
 class CompletionPreProcessTest(TestCase):
@@ -379,7 +397,7 @@ class CompletionPreProcessTest(TestCase):
         self.assertEqual(context.payload.context, expected_context)
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
-    def test_additional_context_with_commercial_user_and_feauture_enabled(self):
+    def test_additional_context_with_commercial_user_and_feature_enabled(self):
         self.call_completion_pre_process(
             PLAYBOOK_PAYLOAD,
             True,
@@ -387,7 +405,7 @@ class CompletionPreProcessTest(TestCase):
         )
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
-    def test_additional_context_with_commercial_user_and_feauture_enabled_with_no_preexisting_vars(
+    def test_additional_context_with_commercial_user_and_feature_enabled_with_no_preexisting_vars(
         self,
     ):
         payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
@@ -400,7 +418,7 @@ class CompletionPreProcessTest(TestCase):
         )
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=False)
-    def test_additional_context_with_commercial_user_and_feauture_disabled(self):
+    def test_additional_context_with_commercial_user_and_feature_disabled(self):
         self.call_completion_pre_process(
             PLAYBOOK_PAYLOAD,
             True,
@@ -476,4 +494,16 @@ class CompletionPreProcessTest(TestCase):
             payload,
             True,
             TASKS_CONTEXT_WITHOUT_VARS,
+        )
+
+    def test_quoted_singletask(
+        self,
+    ):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload["prompt"] = TASKS_PAYLOAD_PROMPT_WITH_QUOTED_TASKS
+
+        self.call_completion_pre_process(
+            payload,
+            True,
+            TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK,
         )
