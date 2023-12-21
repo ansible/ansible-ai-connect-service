@@ -8,7 +8,7 @@ ansible-lint==6.20.3
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==41.0.6
-datasets==2.10.1
+datasets==2.15.0
 Django==4.2.7
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1

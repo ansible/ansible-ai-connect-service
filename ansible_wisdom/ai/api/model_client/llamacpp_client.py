@@ -32,6 +32,7 @@ class LlamaCPPClient(ModelMeshClient):
 
         data = {
             "prompt": full_prompt,
+            "model": model_id,
             "n_predict": 400,
             "temperature": 0.1,
             "stop": [],
@@ -57,6 +58,7 @@ class LlamaCPPClient(ModelMeshClient):
         logger.info(f"request: {data}")
 
         try:
+            # TODO(rg): implement multitask here with a loop
             task_count = len(get_task_names_from_prompt(prompt))
             result = self.session.post(
                 self._prediction_url,
