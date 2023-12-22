@@ -4,7 +4,7 @@
 aiohttp==3.9.0
 ansible-anonymizer==1.4.2
 ansible-risk-insight==0.2.4
-ansible-lint==6.20.3
+ansible-lint==6.22.1
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==41.0.6
@@ -46,7 +46,7 @@ social-auth-core[openidconnect]==4.4.2
 # UPDATED MANUALLY: waiting for parent package to be updated
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
 torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
-transformers==4.30.0
+transformers==4.36.0
 tqdm==4.64.1
 urllib3==1.26.18
 uwsgi==2.0.22
