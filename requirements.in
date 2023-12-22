@@ -2,6 +2,11 @@
 # remove this once datasets or fsspec is updated
 # to properly pull a version of aiohttp > 3.8.5.
 aiohttp==3.9.0
+# pin ansible-core on 2.15.8 to address GHSA-7j69-qfc3-2fq9
+# remove this once ansible-anonymizer, ansible-risk-insight and
+# ansible-lint are updated to properly pull a version of
+# ansible-core > 2.15.0.
+ansible-core==2.15.8
 ansible-anonymizer==1.4.2
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
