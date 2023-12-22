@@ -5,7 +5,7 @@ import ai.api.aws.wca_secret_manager
 import ai.apps
 from ai.api.aws.exceptions import WcaSecretManagerError
 from ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ai.api.model_client.exceptions import WcaInvalidModelId
+from ai.api.model_client.exceptions import WcaInvalidModelId, WcaUserTrialExpired
 from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound
 from ai.api.permissions import (
     AcceptedTermsPermission,
@@ -400,6 +400,23 @@ class TestWCAModelIdValidatorView(
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
             self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_validate_error_user_trial_expired(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        self.client.force_authenticate(user=self.user)
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaUserTrialExpired)
+
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.get(reverse('wca_model_id_validator'))
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertEqual(r.data['code'], 'permission_denied__user_trial_expired')
+            self.assertEqual(
+                r.data['message'], 'User trial expired. Please contact your administrator.'
+            )
+            self.assertInLog("ai.api.model_client.exceptions.WcaUserTrialExpired", log)
+            self.assert_segment_log(log, "trialExpired", None, type="modelIdValidate")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_bad_request(self, *args):

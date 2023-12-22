@@ -21,6 +21,7 @@ from ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaUserTrialExpired,
 )
 from ai.api.model_client.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
@@ -345,6 +346,21 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("Cloudflare rejected the request", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_trial_expired_rejection(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        model_client.session.post = Mock(side_effect=WcaUserTrialExpired())
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assertInLog("User trial expired", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -1911,6 +1927,13 @@ class TestContentMatchesWCAViewErrors(
             "ai.api.pipelines.common.WcaCloudflareRejectionException", HTTPStatus.BAD_REQUEST
         )
         self._assert_model_id_in_exception(self.payload["model"])
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_contentmatch_user_trial_expired_rejection(self):
+        self.model_client.get_model_id = Mock(side_effect=WcaUserTrialExpired)
+        self._assert_exception_in_log_and_status_code(
+            "ai.api.pipelines.common.WcaUserTrialExpiredException", HTTPStatus.FORBIDDEN
+        )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_model_id_error(self):
