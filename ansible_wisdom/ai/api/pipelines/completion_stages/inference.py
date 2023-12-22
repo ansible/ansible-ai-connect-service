@@ -14,6 +14,7 @@ from ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaSuggestionIdCorrelationFailure,
+    WcaUserTrialExpired,
 )
 from ai.api.pipelines.common import (
     BaseWisdomAPIException,
@@ -28,6 +29,7 @@ from ai.api.pipelines.common import (
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
     WcaSuggestionIdCorrelationFailureException,
+    WcaUserTrialExpiredException,
     process_error_count,
 )
 from ai.api.pipelines.completion_context import CompletionContext
@@ -97,6 +99,8 @@ class InferenceStage(PipelineElement):
 
         predictions = None
         exception = None
+        event = None
+        event_name = None
         start_time = time.time()
         try:
             predictions = model_mesh_client.infer(
@@ -159,6 +163,19 @@ class InferenceStage(PipelineElement):
             logger.exception(f"Cloudflare rejected the request for {payload.suggestionId}")
             raise WcaCloudflareRejectionException(cause=e)
 
+        except WcaUserTrialExpired as e:
+            exception = e
+            logger.exception(
+                f"User trial expired, when requesting suggestion {payload.suggestionId}"
+            )
+            event = {
+                "type": "prediction",
+                "modelName": model_id,
+                "suggestionId": str(suggestion_id),
+            }
+            event_name = 'trialExpired'
+            raise WcaUserTrialExpiredException(cause=e)
+
         except Exception as e:
             exception = e
             logger.exception(f"error requesting completion for suggestion {suggestion_id}")
@@ -179,16 +196,20 @@ class InferenceStage(PipelineElement):
                 )
                 if model_id_in_exception:
                     model_id = model_id_in_exception
-            event = {
-                "duration": duration,
-                "exception": exception is not None,
-                "modelName": model_id,
-                "problem": None if exception is None else exception.__class__.__name__,
-                "request": data,
-                "response": anonymized_predictions,
-                "suggestionId": str(suggestion_id),
-            }
-            send_segment_event(event, "prediction", request.user)
+            if event:
+                event['modelName'] = model_id
+            else:
+                event = {
+                    "duration": duration,
+                    "exception": exception is not None,
+                    "modelName": model_id,
+                    "problem": None if exception is None else exception.__class__.__name__,
+                    "request": data,
+                    "response": anonymized_predictions,
+                    "suggestionId": str(suggestion_id),
+                }
+            event_name = event_name if event_name else "prediction"
+            send_segment_event(event, event_name, request.user)
 
         logger.debug(f"response from inference for suggestion id {suggestion_id}:\n{predictions}")
 

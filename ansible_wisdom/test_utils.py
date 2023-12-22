@@ -45,8 +45,11 @@ class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
         segment_events = self.extractSegmentEventsFromLog(log)
         self.assertTrue(len(segment_events) == 1)
         self.assertEqual(segment_events[0]["event"], event)
-        self.assertEqual(segment_events[0]["properties"]["problem"], problem)
-        self.assertEqual(segment_events[0]["properties"]["exception"], True if problem else False)
+        if problem:
+            self.assertEqual(segment_events[0]["properties"]["problem"], problem)
+            self.assertEqual(
+                segment_events[0]["properties"]["exception"], True if problem else False
+            )
         for key, value in kwargs.items():
             self.assertEqual(segment_events[0]["properties"][key], value)
 

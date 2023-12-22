@@ -17,12 +17,13 @@ ansible-anonymizer==1.4.2
     # via -r requirements.in
 ansible-compat==4.1.10
     # via ansible-lint
-ansible-core==2.15.0
+ansible-core==2.15.8
     # via
+    #   -r requirements.in
     #   ansible
     #   ansible-compat
     #   ansible-lint
-ansible-lint==6.20.3
+ansible-lint==6.22.1
     # via -r requirements.in
 ansible-risk-insight==0.2.4
     # via -r requirements.in
@@ -158,6 +159,7 @@ huggingface-hub==0.20.1
     # via
     #   datasets
     #   sentence-transformers
+    #   tokenizers
     #   transformers
 idna==3.4
     # via
@@ -375,7 +377,7 @@ rich==13.5.2
     # via ansible-lint
 rsa==4.9
     # via python-jose
-ruamel-yaml==0.17.31
+ruamel-yaml==0.18.5
     # via
     #   ansible-lint
     #   ansible-risk-insight
@@ -433,7 +435,7 @@ tabulate==0.9.0
     # via ansible-risk-insight
 threadpoolctl==3.1.0
     # via scikit-learn
-tokenizers==0.13.3
+tokenizers==0.15.0
     # via transformers
 tomli==2.0.1
     # via black
@@ -458,7 +460,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-transformers==4.30.0
+transformers==4.36.0
     # via
     #   -r requirements.in
     #   sentence-transformers

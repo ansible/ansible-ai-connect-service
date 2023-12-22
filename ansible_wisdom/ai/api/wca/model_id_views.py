@@ -8,6 +8,7 @@ from ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaTokenFailure,
+    WcaUserTrialExpired,
 )
 from ai.api.permissions import (
     AcceptedTermsPermission,
@@ -31,6 +32,7 @@ from rest_framework.status import (
 )
 from users.signals import user_set_wca_model_id
 
+from ..pipelines.common import WcaUserTrialExpiredException
 from ..views import ServiceUnavailable, WcaKeyNotFoundException
 
 UNKNOWN_MODEL_ID = "Unknown"
@@ -200,6 +202,7 @@ def validate(api_key, model_id):
 
 def do_validated_operation(request, api_key_provider, model_id_provider, on_success, event_name):
     exception = None
+    event = None
     start_time = time.time()
     model_id = UNKNOWN_MODEL_ID
     try:
@@ -233,6 +236,16 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
         logger.info(e, exc_info=True)
         raise WcaKeyNotFoundException(cause=e)
 
+    except WcaUserTrialExpired as e:
+        exception = e
+        logger.info(e, exc_info=True)
+        event = {
+            "type": event_name,
+            "modelName": model_id,
+        }
+        event_name = 'trialExpired'
+        raise WcaUserTrialExpiredException(cause=e)
+
     except Exception as e:
         exception = e
         logger.exception(e)
@@ -240,12 +253,15 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
 
     finally:
         duration = round((time.time() - start_time) * 1000, 2)
-        event = {
-            "duration": duration,
-            "exception": exception is not None,
-            "problem": None if exception is None else exception.__class__.__name__,
-            "modelName": model_id,
-        }
+        if event:
+            event['modelName'] = model_id
+        else:
+            event = {
+                "duration": duration,
+                "exception": exception is not None,
+                "problem": None if exception is None else exception.__class__.__name__,
+                "modelName": model_id,
+            }
         send_segment_event(event, event_name, request.user)
 
 

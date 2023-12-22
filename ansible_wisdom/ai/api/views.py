@@ -10,6 +10,7 @@ from ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaSuggestionIdCorrelationFailure,
+    WcaUserTrialExpired,
 )
 from ai.api.pipelines.common import (
     InternalServerError,
@@ -22,6 +23,7 @@ from ai.api.pipelines.common import (
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
     WcaSuggestionIdCorrelationFailureException,
+    WcaUserTrialExpiredException,
     process_error_count,
 )
 from ai.api.pipelines.completions import CompletionsPipeline
@@ -455,6 +457,8 @@ class ContentMatches(GenericAPIView):
         )
 
         exception = None
+        event = None
+        event_name = None
         start_time = time.time()
         response_serializer = None
         metadata = []
@@ -538,6 +542,17 @@ class ContentMatches(GenericAPIView):
             logger.exception(f"Cloudflare rejected the request for {suggestion_id}")
             raise WcaCloudflareRejectionException(cause=e)
 
+        except WcaUserTrialExpired as e:
+            exception = e
+            logger.exception(f"User trial expired, when requesting suggestion {suggestion_id}")
+            event_name = "trialExpired"
+            event = {
+                "type": "contentmatch",
+                "modelName": model_id,
+                "suggestionId": str(suggestion_id),
+            }
+            raise WcaUserTrialExpiredException(cause=e)
+
         except Exception as e:
             exception = e
             logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
@@ -551,16 +566,20 @@ class ContentMatches(GenericAPIView):
                 )
                 if model_id_in_exception:
                     model_id = model_id_in_exception
-            self._write_to_segment(
-                request_data,
-                duration,
-                exception,
-                metadata,
-                model_id,
-                response_serializer.data if response_serializer else {},
-                suggestion_id,
-                user,
-            )
+            if event:
+                event['modelName'] = model_id
+                send_segment_event(event, event_name, user)
+            else:
+                self._write_to_segment(
+                    request_data,
+                    duration,
+                    exception,
+                    metadata,
+                    model_id,
+                    response_serializer.data if response_serializer else {},
+                    suggestion_id,
+                    user,
+                )
 
         return response_serializer
 

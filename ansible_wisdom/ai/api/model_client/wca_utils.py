@@ -7,6 +7,7 @@ from .exceptions import (
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaTokenFailureApiKeyError,
+    WcaUserTrialExpired,
 )
 
 T = TypeVar('T')
@@ -108,6 +109,10 @@ class InferenceResponseChecks(Checks[InferenceContext]):
                 if text and "cloudflare" in text.lower():
                     raise WcaCloudflareRejection(model_id=context.model_id)
 
+    class ResponseStatusCode403UserTrialExpired(Check[InferenceContext]):
+        def check(self, context: InferenceContext):
+            is_user_trial_expired(context.model_id, context.result.status_code, context.result.text)
+
     def __init__(self):
         super().__init__(
             [
@@ -116,6 +121,7 @@ class InferenceResponseChecks(Checks[InferenceContext]):
                 InferenceResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
                 InferenceResponseChecks.ResponseStatusCode400(),
                 InferenceResponseChecks.ResponseStatusCode403Cloudflare(),
+                InferenceResponseChecks.ResponseStatusCode403UserTrialExpired(),
                 InferenceResponseChecks.ResponseStatusCode403(),
             ]
         )
@@ -164,6 +170,10 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
                 if text and "cloudflare" in text.lower():
                     raise WcaCloudflareRejection(model_id=context.model_id)
 
+    class ResponseStatusCode403UserTrialExpired(Check[InferenceContext]):
+        def check(self, context: ContentMatchContext):
+            is_user_trial_expired(context.model_id, context.result.status_code, context.result.text)
+
     def __init__(self):
         super().__init__(
             [
@@ -172,6 +182,14 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
                 ContentMatchResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
                 ContentMatchResponseChecks.ResponseStatusCode400(),
                 ContentMatchResponseChecks.ResponseStatusCode403Cloudflare(),
+                ContentMatchResponseChecks.ResponseStatusCode403UserTrialExpired(),
                 ContentMatchResponseChecks.ResponseStatusCode403(),
             ]
         )
+
+
+def is_user_trial_expired(model_id, result_code, result_text):
+    if result_code == 403:
+        text = result_text
+        if text and "CUH limit is reached" in text.lower():
+            raise WcaUserTrialExpired(model_id=model_id)
