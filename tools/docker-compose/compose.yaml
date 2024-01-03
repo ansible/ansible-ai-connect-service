@@ -11,6 +11,7 @@ services:
     volumes:
       - $PWD/ansible_wisdom:/var/www/ansible_wisdom
       - $PWD/ari/kb:/etc/ari/kb
+      - $PWD/tools/scripts:/etc/wisdom/scripts
     ports:
       - "8000:8000"
     expose:
@@ -74,7 +75,7 @@ services:
       - ANSIBLE_WCA_FREE_API_KEY=${ANSIBLE_WCA_FREE_API_KEY}
       - ANSIBLE_WCA_FREE_MODEL_ID=${ANSIBLE_WCA_FREE_MODEL_ID}
     command:
-      - /usr/bin/launch-wisdom.sh
+      - /etc/wisdom/scripts/launch-wisdom-compose.sh
     networks:
       - dbnet
   db:
