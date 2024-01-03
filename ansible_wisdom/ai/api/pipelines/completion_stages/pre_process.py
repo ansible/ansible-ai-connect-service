@@ -60,7 +60,8 @@ def completion_pre_process(context: CompletionContext):
         # back from preprocess. We can calculate the proper spacing from the
         # normalized prompt.
         normalized_indent = len(context.payload.prompt) - len(context.payload.prompt.lstrip())
-        original_prompt = " " * normalized_indent + original_prompt.lstrip()
+        normalized_original_prompt = fmtr.normalize_yaml(original_prompt)
+        original_prompt = " " * normalized_indent + normalized_original_prompt
     context.payload.original_prompt = original_prompt
 
 
