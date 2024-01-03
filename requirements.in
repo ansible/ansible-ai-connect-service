@@ -2,6 +2,10 @@
 # remove this once datasets or fsspec is updated
 # to properly pull a version of aiohttp > 3.8.5.
 aiohttp==3.9.0
+# pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
+# remove this once ansible-risk-insight is updated to properly
+# pull a version of ansible >= 8.5.0.
+ansible==8.5.0
 # pin ansible-core on 2.15.8 to address GHSA-7j69-qfc3-2fq9
 # remove this once ansible-anonymizer, ansible-risk-insight and
 # ansible-lint are updated to properly pull a version of
@@ -25,6 +29,10 @@ djangorestframework==3.14.0
 drf-spectacular==0.25.1
 grpcio==1.54.2
 ipython==8.10.0
+# pin jwcrypto on 1.5.1 to address GHSA-cw2r-4p82-qv79
+# remove this once django-oauth-toolkit is updated to properly
+# pull a version of jwcrypto >= 1.5.1.
+jwcrypto==1.5.1
 launchdarkly-server-sdk==8.1.1
 opensearch-py==2.1.1
 # pin pillow on 10.0.1 to address CVE-2023-4863
