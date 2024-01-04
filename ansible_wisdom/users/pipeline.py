@@ -83,7 +83,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     payload = jwt.decode(
         response['access_token'],
         rsakey.to_pem().decode("utf-8"),
-        algorithms=['RS256'],
+        algorithms=[key['alg']],
         audience="account",
     )
 
