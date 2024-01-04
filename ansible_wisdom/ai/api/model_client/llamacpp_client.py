@@ -30,7 +30,7 @@ class LlamaCPPClient(ModelMeshClient):
         full_prompt = f"{context}{prompt}\n"
         logger.info(f"full prompt: {full_prompt}")
 
-        data = {
+        params = {
             "prompt": full_prompt,
             "model": model_id,
             "n_predict": 400,
@@ -55,7 +55,7 @@ class LlamaCPPClient(ModelMeshClient):
             "seed": 0,
         }
 
-        logger.info(f"request: {data}")
+        logger.info(f"request: {params}")
 
         try:
             # TODO(rg): implement multitask here with a loop
@@ -63,15 +63,16 @@ class LlamaCPPClient(ModelMeshClient):
             result = self.session.post(
                 self._prediction_url,
                 headers=self.headers,
-                json=data,
+                json=params,
                 timeout=self.timeout(task_count),
             )
             result.raise_for_status()
             body = json.loads(result.text)
             logger.info(f"response: {body}")
             task = body["content"]
-            # TODO(rg): remove this when we've created a better tune
-            task = task.split("\n    - name")[0]
+            # TODO(rg): fragile and not always correct; remove when we've created a better tune
+            task = task.split("- name:")[0]
+            task = task.split("```")[0]
             response = {"predictions": [task], "model_id": body["model"]}
 
             return response
