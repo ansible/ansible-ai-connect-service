@@ -137,6 +137,69 @@ PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
         file: ./vars/external_vars_3.yml
 '''
 
+PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT = '''\
+---
+- hosts: all
+  remote_user: root
+  vars_files:
+    - ./vars/external_vars_1.yml
+    - ./vars/external_vars_2.yml
+  tasks:
+    # Include variable
+'''
+
+#
+# If the prompt is processed with the formatter with inserting variables,
+# with no other pre-existing vars, following context
+# will be generated:
+#
+PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS = f'''\
+- hosts: all
+  remote_user: root
+  vars_files:
+    - ./vars/external_vars_1.yml
+    - ./vars/external_vars_2.yml
+  vars:
+{add_indents(VARS_1, 4)}
+{add_indents(VARS_2, 4)}
+{add_indents(VARS_3, 4)}
+  tasks:
+'''
+
+PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS = '''\
+---
+- hosts: all
+  remote_user: root
+  vars_files:
+    - ./vars/external_vars_1.yml
+    - ./vars/external_vars_2.yml
+  handlers:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+    - name: Run container with podman using mattermost_app var
+'''
+
+#
+# If the prompt is processed with the formatter with inserting variables,
+# with no other pre-existing vars, following context
+# will be generated:
+#
+PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
+- hosts: all
+  remote_user: root
+  vars_files:
+    - ./vars/external_vars_1.yml
+    - ./vars/external_vars_2.yml
+  vars:
+{add_indents(VARS_1, 4)}
+{add_indents(VARS_2, 4)}
+{add_indents(VARS_3, 4)}
+  handlers:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+'''
 #
 # If the prompt is processed with the formatter without inserting variables, following
 # changes will be made to generate the context:
@@ -415,6 +478,34 @@ class CompletionPreProcessTest(TestCase):
             payload,
             True,
             PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS,
+        )
+
+    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
+    def test_additional_context_with_commercial_user_and_feature_enabled_with_no_preexisting_vars_and_one_multitask_prompt(  # noqa: E501
+        self,
+    ):
+        payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
+        payload[
+            "prompt"
+        ] = PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT
+
+        self.call_completion_pre_process(
+            payload,
+            True,
+            PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS,
+        )
+
+    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
+    def test_additional_context_with_commercial_user_and_feature_enabled_with_no_preexisting_vars_and_handlers(  # noqa: E501
+        self,
+    ):
+        payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
+        payload["prompt"] = PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS
+
+        self.call_completion_pre_process(
+            payload,
+            True,
+            PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS,
         )
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=False)
