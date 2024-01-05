@@ -114,7 +114,7 @@ class InferenceResponseChecks(Checks[InferenceContext]):
             is_user_trial_expired(
                 context.model_id,
                 context.result.status_code,
-                context.result.json().get("message_id"),
+                context.result.json(),
             )
 
     def __init__(self):
@@ -179,7 +179,7 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
             is_user_trial_expired(
                 context.model_id,
                 context.result.status_code,
-                context.result.json().get("message_id"),
+                context.result.json(),
             )
 
     def __init__(self):
@@ -196,6 +196,10 @@ class ContentMatchResponseChecks(Checks[ContentMatchContext]):
         )
 
 
-def is_user_trial_expired(model_id, result_code, message_id):
-    if result_code == 403 and "WCA-0001-E" == message_id:
+def is_user_trial_expired(model_id, result_code, content):
+    if (
+        result_code == 403
+        and isinstance(content, dict)
+        and "WCA-0001-E" == content.get("message_id")
+    ):
         raise WcaUserTrialExpired(model_id=model_id)
