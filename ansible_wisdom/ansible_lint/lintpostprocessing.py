@@ -58,6 +58,7 @@ class AnsibleLintCaller:
 
             self.config_options.lintables = [temp_completion_path]
             result = get_matches(rules=self.default_rules_collection, options=self.config_options)
+            logger.error(f'Lint post-process LintResult: {result}')
             self.run_transform(result, self.config_options)
 
             # read the transformed file
