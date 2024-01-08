@@ -71,8 +71,13 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .catch((error) => {
                 if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
+                } else if (error.response?.status === 403) {
+                    setModelIdError({
+                        inError: true,
+                        message: t("ModelIdValidationTrialExpired"),
+                        detail: error.response?.data?.detail
+                    });
                 } else {
-                    // TODO: Need to customize here the trial expired error?
                     setModelIdError({
                         inError: true,
                         message: error.message,
