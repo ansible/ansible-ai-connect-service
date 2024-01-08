@@ -133,6 +133,7 @@ def completion_post_process(context: CompletionContext):
     payload_context = context.payload.context
     original_indent = context.original_indent
     post_processed_predictions = context.anonymized_predictions.copy()
+    is_multi_task_prompt = fmtr.is_multi_task_prompt(original_prompt)
 
     ari_caller = apps.get_app_config("ai").get_ari_caller()
     if not ari_caller:
@@ -242,10 +243,18 @@ def completion_post_process(context: CompletionContext):
         try:
             # Ansible Lint the ARI processed yaml else the model prediction
             input_yaml = postprocessed_yaml if postprocessed_yaml else recommendation_yaml
+            # Single task predictions are missing the `- name: ` line and fail linter schema check
+            if not is_multi_task_prompt:
+                input_yaml = (
+                    f'{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}'
+                )
             postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
                 postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
+            # Strip the task name line if single task
+            if not is_multi_task_prompt and postprocessed_yaml.lstrip().startswith('- name:'):
+                postprocessed_yaml = '\n'.join(postprocessed_yaml.split('\n')[1:])
             post_processed_predictions["predictions"][0] = postprocessed_yaml
         except Exception as exc:
             exception = exc
