@@ -299,7 +299,13 @@ describe('ModelSettingsOverview',
             async () => {
                 const wcaKey: WcaKey = {status: "SUCCESS", data: {lastUpdate: new Date()}};
                 const wcaModelId: WcaModelId = {status: "SUCCESS", data: {lastUpdate: new Date(), model_id: "model_id"}};
-                (axios.get as jest.Mock).mockRejectedValue({"response": {"status": 403}});
+                (axios.get as jest.Mock).mockRejectedValue({"response": {
+                    "status": 403,
+                    "data": {
+                        "status_code": 403,
+                        "code": "permission_denied__user_trial_expired",
+                        "detail": "User trial expired. Please contact your administrator.",
+                }}});
 
                 render(
                     <ModelSettingsOverview
