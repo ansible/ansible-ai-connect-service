@@ -295,6 +295,35 @@ describe('ModelSettingsOverview',
                 expect(alert).toBeInTheDocument();
             });
 
+        it('Validate::ModelId::TrialExpired',
+            async () => {
+                const wcaKey: WcaKey = {status: "SUCCESS", data: {lastUpdate: new Date()}};
+                const wcaModelId: WcaModelId = {status: "SUCCESS", data: {lastUpdate: new Date(), model_id: "model_id"}};
+                (axios.get as jest.Mock).mockRejectedValue({"response": {
+                    "status": 403,
+                    "data": {
+                        "status_code": 403,
+                        "code": "permission_denied__user_trial_expired",
+                        "detail": "User trial expired. Please contact your administrator.",
+                }}});
+
+                render(
+                    <ModelSettingsOverview
+                        wcaKey={wcaKey}
+                        wcaModelId={wcaModelId}
+                        setModeToKey={setModeToKey}
+                        setModeToModelId={setModeToModelId}
+                    />
+                );
+
+                // Emulate click on "Test [ModelId]" button
+                const testKeyButton = await screen.findByTestId("model-settings-overview__model-id-test-button");
+                await userEvent.click(testKeyButton);
+
+                // Modals are added to the 'document.body' so perform a basic check for a known field.
+                expect(document.body).toHaveTextContent("ModelIdValidationTrialExpired")
+            });
+
         it('Validate::ModelId::Failure::Error',
             async () => {
                 const wcaKey: WcaKey = {status: "SUCCESS", data: {lastUpdate: new Date()}};

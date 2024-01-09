@@ -3,12 +3,13 @@ import {Alert, Button, Icon, PageSection, PageSectionVariants, Panel, PanelMain,
 import {useTranslation} from "react-i18next";
 import {CheckCircleIcon, OutlinedQuestionCircleIcon, PlusCircleIcon} from "@patternfly/react-icons";
 import './ModelSettings.css';
-import {Success, WcaKey, WcaKeyResponse, WcaModelId, WcaModelIdResponse} from "./api/types";
+import {APIException, Success, WcaKey, WcaKeyResponse, WcaModelId, WcaModelIdResponse} from "./api/types";
 import {DELAY} from "./api/globals";
 import {testWcaKey, testWcaModelId} from "./api/api";
 import {ErrorModal, HasError, NO_ERROR} from "./ErrorModal";
 import {Alerts, AlertsHandle} from "./Alerts";
 import {BusyButton} from "./BusyButton";
+import {AxiosError} from "axios"
 
 interface ModelSettingsOverviewProps {
     readonly wcaKey: WcaKey;
@@ -68,15 +69,21 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
             .then((_) => {
                 alertsRef.current?.addAlert(t("ModelIdValidationSuccess"));
             })
-            .catch((error) => {
+            .catch((error: AxiosError<APIException, any>) => {
                 if (error.response?.status === 400) {
                     setIsModelIdInvalid(true);
+                } else if (error.response?.status === 403
+                    && error.response?.data?.code === "permission_denied__user_trial_expired") {
+                    setModelIdError({
+                        inError: true,
+                        message: t("ModelIdValidationTrialExpired"),
+                        detail: error.response?.data?.detail ?? ""
+                    });
                 } else {
-                    // TODO: Need to customize here the trial expired error?
                     setModelIdError({
                         inError: true,
                         message: error.message,
-                        detail: error.response?.data?.detail
+                        detail: error.response?.data?.detail ?? ""
                     });
                 }
             })

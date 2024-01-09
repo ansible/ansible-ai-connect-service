@@ -37,6 +37,7 @@
   "ModelIdError": "The Model Id could not be saved.",
   "ModelIdValidationError": "The Model Id could not be validated.",
   "ModelIdValidationSuccess": "The Model Id is valid.",
+  "ModelIdValidationTrialExpired": "Your trial to the generative AI model has expired. Refer to your IBM Cloud Account to re-enable access to the IBM watsonx Code Assistant.",
   "Save": "Save",
   "Cancel": "Cancel",
   "SecretValue": "***********************************",

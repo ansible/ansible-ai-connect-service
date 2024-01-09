@@ -36,3 +36,9 @@ export interface TelemetryRequest {
 export interface TelemetryResponse {
     optOut: boolean
 }
+
+export interface APIException {
+    status_code: number;
+    detail: string;
+    code: string;
+}
