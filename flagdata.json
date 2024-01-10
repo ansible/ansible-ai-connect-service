@@ -1,0 +1,7 @@
+{
+  "flagValues": {
+    "model_name": "dev_model",
+    "my-boolean-flag-key": true,
+    "my-integer-flag-key": 3
+  }
+}
