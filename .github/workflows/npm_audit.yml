@@ -19,9 +19,6 @@ jobs:
     env:
       WORKING_DIRECTORY: ./ansible_wisdom_console_react
 
-  scan:
-    name: npm audit
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout commit
         uses: actions/checkout@v3
