@@ -4,13 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - ansible_wisdom/ai/api/aws/wca_secret_manager.py
   pull_request:
     branches:
       - main
-    paths:
-      - ansible_wisdom/ai/api/aws/wca_secret_manager.py
 permissions:
   contents: read
 
