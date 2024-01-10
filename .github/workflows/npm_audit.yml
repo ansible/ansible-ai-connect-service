@@ -1,0 +1,30 @@
+name: wisdom-service - npm-audit
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ansible_wisdom_console_react/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ansible_wisdom_console_react/**
+
+jobs:
+  scan:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: npm ci
+      - uses: oke-py/npm-audit-action@v2
+        with:
+          audit_level: low
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_assignees: oke-py
+          issue_labels: vulnerability,test
+          create_issues: false
+          working_directory: ansible_wisdom_console_react
