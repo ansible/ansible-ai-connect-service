@@ -1,4 +1,4 @@
-name: wisdom-service - npm-audit
+name: Admin Portal - npm-audit
 
 on:
   push:
