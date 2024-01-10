@@ -900,7 +900,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_payload_with_ansible_lint(self):
+    def test_payload_with_ansible_lint_without_commercial(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -975,15 +975,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_full_payload_with_ansible_lint_with_commercial_user(self):
+    def test_full_payload_with_ansible_lint_without_ari_postprocess_with_commercial_user(self):
         self.user.rh_user_has_seat = True
         payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Sample shell\n",
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
             "model_id": self.DUMMY_MODEL_ID,
-            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+            "predictions": ["      ansible.builtin.shell:\n        cmd: echo hello"],
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
@@ -995,6 +995,46 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data['predictions'])
+                self.assertEqual(
+                    r.data['predictions'][0],
+                    '      ansible.builtin.command:\n        cmd: echo hello\n',
+                )
+                self.assertSegmentTimestamp(log)
+
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_full_payload_with_ansible_lint_with_ari_postprocess_with_commercial_user(self):
+        self.user.rh_user_has_seat = True
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Sample shell\n",
+            "suggestionId": str(uuid.uuid4()),
+        }
+        response_data = {
+            "model_id": self.DUMMY_MODEL_ID,
+            "predictions": ["      ansible.builtin.shell:\n        cmd: echo hello"],
+        }
+        self.client.force_authenticate(user=self.user)
+        with patch.object(
+            apps.get_app_config('ai'),
+            '_wca_client',
+            MockedMeshClient(self, payload, response_data, rh_user_has_seat=True),
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('completions'), payload)
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertIsNotNone(r.data['predictions'])
+                self.assertEqual(
+                    r.data['predictions'][0],
+                    '      ansible.builtin.command:\n        cmd: echo hello\n',
+                )
                 self.assertSegmentTimestamp(log)
 
                 segment_events = self.extractSegmentEventsFromLog(log)
