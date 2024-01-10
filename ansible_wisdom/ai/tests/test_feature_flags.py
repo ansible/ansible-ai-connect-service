@@ -45,14 +45,8 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         self.assertEqual(kwargs['start_wait'], 40)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='flagdata.json')
-    @patch.object(feature_flags, 'LDClient')
-    def test_feature_flags_with_local_file(self, LDClient):
-        LDClient.return_value.variation.return_value = 'server:port:model_name:index'
+    def test_feature_flags_with_local_file(self):
         ff = feature_flags.FeatureFlags()
         value = ff.get('model_name', self.user, 'default_value')
-
-        self.assertEqual(value, 'server:port:model_name:index')
-        LDClient.assert_called_once()
-        _, config_arg, kwargs = LDClient.mock_calls[0]
-        self.assertIsInstance(config_arg[0], Config)
-        self.assertEqual(config_arg[0].sdk_key, 'sdk-key-123abc')
+        self.assertEqual(value, 'dev_model')
+        self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
