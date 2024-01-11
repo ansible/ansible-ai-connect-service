@@ -17,7 +17,6 @@ services:
     expose:
       - "8000"
       - "8001-8011" # django-prometheus
-    env_file: "../../.env"
     environment:
       - DJANGO_SETTINGS_MODULE=main.settings.development
       - DJANGO_LOG_LEVEL
