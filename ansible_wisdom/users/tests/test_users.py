@@ -241,6 +241,21 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
 
+    @override_settings(TERMS_NOT_APPLICABLE=True)
+    def test_terms_of_service_with_override(self):
+        self.request.session['terms_accepted'] = False
+        result = _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+        self.assertEquals(result, {'terms_accepted': True})
+        self.assertIsNone(self.strategy.redirect_url)
+        self.assertFalse(self.user.save.called)
+        self.assertIsNone(self.user.community_terms_accepted)
+
     @patch('social_django.utils.get_strategy')
     def test_post_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
