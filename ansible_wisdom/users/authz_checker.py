@@ -164,7 +164,7 @@ class AMSCheck(BaseCheck):
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    def get_ams_org(self, rh_org_id: str) -> str:
+    def get_ams_org(self, rh_org_id: int) -> str:
         if not rh_org_id:
             logger.error(f"Unexpected value for rh_org_id: {rh_org_id}")
             return ""
@@ -234,7 +234,7 @@ class AMSCheck(BaseCheck):
             logger.error("Unexpected subscription answer from AMS")
             return False
 
-    def rh_user_is_org_admin(self, username: str, organization_id: str):
+    def rh_user_is_org_admin(self, username: str, organization_id: int):
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
@@ -266,7 +266,7 @@ class AMSCheck(BaseCheck):
 
         return False
 
-    def rh_org_has_subscription(self, organization_id: str) -> bool:
+    def rh_org_has_subscription(self, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
         params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()
