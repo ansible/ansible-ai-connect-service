@@ -251,7 +251,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             request=self.request,
             current_partial=self.partial,
         )
-        self.assertEquals(result, {'terms_accepted': True})
+        self.assertEqual(result, {'terms_accepted': True})
         self.assertIsNone(self.strategy.redirect_url)
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
