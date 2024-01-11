@@ -48,5 +48,5 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
     def test_feature_flags_with_local_file(self):
         ff = feature_flags.FeatureFlags()
         value = ff.get('model_name', self.user, 'default_value')
-        self.assertEqual(value, 'dev_model')
         self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
+        self.assertEqual(value, 'dev_model')
