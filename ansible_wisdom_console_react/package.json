@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "/static/console/",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=7.0.0"
+  },
   "dependencies": {
     "@ansible/ansible-ui-framework": "^2.4.456",
     "@babel/core": "^7.16.0",

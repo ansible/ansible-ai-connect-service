@@ -6,6 +6,13 @@
 >
 > Change it at your peril!
 
+## Build from source
+
+To start building the Ansible Lightspeed "Admin Portal" project, you're going to need:
+
+- Node `18.0.0` or higher
+- npm `7.0.0` or higher
+
 ## Available Scripts
 
 In the project directory, you can run:
