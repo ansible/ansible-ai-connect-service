@@ -9,8 +9,8 @@ module.exports = {
         process.env.NODE_ENV === "production"
           ? "babel-preset-react-app/prod"
           : process.env.NODE_ENV === "test"
-          ? "babel-preset-react-app/test"
-          : "babel-preset-react-app/dev",
+            ? "babel-preset-react-app/test"
+            : "babel-preset-react-app/dev",
       ],
     },
   },
