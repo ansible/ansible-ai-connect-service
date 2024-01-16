@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
+from jose import jwk
 from organizations.models import Organization
 from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
@@ -77,7 +78,15 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         logger.error("Missing id_token, cannot get the organization id.")
         return
 
-    payload = jwt.decode(response['access_token'], options={"verify_signature": False})
+    key = backend.find_valid_key(response['access_token'])
+    rsakey = jwk.construct(key)
+    payload = jwt.decode(
+        response['access_token'],
+        rsakey.to_pem().decode("utf-8"),
+        algorithms=[key['alg']],
+        audience="account",
+    )
+
     realm_access = payload.get("realm_access", {})
     roles = realm_access.get("roles", [])
     user.external_username = payload.get("preferred_username")

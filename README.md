@@ -559,6 +559,7 @@ for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/
 with the following `.env` file:
 
 ```bash
+LAUNCHDARKLY_SDK_KEY=flagdata.json
 ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
