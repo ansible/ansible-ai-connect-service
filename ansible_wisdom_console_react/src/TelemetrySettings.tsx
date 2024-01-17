@@ -100,7 +100,7 @@ export function TelemetrySettings() {
         setTelemetrySettingsError({
           inError: true,
           message: error.message,
-          detail: error.response?.data?.detail,
+          detail: error.response?.data?.detail ?? "",
         });
       })
       .finally(() => {
