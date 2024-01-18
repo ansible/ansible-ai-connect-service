@@ -8,6 +8,7 @@ from uuid import UUID
 from ai.api.serializers import (
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
+    ContentMatchSerializer,
     FeedbackRequestSerializer,
     SuggestionQualityFeedback,
 )
@@ -123,6 +124,20 @@ class ContentMatchRequestSerializerTest(TestCase):
         }
         serializer.validate(data)
         self.assertIsNone(data.get("model"))
+
+
+class ContentMatchSerializerTest(TestCase):
+    def test_empty_repo_url_allowed(self):
+        data = {
+            "repo_url": "",
+            "repo_name": "ansible.product_demos",
+            "path": "playbooks/infrastructure/aws_provision_vm.yml",
+            "license": "gpl-3.0",
+            "data_source_description": "Ansible Galaxy collections",
+            "score": 0.96241134,
+        }
+        serializer = ContentMatchSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
 
 
 class SuggestionQualityFeedbackTest(TestCase):
