@@ -93,14 +93,14 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
       .then((_) => {
         alertsRef.current?.addAlert(t("KeyValidationSuccess"));
       })
-      .catch((error) => {
+      .catch((error: AxiosError<APIException, any>) => {
         if (error.response?.status === 400) {
           setIsKeyInvalid(true);
         } else {
           setKeyError({
             inError: true,
             message: error.message,
-            detail: error.response?.data?.detail,
+            detail: error.response?.data?.detail ?? "",
           });
         }
       })

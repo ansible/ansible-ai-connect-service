@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import React, {
   useCallback,
   useEffect,
@@ -25,6 +26,7 @@ import {
 } from "@patternfly/react-core";
 import "./ModelSettings.css";
 import {
+  APIException,
   Success,
   Telemetry,
   TelemetryRequest,
@@ -94,11 +96,11 @@ export function TelemetrySettings() {
           alertsRef.current?.addAlert(t("TelemetryOptInSaveSuccessAlert"));
         }
       })
-      .catch((error) => {
+      .catch((error: AxiosError<APIException, any>) => {
         setTelemetrySettingsError({
           inError: true,
           message: error.message,
-          detail: error.response?.data?.detail,
+          detail: error.response?.data?.detail ?? "",
         });
       })
       .finally(() => {
