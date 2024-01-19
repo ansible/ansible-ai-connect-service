@@ -244,6 +244,10 @@ class WCAClient(ModelMeshClient):
         return response.json()
 
     def get_api_key(self, rh_user_has_seat: bool, organization_id: int):
+        # use the environment API key override if it's set
+        if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
+            return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
+
         # use the shared API Key if the user has no seat
         if not rh_user_has_seat or organization_id is None:
             return self.free_api_key
@@ -268,6 +272,9 @@ class WCAClient(ModelMeshClient):
         organization_id: Optional[int],
         requested_model_id: Optional[str],
     ):
+        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+
         if not rh_user_has_seat or organization_id is None:
             if requested_model_id:
                 # Note: I don't believe we ever actually make it into this flow.

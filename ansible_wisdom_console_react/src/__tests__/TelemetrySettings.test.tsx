@@ -1,148 +1,179 @@
-import {render, screen} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import {TelemetrySettings} from "../TelemetrySettings";
+import { TelemetrySettings } from "../TelemetrySettings";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
-import {API_TELEMETRY_PATH} from "../api/api";
+import { API_TELEMETRY_PATH } from "../api/api";
 
-jest.mock('axios',
-    () => ({
-        get: jest.fn(),
-        post: jest.fn(),
-    }));
+jest.mock("axios", () => ({
+  get: jest.fn(),
+  post: jest.fn(),
+}));
 
-describe('TelemetrySettings',
-    () => {
+describe("TelemetrySettings", () => {
+  beforeEach(() => jest.resetAllMocks());
 
-        beforeEach(() => jest.resetAllMocks());
+  it("Loading", async () => {
+    (axios.get as jest.Mock).mockResolvedValue({ optOut: "false" });
+    render(<TelemetrySettings />);
+    expect(axios.get as jest.Mock).toBeCalledWith(API_TELEMETRY_PATH);
+    expect(
+      await screen.findByTestId("telemetry-settings__telemetry-loading"),
+    ).toBeInTheDocument();
+  });
 
-        it('Loading',
-            async () => {
-                (axios.get as jest.Mock).mockResolvedValue({"optOut": "false"});
-                render(
-                    <TelemetrySettings/>
-                );
-                expect((axios.get as jest.Mock)).toBeCalledWith(API_TELEMETRY_PATH)
-                expect(await screen.findByTestId("telemetry-settings__telemetry-loading")).toBeInTheDocument();
-            });
+  it("Loaded::Found", async () => {
+    (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: true } });
+    render(<TelemetrySettings />);
+    expect(axios.get as jest.Mock).toBeCalledWith(API_TELEMETRY_PATH);
+    expect(
+      await screen.findByTestId("telemetry-settings__opt_in_radiobutton"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("telemetry-settings__opt_out_radiobutton"),
+    ).toBeInTheDocument();
 
-        it('Loaded::Found',
-            async () => {
-                (axios.get as jest.Mock).mockResolvedValue({"data": {"optOut": true}});
-                render(
-                    <TelemetrySettings/>
-                );
-                expect((axios.get as jest.Mock)).toBeCalledWith(API_TELEMETRY_PATH)
-                expect(await screen.findByTestId("telemetry-settings__opt_in_radiobutton")).toBeInTheDocument();
-                expect(await screen.findByTestId("telemetry-settings__opt_out_radiobutton")).toBeInTheDocument();
+    const saveButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__save-button",
+    );
+    const cancelButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__cancel-button",
+    );
+    expect(saveButton).toBeInTheDocument();
+    expect(cancelButton).toBeInTheDocument();
+    expect(saveButton.disabled).toBeFalsy();
+    expect(cancelButton.disabled).toBeTruthy();
+  });
 
-                const saveButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__save-button");
-                const cancelButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__cancel-button");
-                expect(saveButton).toBeInTheDocument();
-                expect(cancelButton).toBeInTheDocument();
-                expect(saveButton.disabled).toBeFalsy();
-                expect(cancelButton.disabled).toBeTruthy();
-            });
+  it("Click::Save::Success", async () => {
+    (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
+    (axios.post as jest.Mock).mockResolvedValue({});
 
-        it('Click::Save::Success',
-            async () => {
-                (axios.get as jest.Mock).mockResolvedValue({"data": {"optOut": false}});
-                (axios.post as jest.Mock).mockResolvedValue({});
+    render(<TelemetrySettings />);
 
-                render(
-                    <TelemetrySettings/>
-                );
+    // Check initial settings
+    let optInRadioButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__opt_in_radiobutton",
+    );
+    let optOutRadioButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optInRadioButton.checked).toEqual(true);
+    expect(optOutRadioButton.checked).toEqual(false);
 
-                // Check initial settings
-                let optInRadioButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__opt_in_radiobutton");
-                let optOutRadioButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__opt_out_radiobutton");
-                expect(optInRadioButton.checked).toEqual(true);
-                expect(optOutRadioButton.checked).toEqual(false);
+    // Emulate click on "Opt Out" radio button
+    await userEvent.click(optOutRadioButton);
 
-                // Emulate click on "Opt Out" radio button
-                await userEvent.click(optOutRadioButton);
+    // Check settings have changed
+    optInRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_in_radiobutton",
+    );
+    optOutRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optInRadioButton.checked).toEqual(false);
+    expect(optOutRadioButton.checked).toEqual(true);
 
-                // Check settings have changed
-                optInRadioButton = await screen.findByTestId("telemetry-settings__opt_in_radiobutton");
-                optOutRadioButton = await screen.findByTestId("telemetry-settings__opt_out_radiobutton")
-                expect(optInRadioButton.checked).toEqual(false);
-                expect(optOutRadioButton.checked).toEqual(true);
+    // Check action button states
+    const saveButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__save-button",
+    );
+    const cancelButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__cancel-button",
+    );
+    expect(saveButton).toBeInTheDocument();
+    expect(cancelButton).toBeInTheDocument();
+    expect(saveButton.disabled).toBeFalsy();
+    expect(cancelButton.disabled).toBeFalsy();
 
-                // Check action button states
-                const saveButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__save-button");
-                const cancelButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__cancel-button");
-                expect(saveButton).toBeInTheDocument();
-                expect(cancelButton).toBeInTheDocument();
-                expect(saveButton.disabled).toBeFalsy();
-                expect(cancelButton.disabled).toBeFalsy();
+    // Emulate click on "Save" button
+    await userEvent.click(saveButton);
 
-                // Emulate click on "Save" button
-                await userEvent.click(saveButton);
+    expect(axios.post as jest.Mock).toBeCalledWith(
+      API_TELEMETRY_PATH,
+      { optOut: true },
+      { headers: { "X-CSRFToken": null } },
+    );
+  });
 
-                expect((axios.post as jest.Mock)).toBeCalledWith(API_TELEMETRY_PATH, {"optOut": true}, {"headers": {"X-CSRFToken": null}})
-            });
+  it("Click::Save::Failure::Error", async () => {
+    (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
+    (axios.post as jest.Mock).mockRejectedValue({ response: { status: 500 } });
 
-        it('Click::Save::Failure::Error',
-            async () => {
-                (axios.get as jest.Mock).mockResolvedValue({"data": {"optOut": false}});
-                (axios.post as jest.Mock).mockRejectedValue({"response": {"status": 500}});
+    render(<TelemetrySettings />);
 
-                render(
-                    <TelemetrySettings/>
-                );
+    // Emulate click on "Opt Out" radio button
+    const optOutRadioButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optOutRadioButton.checked).toEqual(false);
+    await userEvent.click(optOutRadioButton);
 
-                // Emulate click on "Opt Out" radio button
-                const optOutRadioButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__opt_out_radiobutton");
-                expect(optOutRadioButton.checked).toEqual(false);
-                await userEvent.click(optOutRadioButton);
+    // Emulate click on "Save" button
+    const saveButton = await screen.findByTestId(
+      "telemetry-settings__save-button",
+    );
+    await userEvent.click(saveButton);
 
-                // Emulate click on "Save" button
-                const saveButton = await screen.findByTestId("telemetry-settings__save-button");
-                await userEvent.click(saveButton);
+    expect(axios.post as jest.Mock).toBeCalledWith(
+      API_TELEMETRY_PATH,
+      { optOut: true },
+      { headers: { "X-CSRFToken": null } },
+    );
 
-                expect((axios.post as jest.Mock)).toBeCalledWith(API_TELEMETRY_PATH, {"optOut": true}, {"headers": {"X-CSRFToken": null}})
+    // Modals are added to the 'document.body' so perform a basic check for a known field.
+    expect(document.body).toHaveTextContent("TelemetryError");
+  });
 
-                // Modals are added to the 'document.body' so perform a basic check for a known field.
-                expect(document.body).toHaveTextContent("TelemetryError")
-            });
+  it("Click::Cancel", async () => {
+    (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
 
-        it('Click::Cancel',
-            async () => {
-                (axios.get as jest.Mock).mockResolvedValue({"data": {"optOut": false}});
+    render(<TelemetrySettings />);
 
-                render(
-                    <TelemetrySettings/>
-                );
+    // Check initial settings
+    let optInRadioButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__opt_in_radiobutton",
+    );
+    let optOutRadioButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optInRadioButton.checked).toEqual(true);
+    expect(optOutRadioButton.checked).toEqual(false);
 
-                // Check initial settings
-                let optInRadioButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__opt_in_radiobutton");
-                let optOutRadioButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__opt_out_radiobutton");
-                expect(optInRadioButton.checked).toEqual(true);
-                expect(optOutRadioButton.checked).toEqual(false);
+    // Emulate click on "Opt Out" radio button
+    await userEvent.click(optOutRadioButton);
 
-                // Emulate click on "Opt Out" radio button
-                await userEvent.click(optOutRadioButton);
+    // Check settings have changed
+    optInRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_in_radiobutton",
+    );
+    optOutRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optInRadioButton.checked).toEqual(false);
+    expect(optOutRadioButton.checked).toEqual(true);
 
-                // Check settings have changed
-                optInRadioButton = await screen.findByTestId("telemetry-settings__opt_in_radiobutton");
-                optOutRadioButton = await screen.findByTestId("telemetry-settings__opt_out_radiobutton")
-                expect(optInRadioButton.checked).toEqual(false);
-                expect(optOutRadioButton.checked).toEqual(true);
+    // Emulate click on "Cancel" button
+    const cancelButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__cancel-button",
+    );
+    await userEvent.click(cancelButton);
 
-                // Emulate click on "Cancel" button
-                const cancelButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__cancel-button");
-                await userEvent.click(cancelButton);
+    // Check original settings are restored
+    optInRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_in_radiobutton",
+    );
+    optOutRadioButton = await screen.findByTestId(
+      "telemetry-settings__opt_out_radiobutton",
+    );
+    expect(optInRadioButton.checked).toEqual(true);
+    expect(optOutRadioButton.checked).toEqual(false);
 
-                // Check original settings are restored
-                optInRadioButton = await screen.findByTestId("telemetry-settings__opt_in_radiobutton");
-                optOutRadioButton = await screen.findByTestId("telemetry-settings__opt_out_radiobutton")
-                expect(optInRadioButton.checked).toEqual(true);
-                expect(optOutRadioButton.checked).toEqual(false);
-
-                // Check action button states
-                const saveButton: HTMLInputElement = await screen.findByTestId("telemetry-settings__save-button");
-                expect(saveButton.disabled).toBeFalsy();
-                expect(cancelButton.disabled).toBeTruthy();
-            });
-
-    });
+    // Check action button states
+    const saveButton: HTMLInputElement = await screen.findByTestId(
+      "telemetry-settings__save-button",
+    );
+    expect(saveButton.disabled).toBeFalsy();
+    expect(cancelButton.disabled).toBeTruthy();
+  });
+});
