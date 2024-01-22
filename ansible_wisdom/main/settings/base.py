@@ -93,6 +93,8 @@ COMMERCIAL_DOCUMENTATION_URL = os.getenv(
     'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
 )
 
+TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
+
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
     USE_GITHUB_TEAM = True
