@@ -7,6 +7,7 @@ from test_utils import WisdomAppsBackendMocking
 from users.tests.test_users import create_user
 
 from ..permissions import (
+    BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
     IsOrganisationAdministrator,
@@ -128,4 +129,27 @@ class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
 
     def test_ensure_seated_user_are_blocked(self):
         self.user.rh_user_has_seat = True
+        self.assertFalse(self.p.has_permission(self.request, None))
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+class TestBlockUserWithoutSeat(WisdomAppsBackendMocking):
+    def setUp(self):
+        super().setUp()
+        self.user = create_user(provider="oidc")
+        self.user.rh_user_has_seat = False
+        self.request = Mock()
+        self.request.user = self.user
+        self.p = BlockUserWithoutSeat()
+
+    def tearDown(self):
+        self.user.delete()
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_no_seat_users_are_allowed_with_tech_preview(self):
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_no_seat_users_are_not_allowed_without_tech_preview(self):
         self.assertFalse(self.p.has_permission(self.request, None))

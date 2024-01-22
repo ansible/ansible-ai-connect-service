@@ -50,6 +50,7 @@ from .data.data_model import (
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     AcceptedTermsPermission,
+    BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
 )
@@ -115,6 +116,7 @@ class Completions(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        BlockUserWithoutSeat,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
@@ -308,6 +310,7 @@ class Attributions(GenericAPIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        BlockUserWithoutSeat,
     ]
     required_scopes = ['read', 'write']
 

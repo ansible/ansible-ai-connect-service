@@ -10,6 +10,7 @@
 
     <body>
         {% block banner %}
+        {% if use_tech_preview %}
         <div class="pf-c-alert pf-m-warning" style="margin-top:3px;">
             <div class="pf-c-alert__icon">
                 <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
@@ -17,6 +18,18 @@
             <p class="pf-c-alert__title" style="font-weight: normal;"><b>NOTE</b>: Due to overwhelming positive demand, we have extended the availability of the Ansible Lightspeed Technical Preview from December 31, 2023 to <b>February 29, 2024</b>.</p>
         </div>
         <br />
+        {% endif %}
+        {% if not use_tech_preview %}
+        <div class="pf-c-alert pf-m-info" aria-label="Information alert">
+          <div class="pf-c-alert__icon">
+            <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+          </div>
+          <p class="pf-c-alert__title">
+             The Tech Preview is no longer available, please <a class="pf-l-level__item" href="https://www.ansible.com/blog/topic/ansible-lightspeed/" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span>read the blog</a> for further details.
+          </p>
+        </div>
+        <br/ >
+        {% endif %}
         {% endblock banner %}
         {% if messages %}
             <ul class="messages">

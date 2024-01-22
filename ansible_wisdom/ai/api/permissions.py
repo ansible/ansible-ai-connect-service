@@ -1,5 +1,6 @@
 from ai.api.aws.wca_secret_manager import Suffixes
 from django.apps import apps
+from django.conf import settings
 from rest_framework import permissions
 
 
@@ -78,3 +79,20 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
         return org_has_api_key
+
+
+# See: https://issues.redhat.com/browse/AAP-19427
+class BlockUserWithoutSeat(permissions.BasePermission):
+    """
+    Block access to un-seated users when Tech Preview is finished
+    """
+
+    code = 'permission_denied__user_with_no_seat'
+    message = "User doesn't have access to the IBM watsonx Code Assistant."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+            return True
+
+        return user.rh_user_has_seat

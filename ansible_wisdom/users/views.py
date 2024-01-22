@@ -27,7 +27,7 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["documentation_url"] = settings.DOCUMENTATION_URL
+        context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -40,7 +40,11 @@ class HomeView(TemplateView):
             )
             context["org_has_api_key"] = org_has_api_key
 
-        if self.request.user.is_authenticated and self.request.user.rh_user_has_seat:
+        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and not (
+            self.request.user.is_authenticated and self.request.user.rh_user_has_seat
+        ):
+            context["documentation_url"] = settings.DOCUMENTATION_URL
+        else:
             context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         return context
