@@ -31,7 +31,7 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please log in using the button below.")
         self.assertNotContains(response, "Role:")
-        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
 
@@ -64,7 +64,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
-        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
@@ -74,7 +74,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
-        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title")
         self.assertContains(response, "Admin Portal")
 
 
@@ -123,7 +123,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(
             response, "Red Hat Ansible Lightspeed with IBM watsonx Code Assistant</h1>"
         )
-        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
@@ -134,7 +134,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role: licensed user")
         self.assertContains(response, "your organization has configured a commercial model.")
-        self.assertNotContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title")
         self.assertNotContains(response, "Admin Portal")
 
 
