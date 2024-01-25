@@ -7,6 +7,7 @@ from ai.api.utils.segment import (
     base_send_segment_event,
     redact_seated_users_data,
     send_segment_event,
+    send_segment_group,
 )
 from ai.api.utils.segment_analytics_telemetry import get_segment_analytics_client
 from django.test import override_settings
@@ -255,6 +256,18 @@ class TestSegment(TestCase):
         self.assertEqual(
             redact_seated_users_data(test_data, ALLOW_LIST['contentmatch']), expected_result
         )
+
+    @mock.patch("ai.api.utils.segment.analytics.group")
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_send_segment_group(self, group_method):
+        user = Mock()
+        group_type = 'RH Org'
+        group_value = '1234'
+        send_segment_group('rhsso-1234', group_type, group_value, user)
+        group_method.assert_called_once()
+        traits = group_method.call_args.args[2]
+
+        self.assertEqual(traits, {'group_type': group_type, 'group_value': group_value})
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')

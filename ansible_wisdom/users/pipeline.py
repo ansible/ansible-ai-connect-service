@@ -1,6 +1,7 @@
 import logging
 
 import jwt
+from ai.api.utils.segment import send_segment_group
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -105,6 +106,9 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         id=backend.id_token['organization']['id']
     )[0]
     user.save()
+    send_segment_group(
+        f'rhsso-{user.organization.id}', 'Red Hat Organization', user.organization.id, user
+    )
     return {
         'organization_id': user.organization.id,
         'rh_user_is_org_admin': user.rh_user_is_org_admin,

@@ -15,6 +15,23 @@ logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
+def send_segment_group(group_id: str, group_type: str, group_value: str, user: User) -> None:
+    if not settings.SEGMENT_WRITE_KEY:
+        logger.debug("segment write key not set, skipping group")
+        return
+    try:
+        analytics.group(
+            str(user.uuid), group_id, {'group_type': group_type, 'group_value': group_value}
+        )
+
+        logger.info("sent segment group: %s", group_id)
+    except Exception as ex:
+        logger.exception(
+            f"An exception {ex.__class__} occurred in sending group to segment: %s",
+            group_id,
+        )
+
+
 def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> None:
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
