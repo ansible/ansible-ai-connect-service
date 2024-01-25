@@ -3,6 +3,7 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from organizations.models import Organization
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.timezone import now
@@ -15,6 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--username', type=str, help="User associated with the token")
+        parser.add_argument('--organization-id', type=str, help="Org id of the user")
         parser.add_argument(
             '--token-name', type=str, help="Name of the token", default=generate_token()
         )
@@ -28,7 +30,7 @@ class Command(BaseCommand):
             '--duration', type=int, help="How long the token is valid (minute)", default=60
         )
 
-    def handle(self, username, token_name, duration, create_user, groups, *args, **options):
+    def handle(self, username, organization_id, token_name, duration, create_user, groups, *args, **options):
         u = None
         if not token_name:
             raise CommandError("token_name cannot be empty")
@@ -40,8 +42,12 @@ class Command(BaseCommand):
             if create_user:
                 n = now()
                 u = User.objects.create_user(
-                    username=username, community_terms_accepted=n, commercial_terms_accepted=n
+                    username=username, external_username=username, community_terms_accepted=n, commercial_terms_accepted=n
                 )
+                if organization_id:
+                    u.organization = Organization.objects.get_or_create(id=organization_id)[0]
+                    u.save()
+
             else:
                 raise CommandError(f"Cannot find user {username}")
         else:
