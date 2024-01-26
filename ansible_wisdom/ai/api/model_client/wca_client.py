@@ -144,8 +144,9 @@ class WCAClient(ModelMeshClient):
 
         api_key: Optional[int] = None
         try:
-            api_key = self.get_api_key(rh_user_has_seat, organization_id)
-            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+            if rh_user_has_seat and organization_id:
+                api_key = self.get_api_key(rh_user_has_seat, organization_id)
+            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id) or ''
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
