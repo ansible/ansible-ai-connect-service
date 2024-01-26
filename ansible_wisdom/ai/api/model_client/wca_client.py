@@ -99,14 +99,14 @@ class WCAClient(ModelMeshClient):
         self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
 
     @staticmethod
-    def fatal_exception(exc):
+    def fatal_exception(exc) -> bool:
         """Determine if an exception is fatal or not"""
         if isinstance(exc, requests.RequestException):
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
             # retry on server errors and client errors
             # with 429 status code (rate limited),
             # don't retry on other client errors
-            return status_code and (400 <= status_code < 500) and status_code != 429
+            return bool(status_code and (400 <= status_code < 500) and status_code != 429)
         else:
             # retry on all other errors (e.g. network)
             return False
@@ -123,13 +123,16 @@ class WCAClient(ModelMeshClient):
     def on_backoff_ibm_cloud_identity_token(details):
         ibm_cloud_identity_token_retry_counter.inc()
 
-    def infer(self, model_input, model_id=None, suggestion_id=None):
-        logger.debug(f"Input prompt: {model_input}")
+    def infer(self, model_input, model_id: str = '', suggestion_id=None):
+        logger.error(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
         rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
-        organization_id = model_input.get("instances", [{}])[0].get("organization_id", None)
+        try:
+            organization_id = int(model_input["instances"][0]["organization_id"])
+        except (KeyError, IndexError, ValueError):
+            organization_id = None
 
         # WCA codegen fails if a multitask prompt includes the task preamble
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
@@ -139,9 +142,10 @@ class WCAClient(ModelMeshClient):
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
+        api_key: Optional[int] = None
         try:
             api_key = self.get_api_key(rh_user_has_seat, organization_id)
-            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id) or ''
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
@@ -243,7 +247,7 @@ class WCAClient(ModelMeshClient):
 
         return response.json()
 
-    def get_api_key(self, rh_user_has_seat: bool, organization_id: int):
+    def get_api_key(self, rh_user_has_seat: bool, organization_id: Optional[int]):
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -270,8 +274,8 @@ class WCAClient(ModelMeshClient):
         self,
         rh_user_has_seat: bool,
         organization_id: Optional[int],
-        requested_model_id: Optional[str],
-    ):
+        requested_model_id: str = '',
+    ) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
             return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
 
@@ -306,7 +310,7 @@ class WCAClient(ModelMeshClient):
         logger.error("Seated user's organization doesn't have default model ID set")
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
-    def codematch(self, model_input, model_id=None):
+    def codematch(self, model_input, model_id: str = ""):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
