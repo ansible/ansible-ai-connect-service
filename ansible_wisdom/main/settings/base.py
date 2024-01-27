@@ -143,6 +143,13 @@ else:
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
+AAP_API_URL = os.environ.get("AAP_API_URL")
+SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", 'True').lower() in ('true', '1', 't')
+SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
+SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
+SOCIAL_AUTH_AAP_SCOPE = ["read"]
+SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
+
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
@@ -164,6 +171,7 @@ AUTHENTICATION_BACKENDS = [
     if USE_GITHUB_TEAM
     else "social_core.backends.github.GithubOAuth2",
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
+    "users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
