@@ -22,6 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
+ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
+ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv('ANSIBLE_AI_MODEL_MESH_MODEL_NAME')
+
 # WCA
 ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
 ANSIBLE_WCA_FREE_API_KEY = os.getenv("ANSIBLE_WCA_FREE_API_KEY")
@@ -89,6 +92,8 @@ DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redh
 COMMERCIAL_DOCUMENTATION_URL = os.getenv(
     'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
 )
+
+TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if 'SOCIAL_AUTH_GITHUB_TEAM_KEY' in os.environ:
@@ -171,8 +176,8 @@ OAUTH2_PROVIDER = {
         'code-oss',
         'checode',
     ],
-    # ACCESS_TOKEN_EXPIRE_SECONDS = 36_000  # = 10 hours, default value
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 864_000,  # = 10 days
+    # 14 hours, to match the duration of the Red Hat SSO sessions
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 50_400,
 }
 
 #

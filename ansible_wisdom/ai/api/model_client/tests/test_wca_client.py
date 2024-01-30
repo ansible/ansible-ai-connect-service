@@ -146,6 +146,12 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaSecretManagerError):
             model_client.get_api_key(True, '123')
 
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='key')
+    def test_get_api_key_with_environment_override(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(True, 123)
+        self.assertEqual(api_key, 'key')
+
     @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
     def test_mock_wca_get_free_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
@@ -193,6 +199,18 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaModelIdNotFound):
             wca_client.get_model_id(True, 123, None)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='gemini')
+    def test_model_id_with_environment_override(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, 123, None)
+        self.assertEqual(model_id, 'gemini')
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='gemini')
+    def test_model_id_with_environment_and_user_override(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        model_id = wca_client.get_model_id(True, 123, 'bard')
+        self.assertEqual(model_id, 'bard')
 
     def test_fatal_exception(self):
         """Test the logic to determine if an exception is fatal or not"""

@@ -78,7 +78,7 @@ class ARICaller:
             try:
                 context_data = yaml.safe_load(context)
                 if isinstance(context_data, list) and any(
-                    play_keyword in context_data[0]
+                    play_keyword in context_data[-1]
                     for play_keyword in ["tasks", "pre_tasks", "post_tasks", "handlers"]
                 ):
                     is_playbook = True

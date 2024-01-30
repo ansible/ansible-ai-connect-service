@@ -440,7 +440,7 @@ class AttributionResponseSerializer(serializers.Serializer):
 
 class ContentMatchSerializer(serializers.Serializer):
     repo_name = serializers.CharField()
-    repo_url = serializers.URLField()
+    repo_url = serializers.URLField(allow_blank=True)
     path = serializers.CharField(allow_blank=True)
     license = serializers.CharField()
     data_source_description = serializers.CharField()

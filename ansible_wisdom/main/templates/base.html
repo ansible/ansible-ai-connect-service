@@ -9,6 +9,15 @@
     </head>
 
     <body>
+        {% block banner %}
+        <div class="pf-c-alert pf-m-warning" style="margin-top:3px;">
+            <div class="pf-c-alert__icon">
+                <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
+            </div>
+            <p class="pf-c-alert__title" style="font-weight: normal;"><b>NOTE</b>: Due to overwhelming positive demand, we have extended the availability of the Ansible Lightspeed Technical Preview from December 31, 2023 to <b>February 29, 2024</b>.</p>
+        </div>
+        <br />
+        {% endblock banner %}
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}

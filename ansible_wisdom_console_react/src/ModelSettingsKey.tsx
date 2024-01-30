@@ -1,6 +1,7 @@
+import { AxiosError } from "axios";
 import React, { useCallback, useMemo, useState } from "react";
 import "./ModelSettings.css";
-import { WcaKey, WcaKeyRequest } from "./api/types";
+import { APIException, WcaKey, WcaKeyRequest } from "./api/types";
 import { saveWcaKey } from "./api/api";
 import { HasError, NO_ERROR } from "./ErrorModal";
 import { DELAY } from "./api/globals";
@@ -29,14 +30,14 @@ export const ModelSettingsKey = (props: ModelSettingsKeyProps) => {
         .then((_) => {
           reload();
         })
-        .catch((error) => {
+        .catch((error: AxiosError<APIException, any>) => {
           if (error.response?.status === 400) {
             setIsKeyInvalid(true);
           } else {
             setKeyError({
               inError: true,
               message: error.message,
-              detail: error.response?.data?.detail,
+              detail: error.response?.data?.detail ?? "",
             });
           }
         })

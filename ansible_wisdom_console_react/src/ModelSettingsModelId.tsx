@@ -1,6 +1,7 @@
+import { AxiosError } from "axios";
 import React, { useCallback, useMemo, useState } from "react";
 import "./ModelSettings.css";
-import { WcaModelId, WcaModelIdRequest } from "./api/types";
+import { APIException, WcaModelId, WcaModelIdRequest } from "./api/types";
 import { saveWcaModelId } from "./api/api";
 import { HasError, NO_ERROR } from "./ErrorModal";
 import { DELAY } from "./api/globals";
@@ -32,14 +33,14 @@ export const ModelSettingsModelId = (props: ModelSettingsModelIdProps) => {
         .then((_) => {
           reload();
         })
-        .catch((error) => {
+        .catch((error: AxiosError<APIException, any>) => {
           if (error.response?.status === 400) {
             setIsModelIdInvalid(true);
           } else {
             setModelIdError({
               inError: true,
               message: error.message,
-              detail: error.response?.data?.detail,
+              detail: error.response?.data?.detail ?? "",
             });
           }
         })

@@ -25,6 +25,7 @@ django-health-check==3.17.0
 django-import-export==3.2.0
 django-oauth-toolkit==2.2.0
 django_prometheus==2.2.0
+django-test-migrations==1.3.0
 djangorestframework==3.14.0
 drf-spectacular==0.25.1
 grpcio==1.54.2
@@ -39,10 +40,10 @@ jwcrypto==1.5.1
 jinja2==3.1.3
 launchdarkly-server-sdk==8.1.1
 opensearch-py==2.1.1
-# pin pillow on 10.0.1 to address CVE-2023-4863
+# pin pillow on 10.2.0 to address CVE-2023-4863 and GHSA-3f63-hfp8-52jq
 # remove this once sentence-transformers or torchvision
-# is updated to properly pull a version of pillow > 10.0.1.
-pillow==10.0.1
+# is updated to properly pull a version of pillow > 10.2.0.
+pillow==10.2.0
 protobuf==4.22.1
 psycopg[binary]==3.1.8
 # pin pyarrow on 14.0.1 to address GHSA-5wvp-7f3h-6wmm

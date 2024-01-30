@@ -1,6 +1,7 @@
 import logging
 
 import jwt
+from ai.api.utils.segment import send_segment_group
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -105,6 +106,9 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         id=backend.id_token['organization']['id']
     )[0]
     user.save()
+    send_segment_group(
+        f'rhsso-{user.organization.id}', 'Red Hat Organization', user.organization.id, user
+    )
     return {
         'organization_id': user.organization.id,
         'rh_user_is_org_admin': user.rh_user_is_org_admin,
@@ -115,8 +119,8 @@ def redhat_organization(backend, user, response, *args, **kwargs):
 def _terms_of_service(strategy, user, backend, **kwargs):
     accepted = 'terms_accepted'
     is_commercial = user.rh_user_has_seat
-    if is_commercial:
-        # Commercial users are not presented with T&C page in login flow (new and existing users)
+    # Commercial & local users are not presented with T&C page in login flow (new & existing users)
+    if settings.TERMS_NOT_APPLICABLE or is_commercial:
         return {accepted: True}
 
     field_name = 'community_terms_accepted'
