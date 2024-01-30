@@ -53,7 +53,7 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        if user.organization is None:
+        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.organization is None:
             # We accept the Community users, the won't have access to WCA
             return True
         if user.rh_user_has_seat is True:
@@ -75,6 +75,8 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
+        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.organization is None:
+            return True
         if user.organization is None:
             # We accept the Community users, the won't have access to WCA
             return True
@@ -101,3 +103,18 @@ class BlockUserWithoutSeat(permissions.BasePermission):
             return True
 
         return user.rh_user_has_seat
+
+
+class BlockUserWhenOrgHasNoSubscription(permissions.BasePermission):
+    """
+    Ensure the user's Org has a subscription
+    """
+
+    code = 'permission_denied__no_licence'
+    message = "User doesn't have access to the IBM watsonx Code Assistant."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+            return True
+        return user.rh_org_has_subscription
