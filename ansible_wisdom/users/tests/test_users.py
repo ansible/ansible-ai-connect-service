@@ -337,10 +337,16 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
-class TestUserSeat(WisdomAppsBackendMocking):
+@override_settings(LAUNCHDARKLY_SDK_KEY=None)
+class TestUserSeatWithSeatSupport(WisdomAppsBackendMocking):
     def setUp(self) -> None:
         super().setUp()
-        cache.clear()
+        self.patcher = patch("users.models.feature_flags", spec=True)
+        self.mocked_feature_flags = self.patcher.start()
+        self.mocked_feature_flags.has_seat_support.return_value = True
+
+    def tearDown(self) -> None:
+        self.patcher.stop()
 
     def test_rh_user_has_seat_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
@@ -381,6 +387,12 @@ class TestUserSeat(WisdomAppsBackendMocking):
 
         self.assertTrue(user.rh_user_has_seat)
         self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
+
+    def test_rh_user_has_seat_when_seat_support_is_disabled(self):
+        self.mocked_feature_flags.has_seat_support.return_value = False
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+
+        self.assertTrue(user.rh_user_has_seat)
 
 
 class TestUsername(WisdomServiceLogAwareTestCase):
@@ -531,8 +543,16 @@ class TestUserModelMetrics(APITransactionTestCase):
 
 class TestTelemetryOptInOut(APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         cache.clear()
         feature_flags.FeatureFlags.instance = None
+        # TODO
+        self.patcher = patch("users.models.feature_flags", spec=True)
+        self.mocked_feature_flags = self.patcher.start()
+        self.mocked_feature_flags.has_seat_support.return_value = True
+
+    def tearDown(self) -> None:
+        self.patcher.stop()
 
     def test_github_user(self):
         user = create_user(

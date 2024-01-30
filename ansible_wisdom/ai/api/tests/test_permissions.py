@@ -8,6 +8,7 @@ from users.tests.test_users import create_user
 
 from ..permissions import (
     AcceptedTermsPermission,
+    BlockUserWhenOrgHasNoSubscription,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
@@ -188,4 +189,33 @@ class TestBlockUserWithoutSeat(WisdomAppsBackendMocking):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     def test_no_seat_users_are_not_allowed_without_tech_preview(self):
+        self.assertFalse(self.p.has_permission(self.request, None))
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+class TestBlockUserWhenOrgHasNoSubscription(WisdomAppsBackendMocking):
+    def setUp(self):
+        super().setUp()
+        self.user = create_user(provider="oidc")
+        self.user.rh_org_has_subscription = True
+        self.request = Mock()
+        self.request.user = self.user
+        self.p = BlockUserWhenOrgHasNoSubscription()
+
+    def tearDown(self):
+        self.user.delete()
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_accept_tech_preview_users(self):
+        self.user.rh_org_has_subscription = False
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_accept_users_with_rh_org(self):
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_accept_users_with_no_rh_org(self):
+        self.user.rh_org_has_subscription = False
         self.assertFalse(self.p.has_permission(self.request, None))

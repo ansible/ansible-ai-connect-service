@@ -474,3 +474,8 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
 )
+
+# NOTE: This key will be removed after the seat support removal
+ENABLE_SEAT_SUPPORT_DEFAULT_VALUE = (
+    os.getenv('ENABLE_SEAT_SUPPORT_DEFAULT_VALUE', 'True').lower() == 'true'
+)

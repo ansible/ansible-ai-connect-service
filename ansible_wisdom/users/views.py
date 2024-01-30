@@ -2,6 +2,7 @@ import logging
 
 from ai.api.aws.exceptions import WcaSecretManagerMissingCredentialsError
 from ai.api.aws.wca_secret_manager import Suffixes
+from ai.feature_flags import FeatureFlags
 from django.apps import apps
 from django.conf import settings
 from django.forms import Form
@@ -20,6 +21,7 @@ from .serializers import UserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
+feature_flags = FeatureFlags()
 
 
 class HomeView(TemplateView):
@@ -41,7 +43,9 @@ class HomeView(TemplateView):
             context["org_has_api_key"] = org_has_api_key
 
         if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and not (
-            self.request.user.is_authenticated and self.request.user.rh_user_has_seat
+            self.request.user.is_authenticated
+            and feature_flags.has_seat_support(self.request.user)
+            and self.request.user.rh_user_has_seat
         ):
             context["documentation_url"] = settings.DOCUMENTATION_URL
         else:

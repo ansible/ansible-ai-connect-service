@@ -1,6 +1,7 @@
 import logging
 import uuid
 
+from ai.feature_flags import FeatureFlags
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -12,6 +13,7 @@ from organizations.models import Organization
 from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
 logger = logging.getLogger(__name__)
+feature_flags = FeatureFlags()
 
 
 class NonClashingForeignKey(models.ForeignKey):
@@ -59,6 +61,8 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     @cached_property
     def rh_user_has_seat(self) -> bool:
         """True if the user comes from RHSSO and has a Wisdom Seat."""
+        if not feature_flags.has_seat_support(self):
+            return True
         # For dev/test purposes only:
         if self.groups.filter(name='Commercial').exists():
             return True

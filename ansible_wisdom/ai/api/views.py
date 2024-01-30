@@ -50,6 +50,7 @@ from .data.data_model import (
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     AcceptedTermsPermission,
+    BlockUserWhenOrgHasNoSubscription,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
@@ -119,6 +120,7 @@ class Completions(APIView):
         BlockUserWithoutSeat,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
+        BlockUserWhenOrgHasNoSubscription,
     ]
     required_scopes = ['read', 'write']
 
@@ -311,6 +313,7 @@ class Attributions(GenericAPIView):
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
         BlockUserWithoutSeat,
+        BlockUserWhenOrgHasNoSubscription,
     ]
     required_scopes = ['read', 'write']
 
@@ -404,6 +407,7 @@ class ContentMatches(GenericAPIView):
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
         BlockUserWithoutSeat,
+        BlockUserWhenOrgHasNoSubscription,
     ]
     required_scopes = ['read', 'write']
 

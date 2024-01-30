@@ -2,13 +2,14 @@ import json
 import logging
 import os.path
 from enum import Enum
+from typing import Any
 
+import users.models
 from django.conf import settings
 from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config
 from ldclient.integrations import Files
-from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,8 @@ class WisdomFlags(str, Enum):
     MODEL_NAME = "model_name"
     # Schema 2 Telemetry is enabled for an Organization
     SCHEMA_2_TELEMETRY_ORG_ENABLED = "schema_2_telemetry_org_enabled"
+    # seat support
+    HAS_SEAT_SUPPORT = "has_seat_support"
 
 
 class FeatureFlags:
@@ -58,7 +61,7 @@ class FeatureFlags:
                 )
                 logger.info("feature flag client initialized")
 
-    def get(self, name: str, user: User, default: str):
+    def get(self, name: str, user: "users.models.User", default: str) -> Any:
         if self.client:
             if user.is_anonymous:
                 user_context = Context.builder("AnonymousUser").anonymous(True).build()
@@ -93,3 +96,12 @@ class FeatureFlags:
             return self.client.variation(flag, context, None)
         else:
             raise Exception("FeatureFlag client is not initialized")
+
+    def has_seat_support(self, user: "users.models.User") -> bool:
+        if not self.client:
+            logger.info("feature flag client is not initialized")
+            return settings.ENABLE_SEAT_SUPPORT_DEFAULT_VALUE
+        return (
+            self.get(WisdomFlags.HAS_SEAT_SUPPORT, user, settings.ENABLE_SEAT_SUPPORT_DEFAULT_VALUE)
+            and True
+        )
