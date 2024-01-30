@@ -22,8 +22,6 @@ done
 /var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
 /var/www/venv/bin/python ansible_wisdom/manage.py createcachetable
 /var/www/venv/bin/python ansible_wisdom/manage.py collectstatic --noinput
-# TODO(rg): fix this
-/var/www/venv/bin/python ansible_wisdom/manage.py createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible code-oss://redhat.ansible checode://redhat.ansible" public authorization-code
 
 cd ansible_wisdom/
 /usr/local/bin/supervisord -n
