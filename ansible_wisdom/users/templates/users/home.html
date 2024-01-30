@@ -21,9 +21,8 @@
 
 
 {% if user.is_authenticated %}
-  {% if user.rh_org_has_subscription %}
-    {% if use_tech_preview %}
-      {% if not user.rh_user_has_seat and not org_has_api_key %}
+  {% if use_tech_preview %}
+    {% if not user.rh_user_has_seat %}
 <div class="pf-c-alert pf-m-info" aria-label="Information alert">
   <div class="pf-c-alert__icon">
     <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
@@ -33,8 +32,7 @@
     Contact your Red Hat account organization administrator for more information on how to assign a named seat.
   </p>
 </div>
-        {% endif %}
-      {% endif %}
+    {% endif %}
   {% endif %}
 {% endif %}
 
@@ -61,7 +59,7 @@
               <p>Contact your Red Hat Organization's administrator for more information.
             </div>
 
-{% elif user.is_authenticated and user.rh_org_has_subscription and not user.rh_user_has_seat %}
+{% elif user.is_authenticated and not use_tech_preview and user.rh_org_has_subscription and not user.rh_user_has_seat %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>

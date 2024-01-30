@@ -133,6 +133,22 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "pf-c-alert__title")
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertContains(response, "You will be limited to features of the Lightspeed")
+        self.assertNotContains(response, "fas fa-exclamation-circle")
+        self.assertNotContains(response, "Admin Portal")
+        self.assertNotContains(response, "The Tech Preview is no longer available")
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='valid')
+    @patch.object(users.models.User, "rh_org_has_subscription", True)
+    @patch.object(users.models.User, "rh_user_has_seat", False)
+    def test_rh_user_without_seat_with_secret_with_tech_preview(self):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Role:")
+        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
+        self.assertContains(response, "You will be limited to features of the Lightspeed")
+        self.assertNotContains(response, "fas fa-exclamation-circle")
         self.assertNotContains(response, "Admin Portal")
         self.assertNotContains(response, "The Tech Preview is no longer available")
 

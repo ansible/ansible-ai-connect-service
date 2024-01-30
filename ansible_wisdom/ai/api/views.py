@@ -403,6 +403,7 @@ class ContentMatches(GenericAPIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
+        BlockUserWithoutSeat,
     ]
     required_scopes = ['read', 'write']
 
