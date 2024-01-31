@@ -9,6 +9,23 @@ from oauth2_provider.settings import oauth2_settings
 
 
 class TestSettings(SimpleTestCase):
+    @classmethod
+    def reload_settings(cls):
+        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
+        settings_module = importlib.import_module(module_name)
+
+        importlib.reload(main.settings.base)
+        importlib.reload(settings_module)
+        importlib.reload(django.conf)
+        from django.conf import settings
+
+        settings.configure(default_settings=settings_module)
+        return settings
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.reload_settings()
+
     def test_oauth2(self):
         REFRESH_TOKEN_EXPIRE_SECONDS = oauth2_settings.REFRESH_TOKEN_EXPIRE_SECONDS
         self.assertGreater(REFRESH_TOKEN_EXPIRE_SECONDS, 0)
@@ -23,15 +40,8 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_with_id(self):
-        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
-        settings_module = importlib.import_module(module_name)
+        settings = self.reload_settings()
 
-        importlib.reload(main.settings.base)
-        importlib.reload(settings_module)
-        importlib.reload(django.conf)
-        from django.conf import settings
-
-        settings.configure(default_settings=settings_module)
         self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, 'teamkey')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, 'teamsecret')
@@ -48,15 +58,7 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_without_id(self):
-        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
-        settings_module = importlib.import_module(module_name)
-
-        importlib.reload(main.settings.base)
-        importlib.reload(settings_module)
-        importlib.reload(django.conf)
-        from django.conf import settings
-
-        settings.configure(default_settings=settings_module)
+        settings = self.reload_settings()
         self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, 'teamkey')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, 'teamsecret')
@@ -73,15 +75,7 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_empty_key(self):
-        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
-        settings_module = importlib.import_module(module_name)
-
-        importlib.reload(main.settings.base)
-        importlib.reload(settings_module)
-        importlib.reload(django.conf)
-        from django.conf import settings
-
-        settings.configure(default_settings=settings_module)
+        settings = self.reload_settings()
         self.assertEqual(settings.USE_GITHUB_TEAM, False)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_KEY, 'key')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SECRET, 'secret')
