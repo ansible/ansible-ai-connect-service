@@ -1,9 +1,10 @@
-from django.test import SimpleTestCase
+import importlib
 import os
 from unittest.mock import patch
-import importlib
-import main.settings.base
+
 import django.conf
+import main.settings.base
+from django.test import SimpleTestCase
 from oauth2_provider.settings import oauth2_settings
 
 
@@ -22,11 +23,15 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_with_id(self):
+        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
+        settings_module = importlib.import_module(module_name)
+
         importlib.reload(main.settings.base)
+        importlib.reload(settings_module)
         importlib.reload(django.conf)
         from django.conf import settings
 
-        settings.configure(default_settings=main.settings.base)
+        settings.configure(default_settings=settings_module)
         self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, 'teamkey')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, 'teamsecret')
@@ -43,11 +48,15 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_without_id(self):
+        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
+        settings_module = importlib.import_module(module_name)
+
         importlib.reload(main.settings.base)
+        importlib.reload(settings_module)
         importlib.reload(django.conf)
         from django.conf import settings
 
-        settings.configure(default_settings=main.settings.base)
+        settings.configure(default_settings=settings_module)
         self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, 'teamkey')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, 'teamsecret')
@@ -64,11 +73,15 @@ class TestSettings(SimpleTestCase):
         },
     )
     def test_github_auth_team_empty_key(self):
+        module_name = os.getenv("DJANGO_SETTINGS_MODULE")
+        settings_module = importlib.import_module(module_name)
+
         importlib.reload(main.settings.base)
+        importlib.reload(settings_module)
         importlib.reload(django.conf)
         from django.conf import settings
 
-        settings.configure(default_settings=main.settings.base)
+        settings.configure(default_settings=settings_module)
         self.assertEqual(settings.USE_GITHUB_TEAM, False)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_KEY, 'key')
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SECRET, 'secret')
