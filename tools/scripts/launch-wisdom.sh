@@ -21,6 +21,11 @@ done
 
 /var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
 /var/www/venv/bin/python ansible_wisdom/manage.py createcachetable
+if [ "${DEPLOYMENT_MODE}" == "upstream" ]; then
+    # for upstream, creating a out-of-box tesing user for starting quick
+    echo "Creating a testing user for upstream mode..."
+    /var/www/venv/bin/python ansible_wisdom/manage.py createtoken --username testuser --password testuser --token-name testuser_token --create-user
+fi
 /var/www/venv/bin/python ansible_wisdom/manage.py collectstatic --noinput
 
 cd ansible_wisdom/
