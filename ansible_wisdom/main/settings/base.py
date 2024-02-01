@@ -176,8 +176,7 @@ OAUTH2_PROVIDER = {
         'code-oss',
         'checode',
     ],
-    # 14 hours, to match the duration of the Red Hat SSO sessions
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 50_400,
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 864_000,  # = 10 days
 }
 
 #
