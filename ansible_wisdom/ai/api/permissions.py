@@ -12,7 +12,12 @@ class AcceptedTermsPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
-            if user.community_terms_accepted or user.rh_user_has_seat:
+            if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.community_terms_accepted:
+                return True
+            if user.rh_user_has_seat:
+                return True
+            if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+                # The permission is deprecated and should be removed
                 return True
         return False
 

@@ -7,6 +7,7 @@ from test_utils import WisdomAppsBackendMocking
 from users.tests.test_users import create_user
 
 from ..permissions import (
+    AcceptedTermsPermission,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
@@ -78,6 +79,41 @@ class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+
+@override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+class TestAcceptedTermsPermission(WisdomAppsBackendMocking):
+    def setUp(self):
+        super().setUp()
+        self.user = create_user(provider="oidc")
+        self.request = Mock()
+        self.request.user = self.user
+        self.p = AcceptedTermsPermission()
+
+    def tearDown(self):
+        self.user.delete()
+
+    def test_ensure_community_user_with_no_tc_is_blocked(self):
+        self.user.community_terms_accepted = False
+        self.assertFalse(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_ensure_community_user_with_no_tc_is_allowed_post_tech_preview(self):
+        self.user.community_terms_accepted = False
+        self.user.rh_user_has_seat = False
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_ensure_seated_user_with_no_tc_is_accepted_with_tech_preview(self):
+        self.user.community_terms_accepted = False
+        self.user.rh_user_has_seat = True
+        self.assertTrue(self.p.has_permission(self.request, None))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_ensure_seated_user_with_no_tc_is_accepted_post_tech_preview(self):
+        self.user.community_terms_accepted = False
+        self.user.rh_user_has_seat = True
+        self.assertTrue(self.p.has_permission(self.request, None))
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
