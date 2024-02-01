@@ -1,7 +1,7 @@
 # pin aiohttp on 3.8.6 to address GHSA-gfw2-4jvh-wgfg
 # remove this once datasets or fsspec is updated
 # to properly pull a version of aiohttp > 3.8.5.
-aiohttp==3.9.0
+aiohttp==3.9.3
 # pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
 # remove this once ansible-risk-insight is updated to properly
 # pull a version of ansible >= 8.5.0.
@@ -11,7 +11,7 @@ ansible==8.5.0
 # ansible-lint are updated to properly pull a version of
 # ansible-core > 2.15.0.
 ansible-core==2.15.8
-ansible-anonymizer==1.4.2
+ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
 boto3==1.26.84

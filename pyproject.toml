@@ -27,7 +27,7 @@ skip-string-normalization = true
 profile = "black"
 
 [tool.pyright]
-include = ["ansible_wisdom/ai/api/aws/wca_secret_manager.py", "ansible_wisdom/users/authz_checker.py"]
+include = ["ansible_wisdom/ai/api/aws/wca_secret_manager.py", "ansible_wisdom/users/authz_checker.py", "ansible_wisdom/ai/api/model_client/wca_client.py"]
 exclude = ["**/test_*.py", "ansible_wisdom/*/migrations/*.py"]
 
 reportMissingImports = true
