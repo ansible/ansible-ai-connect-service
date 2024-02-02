@@ -10,14 +10,14 @@ import "./i18n";
 import "./index.css";
 
 const userName = document.getElementById("user_name")?.innerText ?? "undefined";
-const telemetryOptEnabledInnerText = document.getElementById(
-  "telemetry_opt_enabled",
+const telemetrySchema2EnabledInnerText = document.getElementById(
+  "telemetry_schema_2_enabled",
 )?.innerText;
-const telemetryOptEnabled =
-  telemetryOptEnabledInnerText?.toLowerCase() === "true";
+const telemetrySchema2Enabled =
+  telemetrySchema2EnabledInnerText?.toLowerCase() === "true";
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <App userName={userName} telemetryOptEnabled={telemetryOptEnabled} />
+    <App userName={userName} telemetryOptEnabled={telemetrySchema2Enabled} />
   </StrictMode>,
 );

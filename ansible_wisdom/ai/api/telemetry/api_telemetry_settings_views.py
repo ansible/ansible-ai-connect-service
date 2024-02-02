@@ -8,7 +8,6 @@ from ai.api.permissions import (
 from ai.api.serializers import TelemetrySettingsRequestSerializer
 from ai.api.utils.segment import send_segment_event
 from ai.api.views import InternalServerError, ServiceUnavailable
-from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -48,9 +47,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: GET handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            raise ServiceUnavailable()
-
         exception = None
         organization = None
         start_time = time.time()
@@ -61,7 +57,13 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
+            if not organization.is_schema_2_telemetry_enabled:
+                raise ServiceUnavailable()
+
             return Response(status=HTTP_200_OK, data={'optOut': organization.telemetry_opt_out})
+
+        except ServiceUnavailable:
+            raise
 
         except Exception as e:
             exception = e
@@ -94,9 +96,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: POST handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            raise ServiceUnavailable()
-
         exception = None
         organization = None
         start_time = time.time()
@@ -106,6 +105,9 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             organization = request._request.user.organization
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
+
+            if not organization.is_schema_2_telemetry_enabled:
+                raise ServiceUnavailable()
 
             # Extract Telemetry settings from request
             telemetry_settings_serializer = TelemetrySettingsRequestSerializer(data=request.data)
@@ -129,6 +131,9 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             exception = e
             logger.info(e, exc_info=True)
             return Response(status=HTTP_400_BAD_REQUEST)
+
+        except ServiceUnavailable:
+            raise
 
         except Exception as e:
             exception = e

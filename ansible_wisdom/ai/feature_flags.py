@@ -13,10 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 class WisdomFlags(str, Enum):
-    MODEL_NAME = "model_name"  # model name selection
+    # model name selection
+    MODEL_NAME = "model_name"
+    # Schema 2 Telemetry is enabled for an Organization
+    SCHEMA_2_TELEMETRY_ORG_ENABLED = "schema_2_telemetry_org_enabled"
 
 
 class FeatureFlags:
+    instance = None
+
+    # Ensure FeatureFlags is a Singleton
+    def __new__(cls):
+        if cls.instance is not None:
+            return cls.instance
+        else:
+            inst = cls.instance = super().__new__(cls)
+            return inst
+
     def __init__(self):
         self.client = None
         if settings.LAUNCHDARKLY_SDK_KEY:
@@ -59,5 +72,14 @@ class FeatureFlags:
                 )
             logger.debug(f"retrieving feature flag {name}")
             return self.client.variation(name, user_context, default)
+        else:
+            raise Exception("feature flag client is not initialized")
+
+    def is_schema_2_telemetry_enabled(self, org_id: int) -> bool:
+        if self.client:
+            logger.debug(f"constructing User context for Organization '{org_id}'")
+            logger.debug(f"retrieving feature flag '{WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED}'")
+            context = Context.builder(str(org_id)).set("org_id", org_id).build()
+            return self.client.variation(WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED, context, False)
         else:
             raise Exception("feature flag client is not initialized")

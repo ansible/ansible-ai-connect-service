@@ -3,8 +3,10 @@ from unittest.mock import patch
 
 import ai.feature_flags as feature_flags
 from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ai.feature_flags import WisdomFlags
 from django.conf import settings
 from django.test import override_settings
+from ldclient import Context
 from ldclient.config import Config
 
 
@@ -51,3 +53,28 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         value = ff.get('model_name', self.user, 'default_value')
         self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
         self.assertEqual(value, 'dev_model')
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_feature_flags_is_schema_2_telemetry_disabled(self, LDClient):
+        LDClient.return_value.variation.return_value = False
+
+        ff = feature_flags.FeatureFlags()
+        self.assertFalse(ff.is_schema_2_telemetry_enabled(123))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_feature_flags_is_schema_2_telemetry_enabled(self, LDClient):
+        LDClient.return_value.variation.return_value = True
+
+        ff = feature_flags.FeatureFlags()
+        self.assertTrue(ff.is_schema_2_telemetry_enabled(123))
+
+        args = LDClient.return_value.variation.call_args_list[0]
+        name: str = args[0][0]
+        context: Context = args[0][1]
+        self.assertEqual(name, WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED)
+        self.assertEqual(context.kind, 'user')
+        self.assertEqual(context.key, '123')
+        self.assertEqual(context.custom_attributes['org_id'], 123)
+        self.assertFalse(args[0][2])

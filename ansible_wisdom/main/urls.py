@@ -58,14 +58,13 @@ urlpatterns = [
     path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
-if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-    urlpatterns += [
-        path(
-            f'api/{WISDOM_API_VERSION}/telemetry/',
-            TelemetrySettingsView.as_view(),
-            name='telemetry_settings',
-        ),
-    ]
+urlpatterns += [
+    path(
+        f'api/{WISDOM_API_VERSION}/telemetry/',
+        TelemetrySettingsView.as_view(),
+        name='telemetry_settings',
+    ),
+]
 
 if settings.DEBUG:
     urlpatterns += [

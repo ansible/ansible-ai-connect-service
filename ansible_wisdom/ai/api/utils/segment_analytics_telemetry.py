@@ -3,6 +3,7 @@ import logging
 from ai.api.utils.segment import base_send_segment_event, send_segment_event
 from attr import asdict
 from django.conf import settings
+from organizations.models import Organization
 from segment.analytics import Client
 from users.models import User
 
@@ -29,15 +30,18 @@ def send_segment_analytics_event(event_enum, event_payload_supplier, user: User)
     if not user.rh_user_has_seat:
         logger.info("Skipping analytics telemetry event for users that has no seat.")
         return
-    if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-        logger.info("Analytics telemetry not active.")
-        return
-    organization = user.organization
+
+    organization: Organization = user.organization
     if not organization:
         logger.info("Analytics telemetry not active, because of no organization assigned for user.")
         return
+
+    if not organization.is_schema_2_telemetry_enabled:
+        logger.info(f"Analytics telemetry not active for organization '{organization.id}'.")
+        return
+
     if organization.telemetry_opt_out:
-        logger.info("Analytics telemetry not active for organization.")
+        logger.info(f"Organization '{organization.id}' has opted out of Analytics telemetry.")
         return
 
     event_name = event_enum.value

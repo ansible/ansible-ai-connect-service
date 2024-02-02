@@ -69,8 +69,11 @@ class ConsoleView(ProtectedTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user:
-            context["user_name"] = self.request.user.username
-            context["rh_org_has_subscription"] = self.request.user.rh_org_has_subscription
-            context["telemetry_opt_enabled"] = settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED
+        user = self.request.user
+        if user:
+            context["user_name"] = user.username
+            context["rh_org_has_subscription"] = user.rh_org_has_subscription
+            organization = user.organization
+            if organization:
+                context["telemetry_schema_2_enabled"] = organization.is_schema_2_telemetry_enabled
         return context
