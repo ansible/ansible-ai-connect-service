@@ -23,7 +23,18 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
 
         ff = feature_flags.FeatureFlags()
         value = ff.get('model_name', self.user, 'default_value')
+        self.assert_test_feature_flags_with_sdk_key(LDClient, value)
 
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_feature_flags_with_sdk_key_without_user(self, LDClient):
+        LDClient.return_value.variation.return_value = 'server:port:model_name:index'
+
+        ff = feature_flags.FeatureFlags()
+        value = ff.get('model_name', None, 'default_value')
+        self.assert_test_feature_flags_with_sdk_key(LDClient, value)
+
+    def assert_test_feature_flags_with_sdk_key(self, LDClient, value):
         self.assertEqual(value, 'server:port:model_name:index')
         LDClient.assert_called_once()
         _, config_arg, kwargs = LDClient.mock_calls[0]

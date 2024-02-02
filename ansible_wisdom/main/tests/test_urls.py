@@ -37,7 +37,7 @@ class TestUrls(TestCase):
         )
         self.assertEqual(1, len(patterns))
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    @override_settings(TELEMETRY_SCHEMA_2_ENABLED=False)
     def test_telemetry_patterns_when_disabled(self):
         reload(main.urls)
         r = compile("api/v0/telemetry/")

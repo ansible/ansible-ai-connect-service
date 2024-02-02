@@ -62,7 +62,7 @@ urlpatterns = [
     path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
-if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
+if settings.TELEMETRY_SCHEMA_2_ENABLED:
     urlpatterns += [
         path(
             f'api/{WISDOM_API_VERSION}/telemetry/',

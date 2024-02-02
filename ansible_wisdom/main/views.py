@@ -66,5 +66,5 @@ class ConsoleView(ProtectedTemplateView):
         if self.request.user:
             context["user_name"] = self.request.user.username
             context["rh_org_has_subscription"] = self.request.user.rh_org_has_subscription
-            context["telemetry_opt_enabled"] = settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED
+            context["telemetry_schema_2_enabled"] = settings.TELEMETRY_SCHEMA_2_ENABLED
         return context

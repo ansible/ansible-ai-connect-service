@@ -6,6 +6,7 @@ from typing import Optional
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
+import ai.feature_flags as feature_flags
 from ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
@@ -551,7 +552,7 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get('org_telemetry_opt_out'))
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    @override_settings(TELEMETRY_SCHEMA_2_ENABLED=False)
     def test_rhsso_user_with_telemetry_feature_disabled(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -563,6 +564,37 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNone(r.data.get('org_telemetry_opt_out'))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_opted_out_with_override(self, LDClient):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=True,
+        )
+        LDClient.return_value.variation.return_value = str(user.organization.id)
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+
+    @override_settings(TELEMETRY_SCHEMA_2_ENABLED=False)
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_feature_disabled_with_override(self, LDClient):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=True,
+        )
+        LDClient.return_value.variation.return_value = str(user.organization.id)
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
 
     @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
     @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)

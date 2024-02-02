@@ -48,7 +48,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: GET handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
+        if not settings.TELEMETRY_SCHEMA_2_ENABLED:
             raise ServiceUnavailable()
 
         exception = None
@@ -94,7 +94,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: POST handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
+        if not settings.TELEMETRY_SCHEMA_2_ENABLED:
             raise ServiceUnavailable()
 
         exception = None

@@ -1,6 +1,7 @@
 import logging
 import os.path
 from enum import Enum
+from typing import Union
 
 from django.conf import settings
 from ldclient import Context
@@ -13,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class WisdomFlags(str, Enum):
-    MODEL_NAME = "model_name"  # model name selection
+    # model name selection
+    MODEL_NAME = "model_name"
+    # white list of org_id's for which Schema 2 Telemetry is enabled overriding all other settings.
+    SCHEMA_2_TELEMETRY_ORG_ID_WHITE_LIST = "schema_2_telemetry_org_id_white_list"
 
 
 class FeatureFlags:
@@ -42,9 +46,9 @@ class FeatureFlags:
                 )
                 logger.info("feature flag client initialized")
 
-    def get(self, name: str, user: User, default: str):
+    def get(self, name: str, user: Union[User, None], default: str):
         if self.client:
-            if user.is_anonymous:
+            if not user or user.is_anonymous:
                 user_context = Context.builder("AnonymousUser").anonymous(True).build()
             else:
                 groups = list(user.groups.values_list("name", flat=True))

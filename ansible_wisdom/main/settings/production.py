@@ -41,4 +41,4 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 
 # Disable Telemetry Opt In/Out settings in the Admin Portal
-ADMIN_PORTAL_TELEMETRY_OPT_ENABLED = os.getenv('ADMIN_PORTAL_TELEMETRY_OPT_ENABLED', False)
+TELEMETRY_SCHEMA_2_ENABLED = os.getenv('TELEMETRY_SCHEMA_2_ENABLED', False)

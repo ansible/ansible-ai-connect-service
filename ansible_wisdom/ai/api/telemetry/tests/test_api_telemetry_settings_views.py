@@ -36,7 +36,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         for permission in required_permissions:
             self.assertTrue(permission in view.permission_classes)
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    @override_settings(TELEMETRY_SCHEMA_2_ENABLED=False)
     def test_get_settings_when_feature_disabled(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))
@@ -80,7 +80,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         r = self.client.post(reverse('telemetry_settings'))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
+    @override_settings(TELEMETRY_SCHEMA_2_ENABLED=False)
     def test_set_settings_when_feature_disabled(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))
