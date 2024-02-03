@@ -157,7 +157,7 @@ fsspec[http]==2023.5.0
     #   huggingface-hub
 gitdb==4.0.10
     # via ansible-risk-insight
-grpcio==1.54.2
+grpcio==1.60.1
     # via -r requirements.in
 huggingface-hub==0.20.1
     # via
