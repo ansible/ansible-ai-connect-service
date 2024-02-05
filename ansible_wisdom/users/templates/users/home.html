@@ -3,9 +3,9 @@
 
 {% block content %}
 
-{% if user.is_authenticated and user.rh_org_has_subscription %}
-  {% if user.rh_user_is_org_admin %}
-    {% if not org_has_api_key %}
+{% if not user.is_authenticated %}
+<!-- Not Auth -->
+{% elif user.rh_org_has_subscription  and user.rh_user_is_org_admin and not org_has_api_key %}
 <div class="pf-c-alert pf-m-warning" aria-label="Warning alert">
   <div class="pf-c-alert__icon">
     <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
@@ -15,14 +15,17 @@
     <a href="/console">Click here</a> to access the Lightspeed admin portal to complete configuration.
   </p>
 </div>
-    {% endif %}
-  {% endif %}
-{% endif %}
-
-
-{% if user.is_authenticated %}
-  {% if use_tech_preview %}
-    {% if not user.rh_user_has_seat %}
+{% elif user.rh_org_has_subscription and not user.rh_user_is_org_admin and org_has_api_key and user.rh_user_has_seat %}
+<div class="pf-c-alert pf-m-info" aria-label="Information alert">
+  <div class="pf-c-alert__icon">
+    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+  </div>
+  <p class="pf-c-alert__title">
+    You do not have a licensed seat for Ansible Lightspeed and your organization has configured a commercial model.
+    Contact your Red Hat account organization administrator for more information on how to assign a named seat.
+  </p>
+</div>
+{% elif use_tech_preview and not user.rh_user_has_seat %}
 <div class="pf-c-alert pf-m-info" aria-label="Information alert">
   <div class="pf-c-alert__icon">
     <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
@@ -32,8 +35,6 @@
     Contact your Red Hat account organization administrator for more information on how to assign a named seat.
   </p>
 </div>
-    {% endif %}
-  {% endif %}
 {% endif %}
 
 <section class="pf-c-page__main-section pf-m-light">

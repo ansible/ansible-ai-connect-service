@@ -30,9 +30,9 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
     def test_unauthorized(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please log in using the button below.")
+        self.assertContains(response, "Please log in using the button below.", count=1)
         self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=1)
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -65,9 +65,9 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
-        self.assertContains(response, "pf-c-alert__title")
-        self.assertContains(response, "model settings have not been configured")
-        self.assertContains(response, "Admin Portal")
+        self.assertContains(response, "pf-c-alert__title", count=2)
+        self.assertContains(response, "model settings have not been configured", count=1)
+        self.assertContains(response, "Admin Portal", count=1)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch.object(users.models.User, "rh_org_has_subscription", False)
@@ -76,7 +76,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertNotContains(response, "Admin Portal")
         self.assertNotContains(
             response, "Your organization doesn't have access to Ansible Lightspeed."
@@ -104,7 +104,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: administrator, licensed user")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=1)
         self.assertContains(response, "Admin Portal")
 
 
@@ -130,7 +130,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "fas fa-exclamation-circle")
@@ -144,8 +144,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     def test_rh_user_without_seat_with_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
+        print(response.content)
         self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "fas fa-exclamation-circle")
@@ -160,7 +161,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=1)
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertNotContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "Admin Portal")
@@ -186,7 +187,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(
             response, "Red Hat Ansible Lightspeed with IBM watsonx Code Assistant</h1>"
         )
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
@@ -196,8 +197,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role: licensed user")
-        self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed.")
-        self.assertContains(response, "pf-c-alert__title")
+        self.assertNotContains(response, "and your organization has configured a commercial model.")
+        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
