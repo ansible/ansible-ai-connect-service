@@ -59,7 +59,7 @@ class DummySecretManager(BaseSecretManager):
 
             org_id = int(values[0])
 
-            fields = values[1].split("<|sepofid|>", 1)
+            fields = values[1].split("<sep>", 1)
             if len(fields) == 1 and fields[0]:
                 output[org_id] = {
                     Suffixes.API_KEY: DummySecretEntry.from_string("some-key"),

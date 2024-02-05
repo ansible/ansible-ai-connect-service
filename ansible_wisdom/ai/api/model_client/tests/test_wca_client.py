@@ -119,11 +119,11 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         api_key = model_client.get_api_key(False, None)
         self.assertEqual(api_key, 'abcdef')
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:free<|sepofid|>free')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:my-key<sep>my-optimized-model')
     def test_mock_wca_get_api_key(self):
         model_client = WCAClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(True, 11009103)
-        self.assertEqual(api_key, 'free')
+        self.assertEqual(api_key, 'my-key')
 
     @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
     def test_get_api_key_with_seat_without_org_id(self):
@@ -131,7 +131,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         api_key = model_client.get_api_key(True, None)
         self.assertEqual(api_key, 'abcdef')
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:12345<|sepofid|>my-model')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:12345<sep>my-model')
     def test_get_api_key_from_aws(self):
         secret_value = '12345'
         model_client = WCAClient(inference_url='http://example.com/')
@@ -164,20 +164,20 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id = wca_client.get_model_id(False, None, None)
         self.assertEqual(model_id, 'free')
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>sec')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<sep>my-great-model')
     def test_seated_with_empty_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         model_id = wca_client.get_model_id(
             rh_user_has_seat=True, organization_id=123, requested_model_id=''
         )
-        self.assertEqual(model_id, 'sec')
+        self.assertEqual(model_id, 'my-great-model')
 
     def test_seatless_cannot_pick_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(CustomModelBadRequest):
             wca_client.get_model_id(False, None, 'some-model')
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>org-model')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<sep>org-model')
     def test_seated_get_org_default_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         model_id = wca_client.get_model_id(True, 123, None)
@@ -690,9 +690,7 @@ class TestDummySecretManager(TestCase):
         got = DummySecretManager.load_secrets("123123:valid,23421344:whatever")
         self.assertEqual(got, expectation)
 
-    @override_settings(
-        WCA_SECRET_DUMMY_SECRETS='123:abcdef<|sepofid|>sec,12353:efreg<|sepofid|>sec'
-    )
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='123:abcdef<sep>sec,12353:efreg<sep>sec')
     def test_get_secret(self):
         sm = DummySecretManager()
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")
