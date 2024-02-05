@@ -61,7 +61,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
-    optOut = (
+    opt_out = (
         True
         if hasattr(user, 'organization')
         and user.organization is not None
@@ -69,7 +69,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
         else False
     )
 
-    if event['rh_user_has_seat'] and optOut:
+    if event['rh_user_has_seat'] and opt_out:
         allow_list = ALLOW_LIST.get(event_name)
 
         if allow_list:
