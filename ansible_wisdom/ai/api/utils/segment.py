@@ -62,7 +62,11 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
         event['timestamp'] = timestamp
 
     optOut = (
-        True if user.organization is not None and user.organization.telemetry_opt_out else False
+        True
+        if hasattr(user, 'organization')
+        and user.organization is not None
+        and user.organization.telemetry_opt_out
+        else False
     )
 
     if event['rh_user_has_seat'] and optOut:
