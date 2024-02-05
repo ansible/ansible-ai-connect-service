@@ -72,7 +72,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch.object(users.models.User, "rh_org_has_subscription", False)
     @patch.object(users.models.User, "rh_user_has_seat", False)
-    def test_rh_admin_without_seat_and_with_secret_with_tech_preview(self):
+    def test_rh_admin_without_seat_and_with_no_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
@@ -86,7 +86,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @patch.object(users.models.User, "rh_org_has_subscription", False)
     @patch.object(users.models.User, "rh_user_has_seat", False)
-    def test_rh_admin_without_seat_and_with_secret_without_tech_preview(self):
+    def test_rh_admin_without_seat_and_with_no_secret_no_sub_without_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Role:")
