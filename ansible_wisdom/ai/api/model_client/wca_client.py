@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import backoff
 import requests
@@ -34,6 +34,9 @@ from .exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
+
+if TYPE_CHECKING:
+    from ai.apps import AiConfig
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
@@ -256,8 +259,13 @@ class WCAClient(ModelMeshClient):
         if not rh_user_has_seat or organization_id is None:
             return self.free_api_key
 
+        ai_config = cast("AiConfig", apps.get_app_config("ai"))
+        secret_manager = ai_config.get_wca_secret_manager()
+        if not secret_manager:
+            logger.error("Error accessing the secret manager")
+            raise WcaKeyNotFound
+
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
             if api_key is not None:
                 return api_key["SecretString"]
@@ -296,8 +304,13 @@ class WCAClient(ModelMeshClient):
             # let them use what they ask for
             return requested_model_id
 
+        ai_config = cast("AiConfig", apps.get_app_config("ai"))
+        secret_manager = ai_config.get_wca_secret_manager()
+        if not secret_manager:
+            logger.error("Error accessing the secret manager")
+            raise WcaModelIdNotFound(model_id=requested_model_id)
+
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
             if model_id is not None:
                 return model_id["SecretString"]

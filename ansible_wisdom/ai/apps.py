@@ -1,12 +1,12 @@
 import logging
 
 from ansible_lint import lintpostprocessing
-from ansible_risk_insight.scanner import Config
+from ansible_risk_insight.scanner import Config  # type: ignore
 from django.apps import AppConfig
 from django.conf import settings
 from users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
-from ari import postprocessing
+from ari import postprocessing  # type: ignore
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
