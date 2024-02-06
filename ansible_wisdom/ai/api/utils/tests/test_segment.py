@@ -5,6 +5,7 @@ from ai.api.utils import segment_analytics_telemetry
 from ai.api.utils.seated_users_allow_list import ALLOW_LIST
 from ai.api.utils.segment import (
     base_send_segment_event,
+    is_opt_out,
     redact_seated_users_data,
     send_segment_event,
     send_segment_group,
@@ -185,6 +186,25 @@ class TestSegment(TestCase):
                 'ERROR:ai.api.utils.segment:It is not allowed to track'
                 + ' inlineSuggestionFeedback events for seated users',
             )
+
+    def test_is_user_opt_out_for_opt_out_org(self, *args):
+        org = Mock(telemetry_opt_out=True)
+        user = Mock(organization=org)
+        self.assertTrue(is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_opt_out_org(self, *args):
+        org = Mock(telemetry_opt_out=False)
+        user = Mock(organization=org)
+        self.assertFalse(is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_missing_opt_out_parameter(self, *args):
+        org = Mock(telemetry_opt_out=None)
+        user = Mock(organization=org)
+        self.assertFalse(is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_provided_org(self, *args):
+        user = Mock(organization=None)
+        self.assertFalse(is_opt_out(user))
 
     @mock.patch("ai.api.utils.segment.analytics.track")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)

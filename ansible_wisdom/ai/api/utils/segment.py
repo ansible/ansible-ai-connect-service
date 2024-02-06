@@ -61,13 +61,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
-    opt_out = (
-        True
-        if hasattr(user, 'organization')
-        and user.organization is not None
-        and user.organization.telemetry_opt_out
-        else False
-    )
+    opt_out = is_opt_out(user)
 
     if event['rh_user_has_seat'] and opt_out:
         allow_list = ALLOW_LIST.get(event_name)
@@ -79,6 +73,16 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
             logger.error(f'It is not allowed to track {event_name} events for seated users')
             return
     base_send_segment_event(event, event_name, user, analytics)
+
+
+def is_opt_out(user: User):
+    return (
+        True
+        if hasattr(user, 'organization')
+        and user.organization is not None
+        and user.organization.telemetry_opt_out
+        else False
+    )
 
 
 def base_send_segment_event(
