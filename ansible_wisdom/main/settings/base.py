@@ -87,16 +87,24 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
+
+ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
+    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'True').lower() == 'true'
+)
+
+
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
-DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
 COMMERCIAL_DOCUMENTATION_URL = os.getenv(
     'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
 )
-
+DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
-if os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY'):
+if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+    # No Github login after the Tech Preview
+    USE_GITHUB_TEAM = False
+elif os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY'):
     USE_GITHUB_TEAM = True
     SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
     SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')

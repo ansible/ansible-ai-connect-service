@@ -49,11 +49,7 @@ urlpatterns = [
     path('o/', include((base_urlpatterns, app_name), namespace='oauth2_provider')),
     path(
         'login/',
-        LoginView.as_view(
-            extra_context={
-                'use_github_team': settings.USE_GITHUB_TEAM,
-            },
-        ),
+        LoginView.as_view(),
         name='login',
     ),
     path('logout/', LogoutView.as_view(), name='logout'),

@@ -104,6 +104,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
             self.assertInLog('LOGIN successful', log)
 
 
+@override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
         class MockSession(dict):
@@ -243,6 +244,21 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 
     @override_settings(TERMS_NOT_APPLICABLE=True)
     def test_terms_of_service_with_override(self):
+        self.request.session['terms_accepted'] = False
+        result = _terms_of_service(
+            self.strategy,
+            self.user,
+            self.backend,
+            request=self.request,
+            current_partial=self.partial,
+        )
+        self.assertEqual(result, {'terms_accepted': True})
+        self.assertIsNone(self.strategy.redirect_url)
+        self.assertFalse(self.user.save.called)
+        self.assertIsNone(self.user.community_terms_accepted)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_terms_of_service_after_tech_preview(self):
         self.request.session['terms_accepted'] = False
         result = _terms_of_service(
             self.strategy,
