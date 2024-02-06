@@ -82,11 +82,6 @@ class WcaBadRequestException(BaseWisdomAPIException):
     default_detail = {"message": "WCA returned a bad request response."}
 
 
-class CustomModelBadRequestException(BaseWisdomAPIException):
-    status_code = 400
-    default_detail = {"message": "A WCA Model ID override was specified by an unlicensed user."}
-
-
 class WcaInvalidModelIdException(BaseWisdomAPIException):
     status_code = 403
     default_detail = {"message": "WCA Model ID is invalid. Please contact your administrator."}
