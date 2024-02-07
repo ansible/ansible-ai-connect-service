@@ -250,6 +250,25 @@ Create a local admin user:
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
+## Connect to a local model server
+
+To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
+
+1. Download the Mistral-7b-Instruct [llamafile](https://github.com/Mozilla-Ocho/llamafile?tab=readme-ov-file#other-example-llamafiles)
+1. Make it executable and run it (`$YOUR_REAL_IP` is your local IP address, NOT 127.0.0.1 or localhost)
+   ```bash
+   chmod +x ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile
+   ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile --host $YOUR_REAL_IP
+   ```
+1. Set the appropriate environment variables
+   ```bash
+   ANSIBLE_AI_MODEL_MESH_HOST=http://$YOUR_REAL_IP
+   ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=8080
+   ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
+   ANSIBLE_AI_MODEL_NAME=mistral-7b-instruct-v0.2.Q5_K_M.gguf
+   ENABLE_ARI_POSTPROCESS=False
+   ```
+
 ## <a name="aws-config">Use the WCA API Keys Manager</a>
 
 To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following

@@ -56,7 +56,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install coverage
+        pip install -r requirements-dev.txt
 
     - name: Retrieve ari knowledge base from s3
       run: |

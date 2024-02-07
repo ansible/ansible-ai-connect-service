@@ -17,7 +17,7 @@ ansible-lint==6.22.1
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.2
-datasets==2.10.1
+datasets==2.15.0
 # pin Django on 4.2.10 to address PYSEC-2024-28.
 Django==4.2.10
 django-deprecate-fields==0.1.1
