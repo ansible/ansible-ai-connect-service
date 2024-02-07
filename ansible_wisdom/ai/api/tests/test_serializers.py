@@ -170,10 +170,6 @@ class FeedbackRequestSerializerTest(TestCase):
             },
         )
 
-        # inlineSuggestion feedback raises exception when seat
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
-
         serializer = FeedbackRequestSerializer(
             context={'request': request},
             data={
@@ -184,10 +180,6 @@ class FeedbackRequestSerializerTest(TestCase):
                 }
             },
         )
-
-        # ansibleContent feedback raises exception when seat
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
 
         serializer = FeedbackRequestSerializer(
             context={'request': request},
