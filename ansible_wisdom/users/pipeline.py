@@ -119,6 +119,8 @@ def redhat_organization(backend, user, response, *args, **kwargs):
 def _terms_of_service(strategy, user, backend, **kwargs):
     accepted = 'terms_accepted'
     is_commercial = user.rh_user_has_seat
+    if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+        return {accepted: True}
     # Commercial & local users are not presented with T&C page in login flow (new & existing users)
     if settings.TERMS_NOT_APPLICABLE or is_commercial:
         return {accepted: True}

@@ -84,8 +84,7 @@ export WCA_SECRET_DUMMY_SECRETS="11009103:valid"
 ```
 In this example, `11009103`` is your organization id. In this case the model is set to `valid`.
 You can also use the following syntax to set both the model and set key_id:
-`WCA_SECRET_DUMMY_SECRETS='123:my-key<|sepofid|>sec'`
-
+`WCA_SECRET_DUMMY_SECRETS='11009103:ibm_api_key<sep>model_id<|sepofid|>model_name'`
 
 
 For deployment and RH SSO integration test/development, set

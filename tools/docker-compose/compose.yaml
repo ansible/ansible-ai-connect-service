@@ -3,6 +3,7 @@ services:
   django:
     user: "1000"
     platform: linux/amd64
+    image: localhost/docker-compose_django:latest
     build:
       context: $PWD
       dockerfile: wisdom-service.Containerfile

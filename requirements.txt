@@ -19,7 +19,7 @@ ansible-anonymizer==1.5.0
     # via -r requirements.in
 ansible-compat==4.1.10
     # via ansible-lint
-ansible-core==2.15.8
+ansible-core==2.15.9
     # via
     #   -r requirements.in
     #   ansible
@@ -70,7 +70,7 @@ click==8.1.3
     # via
     #   black
     #   nltk
-cryptography==41.0.6
+cryptography==42.0.2
     # via
     #   -r requirements.in
     #   ansible-core
@@ -94,7 +94,7 @@ dill==0.3.6
     # via
     #   datasets
     #   multiprocess
-django==4.2.7
+django==4.2.10
     # via
     #   -r requirements.in
     #   django-allow-cidr
@@ -320,7 +320,7 @@ pygments==2.15.1
     #   rich
 pyjwt==2.7.0
     # via social-auth-core
-pyopenssl==23.2.0
+pyopenssl==24.0.0
     # via -r requirements.in
 pyrfc3339==1.1
     # via launchdarkly-server-sdk

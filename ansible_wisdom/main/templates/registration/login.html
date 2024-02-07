@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+
 <section class="pf-c-page__main-section pf-m-light">
     <div class="pf-l-bullseye">
 
@@ -29,10 +30,12 @@
             <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
             {% endif %}
             {% if not user.is_authenticated %}
+            {% if use_tech_preview %}
             {% if use_github_team %}
             <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
             {% else %}
             <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+            {% endif %}
             {% endif %}
             {% endif %}
           </div>
