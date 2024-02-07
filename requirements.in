@@ -6,11 +6,11 @@ aiohttp==3.9.3
 # remove this once ansible-risk-insight is updated to properly
 # pull a version of ansible >= 8.5.0.
 ansible==8.5.0
-# pin ansible-core on 2.15.8 to address GHSA-7j69-qfc3-2fq9
+# pin ansible-core on 2.15.9 to address GHSA-7j69-qfc3-2fq9 and GHSA-h24r-m9qc-pvpg.
 # remove this once ansible-anonymizer, ansible-risk-insight and
 # ansible-lint are updated to properly pull a version of
-# ansible-core > 2.15.0.
-ansible-core==2.15.8
+# ansible-core > 2.15.8.
+ansible-core==2.15.9
 ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
@@ -18,7 +18,8 @@ boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.2
 datasets==2.10.1
-Django==4.2.7
+# pin Django on 4.2.10 to address PYSEC-2024-28.
+Django==4.2.10
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
