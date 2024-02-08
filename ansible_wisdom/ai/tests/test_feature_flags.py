@@ -74,7 +74,7 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         name: str = args[0][0]
         context: Context = args[0][1]
         self.assertEqual(name, WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED)
-        self.assertEqual(context.kind, 'user')
+        self.assertEqual(context.kind, 'organization')
         self.assertEqual(context.key, '123')
         self.assertEqual(context.custom_attributes['org_id'], 123)
         self.assertFalse(args[0][2])

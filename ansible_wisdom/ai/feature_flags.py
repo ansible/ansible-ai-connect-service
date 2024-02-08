@@ -79,7 +79,9 @@ class FeatureFlags:
         if self.client:
             logger.debug(f"constructing User context for Organization '{org_id}'")
             logger.debug(f"retrieving feature flag '{WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED}'")
-            context = Context.builder(str(org_id)).set("org_id", org_id).build()
+            context = (
+                Context.builder(str(org_id)).kind("organization").set("org_id", org_id).build()
+            )
             return self.client.variation(WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED, context, False)
         else:
             raise Exception("feature flag client is not initialized")
