@@ -4,6 +4,6 @@ services:
     platform: linux/x86_64
     image: registry.access.redhat.com/ubi9/ubi:latest
     volumes:
-      - $PWD:/var/www/wisdom
+      - $PWD:/var/www/wisdom:z
     command:
       - /var/www/wisdom/tools/scripts/pip-compile.sh
