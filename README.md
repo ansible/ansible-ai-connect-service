@@ -250,6 +250,20 @@ Create a local admin user:
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
+## Backup/restore the database (Podman)
+
+You can do a backup and restore the database with the following scripts:
+
+- `./tools/scripts/dump-db.sh`
+- `./tools/scripts/restore-db.sh`
+
+E.g:
+
+```bash
+./tools/scripts/dump-db.sh /tmp/my-backup.dump
+./tools/scripts/restore-db.sh /tmp/my-backup.dump
+```
+
 ## Connect to a local model server
 
 To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
