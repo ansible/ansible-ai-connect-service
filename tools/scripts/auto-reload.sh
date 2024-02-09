@@ -6,6 +6,10 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
+if [[ -n ${DJANGO_SETTINGS_MODULE} ]] && [[ ${DJANGO_SETTINGS_MODULE} == main.settings* ]]; then
+    export DJANGO_SETTINGS_MODULE=ansible_wisdom.${DJANGO_SETTINGS_MODULE}
+fi
+
 last_reload=$(date +%s)
 
 inotifywait -mrq -e create,delete,attrib,close_write,move --exclude '(.*/tests/.*|.*/migrations/.*|.*/flycheck.*)' $1 | while read directory action file; do

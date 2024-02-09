@@ -3,9 +3,10 @@ import os
 from unittest.mock import patch
 
 import django.conf
-import main.settings.base
 from django.test import SimpleTestCase
 from oauth2_provider.settings import oauth2_settings
+
+import ansible_wisdom.main.settings.base
 
 
 class TestSettings(SimpleTestCase):
@@ -14,7 +15,7 @@ class TestSettings(SimpleTestCase):
         module_name = os.getenv("DJANGO_SETTINGS_MODULE")
         settings_module = importlib.import_module(module_name)
 
-        importlib.reload(main.settings.base)
+        importlib.reload(ansible_wisdom.main.settings.base)
         importlib.reload(settings_module)
         importlib.reload(django.conf)
         from django.conf import settings

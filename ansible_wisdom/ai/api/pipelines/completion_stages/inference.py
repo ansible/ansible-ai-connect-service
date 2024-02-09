@@ -3,8 +3,14 @@ import logging
 import time
 from string import Template
 
-from ai.api.data.data_model import ModelMeshPayload
-from ai.api.model_client.exceptions import (
+from ansible_anonymizer import anonymizer
+from django.apps import apps
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Histogram
+
+from ansible_wisdom.ai.api.data.data_model import ModelMeshPayload
+from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -15,7 +21,7 @@ from ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.pipelines.common import (
     BaseWisdomAPIException,
     ModelTimeoutException,
     PipelineElement,
@@ -30,14 +36,9 @@ from ai.api.pipelines.common import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.utils.segment import send_segment_event
-from ai.feature_flags import FeatureFlags, WisdomFlags
-from ansible_anonymizer import anonymizer
-from django.apps import apps
-from django.conf import settings
-from django_prometheus.conf import NAMESPACE
-from prometheus_client import Histogram
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.feature_flags import FeatureFlags, WisdomFlags
 
 logger = logging.getLogger(__name__)
 

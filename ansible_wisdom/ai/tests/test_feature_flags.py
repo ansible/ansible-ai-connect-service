@@ -1,13 +1,14 @@
 from os import path
 from unittest.mock import patch
 
-import ai.feature_flags as feature_flags
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ai.feature_flags import WisdomFlags
 from django.conf import settings
 from django.test import override_settings
 from ldclient import Context
 from ldclient.config import Config
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.ai.feature_flags import WisdomFlags
 
 
 class TestFeatureFlags(WisdomServiceAPITestCaseBase):

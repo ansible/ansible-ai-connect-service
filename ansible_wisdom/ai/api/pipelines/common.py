@@ -2,10 +2,14 @@ import json
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from ai.api.model_client.exceptions import ModelTimeoutError, WcaException
 from django.conf import settings
 from prometheus_client import Counter
 from rest_framework.exceptions import APIException
+
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    ModelTimeoutError,
+    WcaException,
+)
 
 completions_return_code = Counter(
     'model_prediction_return_code', 'The return code of model prediction requests', ['code']

@@ -1,5 +1,7 @@
-from ai.api.aws.wca_secret_manager import Suffixes
-from ai.management.commands._base_wca_get_command import BaseWCAGetCommand
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.ai.management.commands._base_wca_get_command import (
+    BaseWCAGetCommand,
+)
 
 
 class Command(BaseWCAGetCommand):

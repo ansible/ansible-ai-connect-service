@@ -1,11 +1,13 @@
 import logging
 
-from ai.api import formatter as fmtr
-from ai.api.data.data_model import APIPayload
-from ai.api.pipelines.common import PipelineElement, process_error_count
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.pipelines.completion_stages.response import CompletionsPromptType
-from ai.api.serializers import CompletionRequestSerializer
+from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_wisdom.ai.api.data.data_model import APIPayload
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement, process_error_count
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.pipelines.completion_stages.response import (
+    CompletionsPromptType,
+)
+from ansible_wisdom.ai.api.serializers import CompletionRequestSerializer
 
 logger = logging.getLogger(__name__)
 

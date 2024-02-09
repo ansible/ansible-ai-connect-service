@@ -3,22 +3,25 @@ import logging
 import time
 import uuid
 
-from ai.api.utils import segment_analytics_telemetry
-from ai.api.utils.analytics_telemetry_model import (
-    AnalyticsRecommendationGenerated,
-    AnalyticsRecommendationTask,
-    AnalyticsTelemetryEvents,
-)
-from ai.api.utils.segment import send_segment_event
-from ai.api.utils.segment_analytics_telemetry import send_segment_analytics_event
 from ansible_anonymizer import anonymizer
 from django.conf import settings
 from django.http import QueryDict
 from django.urls import reverse
-from healthcheck.version_info import VersionInfo
 from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
+
+from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
+from ansible_wisdom.ai.api.utils.analytics_telemetry_model import (
+    AnalyticsRecommendationGenerated,
+    AnalyticsRecommendationTask,
+    AnalyticsTelemetryEvents,
+)
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.api.utils.segment_analytics_telemetry import (
+    send_segment_analytics_event,
+)
+from ansible_wisdom.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()

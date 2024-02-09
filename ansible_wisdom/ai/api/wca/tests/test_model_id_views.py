@@ -1,27 +1,31 @@
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
-import ai.api.aws.wca_secret_manager
-import ai.apps
-from ai.api.aws.exceptions import WcaSecretManagerError
-from ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ai.api.model_client.exceptions import WcaInvalidModelId, WcaUserTrialExpired
-from ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from organizations.models import Organization
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-from test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
+
+import ansible_wisdom.ai.api.aws.wca_secret_manager
+import ansible_wisdom.ai.apps
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_wisdom.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    WcaInvalidModelId,
+    WcaUserTrialExpired,
+)
+from ansible_wisdom.ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
 
 
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
@@ -34,11 +38,11 @@ class TestWCAModelIdView(
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
 
     def tearDown(self):
@@ -125,7 +129,7 @@ class TestWCAModelIdView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id'))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
+            self.assertInLog('ansible_wisdom.ai.api.aws.exceptions.WcaSecretManagerError', log)
             self.assert_segment_log(log, "modelIdGet", "WcaSecretManagerError")
 
     def test_set_model_id_authentication_error(self, *args):
@@ -164,7 +168,7 @@ class TestWCAModelIdView(
 
         # Set ModelId
         mock_secret_manager.get_secret.return_value = {'SecretString': 'someAPIKey'}
-        with self.assertLogs(logger='users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('wca_model_id'),
@@ -238,7 +242,7 @@ class TestWCAModelIdView(
                 content_type='application/json',
             )
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-            self.assertInLog('ai.api.aws.exceptions.WcaSecretManagerError', log)
+            self.assertInLog('ansible_wisdom.ai.api.aws.exceptions.WcaSecretManagerError', log)
             self.assert_segment_log(log, "modelIdSet", "WcaSecretManagerError")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -278,11 +282,11 @@ class TestWCAModelIdValidatorView(
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
 
     def tearDown(self):
@@ -328,7 +332,7 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-            self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
+            self.assertInLog("ansible_wisdom.ai.api.model_client.exceptions.WcaKeyNotFound", log)
             self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -346,7 +350,9 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assertInLog("ai.api.model_client.exceptions.WcaModelIdNotFound", log)
+            self.assertInLog(
+                "ansible_wisdom.ai.api.model_client.exceptions.WcaModelIdNotFound", log
+            )
             self.assert_segment_log(log, "modelIdValidate", "WcaModelIdNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -398,7 +404,7 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-            self.assertInLog("ai.api.model_client.exceptions.WcaKeyNotFound", log)
+            self.assertInLog("ansible_wisdom.ai.api.model_client.exceptions.WcaKeyNotFound", log)
             self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -415,7 +421,9 @@ class TestWCAModelIdValidatorView(
             self.assertEqual(
                 r.data['message'], 'User trial expired. Please contact your administrator.'
             )
-            self.assertInLog("ai.api.model_client.exceptions.WcaUserTrialExpired", log)
+            self.assertInLog(
+                "ansible_wisdom.ai.api.model_client.exceptions.WcaUserTrialExpired", log
+            )
             self.assert_segment_log(log, "trialExpired", None, type="modelIdValidate")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -428,7 +436,7 @@ class TestWCAModelIdValidatorView(
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.get(reverse('wca_model_id_validator'))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assertInLog("ai.api.model_client.exceptions.WcaInvalidModelId", log)
+            self.assertInLog("ansible_wisdom.ai.api.model_client.exceptions.WcaInvalidModelId", log)
             self.assert_segment_log(log, "modelIdValidate", "WcaInvalidModelId")
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from ai.api import formatter as fmtr
 from django.test import TestCase
+
+from ansible_wisdom.ai.api import formatter as fmtr
 
 
 class AnsibleDumperTestCase(TestCase):

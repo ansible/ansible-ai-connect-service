@@ -10,7 +10,7 @@ services:
     depends_on:
       - db
     volumes:
-      - $PWD/ansible_wisdom:/var/www/ansible_wisdom
+      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom
       - $PWD/ari/kb:/etc/ari/kb
       - $PWD/tools/scripts:/etc/wisdom/scripts
     ports:
@@ -19,7 +19,7 @@ services:
       - "8000"
       - "8001-8011" # django-prometheus
     environment:
-      - DJANGO_SETTINGS_MODULE=main.settings.development
+      - DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
       - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
       - ANSIBLE_AI_DATABASE_NAME=wisdom
       - ANSIBLE_AI_DATABASE_USER=wisdom

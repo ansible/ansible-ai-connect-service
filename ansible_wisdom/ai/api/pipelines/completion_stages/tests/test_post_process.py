@@ -3,7 +3,7 @@ Test post_process
 """
 from unittest.case import TestCase
 
-from ai.api.pipelines.completion_stages import post_process
+from ansible_wisdom.ai.api.pipelines.completion_stages import post_process
 
 
 class TrimWhitespaceLinesTest(TestCase):

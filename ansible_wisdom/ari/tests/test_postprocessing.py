@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ari import postprocessing
+from ansible_wisdom.ari import postprocessing
 
 
 class ARICallerTestCase(TestCase):

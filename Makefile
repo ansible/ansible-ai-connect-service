@@ -21,7 +21,7 @@ ifeq ($(ENVIRONMENT),development)
 	export ANSIBLE_AI_DATABASE_PASSWORD := wisdom
 	export ANSIBLE_AI_DATABASE_USER := wisdom
 	export ARI_KB_PATH := ../ari/kb/
-	export DJANGO_SETTINGS_MODULE := main.settings.development
+	export DJANGO_SETTINGS_MODULE := ansible_wisdom.main.settings.development
 	export ENABLE_ARI_POSTPROCESS := True
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
@@ -54,7 +54,7 @@ run-django: run-server DEPRECATED
 .PHONY: run-server
 # Run Django application
 run-server:
-	python ansible_wisdom/manage.py runserver
+	wisdom-manage runserver
 
 # DEPRECATED: Please use run-server-containerized instead
 run-django-container: run-server-containerized DEPRECATED
@@ -103,28 +103,28 @@ create-superuser-containerized:
 
 .PHONY: migrate
 migrate:
-	python ansible_wisdom/manage.py migrate
+	wisdom-manage migrate
 
 .PHONY: makemigrations
 makemigrations:
-	python ansible_wisdom/manage.py makemigrations
+	wisdom-manage makemigrations
 
 .PHONY: create-cachetable
 create-cachetable: migrate
-	python ansible_wisdom/manage.py createcachetable
+	wisdom-manage createcachetable
 
 .PHONY: create-superuser
 create-superuser: create-cachetable
-	python ansible_wisdom/manage.py createsuperuser --noinput --username admin --email admin@example.com
+	wisdom-manage createsuperuser --noinput --username admin --email admin@example.com
 
 .PHONY: create-application
 create-application: create-superuser
-	python ansible_wisdom/manage.py createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
+	wisdom-manage createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
 
 .PHONY: test
 test:
 	export MOCK_WCA_SECRETS_MANAGER=False && \
-	python ansible_wisdom/manage.py test $$WISDOM_TEST
+	wisdom-manage test $$WISDOM_TEST
 
 .PHONY: code-coverage
 # Run unit tests, calculate code coverage and display results in chrome

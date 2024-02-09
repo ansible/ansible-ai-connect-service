@@ -2,18 +2,19 @@
 
 import logging
 
-from ai.api.permissions import (
+from django.conf import settings
+from django.contrib.auth import views as auth_views
+from django.http import HttpResponseRedirect
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework.permissions import IsAuthenticated
+
+from ansible_wisdom.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from django.conf import settings
-from django.contrib.auth import views as auth_views
-from django.http import HttpResponseRedirect
-from main.base_views import ProtectedTemplateView
-from main.settings.base import SOCIAL_AUTH_OIDC_KEY
-from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from rest_framework.permissions import IsAuthenticated
+from ansible_wisdom.main.base_views import ProtectedTemplateView
+from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,9 @@
 from unittest.mock import patch
 
-import ai.feature_flags as feature_flags
 from django.test import TestCase, override_settings
-from organizations.models import Organization
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.organizations.models import Organization
 
 
 class TestOrganization(TestCase):

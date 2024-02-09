@@ -4,13 +4,6 @@ import time
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
-import ai.feature_flags as feature_flags
-from ai.api.aws.wca_secret_manager import WcaSecretManagerError
-from ai.api.model_client.wca_client import (
-    WCAClient,
-    WcaInferenceFailure,
-    WcaTokenFailure,
-)
 from django.apps import apps
 from django.core.cache import cache
 from django.test import override_settings
@@ -18,7 +11,18 @@ from django.urls import reverse
 from requests import Response
 from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
-from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.aws.wca_secret_manager import WcaSecretManagerError
+from ansible_wisdom.ai.api.model_client.wca_client import (
+    WCAClient,
+    WcaInferenceFailure,
+    WcaTokenFailure,
+)
+from ansible_wisdom.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceLogAwareTestCase,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +43,11 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         super().setUp()
         self.mock_wca_client_with(Mock(spec=WCAClient))
         self.mock_seat_checker_with(Mock())
-        self.model_server_patcher = patch('healthcheck.backends.requests')
+        self.model_server_patcher = patch('ansible_wisdom.healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
         self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
 
-        self.attribution_search_patcher = patch('ai.search.search')
+        self.attribution_search_patcher = patch('ansible_wisdom.ai.search.search')
         self.mock_ai_search = self.attribution_search_patcher.start()
         self.mock_ai_search.return_value = {"attributions": ["an attribution"]}
 
@@ -278,7 +282,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
             self.assertHealthCheckErrorInLog(
                 log,
-                'ai.api.aws.exceptions.WcaSecretManagerError',
+                'ansible_wisdom.ai.api.aws.exceptions.WcaSecretManagerError',
                 'secret-manager',
                 'unavailable: An error occurred',
             )
@@ -319,7 +323,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
             self.assertHealthCheckErrorInLog(
                 log,
-                'ai.api.model_client.exceptions.WcaTokenFailure',
+                'ansible_wisdom.ai.api.model_client.exceptions.WcaTokenFailure',
                 'wca',
                 {
                     "tokens": "unavailable: An error occurred",
@@ -349,7 +353,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
             self.assertHealthCheckErrorInLog(
                 log,
-                'ai.api.model_client.exceptions.WcaInferenceFailure',
+                'ansible_wisdom.ai.api.model_client.exceptions.WcaInferenceFailure',
                 'wca',
                 {"tokens": "ok", "models": "unavailable: An error occurred"},
             )
