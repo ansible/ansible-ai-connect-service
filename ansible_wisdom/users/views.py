@@ -77,10 +77,9 @@ class CurrentUserView(RetrieveAPIView):
         user_data = serializer.data
 
         # Enrich with Organisational data, if necessary
-        if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            organization = self.request.user.organization
-            if organization:
-                user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
+        organization = self.request.user.organization
+        if organization and organization.is_schema_2_telemetry_enabled:
+            user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
 
         return Response(user_data)
 

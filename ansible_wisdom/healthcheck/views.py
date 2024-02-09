@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 
-from ai.api.views import feature_flags
+from ai.feature_flags import FeatureFlags
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
@@ -22,10 +22,6 @@ from .version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 30
-
-
-def get_feature_flags():
-    return feature_flags
 
 
 class HealthCheckCustomView(MainView):
@@ -49,8 +45,8 @@ class HealthCheckCustomView(MainView):
         model_name = settings.ANSIBLE_AI_MODEL_NAME
         deployed_region = settings.DEPLOYED_REGION
         if settings.LAUNCHDARKLY_SDK_KEY:
-            feature_flags = get_feature_flags()
-            model_tuple = feature_flags.get("model_name", user, f".:.:{model_name}:.")
+            # Lazy instantiation of FeatureFlags to ensure it honours settings.LAUNCHDARKLY_SDK_KEY
+            model_tuple = FeatureFlags().get("model_name", user, f".:.:{model_name}:.")
             model_parts = model_tuple.split(':')
             if len(model_parts) == 4:
                 _, _, model_name, _ = model_parts

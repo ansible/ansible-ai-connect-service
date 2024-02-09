@@ -1,3 +1,4 @@
+import json
 import logging
 import os.path
 from enum import Enum
@@ -13,10 +14,23 @@ logger = logging.getLogger(__name__)
 
 
 class WisdomFlags(str, Enum):
-    MODEL_NAME = "model_name"  # model name selection
+    # model name selection
+    MODEL_NAME = "model_name"
+    # Schema 2 Telemetry is enabled for an Organization
+    SCHEMA_2_TELEMETRY_ORG_ENABLED = "schema_2_telemetry_org_enabled"
 
 
 class FeatureFlags:
+    instance = None
+
+    # Ensure FeatureFlags is a Singleton
+    def __new__(cls):
+        if cls.instance is not None:
+            return cls.instance
+        else:
+            inst = cls.instance = super().__new__(cls)
+            return inst
+
     def __init__(self):
         self.client = None
         if settings.LAUNCHDARKLY_SDK_KEY:
@@ -60,4 +74,20 @@ class FeatureFlags:
             logger.debug(f"retrieving feature flag {name}")
             return self.client.variation(name, user_context, default)
         else:
-            raise Exception("feature flag client is not initialized")
+            raise Exception("FeatureFlag client is not initialized")
+
+    def check_flag(self, flag: str, query_dict: dict):
+        """
+        Generic LaunchDarkly check
+        :param flag: The LaunchDarkly 'feature flag' name
+        :param query_dict: The LaunchDarkly Context attributes.
+                           These must include both 'kind' and 'key'.
+        :return: The LaunchDarkly response or None
+        """
+        if self.client:
+            logger.debug(f"Constructing context for '{json.dumps(query_dict)}'")
+            context = Context.from_dict(query_dict)
+            logger.debug(f"Retrieving feature flag '{flag}'")
+            return self.client.variation(flag, context, None)
+        else:
+            raise Exception("FeatureFlag client is not initialized")
