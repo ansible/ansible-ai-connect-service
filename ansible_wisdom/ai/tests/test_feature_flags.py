@@ -56,19 +56,27 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    def test_feature_flags_is_schema_2_telemetry_disabled(self, LDClient):
+    def test_feature_flags_check_flag_disabled(self, LDClient):
         LDClient.return_value.variation.return_value = False
 
         ff = feature_flags.FeatureFlags()
-        self.assertFalse(ff.is_schema_2_telemetry_enabled(123))
+        self.assertFalse(
+            ff.check_flag(
+                WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED, {'kind': 'organization', 'org_id': 123}
+            )
+        )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    def test_feature_flags_is_schema_2_telemetry_enabled(self, LDClient):
+    def test_feature_flags_check_flag_enabled(self, LDClient):
         LDClient.return_value.variation.return_value = True
 
         ff = feature_flags.FeatureFlags()
-        self.assertTrue(ff.is_schema_2_telemetry_enabled(123))
+        self.assertTrue(
+            ff.check_flag(
+                WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED, {'kind': 'organization', 'key': '123'}
+            )
+        )
 
         args = LDClient.return_value.variation.call_args_list[0]
         name: str = args[0][0]
@@ -76,5 +84,4 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         self.assertEqual(name, WisdomFlags.SCHEMA_2_TELEMETRY_ORG_ENABLED)
         self.assertEqual(context.kind, 'organization')
         self.assertEqual(context.key, '123')
-        self.assertEqual(context.custom_attributes['org_id'], 123)
         self.assertFalse(args[0][2])
