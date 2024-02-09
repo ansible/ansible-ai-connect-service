@@ -58,9 +58,7 @@ PyYAML==6.0
 requests==2.31.0
 segment-analytics-python==2.2.2
 sentence-transformers==2.2.2
-# Workaround until https://github.com/python-social-auth/social-app-django/pull/465
-# is released
-https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
+social-auth-app-django==5.4.0
 social-auth-core[openidconnect]==4.4.2
 # UPDATED MANUALLY: waiting for parent package to be updated
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl

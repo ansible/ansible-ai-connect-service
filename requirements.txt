@@ -417,7 +417,7 @@ smmap==5.0.0
     # via
     #   ansible-risk-insight
     #   gitdb
-social-auth-app-django @ https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
+social-auth-app-django==5.4.0
     # via -r requirements.in
 social-auth-core[openidconnect]==4.4.2
     # via
