@@ -7,7 +7,8 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from oauth2_provider.models import AccessToken
-from organizations.models import Organization
+
+from ansible_wisdom.organizations.models import Organization
 
 
 class TestCreateToken(TestCase):

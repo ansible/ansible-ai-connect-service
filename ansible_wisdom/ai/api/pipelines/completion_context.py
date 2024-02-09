@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Any, Union
 
-from ai.api.data.data_model import APIPayload
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from ansible_wisdom.ai.api.data.data_model import APIPayload
 
 
 @dataclass

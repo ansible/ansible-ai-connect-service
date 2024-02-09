@@ -10,9 +10,21 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import requests
-from ai.api.data.data_model import APIPayload
-from ai.api.model_client.base import ModelMeshClient
-from ai.api.model_client.exceptions import (
+from django.apps import apps
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.core.cache import cache
+from django.test import modify_settings, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from requests.exceptions import ReadTimeout
+from rest_framework.test import APITransactionTestCase
+from segment import analytics
+
+from ansible_wisdom.ai.api.data.data_model import APIPayload
+from ansible_wisdom.ai.api.model_client.base import ModelMeshClient
+from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaEmptyResponse,
@@ -22,31 +34,30 @@ from ai.api.model_client.exceptions import (
     WcaModelIdNotFound,
     WcaUserTrialExpired,
 )
-from ai.api.model_client.tests.test_wca_client import (
+from ansible_wisdom.ai.api.model_client.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
     MockResponse,
 )
-from ai.api.model_client.wca_client import WCAClient
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.pipelines.completion_stages.inference import get_model_client
-from ai.api.pipelines.completion_stages.post_process import trim_whitespace_lines
-from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
-from ai.api.pipelines.completion_stages.response import CompletionsPromptType
-from ai.api.serializers import AnsibleType, CompletionRequestSerializer, DataSource
-from ai.api.utils import segment_analytics_telemetry
-from django.apps import apps
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.core.cache import cache
-from django.test import modify_settings, override_settings
-from django.urls import reverse
-from django.utils import timezone
-from organizations.models import Organization
-from requests.exceptions import ReadTimeout
-from rest_framework.test import APITransactionTestCase
-from segment import analytics
-from test_utils import (
+from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.pipelines.completion_stages.inference import get_model_client
+from ansible_wisdom.ai.api.pipelines.completion_stages.post_process import (
+    trim_whitespace_lines,
+)
+from ansible_wisdom.ai.api.pipelines.completion_stages.pre_process import (
+    completion_pre_process,
+)
+from ansible_wisdom.ai.api.pipelines.completion_stages.response import (
+    CompletionsPromptType,
+)
+from ansible_wisdom.ai.api.serializers import (
+    AnsibleType,
+    CompletionRequestSerializer,
+    DataSource,
+)
+from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.test_utils import (
     WisdomAppsBackendMocking,
     WisdomLogAwareMixin,
     WisdomServiceLogAwareTestCase,
@@ -518,7 +529,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('main.middleware.send_segment_event')
+    @patch('ansible_wisdom.main.middleware.send_segment_event')
     def test_wca_compeletion_segment_event_with_invalid_modelid_error(
         self, mock_send_segment_event
     ):
@@ -572,7 +583,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
+    @patch("ansible_wisdom.ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial(self, mock_get_model_client):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start Apache\n",  # noqa: E501
@@ -613,7 +624,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     self.assertEqual(properties['promptType'], CompletionsPromptType.MULTITASK)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch("ai.api.pipelines.completion_stages.inference.get_model_client")
+    @patch("ansible_wisdom.ai.api.pipelines.completion_stages.inference.get_model_client")
     def test_multi_task_prompt_commercial_with_pii(self, mock_get_model_client):
         pii_task = "say hello fred@redhat.com"
         payload = {
@@ -1044,7 +1055,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     self.assertEqual(properties['modelName'], self.DUMMY_MODEL_ID)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.model_client.wca_client.WCAClient.infer')
+    @patch('ansible_wisdom.ai.api.model_client.wca_client.WCAClient.infer')
     def test_wca_client_errors(self, infer):
         """Run WCA client error scenarios for various errors."""
         for error, status_code_expected in [
@@ -1060,7 +1071,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             self.run_wca_client_error_case(status_code_expected)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.model_client.wca_client.WCAClient.infer')
+    @patch('ansible_wisdom.ai.api.model_client.wca_client.WCAClient.infer')
     def test_wca_client_postprocess_error(self, infer):
         infer.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
         self.run_wca_client_error_case(HTTPStatus.NO_CONTENT)
@@ -1333,7 +1344,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    @patch('ai.api.serializers.FeedbackRequestSerializer.is_valid')
+    @patch('ansible_wisdom.ai.api.serializers.FeedbackRequestSerializer.is_valid')
     def test_feedback_segment_ansible_content_500_error(self, is_valid):
         is_valid.side_effect = Exception('Dummy Exception')
         payload = {
@@ -1447,7 +1458,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertIsNotNone(event['timestamp'])
 
 
-@patch('ai.search.search')
+@patch('ansible_wisdom.ai.search.search')
 @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
 class TestAttributionsView(WisdomServiceAPITestCaseBase):
     def test_segment_events(self, mock_search):
@@ -1512,7 +1523,7 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
 
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
-    @patch('ai.search.search')
+    @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
         self.user.rh_user_has_seat = False
 
@@ -1558,7 +1569,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         self.assertEqual(content_match["license"], license)
         self.assertEqual(content_match["data_source_description"], "Ansible Galaxy roles")
 
-    @patch('ai.search.search')
+    @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_with_unseated_user_verify_single_task(self, mock_search):
         self.user.rh_user_has_seat = False
         self.client.force_authenticate(user=self.user)
@@ -1933,7 +1944,7 @@ class TestContentMatchesWCAViewErrors(
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaKeyNotFoundException", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.pipelines.common.WcaKeyNotFoundException", HTTPStatus.FORBIDDEN
         )
 
     def test_wca_contentmatch_with_empty_response(self):
@@ -1943,13 +1954,15 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaEmptyResponseException", HTTPStatus.NO_CONTENT
+            "ansible_wisdom.ai.api.pipelines.common.WcaEmptyResponseException",
+            HTTPStatus.NO_CONTENT,
         )
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaModelIdNotFoundException", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.pipelines.common.WcaModelIdNotFoundException",
+            HTTPStatus.FORBIDDEN,
         )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -1960,14 +1973,15 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.pipelines.common.WcaInvalidModelIdException",
+            HTTPStatus.FORBIDDEN,
         )
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.NO_CONTENT
+            "ansible_wisdom.ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.NO_CONTENT
         )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -1979,7 +1993,8 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaCloudflareRejectionException", HTTPStatus.BAD_REQUEST
+            "ansible_wisdom.ai.api.pipelines.common.WcaCloudflareRejectionException",
+            HTTPStatus.BAD_REQUEST,
         )
         self._assert_model_id_in_exception(self.payload["model"])
 
@@ -1987,7 +2002,8 @@ class TestContentMatchesWCAViewErrors(
     def test_wca_contentmatch_user_trial_expired_rejection(self):
         self.model_client.get_model_id = Mock(side_effect=WcaUserTrialExpired)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaUserTrialExpiredException", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.pipelines.common.WcaUserTrialExpiredException",
+            HTTPStatus.FORBIDDEN,
         )
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -1998,7 +2014,8 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.model_client.exceptions.WcaUserTrialExpired", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.model_client.exceptions.WcaUserTrialExpired",
+            HTTPStatus.FORBIDDEN,
         )
         self._assert_model_id_in_exception(self.payload["model"])
 
@@ -2010,20 +2027,22 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.WcaInvalidModelIdException", HTTPStatus.FORBIDDEN
+            "ansible_wisdom.ai.api.pipelines.common.WcaInvalidModelIdException",
+            HTTPStatus.FORBIDDEN,
         )
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_model_timeout(self):
         self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.ModelTimeoutException", HTTPStatus.NO_CONTENT
+            "ansible_wisdom.ai.api.pipelines.common.ModelTimeoutException", HTTPStatus.NO_CONTENT
         )
 
     def test_wca_contentmatch_with_connection_error(self):
         self.model_client.get_model_id = Mock(side_effect=ConnectionError)
         self._assert_exception_in_log_and_status_code(
-            "ai.api.pipelines.common.ServiceUnavailable", HTTPStatus.SERVICE_UNAVAILABLE
+            "ansible_wisdom.ai.api.pipelines.common.ServiceUnavailable",
+            HTTPStatus.SERVICE_UNAVAILABLE,
         )
 
     def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
@@ -2106,8 +2125,8 @@ class TestContentMatchesWCAViewSegmentEvents(
         }
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.send_segment_event')
-    @patch('ai.search.search')
+    @patch('ansible_wisdom.ai.api.views.send_segment_event')
+    @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_segment_events_with_unseated_user(
         self, mock_search, mock_send_segment_event
     ):
@@ -2154,7 +2173,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.send_segment_event')
+    @patch('ansible_wisdom.ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_seated_user(self, mock_send_segment_event):
         self.user.rh_user_has_seat = True
         self.model_client.get_model_id = Mock(return_value='model-id')
@@ -2201,7 +2220,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.send_segment_event')
+    @patch('ansible_wisdom.ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_invalid_modelid_error(
         self, mock_send_segment_event
     ):
@@ -2240,7 +2259,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.send_segment_event')
+    @patch('ansible_wisdom.ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_empty_response_error(
         self, mock_send_segment_event
     ):
@@ -2282,7 +2301,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.views.send_segment_event')
+    @patch('ansible_wisdom.ai.api.views.send_segment_event')
     def test_wca_contentmatch_segment_events_with_key_error(self, mock_send_segment_event):
         self.user.rh_user_has_seat = True
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)

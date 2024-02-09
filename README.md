@@ -597,7 +597,7 @@ ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
 ANSIBLE_AI_DATABASE_USER=wisdom
 ARI_KB_PATH=../ari/kb/
-DJANGO_SETTINGS_MODULE=main.settings.development
+DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
 ENABLE_ARI_POSTPROCESS=True
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
@@ -612,7 +612,7 @@ If you want to execute only specific file/class/method you can use $WISDOM_TEST 
 
 ```bash
 make test
-WISDOM_TEST="main.tests.test_views.LogoutTest" make test
+WISDOM_TEST="ansible_wisdom.main.tests.test_views.LogoutTest" make test
 ```
 
 Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.

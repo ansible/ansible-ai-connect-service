@@ -8,7 +8,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils.timezone import now
 from oauth2_provider.models import AccessToken
 from oauthlib.common import generate_token
-from organizations.models import Organization
+
+from ansible_wisdom.organizations.models import Organization
 
 
 class Command(BaseCommand):

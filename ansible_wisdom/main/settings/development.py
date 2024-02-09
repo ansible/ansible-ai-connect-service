@@ -57,7 +57,9 @@ if DEBUG:
         index = MIDDLEWARE.index(  # noqa: F405
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
-        MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
+        MIDDLEWARE[  # noqa: F405
+            index
+        ] = "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"
 
 CSP_REPORT_ONLY = True
 AUTHZ_BACKEND_TYPE = os.getenv("AUTHZ_BACKEND_TYPE") or "dummy"

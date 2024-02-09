@@ -5,15 +5,16 @@ from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID
 
-from ai.api.serializers import (
+from django.test import override_settings
+from rest_framework import serializers
+
+from ansible_wisdom.ai.api.serializers import (
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
     ContentMatchSerializer,
     FeedbackRequestSerializer,
     SuggestionQualityFeedback,
 )
-from django.test import override_settings
-from rest_framework import serializers
 
 
 class CompletionRequestSerializerTest(TestCase):

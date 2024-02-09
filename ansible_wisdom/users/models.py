@@ -7,7 +7,8 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
-from organizations.models import Organization
+
+from ansible_wisdom.organizations.models import Organization
 
 from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 

@@ -1,8 +1,9 @@
 import logging
 
 import grpc
-from ai.api.formatter import get_task_names_from_prompt
 from django.conf import settings
+
+from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError

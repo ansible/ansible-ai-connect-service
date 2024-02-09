@@ -1,17 +1,18 @@
 import logging
 
 import jwt
-from ai.api.utils.segment import send_segment_group
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 from jose import jwk
-from organizations.models import Organization
 from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
+
+from ansible_wisdom.ai.api.utils.segment import send_segment_group
+from ansible_wisdom.organizations.models import Organization
 
 logger = logging.getLogger(__name__)
 

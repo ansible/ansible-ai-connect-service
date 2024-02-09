@@ -2,12 +2,13 @@ from copy import copy
 from importlib import reload
 from unittest.mock import patch
 
-import ai.search as search
 import numpy as np
 from django.test import override_settings
 from opensearchpy import AWSV4SignerAuth, OpenSearch
 from rest_framework.test import APITestCase
 from sentence_transformers import SentenceTransformer
+
+import ansible_wisdom.ai.search as search
 
 
 class TestSearch(APITestCase):
@@ -72,8 +73,8 @@ class TestSearch(APITestCase):
                 self.assertIsNotNone(client)
                 self.assertIsNotNone(model)
 
-        with patch('ai.search.client', self.DummyClient()):
-            with patch('ai.search.model', self.DummySentenceTransformer()):
+        with patch('ansible_wisdom.ai.search.client', self.DummyClient()):
+            with patch('ansible_wisdom.ai.search.model', self.DummySentenceTransformer()):
                 ret = search.search(np.array(1))
                 self.assertIsNotNone(ret)
 
@@ -86,13 +87,13 @@ class TestSearch(APITestCase):
                 self.assertIsNone(model)
 
     def test_search(self):
-        with patch('ai.search.client', self.DummyClient()):
-            with patch('ai.search.model', self.DummySentenceTransformer()):
+        with patch('ansible_wisdom.ai.search.client', self.DummyClient()):
+            with patch('ansible_wisdom.ai.search.model', self.DummySentenceTransformer()):
                 ret = search.search(np.array(1))
                 self.assertIsNotNone(ret)
 
     def test_search_with_none_client(self):
-        with patch('ai.search.client', None):
+        with patch('ansible_wisdom.ai.search.client', None):
             with self.assertRaises(Exception):
                 search.search(np.array(1))
 

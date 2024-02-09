@@ -3,7 +3,7 @@ from health_check.plugins import plugin_dir
 
 
 class HealthCheckAppConfig(AppConfig):
-    name = 'healthcheck'
+    name = 'ansible_wisdom.healthcheck'
 
     def ready(self):
         from .backends import (

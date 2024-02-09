@@ -3,8 +3,11 @@ import shutil
 import tempfile
 from multiprocessing.pool import ThreadPool
 
-from ansible_lint.lintpostprocessing import TEMP_TASK_FOLDER, AnsibleLintCaller
-from test_utils import WisdomServiceLogAwareTestCase
+from ansible_wisdom.ansible_lint.lintpostprocessing import (
+    TEMP_TASK_FOLDER,
+    AnsibleLintCaller,
+)
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
 
 normal_sample_yaml = """---
 - name: Hello World Sample

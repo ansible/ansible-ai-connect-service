@@ -47,15 +47,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "social_django",
-    "users",
-    "organizations",
-    "ai",
+    "ansible_wisdom.users",
+    "ansible_wisdom.organizations",
+    "ansible_wisdom.ai",
     "django_prometheus",
     "drf_spectacular",
     "django_extensions",
     "health_check",
     "health_check.db",
-    "healthcheck",
+    "ansible_wisdom.healthcheck",
     "oauth2_provider",
     'import_export',
 ]
@@ -72,7 +72,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "main.middleware.SegmentMiddleware",
+    "ansible_wisdom.main.middleware.SegmentMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
     "csp.middleware.CSPMiddleware",
 ]
@@ -145,20 +145,20 @@ SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
 ]
 SOCIAL_AUTH_PIPELINE = (
-    'users.pipeline.block_auth_users',
+    'ansible_wisdom.users.pipeline.block_auth_users',
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    'main.pipeline.remove_pii',
+    'ansible_wisdom.main.pipeline.remove_pii',
     'social_core.pipeline.social_auth.auth_allowed',
-    'users.pipeline.github_get_username',
+    'ansible_wisdom.users.pipeline.github_get_username',
     # 'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
-    'users.pipeline.redhat_organization',
+    'ansible_wisdom.users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.load_extra_data',
-    'users.pipeline.terms_of_service',
+    'ansible_wisdom.users.pipeline.load_extra_data',
+    'ansible_wisdom.users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
@@ -195,7 +195,7 @@ OAUTH2_PROVIDER = {
 #   django.db.utils.ProgrammingError: relation "users_user" does not exist
 #
 if sys.argv[1:2] not in [['migrate'], ['test']]:
-    INSTALLED_APPS.append('wildcard_oauth2')
+    INSTALLED_APPS.append('ansible_wisdom.wildcard_oauth2')
     OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
 
 # OAUTH: todo
@@ -214,7 +214,7 @@ MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_THROTTLE_CLASSES': ['users.throttling.GroupSpecificThrottle'],
+    'DEFAULT_THROTTLE_CLASSES': ['ansible_wisdom.users.throttling.GroupSpecificThrottle'],
     'DEFAULT_THROTTLE_RATES': {
         'user': COMPLETION_USER_RATE_THROTTLE,
         'test': "100000/minute",
@@ -227,11 +227,11 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
+    'EXCEPTION_HANDLER': 'ansible_wisdom.main.exception_handler.exception_handler_with_error_type',
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
 
-ROOT_URLCONF = "main.urls"
+ROOT_URLCONF = "ansible_wisdom.main.urls"
 
 LOGGING = {
     "version": 1,
@@ -255,7 +255,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "users.signals": {
+        "ansible_wisdom.users.signals": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
@@ -284,7 +284,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "main.wsgi.application"
+WSGI_APPLICATION = "ansible_wisdom.main.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

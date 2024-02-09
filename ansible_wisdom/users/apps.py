@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class UsersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'users'
+    name = 'ansible_wisdom.users'
 
     def ready(self) -> None:
-        import users.signals  # noqa: F401
+        import ansible_wisdom.users.signals  # noqa: F401

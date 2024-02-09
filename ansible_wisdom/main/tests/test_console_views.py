@@ -1,18 +1,19 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-import ai.feature_flags as feature_flags
-from ai.api.permissions import (
+from django.test import override_settings
+from django.urls import resolve, reverse
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework.permissions import IsAuthenticated
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from django.test import override_settings
-from django.urls import resolve, reverse
-from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from organizations.models import Organization
-from rest_framework.permissions import IsAuthenticated
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.organizations.models import Organization
 
 
 class TestConsoleView(WisdomServiceAPITestCaseBase):

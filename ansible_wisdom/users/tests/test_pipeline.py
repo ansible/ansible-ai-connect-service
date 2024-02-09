@@ -10,8 +10,9 @@ from django.contrib.auth import get_user_model
 from django.test import override_settings
 from jose import constants, jwk
 from social_django.models import UserSocialAuth
-from test_utils import WisdomServiceLogAwareTestCase
-from users.pipeline import load_extra_data, redhat_organization
+
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_wisdom.users.pipeline import load_extra_data, redhat_organization
 
 
 def build_access_token(private_key, payload):
@@ -207,7 +208,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
                 {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"},
             )
         }
-        with self.assertLogs(logger='users.pipeline', level='ERROR') as log:
+        with self.assertLogs(logger='ansible_wisdom.users.pipeline', level='ERROR') as log:
             answer = redhat_organization(
                 backend=DummyRHBackend(public_key=self.jwks_public_key),
                 user=self.rh_user,

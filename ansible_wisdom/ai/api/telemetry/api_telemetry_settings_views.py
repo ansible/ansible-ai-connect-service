@@ -1,13 +1,6 @@
 import logging
 import time
 
-from ai.api.permissions import (
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.serializers import TelemetrySettingsRequestSerializer
-from ai.api.utils.segment import send_segment_event
-from ai.api.views import InternalServerError, ServiceUnavailable
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -15,7 +8,15 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
-from users.signals import user_set_telemetry_settings
+
+from ansible_wisdom.ai.api.permissions import (
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.serializers import TelemetrySettingsRequestSerializer
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.api.views import InternalServerError, ServiceUnavailable
+from ansible_wisdom.users.signals import user_set_telemetry_settings
 
 logger = logging.getLogger(__name__)
 

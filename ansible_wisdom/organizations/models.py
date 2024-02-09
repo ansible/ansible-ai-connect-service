@@ -17,7 +17,7 @@ class Organization(models.Model):
             return False
 
         # Avoid circular dependency issue with lazy import
-        from ai.feature_flags import FeatureFlags, WisdomFlags
+        from ansible_wisdom.ai.feature_flags import FeatureFlags, WisdomFlags
 
         feature_flags = FeatureFlags()
         return feature_flags.check_flag(

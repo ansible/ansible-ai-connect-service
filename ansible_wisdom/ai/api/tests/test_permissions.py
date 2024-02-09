@@ -3,8 +3,9 @@ from unittest.mock import Mock, patch
 
 from django.test import override_settings
 from django.urls import reverse
-from test_utils import WisdomAppsBackendMocking
-from users.tests.test_users import create_user
+
+from ansible_wisdom.test_utils import WisdomAppsBackendMocking
+from ansible_wisdom.users.tests.test_users import create_user
 
 from ..permissions import (
     AcceptedTermsPermission,

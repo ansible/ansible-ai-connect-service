@@ -1,18 +1,19 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-import ai.feature_flags as feature_flags
-from ai.api.permissions import (
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.db.utils import DatabaseError
 from django.test import override_settings
 from django.urls import resolve, reverse
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from organizations.models import Organization
 from rest_framework.permissions import IsAuthenticated
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.permissions import (
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.organizations.models import Organization
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
@@ -126,7 +127,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.assertFalse(r.data['optOut'])
 
         # Set settings
-        with self.assertLogs(logger='users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('telemetry_settings'),

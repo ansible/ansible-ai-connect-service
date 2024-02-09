@@ -8,7 +8,8 @@ from ldclient import Context
 from ldclient.client import LDClient
 from ldclient.config import Config
 from ldclient.integrations import Files
-from users.models import User
+
+from ansible_wisdom.users.models import User
 
 logger = logging.getLogger(__name__)
 

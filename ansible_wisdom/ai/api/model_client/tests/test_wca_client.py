@@ -6,13 +6,17 @@ from unittest.mock import Mock, patch
 
 import django.utils.timezone
 import requests
-from ai.api.aws.wca_secret_manager import (
+from django.test import TestCase, override_settings
+from prometheus_client import Counter, Histogram
+from requests.exceptions import HTTPError, ReadTimeout
+
+from ansible_wisdom.ai.api.aws.wca_secret_manager import (
     DummySecretEntry,
     DummySecretManager,
     Suffixes,
     WcaSecretManagerError,
 )
-from ai.api.model_client.exceptions import (
+from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCodeMatchFailure,
@@ -24,7 +28,7 @@ from ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
-from ai.api.model_client.wca_client import (
+from ansible_wisdom.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
     ibm_cloud_identity_token_hist,
@@ -34,10 +38,10 @@ from ai.api.model_client.wca_client import (
     wca_codematch_hist,
     wca_codematch_retry_counter,
 )
-from django.test import TestCase, override_settings
-from prometheus_client import Counter, Histogram
-from requests.exceptions import HTTPError, ReadTimeout
-from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
+from ansible_wisdom.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceLogAwareTestCase,
+)
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 

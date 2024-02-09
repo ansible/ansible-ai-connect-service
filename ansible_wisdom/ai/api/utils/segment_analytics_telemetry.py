@@ -1,11 +1,15 @@
 import logging
 
-from ai.api.utils.segment import base_send_segment_event, send_segment_event
 from attr import asdict
 from django.conf import settings
-from organizations.models import Organization
 from segment.analytics import Client
-from users.models import User
+
+from ansible_wisdom.ai.api.utils.segment import (
+    base_send_segment_event,
+    send_segment_event,
+)
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.users.models import User
 
 logger = logging.getLogger(__name__)
 
