@@ -155,7 +155,7 @@ class SuggestionQualityFeedbackTest(TestCase):
 
 
 class FeedbackRequestSerializerTest(TestCase):
-    def test_commercial_user_no_implicit_feedback(self):
+    def test_commercial_user_raises_exception_on_inlineSuggestion(self):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
@@ -170,6 +170,59 @@ class FeedbackRequestSerializerTest(TestCase):
             },
         )
 
+        # inlineSuggestion feedback raises exception when seat
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_commercial_user_not_opted_out_passes_on_inlineSuggestion(self):
+        org = Mock(telemetry_opt_out=False)
+        user = Mock(rh_user_has_seat=True, organization=org)
+        request = Mock(user=user)
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "inlineSuggestion": {
+                    "latency": 1000,
+                    "userActionTime": 5155,
+                    "action": "0",
+                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+                }
+            },
+        )
+
+        # inlineSuggestion feedback allowed is user seated but not opted Out
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
+
+    def test_is_user_opt_out_for_opt_out_org(self, *args):
+        org = Mock(telemetry_opt_out=True)
+        user = Mock(organization=org)
+        serializer = FeedbackRequestSerializer()
+        self.assertTrue(serializer.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_opt_out_org(self, *args):
+        org = Mock(telemetry_opt_out=False)
+        user = Mock(organization=org)
+        serializer = FeedbackRequestSerializer()
+        self.assertFalse(serializer.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_missing_opt_out_parameter(self, *args):
+        org = Mock(telemetry_opt_out=None)
+        user = Mock(organization=org)
+        serializer = FeedbackRequestSerializer()
+        self.assertFalse(serializer.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_provided_org(self, *args):
+        user = Mock(organization=None)
+        serializer = FeedbackRequestSerializer()
+        self.assertFalse(serializer.is_opt_out(user))
+
+    def test_commercial_user_raises_exception_on_ansibleContent(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+
         serializer = FeedbackRequestSerializer(
             context={'request': request},
             data={
@@ -180,6 +233,14 @@ class FeedbackRequestSerializerTest(TestCase):
                 }
             },
         )
+
+        # ansibleContent feedback raises exception when seat
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_commercial_user_allows_sentimentFeedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
 
         serializer = FeedbackRequestSerializer(
             context={'request': request},
