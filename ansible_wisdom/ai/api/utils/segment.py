@@ -4,10 +4,11 @@ from typing import Any, Dict
 
 from django.conf import settings
 from django.utils import timezone
-from healthcheck.version_info import VersionInfo
 from segment import analytics
 from segment.analytics import Client
-from users.models import User
+
+from ansible_wisdom.healthcheck.version_info import VersionInfo
+from ansible_wisdom.users.models import User
 
 from .seated_users_allow_list import ALLOW_LIST
 

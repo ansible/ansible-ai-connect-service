@@ -10,5 +10,5 @@ class WildcardOauth2ApplicationConfig(AppConfig):
     Configures wildcard_oauth2 as a Django app plugin
     """
 
-    name = 'wildcard_oauth2'
+    name = 'ansible_wisdom.wildcard_oauth2'
     verbose_name = "Wildcard OAuth2 Application"

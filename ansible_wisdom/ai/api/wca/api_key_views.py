@@ -1,17 +1,6 @@
 import logging
 import time
 
-from ai.api.aws.exceptions import WcaSecretManagerError
-from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.serializers import WcaKeyRequestSerializer
-from ai.api.utils.segment import send_segment_event
-from ai.api.views import ServiceUnavailable
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -25,7 +14,19 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
-from users.signals import user_set_wca_api_key
+
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.serializers import WcaKeyRequestSerializer
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.api.views import ServiceUnavailable
+from ansible_wisdom.users.signals import user_set_wca_api_key
 
 logger = logging.getLogger(__name__)
 

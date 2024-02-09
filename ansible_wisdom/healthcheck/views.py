@@ -2,7 +2,6 @@ import json
 import logging
 from datetime import datetime
 
-from ai.feature_flags import FeatureFlags
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
@@ -14,9 +13,11 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 from health_check.views import MainView
-from healthcheck.backends import BaseLightspeedHealthCheck
 from rest_framework import permissions
 from rest_framework.views import APIView
+
+from ansible_wisdom.ai.feature_flags import FeatureFlags
+from ansible_wisdom.healthcheck.backends import BaseLightspeedHealthCheck
 
 from .version_info import VersionInfo
 

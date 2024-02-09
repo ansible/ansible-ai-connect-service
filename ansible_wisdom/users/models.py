@@ -1,7 +1,6 @@
 import logging
 import uuid
 
-from ai.api.aws.wca_secret_manager import Suffixes
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -9,7 +8,9 @@ from django.db import models
 from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
-from organizations.models import Organization
+
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.organizations.models import Organization
 
 from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 

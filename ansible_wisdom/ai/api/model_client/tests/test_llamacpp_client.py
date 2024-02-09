@@ -2,11 +2,12 @@ import json
 from unittest.mock import Mock
 
 import responses
-from ai.api.model_client.exceptions import ModelTimeoutError
-from ai.api.model_client.llamacpp_client import LlamaCPPClient
 from django.test import TestCase, override_settings
 from requests.exceptions import ReadTimeout
 from responses import matchers
+
+from ansible_wisdom.ai.api.model_client.exceptions import ModelTimeoutError
+from ansible_wisdom.ai.api.model_client.llamacpp_client import LlamaCPPClient
 
 
 class TestLlamaCPPClient(TestCase):

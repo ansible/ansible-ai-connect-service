@@ -1,6 +1,6 @@
 from unittest import TestCase, mock
 
-import ai.api.utils.timing as timing
+import ansible_wisdom.ai.api.utils.timing as timing
 
 
 class TestTiming(TestCase):
@@ -13,8 +13,9 @@ class TestTiming(TestCase):
                 pass
             self.assertCountEqual(
                 [
-                    f"INFO:ai.api.utils.timing:[Timing] {activity} start.",
-                    f"INFO:ai.api.utils.timing:[Timing] {activity} finished (Took -1.00s)",
+                    f"INFO:ansible_wisdom.ai.api.utils.timing:[Timing]" f" {activity} start.",
+                    f"INFO:ansible_wisdom.ai.api.utils.timing:[Timing]"
+                    f" {activity} finished (Took -1.00s)",
                 ],
                 log.output,
             )

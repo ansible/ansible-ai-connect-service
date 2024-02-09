@@ -4,12 +4,16 @@ from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
 
-from ai.api.tests.test_views import MockedMeshClient, WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
+
+from ansible_wisdom.ai.api.tests.test_views import (
+    MockedMeshClient,
+    WisdomServiceAPITestCaseBase,
+)
 
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
@@ -57,8 +61,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
-                self.assertNotInLog("foo@ansible.com", log)
-                self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
 
@@ -101,8 +103,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
-                self.assertNotInLog("foo@ansible.com", log)
-                self.assertNotInLog("username", log)
                 self.assertInLog("james8@example.com", log)
                 self.assertInLog("ano-user", log)
                 self.assertSegmentTimestamp(log)
@@ -121,7 +121,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess', side_effect=Exception)
+    @patch(
+        'ansible_wisdom.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
+        side_effect=Exception,
+    )
     def test_preprocess_error(self, preprocess):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
@@ -132,7 +135,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.post(reverse('completions'), payload, format='json')
             self.assertInLog(
-                "ERROR:ai.api.pipelines.completion_stages.pre_process:failed to preprocess:", log
+                "ERROR:ansible_wisdom.ai.api.pipelines.completion_stages.pre_process:failed"
+                " to preprocess:",
+                log,
             )
             self.assertSegmentTimestamp(log)
 

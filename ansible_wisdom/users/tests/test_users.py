@@ -6,13 +6,6 @@ from typing import Optional
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-import ai.feature_flags as feature_flags
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -20,19 +13,30 @@ from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from organizations.models import Organization
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
-from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
-from users.auth import BearerTokenAuthentication
-from users.constants import (
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import APITransactionTestCase
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceLogAwareTestCase,
+)
+from ansible_wisdom.users.auth import BearerTokenAuthentication
+from ansible_wisdom.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from users.pipeline import _terms_of_service
-from users.views import TermsOfService
+from ansible_wisdom.users.pipeline import _terms_of_service
+from ansible_wisdom.users.views import TermsOfService
 
 
 def create_user(
@@ -101,7 +105,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
         self.assertEqual(bearer.keyword, "Bearer")
 
     def test_users_audit_logging(self):
-        with self.assertLogs(logger='users.signals', level='INFO') as log:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='INFO') as log:
             self.client.login(username=self.user.username, password=self.password)
             self.assertInLog('LOGIN successful', log)
 

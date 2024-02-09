@@ -2,7 +2,19 @@ import logging
 import time
 from http import HTTPStatus
 
-from ai.api.model_client.exceptions import (
+from ansible_anonymizer import anonymizer
+from django.apps import apps
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from prometheus_client import Histogram
+from rest_framework import serializers
+from rest_framework import status as rest_framework_status
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
@@ -12,7 +24,7 @@ from ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.pipelines.common import (
     InternalServerError,
     ModelTimeoutException,
     ServiceUnavailable,
@@ -26,19 +38,8 @@ from ai.api.pipelines.common import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ai.api.pipelines.completions import CompletionsPipeline
-from ansible_anonymizer import anonymizer
-from django.apps import apps
-from django.conf import settings
-from django_prometheus.conf import NAMESPACE
-from drf_spectacular.utils import OpenApiResponse, extend_schema
-from prometheus_client import Histogram
-from rest_framework import serializers
-from rest_framework import status as rest_framework_status
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from users.models import User
+from ansible_wisdom.ai.api.pipelines.completions import CompletionsPipeline
+from ansible_wisdom.users.models import User
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags
