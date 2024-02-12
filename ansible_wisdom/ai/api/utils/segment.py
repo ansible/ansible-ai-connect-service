@@ -61,18 +61,27 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     if 'timestamp' not in event:
         event['timestamp'] = timestamp
 
-    opt_out = is_opt_out(user)
+    if not event['rh_user_has_seat']:
+        base_send_segment_event(event, event_name, user, analytics)
+        return
 
-    if event['rh_user_has_seat'] and opt_out:
+    if (
+        event['rh_user_has_seat']
+        and not is_opt_out(user)
+        and event_name == 'inlineSuggestionFeedback'
+    ):
+        base_send_segment_event(event, event_name, user, analytics)
+        return
+
+    if event['rh_user_has_seat']:
         allow_list = ALLOW_LIST.get(event_name)
 
         if allow_list:
             event = redact_seated_users_data(event, allow_list)
+            base_send_segment_event(event, event_name, user, analytics)
         else:
             # If event should be tracked, please update ALLOW_LIST appropriately
             logger.error(f'It is not allowed to track {event_name} events for seated users')
-            return
-    base_send_segment_event(event, event_name, user, analytics)
 
 
 def is_opt_out(user: User):
