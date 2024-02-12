@@ -257,6 +257,29 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST['contentmatch']), expected_result
         )
 
+    def test_redact_trialExpired_response_data(self, *args):
+        test_data = {
+            'type': 'prediction',
+            'modelName': 'org-model-id',
+            'suggestionId': '1',
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 101,
+            'groups': ['g1', 'g2'],
+        }
+
+        expected_result = {
+            'type': 'prediction',
+            'suggestionId': '1',
+            'modelName': 'org-model-id',
+            'groups': ['g1', 'g2'],
+            'rh_user_has_seat': True,
+            'rh_user_org_id': 101,
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST['trialExpired']), expected_result
+        )
+
     @mock.patch("ai.api.utils.segment.analytics.group")
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_send_segment_group(self, group_method):

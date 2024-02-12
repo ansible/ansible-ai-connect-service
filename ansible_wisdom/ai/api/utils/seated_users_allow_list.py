@@ -273,4 +273,15 @@ ALLOW_LIST = {
         'opt_out': None,
         'timestamp': None,
     },
+    'trialExpired': {
+        'type': None,
+        'suggestionId': None,
+        'modelName': None,
+        'imageTags': None,
+        'hostname': None,
+        'groups': None,
+        'rh_user_has_seat': None,
+        'rh_user_org_id': None,
+        'timestamp': None,
+    },
 }
