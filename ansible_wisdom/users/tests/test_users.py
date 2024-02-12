@@ -3,6 +3,7 @@ import string
 from http import HTTPStatus
 from types import SimpleNamespace
 from typing import Optional
+from unittest import TestCase
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
@@ -33,6 +34,8 @@ from users.constants import (
 )
 from users.pipeline import _terms_of_service
 from users.views import TermsOfService
+
+from ..models import User
 
 
 def create_user(
@@ -65,6 +68,27 @@ def create_user(
             user.rh_user_is_org_admin = rh_user_is_org_admin
     user.save()
     return user
+
+
+class TestIsUserOptOut(TestCase):
+    def test_is_user_opt_out_for_opt_out_org(self):
+        org = Mock(telemetry_opt_out=True)
+        user = Mock(organization=org)
+        self.assertTrue(User.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_opt_out_org(self):
+        org = Mock(telemetry_opt_out=False)
+        user = Mock(organization=org)
+        self.assertFalse(User.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_missing_opt_out_parameter(self):
+        org = Mock(telemetry_opt_out=None)
+        user = Mock(organization=org)
+        self.assertFalse(User.is_opt_out(user))
+
+    def test_is_user_not_opt_out_for_not_provided_org(self):
+        user = Mock(organization=None)
+        self.assertFalse(User.is_opt_out(user))
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")

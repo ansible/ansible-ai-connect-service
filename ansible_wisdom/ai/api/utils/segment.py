@@ -67,7 +67,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
 
     if (
         event['rh_user_has_seat']
-        and not is_opt_out(user)
+        and not User.is_opt_out(user)
         and event_name == 'inlineSuggestionFeedback'
     ):
         base_send_segment_event(event, event_name, user, analytics)
@@ -82,16 +82,6 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
         else:
             # If event should be tracked, please update ALLOW_LIST appropriately
             logger.error(f'It is not allowed to track {event_name} events for seated users')
-
-
-def is_opt_out(user: User):
-    return (
-        True
-        if hasattr(user, 'organization')
-        and user.organization is not None
-        and user.organization.telemetry_opt_out
-        else False
-    )
 
 
 def base_send_segment_event(

@@ -326,7 +326,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
     def validate_inlineSuggestion(self, value):
         user = self.context.get('request').user
 
-        if user.rh_user_has_seat is True and self.is_opt_out(user):
+        if user.rh_user_has_seat is True and User.is_opt_out(user):
             raise serializers.ValidationError("invalid feedback type for user")
         return value
 
@@ -336,15 +336,6 @@ class FeedbackRequestSerializer(serializers.Serializer):
         if user.rh_user_has_seat:
             raise serializers.ValidationError("invalid feedback type for user")
         return value
-
-    def is_opt_out(self, user: User):
-        return (
-            True
-            if hasattr(user, 'organization')
-            and user.organization is not None
-            and user.organization.telemetry_opt_out
-            else False
-        )
 
 
 class AttributionRequestSerializer(serializers.Serializer):

@@ -196,29 +196,6 @@ class FeedbackRequestSerializerTest(TestCase):
         except Exception:
             self.fail("serializer is_valid should not have raised exception")
 
-    def test_is_user_opt_out_for_opt_out_org(self, *args):
-        org = Mock(telemetry_opt_out=True)
-        user = Mock(organization=org)
-        serializer = FeedbackRequestSerializer()
-        self.assertTrue(serializer.is_opt_out(user))
-
-    def test_is_user_not_opt_out_for_not_opt_out_org(self, *args):
-        org = Mock(telemetry_opt_out=False)
-        user = Mock(organization=org)
-        serializer = FeedbackRequestSerializer()
-        self.assertFalse(serializer.is_opt_out(user))
-
-    def test_is_user_not_opt_out_for_missing_opt_out_parameter(self, *args):
-        org = Mock(telemetry_opt_out=None)
-        user = Mock(organization=org)
-        serializer = FeedbackRequestSerializer()
-        self.assertFalse(serializer.is_opt_out(user))
-
-    def test_is_user_not_opt_out_for_not_provided_org(self, *args):
-        user = Mock(organization=None)
-        serializer = FeedbackRequestSerializer()
-        self.assertFalse(serializer.is_opt_out(user))
-
     def test_commercial_user_raises_exception_on_ansibleContent(self):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
