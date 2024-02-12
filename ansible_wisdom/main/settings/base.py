@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import sys
 from pathlib import Path
+from typing import Literal
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME") or "wisdom"
+ANSIBLE_AI_MODEL_MESH_HOST = os.environ["ANSIBLE_AI_MODEL_MESH_HOST"]
+ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.environ["ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT"]
+ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
+    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
+)
+
+ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock", "wca"] = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
+)
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL", "https"
+)
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
+    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
+    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+    else None
+)
+
+ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
 ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
 ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv('ANSIBLE_AI_MODEL_MESH_MODEL_NAME')
