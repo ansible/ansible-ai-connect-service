@@ -56,18 +56,6 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
         return True
 
-    # It should be static since we in tests we have AnonymUser and for this case
-    # we just use static User.is_opt_out method.
-    @staticmethod
-    def is_opt_out(user):
-        return (
-            True
-            if hasattr(user, 'organization')
-            and user.organization is not None
-            and user.organization.telemetry_opt_out
-            else False
-        )
-
     @cached_property
     def rh_user_has_seat(self) -> bool:
         """True if the user comes from RHSSO and has a Wisdom Seat."""
