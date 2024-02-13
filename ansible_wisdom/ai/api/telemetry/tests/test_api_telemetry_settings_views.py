@@ -18,6 +18,10 @@ from rest_framework.permissions import IsAuthenticated
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        feature_flags.FeatureFlags.instance = None
+
     def test_get_settings_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))

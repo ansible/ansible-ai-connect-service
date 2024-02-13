@@ -28,6 +28,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.organization.telemetry_opt_out = False
+        feature_flags.FeatureFlags.instance = None
 
     @staticmethod
     def on_segment_error(self, error, items):
