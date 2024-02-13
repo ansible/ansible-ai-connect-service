@@ -22,6 +22,7 @@ class WisdomFlags(str, Enum):
 
 class FeatureFlags:
     instance = None
+    client = None
 
     # Ensure FeatureFlags is a Singleton
     def __new__(cls):
@@ -32,7 +33,8 @@ class FeatureFlags:
             return inst
 
     def __init__(self):
-        self.client = None
+        if self.client is not None:
+            return
         if settings.LAUNCHDARKLY_SDK_KEY:
             if os.path.exists(settings.LAUNCHDARKLY_SDK_KEY):
                 data_source_callback = Files.new_data_source(

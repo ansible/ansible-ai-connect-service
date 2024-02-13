@@ -532,6 +532,7 @@ class TestUserModelMetrics(APITransactionTestCase):
 class TestTelemetryOptInOut(APITransactionTestCase):
     def setUp(self) -> None:
         cache.clear()
+        feature_flags.FeatureFlags.instance = None
 
     def test_github_user(self):
         user = create_user(

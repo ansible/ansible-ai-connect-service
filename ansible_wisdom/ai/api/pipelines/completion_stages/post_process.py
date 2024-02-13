@@ -11,15 +11,12 @@ from ai.api.pipelines.common import (
 )
 from ai.api.pipelines.completion_context import CompletionContext
 from ai.api.utils.segment import send_segment_event
-from ai.feature_flags import FeatureFlags
 from django.apps import apps
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
 logger = logging.getLogger(__name__)
-
-feature_flags = FeatureFlags()
 
 STRIP_YAML_LINE = '---\n'
 

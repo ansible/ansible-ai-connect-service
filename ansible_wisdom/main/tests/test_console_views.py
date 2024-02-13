@@ -16,6 +16,10 @@ from rest_framework.permissions import IsAuthenticated
 
 
 class TestConsoleView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        feature_flags.FeatureFlags.instance = None
+
     def test_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('console'))

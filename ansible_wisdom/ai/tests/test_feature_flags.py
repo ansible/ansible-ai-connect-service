@@ -11,6 +11,10 @@ from ldclient.config import Config
 
 
 class TestFeatureFlags(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        feature_flags.FeatureFlags.instance = None
+
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_feature_flags_without_sdk_key(self):
         ff = feature_flags.FeatureFlags()
