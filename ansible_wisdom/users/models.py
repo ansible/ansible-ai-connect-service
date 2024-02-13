@@ -27,12 +27,6 @@ class NonClashingForeignKey(models.ForeignKey):
 
 
 class User(ExportModelOperationsMixin('user'), AbstractUser):
-    class Meta:
-        # Without the following line, tests fail with:
-        #   RuntimeError: Model class ansible_wisdom.users.models.User doesn't declare
-        #   an explicit app_label and isn't in an application in INSTALLED_APPS.
-        app_label = 'users'
-
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     community_terms_accepted = models.DateTimeField(default=None, null=True)
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
