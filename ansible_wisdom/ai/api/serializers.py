@@ -13,7 +13,6 @@ from drf_spectacular.utils import (
     extend_schema_serializer,
 )
 from rest_framework import serializers
-from users.models import User
 
 from . import formatter as fmtr
 from .fields import AnonymizedCharField, AnonymizedPromptCharField
@@ -326,9 +325,16 @@ class FeedbackRequestSerializer(serializers.Serializer):
     def validate_inlineSuggestion(self, value):
         user = self.context.get('request').user
 
-        if user.rh_user_has_seat is True and User.is_opt_out(user):
+        if user.rh_user_has_seat is False:
+            return value
+        if (
+            user.organization
+            and user.organization.is_schema_2_telemetry_enabled
+            and user.organization.telemetry_opt_out is False
+        ):
+            return value
+        else:
             raise serializers.ValidationError("invalid feedback type for user")
-        return value
 
     def validate_ansibleContent(self, value):
         user = self.context.get('request').user
