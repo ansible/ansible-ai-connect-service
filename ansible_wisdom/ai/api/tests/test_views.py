@@ -13,7 +13,6 @@ import requests
 from ai.api.data.data_model import APIPayload
 from ai.api.model_client.base import ModelMeshClient
 from ai.api.model_client.exceptions import (
-    CustomModelBadRequest,
     ModelTimeoutError,
     WcaBadRequest,
     WcaEmptyResponse,
@@ -1050,7 +1049,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         """Run WCA client error scenarios for various errors."""
         for error, status_code_expected in [
             (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
-            (CustomModelBadRequest(), HTTPStatus.BAD_REQUEST),
             (WcaBadRequest(), HTTPStatus.NO_CONTENT),
             (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
             (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),

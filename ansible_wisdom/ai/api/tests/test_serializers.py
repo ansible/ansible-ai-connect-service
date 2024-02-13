@@ -89,7 +89,8 @@ class CompletionRequestSerializerTest(TestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.validate({'prompt': "#Install SSH\n"})
 
-    def test_validate_custom_model_no_seat(self):
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_validate_custom_model_no_seat_with_tech_preview(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(
@@ -100,6 +101,17 @@ class CompletionRequestSerializerTest(TestCase):
         # model raises exception when no seat
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_validate_custom_model_no_seat_without_tech_preview(self):
+        user = Mock(rh_user_has_seat=False)
+        request = Mock(user=user)
+        serializer = CompletionRequestSerializer(
+            context={'request': request},
+            data={'prompt': "- name: Install SSH\n", 'model': 'custom-model'},
+        )
+
+        self.assertTrue(serializer.is_valid())
 
 
 class ContentMatchRequestSerializerTest(TestCase):

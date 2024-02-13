@@ -5,7 +5,6 @@ from string import Template
 
 from ai.api.data.data_model import ModelMeshPayload
 from ai.api.model_client.exceptions import (
-    CustomModelBadRequest,
     ModelTimeoutError,
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -18,7 +17,6 @@ from ai.api.model_client.exceptions import (
 )
 from ai.api.pipelines.common import (
     BaseWisdomAPIException,
-    CustomModelBadRequestException,
     ModelTimeoutException,
     PipelineElement,
     ServiceUnavailable,
@@ -122,13 +120,6 @@ class InferenceStage(PipelineElement):
                 f" {json.dumps(exception.json_response)}"
             )
             raise WcaBadRequestException(cause=e)
-
-        except CustomModelBadRequest as e:
-            exception = e
-            logger.info(
-                f"unentitled custom model completion request for suggestion {payload.suggestionId}"
-            )
-            raise CustomModelBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e
