@@ -334,6 +334,8 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             self.assertInLog('GET TermsOfService was invoked without partial_token', log)
 
 
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS='1981:valid')
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
@@ -381,6 +383,37 @@ class TestUserSeat(WisdomAppsBackendMocking):
 
         self.assertTrue(user.rh_user_has_seat)
         self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
+
+    def test_rh_user_org_with_sub_but_no_seat_in_ams(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertTrue(user.rh_user_has_seat)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    def test_rh_user_org_with_sub_but_no_sec_and_tech_preview(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertFalse(user.rh_user_has_seat)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    def test_rh_user_org_with_sub_but_no_sec_after_tech_preview(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertTrue(user.rh_user_has_seat)
 
 
 class TestUsername(WisdomServiceLogAwareTestCase):
