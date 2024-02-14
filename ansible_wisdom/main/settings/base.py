@@ -29,7 +29,7 @@ ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
 )
 
-ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "mock", "wca"] = os.getenv(
+ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "dummy", "wca"] = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
 )
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
