@@ -7,6 +7,7 @@
     <div class="pf-l-bullseye">
 
         <div class="pf-l-bullseye__item">
+            {% if not deployment_mode == 'upstream' %}
             <div class="pf-c-empty-state">
                 <div class="pf-c-empty-state__content">
 
@@ -22,28 +23,57 @@
                     </div>
                     {% endif %}
 
-          <div class="pf-l-level" style="margin-top: 60px">
-            <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
-            <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
-            <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
-            {% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
-            <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
-            {% endif %}
-            {% if not user.is_authenticated %}
-            {% if use_tech_preview %}
-            {% if use_github_team %}
-            <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
-            {% else %}
-            <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
-            {% endif %}
-            {% endif %}
-            {% endif %}
-          </div>
+                    <div class="pf-l-level" style="margin-top: 60px">
+                        <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
+                        <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+                        <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+                        {% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+                        <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+                        {% endif %}
+                        {% if not user.is_authenticated %}
+                        {% if use_tech_preview %}
+                        {% if use_github_team %}
+                        <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+                        {% else %}
+                        <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                    </div>
 
                 </div>
             </div>
-        </div>
+            {% else %}
+            <div class="pf-l-bullseye__item">
+                {% if not user.is_authenticated %}
+                    {% if form.errors %}
+                        <p>Your username and password didn't match. Please try again.</p>
+                    {% endif %}
 
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <table>
+                        <caption>Login to the service</caption>
+                        <th>
+                            <td></td>
+                            <td></td>
+                        </th>
+                        <tr>
+                            <td>{{ form.username.label_tag }}</td>
+                            <td>{{ form.username }}</td>
+                        </tr>
+                        <tr>
+                            <td>{{ form.password.label_tag }}</td>
+                            <td>{{ form.password }}</td>
+                        </tr>
+                        </table>
+                        <input type="submit" value="login">
+                        <input type="hidden" name="next" value="{{ next }}">
+                    </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
     </div>
 </section>
 {% endblock content %}

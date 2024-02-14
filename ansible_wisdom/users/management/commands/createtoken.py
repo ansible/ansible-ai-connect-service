@@ -16,6 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--username', type=str, help="User associated with the token")
+        parser.add_argument('--password', type=str, help="User password when creating a new user")
         parser.add_argument('--organization-id', type=str, help="Org id of the user")
         parser.add_argument(
             '--token-name', type=str, help="Name of the token", default=generate_token()
@@ -31,7 +32,16 @@ class Command(BaseCommand):
         )
 
     def handle(
-        self, username, organization_id, token_name, duration, create_user, groups, *args, **options
+        self,
+        username,
+        password,
+        organization_id,
+        token_name,
+        duration,
+        create_user,
+        groups,
+        *args,
+        **options,
     ):
         u = None
         if not token_name:
@@ -40,11 +50,14 @@ class Command(BaseCommand):
             username = f"token_{token_name}"
 
         User = get_user_model()
-        if not User.objects.filter(username=username).exists():
+        u = User.objects.filter(username=username).first()
+        if u is None:
             if create_user:
+                self.stdout.write(f"Creating a new user {username}")
                 n = now()
                 u = User.objects.create_user(
                     username=username,
+                    password=password,
                     external_username=username,
                     community_terms_accepted=n,
                     commercial_terms_accepted=n,
@@ -52,11 +65,8 @@ class Command(BaseCommand):
                 if organization_id:
                     u.organization = Organization.objects.get_or_create(id=organization_id)[0]
                     u.save()
-
             else:
                 raise CommandError(f"Cannot find user {username}")
-        else:
-            u = User.objects.get(username=username)
 
         group_objs = []
         for g in groups or ():
