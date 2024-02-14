@@ -21,6 +21,7 @@ redirect_uris = [
 
 class WildcardOAuth2Test(TestCase):
     def setUp(self):
+        super().setUp()
         self.app = Application(redirect_uris=' '.join(redirect_uris))
 
     def test_standalone_vscode_callback_uri(self):

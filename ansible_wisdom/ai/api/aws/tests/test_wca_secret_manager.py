@@ -26,6 +26,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         pass
 
     def setUp(self):
+        super().setUp()
         self.m_boto3_client = Mock()
         self.m_boto3_client.exceptions.ResourceNotFoundException = MockResourceNotFoundException
         self.m_boto3_client.exceptions.InvalidParameterException = MockInvalidParameterException

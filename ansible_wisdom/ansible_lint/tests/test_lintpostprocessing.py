@@ -29,6 +29,7 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
     """Test AnsibleLintCaller that is used for ansible-lint postprocessing"""
 
     def setUp(self):
+        super().setUp()
         self.ansibleLintCaller = AnsibleLintCaller()
 
     def test_ansible_lint_caller(self):

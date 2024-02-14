@@ -54,6 +54,7 @@ class DummyRHBackend:
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestExtraData(WisdomServiceLogAwareTestCase):
     def setUp(self):
+        super().setUp()
         self.rh_user = get_user_model().objects.create_user(
             username="rh-user",
             email="sso@user.nowhere",
@@ -87,6 +88,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.rh_user.delete()
         self.github_user.delete()
+        super().tearDown()
 
     def test_load_extra_data(self):
         load_extra_data(
