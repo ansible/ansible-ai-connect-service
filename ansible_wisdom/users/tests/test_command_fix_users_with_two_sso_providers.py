@@ -11,6 +11,7 @@ from users.management.commands.fix_users_with_two_sso_providers import Command
 
 class TestFixUsersWithTwoSSOProviders(WisdomServiceLogAwareTestCase):
     def setUp(self):
+        super().setUp()
         self.sso_user = get_user_model().objects.create_user(
             username="sso-user",
             email="sso@user.nowhere",
@@ -21,6 +22,7 @@ class TestFixUsersWithTwoSSOProviders(WisdomServiceLogAwareTestCase):
 
     def tearDown(self):
         self.sso_user.delete()
+        super().tearDown()
 
     def test_without_fix_paramter(self):
         base = Mock()

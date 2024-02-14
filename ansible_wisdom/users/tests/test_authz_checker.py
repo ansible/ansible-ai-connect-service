@@ -506,6 +506,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
 class TestDummy(TestCase):
     def setUp(self):
+        super().setUp()
         self.checker = DummyCheck()
 
     def test_self_test(self):

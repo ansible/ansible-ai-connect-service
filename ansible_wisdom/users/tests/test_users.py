@@ -70,6 +70,7 @@ def create_user(
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
         self.password = "somepassword"
         self.user = create_user(
             password=self.password,
@@ -108,6 +109,8 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
+
         class MockSession(dict):
             def save(self):
                 pass
@@ -385,6 +388,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
 
 class TestUsername(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
         self.local_user = create_user(
             username="local-user",
             password="bar",
@@ -401,6 +405,7 @@ class TestUsername(WisdomServiceLogAwareTestCase):
     def tearDown(self) -> None:
         self.local_user.delete()
         self.sso_user.delete()
+        super().tearDown()
 
     def test_username_from_sso(self) -> None:
         self.assertEqual(self.sso_user.external_username, "babar")
@@ -502,6 +507,7 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
 
 class TestUserModelMetrics(APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         cache.clear()
 
     def test_user_model_metrics(self):
@@ -531,6 +537,7 @@ class TestUserModelMetrics(APITransactionTestCase):
 
 class TestTelemetryOptInOut(APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         cache.clear()
         feature_flags.FeatureFlags.instance = None
 

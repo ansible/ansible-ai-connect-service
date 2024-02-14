@@ -503,6 +503,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
 
     def tearDown(self):
         self.now_patcher.stop()
+        super().tearDown()
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
     def test_codematch(self):
@@ -667,6 +668,7 @@ class TestDummySecretManager(TestCase):
 
     def tearDown(self):
         self.now_patcher.stop()
+        super().tearDown()
 
     def test_load_secrets(self):
         expectation = {

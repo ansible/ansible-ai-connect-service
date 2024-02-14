@@ -92,6 +92,7 @@ class TestAcceptedTermsPermission(WisdomAppsBackendMocking):
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
     def test_ensure_community_user_with_no_tc_is_blocked(self):
         self.user.community_terms_accepted = False
@@ -128,6 +129,7 @@ class TestBlockUserWithoutSeatAndWCAReadyOrg(WisdomAppsBackendMocking):
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
     def test_ensure_user_with_no_org_are_allowed(self):
         self.user.organization = None
@@ -154,6 +156,7 @@ class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
     def test_non_redhat_users_are_allowed(self):
         self.user.organization = None
@@ -181,6 +184,7 @@ class TestBlockUserWithoutSeat(WisdomAppsBackendMocking):
 
     def tearDown(self):
         self.user.delete()
+        super().tearDown()
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_no_seat_users_are_allowed_with_tech_preview(self):
