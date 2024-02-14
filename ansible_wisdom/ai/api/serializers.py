@@ -323,17 +323,26 @@ class FeedbackRequestSerializer(serializers.Serializer):
     sentimentFeedback = SentimentFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
 
-    def validate_commercial_user_feedback(self, value):
-        user = self.context.get('request').user
-        if user.rh_user_has_seat is True:
-            raise serializers.ValidationError("invalid feedback type for user")
-        return value
-
     def validate_inlineSuggestion(self, value):
-        return self.validate_commercial_user_feedback(value)
+        user = self.context.get('request').user
+
+        if user.rh_user_has_seat is False:
+            return value
+        if (
+            user.organization
+            and user.organization.is_schema_2_telemetry_enabled
+            and user.organization.telemetry_opt_out is False
+        ):
+            return value
+        else:
+            raise serializers.ValidationError("invalid feedback type for user")
 
     def validate_ansibleContent(self, value):
-        return self.validate_commercial_user_feedback(value)
+        user = self.context.get('request').user
+
+        if user.rh_user_has_seat:
+            raise serializers.ValidationError("invalid feedback type for user")
+        return value
 
 
 class AttributionRequestSerializer(serializers.Serializer):
