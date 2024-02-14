@@ -117,6 +117,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         segment_analytics_telemetry.send = False  # do not send data to segment from unit tests
 
     def setUp(self):
+        super().setUp()
         self.username = 'u' + "".join(random.choices(string.digits, k=5))
         self.password = 'secret'
         email = 'user@example.com'
