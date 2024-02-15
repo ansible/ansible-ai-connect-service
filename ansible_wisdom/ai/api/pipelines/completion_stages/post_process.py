@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from django.conf import settings
 
 import yaml
 from ai.api import formatter as fmtr
@@ -64,9 +65,7 @@ def write_to_segment(
     problem = (
         exception.problem
         if isinstance(exception, MarkedYAMLError)
-        else str(exception)
-        if str(exception)
-        else exception.__class__.__name__
+        else str(exception) if str(exception) else exception.__class__.__name__
     )
     if event_type == "ARI":
         event_name = "postprocess"
@@ -248,7 +247,7 @@ def completion_post_process(context: CompletionContext):
                 input_yaml = (
                     f'{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}'
                 )
-            postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
+            postprocessed_yaml, _ = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
                 postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
