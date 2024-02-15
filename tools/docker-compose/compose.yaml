@@ -76,7 +76,7 @@ services:
       - ANSIBLE_WCA_HEALTHCHECK_MODEL_ID=${ANSIBLE_WCA_HEALTHCHECK_MODEL_ID}
       - DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
     command:
-      - /etc/wisdom/scripts/launch-wisdom-compose.sh
+      - /etc/wisdom/scripts/launch-wisdom.sh
     networks:
       - dbnet
   db:

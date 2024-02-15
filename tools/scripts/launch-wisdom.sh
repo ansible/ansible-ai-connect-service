@@ -30,6 +30,9 @@ if [ "${DEPLOYMENT_MODE}" == "upstream" ]; then
     echo "Creating a testing user for upstream mode..."
     /var/www/venv/bin/python ansible_wisdom/manage.py createtoken --username testuser --password testuser --token-name testuser_token --create-user
 fi
+if [ ! "${DEPLOYMENT_MODE}" == "saas" ]; then
+    /var/www/venv/bin/wisdom-manage createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible code-oss://redhat.ansible checode://redhat.ansible" public authorization-code
+fi
 /var/www/venv/bin/wisdom-manage collectstatic --noinput
 
 /usr/local/bin/supervisord -n
