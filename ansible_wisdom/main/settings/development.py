@@ -1,38 +1,10 @@
 import os
-from typing import Literal
 
 from .base import *  # NOQA
 
 DEBUG = True
 
-SECRET_KEY = os.environ["SECRET_KEY"]
-
 ALLOWED_HOSTS = ["*"]
-
-ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
-    'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
-)
-ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
-
-ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
-    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "dummy", "wca"] = (
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_TYPE") or "http"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = (
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL") or "https"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
-    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
-    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
-    else None
-)
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
