@@ -116,7 +116,9 @@ ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
 COMMERCIAL_DOCUMENTATION_URL = os.getenv(
-    'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
+    'COMMERCIAL_DOCUMENTATION_URL',
+    'https://access.redhat.com/documentation/en-us/'
+    'red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest',
 )
 DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
