@@ -12,7 +12,7 @@ invoke_pr_test() {
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Accept: application/vnd.github.v3+json" \
     "https://api.github.com/repos/ansible/ansible-wisdom-testing/actions/workflows/${WORKFLOW_ID}/dispatches" \
-    -d '{"pr_number": "'"${PR_NUMBER}"'"}')
+    -d '{"ref": "main", "inputs": {"pr_number": "'"${PR_NUMBER}"'"}}')
   # Give the workflow time to start
   sleep 15
   RUN_ID=$(
