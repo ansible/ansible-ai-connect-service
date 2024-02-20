@@ -9,6 +9,8 @@ aiohttp==3.9.3
     #   -r requirements.in
     #   datasets
     #   fsspec
+    #   langchain
+    #   langchain-community
 aiosignal==1.3.1
     # via aiohttp
 ansible==8.5.0
@@ -29,6 +31,8 @@ ansible-lint==6.22.1
     # via -r requirements.in
 ansible-risk-insight==0.2.4
     # via -r requirements.in
+anyio==4.2.0
+    # via langchain-core
 argparse==1.4.0
     # via uwsgi-readiness-check
 asgiref==3.7.2
@@ -36,7 +40,9 @@ asgiref==3.7.2
 asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   langchain
 attrs==23.1.0
     # via
     #   aiohttp
@@ -77,6 +83,10 @@ cryptography==42.0.2
     #   jwcrypto
     #   pyopenssl
     #   social-auth-core
+dataclasses-json==0.6.4
+    # via
+    #   langchain
+    #   langchain-community
 datasets==2.15.0
     # via -r requirements.in
 decorator==5.1.1
@@ -135,6 +145,8 @@ ecdsa==0.18.0
     # via python-jose
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.2.0
+    # via anyio
 executing==1.2.0
     # via stack-data
 expiringdict==1.2.2
@@ -157,6 +169,8 @@ fsspec[http]==2023.5.0
     #   huggingface-hub
 gitdb==4.0.10
     # via ansible-risk-insight
+greenlet==3.0.3
+    # via sqlalchemy
 grpcio==1.60.1
     # via -r requirements.in
 huggingface-hub==0.20.1
@@ -167,6 +181,7 @@ huggingface-hub==0.20.1
     #   transformers
 idna==3.4
     # via
+    #   anyio
     #   requests
     #   yarl
 importlib-resources==5.0.7
@@ -191,8 +206,14 @@ joblib==1.2.0
     #   ansible-risk-insight
     #   nltk
     #   scikit-learn
+jsonpatch==1.33
+    # via
+    #   langchain
+    #   langchain-core
 jsonpickle==3.0.1
     # via ansible-risk-insight
+jsonpointer==2.4
+    # via jsonpatch
 jsonschema==4.17.3
     # via
     #   ansible-compat
@@ -202,6 +223,22 @@ jwcrypto==1.5.1
     # via
     #   -r requirements.in
     #   django-oauth-toolkit
+langchain==0.1.7
+    # via -r requirements.in
+langchain-community==0.0.20
+    # via
+    #   -r requirements.in
+    #   langchain
+langchain-core==0.1.23
+    # via
+    #   -r requirements.in
+    #   langchain
+    #   langchain-community
+langsmith==0.0.87
+    # via
+    #   langchain
+    #   langchain-community
+    #   langchain-core
 launchdarkly-server-sdk==8.1.1
     # via -r requirements.in
 levenshtein==0.21.1
@@ -212,6 +249,8 @@ markuppy==1.14
     # via tablib
 markupsafe==2.1.2
     # via jinja2
+marshmallow==3.20.2
+    # via dataclasses-json
 matplotlib-inline==0.1.6
     # via ipython
 mdurl==0.1.2
@@ -227,7 +266,9 @@ multidict==6.0.4
 multiprocess==0.70.14
     # via datasets
 mypy-extensions==1.0.0
-    # via black
+    # via
+    #   black
+    #   typing-inspect
 networkx==3.1
     # via torch
 nltk==3.8.1
@@ -235,6 +276,8 @@ nltk==3.8.1
 numpy==1.24.3
     # via
     #   datasets
+    #   langchain
+    #   langchain-community
     #   pandas
     #   pyarrow
     #   scikit-learn
@@ -253,7 +296,7 @@ openpyxl==3.1.2
     # via tablib
 opensearch-py==2.1.1
     # via -r requirements.in
-packaging==23.1
+packaging==23.2
     # via
     #   ansible-compat
     #   ansible-core
@@ -262,6 +305,8 @@ packaging==23.1
     #   datasets
     #   django-allow-cidr
     #   huggingface-hub
+    #   langchain-core
+    #   marshmallow
     #   transformers
 pandas==2.0.2
     # via datasets
@@ -310,8 +355,12 @@ pyasn1==0.5.0
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.10.2
-    # via -r requirements.in
+pydantic==1.10.11
+    # via
+    #   -r requirements.in
+    #   langchain
+    #   langchain-core
+    #   langsmith
 pygit2==1.12.1
     # via ansible-risk-insight
 pygments==2.15.1
@@ -351,6 +400,9 @@ pyyaml==6.0
     #   datasets
     #   drf-spectacular
     #   huggingface-hub
+    #   langchain
+    #   langchain-community
+    #   langchain-core
     #   tablib
     #   transformers
     #   yamllint
@@ -369,6 +421,10 @@ requests==2.31.0
     #   django-oauth-toolkit
     #   fsspec
     #   huggingface-hub
+    #   langchain
+    #   langchain-community
+    #   langchain-core
+    #   langsmith
     #   opensearch-py
     #   requests-oauthlib
     #   segment-analytics-python
@@ -417,6 +473,8 @@ smmap==5.0.0
     # via
     #   ansible-risk-insight
     #   gitdb
+sniffio==1.3.0
+    # via anyio
 social-auth-app-django @ https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
     # via -r requirements.in
 social-auth-core[openidconnect]==4.4.2
@@ -424,6 +482,10 @@ social-auth-core[openidconnect]==4.4.2
     #   -r requirements.in
     #   social-auth-app-django
     #   social-auth-core
+sqlalchemy==2.0.27
+    # via
+    #   langchain
+    #   langchain-community
 sqlparse==0.4.4
     # via django
 stack-data==0.6.2
@@ -440,18 +502,23 @@ tablib[html,ods,xls,xlsx,yaml]==3.4.0
     #   tablib
 tabulate==0.9.0
     # via ansible-risk-insight
+tenacity==8.2.3
+    # via
+    #   langchain
+    #   langchain-community
+    #   langchain-core
 threadpoolctl==3.1.0
     # via scikit-learn
 tokenizers==0.15.0
     # via transformers
 tomli==2.0.1
     # via black
-torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
+#torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
     #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
+#torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
     #   -r requirements.in
     #   sentence-transformers
@@ -471,16 +538,21 @@ transformers==4.36.0
     # via
     #   -r requirements.in
     #   sentence-transformers
-typing-extensions==4.6.2
+typing-extensions==4.9.0
     # via
     #   ansible-compat
+    #   anyio
     #   asgiref
     #   black
     #   django-test-migrations
     #   huggingface-hub
     #   psycopg
     #   pydantic
+    #   sqlalchemy
     #   torch
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via dataclasses-json
 tzdata==2023.3
     # via pandas
 uritemplate==4.1.1

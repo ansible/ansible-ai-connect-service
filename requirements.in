@@ -39,6 +39,9 @@ jwcrypto==1.5.1
 # remove this once ansible-core is updated to properly
 # pull a version of jwcrypto >= 3.1.3.
 jinja2==3.1.3
+langchain==0.1.7
+langchain-community==0.0.20
+langchain-core==0.1.23
 launchdarkly-server-sdk==8.1.1
 opensearch-py==2.1.1
 # pin pillow on 10.2.0 to address CVE-2023-4863 and GHSA-3f63-hfp8-52jq
@@ -51,7 +54,7 @@ psycopg[binary]==3.1.8
 # remove this once datasets is updated to properly pull
 # a version of pyarrow > 14.0.1.
 pyarrow==14.0.1
-pydantic==1.10.2
+pydantic==1.10.11
 pytz
 pyOpenSSL==24.0.0
 PyYAML==6.0
