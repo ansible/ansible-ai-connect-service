@@ -15,7 +15,9 @@ describe("TelemetrySettings", () => {
 
   it("Loading", async () => {
     (axios.get as jest.Mock).mockResolvedValue({ optOut: "false" });
-    render(<TelemetrySettings />);
+    render(
+      <TelemetrySettings adminDashboardUrl={"http://admin_dashboard-url/"} />,
+    );
     expect(axios.get as jest.Mock).toBeCalledWith(API_TELEMETRY_PATH);
     expect(
       await screen.findByTestId("telemetry-settings__telemetry-loading"),
@@ -24,7 +26,9 @@ describe("TelemetrySettings", () => {
 
   it("Loaded::Found", async () => {
     (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: true } });
-    render(<TelemetrySettings />);
+    render(
+      <TelemetrySettings adminDashboardUrl={"http://admin_dashboard-url/"} />,
+    );
     expect(axios.get as jest.Mock).toBeCalledWith(API_TELEMETRY_PATH);
     expect(
       await screen.findByTestId("telemetry-settings__opt_in_radiobutton"),
@@ -43,13 +47,21 @@ describe("TelemetrySettings", () => {
     expect(cancelButton).toBeInTheDocument();
     expect(saveButton.disabled).toBeFalsy();
     expect(cancelButton.disabled).toBeTruthy();
+
+    const adminDashboardUrl: HTMLAnchorElement = await screen.findByTestId(
+      "telemetry-settings__admin_dashboard_url",
+    );
+    expect(adminDashboardUrl).toBeInTheDocument();
+    expect(adminDashboardUrl.href).toEqual("http://admin_dashboard-url/");
   });
 
   it("Click::Save::Success", async () => {
     (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
     (axios.post as jest.Mock).mockResolvedValue({});
 
-    render(<TelemetrySettings />);
+    render(
+      <TelemetrySettings adminDashboardUrl={"http://admin_dashboard-url/"} />,
+    );
 
     // Check initial settings
     let optInRadioButton: HTMLInputElement = await screen.findByTestId(
@@ -100,7 +112,9 @@ describe("TelemetrySettings", () => {
     (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
     (axios.post as jest.Mock).mockRejectedValue({ response: { status: 500 } });
 
-    render(<TelemetrySettings />);
+    render(
+      <TelemetrySettings adminDashboardUrl={"http://admin_dashboard-url/"} />,
+    );
 
     // Emulate click on "Opt Out" radio button
     const optOutRadioButton: HTMLInputElement = await screen.findByTestId(
@@ -128,7 +142,9 @@ describe("TelemetrySettings", () => {
   it("Click::Cancel", async () => {
     (axios.get as jest.Mock).mockResolvedValue({ data: { optOut: false } });
 
-    render(<TelemetrySettings />);
+    render(
+      <TelemetrySettings adminDashboardUrl={"http://admin_dashboard-url/"} />,
+    );
 
     // Check initial settings
     let optInRadioButton: HTMLInputElement = await screen.findByTestId(

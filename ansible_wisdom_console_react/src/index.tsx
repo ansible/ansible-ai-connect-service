@@ -15,9 +15,16 @@ const telemetrySchema2EnabledInnerText = document.getElementById(
 )?.innerText;
 const telemetrySchema2Enabled =
   telemetrySchema2EnabledInnerText?.toLowerCase() === "true";
+const adminDashboardUrl =
+  document.getElementById("telemetry_schema_2_admin_dashboard_url")
+    ?.innerText ?? "";
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <App userName={userName} telemetryOptEnabled={telemetrySchema2Enabled} />
+    <App
+      userName={userName}
+      telemetryOptEnabled={telemetrySchema2Enabled}
+      adminDashboardUrl={adminDashboardUrl}
+    />
   </StrictMode>,
 );
