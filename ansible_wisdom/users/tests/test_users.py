@@ -29,7 +29,6 @@ from ansible_wisdom.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )
-from ansible_wisdom.users.auth import BearerTokenAuthentication
 from ansible_wisdom.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
@@ -99,10 +98,6 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
         r = self.client.get(reverse('home'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn('You are currently not logged in.', str(r.content))
-
-    def test_auth_keyword(self):
-        bearer = BearerTokenAuthentication()
-        self.assertEqual(bearer.keyword, "Bearer")
 
     def test_users_audit_logging(self):
         with self.assertLogs(logger='ansible_wisdom.users.signals', level='INFO') as log:

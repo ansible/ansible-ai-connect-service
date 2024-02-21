@@ -157,7 +157,7 @@ SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
-SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization', 'roles']
+SOCIAL_AUTH_OIDC_SCOPE = ['api.lightspeed']
 SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
@@ -198,7 +198,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
     'ansible_wisdom.users.pipeline.load_extra_data',
-    'ansible_wisdom.users.pipeline.terms_of_service',
+    # 'ansible_wisdom.users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
@@ -266,6 +266,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'ansible_wisdom.users.auth.RHSSOAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
@@ -304,6 +305,11 @@ LOGGING = {
             "propagate": False,
         },
         "ari_changes": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "auth": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
