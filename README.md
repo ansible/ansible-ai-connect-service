@@ -250,7 +250,7 @@ Create a local admin user:
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
 
-## Connect to a local model server
+## Connect to a local llama.cpp model server
 
 To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
 
@@ -266,6 +266,30 @@ To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](htt
    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=8080
    ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
    ANSIBLE_AI_MODEL_NAME=mistral-7b-instruct-v0.2.Q5_K_M.gguf
+   ENABLE_ARI_POSTPROCESS=False
+   ```
+
+## Connect to a local ollama server
+
+1. Install ollama
+   ```bash
+   brew install ollama
+   ```
+1. Start the ollama server, configured to listen on your assigned IP
+   ```bash
+   export OLLAMA_HOST=$YOUR_REAL_UP:11434
+   ollama server &
+   ```
+1. Run the Mistral 7B Instruct model
+   ```bash
+   ollama run mistal:instruct
+   ```
+1. Set the appropriate environment variables
+   ```bash
+   ANSIBLE_AI_MODEL_MESH_HOST=http://$YOUR_REAL_IP
+   ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=11434
+   ANSIBLE_AI_MODEL_MESH_API_TYPE=ollama
+   ANSIBLE_AI_MODEL_NAME="mistral:instruct"
    ENABLE_ARI_POSTPROCESS=False
    ```
 

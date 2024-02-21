@@ -1,4 +1,5 @@
 import logging
+import re
 
 import requests
 from django.conf import settings
@@ -31,33 +32,39 @@ class OllamaClient(ModelMeshClient):
             base_url=self._inference_url,
             model=model_id,
             temperature=0.1,
-            #num_predict=400,
-            #stop=[],
-            #repeat_last_n=256,
-            #repeat_penalty=1.18,
-            #top_k=40,
-            #top_p=0.5,
-            #tfs_z=1,
-            #mirostat=0,
-            #mirostat_tau=5,
-            #mirostat_eta=0.1,
-            #cache=False,
+            # num_predict=400,
+            # stop=[],
+            # repeat_last_n=256,
+            # repeat_penalty=1.18,
+            # top_k=40,
+            # top_p=0.5,
+            # tfs_z=1,
+            # mirostat=0,
+            # mirostat_tau=5,
+            # mirostat_eta=0.1,
+            # cache=False,
         )
 
-        #full_context = "- name: Deploy infrastructure\n  hosts: all\n  tasks:\n    - name: Create Openshift Cluster \"1\""
-        full_context = f"""{context}{prompt}"""
+        template = PromptTemplate.from_template(
+            """You're an Ansible expert. Return a single task that best completes the following partial playbook:
+        {context}{prompt}
+        Return only the task as YAML.
+        Do not return multiple tasks.
+        Do not explain your response.
+        """
+        )
+
+        # Only return the portion of the task that comes after the '- name: this is the name'.
         try:
-            prompt = PromptTemplate.from_template("{prompt}")
-            chain = prompt | llm
-            task = chain.invoke({
-                "prompt": full_context,
-            })
+            chain = template | llm
+            task = chain.invoke({"context": context, "prompt": prompt})
 
             logger.info(f"response: {task}")
 
             # TODO(rg): remove when we have a better tune/prompt
 
-            task = task.split("- name:")[0]
+            task = task.split("```yaml")[-1]
+            task = re.split(r"- name:.+\n", task)[-1]
             task = task.split("```")[0]
 
             logger.info(f"task: {task}")
