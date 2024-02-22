@@ -66,7 +66,7 @@ run-server-containerized:
 
 .PHONY: docker-compose
 docker-compose:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml --profile db up --remove-orphans
 
 # DEPRECATED: Please use start-backends instead
 run-backends: start-backends DEPRECATED
@@ -74,7 +74,7 @@ run-backends: start-backends DEPRECATED
 .PHONY: start-backends
 # Run backend services in container for running Django application from source
 start-backends:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans -d
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml --profile db --profile obs up --remove-orphans -d
 
 .PHONY: stop-backends
 # Stop backend services
@@ -88,7 +88,7 @@ update-openapi-schema:
 
 .PHONY: docker-compose-clean
 docker-compose-clean:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml down
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml --profile obs --profile db down
 
 .PHONY: pip-compile
 pip-compile:

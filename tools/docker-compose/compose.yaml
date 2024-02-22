@@ -80,6 +80,8 @@ services:
     networks:
       - dbnet
   db:
+    profiles:
+        - db
     platform: linux/amd64
     image: docker.io/library/postgres:15-alpine
     environment:
@@ -96,6 +98,8 @@ services:
     ports:
       - "5432:5432"
   prometheus:
+    profiles:
+        - obs
     platform: linux/amd64
     image: docker.io/prom/prometheus
     command:
@@ -108,6 +112,8 @@ services:
     networks:
       - dbnet
   grafana:
+    profiles:
+        - obs
     platform: linux/amd64
     image: docker.io/grafana/grafana:7.5.17
     environment:
