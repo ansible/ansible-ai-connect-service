@@ -54,3 +54,8 @@ WCA_SECRET_BACKEND_TYPE = os.getenv("WCA_SECRET_BACKEND_TYPE", "dummy")  # or aw
 # WCA_SECRET_DUMMY_SECRETS=1009103:valid,11009104:not-valid
 WCA_SECRET_DUMMY_SECRETS = os.getenv("WCA_SECRET_DUMMY_SECRETS", "")
 WCA_CLIENT_BACKEND_TYPE = os.getenv("WCA_CLIENT_BACKEND_TYPE", "dummy")  # or wcaclient
+
+# "Schema 2" Telemetry Admin Dashboard URL
+TELEMETRY_ADMIN_DASHBOARD_URL = (
+    "https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard"
+)

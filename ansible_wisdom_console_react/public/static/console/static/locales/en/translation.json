@@ -56,7 +56,6 @@
   "TelemetryManageUsage": "Manage telemetry usage",
   "TelemetryManageUsageDescription": "Telemetry data is used to enable app usage and the ",
   "TelemetryManageUsageAdminDashboardURLText": "admin dashboard.",
-  "TelemetryManageUsageAdminDashboardURL": "http://www.redhat.com",
   "TelemetryManageUsageLearnMoreURLText": "Learn more about how Ansible Lightspeed uses data. ",
   "TelemetryManageUsageLearnMoreURL": "https://access.redhat.com/documentation/en-us/red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest/html/red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant_user_guide/lightspeed-intro#training-data_lightspeed-intro",
   "TelemetryOptInLabel": "Admin dashboard telemetry data.",

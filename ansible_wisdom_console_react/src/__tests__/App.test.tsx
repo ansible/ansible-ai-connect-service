@@ -5,7 +5,13 @@ import { App } from "../App";
 describe("App", () => {
   it("Rendering::With Username", async () => {
     window.history.pushState({}, "Test page", "/console");
-    render(<App userName={"Batman"} telemetryOptEnabled={true} />);
+    render(
+      <App
+        userName={"Batman"}
+        telemetryOptEnabled={true}
+        adminDashboardUrl={"http://admin_dashboard-url/"}
+      />,
+    );
     const accountMenu = await screen.findByTestId("page-masthead-dropdown");
     expect(accountMenu).toBeInTheDocument();
     expect(accountMenu).toHaveTextContent("Batman");

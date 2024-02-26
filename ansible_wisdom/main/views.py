@@ -76,5 +76,12 @@ class ConsoleView(ProtectedTemplateView):
             context["rh_org_has_subscription"] = user.rh_org_has_subscription
             organization = user.organization
             if organization:
-                context["telemetry_schema_2_enabled"] = organization.is_schema_2_telemetry_enabled
+                is_schema_2_telemetry_enabled = organization.is_schema_2_telemetry_enabled
+                context["telemetry_schema_2_enabled"] = is_schema_2_telemetry_enabled
+
+                if is_schema_2_telemetry_enabled:
+                    context[
+                        "telemetry_schema_2_admin_dashboard_url"
+                    ] = settings.TELEMETRY_ADMIN_DASHBOARD_URL
+
         return context

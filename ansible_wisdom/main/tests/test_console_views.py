@@ -88,6 +88,10 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         context = response.context_data
         # The default setting for tests is True
         self.assertTrue(context['telemetry_schema_2_enabled'])
+        self.assertEqual(
+            context['telemetry_schema_2_admin_dashboard_url'],
+            'https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard',
+        )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
@@ -101,3 +105,4 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.assertIsInstance(response.context_data, dict)
         context = response.context_data
         self.assertFalse(context['telemetry_schema_2_enabled'])
+        self.assertIsNone(context.get('telemetry_schema_2_admin_dashboard_url'))
