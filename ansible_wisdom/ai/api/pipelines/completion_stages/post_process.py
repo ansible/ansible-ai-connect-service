@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 
 import yaml
@@ -207,6 +208,23 @@ def completion_post_process(context: CompletionContext):
                 # Use the anonymized task name in the postprocess segment event
                 postprocess_details.append(
                     {"name": tasks[index]["name"], "rule_details": ari_result["rule_details"]}
+                )
+
+            # Test for changes to the recommendation and if so log as warn.
+            # WCA is already running ARI so we expect no changes.
+            # Ignore any whitespace and single vs double quote changes.
+            pp = re.sub(r'\s+', ' ', postprocessed_yaml).strip()
+            pp = re.sub(r'\'', '\"', pp)
+            orig = re.sub(r'\s+', ' ', recommendation_yaml).strip()
+            orig = re.sub(r'\'', '\"', orig)
+            if pp != orig:
+                logger.warn(
+                    f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
+                    f"recommendation_yaml: [{repr(recommendation_yaml)}] "
+                    f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
+                    f"original_prompt: [{repr(original_prompt)}] "
+                    f"payload_context: [{repr(payload_context)}] "
+                    f"postprocess_details: [{json.dumps(postprocess_details)}] "
                 )
 
             logger.debug(
