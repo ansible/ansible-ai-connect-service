@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 import time
 
 import yaml
@@ -213,10 +212,18 @@ def completion_post_process(context: CompletionContext):
             # Test for changes to the recommendation and if so log as warn.
             # WCA is already running ARI so we expect no changes.
             # Ignore any whitespace and single vs double quote changes.
-            pp = re.sub(r'\s+', ' ', postprocessed_yaml).strip()
-            pp = re.sub(r'\'', '\"', pp)
-            orig = re.sub(r'\s+', ' ', recommendation_yaml).strip()
-            orig = re.sub(r'\'', '\"', orig)
+            pp = (
+                postprocessed_yaml.replace(" ", "")
+                .replace("\n", "")
+                .replace("\"", "")
+                .replace("'", "")
+            )
+            orig = (
+                recommendation_yaml.replace(" ", "")
+                .replace("\n", "")
+                .replace("\"", "")
+                .replace("'", "")
+            )
             if pp != orig:
                 ari_changes_logger = logging.getLogger("ari_changes")
                 ari_changes_logger.info(
