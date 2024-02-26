@@ -218,7 +218,8 @@ def completion_post_process(context: CompletionContext):
             orig = re.sub(r'\s+', ' ', recommendation_yaml).strip()
             orig = re.sub(r'\'', '\"', orig)
             if pp != orig:
-                logger.warn(
+                ari_changes_logger = logging.getLogger("ari_changes")
+                ari_changes_logger.info(
                     f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
                     f"recommendation_yaml: [{repr(recommendation_yaml)}] "
                     f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
