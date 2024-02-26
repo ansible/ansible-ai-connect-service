@@ -287,6 +287,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "ari_changes": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     "root": {
         "handlers": ["console"],
