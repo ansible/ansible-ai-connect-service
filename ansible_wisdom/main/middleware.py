@@ -92,6 +92,7 @@ class SegmentMiddleware:
                 context = request_data.get('context')
                 prompt = request_data.get('prompt')
                 model_name = request_data.get('model', '')
+                model_name = getattr(request, '_model', model_name)
                 metadata = request_data.get('metadata', {})
                 promptType = getattr(request, '_prompt_type', None)
 
@@ -107,6 +108,7 @@ class SegmentMiddleware:
                     model_name = response_data.get('model', model_name)
                     # Clean up response.data for 204
                     if response.status_code == 204:
+                        # This should no longer be needed, and it is problematic because content length is already set
                         response.data = None
                     # For other error cases, remove 'model' in response data
                     elif response.status_code >= 400:

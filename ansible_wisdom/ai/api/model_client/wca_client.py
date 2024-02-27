@@ -86,7 +86,7 @@ class DummyWCAClient:
     def infer(self, *args, suggestion_id=None, **kwargs):
         return {
             "model_id": "mocked_wca_client",
-            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
+            "predictions": ["            loop:\n        - R80\n        -"],
         }
 
 

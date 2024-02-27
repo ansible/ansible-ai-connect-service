@@ -13,7 +13,9 @@ def exception_handler_with_error_type(exc, context):
             # response.data will be cleaned up later in the middleware.
             try:
                 model = response.data.get("model")
-                response.data = {"model": model} if model else None
+                request = context.get('request')
+                request._request._model = model
+                response.data = None
             except Exception:
                 response.data = None
 
