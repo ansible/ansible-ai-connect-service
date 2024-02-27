@@ -71,6 +71,8 @@ jobs:
         build-args: |
           IMAGE_TAGS=${{ steps.tag_name.outputs.IMAGE_TAGS }}
           GIT_COMMIT=${{ steps.tag_name.outputs.sha-long }}
+        extra-args: |
+          --target=production
 
     - name: Scan Malware
       # Do not scan malware in PR builds
