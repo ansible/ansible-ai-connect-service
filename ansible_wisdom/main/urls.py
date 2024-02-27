@@ -13,7 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from ai.api.telemetry.api_telemetry_settings_views import TelemetrySettingsView
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -22,10 +21,22 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from healthcheck.views import WisdomServiceHealthView, WisdomServiceLivenessProbeView
-from main.views import ConsoleView, LoginView, LogoutView
 from oauth2_provider.urls import app_name, base_urlpatterns
-from users.views import CurrentUserView, HomeView, TermsOfService, UnauthorizedView
+
+from ansible_wisdom.ai.api.telemetry.api_telemetry_settings_views import (
+    TelemetrySettingsView,
+)
+from ansible_wisdom.healthcheck.views import (
+    WisdomServiceHealthView,
+    WisdomServiceLivenessProbeView,
+)
+from ansible_wisdom.main.views import ConsoleView, LoginView, LogoutView
+from ansible_wisdom.users.views import (
+    CurrentUserView,
+    HomeView,
+    TermsOfService,
+    UnauthorizedView,
+)
 
 WISDOM_API_VERSION = "v0"
 
@@ -35,9 +46,9 @@ urlpatterns = [
     path('', include('social_django.urls', namespace='social')),
     path('', include('django_prometheus.urls')),
     path('admin/', admin.site.urls),
-    path(f'api/{WISDOM_API_VERSION}/ai/', include("ai.api.urls")),
+    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_wisdom.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
-    path(f'api/{WISDOM_API_VERSION}/wca/', include('ai.api.wca.urls')),
+    path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
@@ -49,7 +60,11 @@ urlpatterns = [
     path('o/', include((base_urlpatterns, app_name), namespace='oauth2_provider')),
     path(
         'login/',
-        LoginView.as_view(),
+        LoginView.as_view(
+            extra_context={
+                'deployment_mode': settings.DEPLOYMENT_MODE,
+            },
+        ),
         name='login',
     ),
     path('logout/', LogoutView.as_view(), name='logout'),
@@ -58,14 +73,13 @@ urlpatterns = [
     path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
-if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-    urlpatterns += [
-        path(
-            f'api/{WISDOM_API_VERSION}/telemetry/',
-            TelemetrySettingsView.as_view(),
-            name='telemetry_settings',
-        ),
-    ]
+urlpatterns += [
+    path(
+        f'api/{WISDOM_API_VERSION}/telemetry/',
+        TelemetrySettingsView.as_view(),
+        name='telemetry_settings',
+    ),
+]
 
 if settings.DEBUG:
     urlpatterns += [

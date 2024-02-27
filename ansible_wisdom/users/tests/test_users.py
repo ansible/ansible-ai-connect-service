@@ -6,12 +6,6 @@ from typing import Optional
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import APITransactionTestCase
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -19,19 +13,30 @@ from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from organizations.models import Organization
 from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
-from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
-from users.auth import BearerTokenAuthentication
-from users.constants import (
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import APITransactionTestCase
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceLogAwareTestCase,
+)
+from ansible_wisdom.users.auth import BearerTokenAuthentication
+from ansible_wisdom.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from users.pipeline import _terms_of_service
-from users.views import TermsOfService
+from ansible_wisdom.users.pipeline import _terms_of_service
+from ansible_wisdom.users.views import TermsOfService
 
 
 def create_user(
@@ -69,6 +74,7 @@ def create_user(
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
         self.password = "somepassword"
         self.user = create_user(
             password=self.password,
@@ -99,7 +105,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
         self.assertEqual(bearer.keyword, "Bearer")
 
     def test_users_audit_logging(self):
-        with self.assertLogs(logger='users.signals', level='INFO') as log:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='INFO') as log:
             self.client.login(username=self.user.username, password=self.password)
             self.assertInLog('LOGIN successful', log)
 
@@ -107,6 +113,8 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
+
         class MockSession(dict):
             def save(self):
                 pass
@@ -333,6 +341,8 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             self.assertInLog('GET TermsOfService was invoked without partial_token', log)
 
 
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS='1981:valid')
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
@@ -381,9 +391,41 @@ class TestUserSeat(WisdomAppsBackendMocking):
         self.assertTrue(user.rh_user_has_seat)
         self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
 
+    def test_rh_user_org_with_sub_but_no_seat_in_ams(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertTrue(user.rh_user_has_seat)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    def test_rh_user_org_with_sub_but_no_sec_and_tech_preview(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertFalse(user.rh_user_has_seat)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    def test_rh_user_org_with_sub_but_no_sec_after_tech_preview(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_user_id="seated-user-id",
+            rh_org_id=1981,
+            external_username="no-seated",
+        )
+        self.assertTrue(user.rh_user_has_seat)
+
 
 class TestUsername(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
+        super().setUp()
         self.local_user = create_user(
             username="local-user",
             password="bar",
@@ -400,6 +442,7 @@ class TestUsername(WisdomServiceLogAwareTestCase):
     def tearDown(self) -> None:
         self.local_user.delete()
         self.sso_user.delete()
+        super().tearDown()
 
     def test_username_from_sso(self) -> None:
         self.assertEqual(self.sso_user.external_username, "babar")
@@ -501,6 +544,7 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
 
 class TestUserModelMetrics(APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         cache.clear()
 
     def test_user_model_metrics(self):
@@ -530,7 +574,9 @@ class TestUserModelMetrics(APITransactionTestCase):
 
 class TestTelemetryOptInOut(APITransactionTestCase):
     def setUp(self) -> None:
+        super().setUp()
         cache.clear()
+        feature_flags.FeatureFlags.instance = None
 
     def test_github_user(self):
         user = create_user(
@@ -555,7 +601,10 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertFalse(r.data.get('org_telemetry_opt_out'))
 
-    def test_rhsso_user_with_telemetry_opted_out(self):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_opted_out(self, LDClient):
+        LDClient.return_value.variation.return_value = True
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
             social_auth_extra_data={"login": "sso_username"},
@@ -567,8 +616,10 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get('org_telemetry_opt_out'))
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
-    def test_rhsso_user_with_telemetry_feature_disabled(self):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_feature_disabled(self, LDClient):
+        LDClient.return_value.variation.return_value = False
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
             social_auth_extra_data={"login": "sso_username"},
@@ -580,10 +631,43 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNone(r.data.get('org_telemetry_opt_out'))
 
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_feature_enabled_opted_out(self, LDClient):
+        LDClient.return_value.variation.return_value = True
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=True,
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_with_telemetry_feature_enabled_opted_in(self, LDClient):
+        LDClient.return_value.variation.return_value = True
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            social_auth_extra_data={"login": "sso_username"},
+            external_username="sso_username",
+            org_opt_out=False,
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
     @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
     @patch.object(AcceptedTermsPermission, 'has_permission', return_value=True)
-    def test_rhsso_user_caching(self, *args):
+    @patch.object(feature_flags, 'LDClient')
+    def test_rhsso_user_caching(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
             social_auth_extra_data={"login": "sso_username"},

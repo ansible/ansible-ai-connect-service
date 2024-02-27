@@ -3,8 +3,9 @@ from abc import abstractmethod
 from typing import Any, TypedDict, Union
 from uuid import UUID
 
-from ai.api.serializers import DataSource
 from pydantic import BaseModel, validator
+
+from ansible_wisdom.ai.api.serializers import DataSource
 
 logger = logging.getLogger(__name__)
 

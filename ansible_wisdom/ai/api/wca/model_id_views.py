@@ -1,22 +1,6 @@
 import logging
 import time
 
-from ai.api.aws.exceptions import WcaSecretManagerError
-from ai.api.aws.wca_secret_manager import Suffixes
-from ai.api.model_client.exceptions import (
-    WcaInvalidModelId,
-    WcaKeyNotFound,
-    WcaModelIdNotFound,
-    WcaTokenFailure,
-    WcaUserTrialExpired,
-)
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.serializers import WcaModelIdRequestSerializer
-from ai.api.utils.segment import send_segment_event
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -30,7 +14,24 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
-from users.signals import user_set_wca_model_id
+
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+    WcaTokenFailure,
+    WcaUserTrialExpired,
+)
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.serializers import WcaModelIdRequestSerializer
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.users.signals import user_set_wca_model_id
 
 from ..pipelines.common import WcaUserTrialExpiredException
 from ..views import ServiceUnavailable, WcaKeyNotFoundException

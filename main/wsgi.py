@@ -1,10 +1,8 @@
+#!/usr/bin/env python3
+
 """
-WSGI config for main project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/4.1/howto/deployment/wsgi/
+Workaround to remove once we've got an image based on the ansible_wisdom
+package in production.
 """
 
 import os

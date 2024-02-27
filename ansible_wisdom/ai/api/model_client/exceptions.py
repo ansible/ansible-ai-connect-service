@@ -23,11 +23,6 @@ class WcaBadRequest(WcaException):
 
 
 @dataclass
-class CustomModelBadRequest(WcaException):
-    """Unentitled user requested custom model"""
-
-
-@dataclass
 class WcaInvalidModelId(WcaException):
     """A WML instance is required for code generation.
     This is possibly caused by an invalid WCA Model ID being provided."""

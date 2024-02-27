@@ -10,7 +10,7 @@ services:
     depends_on:
       - db
     volumes:
-      - $PWD/ansible_wisdom:/var/www/ansible_wisdom
+      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom
       - $PWD/ari/kb:/etc/ari/kb
       - $PWD/tools/scripts:/etc/wisdom/scripts
     ports:
@@ -19,7 +19,7 @@ services:
       - "8000"
       - "8001-8011" # django-prometheus
     environment:
-      - DJANGO_SETTINGS_MODULE=main.settings.development
+      - DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
       - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
       - ANSIBLE_AI_DATABASE_NAME=wisdom
       - ANSIBLE_AI_DATABASE_USER=wisdom
@@ -72,15 +72,16 @@ services:
       - WCA_SECRET_BACKEND_TYPE=${WCA_SECRET_BACKEND_TYPE}
       - WCA_SECRET_DUMMY_SECRETS=${WCA_SECRET_DUMMY_SECRETS}
       - ANSIBLE_WCA_INFERENCE_URL=${ANSIBLE_WCA_INFERENCE_URL}
-      - ANSIBLE_WCA_FREE_API_KEY=${ANSIBLE_WCA_FREE_API_KEY}
-      - ANSIBLE_WCA_FREE_MODEL_ID=${ANSIBLE_WCA_FREE_MODEL_ID}
+      - ANSIBLE_WCA_HEALTHCHECK_API_KEY=${ANSIBLE_WCA_HEALTHCHECK_API_KEY}
+      - ANSIBLE_WCA_HEALTHCHECK_MODEL_ID=${ANSIBLE_WCA_HEALTHCHECK_MODEL_ID}
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
     command:
-      - /etc/wisdom/scripts/launch-wisdom-compose.sh
+      - /etc/wisdom/scripts/launch-wisdom.sh
     networks:
       - dbnet
   db:
     platform: linux/amd64
-    image: docker.io/library/postgres:alpine
+    image: docker.io/library/postgres:15-alpine
     environment:
       - POSTGRES_PASSWORD=wisdom
       - POSTGRES_DB=wisdom

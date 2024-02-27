@@ -4,11 +4,17 @@ from typing import Optional
 
 import backoff
 import requests
-from ai.api.formatter import (
+from django.apps import apps
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Counter, Histogram
+from requests.exceptions import HTTPError
+
+from ansible_wisdom.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
 )
-from ai.api.model_client.wca_utils import (
+from ansible_wisdom.ai.api.model_client.wca_utils import (
     ContentMatchContext,
     ContentMatchResponseChecks,
     InferenceContext,
@@ -16,16 +22,10 @@ from ai.api.model_client.wca_utils import (
     TokenContext,
     TokenResponseChecks,
 )
-from django.apps import apps
-from django.conf import settings
-from django_prometheus.conf import NAMESPACE
-from prometheus_client import Counter, Histogram
-from requests.exceptions import HTTPError
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
 from .exceptions import (
-    CustomModelBadRequest,
     ModelTimeoutError,
     WcaCodeMatchFailure,
     WcaInferenceFailure,
@@ -94,8 +94,6 @@ class WCAClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
         self.session = requests.Session()
-        self.free_api_key = settings.ANSIBLE_WCA_FREE_API_KEY
-        self.free_model_id = settings.ANSIBLE_WCA_FREE_MODEL_ID
         self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
 
     @staticmethod
@@ -128,7 +126,6 @@ class WCAClient(ModelMeshClient):
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
-        rh_user_has_seat = model_input.get("instances", [{}])[0].get("rh_user_has_seat", False)
         try:
             organization_id = int(model_input["instances"][0]["organization_id"])
         except (KeyError, IndexError, ValueError):
@@ -144,8 +141,8 @@ class WCAClient(ModelMeshClient):
 
         api_key: Optional[int] = None
         try:
-            api_key = self.get_api_key(rh_user_has_seat, organization_id)
-            model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+            api_key = self.get_api_key(organization_id)
+            model_id = self.get_model_id(organization_id, model_id)
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
@@ -247,14 +244,16 @@ class WCAClient(ModelMeshClient):
 
         return response.json()
 
-    def get_api_key(self, rh_user_has_seat: bool, organization_id: Optional[int]):
+    def get_api_key(self, organization_id: Optional[int]):
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
 
-        # use the shared API Key if the user has no seat
-        if not rh_user_has_seat or organization_id is None:
-            return self.free_api_key
+        if organization_id is None:
+            logger.error(
+                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_API_KEY is set"
+            )
+            raise WcaKeyNotFound
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -272,25 +271,18 @@ class WCAClient(ModelMeshClient):
 
     def get_model_id(
         self,
-        rh_user_has_seat: bool,
         organization_id: Optional[int],
         requested_model_id: str = '',
     ) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
             return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
 
-        if not rh_user_has_seat or organization_id is None:
-            if requested_model_id:
-                # Note: I don't believe we ever actually make it into this flow.
-                # Completion catches this in the serializer and content match
-                # wouldn't use WCA for an unseated user. This can likely be
-                # removed when we simplify our code post-tech-preview.
-                err_message = "User is not entitled to customized model"
-                logger.info(err_message)
-                raise CustomModelBadRequest(model_id=requested_model_id)
-            return self.free_model_id or ''
+        if organization_id is None:
+            logger.error(
+                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_MODEL_NAME is set"
+            )
+            raise WcaModelIdNotFound(model_id=requested_model_id)
 
-        # from here on, user has a seat
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
@@ -315,10 +307,9 @@ class WCAClient(ModelMeshClient):
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
         suggestions = model_input.get("suggestions", "")
-        rh_user_has_seat = model_input.get("rh_user_has_seat", False)
         organization_id = model_input.get("organization_id", None)
 
-        model_id = self.get_model_id(rh_user_has_seat, organization_id, model_id)
+        model_id = self.get_model_id(organization_id, model_id)
 
         data = {
             "model_id": model_id,
@@ -329,7 +320,7 @@ class WCAClient(ModelMeshClient):
 
         try:
             # TODO: store token and only fetch a new one if it has expired
-            api_key = self.get_api_key(rh_user_has_seat, organization_id)
+            api_key = self.get_api_key(organization_id)
             token = self.get_token(api_key)
             headers = {
                 "Content-Type": "application/json",

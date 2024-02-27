@@ -160,3 +160,6 @@ ari/kb/rules/
 
 # Generated Grafana files
 grafana/*
+
+# Local LaunchDarkly data
+./flagdata.json

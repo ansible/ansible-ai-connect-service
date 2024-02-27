@@ -1,14 +1,6 @@
 import logging
 import time
 
-from ai.api.permissions import (
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.serializers import TelemetrySettingsRequestSerializer
-from ai.api.utils.segment import send_segment_event
-from ai.api.views import InternalServerError, ServiceUnavailable
-from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -16,7 +8,15 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
-from users.signals import user_set_telemetry_settings
+
+from ansible_wisdom.ai.api.permissions import (
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.serializers import TelemetrySettingsRequestSerializer
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.api.views import InternalServerError, ServiceUnavailable
+from ansible_wisdom.users.signals import user_set_telemetry_settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def get(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: GET handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            raise ServiceUnavailable()
-
         exception = None
         organization = None
         start_time = time.time()
@@ -61,7 +58,13 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
+            if not organization.is_schema_2_telemetry_enabled:
+                raise ServiceUnavailable()
+
             return Response(status=HTTP_200_OK, data={'optOut': organization.telemetry_opt_out})
+
+        except ServiceUnavailable:
+            raise
 
         except Exception as e:
             exception = e
@@ -94,9 +97,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("Telemetry settings:: POST handler")
 
-        if not settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            raise ServiceUnavailable()
-
         exception = None
         organization = None
         start_time = time.time()
@@ -106,6 +106,9 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             organization = request._request.user.organization
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
+
+            if not organization.is_schema_2_telemetry_enabled:
+                raise ServiceUnavailable()
 
             # Extract Telemetry settings from request
             telemetry_settings_serializer = TelemetrySettingsRequestSerializer(data=request.data)
@@ -129,6 +132,9 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             exception = e
             logger.info(e, exc_info=True)
             return Response(status=HTTP_400_BAD_REQUEST)
+
+        except ServiceUnavailable:
+            raise
 
         except Exception as e:
             exception = e

@@ -1,7 +1,5 @@
 import logging
 
-from ai.api.aws.exceptions import WcaSecretManagerMissingCredentialsError
-from ai.api.aws.wca_secret_manager import Suffixes
 from django.apps import apps
 from django.conf import settings
 from django.forms import Form
@@ -9,12 +7,15 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
-from main.cache.cache_per_user import cache_per_user
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from social_django.utils import load_strategy
+
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerMissingCredentialsError
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.main.cache.cache_per_user import cache_per_user
 
 from .serializers import UserResponseSerializer
 
@@ -77,10 +78,9 @@ class CurrentUserView(RetrieveAPIView):
         user_data = serializer.data
 
         # Enrich with Organisational data, if necessary
-        if settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED:
-            organization = self.request.user.organization
-            if organization:
-                user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
+        organization = self.request.user.organization
+        if organization and organization.is_schema_2_telemetry_enabled:
+            user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
 
         return Response(user_data)
 

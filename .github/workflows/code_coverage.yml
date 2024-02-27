@@ -20,8 +20,8 @@ jobs:
       ANSIBLE_AI_DATABASE_NAME: wisdom
       ANSIBLE_AI_DATABASE_PASSWORD: wisdom
       ANSIBLE_AI_DATABASE_USER: wisdom
-      ARI_KB_PATH: ../ari/kb/
-      DJANGO_SETTINGS_MODULE: main.settings.development
+      ARI_KB_PATH: /etc/ari/kb/
+      DJANGO_SETTINGS_MODULE: ansible_wisdom.main.settings.development
       ENABLE_ARI_POSTPROCESS: True
       ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
@@ -57,11 +57,14 @@ jobs:
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
+        pip install .
 
     - name: Retrieve ari knowledge base from s3
       run: |
-        aws s3 cp --recursive ${KB_ARI_PATH}/data ari/kb/data
-        aws s3 cp --recursive ${KB_ARI_PATH}/rules ari/kb/rules
+        sudo mkdir -p /etc/ari/kb
+        sudo chown -R $USER:$USER /etc/ari/kb
+        aws s3 cp --recursive ${KB_ARI_PATH}/data /etc/ari/kb/data
+        aws s3 cp --recursive ${KB_ARI_PATH}/rules /etc/ari/kb/rules
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -70,15 +73,14 @@ jobs:
 
     - name: Running Unit Tests
       run: |
-        cd ansible_wisdom
-        coverage run --rcfile=../setup.cfg manage.py test
+        coverage run --rcfile=setup.cfg -m ansible_wisdom.manage test ansible_wisdom
         coverage xml
-        coverage report --rcfile=../setup.cfg --format=markdown > code-coverage-results.md
+        coverage report --rcfile=setup.cfg --format=markdown > code-coverage-results.md
 
     # See https://sonarsource.atlassian.net/browse/SONARPY-1203
     - name: Fix paths in coverage file
       run: |
-        sed -i 's/\/home\/runner\/work\/ansible-wisdom-service\/ansible-wisdom-service\//\/github\/workspace\//g' ansible_wisdom/coverage.xml
+        sed -i 's,/home/runner/work/ansible-wisdom-service/ansible-wisdom-service/,/github/workspace/,g' coverage.xml
 
     ##################
     # TypeScript tests

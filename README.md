@@ -1,4 +1,37 @@
 # Red Hat Ansible Lightspeed with IBM watsonx Code Assistant.
+- [Red Hat Ansible Lightspeed with IBM watsonx Code Assistant.](#red-hat-ansible-lightspeed-with-ibm-watsonx-code-assistant)
+      - [Wisdom Service](#wisdom-service)
+      - [Admin Portal](#admin-portal)
+  - [Using pre-commit](#using-pre-commit)
+  - [Updating the Python dependencies](#updating-the-python-dependencies)
+  - [Full Development Environment](#full-development-environment)
+  - [Running the Django application standalone (from container)](#running-the-django-application-standalone-from-container)
+  - [Running the Django application standalone (from source)](#running-the-django-application-standalone-from-source)
+  - [Backup/restore the database (Podman)](#backuprestore-the-database-podman)
+  - [Connect to a local model server](#connect-to-a-local-model-server)
+  - [Use the WCA API Keys Manager](#use-the-wca-api-keys-manager)
+  - [Deploy the service via OpenShift S2I](#deploy-the-service-via-openshift-s2i)
+  - [Testing the completion API](#testing-the-completion-api)
+  - [Using the VS Code extension](#using-the-vs-code-extension)
+  - [Authenticating with the completion API](#authenticating-with-the-completion-api)
+    - [Authenticate with GitHub](#authenticate-with-github)
+    - [Authenticate with Red Hat](#authenticate-with-red-hat)
+    - [After authentication](#after-authentication)
+  - [Enabling postprocess with ARI](#enabling-postprocess-with-ari)
+  - [Enabling postprocess with Ansible Lint](#enabling-postprocess-with-ansible-lint)
+  - [Application metrics as a Prometheus-style endpoint](#application-metrics-as-a-prometheus-style-endpoint)
+  - [Swagger UI, ReDoc UI and OpenAPI 3.0 Schema](#swagger-ui-redoc-ui-and-openapi-30-schema)
+    - [Swagger UI](#swagger-ui)
+    - [ReDoc UI](#redoc-ui)
+    - [OpenAPI 3.0 Schema](#openapi-30-schema)
+  - [Test cases](#test-cases)
+    - [Unit-test Guidelines](#unit-test-guidelines)
+    - [Execute Unit Tests and Measure Code Coverage](#execute-unit-tests-and-measure-code-coverage)
+      - [Preparation](#preparation)
+      - [Use make](#use-make)
+      - [Running Unit Tests from Command Line or PyCharm](#running-unit-tests-from-command-line-or-pycharm)
+      - [Measuring Code Coverage from Command Line](#measuring-code-coverage-from-command-line)
+
 
 > **Note:** This repository is under active development and is not yet ready for production use.
 
@@ -249,6 +282,20 @@ Create a local admin user:
 > The setup for debugging is different depending on the Python development tool.
 > For PyCharm, please look
 > at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
+
+## Backup/restore the database (Podman)
+
+You can do a backup and restore the database with the following scripts:
+
+- `./tools/scripts/dump-db.sh`
+- `./tools/scripts/restore-db.sh`
+
+E.g:
+
+```bash
+./tools/scripts/dump-db.sh /tmp/my-backup.dump
+./tools/scripts/restore-db.sh /tmp/my-backup.dump
+```
 
 ## Connect to a local llama.cpp model server
 
@@ -607,7 +654,7 @@ ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
 ANSIBLE_AI_DATABASE_USER=wisdom
 ARI_KB_PATH=../ari/kb/
-DJANGO_SETTINGS_MODULE=main.settings.development
+DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
 ENABLE_ARI_POSTPROCESS=True
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
@@ -622,7 +669,7 @@ If you want to execute only specific file/class/method you can use $WISDOM_TEST 
 
 ```bash
 make test
-WISDOM_TEST="main.tests.test_views.LogoutTest" make test
+WISDOM_TEST="ansible_wisdom.main.tests.test_views.LogoutTest" make test
 ```
 
 Alternatively if you want to run unit tests manually, export variables from `.env` as environment variables.

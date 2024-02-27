@@ -2,11 +2,14 @@ import copy
 import uuid
 from unittest.mock import Mock
 
-from ai.api.data.data_model import APIPayload
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.pipelines.completion_stages.pre_process import completion_pre_process
-from ai.api.serializers import CompletionRequestSerializer
 from django.test import TestCase, modify_settings, override_settings
+
+from ansible_wisdom.ai.api.data.data_model import APIPayload
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.pipelines.completion_stages.pre_process import (
+    completion_pre_process,
+)
+from ansible_wisdom.ai.api.serializers import CompletionRequestSerializer
 
 
 def add_indents(vars, n):

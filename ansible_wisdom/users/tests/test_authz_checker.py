@@ -9,8 +9,9 @@ import requests
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
-from test_utils import WisdomServiceLogAwareTestCase
-from users.authz_checker import (
+
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_wisdom.users.authz_checker import (
     AMSCheck,
     CIAMCheck,
     DummyCheck,
@@ -506,6 +507,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
 class TestDummy(TestCase):
     def setUp(self):
+        super().setUp()
         self.checker = DummyCheck()
 
     def test_self_test(self):

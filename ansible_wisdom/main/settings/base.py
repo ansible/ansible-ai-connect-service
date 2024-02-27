@@ -13,12 +13,35 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import sys
 from pathlib import Path
+from typing import Literal
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
+
+ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
+    'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
+)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
+    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
+)
+
+ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "dummy", "wca"] = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
+)
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL", "https"
+)
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
+    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
+    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+    else None
+)
 
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
@@ -27,8 +50,8 @@ ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv('ANSIBLE_AI_MODEL_MESH_MODEL_NAME')
 
 # WCA
 ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
-ANSIBLE_WCA_FREE_API_KEY = os.getenv("ANSIBLE_WCA_FREE_API_KEY")
-ANSIBLE_WCA_FREE_MODEL_ID = os.getenv("ANSIBLE_WCA_FREE_MODEL_ID")
+ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
+ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
 ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
 
 
@@ -47,15 +70,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "social_django",
-    "users",
-    "organizations",
-    "ai",
+    "ansible_wisdom.users",
+    "ansible_wisdom.organizations",
+    "ansible_wisdom.ai",
     "django_prometheus",
     "drf_spectacular",
     "django_extensions",
     "health_check",
     "health_check.db",
-    "healthcheck",
+    "ansible_wisdom.healthcheck",
     "oauth2_provider",
     'import_export',
 ]
@@ -72,7 +95,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "social_django.middleware.SocialAuthExceptionMiddleware",
-    "main.middleware.SegmentMiddleware",
+    "ansible_wisdom.main.middleware.SegmentMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
     "csp.middleware.CSPMiddleware",
 ]
@@ -87,15 +110,15 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
-
 ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
     os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'True').lower() == 'true'
 )
 
-
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
 COMMERCIAL_DOCUMENTATION_URL = os.getenv(
-    'COMMERCIAL_DOCUMENTATION_URL', 'https://www.redhat.com/en/engage/ansible-lightspeed'
+    'COMMERCIAL_DOCUMENTATION_URL',
+    'https://access.redhat.com/documentation/en-us/'
+    'red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest',
 )
 DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
@@ -134,6 +157,8 @@ AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
 AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT", "3"))
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
+DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
+
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
@@ -147,20 +172,20 @@ SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
     'terms_accepted',
 ]
 SOCIAL_AUTH_PIPELINE = (
-    'users.pipeline.block_auth_users',
+    'ansible_wisdom.users.pipeline.block_auth_users',
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    'main.pipeline.remove_pii',
+    'ansible_wisdom.main.pipeline.remove_pii',
     'social_core.pipeline.social_auth.auth_allowed',
-    'users.pipeline.github_get_username',
+    'ansible_wisdom.users.pipeline.github_get_username',
     # 'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
-    'users.pipeline.redhat_organization',
+    'ansible_wisdom.users.pipeline.redhat_organization',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.load_extra_data',
-    'users.pipeline.terms_of_service',
+    'ansible_wisdom.users.pipeline.load_extra_data',
+    'ansible_wisdom.users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
@@ -197,7 +222,7 @@ OAUTH2_PROVIDER = {
 #   django.db.utils.ProgrammingError: relation "users_user" does not exist
 #
 if sys.argv[1:2] not in [['migrate'], ['test']]:
-    INSTALLED_APPS.append('wildcard_oauth2')
+    INSTALLED_APPS.append('ansible_wisdom.wildcard_oauth2')
     OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
 
 # OAUTH: todo
@@ -216,7 +241,7 @@ MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_THROTTLE_CLASSES': ['users.throttling.GroupSpecificThrottle'],
+    'DEFAULT_THROTTLE_CLASSES': ['ansible_wisdom.users.throttling.GroupSpecificThrottle'],
     'DEFAULT_THROTTLE_RATES': {
         'user': COMPLETION_USER_RATE_THROTTLE,
         'test': "100000/minute",
@@ -229,11 +254,11 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'EXCEPTION_HANDLER': 'main.exception_handler.exception_handler_with_error_type',
+    'EXCEPTION_HANDLER': 'ansible_wisdom.main.exception_handler.exception_handler_with_error_type',
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
 
-ROOT_URLCONF = "main.urls"
+ROOT_URLCONF = "ansible_wisdom.main.urls"
 
 LOGGING = {
     "version": 1,
@@ -257,7 +282,12 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "users.signals": {
+        "ansible_wisdom.users.signals": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "ari_changes": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
@@ -286,7 +316,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "main.wsgi.application"
+WSGI_APPLICATION = "ansible_wisdom.main.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

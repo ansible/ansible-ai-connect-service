@@ -1,13 +1,14 @@
 import logging
 import time
 
-from ai.api import formatter as fmtr
-from ai.api.pipelines.common import PipelineElement, process_error_count
-from ai.api.pipelines.completion_context import CompletionContext
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from rest_framework.response import Response
+
+from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement, process_error_count
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 
 logger = logging.getLogger(__name__)
 

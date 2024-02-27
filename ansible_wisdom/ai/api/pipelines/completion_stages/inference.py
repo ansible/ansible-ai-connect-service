@@ -3,9 +3,14 @@ import logging
 import time
 from string import Template
 
-from ai.api.data.data_model import ModelMeshPayload
-from ai.api.model_client.exceptions import (
-    CustomModelBadRequest,
+from ansible_anonymizer import anonymizer
+from django.apps import apps
+from django.conf import settings
+from django_prometheus.conf import NAMESPACE
+from prometheus_client import Histogram
+
+from ansible_wisdom.ai.api.data.data_model import ModelMeshPayload
+from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -16,9 +21,8 @@ from ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.pipelines.common import (
     BaseWisdomAPIException,
-    CustomModelBadRequestException,
     ModelTimeoutException,
     PipelineElement,
     ServiceUnavailable,
@@ -32,14 +36,9 @@ from ai.api.pipelines.common import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.utils.segment import send_segment_event
-from ai.feature_flags import FeatureFlags, WisdomFlags
-from ansible_anonymizer import anonymizer
-from django.apps import apps
-from django.conf import settings
-from django_prometheus.conf import NAMESPACE
-from prometheus_client import Histogram
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_wisdom.ai.feature_flags import FeatureFlags, WisdomFlags
 
 logger = logging.getLogger(__name__)
 
@@ -122,13 +121,6 @@ class InferenceStage(PipelineElement):
                 f" {json.dumps(exception.json_response)}"
             )
             raise WcaBadRequestException(cause=e)
-
-        except CustomModelBadRequest as e:
-            exception = e
-            logger.info(
-                f"unentitled custom model completion request for suggestion {payload.suggestionId}"
-            )
-            raise CustomModelBadRequestException(cause=e)
 
         except WcaInvalidModelId as e:
             exception = e

@@ -1,6 +1,10 @@
 #!/bin/bash
 set -o errexit
 
+if [[ -n ${DJANGO_SETTINGS_MODULE} ]] && [[ ${DJANGO_SETTINGS_MODULE} == main.settings* ]]; then
+    export DJANGO_SETTINGS_MODULE=ansible_wisdom.${DJANGO_SETTINGS_MODULE}
+fi
+
 database_ready() {
 /var/www/venv/bin/python <<EOF
 import sys
@@ -19,9 +23,16 @@ do
     sleep 5
 done
 
-/var/www/venv/bin/python ansible_wisdom/manage.py migrate --noinput
-/var/www/venv/bin/python ansible_wisdom/manage.py createcachetable
-/var/www/venv/bin/python ansible_wisdom/manage.py collectstatic --noinput
+/var/www/venv/bin/wisdom-manage migrate --noinput
+/var/www/venv/bin/wisdom-manage createcachetable
+if [ "${DEPLOYMENT_MODE}" == "upstream" ]; then
+    # for upstream, creating a out-of-box tesing user for starting quick
+    echo "Creating a testing user for upstream mode..."
+    /var/www/venv/bin/python ansible_wisdom/manage.py createtoken --username testuser --password testuser --token-name testuser_token --create-user
+fi
+if [ ! "${DEPLOYMENT_MODE}" == "saas" ]; then
+    /var/www/venv/bin/wisdom-manage createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible code-oss://redhat.ansible checode://redhat.ansible" public authorization-code
+fi
+/var/www/venv/bin/wisdom-manage collectstatic --noinput
 
-cd ansible_wisdom/
 /usr/local/bin/supervisord -n

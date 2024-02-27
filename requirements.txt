@@ -76,7 +76,7 @@ click==8.1.3
     # via
     #   black
     #   nltk
-cryptography==42.0.2
+cryptography==42.0.4
     # via
     #   -r requirements.in
     #   ansible-core
@@ -475,7 +475,7 @@ smmap==5.0.0
     #   gitdb
 sniffio==1.3.0
     # via anyio
-social-auth-app-django @ https://github.com/python-social-auth/social-app-django/archive/2415e073f52d50af53beb02f5e7f557c8e690371.tar.gz
+social-auth-app-django==5.4.0
     # via -r requirements.in
 social-auth-core[openidconnect]==4.4.2
     # via
@@ -513,12 +513,12 @@ tokenizers==0.15.0
     # via transformers
 tomli==2.0.1
     # via black
-#torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
     #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-#torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
     # via
     #   -r requirements.in
     #   sentence-transformers

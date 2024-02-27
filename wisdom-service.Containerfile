@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
 
-ARG DJANGO_SETTINGS_MODULE=main.settings.production
+ARG DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
@@ -31,25 +31,29 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf remove -y epel-release && \
     dnf clean all
 
+# Copy the ansible_wisdom package files
+COPY requirements.txt /var/www/ansible-wisdom-service/requirements.txt
+COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
+COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
+COPY README.md /var/www/ansible-wisdom-service/README.md
+COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
+COPY main /var/www/ansible-wisdom-service/main
+
 # Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
-COPY requirements.txt /var/www/
 COPY model-cache /var/www/model-cache
-# See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
-RUN /var/www/venv/bin/pip install --upgrade 'setuptools>=65.5.1'
-RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/requirements.txt
-RUN echo "/var/www/ansible_wisdom" > /var/www/venv/lib/python3.9/site-packages/project.pth
+RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
+RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
 RUN mkdir /var/run/uwsgi
 
-COPY ansible_wisdom /var/www/ansible_wisdom
 RUN echo -e "\
 {\n\
   \"imageTags\": \"${IMAGE_TAGS}\", \n\
   \"gitCommit\": \"${GIT_COMMIT}\" \n\
 }\n\
-" > /var/www/ansible_wisdom/version_info.json
+" > /var/www/ansible-wisdom-service/ansible_wisdom/version_info.json
 
 # Compile React/TypeScript Console application
 # Copy each source folder individually to avoid copying 'node_modules'
@@ -68,7 +72,6 @@ COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
-COPY tools/scripts/wisdom-manage /usr/bin/wisdom-manage
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
@@ -84,7 +87,9 @@ RUN for dir in \
       /var/log/nginx \
       /etc/ari \
       /etc/ansible \
-      /var/run/django_metrics ; \
+      /var/run/django_metrics \
+      /var/www/.cache \
+      ; \
     do mkdir -p $dir ; chgrp -R 0 $dir; chmod -R g=u $dir ; done && \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
 

@@ -2,18 +2,19 @@
 
 import logging
 
-from ai.api.permissions import (
+from django.conf import settings
+from django.contrib.auth import views as auth_views
+from django.http import HttpResponseRedirect
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework.permissions import IsAuthenticated
+
+from ansible_wisdom.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from django.conf import settings
-from django.contrib.auth import views as auth_views
-from django.http import HttpResponseRedirect
-from main.base_views import ProtectedTemplateView
-from main.settings.base import SOCIAL_AUTH_OIDC_KEY
-from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from rest_framework.permissions import IsAuthenticated
+from ansible_wisdom.main.base_views import ProtectedTemplateView
+from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,18 @@ class ConsoleView(ProtectedTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user:
-            context["user_name"] = self.request.user.username
-            context["rh_org_has_subscription"] = self.request.user.rh_org_has_subscription
-            context["telemetry_opt_enabled"] = settings.ADMIN_PORTAL_TELEMETRY_OPT_ENABLED
+        user = self.request.user
+        if user:
+            context["user_name"] = user.username
+            context["rh_org_has_subscription"] = user.rh_org_has_subscription
+            organization = user.organization
+            if organization:
+                is_schema_2_telemetry_enabled = organization.is_schema_2_telemetry_enabled
+                context["telemetry_schema_2_enabled"] = is_schema_2_telemetry_enabled
+
+                if is_schema_2_telemetry_enabled:
+                    context[
+                        "telemetry_schema_2_admin_dashboard_url"
+                    ] = settings.TELEMETRY_ADMIN_DASHBOARD_URL
+
         return context

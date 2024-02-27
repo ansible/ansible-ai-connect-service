@@ -1,25 +1,29 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-import ai.apps
-from ai.api.aws.exceptions import WcaSecretManagerError
-from ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ai.api.model_client.exceptions import WcaTokenFailure, WcaTokenFailureApiKeyError
-from ai.api.model_client.wca_client import WCAClient
-from ai.api.permissions import (
-    AcceptedTermsPermission,
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.apps import apps
 from django.test import override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from organizations.models import Organization
 from rest_framework.permissions import IsAuthenticated
-from test_utils import WisdomAppsBackendMocking
+
+import ansible_wisdom.ai.apps
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_wisdom.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    WcaTokenFailure,
+    WcaTokenFailureApiKeyError,
+)
+from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
+from ansible_wisdom.ai.api.permissions import (
+    AcceptedTermsPermission,
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.test_utils import WisdomAppsBackendMocking
 
 
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
@@ -30,11 +34,11 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
 
     def tearDown(self):
@@ -156,7 +160,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
         # Set Key
         mock_wca_client.get_token.return_value = "token"
-        with self.assertLogs(logger='users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('wca_api_key'),
@@ -272,11 +276,11 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
 
     def tearDown(self):

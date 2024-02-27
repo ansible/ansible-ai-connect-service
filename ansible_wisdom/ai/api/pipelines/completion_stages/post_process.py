@@ -3,23 +3,21 @@ import logging
 import time
 
 import yaml
-from ai.api import formatter as fmtr
-from ai.api.pipelines.common import (
-    PipelineElement,
-    PostprocessException,
-    process_error_count,
-)
-from ai.api.pipelines.completion_context import CompletionContext
-from ai.api.utils.segment import send_segment_event
-from ai.feature_flags import FeatureFlags
 from django.apps import apps
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
-logger = logging.getLogger(__name__)
+from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_wisdom.ai.api.pipelines.common import (
+    PipelineElement,
+    PostprocessException,
+    process_error_count,
+)
+from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
+from ansible_wisdom.ai.api.utils.segment import send_segment_event
 
-feature_flags = FeatureFlags()
+logger = logging.getLogger(__name__)
 
 STRIP_YAML_LINE = '---\n'
 
@@ -209,6 +207,32 @@ def completion_post_process(context: CompletionContext):
                 # Use the anonymized task name in the postprocess segment event
                 postprocess_details.append(
                     {"name": tasks[index]["name"], "rule_details": ari_result["rule_details"]}
+                )
+
+            # Test for changes to the recommendation and if so log as warn.
+            # WCA is already running ARI so we expect no changes.
+            # Ignore any whitespace and single vs double quote changes.
+            pp = (
+                postprocessed_yaml.replace(" ", "")
+                .replace("\n", "")
+                .replace("\"", "")
+                .replace("'", "")
+            )
+            orig = (
+                recommendation_yaml.replace(" ", "")
+                .replace("\n", "")
+                .replace("\"", "")
+                .replace("'", "")
+            )
+            if pp != orig:
+                ari_changes_logger = logging.getLogger("ari_changes")
+                ari_changes_logger.info(
+                    f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
+                    f"recommendation_yaml: [{repr(recommendation_yaml)}] "
+                    f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
+                    f"original_prompt: [{repr(original_prompt)}] "
+                    f"payload_context: [{repr(payload_context)}] "
+                    f"postprocess_details: [{json.dumps(postprocess_details)}] "
                 )
 
             logger.debug(

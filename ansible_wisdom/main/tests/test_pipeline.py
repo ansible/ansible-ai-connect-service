@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import main.pipeline as pipeline
+import ansible_wisdom.main.pipeline as pipeline
 
 
 class TestPipeline(TestCase):

@@ -9,11 +9,12 @@ import { PageApp } from "./PageApp";
 export interface AppProps {
   readonly userName: string;
   readonly telemetryOptEnabled: boolean;
+  readonly adminDashboardUrl: string;
 }
 
 export function App(props: AppProps) {
   const { t } = useTranslation();
-  const { userName, telemetryOptEnabled } = props;
+  const { userName, telemetryOptEnabled, adminDashboardUrl } = props;
 
   const navigationItems = useMemo<PageNavigationItem[]>(() => {
     const items = [
@@ -29,7 +30,7 @@ export function App(props: AppProps) {
         // Telemetry
         label: t("Telemetry"),
         path: "telemetry",
-        element: <TelemetrySettings />,
+        element: <TelemetrySettings adminDashboardUrl={adminDashboardUrl} />,
       });
     }
     return [
@@ -40,7 +41,7 @@ export function App(props: AppProps) {
         children: items,
       },
     ];
-  }, [t, telemetryOptEnabled]);
+  }, [t, telemetryOptEnabled, adminDashboardUrl]);
 
   return (
     <PageApp

@@ -1,38 +1,10 @@
 import os
-from typing import Literal
 
 from .base import *  # NOQA
 
 DEBUG = True
 
-SECRET_KEY = os.environ["SECRET_KEY"]
-
 ALLOWED_HOSTS = ["*"]
-
-ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
-    'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
-)
-ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
-
-ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
-    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "dummy", "wca"] = (
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_TYPE") or "http"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = (
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL") or "https"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
-    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
-    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
-    else None
-)
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
@@ -57,7 +29,9 @@ if DEBUG:
         index = MIDDLEWARE.index(  # noqa: F405
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
-        MIDDLEWARE[index] = "main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
+        MIDDLEWARE[  # noqa: F405
+            index
+        ] = "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"
 
 CSP_REPORT_ONLY = True
 AUTHZ_BACKEND_TYPE = os.getenv("AUTHZ_BACKEND_TYPE") or "dummy"
@@ -81,5 +55,7 @@ WCA_SECRET_BACKEND_TYPE = os.getenv("WCA_SECRET_BACKEND_TYPE", "dummy")  # or aw
 WCA_SECRET_DUMMY_SECRETS = os.getenv("WCA_SECRET_DUMMY_SECRETS", "")
 WCA_CLIENT_BACKEND_TYPE = os.getenv("WCA_CLIENT_BACKEND_TYPE", "dummy")  # or wcaclient
 
-# Enable Telemetry Opt In/Out settings in the Admin Portal
-ADMIN_PORTAL_TELEMETRY_OPT_ENABLED = True
+# "Schema 2" Telemetry Admin Dashboard URL
+TELEMETRY_ADMIN_DASHBOARD_URL = (
+    "https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard"
+)

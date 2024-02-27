@@ -6,14 +6,17 @@ from unittest.mock import Mock, patch
 
 import django.utils.timezone
 import requests
-from ai.api.aws.wca_secret_manager import (
+from django.test import TestCase, override_settings
+from prometheus_client import Counter, Histogram
+from requests.exceptions import HTTPError, ReadTimeout
+
+from ansible_wisdom.ai.api.aws.wca_secret_manager import (
     DummySecretEntry,
     DummySecretManager,
     Suffixes,
     WcaSecretManagerError,
 )
-from ai.api.model_client.exceptions import (
-    CustomModelBadRequest,
+from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCodeMatchFailure,
@@ -25,7 +28,7 @@ from ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
-from ai.api.model_client.wca_client import (
+from ansible_wisdom.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
     ibm_cloud_identity_token_hist,
@@ -35,10 +38,10 @@ from ai.api.model_client.wca_client import (
     wca_codematch_hist,
     wca_codematch_retry_counter,
 )
-from django.test import TestCase, override_settings
-from prometheus_client import Counter, Histogram
-from requests.exceptions import HTTPError, ReadTimeout
-from test_utils import WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase
+from ansible_wisdom.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceLogAwareTestCase,
+)
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
@@ -113,29 +116,22 @@ def assert_call_count_metrics(metric):
 @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
-    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
-    def test_get_api_key_without_seat(self):
-        model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(False, None)
-        self.assertEqual(api_key, 'abcdef')
-
     @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:my-key<sep>my-optimized-model')
     def test_mock_wca_get_api_key(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, 11009103)
+        api_key = model_client.get_api_key(11009103)
         self.assertEqual(api_key, 'my-key')
 
-    @override_settings(ANSIBLE_WCA_FREE_API_KEY='abcdef')
-    def test_get_api_key_with_seat_without_org_id(self):
+    def test_get_api_key_without_org_id(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, None)
-        self.assertEqual(api_key, 'abcdef')
+        with self.assertRaises(WcaKeyNotFound):
+            model_client.get_api_key(None)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:12345<sep>my-model')
     def test_get_api_key_from_aws(self):
         secret_value = '12345'
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, 123)
+        api_key = model_client.get_api_key(123)
         self.assertEqual(api_key, secret_value)
 
     def test_get_api_key_from_aws_error(self):
@@ -144,72 +140,58 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         self.mock_wca_secret_manager_with(m)
         model_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaSecretManagerError):
-            model_client.get_api_key(True, '123')
+            model_client.get_api_key('123')
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='key')
     def test_get_api_key_with_environment_override(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        api_key = model_client.get_api_key(True, 123)
+        api_key = model_client.get_api_key(123)
         self.assertEqual(api_key, 'key')
 
-    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
-    def test_mock_wca_get_free_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(False, None, None)
-        self.assertEqual(model_id, 'free')
-
-    @override_settings(ANSIBLE_WCA_FREE_MODEL_ID='free')
-    def test_seatless_get_free_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(False, None, None)
-        self.assertEqual(model_id, 'free')
-
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<sep>my-great-model')
-    def test_seated_with_empty_model(self):
+    def test_get_model_id_with_empty_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(
-            rh_user_has_seat=True, organization_id=123, requested_model_id=''
-        )
+        model_id = wca_client.get_model_id(organization_id=123, requested_model_id='')
         self.assertEqual(model_id, 'my-great-model')
 
-    def test_seatless_cannot_pick_model(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(CustomModelBadRequest):
-            wca_client.get_model_id(False, None, 'some-model')
-
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:my-key<sep>org-model')
-    def test_seated_get_org_default_model(self):
+    def test_get_model_id_get_org_default_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, 123, None)
+        model_id = wca_client.get_model_id(123, None)
         self.assertEqual(model_id, 'org-model')
 
-    def test_seated_can_pick_model(self):
+    def test_get_model_id_with_model_override(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, 123, 'model-i-pick')
+        model_id = wca_client.get_model_id(123, 'model-i-pick')
         self.assertEqual(model_id, 'model-i-pick')
 
+    def test_get_model_id_without_org_id(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaModelIdNotFound):
+            model_client.get_model_id(None, None)
+
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:')
-    def test_seated_cannot_have_no_key(self):
+    def test_get_api_key_org_cannot_have_no_key(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaKeyNotFound):
-            wca_client.get_api_key(True, 123)
+            wca_client.get_api_key(123)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
-    def test_seated_cannot_have_no_model(self):
+    def test_get_model_id_org_cannot_have_no_model(self):
         wca_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaModelIdNotFound):
-            wca_client.get_model_id(True, 123, None)
+            wca_client.get_model_id(123, None)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='gemini')
     def test_model_id_with_environment_override(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, 123, None)
+        model_id = wca_client.get_model_id(123, None)
         self.assertEqual(model_id, 'gemini')
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='gemini')
     def test_model_id_with_environment_and_user_override(self):
         wca_client = WCAClient(inference_url='http://example.com/')
-        model_id = wca_client.get_model_id(True, 123, 'bard')
+        model_id = wca_client.get_model_id(123, 'bard')
         self.assertEqual(model_id, 'bard')
 
     def test_fatal_exception(self):
@@ -296,6 +278,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
     def _do_inference(self, suggestion_id=None, request_id=None, prompt=None, codegen_prompt=None):
         model_id = "zavala"
+        api_key = "abc123"
         context = ""
         prompt = prompt if prompt else "- name: install ffmpeg on Red Hat Enterprise Linux"
 
@@ -336,6 +319,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
 
         result = model_client.infer(
             model_input=model_input,
@@ -355,6 +339,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_timeout(self):
         model_id = "zavala"
+        api_key = "abc123"
         model_input = {
             "instances": [
                 {
@@ -375,6 +360,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(ModelTimeoutError) as e:
             model_client.infer(
                 model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
@@ -385,6 +371,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codegen_retry_counter)
     def test_infer_http_error(self):
         model_id = "zavala"
+        api_key = "abc123"
         model_input = {
             "instances": [
                 {
@@ -405,6 +392,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(WcaInferenceFailure) as e:
             model_client.infer(
                 model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
@@ -414,6 +402,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_request_id_correlation_failure(self):
         model_id = "zavala"
+        api_key = "abc123"
         model_input = {
             "instances": [
                 {
@@ -440,6 +429,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
 
         with self.assertRaises(WcaSuggestionIdCorrelationFailure) as e:
             model_client.infer(
@@ -517,10 +507,12 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
 
     def tearDown(self):
         self.now_patcher.stop()
+        super().tearDown()
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
     def test_codematch(self):
         model_id = "sample_model_name"
+        api_key = "abc123"
         suggestions = [
             "- name: install ffmpeg on Red Hat Enterprise Linux\n  "
             "ansible.builtin.package:\n    name:\n      - ffmpeg\n    state: present\n",
@@ -574,6 +566,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value=token)
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
 
         result = model_client.codematch(model_input=model_input, model_id=model_id)
 
@@ -589,6 +582,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codematch_hist)
     def test_codematch_timeout(self):
         model_id = "sample_model_name"
+        api_key = "abc123"
         suggestions = [
             "- name: install ffmpeg on Red Hat Enterprise Linux",
             "- name: This is another test",
@@ -607,6 +601,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(ModelTimeoutError) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
@@ -615,6 +610,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codematch_retry_counter)
     def test_codematch_http_error(self):
         model_id = "sample_model_name"
+        api_key = "abc123"
         model_input = {
             "instances": [
                 {
@@ -634,6 +630,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(WcaCodeMatchFailure) as e:
             model_client.codematch(model_input=model_input, model_id=model_id)
         self.assertEqual(e.exception.model_id, model_id)
@@ -675,6 +672,7 @@ class TestDummySecretManager(TestCase):
 
     def tearDown(self):
         self.now_patcher.stop()
+        super().tearDown()
 
     def test_load_secrets(self):
         expectation = {

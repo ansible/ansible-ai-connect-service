@@ -1,5 +1,7 @@
-from ai.api.aws.wca_secret_manager import Suffixes
-from ai.management.commands._base_wca_delete_command import BaseWCADeleteCommand
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.ai.management.commands._base_wca_delete_command import (
+    BaseWCADeleteCommand,
+)
 
 
 class Command(BaseWCADeleteCommand):

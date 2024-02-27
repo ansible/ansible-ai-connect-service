@@ -1,22 +1,28 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-from ai.api.permissions import (
-    IsOrganisationAdministrator,
-    IsOrganisationLightspeedSubscriber,
-)
-from ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from django.db.utils import DatabaseError
 from django.test import override_settings
 from django.urls import resolve, reverse
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from organizations.models import Organization
 from rest_framework.permissions import IsAuthenticated
+
+import ansible_wisdom.ai.feature_flags as feature_flags
+from ansible_wisdom.ai.api.permissions import (
+    IsOrganisationAdministrator,
+    IsOrganisationLightspeedSubscriber,
+)
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.organizations.models import Organization
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
 class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        super().setUp()
+        feature_flags.FeatureFlags.instance = None
+
     def test_get_settings_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))
@@ -36,8 +42,11 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         for permission in required_permissions:
             self.assertTrue(permission in view.permission_classes)
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
-    def test_get_settings_when_feature_disabled(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_get_settings_when_feature_disabled(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = False
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))
         self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
@@ -52,7 +61,10 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
             self.assert_segment_log(log, "telemetrySettingsGet", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_get_settings_when_undefined(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_get_settings_when_undefined(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
@@ -63,7 +75,10 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
             self.assert_segment_log(log, "telemetrySettingsGet", None, opt_out=False)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_get_settings_when_defined(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_get_settings_when_defined(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=True)[
             0
         ]
@@ -80,8 +95,11 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         r = self.client.post(reverse('telemetry_settings'))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
-    @override_settings(ADMIN_PORTAL_TELEMETRY_OPT_ENABLED=False)
-    def test_set_settings_when_feature_disabled(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_set_settings_when_feature_disabled(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = False
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('telemetry_settings'))
         self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
@@ -96,7 +114,10 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
             self.assert_segment_log(log, "telemetrySettingsSet", None)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_set_settings_with_valid_value(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_set_settings_with_valid_value(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
@@ -106,7 +127,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.assertFalse(r.data['optOut'])
 
         # Set settings
-        with self.assertLogs(logger='users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('telemetry_settings'),
@@ -129,7 +150,10 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.assertTrue(r.data['optOut'])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_set_settings_throws_exception(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_set_settings_throws_exception(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
@@ -144,7 +168,10 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
                 self.assert_segment_log(log, "telemetrySettingsSet", "DatabaseError", opt_out=False)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    def test_set_settings_throws_validation_exception(self, *args):
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_set_settings_throws_validation_exception(self, LDClient, *args):
+        LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 

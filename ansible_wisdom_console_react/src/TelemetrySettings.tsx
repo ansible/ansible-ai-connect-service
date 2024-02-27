@@ -41,8 +41,13 @@ import { useTelemetry } from "./hooks/useTelemetryAPI";
 import { BusyButton } from "./BusyButton";
 import { Alerts, AlertsHandle } from "./Alerts";
 
-export function TelemetrySettings() {
+export interface TelemetrySettingsProps {
+  readonly adminDashboardUrl: string;
+}
+
+export function TelemetrySettings(props: TelemetrySettingsProps) {
   const { t } = useTranslation();
+  const { adminDashboardUrl } = props;
 
   const [telemetry, setTelemetry] = useState<Telemetry>({
     status: "NOT_ASKED",
@@ -141,7 +146,10 @@ export function TelemetrySettings() {
                     <Text component={"h3"}>{t("TelemetryManageUsage")}</Text>
                     <Text component={"p"}>
                       {t("TelemetryManageUsageDescription")}
-                      <a href={t("TelemetryManageUsageAdminDashboardURL")}>
+                      <a
+                        data-testid={"telemetry-settings__admin_dashboard_url"}
+                        href={adminDashboardUrl}
+                      >
                         {t("TelemetryManageUsageAdminDashboardURLText")}
                       </a>
                     </Text>

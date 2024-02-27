@@ -1,5 +1,5 @@
-from test_utils import WisdomServiceLogAwareTestCase
-from users.signals import _obfuscate
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_wisdom.users.signals import _obfuscate
 
 
 class TestSignals(WisdomServiceLogAwareTestCase):

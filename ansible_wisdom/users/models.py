@@ -2,12 +2,15 @@ import logging
 import uuid
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
-from organizations.models import Organization
+
+from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.organizations.models import Organization
 
 from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
@@ -63,15 +66,16 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if self.groups.filter(name='Commercial').exists():
             return True
 
-        if not self.is_oidc_user():
-            return False
+        # Logic used during the transition and before the removal of the rh_user_has_seat attr
+        if self.organization and self.rh_org_has_subscription:
+            if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+                return True
 
-        seat_checker = apps.get_app_config("ai").get_seat_checker()
-        if not seat_checker:
-            return False
-        uid = self.social_auth.values()[0]["uid"]
-        rh_org_id = self.organization.id if self.organization else None
-        return seat_checker.check(uid, self.external_username, rh_org_id)
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            org_has_api_key = secret_manager.secret_exists(self.organization.id, Suffixes.API_KEY)
+            return org_has_api_key
+
+        return False
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:
