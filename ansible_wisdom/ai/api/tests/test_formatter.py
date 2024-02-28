@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-from django.test import TestCase
-
 from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
 
 
-class AnsibleDumperTestCase(TestCase):
+class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
     def test_extra_empty_lines(self):
         extra_empty_lines = """---
 - name: test empty lines
@@ -372,6 +371,20 @@ var3: value3
             "",
             fmtr.restore_original_task_names("", multi_task_prompt),
         )
+
+    def test_restore_original_task_names_for_error(self):
+        multi_task_prompt = "# Install Apache\n"
+        multi_task_yaml = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
+            "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+
+        with self.assertLogs(logger='root', level='INFO') as log:
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt)
+            self.assertInLog(
+                "There is no match for the enumerated prompt task in the suggestion yaml", log
+            )
 
     def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"

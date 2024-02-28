@@ -365,6 +365,9 @@ def restore_original_task_names(output_yaml, prompt):
                 restored_task_line = task_line.replace(task, prompt_tasks[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
             except IndexError:
+                logger.info(
+                    "There is no match for the enumerated prompt task in the suggestion yaml"
+                )
                 continue
 
     return output_yaml
