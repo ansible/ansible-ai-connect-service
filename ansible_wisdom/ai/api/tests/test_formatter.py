@@ -308,11 +308,26 @@ var3: value3
     def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
+        multi_task_prompt_with_loop = (
+            "# Delete all virtual machines in my Azure resource group that exists longer "
+            "than 24 hours. Do not delete virtual machines that exists less than 24 hours."
+        )
 
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
             "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+        multi_task_yaml_with_loop = (
+            "- name:  Delete all virtual machines in my "
+            "Azure resource group that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
         )
         single_task_yaml = (
             "  ansible.builtin.package:\n    name: openssh-server\n    state: present\n  when:\n"
@@ -324,10 +339,28 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
+        expected_multi_task_yaml_with_loop = (
+            "- name:  Delete all virtual machines in my "
+            "Azure resource group that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+        )
 
         self.assertEqual(
             expected_multi_task_yaml,
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml_with_loop,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop, multi_task_prompt_with_loop
+            ),
         )
 
         self.assertEqual(

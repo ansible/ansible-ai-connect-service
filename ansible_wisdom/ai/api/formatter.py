@@ -357,10 +357,14 @@ def get_task_names_from_tasks(tasks):
 def restore_original_task_names(output_yaml, prompt):
     if output_yaml and is_multi_task_prompt(prompt):
         prompt_tasks = get_task_names_from_prompt(prompt)
-        matches = re.finditer(r"(- name:\s+)(.*)", output_yaml, re.M)
+        matches = re.finditer(r"(^- name:\s+)(.*)", output_yaml, re.M)
         for i, match in enumerate(matches):
-            task_line = match.group(0)
-            task = match.group(2)
-            restored_task_line = task_line.replace(task, prompt_tasks[i])
-            output_yaml = output_yaml.replace(task_line, restored_task_line)
+            try:
+                task_line = match.group(0)
+                task = match.group(2)
+                restored_task_line = task_line.replace(task, prompt_tasks[i])
+                output_yaml = output_yaml.replace(task_line, restored_task_line)
+            except IndexError:
+                continue
+
     return output_yaml
