@@ -372,7 +372,7 @@ var3: value3
             fmtr.restore_original_task_names("", multi_task_prompt),
         )
 
-    def test_restore_original_task_names_for_error(self):
+    def test_restore_original_task_names_for_index_error(self):
         multi_task_prompt = "# Install Apache\n"
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
