@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-from django.test import TestCase
-
 from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
 
 
-class AnsibleDumperTestCase(TestCase):
+class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
     def test_extra_empty_lines(self):
         extra_empty_lines = """---
 - name: test empty lines
@@ -308,11 +307,26 @@ var3: value3
     def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
+        multi_task_prompt_with_loop = (
+            "# Delete all virtual machines in my Azure resource group that exists longer "
+            "than 24 hours. Do not delete virtual machines that exists less than 24 hours."
+        )
 
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
             "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+        multi_task_yaml_with_loop = (
+            "- name:  Delete all virtual machines in my "
+            "Azure resource group that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
         )
         single_task_yaml = (
             "  ansible.builtin.package:\n    name: openssh-server\n    state: present\n  when:\n"
@@ -324,10 +338,28 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
+        expected_multi_task_yaml_with_loop = (
+            "- name:  Delete all virtual machines in my "
+            "Azure resource group that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+        )
 
         self.assertEqual(
             expected_multi_task_yaml,
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml_with_loop,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop, multi_task_prompt_with_loop
+            ),
         )
 
         self.assertEqual(
@@ -339,6 +371,20 @@ var3: value3
             "",
             fmtr.restore_original_task_names("", multi_task_prompt),
         )
+
+    def test_restore_original_task_names_for_index_error(self):
+        multi_task_prompt = "# Install Apache\n"
+        multi_task_yaml = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
+            "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
+
+        with self.assertLogs(logger='root', level='INFO') as log:
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt)
+            self.assertInLog(
+                "There is no match for the enumerated prompt task in the suggestion yaml", log
+            )
 
     def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"
