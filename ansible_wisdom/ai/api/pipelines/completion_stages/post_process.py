@@ -209,31 +209,32 @@ def completion_post_process(context: CompletionContext):
                     {"name": tasks[index]["name"], "rule_details": ari_result["rule_details"]}
                 )
 
-            # Test for changes to the recommendation and if so log as warn.
-            # WCA is already running ARI so we expect no changes.
-            # Ignore any whitespace and single vs double quote changes.
-            pp = (
-                postprocessed_yaml.replace(" ", "")
-                .replace("\n", "")
-                .replace("\"", "")
-                .replace("'", "")
-            )
-            orig = (
-                recommendation_yaml.replace(" ", "")
-                .replace("\n", "")
-                .replace("\"", "")
-                .replace("'", "")
-            )
-            if pp != orig:
-                ari_changes_logger = logging.getLogger("ari_changes")
-                ari_changes_logger.info(
-                    f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
-                    f"recommendation_yaml: [{repr(recommendation_yaml)}] "
-                    f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
-                    f"original_prompt: [{repr(original_prompt)}] "
-                    f"payload_context: [{repr(payload_context)}] "
-                    f"postprocess_details: [{json.dumps(postprocess_details)}] "
+            if user.rh_user_has_seat:
+                # Test for changes to the recommendation and if so log as warn.
+                # WCA is already running ARI so we expect no changes.
+                # Ignore any whitespace and single vs double quote changes.
+                pp = (
+                    postprocessed_yaml.replace(" ", "")
+                    .replace("\n", "")
+                    .replace("\"", "")
+                    .replace("'", "")
                 )
+                orig = (
+                    recommendation_yaml.replace(" ", "")
+                    .replace("\n", "")
+                    .replace("\"", "")
+                    .replace("'", "")
+                )
+                if pp != orig:
+                    ari_changes_logger = logging.getLogger("ari_changes")
+                    ari_changes_logger.info(
+                        f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
+                        f"recommendation_yaml: [{repr(recommendation_yaml)}] "
+                        f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
+                        f"original_prompt: [{repr(original_prompt)}] "
+                        f"payload_context: [{repr(payload_context)}] "
+                        f"postprocess_details: [{json.dumps(postprocess_details)}] "
+                    )
 
             logger.debug(
                 f"suggestion id: {suggestion_id}, "
