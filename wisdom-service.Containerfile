@@ -37,7 +37,6 @@ COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
 COPY README.md /var/www/ansible-wisdom-service/README.md
 COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
-COPY main /var/www/ansible-wisdom-service/main
 
 # Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
