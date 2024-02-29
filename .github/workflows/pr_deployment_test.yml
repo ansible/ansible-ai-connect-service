@@ -2,6 +2,10 @@ name: PR Deployment Testing
 on:
   pull_request:
     types: [ labeled ]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
 
 jobs:
   pr_testing:
@@ -25,5 +29,6 @@ jobs:
       - name: report test results
         uses: mshick/add-pr-comment@v2
         with:
+          issue: ${{ inputs.pr }}
           message: |
             ${{ steps.test_pr.outputs.TEST_RESULTS }}
