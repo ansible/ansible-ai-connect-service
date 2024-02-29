@@ -307,9 +307,10 @@ var3: value3
     def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
-        multi_task_prompt_with_loop = (
-            "# Delete all virtual machines in my Azure resource group that exists longer "
-            "than 24 hours. Do not delete virtual machines that exists less than 24 hours."
+        task_prompt_with_loop = (
+            "# Delete all virtual machines in my Azure resource group called 'melisa' that "
+            "exists longer than 24 hours. Do not delete virtual machines that exists less "
+            "than 24 hours."
         )
 
         multi_task_yaml = (
@@ -317,9 +318,9 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
-        multi_task_yaml_with_loop = (
+        task_yaml_with_loop = (
             "- name:  Delete all virtual machines in my "
-            "Azure resource group that exists longer than 24 hours. Do not "
+            "Azure resource group called 'test' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
             "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
@@ -338,9 +339,9 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
-        expected_multi_task_yaml_with_loop = (
+        expected_task_yaml_with_loop = (
             "- name:  Delete all virtual machines in my "
-            "Azure resource group that exists longer than 24 hours. Do not "
+            "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
             "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
@@ -355,12 +356,14 @@ var3: value3
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
         )
 
-        self.assertEqual(
-            expected_multi_task_yaml_with_loop,
-            fmtr.restore_original_task_names(
-                multi_task_yaml_with_loop, multi_task_prompt_with_loop
-            ),
-        )
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertEqual(
+                expected_task_yaml_with_loop,
+                fmtr.restore_original_task_names(task_yaml_with_loop, task_prompt_with_loop),
+            )
+            self.assertInLog(
+                "There is no match for the enumerated prompt task in the suggestion yaml", log
+            )
 
         self.assertEqual(
             single_task_yaml,
@@ -373,6 +376,7 @@ var3: value3
         )
 
     def test_restore_original_task_names_for_index_error(self):
+        # The following prompt simulates a forgotten second task prompt.
         multi_task_prompt = "# Install Apache\n"
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
@@ -380,7 +384,7 @@ var3: value3
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
 
-        with self.assertLogs(logger='root', level='INFO') as log:
+        with self.assertLogs(logger='root', level='ERROR') as log:
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt)
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
