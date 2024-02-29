@@ -41,6 +41,15 @@ class Metadata(serializers.Serializer):
     )
 
 
+class BaseRequestSerializer(serializers.Serializer):
+    ansibleExtensionVersion = serializers.RegexField(
+        r"v\d+\.\d+\.\d+",
+        required=False,
+        label="Ansible vscode/vscodium extension version",
+        help_text="User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+    )
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -55,9 +64,9 @@ class Metadata(serializers.Serializer):
         ),
     ]
 )
-class CompletionRequestSerializer(serializers.Serializer):
+class CompletionRequestSerializer(BaseRequestSerializer):
     class Meta:
-        fields = ['prompt', 'suggestionId', 'metadata', 'model']
+        fields = ['prompt', 'suggestionId', 'metadata', 'model', 'ansibleExtensionVersion']
 
     prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
@@ -307,7 +316,7 @@ class IssueFeedback(serializers.Serializer):
         ),
     ]
 )
-class FeedbackRequestSerializer(serializers.Serializer):
+class FeedbackRequestSerializer(BaseRequestSerializer):
     class Meta:
         fields = [
             'inlineSuggestion',
@@ -315,6 +324,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
             'suggestionQualityFeedback',
             'sentimentFeedback',
             'issueFeedback',
+            'ansibleExtensionVersion',
         ]
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
@@ -345,9 +355,9 @@ class FeedbackRequestSerializer(serializers.Serializer):
         return value
 
 
-class AttributionRequestSerializer(serializers.Serializer):
+class AttributionRequestSerializer(BaseRequestSerializer):
     class Meta:
-        fields = ['suggestion', 'suggestionId']
+        fields = ['suggestion', 'suggestionId', 'ansibleExtensionVersion']
 
     suggestion = serializers.CharField(trim_whitespace=False)
     suggestionId = serializers.UUIDField(
@@ -361,9 +371,9 @@ class AttributionRequestSerializer(serializers.Serializer):
     )
 
 
-class ContentMatchRequestSerializer(serializers.Serializer):
+class ContentMatchRequestSerializer(BaseRequestSerializer):
     class Meta:
-        fields = ['suggestions', 'suggestionId', 'model']
+        fields = ['suggestions', 'suggestionId', 'model', 'ansibleExtensionVersion']
 
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
