@@ -43,7 +43,7 @@ class Metadata(serializers.Serializer):
 
 class BaseRequestSerializer(serializers.Serializer):
     ansibleExtensionVersion = serializers.RegexField(
-        r"v\d+\.\d+\.\d+",
+        r"v?\d+\.\d+\.\d+",
         required=False,
         label="Ansible vscode/vscodium extension version",
         help_text="User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
