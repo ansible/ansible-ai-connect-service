@@ -226,7 +226,7 @@ class FeedbackRequestSerializerTest(TestCase):
             },
         )
 
-        # inlineSuggestion feedback raises exception when seat and not telemetry enabled
+        # feedback request raises exception when ansibleExtensionVersion is not valid version
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
 
