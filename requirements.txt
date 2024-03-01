@@ -154,6 +154,7 @@ fsspec[http]==2023.5.0
     # via
     #   datasets
     #   huggingface-hub
+    #   torch
 gitdb==4.0.10
     # via ansible-risk-insight
 grpcio==1.60.1
@@ -440,12 +441,14 @@ tokenizers==0.15.0
     # via transformers
 tomli==2.0.1
     # via black
-torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine=="x86_64"
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_arm64.whl ; platform_machine=="arm64"
     # via
     #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine=="x86_64"
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_arm64.whl ; platform_machine=="arm64"
     # via
     #   -r requirements.in
     #   sentence-transformers

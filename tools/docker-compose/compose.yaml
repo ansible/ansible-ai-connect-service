@@ -2,7 +2,6 @@ version: "3.8"
 services:
   django:
     user: "1000"
-    platform: linux/amd64
     image: localhost/docker-compose_django:latest
     build:
       context: $PWD
@@ -80,7 +79,6 @@ services:
     networks:
       - dbnet
   db:
-    platform: linux/amd64
     image: docker.io/library/postgres:15-alpine
     environment:
       - POSTGRES_PASSWORD=wisdom
@@ -96,7 +94,6 @@ services:
     ports:
       - "5432:5432"
   prometheus:
-    platform: linux/amd64
     image: docker.io/prom/prometheus
     command:
       - --config.file=/opt/prometheus/prometheus.yaml
@@ -108,7 +105,6 @@ services:
     networks:
       - dbnet
   grafana:
-    platform: linux/amd64
     image: docker.io/grafana/grafana:7.5.17
     environment:
       - GF_LOG_LEVEL=warn
