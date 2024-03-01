@@ -111,6 +111,20 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @override_settings(ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION="v1.0.0")
     @patch.object(feature_flags, 'LDClient')
+    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    def test_send_segment_analytics_event_requires_min_ansible_ext_version(
+        self, base_send_segment_event, LDClient
+    ):
+        LDClient.return_value.variation.return_value = True
+        send_segment_analytics_event(
+            AnalyticsTelemetryEvents.PRODUCT_FEEDBACK, Mock(), self.user, "v0.9"
+        )
+        base_send_segment_event.assert_not_called()
+
+    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @override_settings(ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION="v1.0.0")
+    @patch.object(feature_flags, 'LDClient')
     @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.send_segment_event")
     def test_send_segment_analytics_event_error_validation(self, send_segment_event, LDClient):
         LDClient.return_value.variation.return_value = True

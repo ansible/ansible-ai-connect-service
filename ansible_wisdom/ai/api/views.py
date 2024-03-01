@@ -207,7 +207,9 @@ class Feedback(APIView):
         )
         sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
         issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
-        ansible_extension_version = validated_data.get("ansibleExtensionVersion")
+        ansible_extension_version = validated_data.get("metadata", {}).get(
+            "ansibleExtensionVersion", None
+        )
         if inline_suggestion_data:
             event = {
                 "latency": inline_suggestion_data.get('latency'),

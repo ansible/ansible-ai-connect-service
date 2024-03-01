@@ -20,7 +20,25 @@ from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 class Metadata(serializers.Serializer):
     class Meta:
-        fields = ['documentUri', 'activityId', 'ansibleFileType', 'additionalContext']
+        fields = ['ansibleExtensionVersion']
+
+    ansibleExtensionVersion = serializers.RegexField(
+        r"v?\d+\.\d+\.\d+",
+        required=False,
+        label="Ansible vscode/vscodium extension version",
+        help_text="User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+    )
+
+
+class CompletionMetadata(Metadata):
+    class Meta:
+        fields = [
+            'documentUri',
+            'activityId',
+            'ansibleFileType',
+            'additionalContext',
+            'ansibleExtensionVersion',
+        ]
 
     documentUri = AnonymizedCharField(required=False)
     activityId = serializers.UUIDField(
@@ -41,15 +59,6 @@ class Metadata(serializers.Serializer):
     )
 
 
-class BaseRequestSerializer(serializers.Serializer):
-    ansibleExtensionVersion = serializers.RegexField(
-        r"v?\d+\.\d+\.\d+",
-        required=False,
-        label="Ansible vscode/vscodium extension version",
-        help_text="User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
-    )
-
-
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -64,7 +73,7 @@ class BaseRequestSerializer(serializers.Serializer):
         ),
     ]
 )
-class CompletionRequestSerializer(BaseRequestSerializer):
+class CompletionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'suggestionId', 'metadata', 'model', 'ansibleExtensionVersion']
 
@@ -81,7 +90,7 @@ class CompletionRequestSerializer(BaseRequestSerializer):
         help_text="A UUID that identifies a suggestion.",
         default=uuid.uuid4,
     )
-    metadata = Metadata(required=False)
+    metadata = CompletionMetadata(required=False)
     model = serializers.CharField(required=False, allow_blank=True)
 
     @staticmethod
@@ -316,7 +325,7 @@ class IssueFeedback(serializers.Serializer):
         ),
     ]
 )
-class FeedbackRequestSerializer(BaseRequestSerializer):
+class FeedbackRequestSerializer(serializers.Serializer):
     class Meta:
         fields = [
             'inlineSuggestion',
@@ -332,6 +341,7 @@ class FeedbackRequestSerializer(BaseRequestSerializer):
     suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
     sentimentFeedback = SentimentFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
+    metadata = Metadata(required=False)
 
     def validate_inlineSuggestion(self, value):
         user = self.context.get('request').user
@@ -355,7 +365,7 @@ class FeedbackRequestSerializer(BaseRequestSerializer):
         return value
 
 
-class AttributionRequestSerializer(BaseRequestSerializer):
+class AttributionRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['suggestion', 'suggestionId', 'ansibleExtensionVersion']
 
@@ -369,9 +379,10 @@ class AttributionRequestSerializer(BaseRequestSerializer):
             " attribution data is being requested for."
         ),
     )
+    metadata = Metadata(required=False)
 
 
-class ContentMatchRequestSerializer(BaseRequestSerializer):
+class ContentMatchRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['suggestions', 'suggestionId', 'model', 'ansibleExtensionVersion']
 
@@ -386,6 +397,7 @@ class ContentMatchRequestSerializer(BaseRequestSerializer):
         ),
     )
     model = serializers.CharField(required=False, allow_blank=True)
+    metadata = Metadata(required=False)
 
     def validate(self, data):
         data = super().validate(data)

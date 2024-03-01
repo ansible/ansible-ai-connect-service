@@ -25,7 +25,9 @@ class DeserializeStage(PipelineElement):
             request_serializer.is_valid(raise_exception=True)
             request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
             request._request._ansible_extension_version = str(
-                request_serializer.validated_data.get('ansibleExtensionVersion', None)
+                request_serializer.validated_data.get("metadata", {}).get(
+                    "ansibleExtensionVersion", None
+                )
             )
             context.metadata = request_serializer.validated_data.get('metadata', {})
             prompt = request_serializer.validated_data.get("prompt")

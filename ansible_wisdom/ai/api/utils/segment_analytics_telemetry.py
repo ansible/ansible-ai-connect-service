@@ -54,10 +54,6 @@ def send_segment_analytics_event(
             f"Skipping analytics telemetry event, extension version: {ansibleExtensionVersion}"
         )
         return
-    else:
-        logger.info(
-            f"ALL GOOD analytics telemetry event, extension version: {ansibleExtensionVersion}"
-        )
 
     organization: Organization = user.organization
     if not organization:
