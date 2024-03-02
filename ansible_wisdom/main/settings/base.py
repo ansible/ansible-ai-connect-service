@@ -11,9 +11,30 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+import logging
 import sys
 from pathlib import Path
 from typing import Literal
+#from langchain_community.document_loaders import UnstructuredMarkdownLoader
+#from langchain.text_splitter import MarkdownHeaderTextSplitter, MarkdownTextSplitter
+#from langchain_community.vectorstores import FAISS
+#from langchain_community.embeddings.sentence_transformer import (
+#    SentenceTransformerEmbeddings,
+#)
+#logger = logging.getLogger(__name__)
+#
+#embeddings = SentenceTransformerEmbeddings()
+#loader = loader = UnstructuredMarkdownLoader("/etc/context/rules.md")
+#docs = loader.load()
+#md_splitter = MarkdownTextSplitter()
+#docs = md_splitter.split_documents(docs)
+#logger.info(f"loaded {len(docs)} documents")
+#logger.info("initializing vector store with embeddings")
+#vectorstore = FAISS.from_documents(docs, embeddings)
+#retriever = vectorstore.as_retriever()
+#logger.info("DONE initializing vector store with embeddings")
+#
+#RETRIEVER = retriever
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

@@ -1,7 +1,7 @@
 # pin aiohttp on 3.8.6 to address GHSA-gfw2-4jvh-wgfg
 # remove this once datasets or fsspec is updated
 # to properly pull a version of aiohttp > 3.8.5.
-aiohttp==3.9.3
+aiohttp
 # pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
 # remove this once ansible-risk-insight is updated to properly
 # pull a version of ansible >= 8.5.0.
@@ -14,6 +14,7 @@ ansible-core==2.15.9
 ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
+beautifulsoup
 boto3==1.26.84
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.4
@@ -29,6 +30,7 @@ django_prometheus==2.2.0
 django-test-migrations==1.3.0
 djangorestframework==3.14.0
 drf-spectacular==0.25.1
+faiss-cpu
 grpcio==1.60.1
 ipython==8.10.0
 # pin jwcrypto on 1.5.1 to address GHSA-cw2r-4p82-qv79
@@ -42,7 +44,9 @@ jinja2==3.1.3
 langchain==0.1.7
 langchain-community==0.0.20
 langchain-core==0.1.23
+langchain_openai
 launchdarkly-server-sdk==8.1.1
+markdown
 opensearch-py==2.1.1
 # pin pillow on 10.2.0 to address CVE-2023-4863 and GHSA-3f63-hfp8-52jq
 # remove this once sentence-transformers or torchvision
@@ -68,6 +72,7 @@ torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x
 torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl
 transformers==4.36.0
 tqdm==4.64.1
+unstructured
 urllib3==1.26.18
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
