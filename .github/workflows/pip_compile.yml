@@ -2,17 +2,25 @@ name: wisdom-service - pip-compile
 
 on:
   push:
-    # tags:
-    #   - v*
     branches:
       - main
     paths:
       - ansible_wisdom/**
+      - requirements.in
+      - requirements.txt
+      - requirements-dev.in
+      - requirements-dev.txt
+      - Makefile
   pull_request:
     branches:
       - main
     paths:
       - ansible_wisdom/**
+      - requirements.in
+      - requirements.txt
+      - requirements-dev.in
+      - requirements-dev.txt
+      - Makefile
 permissions:
   contents: read
 
