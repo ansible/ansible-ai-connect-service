@@ -165,13 +165,12 @@ AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RET
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
 DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
-
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
     else "social_core.backends.github.GithubOAuth2",
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
-    "users.auth.AAPOAuth2",
+    "ansible_wisdom.users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
