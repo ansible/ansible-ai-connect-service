@@ -156,6 +156,7 @@ class SegmentMiddleware:
                             model_name=model_name,
                         ),
                         request.user,
+                        getattr(request, '_ansible_extension_version', None),
                     )
 
         return response
