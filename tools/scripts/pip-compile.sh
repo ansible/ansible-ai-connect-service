@@ -1,7 +1,6 @@
 #!/bin/bash
 set -o errexit
 
-cd /var/www/wisdom
 /usr/bin/python3 -m venv /var/www/venv
 /var/www/venv/bin/python3 -m pip --no-cache-dir install pip-tools
 
