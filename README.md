@@ -235,17 +235,8 @@ Create a local admin user:
 1. Clone the repository and install all the dependencies
 
    ```bash
-   pip install -r requirements.txt
-   ```
-
-   If you are attempting to do this on a Mac, do instead:
-
-   ```bash
    pip install -r requirements.in
    ```
-
-   This will avoid problems with the Python Nvidia CUDA libraries which are
-   unavailable on Mac.
 
 2. Export the host and port for the model server.
 

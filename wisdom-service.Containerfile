@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest AS production
+FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest AS base
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -36,13 +36,13 @@ COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
 
-FROM base as build
+FROM base AS build
 COPY requirements.in .
 COPY requirements-dev.in .
 COPY tools/scripts/pip-compile.sh /usr/bin/pip-compile.sh
 RUN /usr/bin/pip-compile.sh
 
-FROM base as prod
+FROM base AS production
 
 ENV PATH="/var/www/venv/bin:${PATH}"
 COPY model-cache /var/www/model-cache
