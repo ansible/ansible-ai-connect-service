@@ -318,6 +318,13 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
+        multi_task_yaml_extra_task = (
+            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
+            "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com"
+            "\n- name:  say hi test@example.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
         task_yaml_with_loop = (
             "- name:  Delete all virtual machines in my "
             "Azure resource group called 'test' that exists longer than 24 hours. Do not "
@@ -357,13 +364,15 @@ var3: value3
         )
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertEqual(
-                expected_task_yaml_with_loop,
-                fmtr.restore_original_task_names(task_yaml_with_loop, task_prompt_with_loop),
-            )
+            fmtr.restore_original_task_names(multi_task_yaml_extra_task, multi_task_prompt),
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
             )
+
+        self.assertEqual(
+            expected_task_yaml_with_loop,
+            fmtr.restore_original_task_names(task_yaml_with_loop, task_prompt_with_loop),
+        )
 
         self.assertEqual(
             single_task_yaml,
