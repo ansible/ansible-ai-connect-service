@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest
+FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest as base
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -32,7 +32,6 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf clean all
 
 # Copy the ansible_wisdom package files
-COPY requirements.txt /var/www/ansible-wisdom-service/requirements.txt
 COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
 COPY README.md /var/www/ansible-wisdom-service/README.md
@@ -41,8 +40,18 @@ COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
 # Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3 -m venv /var/www/venv
+
+FROM base as build
+COPY requirements.in .
+COPY requirements-dev.in .
+COPY tools/scripts/pip-compile.sh /usr/bin/pip-compile.sh
+RUN /usr/bin/pip-compile.sh
+
+FROM base as prod
+
 ENV PATH="/var/www/venv/bin:${PATH}"
 COPY model-cache /var/www/model-cache
+COPY --from=build requirements.txt /var/www/ansible-wisdom-service/requirements.txt
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
 RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
 RUN mkdir /var/run/uwsgi
