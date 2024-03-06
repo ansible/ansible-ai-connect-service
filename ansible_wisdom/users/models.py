@@ -12,7 +12,11 @@ from django_prometheus.models import ExportModelOperationsMixin
 from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_wisdom.organizations.models import Organization
 
-from .constants import FAUX_COMMERCIAL_USER_ORG_ID, USER_SOCIAL_AUTH_PROVIDER_OIDC
+from .constants import (
+    FAUX_COMMERCIAL_USER_ORG_ID,
+    USER_SOCIAL_AUTH_PROVIDER_AAP,
+    USER_SOCIAL_AUTH_PROVIDER_OIDC,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +58,12 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     def is_oidc_user(self) -> bool:
         if not self.social_auth.values():
             return False
-        if self.social_auth.values()[0]["provider"] != USER_SOCIAL_AUTH_PROVIDER_OIDC:
-            return False
+        return self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC
 
-        return True
+    def is_aap_user(self) -> bool:
+        if not self.social_auth.values():
+            return False
+        return self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_AAP
 
     @cached_property
     def rh_user_has_seat(self) -> bool:

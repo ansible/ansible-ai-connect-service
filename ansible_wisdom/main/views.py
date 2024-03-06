@@ -24,6 +24,7 @@ class LoginView(auth_views.LoginView):
         context = super().get_context_data(**kwargs)
         context['use_github_team'] = settings.USE_GITHUB_TEAM
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
+        context["deployment_mode"] = settings.DEPLOYMENT_MODE
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -38,13 +39,18 @@ class LogoutView(auth_views.LogoutView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_next_page(self, request):
-        rht = (
-            'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
-            f'?post_logout_redirect_uri={request.build_absolute_uri("/")}'
-            f'&client_id={SOCIAL_AUTH_OIDC_KEY}'
-        )
+        next_url = request.build_absolute_uri("/")
+        if request.user.is_oidc_user():
+            return (
+                'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
+                f'?post_logout_redirect_uri={next_url}'
+                f'&client_id={SOCIAL_AUTH_OIDC_KEY}'
+            )
 
-        return rht if request.user.is_oidc_user() else None
+        if request.user.is_aap_user():
+            return f'{settings.AAP_API_URL}/logout/?next={next_url}'
+
+        return None
 
 
 class ConsoleView(ProtectedTemplateView):

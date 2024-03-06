@@ -60,11 +60,7 @@ urlpatterns = [
     path('o/', include((base_urlpatterns, app_name), namespace='oauth2_provider')),
     path(
         'login/',
-        LoginView.as_view(
-            extra_context={
-                'deployment_mode': settings.DEPLOYMENT_MODE,
-            },
-        ),
+        LoginView.as_view(),
         name='login',
     ),
     path('logout/', LogoutView.as_view(), name='logout'),
