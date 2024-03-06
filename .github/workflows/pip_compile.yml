@@ -8,8 +8,12 @@ on:
       - ansible_wisdom/**
       - requirements.in
       - requirements.txt
+      - requirements-x86_64.txt
+      - requirements-aarch64.txt
       - requirements-dev.in
       - requirements-dev.txt
+      - requirements-dev-x86_64.txt
+      - requirements-dev-aarch64.txt
       - Makefile
   pull_request:
     branches:
@@ -18,8 +22,12 @@ on:
       - ansible_wisdom/**
       - requirements.in
       - requirements.txt
+      - requirements-x86_64.txt
+      - requirements-aarch64.txt
       - requirements-dev.in
       - requirements-dev.txt
+      - requirements-dev-x86_64.txt
+      - requirements-dev-aarch64.txt
       - Makefile
 permissions:
   contents: read
