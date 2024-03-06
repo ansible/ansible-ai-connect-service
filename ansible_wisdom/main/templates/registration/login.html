@@ -20,7 +20,7 @@
 
                     <div style="margin-top: 25px">
                     {% if deployment_mode == 'onprem' %}
-                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in to AAP</a>
+                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with AAP</a>
                     {% else %}
                     <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat</a>
                     {% endif %}

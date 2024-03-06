@@ -58,18 +58,12 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     def is_oidc_user(self) -> bool:
         if not self.social_auth.values():
             return False
-        if self.social_auth.values()[0]["provider"] != USER_SOCIAL_AUTH_PROVIDER_OIDC:
-            return False
-
-        return True
+        return self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_OIDC
 
     def is_aap_user(self) -> bool:
         if not self.social_auth.values():
             return False
-        if self.social_auth.values()[0]["provider"] != USER_SOCIAL_AUTH_PROVIDER_AAP:
-            return False
-
-        return True
+        return self.social_auth.values()[0]["provider"] == USER_SOCIAL_AUTH_PROVIDER_AAP
 
     @cached_property
     def rh_user_has_seat(self) -> bool:
