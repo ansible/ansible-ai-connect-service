@@ -143,6 +143,13 @@ else:
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
+AAP_API_URL = os.environ.get("AAP_API_URL")
+SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", 'True').lower() in ('true', '1', 't')
+SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
+SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
+SOCIAL_AUTH_AAP_SCOPE = ["read"]
+SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
+
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
@@ -158,12 +165,12 @@ AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RET
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
 DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
-
 AUTHENTICATION_BACKENDS = [
     "social_core.backends.github.GithubTeamOAuth2"
     if USE_GITHUB_TEAM
     else "social_core.backends.github.GithubOAuth2",
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
+    "ansible_wisdom.users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
