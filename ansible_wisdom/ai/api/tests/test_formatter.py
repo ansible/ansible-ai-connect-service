@@ -385,7 +385,7 @@ var3: value3
         )
 
     def test_restore_original_task_names_for_index_error(self):
-        # The following prompt simulates a forgotten second task prompt.
+        # The following prompt simulates a mismatch between requested tasks and received tasks
         multi_task_prompt = "# Install Apache\n"
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
