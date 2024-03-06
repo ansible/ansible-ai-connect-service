@@ -2,12 +2,13 @@
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_wisdom.main.views import LoginView
 from ansible_wisdom.users.constants import (
+    USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
@@ -42,6 +43,14 @@ class LogoutTest(TestCase):
 
         response = self.client.get(reverse('logout'))
         self.assertEqual(response.url, '/')
+
+    @override_settings(AAP_API_URL='http://aap/api')
+    def test_aap_sso_redirect(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_AAP)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('logout'))
+        self.assertEqual(response.url, 'http://aap/api/logout/?next=http://testserver/')
 
 
 class AlreadyAuth(TestCase):
