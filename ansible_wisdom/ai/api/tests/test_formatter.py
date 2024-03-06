@@ -307,7 +307,7 @@ var3: value3
     def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
-        task_prompt_with_loop = (
+        multi_task_prompt_with_loop = (
             "# Delete all virtual machines in my Azure resource group called 'melisa' that "
             "exists longer than 24 hours. Do not delete virtual machines that exists less "
             "than 24 hours."
@@ -325,7 +325,7 @@ var3: value3
             "\n- name:  say hi test@example.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
-        task_yaml_with_loop = (
+        multi_task_yaml_with_loop = (
             "- name:  Delete all virtual machines in my "
             "Azure resource group called 'test' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
@@ -346,7 +346,7 @@ var3: value3
             "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
-        expected_task_yaml_with_loop = (
+        expected_multi_task_yaml_with_loop = (
             "- name:  Delete all virtual machines in my "
             "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
@@ -370,8 +370,10 @@ var3: value3
             )
 
         self.assertEqual(
-            expected_task_yaml_with_loop,
-            fmtr.restore_original_task_names(task_yaml_with_loop, task_prompt_with_loop),
+            expected_multi_task_yaml_with_loop,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop, multi_task_prompt_with_loop
+            ),
         )
 
         self.assertEqual(
