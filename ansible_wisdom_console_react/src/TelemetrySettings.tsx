@@ -146,12 +146,6 @@ export function TelemetrySettings(props: TelemetrySettingsProps) {
                     <Text component={"h3"}>{t("TelemetryManageUsage")}</Text>
                     <Text component={"p"}>
                       {t("TelemetryManageUsageDescription")}
-                      <a
-                        data-testid={"telemetry-settings__admin_dashboard_url"}
-                        href={adminDashboardUrl}
-                      >
-                        {t("TelemetryManageUsageAdminDashboardURLText")}
-                      </a>
                     </Text>
                     <Text component={"p"}>
                       <a href={t("TelemetryManageUsageLearnMoreURL")}>
@@ -182,7 +176,19 @@ export function TelemetrySettings(props: TelemetrySettingsProps) {
                           id="optInRadio"
                           name="optInOutRadio"
                           label={t("TelemetryOptInLabel")}
-                          description={t("TelemetryOptInDescription")}
+                          description={
+                            <div>
+                              {t("TelemetryOptInDescription")}
+                              <a
+                                data-testid={
+                                  "telemetry-settings__admin_dashboard_url"
+                                }
+                                href={adminDashboardUrl}
+                              >
+                                {t("TelemetryManageUsageAdminDashboardURLText")}
+                              </a>
+                            </div>
+                          }
                           isChecked={!telemetryOptOut}
                           onChange={() => setTelemetryOptOut(false)}
                           isDisabled={saving}

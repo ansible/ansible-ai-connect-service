@@ -2,6 +2,7 @@ version: "3.8"
 services:
   pip-compile:
     image: registry.access.redhat.com/ubi9/ubi:latest
+    working_dir: /var/www/wisdom
     volumes:
       - $PWD:/var/www/wisdom
     command:

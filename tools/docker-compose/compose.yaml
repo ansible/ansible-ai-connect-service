@@ -6,6 +6,7 @@ services:
     build:
       context: $PWD
       dockerfile: wisdom-service.Containerfile
+      target: devel
     depends_on:
       - db
     volumes:

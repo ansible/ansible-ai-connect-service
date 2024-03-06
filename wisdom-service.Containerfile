@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM registry.access.redhat.com/ubi9/ubi:latest AS production
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -26,18 +26,12 @@ RUN dnf install -y \
 
 RUN dnf module install -y nginx/common
 
-RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    dnf install -y inotify-tools && \
-    dnf remove -y epel-release && \
-    dnf clean all
-
 # Copy the ansible_wisdom package files
 COPY requirements.txt /var/www/ansible-wisdom-service/requirements.txt
 COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
 COPY README.md /var/www/ansible-wisdom-service/README.md
 COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
-COPY main /var/www/ansible-wisdom-service/main
 
 # Compile Python/Django application
 RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
@@ -69,7 +63,6 @@ RUN npm --prefix /tmp/ansible_wisdom_console_react run build
 
 # Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
-COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
@@ -104,3 +97,14 @@ USER 1000
 EXPOSE 8000
 
 CMD /usr/bin/launch-wisdom.sh
+
+FROM production AS devel
+USER 0
+RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    dnf install -y inotify-tools && \
+    dnf remove -y epel-release && \
+    dnf clean all
+COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
+RUN mkdir /etc/supervisor/supervisord.d/
+COPY tools/configs/supervisord.d/auto-reload.conf /etc/supervisor/supervisord.d/auto-reload.conf
+USER 1000
