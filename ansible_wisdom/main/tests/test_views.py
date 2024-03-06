@@ -59,7 +59,35 @@ class AlreadyAuth(TestCase):
         request.user = AnonymousUser()
         response = LoginView.as_view()(request)
         response.render()
-        self.assertIn("You are currently not logged in.", response.content.decode())
+        contents = response.content.decode()
+        self.assertIn("You are currently not logged in.", contents)
+        self.assertIn("Log in with Red Hat", contents)
+        self.assertNotIn("Log in with AAP", contents)
+        self.assertNotIn("Login to the service", contents)
+
+    @override_settings(DEPLOYMENT_MODE='onprem')
+    def test_login_aap(self):
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("You are currently not logged in.", contents)
+        self.assertNotIn("Log in with Red Hat", contents)
+        self.assertIn("Log in to AAP", contents)
+        self.assertNotIn("Login to the service", contents)
+
+    @override_settings(DEPLOYMENT_MODE='upstream')
+    def test_login_django(self):
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("You are currently not logged in.", contents)
+        self.assertNotIn("Log in with Red Hat", contents)
+        self.assertNotIn("Log in with Red Hat", contents)
+        self.assertIn("Login to the service", contents)
 
     def test_no_login_for_auth_user(self):
         class MockUser:
