@@ -27,7 +27,9 @@ RUN dnf install -y \
 RUN dnf module install -y nginx/common
 
 # Copy the ansible_wisdom package files
-COPY requirements.txt /var/www/ansible-wisdom-service/requirements.txt
+COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
+COPY requirements-aarch64.txt /var/www/ansible-wisdom-service/
+COPY requirements.txt /var/www/ansible-wisdom-service/
 COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
 COPY README.md /var/www/ansible-wisdom-service/README.md
