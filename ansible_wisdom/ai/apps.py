@@ -49,6 +49,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = LlamaCPPClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "bam":
+            from .api.model_client.bam_client import BAMClient
+
+            self.model_mesh_client = BAMClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["dummy", "mock"]:
             if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
                 logger.error(
