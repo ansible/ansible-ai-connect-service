@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 registry.access.redhat.com/ubi9/ubi:latest AS production
+FROM registry.access.redhat.com/ubi9/ubi:latest AS production
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -27,7 +27,9 @@ RUN dnf install -y \
 RUN dnf module install -y nginx/common
 
 # Copy the ansible_wisdom package files
-COPY requirements.txt /var/www/ansible-wisdom-service/requirements.txt
+COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
+COPY requirements-aarch64.txt /var/www/ansible-wisdom-service/
+COPY requirements.txt /var/www/ansible-wisdom-service/
 COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
 COPY README.md /var/www/ansible-wisdom-service/README.md
