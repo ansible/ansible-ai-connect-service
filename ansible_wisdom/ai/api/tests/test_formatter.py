@@ -312,6 +312,10 @@ var3: value3
             "exists longer than 24 hours. Do not delete virtual machines that exists less "
             "than 24 hours."
         )
+        multi_task_prompt_with_loop_extra_task = (
+            "# Delete all virtual machines in my Azure resource group "
+            "& say hello to ada@anemail.com"
+        )
 
         multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
@@ -336,6 +340,17 @@ var3: value3
             "      password: \"{{ _password_ }}\"\n"
             "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
         )
+        multi_task_yaml_with_loop_extra_task = (
+            "- name:  Delete all virtual machines in my Azure resource group\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            "- name:  say hello to ada@anemail.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
         single_task_yaml = (
             "  ansible.builtin.package:\n    name: openssh-server\n    state: present\n  when:\n"
             "    - enable_ssh | bool\n    - ansible_distribution == 'Ubuntu'"
@@ -357,6 +372,17 @@ var3: value3
             "      password: \"{{ _password_ }}\"\n"
             "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
         )
+        expected_multi_task_yaml_with_loop_extra_task = (
+            "- name:  Delete all virtual machines in my Azure resource group\n"
+            "  azure.azcollection.azure_rm_virtualmachine:\n"
+            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            "    vm_size: Standard_A0\n"
+            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
+            "      password: \"{{ _password_ }}\"\n"
+            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            "- name:  say hello to ada@anemail.com\n  "
+            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+        )
 
         self.assertEqual(
             expected_multi_task_yaml,
@@ -373,6 +399,13 @@ var3: value3
             expected_multi_task_yaml_with_loop,
             fmtr.restore_original_task_names(
                 multi_task_yaml_with_loop, multi_task_prompt_with_loop
+            ),
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml_with_loop_extra_task,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop_extra_task, multi_task_prompt_with_loop_extra_task
             ),
         )
 
