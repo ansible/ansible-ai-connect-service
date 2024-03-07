@@ -355,7 +355,6 @@ var3: value3
             "  ansible.builtin.package:\n    name: openssh-server\n    state: present\n  when:\n"
             "    - enable_ssh | bool\n    - ansible_distribution == 'Ubuntu'"
         )
-
         expected_multi_task_yaml = (
             "- name:  Install Apache\n  ansible.builtin.apt:\n    "
             "name: apache2\n    state: latest\n- name:  say hello fred@redhat.com\n  "
