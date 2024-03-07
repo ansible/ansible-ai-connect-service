@@ -131,9 +131,10 @@ class CompletionRequestSerializer(serializers.Serializer):
 
     def validate_model(self, value):
         user = self.context.get('request').user
+        # TODO(rg): handle this properly
         # While tech preview is available, custom models remain commercial-only
-        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.rh_user_has_seat is False:
-            raise serializers.ValidationError("user is not entitled to customized model")
+        #if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.rh_user_has_seat is False:
+        #    raise serializers.ValidationError("user is not entitled to customized model")
         return value
 
     def validate(self, data):
