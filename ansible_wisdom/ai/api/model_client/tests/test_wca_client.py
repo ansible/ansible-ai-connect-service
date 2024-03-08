@@ -1,3 +1,4 @@
+import base64
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -31,6 +32,7 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
 from ansible_wisdom.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
+    WCAClientOnPrem,
     ibm_cloud_identity_token_hist,
     ibm_cloud_identity_token_retry_counter,
     wca_codegen_hist,
@@ -692,3 +694,109 @@ class TestDummySecretManager(TestCase):
     def test_get_secret(self):
         sm = DummySecretManager()
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")
+
+
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient-onprem")
+class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
+    def test_get_api_key(self):
+        model_client = WCAClientOnPrem(inference_url='http://example.com/')
+        api_key = model_client.get_api_key(11009103)
+        self.assertEqual(api_key, '12345')
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
+    def test_get_api_key_without_setting(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaKeyNotFound):
+            model_client.get_api_key(11009103)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+    def test_get_model_id(self):
+        model_client = WCAClientOnPrem(inference_url='http://example.com/')
+        model_id = model_client.get_model_id(11009103)
+        self.assertEqual(model_id, 'model-name')
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+    def test_get_model_id_without_setting(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        with self.assertRaises(WcaModelIdNotFound):
+            model_client.get_model_id(11009103)
+
+
+@override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
+@override_settings(ANSIBLE_WCA_USERNAME='username')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
+    def test_headers(self):
+        suggestion_id = 'suggestion_id'
+        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+        token = base64.b64encode(bytes('username:12345', 'ascii')).decode("ascii")
+
+        model_input = {
+            "instances": [
+                {
+                    "context": "",
+                    "prompt": prompt,
+                }
+            ]
+        }
+        codegen_data = {
+            "model_id": 'model-name',
+            "prompt": f"{prompt}\n",
+        }
+
+        request_headers = {
+            "Authorization": f"ZenApiKey {token}",
+            WCA_REQUEST_ID_HEADER: suggestion_id,
+        }
+
+        model_client = WCAClientOnPrem(inference_url='https://example.com')
+        model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
+
+        model_client.infer(
+            model_input=model_input,
+            suggestion_id=suggestion_id,
+        )
+
+        model_client.session.post.assert_called_once_with(
+            "https://example.com/v1/wca/codegen/ansible",
+            headers=request_headers,
+            json=codegen_data,
+            timeout=None,
+        )
+
+
+@override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
+@override_settings(ANSIBLE_WCA_USERNAME='username')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
+    def test_headers(self):
+        suggestions = [
+            "- name: install ffmpeg on Red Hat Enterprise Linux\n  "
+            "ansible.builtin.package:\n    name:\n      - ffmpeg\n    state: present\n",
+            "- name: This is another test",
+        ]
+        model_input = {"suggestions": suggestions}
+        data = {
+            "model_id": 'model-name',
+            "input": suggestions,
+        }
+        token = base64.b64encode(bytes('username:12345', 'ascii')).decode("ascii")
+
+        request_headers = {
+            "Authorization": f"ZenApiKey {token}",
+        }
+
+        model_client = WCAClientOnPrem(inference_url='https://example.com')
+        model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
+
+        model_client.codematch(model_input=model_input, model_id='model-name')
+
+        model_client.session.post.assert_called_once_with(
+            "https://example.com/v1/wca/codematch/ansible",
+            headers=request_headers,
+            json=data,
+            timeout=None,
+        )

@@ -129,9 +129,8 @@ test:
 .PHONY: code-coverage
 # Run unit tests, calculate code coverage and display results in chrome
 code-coverage:
-	cd ansible_wisdom && \
 	coverage erase && \
-	coverage run --rcfile=../setup.cfg manage.py test && \
+	coverage run --rcfile=setup.cfg -m ansible_wisdom.manage test ansible_wisdom && \
 	coverage html && \
 	google-chrome htmlcov/index.html
 
