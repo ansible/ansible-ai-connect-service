@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+from abc import abstractmethod
 from typing import Optional
 
 import backoff
@@ -140,7 +141,6 @@ class BaseWCAClient(ModelMeshClient):
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
-        api_key: Optional[int] = None
         try:
             api_key = self.get_api_key(organization_id)
             model_id = self.get_model_id(organization_id, model_id)
@@ -204,15 +204,17 @@ class BaseWCAClient(ModelMeshClient):
 
         return response
 
-    def get_api_key(self, organization_id: Optional[int]):
-        pass
+    @abstractmethod
+    def get_api_key(self, organization_id: Optional[int]) -> str:
+        raise NotImplementedError
 
+    @abstractmethod
     def get_model_id(
         self,
         organization_id: Optional[int],
         requested_model_id: str = '',
     ) -> str:
-        pass
+        raise NotImplementedError
 
     def codematch(self, model_input, model_id: str = ""):
         logger.debug(f"Input prompt: {model_input}")
@@ -267,11 +269,15 @@ class BaseWCAClient(ModelMeshClient):
         except requests.exceptions.ReadTimeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def get_inference_headers(self, api_key, suggestion_id):
-        pass
+    @abstractmethod
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
+        raise NotImplementedError
 
-    def get_codematch_headers(self, api_key):
-        pass
+    @abstractmethod
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        raise NotImplementedError
 
 
 class WCAClient(BaseWCAClient):
@@ -315,7 +321,7 @@ class WCAClient(BaseWCAClient):
 
         return response.json()
 
-    def get_api_key(self, organization_id: Optional[int]):
+    def get_api_key(self, organization_id: Optional[int]) -> str:
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -373,7 +379,9 @@ class WCAClient(BaseWCAClient):
         logger.error("Seated user's organization doesn't have default model ID set")
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
-    def get_inference_headers(self, api_key, suggestion_id):
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
         token = self.get_token(api_key)
         return {
             "Content-Type": "application/json",
@@ -381,7 +389,7 @@ class WCAClient(BaseWCAClient):
             WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
 
-    def get_codematch_headers(self, api_key):
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         token = self.get_token(api_key)
         return {
             "Content-Type": "application/json",
@@ -393,7 +401,7 @@ class WCAClientOnPrem(BaseWCAClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def get_api_key(self, organization_id: Optional[int]):
+    def get_api_key(self, organization_id: Optional[int]) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
         raise WcaKeyNotFound
@@ -407,7 +415,9 @@ class WCAClientOnPrem(BaseWCAClient):
             return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
-    def get_inference_headers(self, api_key, suggestion_id):
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
         username = settings.ANSIBLE_WCA_USERNAME
         token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")
@@ -416,7 +426,7 @@ class WCAClientOnPrem(BaseWCAClient):
             WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
 
-    def get_codematch_headers(self, api_key):
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
         username = settings.ANSIBLE_WCA_USERNAME
         token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")
