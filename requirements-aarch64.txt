@@ -29,6 +29,8 @@ ansible-lint==6.22.1
     # via -r requirements.in
 ansible-risk-insight==0.2.4
     # via -r requirements.in
+anyio==4.3.0
+    # via langchain-core
 argparse==1.4.0
     # via uwsgi-readiness-check
 asgiref==3.7.2
@@ -136,6 +138,8 @@ ecdsa==0.18.0
     # via python-jose
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.2.0
+    # via anyio
 executing==2.0.1
     # via stack-data
 expiringdict==1.2.2
@@ -167,6 +171,7 @@ huggingface-hub==0.21.3
     #   transformers
 idna==3.6
     # via
+    #   anyio
     #   requests
     #   yarl
 importlib-resources==5.0.7
@@ -191,8 +196,12 @@ joblib==1.3.2
     #   ansible-risk-insight
     #   nltk
     #   scikit-learn
+jsonpatch==1.33
+    # via langchain-core
 jsonpickle==3.0.3
     # via ansible-risk-insight
+jsonpointer==2.4
+    # via jsonpatch
 jsonschema==4.21.1
     # via
     #   ansible-compat
@@ -204,6 +213,10 @@ jwcrypto==1.5.1
     # via
     #   -r requirements.in
     #   django-oauth-toolkit
+langchain-core==0.1.30
+    # via -r requirements.in
+langsmith==0.1.22
+    # via langchain-core
 launchdarkly-server-sdk==8.1.1
     # via -r requirements.in
 levenshtein==0.25.0
@@ -255,6 +268,8 @@ openpyxl==3.1.2
     # via tablib
 opensearch-py==2.1.1
     # via -r requirements.in
+orjson==3.9.15
+    # via langsmith
 packaging==23.2
     # via
     #   ansible-compat
@@ -264,6 +279,7 @@ packaging==23.2
     #   datasets
     #   django-allow-cidr
     #   huggingface-hub
+    #   langchain-core
     #   transformers
 pandas==2.2.1
     # via datasets
@@ -310,8 +326,11 @@ pyasn1==0.5.1
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.10.2
-    # via -r requirements.in
+pydantic==1.10.11
+    # via
+    #   -r requirements.in
+    #   langchain-core
+    #   langsmith
 pygit2==1.14.1
     # via ansible-risk-insight
 pygments==2.17.2
@@ -349,6 +368,7 @@ pyyaml==6.0
     #   datasets
     #   drf-spectacular
     #   huggingface-hub
+    #   langchain-core
     #   tablib
     #   transformers
     #   yamllint
@@ -371,6 +391,8 @@ requests==2.31.0
     #   django-oauth-toolkit
     #   fsspec
     #   huggingface-hub
+    #   langchain-core
+    #   langsmith
     #   opensearch-py
     #   requests-oauthlib
     #   segment-analytics-python
@@ -423,6 +445,8 @@ smmap==5.0.1
     # via
     #   ansible-risk-insight
     #   gitdb
+sniffio==1.3.1
+    # via anyio
 social-auth-app-django==5.4.0
     # via -r requirements.in
 social-auth-core[openidconnect]==4.4.2
@@ -443,6 +467,8 @@ tablib[html,ods,xls,xlsx,yaml]==3.5.0
     # via django-import-export
 tabulate==0.9.0
     # via ansible-risk-insight
+tenacity==8.2.3
+    # via langchain-core
 threadpoolctl==3.3.0
     # via scikit-learn
 tokenizers==0.15.2
@@ -477,6 +503,7 @@ transformers==4.36.0
 typing-extensions==4.10.0
     # via
     #   ansible-compat
+    #   anyio
     #   asgiref
     #   black
     #   django-test-migrations
