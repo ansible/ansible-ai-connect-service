@@ -373,6 +373,14 @@ class TestUserSeat(WisdomAppsBackendMocking):
             user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
             self.assertFalse(user.rh_user_has_seat)
 
+    def test_rh_user_in_unlimited_org(self):
+        with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
+            user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+            org = Organization(None, None)
+            org.is_unlimited_access_allowed = True
+            user.organization = org
+            self.assertTrue(user.rh_org_has_subscription)
+
     def test_rh_user_has_seat_with_github_commercial_group(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
 

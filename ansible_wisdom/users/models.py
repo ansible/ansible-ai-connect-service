@@ -85,7 +85,11 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:
-        """True if the user comes from RHSSO and the associated org has access to Wisdom."""
+        """True if the user is in unlimited group or
+        comes from RHSSO and the associated org has access to Wisdom."""
+        if self.organization.is_unlimited_access_allowed:
+            return True
+
         if not self.is_oidc_user():
             return False
 
