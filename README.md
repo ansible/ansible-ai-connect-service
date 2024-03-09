@@ -72,7 +72,35 @@ pre-commit autoupdate && pre-commit run -a
 ## Updating the Python dependencies
 
 We are now using pip-compile in order to manage our Python
-dependencies.
+dependencies for the x86_64 and ARM64/AArch64 architectures.
+
+In order to generate requirements.txt files for both architectures,
+you must use a multi-arch capable virtual machine emulator (like QEMU)
+and enable multi-arch support.
+
+To enable multi-arch support, run the instructions for your container
+engine and emulator from this table:
+
+<table>
+<tr>
+<td>Container Engine</td>
+<td>Emulator</td>
+<td>Instructions</td>
+</tr>
+<tr>
+<td>podman</td>
+<td>QEMU</td>
+<td>
+
+```bash
+podman machine ssh
+sudo rpm-ostree install qemu-user-static
+sudo systemctl reboot
+```
+
+</td>
+</tr>
+</table>
 
 The specification of what packages we need now live in the
 requirements.in and requirements-dev.in files. Use your preferred
