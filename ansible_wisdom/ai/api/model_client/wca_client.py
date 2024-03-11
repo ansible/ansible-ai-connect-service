@@ -279,6 +279,10 @@ class BaseWCAClient(ModelMeshClient):
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         raise NotImplementedError
 
+    @abstractmethod
+    def _get_base_headers(self, api_key: str) -> dict[str, str]:
+        raise NotImplementedError
+
 
 class WCAClient(BaseWCAClient):
     def __init__(self, inference_url):
@@ -382,14 +386,16 @@ class WCAClient(BaseWCAClient):
     def get_inference_headers(
         self, api_key: str, suggestion_id: Optional[str]
     ) -> dict[str, Optional[str]]:
-        token = self.get_token(api_key)
+        base_headers = self._get_base_headers(api_key)
         return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token['access_token']}",
+            **base_headers,
             WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        return self._get_base_headers(api_key)
+
+    def _get_base_headers(self, api_key: str) -> dict[str, str]:
         token = self.get_token(api_key)
         return {
             "Content-Type": "application/json",
@@ -397,7 +403,7 @@ class WCAClient(BaseWCAClient):
         }
 
 
-class WCAClientOnPrem(BaseWCAClient):
+class WCAOnPremClient(BaseWCAClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
@@ -411,22 +417,28 @@ class WCAClientOnPrem(BaseWCAClient):
         organization_id: Optional[int],
         requested_model_id: str = '',
     ) -> str:
+        if requested_model_id:
+            # requested_model_id defined: let them use what they ask for
+            return requested_model_id
+
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
             return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
-        raise WcaModelIdNotFound(model_id=requested_model_id)
+
+        raise WcaModelIdNotFound()
 
     def get_inference_headers(
         self, api_key: str, suggestion_id: Optional[str]
     ) -> dict[str, Optional[str]]:
-        # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
-        username = settings.ANSIBLE_WCA_USERNAME
-        token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")
+        base_headers = self._get_base_headers(api_key)
         return {
-            "Authorization": f"ZenApiKey {token}",
+            **base_headers,
             WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        return self._get_base_headers(api_key)
+
+    def _get_base_headers(self, api_key: str) -> dict[str, str]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
         username = settings.ANSIBLE_WCA_USERNAME
         token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")

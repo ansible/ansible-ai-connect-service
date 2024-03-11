@@ -32,7 +32,7 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
 from ansible_wisdom.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
-    WCAClientOnPrem,
+    WCAOnPremClient,
     ibm_cloud_identity_token_hist,
     ibm_cloud_identity_token_retry_counter,
     wca_codegen_hist,
@@ -700,7 +700,7 @@ class TestDummySecretManager(TestCase):
 class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
     def test_get_api_key(self):
-        model_client = WCAClientOnPrem(inference_url='http://example.com/')
+        model_client = WCAOnPremClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(11009103)
         self.assertEqual(api_key, '12345')
 
@@ -712,13 +712,19 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
     def test_get_model_id(self):
-        model_client = WCAClientOnPrem(inference_url='http://example.com/')
+        model_client = WCAOnPremClient(inference_url='http://example.com/')
         model_id = model_client.get_model_id(11009103)
         self.assertEqual(model_id, 'model-name')
 
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+    def test_get_model_id_with_override(self):
+        model_client = WCAOnPremClient(inference_url='http://example.com/')
+        model_id = model_client.get_model_id(11009103, 'override-model-name')
+        self.assertEqual(model_id, 'override-model-name')
+
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
     def test_get_model_id_without_setting(self):
-        model_client = WCAClient(inference_url='http://example.com/')
+        model_client = WCAOnPremClient(inference_url='http://example.com/')
         with self.assertRaises(WcaModelIdNotFound):
             model_client.get_model_id(11009103)
 
@@ -751,7 +757,7 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
             WCA_REQUEST_ID_HEADER: suggestion_id,
         }
 
-        model_client = WCAClientOnPrem(inference_url='https://example.com')
+        model_client = WCAOnPremClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
         model_client.infer(
@@ -789,7 +795,7 @@ class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
             "Authorization": f"ZenApiKey {token}",
         }
 
-        model_client = WCAClientOnPrem(inference_url='https://example.com')
+        model_client = WCAOnPremClient(inference_url='https://example.com')
         model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
         model_client.codematch(model_input=model_input, model_id='model-name')

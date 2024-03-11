@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from ansible_wisdom.ai.api.model_client.dummy_client import DummyClient
 from ansible_wisdom.ai.api.model_client.grpc_client import GrpcClient
 from ansible_wisdom.ai.api.model_client.http_client import HttpClient
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient, WCAClientOnPrem
+from ansible_wisdom.ai.api.model_client.wca_client import WCAClient, WCAOnPremClient
 
 
 class TestAiApp(APITestCase):
@@ -27,7 +27,7 @@ class TestAiApp(APITestCase):
     def test_wca_on_prem_client(self):
         app_config = AppConfig.create('ansible_wisdom.ai')
         app_config.ready()
-        self.assertIsInstance(app_config.get_wca_client(), WCAClientOnPrem)
+        self.assertIsInstance(app_config.get_wca_client(), WCAOnPremClient)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='http')
     def test_http_client(self):
