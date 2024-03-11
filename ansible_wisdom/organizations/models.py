@@ -27,7 +27,7 @@ class Organization(models.Model):
 
         return self.__make_organization_request_to_launchdarkly(WisdomFlags.SPECIAL_WCA_ACCESS_ORGS)
 
-    def __make_organization_request_to_launchdarkly(self, flag) -> bool:
+    def __make_organization_request_to_launchdarkly(self, flag: str) -> bool:
         if not settings.LAUNCHDARKLY_SDK_KEY:
             return False
 
