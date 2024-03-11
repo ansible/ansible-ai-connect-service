@@ -302,6 +302,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "organizations": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     "root": {
         "handlers": ["console"],

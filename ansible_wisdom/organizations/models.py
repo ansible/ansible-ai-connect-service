@@ -21,11 +21,17 @@ class Organization(models.Model):
         )
 
     @cached_property
-    def is_unlimited_access_allowed(self) -> bool:
+    def is_subscription_check_should_be_bypassed(self) -> bool:
         # Avoid circular dependency issue with lazy import
         from ansible_wisdom.ai.feature_flags import WisdomFlags
 
-        return self.__make_organization_request_to_launchdarkly(WisdomFlags.SPECIAL_WCA_ACCESS_ORGS)
+        try:
+            return self.__make_organization_request_to_launchdarkly(
+                WisdomFlags.BYPASS_AAP_SUBSCRIPTION_CHECK
+            )
+        except Exception:
+            # User should not be blocked if LaunchDarkly fails.
+            return True
 
     def __make_organization_request_to_launchdarkly(self, flag: str) -> bool:
         if not settings.LAUNCHDARKLY_SDK_KEY:
