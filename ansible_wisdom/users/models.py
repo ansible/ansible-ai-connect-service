@@ -87,7 +87,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     def rh_org_has_subscription(self) -> bool:
         """True if the user is in unlimited group or
         comes from RHSSO and the associated org has access to Wisdom."""
-        if self.organization.is_unlimited_access_allowed:
+        if self.organization and self.organization.is_unlimited_access_allowed:
             logger.warn(f"Organization check bypassed for user UUID: {self.uuid}")
             return True
 
