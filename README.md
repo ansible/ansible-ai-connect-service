@@ -560,7 +560,7 @@ When you make code changes, please update the static OpenAPI Schema YAML file
 with the following steps:
 
 1. Ensure the API metadata (description, version, `TAGS` used to organize API categories) are accurate; this requires updating the [`SPECTACULAR_SETTINGS` variable](https://github.com/ansible/ansible-wisdom-service/blob/main/ansible_wisdom/main/settings/development.py#L10-L23) in `ansible_wisdom/main/settings/development.py`.
-2. Run the wisdom service locally. 
+2. Run the wisdom service locally.
 3. Run `make update-openapi-schema` in the project root.
 4. Commit the updated OpenAPI Schema YAML file with your API changes.
 
