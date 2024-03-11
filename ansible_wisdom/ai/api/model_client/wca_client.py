@@ -279,10 +279,6 @@ class BaseWCAClient(ModelMeshClient):
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         raise NotImplementedError
 
-    @abstractmethod
-    def _get_base_headers(self, api_key: str) -> dict[str, str]:
-        raise NotImplementedError
-
 
 class WCAClient(BaseWCAClient):
     def __init__(self, inference_url):
