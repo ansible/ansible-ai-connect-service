@@ -18,7 +18,7 @@ from .constants import (
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("organizations")
 
 
 class NonClashingForeignKey(models.ForeignKey):
@@ -85,7 +85,15 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:
-        """True if the user comes from RHSSO and the associated org has access to Wisdom."""
+        """True if the user is in unlimited group or
+        comes from RHSSO and the associated org has access to Wisdom."""
+        if self.organization and self.organization.is_subscription_check_should_be_bypassed:
+            logger.info(
+                f"""Bypass organization check for organization ID {self.organization.id}
+ and user UUID: {self.uuid}."""
+            )
+            return True
+
         if not self.is_oidc_user():
             return False
 
