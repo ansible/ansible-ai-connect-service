@@ -35,6 +35,7 @@ from .exceptions import (
     WcaModelIdNotFound,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
+    WcaUsernameNotFound,
 )
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
@@ -402,11 +403,15 @@ class WCAClient(BaseWCAClient):
 class WCAOnPremClient(BaseWCAClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
+        if not settings.ANSIBLE_WCA_USERNAME:
+            raise WcaUsernameNotFound
+        if not settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
+            raise WcaKeyNotFound
+        # ANSIBLE_AI_MODEL_MESH_MODEL_NAME cannot be validated until runtime. The
+        # User may provide an override value if the Environment Variable is not set.
 
     def get_api_key(self, organization_id: Optional[int]) -> str:
-        if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
-            return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
-        raise WcaKeyNotFound
+        return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
 
     def get_model_id(
         self,

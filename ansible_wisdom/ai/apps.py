@@ -67,7 +67,7 @@ class AiConfig(AppConfig):
     def get_wca_client(self):
         backends = {
             "wcaclient": WCAClient,
-            "wcaclient-onprem": WCAOnPremClient,
+            "wca-onprem-client": WCAOnPremClient,
             "dummy": DummyWCAClient,
         }
         if not settings.WCA_CLIENT_BACKEND_TYPE:

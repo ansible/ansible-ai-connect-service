@@ -696,32 +696,40 @@ class TestDummySecretManager(TestCase):
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient-onprem")
+@override_settings(WCA_CLIENT_BACKEND_TYPE="wca-onprem-client")
 class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+    @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
     def test_get_api_key(self):
         model_client = WCAOnPremClient(inference_url='http://example.com/')
         api_key = model_client.get_api_key(11009103)
         self.assertEqual(api_key, '12345')
 
+    @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
     def test_get_api_key_without_setting(self):
         model_client = WCAClient(inference_url='http://example.com/')
         with self.assertRaises(WcaKeyNotFound):
             model_client.get_api_key(11009103)
 
+    @override_settings(ANSIBLE_WCA_USERNAME='username')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
     def test_get_model_id(self):
         model_client = WCAOnPremClient(inference_url='http://example.com/')
         model_id = model_client.get_model_id(11009103)
         self.assertEqual(model_id, 'model-name')
 
+    @override_settings(ANSIBLE_WCA_USERNAME='username')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
     def test_get_model_id_with_override(self):
         model_client = WCAOnPremClient(inference_url='http://example.com/')
         model_id = model_client.get_model_id(11009103, 'override-model-name')
         self.assertEqual(model_id, 'override-model-name')
 
+    @override_settings(ANSIBLE_WCA_USERNAME='username')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
     def test_get_model_id_without_setting(self):
         model_client = WCAOnPremClient(inference_url='http://example.com/')
