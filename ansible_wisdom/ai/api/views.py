@@ -207,6 +207,9 @@ class Feedback(APIView):
         )
         sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
         issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
+        ansible_extension_version = validated_data.get("metadata", {}).get(
+            "ansibleExtensionVersion", None
+        )
         if inline_suggestion_data:
             event = {
                 "latency": inline_suggestion_data.get('latency'),
@@ -225,6 +228,7 @@ class Feedback(APIView):
                     rh_user_org_id=getattr(user, 'org_id', None),
                 ),
                 user,
+                ansible_extension_version,
             )
         if ansible_content_data:
             event = {
@@ -258,6 +262,7 @@ class Feedback(APIView):
                     rh_user_org_id=getattr(user, 'org_id', None),
                 ),
                 user,
+                ansible_extension_version,
             )
         if issue_feedback_data:
             event = {

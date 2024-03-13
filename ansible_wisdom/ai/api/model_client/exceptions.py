@@ -23,6 +23,11 @@ class WcaBadRequest(WcaException):
 
 
 @dataclass
+class WcaUsernameNotFound(WcaException):
+    """WCA Username was expected but not found."""
+
+
+@dataclass
 class WcaInvalidModelId(WcaException):
     """A WML instance is required for code generation.
     This is possibly caused by an invalid WCA Model ID being provided."""

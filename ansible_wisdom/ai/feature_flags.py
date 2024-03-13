@@ -19,6 +19,8 @@ class WisdomFlags(str, Enum):
     MODEL_NAME = "model_name"
     # Schema 2 Telemetry is enabled for an Organization
     SCHEMA_2_TELEMETRY_ORG_ENABLED = "schema_2_telemetry_org_enabled"
+    # For some organizations we can bypass the subscription check
+    BYPASS_AAP_SUBSCRIPTION_CHECK = "special_wca_access_orgs"
 
 
 class FeatureFlags:
