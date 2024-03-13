@@ -49,7 +49,6 @@ from .data.data_model import (
     ContentMatchResponseDto,
 )
 from .model_client.exceptions import ModelTimeoutError
-from .model_client.wca_client import WCAClient
 from .permissions import (
     AcceptedTermsPermission,
     BlockUserWithoutSeat,
@@ -212,7 +211,8 @@ class Feedback(APIView):
             "ansibleExtensionVersion", None
         )
         org_id = getattr(user, 'org_id', None)
-        model_name = WCAClient.get_model_id(org_id, str(validated_data.get('model', '')))
+        wca_client = apps.get_app_config("ai").get_wca_client()
+        model_name = wca_client.get_model_id(org_id, str(validated_data.get('model', '')))
 
         if inline_suggestion_data:
             event = {

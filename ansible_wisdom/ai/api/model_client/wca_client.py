@@ -347,8 +347,8 @@ class WCAClient(BaseWCAClient):
         logger.error("Seated user's organization doesn't have default API Key set")
         raise WcaKeyNotFound
 
-    @staticmethod
     def get_model_id(
+        self,
         organization_id: Optional[int],
         requested_model_id: str = '',
     ) -> str:
