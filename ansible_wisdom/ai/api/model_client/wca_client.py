@@ -81,6 +81,20 @@ class DummyWCAClient:
     def infer_from_parameters(self, *args, **kwargs):
         return ""
 
+    def get_model_id(
+        self,
+        organization_id: Optional[int],
+        requested_model_id: str = '',
+    ) -> str:
+        if requested_model_id:
+            # requested_model_id defined: let them use what they ask for
+            return requested_model_id
+
+        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+
+        raise WcaModelIdNotFound()
+
     def get_token(self, api_key):
         if api_key != "valid":
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
