@@ -89,11 +89,7 @@ class DummyWCAClient:
         if requested_model_id:
             # requested_model_id defined: let them use what they ask for
             return requested_model_id
-
-        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
-            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
-
-        raise WcaModelIdNotFound()
+        return ""
 
     def get_token(self, api_key):
         if api_key != "valid":
