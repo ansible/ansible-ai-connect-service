@@ -4,6 +4,7 @@ from typing import Any, TypedDict, Union
 from uuid import UUID
 
 from pydantic import BaseModel, validator
+from typing_extensions import TypedDict
 
 from ansible_wisdom.ai.api.serializers import DataSource
 

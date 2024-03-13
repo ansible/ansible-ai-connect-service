@@ -1,4 +1,5 @@
 import logging
+import textwrap
 import time
 from http import HTTPStatus
 
@@ -7,6 +8,8 @@ from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from langchain_community.llms import Ollama
+from langchain_core.prompts import PromptTemplate
 from prometheus_client import Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
@@ -683,3 +686,60 @@ class ContentMatches(GenericAPIView):
             "metadata": metadata,
         }
         send_segment_event(event, "contentmatch", user)
+
+
+class Explanation(APIView):
+    """
+    Returns a text that explains a playbook.
+    """
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+        BlockUserWithoutSeat,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_completions'
+
+    @extend_schema(
+        request=CompletionRequestSerializer,
+        responses={
+            200: CompletionResponseSerializer,
+            204: OpenApiResponse(description='Empty response'),
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Inline code suggestions",
+    )
+    def post(self, request) -> Response:
+        llm = Ollama(
+            base_url="http://192.168.1.191:11434",
+            model="mistral",
+        )
+
+        template_text = """
+        You're an Ansible expert.
+        You only answer with text paragraph.
+        Write one paragraph per Ansible task.
+        Write a title before every paragraph.
+        Do not return any YAML our Ansible in the output.
+        Please format the output with Markdown.
+
+        {playbook}
+        """
+        template = PromptTemplate.from_template(textwrap.dedent(template_text))
+        chain = template | llm
+
+        output = chain.invoke({"playbook": request.data["content"]})
+        return Response(
+            {"explanation": output, "format": "markdown"}, status=rest_framework_status.HTTP_200_OK
+        )
