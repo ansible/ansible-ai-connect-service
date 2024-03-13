@@ -7,6 +7,7 @@ import string
 import time
 import uuid
 from http import HTTPStatus
+from typing import Optional
 from unittest.mock import Mock, patch
 
 import requests
@@ -118,6 +119,13 @@ class MockedMeshClient(ModelMeshClient):
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
         # i.e., still receives 200 after 10 API calls...
         return self.response_data
+
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or ''
 
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):

@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Optional
 
 from django.conf import settings
 
@@ -15,6 +16,14 @@ class ModelMeshClient:
 
     def set_inference_url(self, inference_url):
         self._inference_url = inference_url
+
+    @abstractmethod
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        raise NotImplementedError
 
     def timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None

@@ -83,13 +83,10 @@ class DummyWCAClient:
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
-        if requested_model_id:
-            # requested_model_id defined: let them use what they ask for
-            return requested_model_id
-        return ""
+        return requested_model_id or ''
 
     def get_token(self, api_key):
         if api_key != "valid":
@@ -217,14 +214,6 @@ class BaseWCAClient(ModelMeshClient):
 
     @abstractmethod
     def get_api_key(self, organization_id: Optional[int]) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_model_id(
-        self,
-        organization_id: Optional[int],
-        requested_model_id: str = '',
-    ) -> str:
         raise NotImplementedError
 
     def codematch(self, model_input, model_id: str = ""):
@@ -359,7 +348,7 @@ class WCAClient(BaseWCAClient):
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
@@ -425,7 +414,7 @@ class WCAOnPremClient(BaseWCAClient):
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
         if requested_model_id:

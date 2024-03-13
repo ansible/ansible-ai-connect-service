@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import grpc
 from django.conf import settings
@@ -29,7 +30,7 @@ class GrpcClient(ModelMeshClient):
         self._inference_stub = self.get_inference_stub()
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
-        model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
+        model_id = self.get_model_id(None, model_id)
         logger.debug(f"Input prompt: {model_input}")
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
@@ -55,3 +56,10 @@ class GrpcClient(ModelMeshClient):
             else:
                 logger.error(f"gRPC client error: {exc.details()}")
                 raise
+
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or settings.ANSIBLE_AI_MODEL_NAME

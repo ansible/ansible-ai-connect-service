@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 import requests
 from django.conf import settings
@@ -19,7 +20,7 @@ class HttpClient(ModelMeshClient):
         self.headers = {"Content-Type": "application/json"}
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
-        model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
+        model_id = self.get_model_id(None, model_id)
         self._prediction_url = f"{self._inference_url}/predictions/{model_id}"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -38,3 +39,10 @@ class HttpClient(ModelMeshClient):
             return response
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
+
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or settings.ANSIBLE_AI_MODEL_NAME
