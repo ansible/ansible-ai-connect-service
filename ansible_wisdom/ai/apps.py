@@ -10,7 +10,7 @@ from ansible_wisdom.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
-from .api.model_client.wca_client import DummyWCAClient, WCAClient
+from .api.model_client.wca_client import DummyWCAClient, WCAClient, WCAOnPremClient
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ class AiConfig(AppConfig):
     def get_wca_client(self):
         backends = {
             "wcaclient": WCAClient,
+            "wca-onprem-client": WCAOnPremClient,
             "dummy": DummyWCAClient,
         }
         if not settings.WCA_CLIENT_BACKEND_TYPE:
