@@ -82,9 +82,9 @@ It is recommended to use a separate virtual environment for your development.  
 
 1. Go to Settings page (on Linux it is File > Settings)
 2. Open Project: ansible-wisdom-service > Python Interpreter and click Add Interpreter  
-![](images/image10.png)
+![](images/pycharm-image10.png)
 3. Select Virtual Environment and and set Base interpreter, then click OK  
-![](images/image13.png)
+![](images/pycharm-image13.png)
 
 ## PyCharm Run Configurations
 
@@ -95,7 +95,6 @@ We are going to create following run configurations:
 1. createsuperuser
 1. createapplication
 1. runserver
-1. runserver (grpc)
 1. test
 
 1-4 are for setup, 5 & 6 are for running Wisdom Service and 7 is for running unit tests.
@@ -119,7 +118,7 @@ SOCIAL_AUTH_GITHUB_SECRET=(your secret here)
 ```
 
 > [!TIP]
-> For using a model server that provides prediction results, you need to set extra environment variables for a client type that is used to connect to the model server. Please take a look at the doc [Local Wisdom Server Setup with the gRPC or WCA clients](./grpc-wca-setup.md) for more details.
+> For using a model server that provides prediction results, you need to set extra environment variables for a client type that is used to connect to the model server. Please take a look at the [README](../README.md) for more details.
 
 ### migrate, createsuperuser and createapplication
 
@@ -132,7 +131,7 @@ Another setup required for using the local development environment with Ansible 
 These configurations are almost identical except for the argument given to manage.py, you can create one and copy it before creating another.  
   
 To create the migrate configuration, go to Run > Edit Configurations on PyCharm.  On Configuration tab:  
-![](images/image9.png)
+![](images/pycharm-image9.png)
 
 Script path: **(path to manage.py)**
 
@@ -141,7 +140,7 @@ Parameters: **migrate**
 Working directory: **(path to ansible_wisdom directory of the project)**
 
 And on the EnvFile tab:  
-![](images/image14.png)
+![](images/pycharm-image14.png)
 
 Enable EnvFile: checked
 
@@ -149,7 +148,7 @@ Then select your .env file in the list.
 
 For creating the createcachetable configuration, 
 
-![](images/image2.png)  
+![](images/pycharm-image2.png)  
 
 
 Script path: **(path to manage.py)**
@@ -163,7 +162,7 @@ Before launch: select migrate configuration so that it will be executed before
 For creating the createsuperuser configuration, 
 
   
-![](images/image12.png)
+![](images/pycharm-image12.png)
 
 Script path: **(path to manage.py)**
 
@@ -178,7 +177,7 @@ The settings on the EnvFile tab are the same as the ones for the migrate config
 
 For creating the createapplication configuration:
 
-![](images/image8.png)
+![](images/pycharm-image8.png)
 
 Script path: **(path to manage.py)**
 
@@ -188,21 +187,6 @@ Working directory: (path to ansible_wisdom directory of the project)
 Before launch: select createsuperuser configuration so that it will be executed before this  createsuperuser configuration is executed  
   
 The settings on the EnvFile tab are the same as the ones for the migrate configuration.
-
-### runserver (grpc|wca)/test
-
-For creating the runserver configuration:
-
-![](images/image6.png)  
-  
-Script path: (path to manage.py)
-
-Parameters: runserver --noreload  
-Working directory: (path to ansible_wisdom directory of the project) 
-
-Depending on the client type for model server connection (either gRPC or WCA), you need to have a different set of environment variables. See [Local Wisdom Server Setup with the gRPC or WCA clients](./grpc-wca-setup.md) for more information.
-
-The test configuration also uses a similar configuration to runserver.  Only difference is in the Parameters (test instead of runserver --noreload)  
 
 ### Tips to run specific test cases
 
@@ -243,34 +227,34 @@ Starting development server at http://127.0.0.1:8000/Quit the server with C
 
 If you open your web browser and point to [http://localhost:8000/](http://localhost:8000/), you see:
 
-![](images/image5.png)
+![](images/pycharm-image5.png)
 
 DON'T CLICK Log in HERE! If you do so, you'll see  
-![](images/image1.png)
+![](images/pycharm-image1.png)
 
 then you'll see
 
-![](images/image15.png)
+![](images/pycharm-image15.png)
 
 What you need is to open VSCode, install Ansible Plugin, and configure Lightspeed URL to [http://localhost:8000/](http://localhost:8000/) (note it's http, not https)  
 
 
-![](images/image16.png)
+![](images/pycharm-image16.png)
 
 Click the Ansible icon and click Connect:
 
-![](images/image4.png)
+![](images/pycharm-image4.png)
 
 Click Allow to sign in:
 
-![](images/image7.png)
+![](images/pycharm-image7.png)
 
 then you will see the login screen with  the "Log in with GitHub" button.  Click the button and it will guide you to the Terms of Use page, etc.
 
-![](images/image3.png)
+![](images/pycharm-image3.png)
 
 If everything went well, you'll see your GitHub ID on the web browser screen:
 
-![](images/image11.png)
+![](images/pycharm-image11.png)
 
 From that point, you can start debugging, i.e. set breakpoint, view variables etc. Have fun!
