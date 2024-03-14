@@ -1,0 +1,2 @@
+-r requirements-aarch64.txt
+-r requirements-x86_64.txt
