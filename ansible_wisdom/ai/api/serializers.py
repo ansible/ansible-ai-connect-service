@@ -342,6 +342,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
     sentimentFeedback = SentimentFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
     metadata = Metadata(required=False)
+    model = serializers.CharField(required=False)
 
     def validate_inlineSuggestion(self, value):
         user = self.context.get('request').user

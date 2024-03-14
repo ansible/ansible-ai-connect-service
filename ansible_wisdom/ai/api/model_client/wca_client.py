@@ -81,6 +81,13 @@ class DummyWCAClient:
     def infer_from_parameters(self, *args, **kwargs):
         return ""
 
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or ''
+
     def get_token(self, api_key):
         if api_key != "valid":
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
@@ -207,14 +214,6 @@ class BaseWCAClient(ModelMeshClient):
 
     @abstractmethod
     def get_api_key(self, organization_id: Optional[int]) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_model_id(
-        self,
-        organization_id: Optional[int],
-        requested_model_id: str = '',
-    ) -> str:
         raise NotImplementedError
 
     def codematch(self, model_input, model_id: str = ""):
@@ -349,7 +348,7 @@ class WCAClient(BaseWCAClient):
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
@@ -415,7 +414,7 @@ class WCAOnPremClient(BaseWCAClient):
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
         if requested_model_id:
