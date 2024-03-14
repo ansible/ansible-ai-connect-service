@@ -211,8 +211,8 @@ class Feedback(APIView):
             "ansibleExtensionVersion", None
         )
         org_id = getattr(user, 'org_id', None)
-        wca_client = apps.get_app_config("ai").get_wca_client()
-        model_name = wca_client.get_model_id(org_id, str(validated_data.get('model', '')))
+        model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        model_name = model_mesh_client.get_model_id(org_id, str(validated_data.get('model', '')))
 
         if inline_suggestion_data:
             event = {
