@@ -1,9 +1,7 @@
 import json
 import logging
-from typing import Optional
 
 import requests
-from django.conf import settings
 
 from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
 
@@ -80,10 +78,3 @@ class LlamaCPPClient(ModelMeshClient):
             return response
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
-
-    def get_model_id(
-        self,
-        organization_id: Optional[int] = None,
-        requested_model_id: str = '',
-    ) -> str:
-        return requested_model_id or settings.ANSIBLE_AI_MODEL_NAME

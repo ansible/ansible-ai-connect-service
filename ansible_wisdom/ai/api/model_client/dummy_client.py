@@ -2,7 +2,6 @@ import json
 import logging
 import secrets
 import time
-from typing import Optional
 
 import requests
 from django.conf import settings
@@ -29,10 +28,3 @@ class DummyClient(ModelMeshClient):
         response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
         response_body['model_id'] = '_'
         return response_body
-
-    def get_model_id(
-        self,
-        organization_id: Optional[int] = None,
-        requested_model_id: str = '',
-    ) -> str:
-        return requested_model_id or settings.ANSIBLE_AI_MODEL_NAME
