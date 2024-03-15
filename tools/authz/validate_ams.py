@@ -2,12 +2,11 @@
 # NOTE: require the sso.stage credentials
 
 import os
+import re
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from urllib.parse import urlsplit, urlunsplit
 from urllib.error import URLError
-
-import re
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
@@ -35,13 +34,15 @@ class Token:
         }
 
         url = urlsplit(os.environ['AUTHZ_SSO_SERVER'])
-        url = parsed_url._replace(path="/auth/realms/redhat-external/protocol/openid-connect/token")
+        url = url._replace(path="/auth/realms/redhat-external/protocol/openid-connect/token")
 
         if not re.search(AUTHZ_SSO_PATTERN, url.netloc):
-            raise AuthzURLError(f"Authz URL host ('{url.netloc}') must match '{AUTHZ_SSO_PATTERN}'")
+            raise AuthzURLError(
+                f"Authz SSO URL host ('{url.netloc}') must match '{AUTHZ_SSO_PATTERN}'"
+            )
 
         if url.scheme != "https":
-            raise AuthzURLError(f"Authz URL scheme ('{url.scheme}') must be 'https'")
+            raise AuthzURLError(f"Authz SSO URL scheme ('{url.scheme}') must be 'https'")
 
         r = requests.post(
             urlunsplit(url),
@@ -69,10 +70,10 @@ def get_ams_org(rh_org_id: str) -> str:
     url = url._replace(path="/api/accounts_mgmt/v1/organizations")
 
     if not re.search(AUTHZ_API_PATTERN, url.netloc):
-        raise AuthzURLError(f"Authz URL host ('{url.netloc}') must match '{AUTHZ_API_PATTERN}'")
+        raise AuthzURLError(f"Authz API URL host ('{url.netloc}') must match '{AUTHZ_API_PATTERN}'")
 
     if url.scheme != "https":
-        raise AuthzURLError(f"Authz URL scheme ('{url.scheme}') must be 'https'")
+        raise AuthzURLError(f"Authz API URL scheme ('{url.scheme}') must be 'https'")
 
     r = requests.get(
         urlunsplit(url),
