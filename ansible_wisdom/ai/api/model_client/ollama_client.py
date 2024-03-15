@@ -3,7 +3,6 @@ import re
 
 import requests
 from django.conf import settings
-
 from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 
@@ -46,12 +45,13 @@ class OllamaClient(ModelMeshClient):
         )
 
         template = PromptTemplate.from_template(
-            """You're an Ansible expert. Return a single task that best completes the following partial playbook:
-        {context}{prompt}
-        Return only the task as YAML.
-        Do not return multiple tasks.
-        Do not explain your response.
-        """
+            """You're an Ansible expert.
+Return a single task that best completes the following partial playbook:
+{context}{prompt}
+Return only the task as YAML.
+Do not return multiple tasks.
+Do not explain your response.
+"""
         )
 
         # Only return the portion of the task that comes after the '- name: this is the name'.
