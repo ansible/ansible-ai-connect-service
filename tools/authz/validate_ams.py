@@ -42,7 +42,7 @@ class Token:
 my_token = Token(os.environ["AUTHZ_SSO_CLIENT_ID"], os.environ["AUTHZ_SSO_CLIENT_SECRET"])
 
 
-def get_ams_org(rh_org_id: str) -> str:
+def get_ams_org(rh_org_id: int) -> str:
     params = {"search": f"external_id='{rh_org_id}'"}
 
     r = requests.get(
