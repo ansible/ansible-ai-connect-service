@@ -4,8 +4,19 @@
 import os
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from urllib.parse import urlsplit, urlunsplit
+from urllib.error import URLError
+
+import re
 
 import requests
+
+AUTHZ_SSO_PATTERN = r"^sso.(.+\.)?redhat.com$"
+AUTHZ_API_PATTERN = r"^api.(.+\.)?openshift.com$"
+
+
+class AuthzURLError(URLError):
+    pass
 
 
 class Token:
@@ -23,11 +34,20 @@ class Token:
             "scope": "api.iam.access",
         }
 
+        url = urlsplit(os.environ['AUTHZ_SSO_SERVER'])
+        url = parsed_url._replace(path="/auth/realms/redhat-external/protocol/openid-connect/token")
+
+        if not re.search(AUTHZ_SSO_PATTERN, url.netloc):
+            raise AuthzURLError(f"Authz URL host ('{url.netloc}') must match '{AUTHZ_SSO_PATTERN}'")
+
+        if url.scheme != "https":
+            raise AuthzURLError(f"Authz URL scheme ('{url.scheme}') must be 'https'")
+
         r = requests.post(
-            os.environ['AUTHZ_SSO_SERVER']
-            + "/auth/realms/redhat-external/protocol/openid-connect/token",
+            urlunsplit(url),
             data=data,
         )
+
         data = r.json()
         self.access_token = data["access_token"]
         expires_in = data["expires_in"]
@@ -45,8 +65,17 @@ my_token = Token(os.environ["AUTHZ_SSO_CLIENT_ID"], os.environ["AUTHZ_SSO_CLIENT
 def get_ams_org(rh_org_id: str) -> str:
     params = {"search": f"external_id='{rh_org_id}'"}
 
+    url = urlsplit(os.environ['AUTHZ_API_SERVER'])
+    url = url._replace(path="/api/accounts_mgmt/v1/organizations")
+
+    if not re.search(AUTHZ_API_PATTERN, url.netloc):
+        raise AuthzURLError(f"Authz URL host ('{url.netloc}') must match '{AUTHZ_API_PATTERN}'")
+
+    if url.scheme != "https":
+        raise AuthzURLError(f"Authz URL scheme ('{url.scheme}') must be 'https'")
+
     r = requests.get(
-        f"{os.environ['AUTHZ_API_SERVER']}/api/accounts_mgmt/v1/organizations",
+        urlunsplit(url),
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {my_token.get()}",
