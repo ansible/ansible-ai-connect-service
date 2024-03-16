@@ -210,12 +210,17 @@ class Feedback(APIView):
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
         )
+        org_id = getattr(user, 'org_id', None)
+        model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        model_name = model_mesh_client.get_model_id(org_id, str(validated_data.get('model', '')))
+
         if inline_suggestion_data:
             event = {
                 "latency": inline_suggestion_data.get('latency'),
                 "userActionTime": inline_suggestion_data.get('userActionTime'),
                 "action": inline_suggestion_data.get('action'),
                 "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+                "modelName": model_name,
                 "activityId": str(inline_suggestion_data.get('activityId', '')),
                 "exception": exception is not None,
             }
@@ -225,7 +230,7 @@ class Feedback(APIView):
                 lambda: AnalyticsRecommendationAction(
                     action=inline_suggestion_data.get('action'),
                     suggestion_id=inline_suggestion_data.get('suggestionId', ''),
-                    rh_user_org_id=getattr(user, 'org_id', None),
+                    rh_user_org_id=org_id,
                 ),
                 user,
                 ansible_extension_version,
@@ -235,6 +240,7 @@ class Feedback(APIView):
                 "content": ansible_content_data.get('content'),
                 "documentUri": ansible_content_data.get('documentUri'),
                 "trigger": ansible_content_data.get('trigger'),
+                "modelName": model_name,
                 "activityId": str(ansible_content_data.get('activityId', '')),
                 "exception": exception is not None,
             }
@@ -245,6 +251,7 @@ class Feedback(APIView):
                 "providedSuggestion": suggestion_quality_data.get('providedSuggestion'),
                 "expectedSuggestion": suggestion_quality_data.get('expectedSuggestion'),
                 "additionalComment": suggestion_quality_data.get('additionalComment'),
+                "modelName": model_name,
                 "exception": exception is not None,
             }
             send_segment_event(event, "suggestionQualityFeedback", user)
@@ -252,6 +259,7 @@ class Feedback(APIView):
             event = {
                 "value": sentiment_feedback_data.get('value'),
                 "feedback": sentiment_feedback_data.get('feedback'),
+                "modelName": model_name,
                 "exception": exception is not None,
             }
             send_segment_event(event, "sentimentFeedback", user)
@@ -259,7 +267,8 @@ class Feedback(APIView):
                 AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
                 lambda: AnalyticsProductFeedback(
                     value=sentiment_feedback_data.get('value'),
-                    rh_user_org_id=getattr(user, 'org_id', None),
+                    rh_user_org_id=org_id,
+                    model_name=model_name,
                 ),
                 user,
                 ansible_extension_version,
@@ -269,6 +278,7 @@ class Feedback(APIView):
                 "type": issue_feedback_data.get('type'),
                 "title": issue_feedback_data.get('title'),
                 "description": issue_feedback_data.get('description'),
+                "modelName": model_name,
                 "exception": exception is not None,
             }
             send_segment_event(event, "issueFeedback", user)

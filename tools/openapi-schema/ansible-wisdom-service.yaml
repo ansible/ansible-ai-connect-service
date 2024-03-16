@@ -722,6 +722,8 @@ components:
           $ref: '#/components/schemas/IssueFeedback'
         metadata:
           $ref: '#/components/schemas/Metadata'
+        model:
+          type: string
     InlineSuggestionFeedback:
       type: object
       properties:

@@ -7,6 +7,7 @@ import string
 import time
 import uuid
 from http import HTTPStatus
+from typing import Optional
 from unittest.mock import Mock, patch
 
 import requests
@@ -118,6 +119,13 @@ class MockedMeshClient(ModelMeshClient):
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
         # i.e., still receives 200 after 10 API calls...
         return self.response_data
+
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or ''
 
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
@@ -1204,6 +1212,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "title": "This is a test issue",
                 "description": "This is a test issue description",
             },
+            "model": str(uuid.uuid4()),
         }
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.force_authenticate(user=self.user)
@@ -1288,6 +1297,30 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('rh_user_org_id' in properties)
                 self.assertEqual(hostname, properties['hostname'])
                 self.assertIsNotNone(event['timestamp'])
+
+    def test_feedback_segment_events_with_custom_model(self):
+        model_name = str(uuid.uuid4())
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+            "model": model_name,
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('feedback'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            for event in segment_events:
+                properties = event['properties']
+                self.assertTrue('modelName' in properties)
+                self.assertEqual(model_name, properties['modelName'])
 
     def test_feedback_segment_inline_suggestion_feedback_error(self):
         payload = {
