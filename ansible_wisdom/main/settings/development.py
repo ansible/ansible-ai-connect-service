@@ -1,6 +1,11 @@
-import os
-
 from .base import *  # NOQA
+from .base import (
+    MIDDLEWARE,
+    cast,
+    os,
+    t_wca_client_backend_type,
+    t_wca_secret_backend_type,
+)
 
 DEBUG = True
 
@@ -29,8 +34,8 @@ if DEBUG:
         index = MIDDLEWARE.index(  # noqa: F405
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
-        MIDDLEWARE[index] = (  # noqa: F405
-            "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"
+        MIDDLEWARE[index] = (
+            "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
         )
 
 CSP_REPORT_ONLY = True
@@ -47,13 +52,17 @@ AUTHZ_DUMMY_RH_ORG_ADMINS = os.getenv("AUTHZ_DUMMY_RH_ORG_ADMINS", "")
 # note: "*" means that all the orgs have a subscription.
 AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION = os.getenv("AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION", "")
 
-WCA_SECRET_BACKEND_TYPE = os.getenv("WCA_SECRET_BACKEND_TYPE", "dummy")  # or aws_sm
+WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = os.getenv(
+    "WCA_SECRET_BACKEND_TYPE", cast(t_wca_secret_backend_type, "dummy")
+)  # or aws_sm
 # a list of key:value with a , separator. key is the orgid, value is the secret.
 # when a secret with the string "valid", it means the backend will accept it has
 # a valid string. e.g:
 # WCA_SECRET_DUMMY_SECRETS=1009103:valid,11009104:not-valid
 WCA_SECRET_DUMMY_SECRETS = os.getenv("WCA_SECRET_DUMMY_SECRETS", "")
-WCA_CLIENT_BACKEND_TYPE = os.getenv("WCA_CLIENT_BACKEND_TYPE", "dummy")  # or wcaclient
+WCA_CLIENT_BACKEND_TYPE: t_wca_client_backend_type = os.getenv(
+    "WCA_CLIENT_BACKEND_TYPE", cast(t_wca_client_backend_type, "dummy")
+)  # or wcaclient
 
 # "Schema 2" Telemetry Admin Dashboard URL
 TELEMETRY_ADMIN_DASHBOARD_URL = (

@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from http import HTTPStatus
+from typing import Union
 from unittest.mock import Mock, patch
 
 from django.apps import apps
@@ -116,7 +117,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
+        self.assert_basic_data_deployed_region(data.get('deployed_region'))
         dependencies = data.get('dependencies', [])
         self.assertEqual(6, len(dependencies))
         for dependency in dependencies:
@@ -135,6 +136,9 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             self.assertGreaterEqual(dependency['time_taken'], 0)
 
         return timestamp, dependencies
+
+    def assert_basic_data_deployed_region(self, deployed_region: Union[str, None]) -> None:
+        self.assertIsNotNone(deployed_region)
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
@@ -470,3 +474,11 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertEqual(dependency['status'], 'disabled')
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
+
+
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(DEPLOYMENT_MODE="onprem")
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+class TestHealthCheckOnPrem(TestHealthCheck):
+    def assert_basic_data_deployed_region(self, deployed_region: Union[str, None]) -> None:
+        self.assertIsNone(deployed_region)

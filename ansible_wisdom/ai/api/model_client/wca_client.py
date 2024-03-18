@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 import backoff
 import requests
@@ -74,9 +74,9 @@ ibm_cloud_identity_token_retry_counter = Counter(
 )
 
 
-class DummyWCAClient:
+class DummyWCAClient(ModelMeshClient):
     def __init__(self, inference_url):
-        self.inference_url = inference_url
+        super().__init__(inference_url=inference_url)
 
     def infer_from_parameters(self, *args, **kwargs):
         return ""
@@ -93,7 +93,9 @@ class DummyWCAClient:
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
         return ""
 
-    def infer(self, *args, suggestion_id=None, **kwargs):
+    def infer(
+        self, model_input, model_id="wisdom", suggestion_id=None
+    ) -> dict[str, Union[str, list[str]]]:
         return {
             "model_id": "mocked_wca_client",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
@@ -131,7 +133,9 @@ class BaseWCAClient(ModelMeshClient):
     def on_backoff_ibm_cloud_identity_token(details):
         ibm_cloud_identity_token_retry_counter.inc()
 
-    def infer(self, model_input, model_id: str = '', suggestion_id=None):
+    def infer(
+        self, model_input, model_id: str = '', suggestion_id=None
+    ) -> dict[str, Union[str, list[str]]]:
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")

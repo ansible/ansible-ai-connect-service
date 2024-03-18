@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import sys
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,11 +29,14 @@ ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
 )
 
-ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal[
-    "grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy"
-] = os.getenv("ANSIBLE_AI_MODEL_MESH_API_TYPE", "http")
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL", "https"
+t_model_mesh_api_type = Literal["grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy"]
+ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE", cast(t_model_mesh_api_type, "http")
+)
+t_model_mesh_healthcheck_protocol = Literal["http", "https"]
+ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL: t_model_mesh_healthcheck_protocol = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL",
+    cast(t_model_mesh_healthcheck_protocol, "https"),
 )
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
@@ -129,7 +132,7 @@ TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-    # No Github login after the Tech Preview
+    # No GitHub login after the Tech Preview
     USE_GITHUB_TEAM = False
 elif os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY'):
     USE_GITHUB_TEAM = True
@@ -168,7 +171,10 @@ AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
 AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT", "3"))
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
-DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
+t_deployment_mode = Literal["saas", "upstream", "onprem"]
+DEPLOYMENT_MODE: t_deployment_mode = os.environ.get(
+    "DEPLOYMENT_MODE", cast(t_deployment_mode, "saas")
+)
 AUTHENTICATION_BACKENDS = [
     (
         "social_core.backends.github.GithubTeamOAuth2"
@@ -495,9 +501,10 @@ CACHES = {
         "LOCATION": "cache",
     }
 }
-
-WCA_CLIENT_BACKEND_TYPE = "wcaclient"
-WCA_SECRET_BACKEND_TYPE = "aws_sm"
+t_wca_client_backend_type = Literal["wcaclient", "wca-on-prem-client", "dummy"]
+WCA_CLIENT_BACKEND_TYPE: t_wca_client_backend_type = cast(t_wca_client_backend_type, "wcaclient")
+t_wca_secret_backend_type = Literal["dummy", "aws_sm"]
+WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = cast(t_wca_secret_backend_type, "aws_sm")
 
 WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_ACCESS_KEY', '')
 WCA_SECRET_MANAGER_SECRET_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_SECRET_ACCESS_KEY', '')

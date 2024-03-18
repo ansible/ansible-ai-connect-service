@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 from django.conf import settings
 
@@ -11,7 +11,9 @@ class ModelMeshClient:
         self._timeout = int(i) if i is not None else None
 
     @abstractmethod
-    def infer(self, model_input, model_id="wisdom", suggestion_id=None):  # pragma: no cover
+    def infer(
+        self, model_input, model_id="wisdom", suggestion_id=None
+    ) -> dict[str, Union[str, list[str]]]:  # pragma: no cover
         pass
 
     def codematch(self, model_input, model_id):

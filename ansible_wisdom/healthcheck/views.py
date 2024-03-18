@@ -58,8 +58,11 @@ class HealthCheckCustomView(MainView):
             'version': self._version_info.image_tags,
             'git_commit': self._version_info.git_commit,
             'model_name': model_name,
-            'deployed_region': deployed_region,
         }
+        # Don't include 'deployed_region' for 'on prem'
+        if settings.DEPLOYMENT_MODE != "onprem":
+            data = {**data, 'deployed_region': deployed_region}
+
         dependencies = []
         for p in plugins:
             plugins_id = self._plugin_name_map.get(p.identifier(), 'unknown')
