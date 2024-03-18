@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Any, Dict
 
 import requests
 
@@ -17,7 +18,7 @@ class HttpClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_id="", suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         model_id = self.get_model_id(None, model_id)
         self._prediction_url = f"{self._inference_url}/predictions/{model_id}"
 

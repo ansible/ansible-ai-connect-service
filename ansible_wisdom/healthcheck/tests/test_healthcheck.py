@@ -2,9 +2,11 @@ import json
 import logging
 import time
 from http import HTTPStatus
+from typing import Optional
 from unittest.mock import Mock, patch
 
 from django.apps import apps
+from django.conf import settings
 from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
@@ -101,11 +103,17 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             log,
         )
 
-    def assert_basic_data(self, r: Response, expected_status: str) -> (str, []):
+    def assert_basic_data(
+        self,
+        r: Response,
+        expected_status: str,
+        deployed_region: Optional[str] = settings.DEPLOYED_REGION,
+    ) -> (str, []):
         """
         Performs assertion of the basic data returned for all Health Checks.
         :param r: HTTP Response
         :param expected_status: HTTP status
+        :param deployed_region: The region to which the service is deployed
         :return: (timestamp, dependencies) tuple from the basic data.
         """
         data = json.loads(r.content)
@@ -115,7 +123,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         self.assertIsNotNone(data['version'])
         self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
-        self.assertIsNotNone(data['deployed_region'])
+        self.assertEqual(data.get('deployed_region'), deployed_region)
         dependencies = data.get('dependencies', [])
         self.assertEqual(6, len(dependencies))
         for dependency in dependencies:
@@ -152,6 +160,17 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         self.assertEqual(r.status_code, HTTPStatus.OK)
         data = json.loads(r.content)
         self.assertEqual(timestamp, data['timestamp'])
+
+    @override_settings(DEPLOYED_REGION="")
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    def test_health_check_without_deployed_region(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        timestamp, dependencies = self.assert_basic_data(r, 'ok', None)
+        for dependency in dependencies:
+            self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
