@@ -395,6 +395,39 @@ class AttributionRequestSerializer(serializers.Serializer):
     metadata = Metadata(required=False)
 
 
+class ExplanationRequestSerializer(serializers.Serializer):
+    class Meta:
+        fields = ['content', 'explanationId', 'ansibleExtensionVersion']
+
+    content = serializers.CharField(
+        required=True,
+        label="Playbook content",
+        help_text=("The playbook that needs to be explained."),
+    )
+    explanationId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Explanation ID",
+        help_text=(
+            "A UUID that identifies the particular explanation data is being requested for."
+        ),
+    )
+    metadata = Metadata(required=False)
+
+
+class ExplanationResponseSerializer(serializers.Serializer):
+    content = serializers.CharField()
+    format = serializers.CharField()
+    explanationId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="Explanation ID",
+        help_text=(
+            "A UUID that identifies the particular explanation data is being requested for."
+        ),
+    )
+
+
 class ContentMatchRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['suggestions', 'suggestionId', 'model', 'ansibleExtensionVersion']

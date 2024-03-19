@@ -1,17 +1,10 @@
 import json
 import logging
 import re
+from typing import Any, Callable, List, Optional
 
 import requests
 from django.conf import settings
-
-from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
-
-from .base import ModelMeshClient
-from .exceptions import ModelTimeoutError
-
-from typing import Any, List, Optional, Callable
-
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages.chat import ChatMessage
 from langchain_core.prompts.chat import (
@@ -19,6 +12,9 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+
+from .base import ModelMeshClient
+from .exceptions import ModelTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +120,7 @@ class BAMClient(ModelMeshClient):
 
         try:
             # messages = chat_template.format_messages(prompt=full_prompt)
-            chain = chat_template | self.llm
+            chain = chat_template | llm
             message = chain.invoke({"prompt": full_prompt})
 
             task = message.content
