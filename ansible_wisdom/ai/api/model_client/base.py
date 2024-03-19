@@ -29,3 +29,6 @@ class ModelMeshClient:
 
     def timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError

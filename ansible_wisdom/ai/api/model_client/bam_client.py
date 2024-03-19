@@ -87,10 +87,18 @@ class ChatBAM(SimpleChatModel):
 class BAMClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
+        self._prediction_url = f"{self._inference_url}/v2/text/chat?version=2024-01-10"
+
+    def get_chat_model(self, model_id):
+        return ChatBAM(
+            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
+            model_id=model_id,
+            prediction_url=self._prediction_url,
+            timeout=self.timeout,
+        )
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
-        self._prediction_url = f"{self._inference_url}/v2/text/chat?version=2024-01-10"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
@@ -101,12 +109,7 @@ class BAMClient(ModelMeshClient):
         full_prompt = f"{context}{prompt}\n"
         logger.info(f"full prompt: {full_prompt}")
 
-        llm = ChatBAM(
-            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
-            model_id=model_id,
-            prediction_url=self._prediction_url,
-            timeout=self.timeout,
-        )
+        llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
             [
@@ -121,7 +124,7 @@ class BAMClient(ModelMeshClient):
 
         try:
             # messages = chat_template.format_messages(prompt=full_prompt)
-            chain = chat_template | llm
+            chain = chat_template | self.llm
             message = chain.invoke({"prompt": full_prompt})
 
             task = message.content
