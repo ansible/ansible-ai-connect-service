@@ -13,7 +13,6 @@ from .exceptions import ModelTimeoutError
 from typing import Any, List, Optional, Callable
 
 from langchain_core.language_models.chat_models import SimpleChatModel
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages.chat import ChatMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
