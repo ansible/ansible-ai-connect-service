@@ -18,7 +18,11 @@ from .exceptions import ModelTimeoutError
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_MESSAGE_TEMPLATE = "You are an Ansible expert. Return a single task that best completes the partial playbook. Return only the task as YAML. Do not return multiple tasks. Do not explain your response. Do not include the prompt in your response."
+SYSTEM_MESSAGE_TEMPLATE = (
+    "You are an Ansible expert. Return a single task that best completes the "
+    "partial playbook. Return only the task as YAML. Do not return multiple tasks. "
+    "Do not explain your response. Do not include the prompt in your response."
+)
 HUMAN_MESSAGE_TEMPLATE = "{prompt}"
 
 
@@ -123,7 +127,8 @@ class BAMClient(ModelMeshClient):
             chain = chat_template | llm
             message = chain.invoke({"prompt": full_prompt})
 
-            task = message.content
+            # Ollama answers with just a string
+            task = message.content if hasattr(message, "content") else message
 
             # TODO(rg): fragile and not always correct; remove when we've created a better tune
             task = task.split("```yaml")[-1]

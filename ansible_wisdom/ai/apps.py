@@ -66,11 +66,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = BAMClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["dummy", "mock"]:
-            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
-                logger.error(
-                    'ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock" is deprecated, use "dummy" instead'
-                )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
+            from .api.model_client.ollama_client import OllamaClient
+
+            self.model_mesh_client = OllamaClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
         else:
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
