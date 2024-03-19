@@ -1,9 +1,10 @@
 import logging
 from abc import abstractmethod
-from typing import Any, TypedDict, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, validator
+from typing_extensions import TypedDict
 
 from ansible_wisdom.ai.api.serializers import DataSource
 
@@ -15,17 +16,17 @@ class APIPayload(BaseModel):
     prompt: str = ""
     original_prompt: str = ""
     context: str = ""
-    userId: Union[UUID, None]
-    suggestionId: Union[UUID, None]
+    userId: Optional[UUID] = None
+    suggestionId: Optional[UUID] = None
 
 
 class ModelMeshData(TypedDict):
     prompt: str
     context: str
-    userId: Union[str, None]
+    userId: Optional[str]
     rh_user_has_seat: bool
-    organization_id: Union[str, None]
-    suggestionId: Union[str, None]
+    organization_id: Optional[int] = None
+    suggestionId: Optional[str] = None
 
 
 class ModelMeshPayload(BaseModel):
@@ -34,10 +35,10 @@ class ModelMeshPayload(BaseModel):
 
 class ContentMatchPayloadData(TypedDict):
     suggestions: list[str]
-    user_id: Union[str, None]
+    user_id: Optional[str]
     rh_user_has_seat: bool
-    organization_id: Union[str, None]
-    suggestionId: Union[str, None]
+    organization_id: Optional[int] = None
+    suggestionId: Optional[str] = None
 
 
 class ContentMatchResponseData(BaseModel):
@@ -47,7 +48,7 @@ class ContentMatchResponseData(BaseModel):
     license: str = ""
     score: float = 0
     data_source_description: str = ""
-    data_source = -1
+    data_source: int = -1
 
     def __init__(self, **data: Any):
         super().__init__(**data)

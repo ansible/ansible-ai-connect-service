@@ -51,7 +51,7 @@ psycopg[binary]==3.1.8
 # remove this once datasets is updated to properly pull
 # a version of pyarrow > 14.0.1.
 pyarrow==14.0.1
-pydantic==1.10.2
+pydantic==2.6.4
 pytz
 pyOpenSSL==24.0.0
 PyYAML==6.0

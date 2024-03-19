@@ -11,6 +11,8 @@ aiohttp==3.9.3
     #   fsspec
 aiosignal==1.3.1
     # via aiohttp
+annotated-types==0.6.0
+    # via pydantic
 ansible==8.5.0
     # via
     #   -r requirements.in
@@ -308,8 +310,10 @@ pyasn1==0.5.1
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.10.2
+pydantic==2.6.4
     # via -r requirements.in
+pydantic-core==2.16.3
+    # via pydantic
 pygit2==1.14.1
     # via ansible-risk-insight
 pygments==2.17.2
@@ -482,6 +486,7 @@ typing-extensions==4.10.0
     #   jwcrypto
     #   psycopg
     #   pydantic
+    #   pydantic-core
     #   torch
 tzdata==2024.1
     # via pandas
