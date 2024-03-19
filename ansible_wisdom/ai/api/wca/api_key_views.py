@@ -122,7 +122,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             wca_key = key_serializer.validated_data['key']
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").get_wca_client()
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
             model_mesh_client.get_token(wca_key)
 
             # Store the validated API Key
@@ -200,7 +200,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").get_wca_client()
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if api_key is None:
