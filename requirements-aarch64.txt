@@ -80,7 +80,7 @@ cryptography==42.0.4
     #   jwcrypto
     #   pyopenssl
     #   social-auth-core
-datasets==2.15.0
+datasets==2.18.0
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
@@ -144,6 +144,7 @@ filelock==3.13.1
     # via
     #   ansible-lint
     #   ansible-risk-insight
+    #   datasets
     #   huggingface-hub
     #   torch
     #   transformers
@@ -299,9 +300,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
     # via stack-data
 pyarrow==14.0.1
-    # via
-    #   -r requirements.in
-    #   datasets
+    # via datasets
 pyarrow-hotfix==0.6
     # via datasets
 pyasn1==0.5.1
