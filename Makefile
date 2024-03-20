@@ -1,5 +1,6 @@
 ENVIRONMENT ?= development
 TAG ?= latest
+ANSIBLE_AI_PROJECT_NAME ?= "Ansible AI Connect"
 
 # Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
@@ -126,7 +127,7 @@ create-superuser: create-cachetable
 
 .PHONY: create-application
 create-application: create-superuser
-	wisdom-manage createapplication --name "Ansible Lightspeed for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
+	wisdom-manage createapplication --name "${ANSIBLE_AI_PROJECT_NAME} for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
 
 .PHONY: test
 test:

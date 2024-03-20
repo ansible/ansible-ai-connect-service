@@ -25,6 +25,7 @@ class LoginView(auth_views.LoginView):
         context['use_github_team'] = settings.USE_GITHUB_TEAM
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
+        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -76,6 +77,7 @@ class ConsoleView(ProtectedTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         user = self.request.user
         if user:
             context["user_name"] = user.username

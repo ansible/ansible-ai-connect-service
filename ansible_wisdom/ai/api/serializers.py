@@ -259,7 +259,7 @@ class SuggestionQualityFeedback(serializers.Serializer):
         required=False,
         label='Additional Comment',
         help_text='Additional comment describing why the \
-                   change was required in Lightspeed suggestion.',
+                   change was required in suggestion.',
     )
 
 
