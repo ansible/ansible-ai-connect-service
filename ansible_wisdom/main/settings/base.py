@@ -30,7 +30,7 @@ ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
 )
 
 ANSIBLE_AI_MODEL_MESH_API_TYPE: Literal["grpc", "http", "dummy", "wca", "wca-onprem"] = os.getenv(
-    "ANSIBLE_A  I_MODEL_MESH_API_TYPE", "http"
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE", "http"
 )
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL", "https"
