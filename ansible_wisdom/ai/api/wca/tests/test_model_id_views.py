@@ -28,7 +28,7 @@ from ansible_wisdom.organizations.models import Organization
 from ansible_wisdom.test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
@@ -44,6 +44,7 @@ class TestWCAModelIdView(
 
         self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -203,7 +204,7 @@ class TestWCAModelIdView(
     def test_set_model_id_not_valid(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
 
         # ModelId should initially not exist
@@ -272,7 +273,7 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomAppsBackendMocking, WisdomServiceA
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
@@ -288,6 +289,7 @@ class TestWCAModelIdValidatorView(
 
         self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -297,7 +299,7 @@ class TestWCAModelIdValidatorView(
     def test_validate(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         mock_wca_client.infer = Mock(return_value={})
 
         r = self.client.get(reverse('wca_model_id_validator'))
@@ -384,7 +386,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_wrong_model_id(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=ValidationError)
 
@@ -397,7 +399,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_api_key_not_found(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
 
@@ -410,7 +412,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_user_trial_expired(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaUserTrialExpired)
 
@@ -429,7 +431,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_bad_request(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInvalidModelId)
 
@@ -442,7 +444,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_error_model_id_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
 
