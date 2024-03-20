@@ -101,7 +101,7 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
         wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
         wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
         try:
-            apps.get_app_config("ai").model_mesh_client.infer_from_parameters(
+            apps.get_app_config("ai").get_wca_client().infer_from_parameters(
                 wca_api_key,
                 wca_model_id,
                 "",

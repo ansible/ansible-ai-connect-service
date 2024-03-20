@@ -52,6 +52,9 @@ completions_hist = Histogram(
 
 
 def get_model_client(wisdom_app, user):
+    if user.rh_user_has_seat:
+        return wisdom_app.get_wca_client(), None
+
     model_mesh_client = wisdom_app.model_mesh_client
     model_name = None
     if settings.LAUNCHDARKLY_SDK_KEY:
