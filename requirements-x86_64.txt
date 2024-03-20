@@ -451,12 +451,12 @@ tokenizers==0.15.2
     # via transformers
 tomli==2.0.1
     # via black
-torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine == "x86_64"
+torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine == "x86_64" and sys_platform == "linux"
     # via
     #   -r requirements.in
     #   sentence-transformers
     #   torchvision
-torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine == "x86_64"
+torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp39-cp39-linux_x86_64.whl ; platform_machine == "x86_64" and sys_platform == "linux"
     # via
     #   -r requirements.in
     #   sentence-transformers
