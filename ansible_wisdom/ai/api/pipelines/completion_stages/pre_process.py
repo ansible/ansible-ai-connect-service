@@ -4,10 +4,14 @@ import time
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
-from rest_framework.response import Response
 
 from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement, process_error_count
+from ansible_wisdom.ai.api.exceptions import (
+    PreprocessInvalidPromptException,
+    PreprocessInvalidYamlException,
+    process_error_count,
+)
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement
 from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 
 logger = logging.getLogger(__name__)
@@ -78,12 +82,10 @@ class PreProcessStage(PipelineElement):
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
-            message = (
-                'Request contains invalid prompt'
-                if isinstance(exc, fmtr.InvalidPromptException)
-                else 'Request contains invalid yaml'
-            )
-            context.response = Response({'message': message}, status=400)
+            if isinstance(exc, fmtr.InvalidPromptException):
+                raise PreprocessInvalidPromptException()
+            else:
+                raise PreprocessInvalidYamlException()
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

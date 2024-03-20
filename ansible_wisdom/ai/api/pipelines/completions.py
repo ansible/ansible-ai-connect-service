@@ -3,7 +3,8 @@ import logging
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ansible_wisdom.ai.api.pipelines.common import InternalServerError, Pipeline
+from ansible_wisdom.ai.api.exceptions import InternalServerError
+from ansible_wisdom.ai.api.pipelines.common import Pipeline
 from ansible_wisdom.ai.api.pipelines.completion_stages.deserialise import (
     DeserializeStage,
 )

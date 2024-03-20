@@ -3,12 +3,12 @@ from enum import Enum
 
 from rest_framework.response import Response
 
-from ansible_wisdom.ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.exceptions import (
     InternalServerError,
-    PipelineElement,
     completions_return_code,
     process_error_count,
 )
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement
 from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 from ansible_wisdom.ai.api.serializers import CompletionResponseSerializer
 

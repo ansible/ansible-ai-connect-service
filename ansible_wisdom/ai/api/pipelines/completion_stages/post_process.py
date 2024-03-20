@@ -9,11 +9,8 @@ from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
 from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.ai.api.pipelines.common import (
-    PipelineElement,
-    PostprocessException,
-    process_error_count,
-)
+from ansible_wisdom.ai.api.exceptions import PostprocessException, process_error_count
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement
 from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 from ansible_wisdom.ai.api.utils.segment import send_segment_event
 

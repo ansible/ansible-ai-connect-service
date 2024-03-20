@@ -17,6 +17,11 @@ from rest_framework.status import (
 
 from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_wisdom.ai.api.exceptions import (
+    ServiceUnavailable,
+    WcaKeyNotFoundException,
+    WcaUserTrialExpiredException,
+)
 from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -32,9 +37,6 @@ from ansible_wisdom.ai.api.permissions import (
 from ansible_wisdom.ai.api.serializers import WcaModelIdRequestSerializer
 from ansible_wisdom.ai.api.utils.segment import send_segment_event
 from ansible_wisdom.users.signals import user_set_wca_model_id
-
-from ..pipelines.common import WcaUserTrialExpiredException
-from ..views import ServiceUnavailable, WcaKeyNotFoundException
 
 UNKNOWN_MODEL_ID = "Unknown"
 

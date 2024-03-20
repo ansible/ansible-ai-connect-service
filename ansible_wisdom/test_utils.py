@@ -29,7 +29,16 @@ class WisdomLogAwareMixin:
         return events
 
 
-class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
+class WisdomTestCase(TestCase):
+    def assert_error_detail(self, r, code: str, message: str = None):
+        r_code = r.data.get('message').code
+        self.assertEqual(r_code, code)
+        if message:
+            r_message = r.data.get('message')
+            self.assertEqual(r_message, message)
+
+
+class WisdomServiceLogAwareTestCase(WisdomTestCase, WisdomLogAwareMixin):
     def assertInLog(self, s, logs):
         self.assertTrue(self.searchInLogOutput(s, logs), logs)
 
@@ -54,7 +63,7 @@ class WisdomServiceLogAwareTestCase(TestCase, WisdomLogAwareMixin):
             self.assertEqual(segment_events[0]["properties"][key], value)
 
 
-class WisdomAppsBackendMocking(TestCase):
+class WisdomAppsBackendMocking(WisdomTestCase):
     """
     Ensure that the apps backend are properly reinitialized between each tests and avoid
     potential side-effects.
