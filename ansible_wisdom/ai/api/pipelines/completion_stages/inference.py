@@ -10,21 +10,9 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 
 from ansible_wisdom.ai.api.data.data_model import ModelMeshPayload
-from ansible_wisdom.ai.api.model_client.exceptions import (
-    ModelTimeoutError,
-    WcaBadRequest,
-    WcaCloudflareRejection,
-    WcaEmptyResponse,
-    WcaInvalidModelId,
-    WcaKeyNotFound,
-    WcaModelIdNotFound,
-    WcaSuggestionIdCorrelationFailure,
-    WcaUserTrialExpired,
-)
-from ansible_wisdom.ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.exceptions import (
     BaseWisdomAPIException,
     ModelTimeoutException,
-    PipelineElement,
     ServiceUnavailable,
     WcaBadRequestException,
     WcaCloudflareRejectionException,
@@ -36,6 +24,18 @@ from ansible_wisdom.ai.api.pipelines.common import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    ModelTimeoutError,
+    WcaBadRequest,
+    WcaCloudflareRejection,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
+    WcaUserTrialExpired,
+)
+from ansible_wisdom.ai.api.pipelines.common import PipelineElement
 from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 from ansible_wisdom.ai.api.utils.segment import send_segment_event
 from ansible_wisdom.ai.feature_flags import FeatureFlags, WisdomFlags

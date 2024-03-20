@@ -105,10 +105,13 @@ class SegmentMiddleware:
                     if isinstance(message, ErrorDetail):
                         message = str(message)
                     model_name = response_data.get('model', model_name)
-                    # Clean up response.data for 204
+                    # Clean up response.data for 204; preserving error information
                     if response.status_code == 204:
-                        response.data = None
-                        response['Content-Length'] = 0
+                        response.data = {}
+                        if response_data.get('code'):
+                            response.data.update({'code': response_data.get('code')})
+                        if response_data.get('message'):
+                            response.data.update({'message': response_data.get('message')})
                     # For other error cases, remove 'model' in response data
                     elif response.status_code >= 400:
                         response_data.pop('model', None)
@@ -122,6 +125,9 @@ class SegmentMiddleware:
                     "request": {"context": context, "prompt": prompt},
                     "response": {
                         "exception": getattr(response, 'exception', None),
+                        # See main.exception_handler.exception_handler_with_error_type
+                        # That extracts 'default_code' from Exceptions and stores it
+                        # in the Response.
                         "error_type": getattr(response, 'error_type', None),
                         "message": message,
                         "predictions": predictions,

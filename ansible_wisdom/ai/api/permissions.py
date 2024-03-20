@@ -10,6 +10,9 @@ class AcceptedTermsPermission(permissions.BasePermission):
     Allow access only to users who have accepted terms and conditions or paid users.
     """
 
+    code = 'permission_denied__terms_of_use_not_accepted'
+    message = "Terms of use have not been accepted."
+
     def has_permission(self, request, view):
         user = request.user
         if user.is_authenticated:
@@ -28,6 +31,9 @@ class IsOrganisationAdministrator(permissions.BasePermission):
     Allow access only to users who are an administrator.
     """
 
+    code = 'permission_denied__user_not_org_administrator'
+    message = "The User is not an Administrator of the Organization."
+
     def has_permission(self, request, view):
         user = request.user
         return user.rh_user_is_org_admin
@@ -37,6 +43,9 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     """
     Allow access only to users who have a Light Speed subscription.
     """
+
+    code = 'permission_denied__user_has_no_subscription'
+    message = "The User does not have a subscription."
 
     def has_permission(self, request, view):
         user = request.user

@@ -4,10 +4,7 @@ from unittest.mock import Mock, patch
 from django.test import override_settings
 from django.urls import reverse
 
-from ansible_wisdom.test_utils import WisdomAppsBackendMocking
-from ansible_wisdom.users.tests.test_users import create_user
-
-from ..permissions import (
+from ansible_wisdom.ai.api.permissions import (
     AcceptedTermsPermission,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
@@ -15,7 +12,9 @@ from ..permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from .test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_wisdom.test_utils import WisdomAppsBackendMocking
+from ansible_wisdom.users.tests.test_users import create_user
 
 
 class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
@@ -42,6 +41,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('completions'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assert_error_detail(r, AcceptedTermsPermission.code, AcceptedTermsPermission.message)
 
     def test_commercial_user_has_not_accepted(self):
         self.user.rh_user_has_seat = True
@@ -71,15 +71,21 @@ class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assert_error_detail(
+            r, IsOrganisationAdministrator.code, IsOrganisationAdministrator.message
+        )
 
 
-@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=False)
+@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
 class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
     def test_user_is_lightspeed_subscriber_admin(self, *args):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assert_error_detail(
+            r, IsOrganisationLightspeedSubscriber.code, IsOrganisationLightspeedSubscriber.message
+        )
 
 
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)

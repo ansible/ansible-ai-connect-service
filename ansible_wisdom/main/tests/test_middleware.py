@@ -10,6 +10,7 @@ from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
 
+from ansible_wisdom.ai.api.exceptions import PostprocessException
 from ansible_wisdom.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomServiceAPITestCaseBase,
@@ -221,8 +222,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     r = self.client.post(reverse('completions'), payload, format='json')
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                    self.assertIsNone(r.data)
-                    self.assertEqual(r['Content-Length'], "0")
+                    self.assert_error_detail(
+                        r, PostprocessException.default_code, PostprocessException.default_detail
+                    )
                     self.assertSegmentTimestamp(log)
         finally:
             # Restore defaults and set the 'send' flag to False during test execution

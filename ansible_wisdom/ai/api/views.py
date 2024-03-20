@@ -14,17 +14,11 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ansible_wisdom.ai.api.model_client.exceptions import (
-    WcaBadRequest,
-    WcaCloudflareRejection,
-    WcaEmptyResponse,
-    WcaInvalidModelId,
-    WcaKeyNotFound,
-    WcaModelIdNotFound,
-    WcaSuggestionIdCorrelationFailure,
-    WcaUserTrialExpired,
-)
-from ansible_wisdom.ai.api.pipelines.common import (
+from ansible_wisdom.ai.api.exceptions import (
+    AttributionException,
+    BaseWisdomAPIException,
+    FeedbackInternalServerException,
+    FeedbackValidationException,
     InternalServerError,
     ModelTimeoutException,
     ServiceUnavailable,
@@ -37,6 +31,16 @@ from ansible_wisdom.ai.api.pipelines.common import (
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
+)
+from ansible_wisdom.ai.api.model_client.exceptions import (
+    WcaBadRequest,
+    WcaCloudflareRejection,
+    WcaEmptyResponse,
+    WcaInvalidModelId,
+    WcaKeyNotFound,
+    WcaModelIdNotFound,
+    WcaSuggestionIdCorrelationFailure,
+    WcaUserTrialExpired,
 )
 from ansible_wisdom.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_wisdom.users.models import User
@@ -55,7 +59,6 @@ from .permissions import (
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
 )
-from .pipelines.common import BaseWisdomAPIException
 from .serializers import (
     AnsibleContentFeedback,
     AttributionRequestSerializer,
@@ -181,15 +184,13 @@ class Feedback(APIView):
             logger.info(f"feedback request payload from client: {validated_data}")
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
         except serializers.ValidationError as exc:
+            # TODO {manstis} Raise _real_ exceptions!
             exception = exc
-            return Response({"message": str(exc)}, status=exc.status_code)
+            raise FeedbackValidationException(str(exc))
         except Exception as exc:
             exception = exc
             logger.exception(f"An exception {exc.__class__} occurred in sending a feedback")
-            return Response(
-                {"message": "Failed to send feedback"},
-                status=rest_framework_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise FeedbackInternalServerException()
         finally:
             self.write_to_segment(request.user, validated_data, exception, request.data)
 
@@ -357,7 +358,7 @@ class Attributions(GenericAPIView):
             )
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
-            return Response({'message': "Unable to complete the request"}, status=503)
+            raise AttributionException()
 
         duration = round((time.time() - start_time) * 1000, 2)
         attribution_encoding_hist.observe(encode_duration / 1000)

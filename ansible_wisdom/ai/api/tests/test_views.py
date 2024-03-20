@@ -7,7 +7,7 @@ import string
 import time
 import uuid
 from http import HTTPStatus
-from typing import Optional
+from typing import Optional, Union
 from unittest.mock import Mock, patch
 
 import requests
@@ -20,10 +20,29 @@ from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from requests.exceptions import ReadTimeout
+from rest_framework.exceptions import APIException
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
 
 from ansible_wisdom.ai.api.data.data_model import APIPayload
+from ansible_wisdom.ai.api.exceptions import (
+    AttributionException,
+    FeedbackInternalServerException,
+    FeedbackValidationException,
+    ModelTimeoutException,
+    PostprocessException,
+    PreprocessInvalidPromptException,
+    PreprocessInvalidYamlException,
+    ServiceUnavailable,
+    WcaBadRequestException,
+    WcaCloudflareRejectionException,
+    WcaEmptyResponseException,
+    WcaInvalidModelIdException,
+    WcaKeyNotFoundException,
+    WcaModelIdNotFoundException,
+    WcaSuggestionIdCorrelationFailureException,
+    WcaUserTrialExpiredException,
+)
 from ansible_wisdom.ai.api.model_client.base import ModelMeshClient
 from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
@@ -239,6 +258,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r, WcaKeyNotFoundException.default_code, WcaKeyNotFoundException.default_detail
+            )
             self.assertInLog("A WCA Api Key was expected but not found", log)
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -266,6 +288,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaModelIdNotFoundException.default_code,
+                WcaModelIdNotFoundException.default_detail,
+            )
             self.assertInLog("A WCA Model ID was expected but not found", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -285,6 +312,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
             self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -310,6 +342,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
             self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -327,6 +364,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
             self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -344,6 +386,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.assert_error_detail(
+                r,
+                WcaEmptyResponseException.default_code,
+                WcaEmptyResponseException.default_detail,
+            )
             self.assertInLog("WCA returned an empty response", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -364,6 +411,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(
+                r,
+                WcaCloudflareRejectionException.default_code,
+                WcaCloudflareRejectionException.default_detail,
+            )
             self.assertInLog("Cloudflare rejected the request", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -379,6 +431,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaUserTrialExpiredException.default_code,
+                WcaUserTrialExpiredException.default_detail,
+            )
             self.assertInLog("User trial expired", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -396,6 +453,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaUserTrialExpiredException.default_code,
+                WcaUserTrialExpiredException.default_detail,
+            )
             self.assertInLog("User trial expired", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -415,6 +477,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
             self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid<|sepofid|>valid')
@@ -489,6 +556,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.assert_error_detail(
+                r,
+                ModelTimeoutException.default_code,
+                ModelTimeoutException.default_detail,
+            )
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
@@ -526,6 +598,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assert_error_detail(
+                r,
+                WcaSuggestionIdCorrelationFailureException.default_code,
+                WcaSuggestionIdCorrelationFailureException.default_detail,
+            )
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
@@ -539,7 +616,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ansible_wisdom.main.middleware.send_segment_event')
-    def test_wca_compeletion_segment_event_with_invalid_modelid_error(
+    def test_wca_completion_segment_event_with_invalid_model_id_error(
         self, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = True
@@ -559,6 +636,11 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
             self.assertInLog("WCA Model ID is invalid", log)
 
             actual_event = mock_send_segment_event.call_args_list[0][0][0]
@@ -760,7 +842,11 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                self.assertEqual(r.data['message'], 'Request contains invalid yaml')
+                self.assert_error_detail(
+                    r,
+                    PreprocessInvalidYamlException.default_code,
+                    PreprocessInvalidYamlException.default_detail,
+                )
                 self.assertSegmentTimestamp(log)
 
     def test_completions_preprocessing_error_with_invalid_prompt(self):
@@ -781,7 +867,11 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                self.assertEqual(r.data['message'], 'Request contains invalid prompt')
+                self.assert_error_detail(
+                    r,
+                    PreprocessInvalidPromptException.default_code,
+                    PreprocessInvalidPromptException.default_detail,
+                )
                 self.assertSegmentTimestamp(log)
 
     def test_completions_preprocessing_error_without_name_prompt(self):
@@ -875,7 +965,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assertEqual(None, r.data)
+                self.assert_error_detail(
+                    r, PostprocessException.default_code, PostprocessException.default_detail
+                )
                 self.assertInLog('error postprocessing prediction for suggestion', log)
                 self.assertSegmentTimestamp(log)
 
@@ -904,7 +996,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assertEqual(None, r.data)
+                self.assertIsNotNone(r.data)
+                self.assert_error_detail(
+                    r,
+                    PostprocessException.default_code,
+                    PostprocessException.default_detail,
+                )
                 self.assertInLog('error postprocessing prediction for suggestion', log)
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
@@ -1077,15 +1174,15 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
         ]:
             infer.side_effect = self.get_side_effect(error)
-            self.run_wca_client_error_case(status_code_expected)
+            self.run_wca_client_error_case(status_code_expected, error)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch('ansible_wisdom.ai.api.model_client.wca_client.WCAClient.infer')
     def test_wca_client_postprocess_error(self, infer):
         infer.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
-        self.run_wca_client_error_case(HTTPStatus.NO_CONTENT)
+        self.run_wca_client_error_case(HTTPStatus.NO_CONTENT, PostprocessException())
 
-    def run_wca_client_error_case(self, status_code_expected):
+    def run_wca_client_error_case(self, status_code_expected, error: Union[APIException, OSError]):
         """Execute a single WCA client error scenario."""
         self.user.rh_user_has_seat = True
         payload = {
@@ -1099,8 +1196,10 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(r.status_code, status_code_expected)
-                self.assertSegmentTimestamp(log)
+                if isinstance(error, APIException):
+                    self.assert_error_detail(r, error.default_code, error.default_detail)
 
+                self.assertSegmentTimestamp(log)
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
                 for event in segment_events:
@@ -1228,6 +1327,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('feedback'), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
             self.assertSegmentTimestamp(log)
 
     def test_anonymize(self):
@@ -1336,6 +1436,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1364,6 +1465,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1394,7 +1496,9 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.assert_error_detail(r, FeedbackInternalServerException.default_code)
             self.assertInLog("An exception <class 'Exception'> occurred in sending a feedback", log)
+
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
@@ -1426,6 +1530,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1451,6 +1556,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1477,6 +1583,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(r, FeedbackValidationException.default_code)
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1549,6 +1656,9 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('attributions'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+            self.assert_error_detail(
+                r, AttributionException.default_code, AttributionException.default_detail
+            )
 
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(len(segment_events), 0)
@@ -1977,9 +2087,7 @@ class TestContentMatchesWCAViewErrors(
     def test_wca_contentmatch_with_non_existing_wca_key(self):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaKeyNotFoundException", HTTPStatus.FORBIDDEN
-        )
+        self._assert_exception_in_log(WcaKeyNotFoundException)
 
     def test_wca_contentmatch_with_empty_response(self):
         response = MockResponse(
@@ -1987,17 +2095,11 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.NO_CONTENT,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaEmptyResponseException",
-            HTTPStatus.NO_CONTENT,
-        )
+        self._assert_exception_in_log(WcaEmptyResponseException)
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaModelIdNotFoundException",
-            HTTPStatus.FORBIDDEN,
-        )
+        self._assert_exception_in_log(WcaModelIdNotFoundException)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_with_invalid_model_id(self):
@@ -2006,17 +2108,12 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaInvalidModelIdException",
-            HTTPStatus.FORBIDDEN,
-        )
+        self._assert_exception_in_log(WcaInvalidModelIdException)
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaBadRequestException", HTTPStatus.NO_CONTENT
-        )
+        self._assert_exception_in_log(WcaBadRequestException)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_cloudflare_rejection(self):
@@ -2026,19 +2123,13 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.FORBIDDEN,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaCloudflareRejectionException",
-            HTTPStatus.BAD_REQUEST,
-        )
+        self._assert_exception_in_log(WcaCloudflareRejectionException)
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_user_trial_expired_rejection(self):
         self.model_client.get_model_id = Mock(side_effect=WcaUserTrialExpired)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaUserTrialExpiredException",
-            HTTPStatus.FORBIDDEN,
-        )
+        self._assert_exception_in_log(WcaUserTrialExpiredException)
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_trial_expired(self):
@@ -2047,10 +2138,7 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.FORBIDDEN,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.model_client.exceptions.WcaUserTrialExpired",
-            HTTPStatus.FORBIDDEN,
-        )
+        self._assert_exception_in_log(WcaUserTrialExpiredException)
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -2060,31 +2148,27 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.WcaInvalidModelIdException",
-            HTTPStatus.FORBIDDEN,
-        )
+        self._assert_exception_in_log(WcaInvalidModelIdException)
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_model_timeout(self):
         self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.ModelTimeoutException", HTTPStatus.NO_CONTENT
-        )
+        self._assert_exception_in_log(ModelTimeoutException)
 
     def test_wca_contentmatch_with_connection_error(self):
         self.model_client.get_model_id = Mock(side_effect=ConnectionError)
-        self._assert_exception_in_log_and_status_code(
-            "ansible_wisdom.ai.api.pipelines.common.ServiceUnavailable",
-            HTTPStatus.SERVICE_UNAVAILABLE,
-        )
+        self._assert_exception_in_log(ServiceUnavailable)
 
-    def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
+    def _assert_exception_in_log(self, exception: type[APIException]):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.mock_wca_client_with(self.model_client)
             r = self.client.post(reverse('contentmatches'), self.payload)
-            self.assertEqual(r.status_code, status_code_expected)
-            self.assertInLog(exception_name, log)
+            self.assertEqual(r.status_code, exception.status_code)
+            self.assertInLog(str(exception.__name__), log)
+
+        self.mock_wca_client_with(self.model_client)
+        r = self.client.post(reverse('contentmatches'), self.payload)
+        self.assert_error_detail(r, exception().default_code, exception().default_detail)
 
     def _assert_model_id_in_exception(self, expected_model_id):
         self.mock_wca_client_with(self.model_client)
@@ -2269,6 +2353,9 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.mock_wca_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assert_error_detail(
+            r, WcaInvalidModelIdException.default_code, WcaInvalidModelIdException.default_detail
+        )
 
         event = {
             'exception': True,
@@ -2311,6 +2398,9 @@ class TestContentMatchesWCAViewSegmentEvents(
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("WCA returned an empty response.", log)
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+        self.assert_error_detail(
+            r, WcaEmptyResponseException.default_code, WcaEmptyResponseException.default_detail
+        )
 
         event = {
             'exception': True,
@@ -2346,6 +2436,9 @@ class TestContentMatchesWCAViewSegmentEvents(
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("A WCA Api Key was expected but not found.", log)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        self.assert_error_detail(
+            r, WcaKeyNotFoundException.default_code, WcaKeyNotFoundException.default_detail
+        )
 
         event = {
             'exception': True,
