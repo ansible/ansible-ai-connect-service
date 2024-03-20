@@ -26,7 +26,7 @@ from ansible_wisdom.organizations.models import Organization
 from ansible_wisdom.test_utils import WisdomAppsBackendMocking
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
@@ -40,6 +40,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
         self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -148,7 +149,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def _test_set_key_with_valid_value(self, has_seat):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -188,7 +189,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_key_with_invalid_value(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -214,7 +215,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_set_key_throws_secret_manager_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.get_token.return_value = "token"
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError('Test')
@@ -231,7 +232,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_set_key_throws_http_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.get_token.side_effect = WcaTokenFailure()
         with self.assertLogs(logger='root', level='DEBUG') as log:
@@ -268,7 +269,7 @@ class TestWCAApiKeyViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
@@ -282,6 +283,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
 
         self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
         self.wca_client_patcher.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -314,7 +316,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
 
         mock_wca_client.get_token.return_value = "token"
@@ -340,7 +342,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_key_with_invalid_value(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.get_token.side_effect = WcaTokenFailureApiKeyError('Something went wrong')
 
@@ -352,7 +354,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_validate_key_throws_http_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
         self.client.force_authenticate(user=self.user)
         mock_wca_client.get_token.side_effect = WcaTokenFailure('Something went wrong')
 
