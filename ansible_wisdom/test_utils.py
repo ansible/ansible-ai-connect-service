@@ -75,6 +75,10 @@ class WisdomAppsBackendMocking(TestCase):
         super().tearDown()
 
     @staticmethod
+    def mock_model_client_with(mocked):
+        apps.get_app_config('ai').model_mesh_client = mocked
+
+    @staticmethod
     def mock_wca_client_with(mocked):
         apps.get_app_config('ai')._wca_client = mocked
 

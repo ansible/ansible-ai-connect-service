@@ -159,7 +159,6 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         self.client.login(username=self.username, password=self.password)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def stub_wca_client(
         self,
@@ -210,7 +209,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             200,
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('completions'), model_input)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -235,7 +234,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(side_effect=WcaKeyNotFound),
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -262,7 +261,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             mock_model_id=Mock(side_effect=WcaModelIdNotFound),
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -281,7 +280,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -306,7 +305,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             },
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -323,7 +322,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             403,
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -340,7 +339,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             204,
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
@@ -360,7 +359,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             status_code=HTTPStatus.FORBIDDEN,
         )
         model_client.session.post = Mock(return_value=response)
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
@@ -375,7 +374,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         model_client, model_input = self.stub_wca_client()
         model_client.session.post = Mock(side_effect=WcaUserTrialExpired())
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -392,7 +391,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             403, response_data={"message_id": "WCA-0001-E", "detail": "The CUH limit is reached."}
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -411,7 +410,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             status_code=HTTPStatus.BAD_REQUEST,
         )
         model_client.session.post = Mock(return_value=response)
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -433,7 +432,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
@@ -462,7 +461,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
@@ -485,7 +484,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         }
         model_client, _ = stub
         model_client.session.post = Mock(side_effect=ReadTimeout())
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
@@ -522,7 +521,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         model_client, _ = stub
         model_client.session.post = Mock(return_value=response)
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -555,7 +554,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         model_input[
             'prompt'
         ] = '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -1555,7 +1554,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertInLog('Failed to search for attributions', log)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
@@ -1704,7 +1702,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1794,7 +1792,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1861,7 +1859,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1913,7 +1911,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1926,7 +1924,6 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         )
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewErrors(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
 ):
@@ -2081,18 +2078,17 @@ class TestContentMatchesWCAViewErrors(
 
     def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.mock_wca_client_with(self.model_client)
+            self.mock_model_client_with(self.model_client)
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertEqual(r.status_code, status_code_expected)
             self.assertInLog(exception_name, log)
 
     def _assert_model_id_in_exception(self, expected_model_id):
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.data["model"], expected_model_id)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewSegmentEvents(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
@@ -2212,7 +2208,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.user.rh_user_has_seat = True
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
@@ -2266,7 +2262,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
@@ -2306,7 +2302,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("WCA returned an empty response.", log)
@@ -2341,7 +2337,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("A WCA Api Key was expected but not found.", log)
