@@ -43,6 +43,10 @@ class AiConfig(AppConfig):
             self.model_mesh_client = WCAOnPremClient(
                 inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
             )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
+            self.model_mesh_client = DummyWCAClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
             from .api.model_client.http_client import HttpClient
 
