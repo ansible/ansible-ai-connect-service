@@ -35,11 +35,12 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaModelIdNotFound,
     WcaUserTrialExpired,
 )
+from ansible_wisdom.ai.api.model_client.llamacpp_client import LlamaCPPClient
 from ansible_wisdom.ai.api.model_client.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
     MockResponse,
 )
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
+from ansible_wisdom.ai.api.model_client.wca_client import WCAClient, WCAOnPremClient
 from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
 from ansible_wisdom.ai.api.pipelines.completion_stages.inference import get_model_client
 from ansible_wisdom.ai.api.pipelines.completion_stages.post_process import (
@@ -157,6 +158,49 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
     def login(self):
         self.client.login(username=self.username, password=self.password)
+
+
+@override_settings(LAUNCHDARKLY_SDK_KEY=None)
+class TestGetModelClient(WisdomServiceAPITestCaseBase):
+    def setUp(self):
+        apps.get_app_config('ai')._wca_client = None
+        super().setUp()
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='_unknown_type')
+    def test_wrong_model_mesh_type(self):
+        with self.assertRaises(ValueError):
+            apps.get_app_config('ai').ready()
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    def test_seatless_got_default_client_type(self):
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = False
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, LlamaCPPClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    def test_seated_got_wca(self):
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, WCAClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    @override_settings(DEPLOYMENT_MODE='onprem')
+    @override_settings(ANSIBLE_WCA_USERNAME='an_user')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='api_key')
+    def test_onprem_seated_got_wca_onprem(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, WCAOnPremClient))
+        self.assertIsNone(model_name)
 
 
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
