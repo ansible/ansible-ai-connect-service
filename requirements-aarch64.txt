@@ -47,8 +47,10 @@ backcall==0.2.0
     # via ipython
 backoff==2.2.1
     # via segment-analytics-python
-black==24.2.0
-    # via ansible-lint
+black==24.3.0
+    # via
+    #   -r requirements.in
+    #   ansible-lint
 boto3==1.26.84
     # via -r requirements.in
 botocore==1.29.165
