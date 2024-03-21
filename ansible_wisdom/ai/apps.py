@@ -68,29 +68,9 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_wca_client(self):
-        if self._wca_client:
-            return self._wca_client
-
-        # the following (actually this method) logic can be removed once we tear down
-        # tech preview code because tech preview needs the same wisdom-service to
-        # support grpc/wca clients.
-        if settings.DEPLOYMENT_MODE == 'onprem':
-            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
-                self._wca_client = self.model_mesh_client
-            else:
-                self._wca_client = WCAOnPremClient(
-                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-                )
-        elif settings.DEPLOYMENT_MODE == 'upstream':
-            return None
-        else:
-            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-                self._wca_client = self.model_mesh_client
-            else:
-                self._wca_client = WCAClient(
-                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-                )
-
+        self._wca_client = self._wca_client or WCAClient(
+            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+        )
         return self._wca_client
 
     def get_ari_caller(self):
