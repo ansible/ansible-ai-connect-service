@@ -11,6 +11,8 @@ ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
 boto3==1.26.84
+# pin black on 24.3.0 to address PYSEC-2024-48.
+black==24.3.0
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.4
 datasets==2.18.0
