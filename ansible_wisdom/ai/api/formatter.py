@@ -329,9 +329,11 @@ def get_task_names_from_prompt(prompt):
         split_list = prompt.split('&')
         trimmed_list = [task_prompt.strip() for task_prompt in split_list]
         fixed_list = [
-            trimmed_prompt.replace('- name:', '', 1).strip()
-            if trimmed_prompt.startswith('- name:')
-            else trimmed_prompt
+            (
+                trimmed_prompt.replace('- name:', '', 1).strip()
+                if trimmed_prompt.startswith('- name:')
+                else trimmed_prompt
+            )
             for trimmed_prompt in trimmed_list
         ]
         return fixed_list

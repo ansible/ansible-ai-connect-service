@@ -552,9 +552,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
         )
         model_client, model_input = stub
-        model_input[
-            'prompt'
-        ] = '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
+        model_input['prompt'] = (
+            '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
+        )
         self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)

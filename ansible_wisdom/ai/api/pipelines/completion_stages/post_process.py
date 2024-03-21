@@ -62,9 +62,7 @@ def write_to_segment(
     problem = (
         exception.problem
         if isinstance(exception, MarkedYAMLError)
-        else str(exception)
-        if str(exception)
-        else exception.__class__.__name__
+        else str(exception) if str(exception) else exception.__class__.__name__
     )
     if event_type == "ARI":
         event_name = "postprocess"
