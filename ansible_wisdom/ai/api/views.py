@@ -200,116 +200,131 @@ class Feedback(APIView):
         exception: Exception = None,
         request_data=None,
     ) -> None:
-        inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
-        ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
-        suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
-            "suggestionQualityFeedback"
-        )
-        sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
-        issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
-        ansible_extension_version = validated_data.get("metadata", {}).get(
-            "ansibleExtensionVersion", None
-        )
-        org_id = getattr(user, 'org_id', None)
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        model_name = model_mesh_client.get_model_id(org_id, str(validated_data.get('model', '')))
-
-        if inline_suggestion_data:
-            event = {
-                "latency": inline_suggestion_data.get('latency'),
-                "userActionTime": inline_suggestion_data.get('userActionTime'),
-                "action": inline_suggestion_data.get('action'),
-                "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
-                "modelName": model_name,
-                "activityId": str(inline_suggestion_data.get('activityId', '')),
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "inlineSuggestionFeedback", user)
-            send_segment_analytics_event(
-                AnalyticsTelemetryEvents.RECOMMENDATION_ACTION,
-                lambda: AnalyticsRecommendationAction(
-                    action=inline_suggestion_data.get('action'),
-                    suggestion_id=inline_suggestion_data.get('suggestionId', ''),
-                    rh_user_org_id=org_id,
-                ),
-                user,
-                ansible_extension_version,
+        try:
+            print("start writing to segment")
+            inline_suggestion_data: InlineSuggestionFeedback = validated_data.get(
+                "inlineSuggestion"
             )
-        if ansible_content_data:
-            event = {
-                "content": ansible_content_data.get('content'),
-                "documentUri": ansible_content_data.get('documentUri'),
-                "trigger": ansible_content_data.get('trigger'),
-                "modelName": model_name,
-                "activityId": str(ansible_content_data.get('activityId', '')),
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "ansibleContentFeedback", user)
-        if suggestion_quality_data:
-            event = {
-                "prompt": suggestion_quality_data.get('prompt'),
-                "providedSuggestion": suggestion_quality_data.get('providedSuggestion'),
-                "expectedSuggestion": suggestion_quality_data.get('expectedSuggestion'),
-                "additionalComment": suggestion_quality_data.get('additionalComment'),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "suggestionQualityFeedback", user)
-        if sentiment_feedback_data:
-            event = {
-                "value": sentiment_feedback_data.get('value'),
-                "feedback": sentiment_feedback_data.get('feedback'),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "sentimentFeedback", user)
-            send_segment_analytics_event(
-                AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
-                lambda: AnalyticsProductFeedback(
-                    value=sentiment_feedback_data.get('value'),
-                    rh_user_org_id=org_id,
-                    model_name=model_name,
-                ),
-                user,
-                ansible_extension_version,
+            ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
+            suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
+                "suggestionQualityFeedback"
             )
-        if issue_feedback_data:
-            event = {
-                "type": issue_feedback_data.get('type'),
-                "title": issue_feedback_data.get('title'),
-                "description": issue_feedback_data.get('description'),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "issueFeedback", user)
+            sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
+            issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
+            ansible_extension_version = validated_data.get("metadata", {}).get(
+                "ansibleExtensionVersion", None
+            )
+            org_id = getattr(user, 'org_id', None)
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            model_name = model_mesh_client.get_model_id(
+                org_id, str(validated_data.get('model', ''))
+            )
 
-        feedback_events = [
-            inline_suggestion_data,
-            ansible_content_data,
-            suggestion_quality_data,
-            sentiment_feedback_data,
-            issue_feedback_data,
-        ]
-        if exception and all(not data for data in feedback_events):
-            # When an exception is thrown before inline_suggestion_data or ansible_content_data
-            # is set, we send request_data to Segment after having anonymized it.
-            ano_request_data = anonymizer.anonymize_struct(request_data)
-            if "inlineSuggestion" in request_data:
-                event_type = "inlineSuggestionFeedback"
-            elif "suggestionQualityFeedback" in request_data:
-                event_type = "suggestionQualityFeedback"
-            elif "sentimentFeedback" in request_data:
-                event_type = "sentimentFeedback"
-            elif "issueFeedback" in request_data:
-                event_type = "issueFeedback"
-            else:
-                event_type = "ansibleContentFeedback"
+            if inline_suggestion_data:
+                print("got to inline_suggestion")
+                event = {
+                    "latency": inline_suggestion_data.get('latency'),
+                    "userActionTime": inline_suggestion_data.get('userActionTime'),
+                    "action": inline_suggestion_data.get('action'),
+                    "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+                    "modelName": model_name,
+                    "activityId": str(inline_suggestion_data.get('activityId', '')),
+                    "exception": exception is not None,
+                }
+                send_segment_event(event, "inlineSuggestionFeedback", user)
+                send_segment_analytics_event(
+                    AnalyticsTelemetryEvents.RECOMMENDATION_ACTION,
+                    lambda: AnalyticsRecommendationAction(
+                        action=inline_suggestion_data.get('action'),
+                        suggestion_id=inline_suggestion_data.get('suggestionId', ''),
+                        rh_user_org_id=org_id,
+                    ),
+                    user,
+                    ansible_extension_version,
+                )
+            if ansible_content_data:
+                print("got to content_data")
+                event = {
+                    "content": ansible_content_data.get('content'),
+                    "documentUri": ansible_content_data.get('documentUri'),
+                    "trigger": ansible_content_data.get('trigger'),
+                    "modelName": model_name,
+                    "activityId": str(ansible_content_data.get('activityId', '')),
+                    "exception": exception is not None,
+                }
+                send_segment_event(event, "ansibleContentFeedback", user)
+            if suggestion_quality_data:
+                print("got to quality_data")
+                event = {
+                    "prompt": suggestion_quality_data.get('prompt'),
+                    "providedSuggestion": suggestion_quality_data.get('providedSuggestion'),
+                    "expectedSuggestion": suggestion_quality_data.get('expectedSuggestion'),
+                    "additionalComment": suggestion_quality_data.get('additionalComment'),
+                    "modelName": model_name,
+                    "exception": exception is not None,
+                }
+                send_segment_event(event, "suggestionQualityFeedback", user)
+            if sentiment_feedback_data:
+                print("got to feedback_data")
+                event = {
+                    "value": sentiment_feedback_data.get('value'),
+                    "feedback": sentiment_feedback_data.get('feedback'),
+                    "modelName": model_name,
+                    "exception": exception is not None,
+                }
+                send_segment_event(event, "sentimentFeedback", user)
+                send_segment_analytics_event(
+                    AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
+                    lambda: AnalyticsProductFeedback(
+                        value=sentiment_feedback_data.get('value'),
+                        rh_user_org_id=org_id,
+                        model_name=model_name,
+                    ),
+                    user,
+                    ansible_extension_version,
+                )
+            if issue_feedback_data:
+                print("got to feedback_data")
+                event = {
+                    "type": issue_feedback_data.get('type'),
+                    "title": issue_feedback_data.get('title'),
+                    "description": issue_feedback_data.get('description'),
+                    "modelName": model_name,
+                    "exception": exception is not None,
+                }
+                send_segment_event(event, "issueFeedback", user)
 
-            event = {
-                "data": ano_request_data,
-                "exception": str(exception),
-            }
-            send_segment_event(event, event_type, user)
+            feedback_events = [
+                inline_suggestion_data,
+                ansible_content_data,
+                suggestion_quality_data,
+                sentiment_feedback_data,
+                issue_feedback_data,
+            ]
+            print("created feedback event")
+            if exception and all(not data for data in feedback_events):
+                # When an exception is thrown before inline_suggestion_data or ansible_content_data
+                # is set, we send request_data to Segment after having anonymized it.
+                ano_request_data = anonymizer.anonymize_struct(request_data)
+                if "inlineSuggestion" in request_data:
+                    event_type = "inlineSuggestionFeedback"
+                elif "suggestionQualityFeedback" in request_data:
+                    event_type = "suggestionQualityFeedback"
+                elif "sentimentFeedback" in request_data:
+                    event_type = "sentimentFeedback"
+                elif "issueFeedback" in request_data:
+                    event_type = "issueFeedback"
+                else:
+                    event_type = "ansibleContentFeedback"
+
+                event = {
+                    "data": ano_request_data,
+                    "exception": str(exception),
+                }
+                send_segment_event(event, event_type, user)
+                print("done writing to segment")
+        except Exception as error:
+            print(f"failed with {error}")
 
 
 class Attributions(GenericAPIView):
