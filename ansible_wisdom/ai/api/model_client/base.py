@@ -14,7 +14,7 @@ class ModelMeshClient:
     def infer(self, model_input, model_id="wisdom", suggestion_id=None):  # pragma: no cover
         pass
 
-    def codematch(content_match_data, model_id):
+    def codematch(self, content_match_data, model_id):
         raise NotImplementedError
 
     def set_inference_url(self, inference_url):

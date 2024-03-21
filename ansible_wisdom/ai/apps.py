@@ -65,10 +65,6 @@ class AiConfig(AppConfig):
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
             )
 
-        if self.model_mesh_client is None:
-            raise ValueError(
-                f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
-            )
         return super().ready()
 
     def get_wca_client(self):
