@@ -98,7 +98,7 @@ class BAMClient(ModelMeshClient):
         )
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
-        model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
+        model_id = self.get_model_id(None, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
