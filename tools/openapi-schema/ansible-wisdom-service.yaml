@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Ansible Lightspeed with IBM watsonx Code Assistant.
+  title: Ansible AI Connect.
   version: 0.0.8
   description: Equip the automation developer at Lightspeed.
 paths:
