@@ -209,7 +209,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             200,
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         r = self.client.post(reverse('completions'), model_input)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -234,7 +234,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(side_effect=WcaKeyNotFound),
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -261,7 +261,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             mock_model_id=Mock(side_effect=WcaModelIdNotFound),
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -280,7 +280,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -305,7 +305,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             },
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -322,7 +322,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             403,
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -339,7 +339,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             204,
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
@@ -359,7 +359,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             status_code=HTTPStatus.FORBIDDEN,
         )
         model_client.session.post = Mock(return_value=response)
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
@@ -374,7 +374,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         model_client, model_input = self.stub_wca_client()
         model_client.session.post = Mock(side_effect=WcaUserTrialExpired())
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -391,7 +391,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             403, response_data={"message_id": "WCA-0001-E", "detail": "The CUH limit is reached."}
         )
         model_client, model_input = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -410,7 +410,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             status_code=HTTPStatus.BAD_REQUEST,
         )
         model_client.session.post = Mock(return_value=response)
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -432,7 +432,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 20)
@@ -461,7 +461,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "suggestionId": str(DEFAULT_SUGGESTION_ID),
         }
         model_client, _ = stub
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         r = self.client.post(reverse('completions'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(model_client.session.post.call_args[1]['timeout'], 40)
@@ -484,7 +484,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         }
         model_client, _ = stub
         model_client.session.post = Mock(side_effect=ReadTimeout())
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
@@ -521,7 +521,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         model_client, _ = stub
         model_client.session.post = Mock(return_value=response)
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -554,7 +554,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         model_input[
             'prompt'
         ] = '---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n'
-        self.mock_model_client_with(model_client)
+        self.mock_wca_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

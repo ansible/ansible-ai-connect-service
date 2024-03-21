@@ -27,35 +27,44 @@ class AiConfig(AppConfig):
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
+    _wca_client = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
 
-    MODEL_CLIENTS = {
-        'grpc': GrpcClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-        ),
-        'wca': WCAClient(
-            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-        ),
-        'wca-onprem': WCAOnPremClient(
-            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-        ),
-        'wca-dummy': DummyWCAClient(
-            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-        ),
-        'http': HttpClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-        ),
-        'llamacpp': LlamaCPPClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-        ),
-        'dummy': DummyClient(
-            inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
-        ),
-    }
-
     def ready(self) -> None:
-        self.model_mesh_client = self.MODEL_CLIENTS.get(settings.ANSIBLE_AI_MODEL_MESH_API_TYPE)
+        if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
+            self.model_mesh_client = GrpcClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
+            self.model_mesh_client = WCAClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
+            self.model_mesh_client = WCAOnPremClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
+            self.model_mesh_client = DummyWCAClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
+            self.model_mesh_client = HttpClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "llamacpp":
+            self.model_mesh_client = LlamaCPPClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
+            self.model_mesh_client = DummyClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        else:
+            raise ValueError(
+                f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
+            )
+
         if self.model_mesh_client is None:
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
@@ -63,7 +72,30 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_wca_client(self):
-        return self.MODEL_CLIENTS.get('wca')
+        if self._wca_client:
+            return self._wca_client
+
+        # the following (actually this method) logic can be removed once we tear down
+        # tech preview code because tech preview needs the same wisdom-service to
+        # support grpc/wca clients.
+        if settings.DEPLOYMENT_MODE == 'onprem':
+            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
+                self._wca_client = self.model_mesh_client
+            else:
+                self._wca_client = WCAOnPremClient(
+                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                )
+        elif settings.DEPLOYMENT_MODE == 'upstream':
+            return None
+        else:
+            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
+                self._wca_client = self.model_mesh_client
+            else:
+                self._wca_client = WCAClient(
+                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                )
+
+        return self._wca_client
 
     def get_ari_caller(self):
         if not settings.ENABLE_ARI_POSTPROCESS:

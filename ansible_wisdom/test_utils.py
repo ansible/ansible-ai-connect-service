@@ -64,7 +64,13 @@ class WisdomAppsBackendMocking(TestCase):
         super().setUp()
         self.backend_patchers = {
             key: patch.object(apps.get_app_config('ai'), key, None)
-            for key in ["_wca_client", "_ari_caller", "_seat_checker", "_wca_secret_manager"]
+            for key in [
+                "_wca_client",
+                "_ari_caller",
+                "_seat_checker",
+                "_wca_secret_manager",
+                "model_mesh_client",
+            ]
         }
         for key, mocker in self.backend_patchers.items():
             mocker.start()
