@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
@@ -135,7 +136,7 @@ class AiConfig(AppConfig):
 
         return self._seat_checker
 
-    def get_wca_secret_manager(self):
+    def get_wca_secret_manager(self) -> Union[AWSSecretManager, DummySecretManager]:
         backends = {
             "aws_sm": AWSSecretManager,
             "dummy": DummySecretManager,
@@ -144,10 +145,9 @@ class AiConfig(AppConfig):
         try:
             expected_backend = backends[settings.WCA_SECRET_BACKEND_TYPE]
         except KeyError:
-            logger.error(
+            logger.exception(
                 "Unexpected WCA_SECRET_BACKEND_TYPE value: '%s'", settings.WCA_SECRET_BACKEND_TYPE
             )
-            return None
 
         if self._wca_secret_manager is UNINITIALIZED:
             self._wca_secret_manager = expected_backend(

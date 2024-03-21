@@ -16,7 +16,6 @@ class OllamaClient(BAMClient):
 
     def get_chat_model(self, model_id):
         return Ollama(
-            # base_url=self._prediction_url,
-            base_url="http://192.168.1.191:11434",
+            base_url=self._prediction_url,
             model=model_id,
         )

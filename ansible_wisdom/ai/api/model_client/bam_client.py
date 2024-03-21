@@ -1,12 +1,14 @@
 import json
 import logging
 import re
-from typing import Any, Callable, List, Optional
+from textwrap import dedent
+from typing import Any, Callable, List, Optional, Union
 
 import requests
 from django.conf import settings
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
-from langchain_core.messages.chat import ChatMessage
+from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -30,7 +32,7 @@ class ChatBAM(SimpleChatModel):
     api_key: str
     model_id: str
     prediction_url: str
-    timeout: Callable[[int], int]
+    timeout: Callable[[int], Union[int, None]]
 
     @property
     def _llm_type(self) -> str:
@@ -38,8 +40,9 @@ class ChatBAM(SimpleChatModel):
 
     def _call(
         self,
-        messages: List[ChatMessage],
+        messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
         if stop is not None:
@@ -68,13 +71,10 @@ class ChatBAM(SimpleChatModel):
 
         logger.info(f"request: {params}")
 
-        # TODO(rg): implement multitask
-        # task_count = len(get_task_names_from_prompt(prompt))
         result = session.post(
             self.prediction_url,
             headers=headers,
             json=params,
-            # timeout=self.timeout(task_count),
             timeout=self.timeout(1),
         )
         result.raise_for_status()
@@ -82,6 +82,29 @@ class ChatBAM(SimpleChatModel):
         logger.info(f"response: {body}")
         response = body.get("results", [{}])[0].get("generated_text", "")
         return response
+
+
+def unwrap_answer(message: Union[str, BaseMessage]) -> str:
+    task: str = ""
+    if isinstance(message, BaseMessage):
+        if (
+            isinstance(message.content, list)
+            and len(message.content)
+            and isinstance(message.content[0], str)
+        ):
+            task = message.content[0]
+        elif isinstance(message.content, str):
+            task = message.content
+    elif isinstance(message, str):
+        # Ollama currently answers with just a string
+        task = message
+    if not task:
+        raise ValueError
+
+    m = re.search(r"```yaml\n+(.+)```", task, re.MULTILINE | re.DOTALL)
+    if m:
+        task = m.group(1)
+    return dedent(re.split(r'- name: .+\n', task)[-1]).rstrip()
 
 
 class BAMClient(ModelMeshClient):
@@ -97,7 +120,7 @@ class BAMClient(ModelMeshClient):
             timeout=self.timeout,
         )
 
-    def infer(self, model_input, model_id=None, suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None):
         model_id = self.get_model_id(None, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -123,18 +146,9 @@ class BAMClient(ModelMeshClient):
         )
 
         try:
-            # messages = chat_template.format_messages(prompt=full_prompt)
             chain = chat_template | llm
             message = chain.invoke({"prompt": full_prompt})
-
-            # Ollama answers with just a string
-            task = message.content if hasattr(message, "content") else message
-
-            # TODO(rg): fragile and not always correct; remove when we've created a better tune
-            task = task.split("```yaml")[-1]
-            task = re.split(r'- name: .+\n', task)[-1]
-            task = task.split("```")[0]
-            response = {"predictions": [task], "model_id": model_id}
+            response = {"predictions": [unwrap_answer(message)], "model_id": model_id}
 
             return response
 

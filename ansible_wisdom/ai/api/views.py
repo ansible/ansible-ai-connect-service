@@ -776,8 +776,6 @@ class Explanation(APIView):
         chain = chat_template | llm
 
         output = chain.invoke({"playbook": request.data["content"]})
-        output = output.content if hasattr(output, "content") else output
-
         answer = {"content": output, "format": "markdown"}
         if "explanationId" in request.data:
             answer["explanationId"] = request.data["explanationId"]
