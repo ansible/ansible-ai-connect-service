@@ -9,7 +9,11 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
 )
 from ansible_wisdom.ai.api.model_client.grpc_client import GrpcClient
 from ansible_wisdom.ai.api.model_client.http_client import HttpClient
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient, WCAOnPremClient
+from ansible_wisdom.ai.api.model_client.wca_client import (
+    DummyWCAClient,
+    WCAClient,
+    WCAOnPremClient,
+)
 
 
 class TestAiApp(APITestCase):
@@ -19,33 +23,29 @@ class TestAiApp(APITestCase):
         app_config.ready()
         self.assertIsInstance(app_config.model_mesh_client, GrpcClient)
 
-    @override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
     def test_wca_client(self):
         app_config = AppConfig.create('ansible_wisdom.ai')
         app_config.ready()
-        self.assertIsInstance(app_config.get_wca_client(), WCAClient)
+        self.assertIsInstance(app_config.model_mesh_client, WCAClient)
 
     @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
-    @override_settings(WCA_CLIENT_BACKEND_TYPE="wca-onprem-client")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
     def test_wca_on_prem_client(self):
         app_config = AppConfig.create('ansible_wisdom.ai')
         app_config.ready()
-        self.assertIsInstance(app_config.get_wca_client(), WCAOnPremClient)
+        self.assertIsInstance(app_config.model_mesh_client, WCAOnPremClient)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
-    @override_settings(WCA_CLIENT_BACKEND_TYPE="wca-onprem-client")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
     def test_wca_on_prem_client_missing_username(self):
         app_config = AppConfig.create('ansible_wisdom.ai')
         with self.assertRaises(WcaUsernameNotFound):
             app_config.ready()
 
     @override_settings(ANSIBLE_WCA_USERNAME='username')
-    @override_settings(WCA_CLIENT_BACKEND_TYPE="wca-onprem-client")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
     def test_wca_on_prem_client_missing_api_key(self):
         app_config = AppConfig.create('ansible_wisdom.ai')
         with self.assertRaises(WcaKeyNotFound):
@@ -56,6 +56,12 @@ class TestAiApp(APITestCase):
         app_config = AppConfig.create('ansible_wisdom.ai')
         app_config.ready()
         self.assertIsInstance(app_config.model_mesh_client, HttpClient)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-dummy')
+    def test_wca_dummy_client(self):
+        app_config = AppConfig.create('ansible_wisdom.ai')
+        app_config.ready()
+        self.assertIsInstance(app_config.model_mesh_client, DummyWCAClient)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='dummy')
     def test_mock_client(self):

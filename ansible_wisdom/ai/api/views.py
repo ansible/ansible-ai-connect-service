@@ -463,7 +463,7 @@ class ContentMatches(GenericAPIView):
         user: User,
         request_data,
     ):
-        wca_client = apps.get_app_config("ai").get_wca_client()
+        wca_client = apps.get_app_config("ai").model_mesh_client
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get('suggestions', []),

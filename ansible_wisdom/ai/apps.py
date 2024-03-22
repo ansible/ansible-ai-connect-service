@@ -10,6 +10,9 @@ from ansible_wisdom.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
+from .api.model_client.grpc_client import GrpcClient
+from .api.model_client.http_client import HttpClient
+from .api.model_client.llamacpp_client import LlamaCPPClient
 from .api.model_client.wca_client import DummyWCAClient, WCAClient, WCAOnPremClient
 
 logger = logging.getLogger(__name__)
@@ -22,38 +25,38 @@ class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ansible_wisdom.ai"
     model_mesh_client = None
-    _wca_client = UNINITIALIZED
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
+    _wca_client = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
 
     def ready(self) -> None:
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
-            from .api.model_client.grpc_client import GrpcClient
-
             self.model_mesh_client = GrpcClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-            self.model_mesh_client = self.get_wca_client()
+            self.model_mesh_client = WCAClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
+            self.model_mesh_client = WCAOnPremClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
+            self.model_mesh_client = DummyWCAClient(
+                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+            )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
-            from .api.model_client.http_client import HttpClient
-
             self.model_mesh_client = HttpClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "llamacpp":
-            from .api.model_client.llamacpp_client import LlamaCPPClient
-
             self.model_mesh_client = LlamaCPPClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["dummy", "mock"]:
-            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock":
-                logger.error(
-                    'ANSIBLE_AI_MODEL_MESH_API_TYPE == "mock" is deprecated, use "dummy" instead'
-                )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
             self.model_mesh_client = DummyClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
@@ -65,28 +68,7 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_wca_client(self):
-        backends = {
-            "wcaclient": WCAClient,
-            "wca-onprem-client": WCAOnPremClient,
-            "dummy": DummyWCAClient,
-        }
-        if not settings.WCA_CLIENT_BACKEND_TYPE:
-            self._wca_client = UNINITIALIZED
-            return None
-
-        try:
-            expected_backend = backends[settings.WCA_CLIENT_BACKEND_TYPE]
-        except KeyError:
-            logger.error(
-                "Unexpected WCA_CLIENT_BACKEND_TYPE value: '%s'", settings.WCA_CLIENT_BACKEND_TYPE
-            )
-            self._wca_client = UNINITIALIZED
-            return None
-
-        if self._wca_client:
-            return self._wca_client
-
-        self._wca_client = expected_backend(
+        self._wca_client = self._wca_client or WCAClient(
             inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
         )
         return self._wca_client

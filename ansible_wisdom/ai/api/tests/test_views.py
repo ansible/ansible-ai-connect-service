@@ -35,6 +35,7 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaModelIdNotFound,
     WcaUserTrialExpired,
 )
+from ansible_wisdom.ai.api.model_client.llamacpp_client import LlamaCPPClient
 from ansible_wisdom.ai.api.model_client.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
     MockResponse,
@@ -159,7 +160,57 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         self.client.login(username=self.username, password=self.password)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
+@override_settings(LAUNCHDARKLY_SDK_KEY=None)
+class TestGetModelClient(WisdomServiceAPITestCaseBase):
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='_unknown_type')
+    def test_wrong_model_mesh_type(self):
+        with self.assertRaises(ValueError):
+            apps.get_app_config('ai').ready()
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    def test_seatless_got_default_client_type(self):
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = False
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, LlamaCPPClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    def test_seated_got_wca(self):
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, WCAClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    @override_settings(DEPLOYMENT_MODE='onprem')
+    def test_onprem_seated_got_default(self):
+        # we expect for onprem deployment, ANSIBLE_AI_MODEL_MESH_API_TYPE will be
+        # set to either wca or wca-onprem
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, LlamaCPPClient))
+        self.assertIsNone(model_name)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
+    @override_settings(DEPLOYMENT_MODE='onprem')
+    def test_onprem_seatless_got_default(self):
+        apps.get_app_config('ai').ready()
+        self.user.rh_user_has_seat = False
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
+        self.assertTrue(isinstance(model_client, LlamaCPPClient))
+        self.assertIsNone(model_name)
+
+
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def stub_wca_client(
         self,
@@ -1555,7 +1606,6 @@ class TestAttributionsView(WisdomServiceAPITestCaseBase):
             self.assertInLog('Failed to search for attributions', log)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_with_no_seated_user(self, mock_search):
@@ -1704,7 +1754,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1794,7 +1844,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1861,7 +1911,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1913,7 +1963,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value='org-api-key')
         model_client.get_model_id = Mock(return_value='org-model-id')
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         r = self.client.post(reverse('contentmatches'), payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         model_client.get_token.assert_called_once()
@@ -1926,7 +1976,6 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         )
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewErrors(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
 ):
@@ -2081,18 +2130,17 @@ class TestContentMatchesWCAViewErrors(
 
     def _assert_exception_in_log_and_status_code(self, exception_name, status_code_expected):
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.mock_wca_client_with(self.model_client)
+            self.mock_model_client_with(self.model_client)
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertEqual(r.status_code, status_code_expected)
             self.assertInLog(exception_name, log)
 
     def _assert_model_id_in_exception(self, expected_model_id):
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.data["model"], expected_model_id)
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 class TestContentMatchesWCAViewSegmentEvents(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
@@ -2212,7 +2260,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.user.rh_user_has_seat = True
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
@@ -2266,7 +2314,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
@@ -2306,7 +2354,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         )
         self.model_client.session.post = Mock(return_value=response)
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("WCA returned an empty response.", log)
@@ -2341,7 +2389,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
 
-        self.mock_wca_client_with(self.model_client)
+        self.mock_model_client_with(self.model_client)
         with self.assertLogs(logger='root', level='ERROR') as log:
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertInLog("A WCA Api Key was expected but not found.", log)
