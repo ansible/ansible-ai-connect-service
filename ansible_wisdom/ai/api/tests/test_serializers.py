@@ -52,6 +52,10 @@ class CompletionRequestSerializerTest(TestCase):
         with self.assertRaises(serializers.ValidationError):
             # Prompt does not contain multitask prompt comment or - name:
             serializer.validate({'prompt': "Install Apache\n"})
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate({'prompt': "- name: [This is a list]"})
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate({'prompt': "- name: {This is a dict}"})
 
     def test_validate_multitask_commercial(self):
         user = Mock(rh_user_has_seat=True)

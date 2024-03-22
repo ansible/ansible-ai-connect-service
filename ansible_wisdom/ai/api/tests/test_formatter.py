@@ -163,20 +163,6 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
         prompt = "  - name: This is a string"
         fmtr.preprocess(context, prompt)
 
-    def test_list_as_name(self):
-        # make sure that an exception is thrown when the prompt contains a list as the name
-        context = "---"
-        prompt = "  - name: [This is a list]"
-        with self.assertRaises(Exception):
-            fmtr.preprocess(context, prompt)
-
-    def test_dict_as_name(self):
-        # make sure that an exception is thrown when the prompt contains a dictionary as the name
-        context = "---"
-        prompt = "  - name: {This is a dict}"
-        with self.assertRaises(Exception):
-            fmtr.preprocess(context, prompt)
-
     def test_extract_prompt_and_context(self):
         def run_a_test(prompt_in, context_expected, prompt_expected):
             prompt, context = fmtr.extract_prompt_and_context(prompt_in)

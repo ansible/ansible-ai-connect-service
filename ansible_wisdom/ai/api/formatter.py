@@ -74,10 +74,6 @@ class AnsibleDumper(yaml.Dumper):
         return True
 
 
-class InvalidPromptException(Exception):
-    pass
-
-
 """
 Normalize by loading and re-serializing
 """
@@ -198,20 +194,6 @@ def preprocess(
                 logger.warning(f"preprocess failed - too few new-lines in: {formatted}")
 
             prompt = handle_spaces_and_casing(prompt)
-
-            # TODO - We can probably ditch this since it's covered by
-            # CompletionRequestSerializer.validate_extracted_prompt
-            # Make sure the prompt is in the form "  - name: a string description."
-            prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
-            if (
-                not isinstance(prompt_list, list)
-                or len(prompt_list) != 1
-                or not isinstance(prompt_list[0], dict)
-                or len(prompt_list[0]) != 1
-                or 'name' not in prompt_list[0]
-                or not isinstance(prompt_list[0]['name'], str)
-            ):
-                raise InvalidPromptException()
 
         logger.debug(f'preprocessed user input {context}\n{prompt}')
     return context, prompt
