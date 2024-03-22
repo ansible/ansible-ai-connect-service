@@ -38,9 +38,11 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
     if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
-    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
-    else None
+    else (
+        os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+        if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+        else None
+    )
 )
 
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
@@ -168,9 +170,11 @@ AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEO
 
 DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
 AUTHENTICATION_BACKENDS = [
-    "social_core.backends.github.GithubTeamOAuth2"
-    if USE_GITHUB_TEAM
-    else "social_core.backends.github.GithubOAuth2",
+    (
+        "social_core.backends.github.GithubTeamOAuth2"
+        if USE_GITHUB_TEAM
+        else "social_core.backends.github.GithubOAuth2"
+    ),
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
     "ansible_wisdom.users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",

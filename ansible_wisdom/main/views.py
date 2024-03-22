@@ -86,8 +86,8 @@ class ConsoleView(ProtectedTemplateView):
                 context["telemetry_schema_2_enabled"] = is_schema_2_telemetry_enabled
 
                 if is_schema_2_telemetry_enabled:
-                    context[
-                        "telemetry_schema_2_admin_dashboard_url"
-                    ] = settings.TELEMETRY_ADMIN_DASHBOARD_URL
+                    context["telemetry_schema_2_admin_dashboard_url"] = (
+                        settings.TELEMETRY_ADMIN_DASHBOARD_URL
+                    )
 
         return context

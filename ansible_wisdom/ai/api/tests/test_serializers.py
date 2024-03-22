@@ -1,6 +1,7 @@
 """
 Test serializers
 """
+
 from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID

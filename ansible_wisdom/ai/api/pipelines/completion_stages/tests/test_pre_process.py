@@ -488,9 +488,9 @@ class CompletionPreProcessTest(TestCase):
         self,
     ):
         payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
-        payload[
-            "prompt"
-        ] = PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT
+        payload["prompt"] = (
+            PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT
+        )
 
         self.call_completion_pre_process(
             payload,

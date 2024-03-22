@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements-dev-aarch64.txt requirements-dev.in
 #
-black==22.10.0
+black==24.3.0
     # via -r requirements-dev.in
 build==1.1.1
     # via pip-tools
@@ -47,7 +47,9 @@ mypy-extensions==1.0.0
 nodeenv==1.8.0
     # via pre-commit
 packaging==23.2
-    # via build
+    # via
+    #   black
+    #   build
 pathspec==0.12.1
     # via
     #   black
