@@ -126,12 +126,7 @@ class BAMClient(ModelMeshClient):
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
 
-        logger.info(f"prompt: '{prompt}'")
-        logger.info(f"context: '{context}'")
-
         full_prompt = f"{context}{prompt}\n"
-        logger.info(f"full prompt: {full_prompt}")
-
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
