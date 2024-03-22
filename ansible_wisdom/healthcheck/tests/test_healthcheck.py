@@ -36,7 +36,6 @@ def is_status_ok(status):
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):

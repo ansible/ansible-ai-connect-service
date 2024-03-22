@@ -115,7 +115,6 @@ def assert_call_count_metrics(metric):
     return count_metrics_decorator
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wcaclient")
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:my-key<sep>my-optimized-model')
@@ -696,7 +695,6 @@ class TestDummySecretManager(TestCase):
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")
 
 
-@override_settings(WCA_CLIENT_BACKEND_TYPE="wca-onprem-client")
 class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
