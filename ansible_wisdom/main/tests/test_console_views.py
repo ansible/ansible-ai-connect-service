@@ -79,7 +79,7 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    def test_extra_data_telemetry_feature_enabled(self, LDClient, *args):
+    def test_extra_data_telemetry_feature(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
@@ -87,22 +87,7 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         self.assertIsInstance(response.context_data, dict)
         context = response.context_data
         # The default setting for tests is True
-        self.assertTrue(context['telemetry_schema_2_enabled'])
         self.assertEqual(
             context['telemetry_schema_2_admin_dashboard_url'],
             'https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard',
         )
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
-    def test_extra_data_telemetry__feature_disabled(self, LDClient, *args):
-        LDClient.return_value.variation.return_value = False
-        self.user.organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=True)[
-            0
-        ]
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(reverse('console'))
-        self.assertIsInstance(response.context_data, dict)
-        context = response.context_data
-        self.assertFalse(context['telemetry_schema_2_enabled'])
-        self.assertIsNone(context.get('telemetry_schema_2_admin_dashboard_url'))

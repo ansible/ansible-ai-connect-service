@@ -189,7 +189,7 @@ class FeedbackRequestSerializerTest(TestCase):
             serializer.is_valid(raise_exception=True)
 
     def test_commercial_user_not_telemetry_enabled_raises_exception_on_inlineSuggestion(self):
-        org = Mock(telemetry_opt_out=False, is_schema_2_telemetry_enabled=False)
+        org = Mock(telemetry_opt_out=False)
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
@@ -209,7 +209,7 @@ class FeedbackRequestSerializerTest(TestCase):
             serializer.is_valid(raise_exception=True)
 
     def test_invalid_ansible_extension_version_on_inline_suggestion(self):
-        org = Mock(telemetry_opt_out=False, is_schema_2_telemetry_enabled=True)
+        org = Mock(telemetry_opt_out=False)
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
@@ -232,7 +232,7 @@ class FeedbackRequestSerializerTest(TestCase):
             serializer.is_valid(raise_exception=True)
 
     def test_commercial_user_not_opted_out_passes_on_inlineSuggestion(self):
-        org = Mock(telemetry_opt_out=False, is_schema_2_telemetry_enabled=True)
+        org = Mock(telemetry_opt_out=False)
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(

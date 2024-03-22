@@ -79,7 +79,7 @@ class CurrentUserView(RetrieveAPIView):
 
         # Enrich with Organisational data, if necessary
         organization = self.request.user.organization
-        if organization and organization.is_schema_2_telemetry_enabled:
+        if organization:
             user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
 
         return Response(user_data)

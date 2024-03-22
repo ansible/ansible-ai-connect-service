@@ -58,9 +58,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            if not organization.is_schema_2_telemetry_enabled:
-                raise ServiceUnavailable()
-
             return Response(status=HTTP_200_OK, data={'optOut': organization.telemetry_opt_out})
 
         except ServiceUnavailable:
@@ -106,9 +103,6 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             organization = request._request.user.organization
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
-
-            if not organization.is_schema_2_telemetry_enabled:
-                raise ServiceUnavailable()
 
             # Extract Telemetry settings from request
             telemetry_settings_serializer = TelemetrySettingsRequestSerializer(data=request.data)

@@ -60,10 +60,6 @@ def send_segment_analytics_event(
         logger.info("Analytics telemetry not active, because of no organization assigned for user.")
         return
 
-    if not organization.is_schema_2_telemetry_enabled:
-        logger.info(f"Analytics telemetry not active for organization '{organization.id}'.")
-        return
-
     if organization.telemetry_opt_out:
         logger.info(f"Organization '{organization.id}' has opted out of Analytics telemetry.")
         return
