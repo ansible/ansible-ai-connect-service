@@ -108,6 +108,7 @@ class SegmentMiddleware:
                     # Clean up response.data for 204
                     if response.status_code == 204:
                         response.data = None
+                        response['Content-Length'] = 0
                     # For other error cases, remove 'model' in response data
                     elif response.status_code >= 400:
                         response_data.pop('model', None)
@@ -155,6 +156,7 @@ class SegmentMiddleware:
                             model_name=model_name,
                         ),
                         request.user,
+                        getattr(request, '_ansible_extension_version', None),
                     )
 
         return response

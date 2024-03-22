@@ -48,3 +48,17 @@ class TestOrganization(TestCase):
         organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)[0]
         self.assertFalse(organization.telemetry_opt_out)
         self.assertFalse(organization.is_schema_2_telemetry_enabled)
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_org_with_unlimited_access_allowed_with_feature_flag_override(self, LDClient):
+        LDClient.return_value.variation.return_value = True
+        organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)[0]
+        self.assertTrue(organization.is_subscription_check_should_be_bypassed)
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @patch.object(feature_flags, 'LDClient')
+    def test_org_with_no_unlimited_access_allowed_with_feature_flag_no_override(self, LDClient):
+        LDClient.return_value.variation.return_value = False
+        organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)[0]
+        self.assertFalse(organization.is_subscription_check_should_be_bypassed)

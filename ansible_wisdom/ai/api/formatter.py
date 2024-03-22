@@ -329,9 +329,11 @@ def get_task_names_from_prompt(prompt):
         split_list = prompt.split('&')
         trimmed_list = [task_prompt.strip() for task_prompt in split_list]
         fixed_list = [
-            trimmed_prompt.replace('- name:', '', 1).strip()
-            if trimmed_prompt.startswith('- name:')
-            else trimmed_prompt
+            (
+                trimmed_prompt.replace('- name:', '', 1).strip()
+                if trimmed_prompt.startswith('- name:')
+                else trimmed_prompt
+            )
             for trimmed_prompt in trimmed_list
         ]
         return fixed_list
@@ -357,10 +359,17 @@ def get_task_names_from_tasks(tasks):
 def restore_original_task_names(output_yaml, prompt):
     if output_yaml and is_multi_task_prompt(prompt):
         prompt_tasks = get_task_names_from_prompt(prompt)
-        matches = re.finditer(r"(- name:\s+)(.*)", output_yaml, re.M)
+        matches = re.finditer(r"^- name:\s+(.*)", output_yaml, re.M)
         for i, match in enumerate(matches):
-            task_line = match.group(0)
-            task = match.group(2)
-            restored_task_line = task_line.replace(task, prompt_tasks[i])
-            output_yaml = output_yaml.replace(task_line, restored_task_line)
+            try:
+                task_line = match.group(0)
+                task = match.group(1)
+                restored_task_line = task_line.replace(task, prompt_tasks[i])
+                output_yaml = output_yaml.replace(task_line, restored_task_line)
+            except IndexError:
+                logger.error(
+                    "There is no match for the enumerated prompt task in the suggestion yaml"
+                )
+                break
+
     return output_yaml

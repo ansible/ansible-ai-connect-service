@@ -577,6 +577,8 @@ components:
           title: Suggestion ID
           description: A UUID that identifies the particular suggestion attribution
             data is being requested for.
+        metadata:
+          $ref: '#/components/schemas/Metadata'
       required:
       - suggestion
     AttributionResponse:
@@ -588,6 +590,31 @@ components:
             $ref: '#/components/schemas/Attribution'
       required:
       - attributions
+    CompletionMetadata:
+      type: object
+      properties:
+        ansibleExtensionVersion:
+          type: string
+          title: Ansible vscode/vscodium extension version
+          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
+          pattern: v?\d+\.\d+\.\d+
+        documentUri:
+          type: string
+        activityId:
+          type: string
+          format: uuid
+          title: Activity ID
+          description: A UUID that identifies a user activity session within a given
+            document.
+        ansibleFileType:
+          type: string
+          title: Ansible File Type
+          description: Ansible file type (playbook/tasks_in_role/tasks)
+        additionalContext:
+          type: object
+          additionalProperties: {}
+          title: Additional Context
+          description: Additional context for completion API
     CompletionRequest:
       type: object
       properties:
@@ -600,7 +627,7 @@ components:
           title: Suggestion ID
           description: A UUID that identifies a suggestion.
         metadata:
-          $ref: '#/components/schemas/Metadata'
+          $ref: '#/components/schemas/CompletionMetadata'
         model:
           type: string
       required:
@@ -667,6 +694,8 @@ components:
             data is being requested for.
         model:
           type: string
+        metadata:
+          $ref: '#/components/schemas/Metadata'
       required:
       - suggestions
     ContentMatchResponse:
@@ -691,6 +720,10 @@ components:
           $ref: '#/components/schemas/SentimentFeedback'
         issueFeedback:
           $ref: '#/components/schemas/IssueFeedback'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        model:
+          type: string
     InlineSuggestionFeedback:
       type: object
       properties:
@@ -740,23 +773,11 @@ components:
     Metadata:
       type: object
       properties:
-        documentUri:
+        ansibleExtensionVersion:
           type: string
-        activityId:
-          type: string
-          format: uuid
-          title: Activity ID
-          description: A UUID that identifies a user activity session within a given
-            document.
-        ansibleFileType:
-          type: string
-          title: Ansible File Type
-          description: Ansible file type (playbook/tasks_in_role/tasks)
-        additionalContext:
-          type: object
-          additionalProperties: {}
-          title: Additional Context
-          description: Additional context for completion API
+          title: Ansible vscode/vscodium extension version
+          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
+          pattern: v?\d+\.\d+\.\d+
     SentimentFeedback:
       type: object
       properties:

@@ -1,5 +1,7 @@
+import base64
 import json
 import logging
+from abc import abstractmethod
 from typing import Optional
 
 import backoff
@@ -33,6 +35,7 @@ from .exceptions import (
     WcaModelIdNotFound,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
+    WcaUsernameNotFound,
 )
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
@@ -78,6 +81,13 @@ class DummyWCAClient:
     def infer_from_parameters(self, *args, **kwargs):
         return ""
 
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        return requested_model_id or ''
+
     def get_token(self, api_key):
         if api_key != "valid":
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
@@ -90,7 +100,7 @@ class DummyWCAClient:
         }
 
 
-class WCAClient(ModelMeshClient):
+class BaseWCAClient(ModelMeshClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
         self.session = requests.Session()
@@ -139,7 +149,6 @@ class WCAClient(ModelMeshClient):
         if prompt.endswith('\n') is False:
             prompt = f"{prompt}\n"
 
-        api_key: Optional[int] = None
         try:
             api_key = self.get_api_key(organization_id)
             model_id = self.get_model_id(organization_id, model_id)
@@ -160,13 +169,7 @@ class WCAClient(ModelMeshClient):
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
-        # TODO: store token and only fetch a new one if it has expired
-        token = self.get_token(api_key)
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token['access_token']}",
-            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
-        }
+        headers = self.get_inference_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
@@ -209,7 +212,81 @@ class WCAClient(ModelMeshClient):
 
         return response
 
+    @abstractmethod
+    def get_api_key(self, organization_id: Optional[int]) -> str:
+        raise NotImplementedError
+
+    def codematch(self, model_input, model_id: str = ""):
+        logger.debug(f"Input prompt: {model_input}")
+        self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
+
+        suggestions = model_input.get("suggestions", "")
+        organization_id = model_input.get("organization_id", None)
+
+        model_id = self.get_model_id(organization_id, model_id)
+
+        data = {
+            "model_id": model_id,
+            "input": suggestions,
+        }
+
+        logger.debug(f"Codematch API request payload: {data}")
+
+        try:
+            api_key = self.get_api_key(organization_id)
+            headers = self.get_codematch_headers(api_key)
+            suggestion_count = len(suggestions)
+
+            @backoff.on_exception(
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=self.fatal_exception,
+                on_backoff=self.on_backoff_codematch,
+            )
+            @wca_codematch_hist.time()
+            def post_request():
+                return self.session.post(
+                    self._search_url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.timeout(suggestion_count),
+                )
+
+            result = post_request()
+            context = ContentMatchContext(model_id, result, suggestion_count > 1)
+            ContentMatchResponseChecks().run_checks(context)
+            result.raise_for_status()
+
+            response = result.json()
+            logger.debug(f"Codematch API response: {response}")
+
+            return model_id, response
+
+        except HTTPError:
+            raise WcaCodeMatchFailure(model_id=model_id)
+
+        except requests.exceptions.ReadTimeout:
+            raise ModelTimeoutError(model_id=model_id)
+
+    @abstractmethod
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        raise NotImplementedError
+
+
+class WCAClient(BaseWCAClient):
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
     def get_token(self, api_key):
+        # TODO: store token and only fetch a new one if it has expired
+        # https://cloud.ibm.com/docs/account?topic=account-iamtoken_from_apikey
         logger.debug("Fetching WCA token")
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -244,7 +321,7 @@ class WCAClient(ModelMeshClient):
 
         return response.json()
 
-    def get_api_key(self, organization_id: Optional[int]):
+    def get_api_key(self, organization_id: Optional[int]) -> str:
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -271,7 +348,7 @@ class WCAClient(ModelMeshClient):
 
     def get_model_id(
         self,
-        organization_id: Optional[int],
+        organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
@@ -302,61 +379,69 @@ class WCAClient(ModelMeshClient):
         logger.error("Seated user's organization doesn't have default model ID set")
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
-    def codematch(self, model_input, model_id: str = ""):
-        logger.debug(f"Input prompt: {model_input}")
-        self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
-
-        suggestions = model_input.get("suggestions", "")
-        organization_id = model_input.get("organization_id", None)
-
-        model_id = self.get_model_id(organization_id, model_id)
-
-        data = {
-            "model_id": model_id,
-            "input": suggestions,
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
+        base_headers = self._get_base_headers(api_key)
+        return {
+            **base_headers,
+            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
         }
 
-        logger.debug(f"Codematch API request payload: {data}")
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        return self._get_base_headers(api_key)
 
-        try:
-            # TODO: store token and only fetch a new one if it has expired
-            api_key = self.get_api_key(organization_id)
-            token = self.get_token(api_key)
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {token['access_token']}",
-            }
+    def _get_base_headers(self, api_key: str) -> dict[str, str]:
+        token = self.get_token(api_key)
+        return {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token['access_token']}",
+        }
 
-            suggestion_count = len(suggestions)
 
-            @backoff.on_exception(
-                backoff.expo,
-                Exception,
-                max_tries=self.retries + 1,
-                giveup=self.fatal_exception,
-                on_backoff=self.on_backoff_codematch,
-            )
-            @wca_codematch_hist.time()
-            def post_request():
-                return self.session.post(
-                    self._search_url,
-                    headers=headers,
-                    json=data,
-                    timeout=self.timeout(suggestion_count),
-                )
+class WCAOnPremClient(BaseWCAClient):
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+        if not settings.ANSIBLE_WCA_USERNAME:
+            raise WcaUsernameNotFound
+        if not settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
+            raise WcaKeyNotFound
+        # ANSIBLE_AI_MODEL_MESH_MODEL_NAME cannot be validated until runtime. The
+        # User may provide an override value if the Environment Variable is not set.
 
-            result = post_request()
-            context = ContentMatchContext(model_id, result, suggestion_count > 1)
-            ContentMatchResponseChecks().run_checks(context)
-            result.raise_for_status()
+    def get_api_key(self, organization_id: Optional[int]) -> str:
+        return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
 
-            response = result.json()
-            logger.debug(f"Codematch API response: {response}")
+    def get_model_id(
+        self,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = '',
+    ) -> str:
+        if requested_model_id:
+            # requested_model_id defined: let them use what they ask for
+            return requested_model_id
 
-            return model_id, response
+        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
 
-        except HTTPError:
-            raise WcaCodeMatchFailure(model_id=model_id)
+        raise WcaModelIdNotFound()
 
-        except requests.exceptions.ReadTimeout:
-            raise ModelTimeoutError(model_id=model_id)
+    def get_inference_headers(
+        self, api_key: str, suggestion_id: Optional[str]
+    ) -> dict[str, Optional[str]]:
+        base_headers = self._get_base_headers(api_key)
+        return {
+            **base_headers,
+            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
+        }
+
+    def get_codematch_headers(self, api_key: str) -> dict[str, str]:
+        return self._get_base_headers(api_key)
+
+    def _get_base_headers(self, api_key: str) -> dict[str, str]:
+        # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
+        username = settings.ANSIBLE_WCA_USERNAME
+        token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")
+        return {
+            "Authorization": f"ZenApiKey {token}",
+        }

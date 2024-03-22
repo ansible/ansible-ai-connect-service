@@ -59,9 +59,11 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL = os.getenv(
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
     if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
-    else os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
-    else None
+    else (
+        os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
+        if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+        else None
+    )
 )
 
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
@@ -69,6 +71,8 @@ ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
 ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv('ANSIBLE_AI_MODEL_MESH_MODEL_NAME')
 
+# WCA OnPrem
+ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
 # WCA
 ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
 ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
@@ -164,6 +168,13 @@ else:
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
+AAP_API_URL = os.environ.get("AAP_API_URL")
+SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", 'True').lower() in ('true', '1', 't')
+SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
+SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
+SOCIAL_AUTH_AAP_SCOPE = ["read"]
+SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
+
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
@@ -179,12 +190,14 @@ AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RET
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
 
 DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", "saas")
-
 AUTHENTICATION_BACKENDS = [
-    "social_core.backends.github.GithubTeamOAuth2"
-    if USE_GITHUB_TEAM
-    else "social_core.backends.github.GithubOAuth2",
+    (
+        "social_core.backends.github.GithubTeamOAuth2"
+        if USE_GITHUB_TEAM
+        else "social_core.backends.github.GithubOAuth2"
+    ),
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
+    "ansible_wisdom.users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
@@ -215,6 +228,9 @@ SOCIAL_AUTH_PIPELINE = (
 # Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
 SEGMENT_ANALYTICS_WRITE_KEY = os.environ.get("SEGMENT_ANALYTICS_WRITE_KEY")
+ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION = os.environ.get(
+    "ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION", "v2.12.143"
+)
 
 OAUTH2_PROVIDER = {
     'SCOPES': {
@@ -309,6 +325,11 @@ LOGGING = {
             "propagate": False,
         },
         "ari_changes": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "organizations": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

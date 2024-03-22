@@ -46,6 +46,7 @@ class AnalyticsProductFeedback:
         validator=[validators.instance_of(int), validators.in_([1, 2, 3, 4, 5])], converter=int
     )
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
+    model_name: str = field(default='')
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )

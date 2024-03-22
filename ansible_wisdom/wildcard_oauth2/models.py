@@ -3,6 +3,7 @@ A custom OAuth2 application that allows wildcard for redirect_uris
 
 https://github.com/jazzband/django-oauth-toolkit/issues/443#issuecomment-420255286
 """
+
 import ipaddress
 import re
 from urllib.parse import parse_qsl, unquote, urlparse

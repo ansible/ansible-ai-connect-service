@@ -1,6 +1,7 @@
 """
 Test serializers
 """
+
 from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID
@@ -204,6 +205,29 @@ class FeedbackRequestSerializerTest(TestCase):
         )
 
         # inlineSuggestion feedback raises exception when seat and not telemetry enabled
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
+    def test_invalid_ansible_extension_version_on_inline_suggestion(self):
+        org = Mock(telemetry_opt_out=False, is_schema_2_telemetry_enabled=True)
+        user = Mock(rh_user_has_seat=True, organization=org)
+        request = Mock(user=user)
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "inlineSuggestion": {
+                    "latency": 1000,
+                    "userActionTime": 5155,
+                    "action": "0",
+                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+                },
+                "metadata": {
+                    "ansibleExtensionVersion": "foo",
+                },
+            },
+        )
+
+        # feedback request raises exception when ansibleExtensionVersion is not valid version
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
 

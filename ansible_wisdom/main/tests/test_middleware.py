@@ -188,6 +188,52 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.send = False
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_204_empty_response(self):
+        payload = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "suggestionId": str(uuid.uuid4()),
+            "metadata": {
+                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
+                "activityId": str(uuid.uuid4()),
+            },
+            "status_code": 204,
+        }
+        response_data = {
+            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+        }
+        self.client.force_authenticate(user=self.user)
+
+        # Override properties of Segment client to cause an error
+        if analytics.default_client:
+            analytics.shutdown()
+            analytics.default_client = None
+        analytics.host = 'invalid_host_without_protocol'
+        analytics.max_retries = 1
+        analytics.send = True
+
+        try:
+            with patch.object(
+                apps.get_app_config('ai'),
+                'model_mesh_client',
+                MockedMeshClient(self, payload, response_data),
+            ):
+                with self.assertLogs(logger='root', level='DEBUG') as log:
+                    r = self.client.post(reverse('completions'), payload, format='json')
+                    analytics.flush()
+                    self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+                    self.assertIsNone(r.data)
+                    self.assertEqual(r['Content-Length'], "0")
+                    self.assertSegmentTimestamp(log)
+        finally:
+            # Restore defaults and set the 'send' flag to False during test execution
+            if analytics.default_client:
+                analytics.shutdown()
+                analytics.default_client = None
+            analytics.host = analytics.Client.DefaultConfig.host
+            analytics.max_retries = analytics.Client.DefaultConfig.max_retries
+            analytics.send = False
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error_with_data_exceeding_limit(self):
         prompt = '''---
 - hosts: localhost

@@ -72,7 +72,35 @@ pre-commit autoupdate && pre-commit run -a
 ## Updating the Python dependencies
 
 We are now using pip-compile in order to manage our Python
-dependencies.
+dependencies for the x86_64 and ARM64/AArch64 architectures.
+
+In order to generate requirements.txt files for both architectures,
+you must use a multi-arch capable virtual machine emulator (like QEMU)
+and enable multi-arch support.
+
+To enable multi-arch support, run the instructions for your container
+engine and emulator from this table:
+
+<table>
+<tr>
+<td>Container Engine</td>
+<td>Emulator</td>
+<td>Instructions</td>
+</tr>
+<tr>
+<td>podman</td>
+<td>QEMU</td>
+<td>
+
+```bash
+podman machine ssh
+sudo rpm-ostree install qemu-user-static
+sudo systemctl reboot
+```
+
+</td>
+</tr>
+</table>
 
 The specification of what packages we need now live in the
 requirements.in and requirements-dev.in files. Use your preferred
@@ -401,8 +429,7 @@ Response:
 
 ## Using the VS Code extension
 
-Access the updated Ansible VS Code extension here:
-https://drive.google.com/drive/u/1/folders/1cyjv_Ljz9I2IXY140S7_fjQsqZtxr_sg
+Install the latest Ansible VS Code Extension from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=redhat.ansible).
 
 In order to successfully connect to your local dev environment using
 the plugin, you need to create the OAuth2 application in Django. Open
@@ -584,13 +611,10 @@ in this repository.
 When you make code changes, please update the static OpenAPI Schema YAML file
 with the following steps:
 
-1. Update API descriptions.
-   See [this doc](https://docs.google.com/document/d/1iF32yui3JTG808GhInN7CUTEn4Ocimed1szOn0N0P_E/edit#heading=h.sufj9xfpwkbn)
-   to find where to update.
-2. Make sure the API version is updated
-   in [development.yaml](https://github.com/ansible/ansible-wisdom-service/blob/7a9669be1ac5b037d1bd92793db48e6aed15bb4e/ansible_wisdom/main/settings/development.py#L38)
+1. Ensure the API metadata (description, version, `TAGS` used to organize API categories) are accurate; this requires updating the [`SPECTACULAR_SETTINGS` variable](https://github.com/ansible/ansible-wisdom-service/blob/main/ansible_wisdom/main/settings/development.py#L10-L23) in `ansible_wisdom/main/settings/development.py`.
+2. Run the wisdom service locally.
 3. Run `make update-openapi-schema` in the project root.
-4. Checkin the updated OpenAPI Schema YAML file with your API changes.
+4. Commit the updated OpenAPI Schema YAML file with your API changes.
 
 Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded either:
 

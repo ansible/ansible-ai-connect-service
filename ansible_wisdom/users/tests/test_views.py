@@ -83,7 +83,9 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
             response, "Your organization doesn't have access to Ansible Lightspeed."
         )
         self.assertNotContains(response, "You will be limited to features of the Lightspeed")
-        self.assertNotContains(response, "The Tech Preview is no longer available")
+        self.assertNotContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", False)
@@ -97,7 +99,9 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(
             response, "Your organization doesn't have access to Ansible Lightspeed."
         )
-        self.assertContains(response, "The Tech Preview is no longer available")
+        self.assertContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
@@ -137,7 +141,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "fas fa-exclamation-circle")
         self.assertNotContains(response, "Admin Portal")
-        self.assertNotContains(response, "The Tech Preview is no longer available")
+        self.assertNotContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(WCA_SECRET_DUMMY_SECRETS='valid')
@@ -152,7 +158,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "fas fa-exclamation-circle")
         self.assertNotContains(response, "Admin Portal")
-        self.assertNotContains(response, "The Tech Preview is no longer available")
+        self.assertNotContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
@@ -166,7 +174,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "You do not have a licensed seat for Ansible Lightspeed")
         self.assertNotContains(response, "You will be limited to features of the Lightspeed")
         self.assertNotContains(response, "Admin Portal")
-        self.assertContains(response, "The Tech Preview is no longer available")
+        self.assertContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
     @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
@@ -212,7 +222,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
             response, "Your organization doesn't have access to Ansible Lightspeed."
         )
         self.assertContains(response, "fa-exclamation-circle")
-        self.assertContains(response, "The Tech Preview is no longer available")
+        self.assertContains(
+            response, "The Ansible Lightspeed Technical Preview is no longer available"
+        )
 
 
 @override_settings(AUTHZ_BACKEND_TYPE='dummy')
