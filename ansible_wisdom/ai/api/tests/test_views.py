@@ -31,7 +31,6 @@ from ansible_wisdom.ai.api.exceptions import (
     FeedbackValidationException,
     ModelTimeoutException,
     PostprocessException,
-    PreprocessInvalidPromptException,
     PreprocessInvalidYamlException,
     ServiceUnavailable,
     WcaBadRequestException,
@@ -846,31 +845,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                     r,
                     PreprocessInvalidYamlException.default_code,
                     PreprocessInvalidYamlException.default_detail,
-                )
-                self.assertSegmentTimestamp(log)
-
-    def test_completions_preprocessing_error_with_invalid_prompt(self):
-        payload = {
-            "prompt": "---\n  - name: [Setup]",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
-            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
-        }
-        self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, response_data),
-        ):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload)
-                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-                self.assert_error_detail(
-                    r,
-                    PreprocessInvalidPromptException.default_code,
-                    PreprocessInvalidPromptException.default_detail,
                 )
                 self.assertSegmentTimestamp(log)
 

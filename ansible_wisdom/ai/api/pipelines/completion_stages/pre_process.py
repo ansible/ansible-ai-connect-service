@@ -7,7 +7,6 @@ from prometheus_client import Histogram
 
 from ansible_wisdom.ai.api import formatter as fmtr
 from ansible_wisdom.ai.api.exceptions import (
-    PreprocessInvalidPromptException,
     PreprocessInvalidYamlException,
     process_error_count,
 )
@@ -82,10 +81,7 @@ class PreProcessStage(PipelineElement):
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
-            if isinstance(exc, fmtr.InvalidPromptException):
-                raise PreprocessInvalidPromptException()
-            else:
-                raise PreprocessInvalidYamlException()
+            raise PreprocessInvalidYamlException()
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

@@ -48,52 +48,51 @@ class BaseWisdomAPIException(APIException):
         return model_id
 
 
-class PreprocessInvalidPromptException(BaseWisdomAPIException):
-    status_code = 400
-    default_code = 'error__preprocess_invalid_prompt'
-    default_detail = 'Request contains invalid prompt.'
+class WisdomEmptyResponse(BaseWisdomAPIException):
+    status_code = 204
 
 
-class PreprocessInvalidYamlException(BaseWisdomAPIException):
+class WisdomBadRequest(BaseWisdomAPIException):
     status_code = 400
+
+
+class WisdomAccessDenied(BaseWisdomAPIException):
+    status_code = 403
+
+
+class PreprocessInvalidYamlException(WisdomBadRequest):
     default_code = 'error__preprocess_invalid_yaml'
     default_detail = 'Request contains invalid yaml.'
 
 
-class PostprocessException(BaseWisdomAPIException):
-    status_code = 204
+class PostprocessException(WisdomEmptyResponse):
     # Do not prefix with error__ to allow correlation with older Segment events
     default_code = 'postprocess_error'
     default_detail = 'A postprocess error occurred.'
 
 
-class ModelTimeoutException(BaseWisdomAPIException):
-    status_code = 204
+class ModelTimeoutException(WisdomEmptyResponse):
     # Do not prefix with error__ to allow correlation with older Segment events
     default_code = 'model_timeout'
     default_detail = 'An timeout occurred attempting to complete the request.'
 
 
-class WcaBadRequestException(BaseWisdomAPIException):
-    status_code = 204
+class WcaBadRequestException(WisdomEmptyResponse):
     default_code = 'error__wca_bad_request'
     default_detail = 'WCA returned a bad request response.'
 
 
-class WcaInvalidModelIdException(BaseWisdomAPIException):
-    status_code = 403
+class WcaInvalidModelIdException(WisdomAccessDenied):
     default_code = 'error__wca_invalid_model_id'
     default_detail = 'WCA Model ID is invalid. Please contact your administrator.'
 
 
-class WcaKeyNotFoundException(BaseWisdomAPIException):
-    status_code = 403
+class WcaKeyNotFoundException(WisdomAccessDenied):
     default_code = 'error__wca_key_not_found'
     default_detail = 'A WCA Api Key was expected but not found. Please contact your administrator.'
 
 
-class WcaModelIdNotFoundException(BaseWisdomAPIException):
-    status_code = 403
+class WcaModelIdNotFoundException(WisdomAccessDenied):
     default_code = 'error__wca_model_id_not_found'
     default_detail = 'A WCA Model ID was expected but not found. Please contact your administrator.'
 
@@ -104,20 +103,17 @@ class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
     default_detail = 'WCA Request/Response Suggestion ID correlation failed.'
 
 
-class WcaEmptyResponseException(BaseWisdomAPIException):
-    status_code = 204
+class WcaEmptyResponseException(WisdomEmptyResponse):
     default_code = 'error__wca_empty_response'
     default_detail = 'WCA returned an empty response.'
 
 
-class WcaCloudflareRejectionException(BaseWisdomAPIException):
-    status_code = 400
+class WcaCloudflareRejectionException(WisdomBadRequest):
     default_code = 'error__wca_cloud_flare_rejection'
     default_detail = 'Cloudflare rejected the request. Please contact your administrator.'
 
 
-class WcaUserTrialExpiredException(BaseWisdomAPIException):
-    status_code = 403
+class WcaUserTrialExpiredException(WisdomAccessDenied):
     default_code = "permission_denied__user_trial_expired"
     default_detail = 'User trial expired. Please contact your administrator.'
 
@@ -134,8 +130,7 @@ class InternalServerError(BaseWisdomAPIException):
     default_detail = 'An error occurred attempting to complete the request.'
 
 
-class FeedbackValidationException(BaseWisdomAPIException):
-    status_code = 400
+class FeedbackValidationException(WisdomBadRequest):
     default_code = 'error__feedback_validation'
 
     def __init__(self, detail, *args, **kwargs):

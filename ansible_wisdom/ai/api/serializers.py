@@ -2,9 +2,9 @@
 DRF Serializer classes for input/output validations and OpenAPI document generation.
 """
 
-import re
 import uuid
 
+import yaml
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -113,11 +113,21 @@ class CompletionRequestSerializer(serializers.Serializer):
                 raise serializers.ValidationError({"prompt": "maximum task request size exceeded"})
         else:
             # Confirm the prompt contains some flavor of '- name:'
-            match = re.search(r"^[\s]*-[\s]+name[\s]*:", prompt)
-            if not match:
+            prompt_list = yaml.load(prompt, Loader=yaml.SafeLoader)
+            if (
+                not isinstance(prompt_list, list)
+                or len(prompt_list) != 1
+                or not isinstance(prompt_list[0], dict)
+                or len(prompt_list[0]) != 1
+                or 'name' not in prompt_list[0]
+            ):
                 raise serializers.ValidationError(
                     {"prompt": "prompt does not contain the name parameter"}
                 )
+            if isinstance(prompt_list[0]['name'], list):
+                raise serializers.ValidationError({"prompt": "prompt contains a list"})
+            if isinstance(prompt_list[0]['name'], dict):
+                raise serializers.ValidationError({"prompt": "prompt contains a dictionary"})
 
     def validate_model(self, value):
         user = self.context.get('request').user
