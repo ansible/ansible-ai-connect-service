@@ -60,8 +60,8 @@ COPY ansible_wisdom_console_react/src /tmp/ansible_wisdom_console_react/src
 COPY ansible_wisdom_console_react/package.json /tmp/ansible_wisdom_console_react/package.json
 COPY ansible_wisdom_console_react/package-lock.json /tmp/ansible_wisdom_console_react/package-lock.json
 COPY ansible_wisdom_console_react/tsconfig.json /tmp/ansible_wisdom_console_react/tsconfig.json
-#RUN npm --prefix /tmp/ansible_wisdom_console_react ci
-#RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+RUN npm --prefix /tmp/ansible_wisdom_console_react ci
+RUN npm --prefix /tmp/ansible_wisdom_console_react run build
 
 # Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh

@@ -10,11 +10,11 @@ services:
     depends_on:
       - db
     volumes:
-      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom:z
-      - $PWD/ari/kb:/etc/ari/kb:z
-      - $PWD/context:/etc/context:z
-      - $PWD/data/nltk_data:/var/www/nltk_data:z
-      - $PWD/tools/scripts:/etc/wisdom/scripts:z
+      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom
+      - $PWD/ari/kb:/etc/ari/kb
+      - $PWD/context:/etc/context
+      - $PWD/data/nltk_data:/var/www/nltk_data
+      - $PWD/tools/scripts:/etc/wisdom/scripts
     ports:
       - "8000:8000"
     expose:
@@ -92,8 +92,8 @@ services:
 # Disabled because this doesn't work properly on MacOS.
 # [33] CONTEXT:  writing block 0 of relation base/16384/2658
 # 2023-01-17 21:46:56.579 UTC [33] LOG:  out of file descriptors: No file descriptors available; release and retry
-    volumes:
-      - $PWD/db_data:/var/lib/postgresql/data:z
+    #volumes:
+    #  - $PWD/db_data:/var/lib/postgresql/data:z
     ports:
       - "5432:5432"
   prometheus:

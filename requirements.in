@@ -10,7 +10,6 @@ ansible-core==2.15.9
 ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.4
 ansible-lint==6.22.1
-beautifulsoup
 boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
