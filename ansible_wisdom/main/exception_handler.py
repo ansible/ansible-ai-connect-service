@@ -21,7 +21,7 @@ def exception_handler_with_error_type(exc, context):
                 response.data.pop('detail')
 
         # Extract 'model_id' from Exception
-        _model_id = {'model': exc.model_id} if hasattr(exc, 'model_id') else {'model': ''}
+        _model_id = {'model': exc.model_id} if hasattr(exc, 'model_id') else {}
 
         # Append 'code' and 'message' to the response data to enable the client
         # to be able to properly present the error to the user; based on 'code'.
