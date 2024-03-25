@@ -176,6 +176,7 @@ class Feedback(APIView):
         exception = None
         validated_data = {}
         try:
+            print(f"full request here:\n{request}")
             request_serializer = FeedbackRequestSerializer(
                 data=request.data, context={'request': request}
             )
@@ -206,6 +207,7 @@ class Feedback(APIView):
             inline_suggestion_data: InlineSuggestionFeedback = validated_data.get(
                 "inlineSuggestion"
             )
+            print(f"inline_suggestion_data:\n{inline_suggestion_data}")
             ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
             suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
                 "suggestionQualityFeedback"
