@@ -176,7 +176,7 @@ class Feedback(APIView):
         exception = None
         validated_data = {}
         try:
-            print(f"full request here:\n{request}")
+            print(f"full request here:\n{request}\n{request.data}")
             request_serializer = FeedbackRequestSerializer(
                 data=request.data, context={'request': request}
             )
