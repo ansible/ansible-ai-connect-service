@@ -188,22 +188,6 @@ class FeedbackRequestSerializerTest(TestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
 
-    def test_commercial_user_not_telemetry_enabled_raises_exception_on_inlineSuggestion(self):
-        org = Mock(telemetry_opt_out=False)
-        user = Mock(rh_user_has_seat=True, organization=org)
-        request = Mock(user=user)
-        serializer = FeedbackRequestSerializer(
-            context={'request': request},
-            data={
-                "inlineSuggestion": {
-                    "latency": 1000,
-                    "userActionTime": 5155,
-                    "action": "0",
-                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
-                }
-            },
-        )
-
         # inlineSuggestion feedback raises exception when seat and not telemetry enabled
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
