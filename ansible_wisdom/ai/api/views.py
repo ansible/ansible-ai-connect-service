@@ -1,4 +1,5 @@
 import logging
+import textwrap
 import time
 from http import HTTPStatus
 
@@ -7,6 +8,11 @@ from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from langchain_core.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
 from prometheus_client import Histogram
 from rest_framework import serializers
 from rest_framework import status as rest_framework_status
@@ -67,6 +73,8 @@ from .serializers import (
     CompletionResponseSerializer,
     ContentMatchRequestSerializer,
     ContentMatchResponseSerializer,
+    ExplanationRequestSerializer,
+    ExplanationResponseSerializer,
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
@@ -701,3 +709,78 @@ class ContentMatches(GenericAPIView):
             "metadata": metadata,
         }
         send_segment_event(event, "contentmatch", user)
+
+
+class Explanation(APIView):
+    """
+    Returns a text that explains a playbook.
+    """
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+        BlockUserWithoutSeat,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_explanation'
+
+    @extend_schema(
+        request=ExplanationRequestSerializer,
+        responses={
+            200: ExplanationResponseSerializer,
+            204: OpenApiResponse(description='Empty response'),
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Inline code suggestions",
+    )
+    def post(self, request) -> Response:
+        SYSTEM_MESSAGE_TEMPLATE = """
+        You're an Ansible expert.
+        You only answer with text paragraphs.
+        Write one paragraph per Ansible task.
+        Write a title before every paragraph.
+        Do not return any YAML or Ansible in the output.
+        Please format the output with Markdown.
+        Give a lot of details regarding the parameters of each Ansible plugin.
+        """
+
+        HUMAN_MESSAGE_TEMPLATE = """Please explain the following Ansible playbook:
+
+        {playbook}"
+        """
+
+        model_client = apps.get_app_config("ai").model_mesh_client
+        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+
+        chat_template = ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(
+                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
+                ),
+                HumanMessagePromptTemplate.from_template(
+                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                ),
+            ]
+        )
+
+        chain = chat_template | llm
+
+        output = chain.invoke({"playbook": request.data["content"]})
+        answer = {"content": output, "format": "markdown"}
+        if "explanationId" in request.data:
+            answer["explanationId"] = request.data["explanationId"]
+
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )

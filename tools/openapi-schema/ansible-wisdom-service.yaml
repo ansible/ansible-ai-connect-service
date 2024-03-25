@@ -148,6 +148,47 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
+  /api/v0/ai/explanations/:
+    post:
+      operationId: ai_explanations_create
+      description: Returns a text that explains a playbook.
+      summary: Inline code suggestions
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplanationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExplanationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExplanationRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExplanationResponse'
+          description: ''
+        '204':
+          description: Empty response
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
   /api/v0/ai/feedback/:
     post:
       operationId: ai_feedback_create
@@ -707,6 +748,39 @@ components:
             $ref: '#/components/schemas/ContentMatchList'
       required:
       - contentmatches
+    ExplanationRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          title: Playbook content
+          description: The playbook that needs to be explained.
+        explanationId:
+          type: string
+          format: uuid
+          title: Explanation ID
+          description: A UUID that identifies the particular explanation data is being
+            requested for.
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+      required:
+      - content
+    ExplanationResponse:
+      type: object
+      properties:
+        content:
+          type: string
+        format:
+          type: string
+        explanationId:
+          type: string
+          format: uuid
+          title: Explanation ID
+          description: A UUID that identifies the particular explanation data is being
+            requested for.
+      required:
+      - content
+      - format
     FeedbackRequest:
       type: object
       properties:

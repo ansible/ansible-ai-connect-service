@@ -132,7 +132,7 @@ class MockedMeshClient(ModelMeshClient):
 
         self.response_data = response_data
 
-    def infer(self, data, model_id=None, suggestion_id=None):
+    def infer(self, data, model_id="", suggestion_id=None):
         if self.test_inference_match:
             self.test.assertEqual(data, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...

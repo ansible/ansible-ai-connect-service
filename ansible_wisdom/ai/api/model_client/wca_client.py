@@ -333,7 +333,7 @@ class WCAClient(BaseWCAClient):
             raise WcaKeyNotFound
 
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
             if api_key is not None:
                 return api_key["SecretString"]
@@ -366,7 +366,7 @@ class WCAClient(BaseWCAClient):
             return requested_model_id
 
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
             model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
             if model_id is not None:
                 return model_id["SecretString"]

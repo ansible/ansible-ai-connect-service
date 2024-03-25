@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
@@ -58,6 +59,18 @@ class AiConfig(AppConfig):
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
             self.model_mesh_client = DummyClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "bam":
+            from .api.model_client.bam_client import BAMClient
+
+            self.model_mesh_client = BAMClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
+            from .api.model_client.ollama_client import OllamaClient
+
+            self.model_mesh_client = OllamaClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         else:
@@ -123,7 +136,7 @@ class AiConfig(AppConfig):
 
         return self._seat_checker
 
-    def get_wca_secret_manager(self):
+    def get_wca_secret_manager(self) -> Union[AWSSecretManager, DummySecretManager]:
         backends = {
             "aws_sm": AWSSecretManager,
             "dummy": DummySecretManager,
@@ -132,10 +145,9 @@ class AiConfig(AppConfig):
         try:
             expected_backend = backends[settings.WCA_SECRET_BACKEND_TYPE]
         except KeyError:
-            logger.error(
+            logger.exception(
                 "Unexpected WCA_SECRET_BACKEND_TYPE value: '%s'", settings.WCA_SECRET_BACKEND_TYPE
             )
-            return None
 
         if self._wca_secret_manager is UNINITIALIZED:
             self._wca_secret_manager = expected_backend(
