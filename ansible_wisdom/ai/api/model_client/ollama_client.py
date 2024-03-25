@@ -20,24 +20,34 @@ from .exceptions import ModelTimeoutError
 
 logger = logging.getLogger(__name__)
 
-embeddings = SentenceTransformerEmbeddings()
-loader = loader = UnstructuredMarkdownLoader("/etc/context/rules.md", mode="single")
-docs = loader.load()
-md_splitter = MarkdownTextSplitter()
-docs = md_splitter.split_documents(docs)
-logger.info(f"loaded {len(docs)} documents")
-
-logger.info("initializing vector store with embeddings")
-vectorstore = FAISS.from_documents(docs, embeddings)
-retriever = vectorstore.as_retriever()
-logger.info("DONE initializing vector store with embeddings")
 
 
 class OllamaClient(ModelMeshClient):
+    instance = None
+    embeddings = SentenceTransformerEmbeddings()
+    #loader = loader = UnstructuredMarkdownLoader("/etc/context/rules.md", mode="single")
+    loader = loader = UnstructuredMarkdownLoader("/etc/context/rules-short.md", mode="single")
+    docs = loader.load()
+    md_splitter = MarkdownTextSplitter()
+    docs = md_splitter.split_documents(docs)
+    logger.info(f"loaded {len(docs)} documents")
+
+    logger.info("initializing vector store with embeddings")
+    vectorstore = FAISS.from_documents(docs, embeddings)
+    retriever = vectorstore.as_retriever()
+    logger.info("DONE initializing vector store with embeddings")
+
+    def __new__(cls, *args, **kwargs):
+        if cls.instance is not None:
+            return cls.instance
+        instance = super().__new__(cls)
+        return instance
+
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
+
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
@@ -88,6 +98,16 @@ class OllamaClient(ModelMeshClient):
         {rules}
         """
 
+        rag_template = """You're an Ansible expert. Return only the Ansible code that best completes the following partial playbook:
+        {context}{prompt}
+
+        Return only YAML.
+        Do not explain your response.
+
+        Understand and apply the following rules to create the task; when you see a prompt that resembles the Problematic Code, make it look like the Correct Code:
+        {rules}
+        """
+
         playbook_template = """You're an Ansible expert. Return only the Ansible code that best completes the following partial playbook:
         {context}{prompt}
 
@@ -109,7 +129,8 @@ class OllamaClient(ModelMeshClient):
         {rules}
         """
 
-        template = PromptTemplate.from_template(playbook_template)
+        #template = PromptTemplate.from_template(playbook_template)
+        template = PromptTemplate.from_template(rag_template)
 
         # Only return the portion of the task that comes after the '- name: this is the name'.
         try:
@@ -117,7 +138,7 @@ class OllamaClient(ModelMeshClient):
             chain = (
                 {
                     "context": itemgetter("context"),
-                    "rules": itemgetter("rules") | retriever,
+                    "rules": itemgetter("rules") | self.retriever,
                     #"rules": itemgetter("rules"),
                     "prompt": itemgetter("prompt"),
                 }
