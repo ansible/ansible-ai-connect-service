@@ -101,7 +101,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         else:
             logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
-    user.organization = Organization.objects.get_or_create(id=payload['organization']['id'])[0]
+    user.organization = Organization.objects.get_or_create(id=int(payload['organization']['id']))[0]
     user.save()
     send_segment_group(
         f'rhsso-{user.organization.id}', 'Red Hat Organization', user.organization.id, user
