@@ -1,4 +1,5 @@
 import logging
+import re
 import textwrap
 import time
 from http import HTTPStatus
@@ -75,6 +76,10 @@ from .serializers import (
     ContentMatchResponseSerializer,
     ExplanationRequestSerializer,
     ExplanationResponseSerializer,
+    SummaryRequestSerializer,
+    SummaryResponseSerializer,
+    GenerationRequestSerializer,
+    GenerationResponseSerializer,
     FeedbackRequestSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
@@ -762,6 +767,165 @@ class Explanation(APIView):
         answer = {"content": output, "format": "markdown"}
         if "explanationId" in request.data:
             answer["explanationId"] = request.data["explanationId"]
+
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
+
+class Summary(APIView):
+    """
+    Returns a text that summarizes an input text.
+    """
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+        BlockUserWithoutSeat,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_explanation'
+
+    @extend_schema(
+        request=SummaryRequestSerializer,
+        responses={
+            200: SummaryResponseSerializer,
+            204: OpenApiResponse(description='Empty response'),
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Elaborate input text",
+    )
+    def post(self, request) -> Response:
+        SYSTEM_MESSAGE_TEMPLATE = """
+        You're a smart and kind software consultant.
+        You only answer with text paragraphs.
+        Do not include any code or command samples.
+        Use a numbered list.
+        """
+
+        HUMAN_MESSAGE_TEMPLATE = """Please elaborate the following text in plain English:
+
+        {content}"
+        """
+
+        model_client = apps.get_app_config("ai").model_mesh_client
+        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+
+        chat_template = ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(
+                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
+                ),
+                HumanMessagePromptTemplate.from_template(
+                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                ),
+            ]
+        )
+
+        chain = chat_template | llm
+
+        request_serializer = SummaryRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+
+        answer = {"content": output, "format": "plaintext"}
+        answer["summaryId"] = str(request_serializer.validated_data.get("summaryId", ""))
+
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
+
+class Generation(APIView):
+    """
+    Returns a playbook based on a text input.
+    """
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+        BlockUserWithoutSeat,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
+    ]
+    required_scopes = ['read', 'write']
+
+    throttle_cache_key_suffix = '_generation'
+
+    @extend_schema(
+        request=GenerationRequestSerializer,
+        responses={
+            200: GenerationResponseSerializer,
+            204: OpenApiResponse(description='Empty response'),
+            400: OpenApiResponse(description='Bad Request'),
+            401: OpenApiResponse(description='Unauthorized'),
+            429: OpenApiResponse(description='Request was throttled'),
+            503: OpenApiResponse(description='Service Unavailable'),
+        },
+        summary="Inline code suggestions",
+    )
+    def post(self, request) -> Response:
+        SYSTEM_MESSAGE_TEMPLATE = """
+        You are an Ansible expert. 
+        Your role is to help Ansible developers write playbooks.
+        Don't explain the code, just generate the playbook in YAML format.
+        """
+
+        HUMAN_MESSAGE_TEMPLATE = """Please write an Ansible playbook as directed in the following sentences:
+
+        {content}"
+        """
+
+        model_client = apps.get_app_config("ai").model_mesh_client
+        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+
+        chat_template = ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(
+                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
+                ),
+                HumanMessagePromptTemplate.from_template(
+                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                ),
+            ]
+        )
+
+        chain = chat_template | llm
+
+        request_serializer = GenerationRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+
+        postprocessed = [];
+        code_block = False;
+        for line in output.split("\n"):
+            if not code_block:
+                if re.match(r"^\s*```", line):
+                    code_block = True
+            else:
+                if re.match(r"^\s*```", line):
+                    break
+                postprocessed.append(line)
+
+        if len(postprocessed) > 0:
+            output = "\n".join(postprocessed)
+
+        answer = {"content": output, "format": "markdown"}
+        answer["generationId"] = str(request_serializer.validated_data.get("generationId", ""))
 
         return Response(
             answer,

@@ -19,6 +19,8 @@ from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.utils import Input, Output
 from requests.exceptions import ReadTimeout
 from rest_framework.exceptions import APIException
 from rest_framework.test import APITransactionTestCase
@@ -145,6 +147,16 @@ class MockedMeshClient(ModelMeshClient):
         requested_model_id: str = '',
     ) -> str:
         return requested_model_id or ''
+
+    def get_chat_model(self, model_id):
+        class MockedLLM(Runnable):
+            def __init__(self, response_data):
+                self.response_data = response_data
+
+            def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+                return self.response_data
+
+        return MockedLLM(self.response_data)
 
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
@@ -2483,3 +2495,142 @@ class TestContentMatchesWCAViewSegmentEvents(
 
         self.assertTrue(event.items() <= actual_event.items())
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
+
+class TestSummaryView(WisdomServiceAPITestCaseBase):
+    response_data = """
+1. First, ensure that your Red Hat Enterprise Linux (RHEL) 9 system is up-to-date.
+2. Next, you install the Nginx package using the package manager.
+3. After installation, start the ginx service.
+4. Ensure that Nginx starts automatically.
+5. Check if Nginx is running successfully.
+6. Finally, visit the IP address of your system's hostname followed by the default Nginx port number (80 or 443). 
+"""
+    def test_ok(self):
+        summary_id =  str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "summaryId": summary_id,
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "plaintext")
+            self.assertEqual(r.data["summaryId"], summary_id)
+
+    def test_unauthorized(self):
+        summary_id =  str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "summaryId": summary_id,
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            # Hit the API without authentication
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_bad_request(self):
+        summary_id =  str(uuid.uuid4())
+        # No content specified
+        payload = {
+            "summaryId": str(uuid.uuid4()),
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+
+class TestGenerationView(WisdomServiceAPITestCaseBase):
+
+    response_data = """yaml
+---
+- hosts: rhel9
+  become: yes
+  tasks:
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Update package list
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Install nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Start and enable nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+"""
+    def test_ok(self):
+        generation_id =  str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "markdown")
+            self.assertEqual(r.data["generationId"], generation_id)
+
+    def test_unauthorized(self):
+        generation_id =  str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            # Hit the API without authentication
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_bad_request(self):
+        generation_id =  str(uuid.uuid4())
+        # No content specified
+        payload = {
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0"
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
