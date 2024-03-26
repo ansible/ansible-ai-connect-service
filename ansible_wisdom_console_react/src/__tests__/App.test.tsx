@@ -8,7 +8,6 @@ describe("App", () => {
     render(
       <App
         userName={"Batman"}
-        telemetryOptEnabled={true}
         adminDashboardUrl={"http://admin_dashboard-url/"}
       />,
     );

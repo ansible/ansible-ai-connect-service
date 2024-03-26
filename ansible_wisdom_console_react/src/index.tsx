@@ -10,21 +10,12 @@ import "./i18n";
 import "./index.css";
 
 const userName = document.getElementById("user_name")?.innerText ?? "undefined";
-const telemetrySchema2EnabledInnerText = document.getElementById(
-  "telemetry_schema_2_enabled",
-)?.innerText;
-const telemetrySchema2Enabled =
-  telemetrySchema2EnabledInnerText?.toLowerCase() === "true";
 const adminDashboardUrl =
   document.getElementById("telemetry_schema_2_admin_dashboard_url")
     ?.innerText ?? "";
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <App
-      userName={userName}
-      telemetryOptEnabled={telemetrySchema2Enabled}
-      adminDashboardUrl={adminDashboardUrl}
-    />
+    <App userName={userName} adminDashboardUrl={adminDashboardUrl} />
   </StrictMode>,
 );

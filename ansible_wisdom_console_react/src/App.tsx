@@ -8,13 +8,12 @@ import { PageApp } from "./PageApp";
 
 export interface AppProps {
   readonly userName: string;
-  readonly telemetryOptEnabled: boolean;
   readonly adminDashboardUrl: string;
 }
 
 export function App(props: AppProps) {
   const { t } = useTranslation();
-  const { userName, telemetryOptEnabled, adminDashboardUrl } = props;
+  const { userName, adminDashboardUrl } = props;
 
   const navigationItems = useMemo<PageNavigationItem[]>(() => {
     const items = [
@@ -24,15 +23,13 @@ export function App(props: AppProps) {
         path: "settings",
         element: <ModelSettings />,
       },
-    ];
-    if (telemetryOptEnabled) {
-      items.push({
+      {
         // Telemetry
         label: t("Telemetry"),
         path: "telemetry",
         element: <TelemetrySettings adminDashboardUrl={adminDashboardUrl} />,
-      });
-    }
+      },
+    ];
     return [
       {
         // Admin portal
@@ -41,7 +38,7 @@ export function App(props: AppProps) {
         children: items,
       },
     ];
-  }, [t, telemetryOptEnabled, adminDashboardUrl]);
+  }, [t, adminDashboardUrl]);
 
   return (
     <PageApp

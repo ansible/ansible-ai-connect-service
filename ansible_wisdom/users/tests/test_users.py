@@ -625,51 +625,6 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.assertTrue(r.data.get('org_telemetry_opt_out'))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
-    def test_rhsso_user_with_telemetry_feature_disabled(self, LDClient):
-        LDClient.return_value.variation.return_value = False
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": "sso_username"},
-            external_username="sso_username",
-            org_opt_out=True,
-        )
-        self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIsNone(r.data.get('org_telemetry_opt_out'))
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
-    def test_rhsso_user_with_telemetry_feature_enabled_opted_out(self, LDClient):
-        LDClient.return_value.variation.return_value = True
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": "sso_username"},
-            external_username="sso_username",
-            org_opt_out=True,
-        )
-        self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue(r.data.get('org_telemetry_opt_out'))
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
-    def test_rhsso_user_with_telemetry_feature_enabled_opted_in(self, LDClient):
-        LDClient.return_value.variation.return_value = True
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            social_auth_extra_data={"login": "sso_username"},
-            external_username="sso_username",
-            org_opt_out=False,
-        )
-        self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertFalse(r.data.get('org_telemetry_opt_out'))
-
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
     @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
     @patch.object(AcceptedTermsPermission, 'has_permission', return_value=True)
