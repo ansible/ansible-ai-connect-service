@@ -41,9 +41,9 @@ class DummyRHBackend(OpenIdConnectAuth):
         return self.issuer
 
 
-def build_access_token(private_key, issuer, payload):
+def build_access_token(private_key, issuer, payload, scope=None):
     payload["aud"] = RHSSO_LIGHTSPEED_SCOPE
-    payload["scope"] = RHSSO_LIGHTSPEED_SCOPE
+    payload["scope"] = scope if scope else RHSSO_LIGHTSPEED_SCOPE
     payload["iss"] = issuer
     return jwt.encode(payload, key=private_key, algorithm='RS256')
 
@@ -66,15 +66,47 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
         access_token = build_access_token(
-            backend.rsa_private_key,
-            backend.issuer,
-            {'sub': self.rh_usa.uid},
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={'sub': self.rh_usa.uid},
         )
 
         request = Mock(headers={'Authorization': f"Bearer {access_token}"})
         user, _ = self.authentication.authenticate(request)
 
         self.assertEqual(user.id, self.rh_user.id)
+
+    @patch('ansible_wisdom.users.auth.load_backend')
+    def test_authenticate_returns_none_on_invalid_scope(self, mock_load_backend):
+        backend = DummyRHBackend()
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={'sub': self.rh_usa.uid},
+            scope='bogus-scope',
+        )
+
+        request = Mock(headers={'Authorization': f"Bearer {access_token}"})
+        self.assertIsNone(self.authentication.authenticate(request))
+
+    def test_authenticate_returns_none_on_invalid_auth_header(self):
+        backend = DummyRHBackend()
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            scope='bogus-scope',
+            payload={'sub': self.rh_usa.uid},
+        )
+
+        request = Mock(headers={'Authorization': f"bogus {access_token}"})
+        self.assertIsNone(self.authentication.authenticate(request))
+
+        request = Mock(headers={'Authorization': f"{access_token}"})
+        self.assertIsNone(self.authentication.authenticate(request))
+
+        request = Mock(headers={})
+        self.assertIsNone(self.authentication.authenticate(request))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @patch('ansible_wisdom.users.auth.load_backend')
@@ -83,9 +115,9 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         backend.strategy = load_strategy()
         mock_load_backend.return_value = backend
         access_token = build_access_token(
-            backend.rsa_private_key,
-            backend.issuer,
-            {
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={
                 'sub': 'some_unknown_sub',
                 'organization': {'id': '999'},
                 'preferred_username': 'joe-new-user',
