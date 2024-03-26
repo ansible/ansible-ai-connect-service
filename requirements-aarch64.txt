@@ -529,7 +529,7 @@ traitlets==5.14.1
     # via
     #   ipython
     #   matplotlib-inline
-transformers==4.36.0
+transformers==4.39.1
     # via
     #   -r requirements.in
     #   sentence-transformers
