@@ -1,6 +1,5 @@
-import os
-
 from .base import *  # NOQA
+from .base import os
 
 DEBUG = False
 

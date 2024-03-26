@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict
 
 import grpc
 
@@ -27,7 +28,7 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, model_input, model_id="", suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         model_id = self.get_model_id(None, model_id)
         logger.debug(f"Input prompt: {model_input}")
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -38,19 +39,20 @@ class GrpcClient(ModelMeshClient):
         try:
             task_count = len(get_task_names_from_prompt(prompt))
             response = self._inference_stub.AnsiblePredict(
-                request=ansiblerequest_pb2.AnsibleRequest(prompt=prompt, context=context),
+                request=ansiblerequest_pb2.AnsibleRequest(  # type: ignore
+                    prompt=prompt, context=context
+                ),
                 metadata=[("mm-vmodel-id", model_id)],
                 timeout=self.timeout(task_count),
             )
 
             logger.debug(f"inference response: {response}")
             logger.debug(f"inference response: {response.text}")
-            result = {"predictions": [response.text]}
-            result['model_id'] = model_id
+            result: Dict[str, Any] = {"predictions": [response.text], 'model_id': model_id}
             return result
         except grpc.RpcError as exc:
-            if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+            if exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore
                 raise ModelTimeoutError
             else:
-                logger.error(f"gRPC client error: {exc.details()}")
+                logger.error(f"gRPC client error: {exc.details()}")  # type: ignore
                 raise

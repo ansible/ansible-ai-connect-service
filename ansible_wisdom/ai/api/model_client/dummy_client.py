@@ -2,6 +2,7 @@ import json
 import logging
 import secrets
 import time
+from typing import Any, Dict
 
 import requests
 from django.conf import settings
@@ -17,7 +18,7 @@ class DummyClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_id="", suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
         if settings.DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER:

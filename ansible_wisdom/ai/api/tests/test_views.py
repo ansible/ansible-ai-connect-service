@@ -7,7 +7,7 @@ import string
 import time
 import uuid
 from http import HTTPStatus
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 from unittest.mock import Mock, patch
 
 import requests
@@ -132,9 +132,9 @@ class MockedMeshClient(ModelMeshClient):
 
         self.response_data = response_data
 
-    def infer(self, data, model_id="", suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         if self.test_inference_match:
-            self.test.assertEqual(data, self.expects)
+            self.test.assertEqual(model_input, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
         # i.e., still receives 200 after 10 API calls...
         return self.response_data

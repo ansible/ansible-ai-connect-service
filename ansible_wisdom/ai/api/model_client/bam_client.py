@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from textwrap import dedent
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
 from django.conf import settings
@@ -120,7 +120,7 @@ class BAMClient(ModelMeshClient):
             timeout=self.timeout,
         )
 
-    def infer(self, model_input, model_id="", suggestion_id=None):
+    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         model_id = self.get_model_id(None, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
