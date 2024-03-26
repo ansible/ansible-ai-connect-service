@@ -86,7 +86,6 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         response = self.client.get(reverse('console'))
         self.assertIsInstance(response.context_data, dict)
         context = response.context_data
-        # The default setting for tests is True
         self.assertEqual(
             context['telemetry_schema_2_admin_dashboard_url'],
             'https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard',
