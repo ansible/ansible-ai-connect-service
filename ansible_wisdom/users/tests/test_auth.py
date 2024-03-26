@@ -6,6 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from jose import constants, jwk
 from rest_framework.test import APIRequestFactory
 from social_core.backends.open_id_connect import OpenIdConnectAuth
@@ -75,6 +76,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
 
         self.assertEqual(user.id, self.rh_user.id)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @patch('ansible_wisdom.users.auth.load_backend')
     def test_authenticate_creates_new_user(self, mock_load_backend):
         backend = DummyRHBackend()

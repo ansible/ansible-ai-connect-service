@@ -198,7 +198,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.user.user_details',
     'ansible_wisdom.users.pipeline.load_extra_data',
-    # 'ansible_wisdom.users.pipeline.terms_of_service',
+    'ansible_wisdom.users.pipeline.terms_of_service',
 )
 
 # Wisdom Eng Team:
@@ -266,7 +266,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'ansible_wisdom.users.auth.RHSSOAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
@@ -274,6 +273,12 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'ansible_wisdom.main.exception_handler.exception_handler_with_error_type',
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
+
+# Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
+if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(
+        -1, 'ansible_wisdom.users.auth.RHSSOAuthentication'
+    )
 
 ROOT_URLCONF = "ansible_wisdom.main.urls"
 
