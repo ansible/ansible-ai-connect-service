@@ -111,3 +111,15 @@ class BlockUserWithoutSeat(permissions.BasePermission):
             return True
 
         return user.rh_user_has_seat
+
+
+class BlockUserWithExpiredOnprem(permissions.BasePermission):
+    """
+    Block access to users when on prem license expired
+    """
+
+    code = 'permission_denied__license_expired'
+    message = "Onprem License expired."
+
+    def has_permission(self, request, view):
+        return not request.user.is_onprem_license_expired
