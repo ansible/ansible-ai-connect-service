@@ -19,7 +19,6 @@ services:
       - "8000"
       - "8001-8011" # django-prometheus
     environment:
-      - ANSIBLE_AI_PROJECT_NAME="Ansible AI Connect"
       - DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
       - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
       - ANSIBLE_AI_DATABASE_NAME=wisdom
