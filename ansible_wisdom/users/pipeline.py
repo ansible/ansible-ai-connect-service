@@ -13,6 +13,7 @@ from social_django.models import UserSocialAuth
 
 from ansible_wisdom.ai.api.utils.segment import send_segment_group
 from ansible_wisdom.organizations.models import Organization
+from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +77,6 @@ def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
 def redhat_organization(backend, user, response, *args, **kwargs):
     if backend.name != 'oidc':
         return
-    if not backend.id_token:
-        logger.error("Missing id_token, cannot get the organization id.")
-        return
 
     key = backend.find_valid_key(response['access_token'])
     rsakey = jwk.construct(key)
@@ -86,7 +84,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         response['access_token'],
         rsakey.to_pem().decode("utf-8"),
         algorithms=[key['alg']],
-        audience="account",
+        audience=RHSSO_LIGHTSPEED_SCOPE,
     )
 
     realm_access = payload.get("realm_access", {})
@@ -103,9 +101,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         else:
             logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
-    user.organization = Organization.objects.get_or_create(
-        id=backend.id_token['organization']['id']
-    )[0]
+    user.organization = Organization.objects.get_or_create(id=int(payload['organization']['id']))[0]
     user.save()
     send_segment_group(
         f'rhsso-{user.organization.id}', 'Red Hat Organization', user.organization.id, user

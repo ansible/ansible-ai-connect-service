@@ -12,16 +12,16 @@ from jose import constants, jwk
 from social_django.models import UserSocialAuth
 
 from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
 from ansible_wisdom.users.pipeline import load_extra_data, redhat_organization
 
 
 def build_access_token(private_key, payload):
-    payload["aud"] = ["account"]
+    payload["aud"] = [RHSSO_LIGHTSPEED_SCOPE]
     return jwt.encode(payload, key=private_key, algorithm='RS256')
 
 
 class DummyGithubBackend:
-    id_token = {}
     name = "github"
 
     def extra_data(*args, **kwargs):
@@ -34,7 +34,6 @@ class DummyGithubBackend:
 
 
 class DummyRHBackend:
-    id_token = {"organization": {"id": 345}}
     name = "oidc"
 
     def __init__(self, public_key):
@@ -106,7 +105,11 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
-                {"realm_access": {"roles": ["admin:org:all"]}, "preferred_username": "jean-michel"},
+                {
+                    "realm_access": {"roles": ["admin:org:all"]},
+                    "preferred_username": "jean-michel",
+                    "organization": {"id": "345"},
+                },
             )
         }
 
@@ -128,7 +131,11 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
-                {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"},
+                {
+                    "realm_access": {"roles": ["another_other_role"]},
+                    "preferred_username": "yves",
+                    "organization": {"id": "345"},
+                },
             )
         }
 
@@ -161,7 +168,11 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
-                {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"},
+                {
+                    "realm_access": {"roles": ["another_other_role"]},
+                    "preferred_username": "yves",
+                    "organization": {"id": "345"},
+                },
             )
         }
 
@@ -184,7 +195,11 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
-                {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"},
+                {
+                    "realm_access": {"roles": ["another_other_role"]},
+                    "preferred_username": "yves",
+                    "organization": {"id": "345"},
+                },
             )
         }
 
@@ -207,7 +222,11 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
-                {"realm_access": {"roles": ["another_other_role"]}, "preferred_username": "yves"},
+                {
+                    "realm_access": {"roles": ["another_other_role"]},
+                    "preferred_username": "yves",
+                    "organization": {"id": "345"},
+                },
             )
         }
         with self.assertLogs(logger='ansible_wisdom.users.pipeline', level='ERROR') as log:

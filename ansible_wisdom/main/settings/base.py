@@ -160,7 +160,7 @@ SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
 SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
 SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
-SOCIAL_AUTH_OIDC_SCOPE = ['id.idp', 'id.organization', 'roles']
+SOCIAL_AUTH_OIDC_SCOPE = ['api.lightspeed']
 SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
@@ -280,6 +280,12 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
 }
 
+# Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
+if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(
+        -1, 'ansible_wisdom.users.auth.RHSSOAuthentication'
+    )
+
 ROOT_URLCONF = "ansible_wisdom.main.urls"
 
 LOGGING = {
@@ -310,6 +316,11 @@ LOGGING = {
             "propagate": False,
         },
         "ari_changes": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "auth": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
