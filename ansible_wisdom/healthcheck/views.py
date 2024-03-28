@@ -23,6 +23,20 @@ from .version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 CACHE_TIMEOUT = 30
+_version_info = VersionInfo()
+
+
+def common_data():
+    data = {
+        'timestamp': str(datetime.now().isoformat()),
+        'version': _version_info.image_tags,
+        'git_commit': _version_info.git_commit,
+    }
+    deployed_region = settings.DEPLOYED_REGION
+    # Only include 'deployed_region' if set
+    if deployed_region:
+        data = {**data, 'deployed_region': deployed_region}
+    return data
 
 
 class HealthCheckCustomView(MainView):
@@ -35,8 +49,6 @@ class HealthCheckCustomView(MainView):
         'AttributionCheck': 'attribution',
     }
 
-    _version_info = VersionInfo()
-
     @method_decorator(cache_page(CACHE_TIMEOUT))
     def get(self, request, *args, **kwargs):
         status_code = 200  # Set status code to 200 for letting the output be cached
@@ -44,7 +56,6 @@ class HealthCheckCustomView(MainView):
 
     def render_to_response_json(self, plugins, status, user):  # customize JSON output
         model_name = settings.ANSIBLE_AI_MODEL_NAME
-        deployed_region = settings.DEPLOYED_REGION
         if settings.LAUNCHDARKLY_SDK_KEY:
             # Lazy instantiation of FeatureFlags to ensure it honours settings.LAUNCHDARKLY_SDK_KEY
             model_tuple = FeatureFlags().get("model_name", user, f".:.:{model_name}:.")
@@ -52,16 +63,9 @@ class HealthCheckCustomView(MainView):
             if len(model_parts) == 4:
                 _, _, model_name, _ = model_parts
 
-        data = {
-            'status': 'error' if self.errors else 'ok',
-            'timestamp': str(datetime.now().isoformat()),
-            'version': self._version_info.image_tags,
-            'git_commit': self._version_info.git_commit,
-            'model_name': model_name,
-        }
-        # Only include 'deployed_region' if set
-        if deployed_region:
-            data = {**data, 'deployed_region': deployed_region}
+        data = common_data()
+        data['model_name'] = model_name
+        data['status'] = 'error' if self.errors else 'ok'
 
         dependencies = []
         for p in plugins:
@@ -143,6 +147,7 @@ class WisdomServiceLivenessProbeView(APIView):
     )
     @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
-        data = {'status': 'ok'}
+        data = common_data()
+        data['status'] = 'ok'
         data_json = json.dumps(data)
         return HttpResponse(data_json, content_type='application/json')

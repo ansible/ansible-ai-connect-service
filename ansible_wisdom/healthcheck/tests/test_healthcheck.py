@@ -79,7 +79,8 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
     def test_liveness_probe(self):
         r = self.client.get(reverse('liveness_probe'), format='json')
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertJSONEqual(r.content, {"status": "ok"})
+        data = json.loads(r.content)
+        self.assert_common_data(data, 'ok', settings.DEPLOYED_REGION)
 
     @staticmethod
     def getHealthCheckErrorString(plugin_name, plugin_status):
@@ -103,6 +104,13 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             log,
         )
 
+    def assert_common_data(self, data: dict, expected_status: str, deployed_region: str):
+        self.assertIsNotNone(data['timestamp'])
+        self.assertIsNotNone(data['version'])
+        self.assertIsNotNone(data['git_commit'])
+        self.assertEqual(data.get('deployed_region'), deployed_region)
+        self.assertEqual(expected_status, data['status'])
+
     def assert_basic_data(
         self,
         r: Response,
@@ -117,13 +125,9 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         :return: (timestamp, dependencies) tuple from the basic data.
         """
         data = json.loads(r.content)
-        self.assertEqual(expected_status, data['status'])
+        self.assert_common_data(data, expected_status, deployed_region)
         timestamp = data['timestamp']
-        self.assertIsNotNone(timestamp)
-        self.assertIsNotNone(data['version'])
-        self.assertIsNotNone(data['git_commit'])
         self.assertIsNotNone(data['model_name'])
-        self.assertEqual(data.get('deployed_region'), deployed_region)
         dependencies = data.get('dependencies', [])
         self.assertEqual(6, len(dependencies))
         for dependency in dependencies:
