@@ -68,7 +68,7 @@ wisdom-manage = "ansible_wisdom.manage:main"
 [tool]
 
 [tool.setuptools.packages.find]
-include = ["ansible_wisdom*"]
+include = ["ansible_wisdom*", "ansible_ai_connect*"]
 
 [tool.black]
 line-length = 100
