@@ -3,6 +3,7 @@
 
 {% block content %}
 
+<!-- TODO: Add DEPLOYMENT_MODE check here as well?-->
 {% if not user.is_authenticated %}
 <!-- Not Auth -->
 {% elif user.rh_org_has_subscription and user.rh_user_is_org_admin and not org_has_api_key %}
