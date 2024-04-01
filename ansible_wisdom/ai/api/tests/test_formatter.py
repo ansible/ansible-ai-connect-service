@@ -437,6 +437,115 @@ var3: value3
         after = "    # install ffmpeg & start ffmpeg"
         self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
 
+    def test_get_fqcn_module_from_prediction(self):
+        self.assertEqual(
+            "ansible.builtin.package",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      ansible.builtin.package:\n"
+                "        name: docker\n"
+                "        state: present\n"
+            ),
+        )
+        self.assertEqual(
+            "ansible.builtin.import_tasks",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      ansible.builtin.import_tasks: first_basic_.yml\n"
+            ),
+        )
+        self.assertEqual(
+            "ansible.builtin.include_tasks",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      ansible.builtin.include_tasks:\n" "        file: ../common/tasks/setup.yml\n"
+            ),
+        )
+        self.assertEqual(
+            "community.general.s3_facts",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      community.general.s3_facts:\n"
+                "        bucket: my-ansible-bucket\n"
+                "        object: /my-ansible-bucket/requirements.txt\n"
+                "        mode: get\n"
+            ),
+        )
+        self.assertEqual(
+            "ansible.builtin.include_role",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      ansible.builtin.include_role:\n"
+                "        name: redhat.rhel_system_roles.cockpit\n"
+            ),
+        )
+        self.assertEqual(
+            "docker_image",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      docker_image:\n"
+                "        name: rabbitmq:3.7.13\n"
+                "        source: pull\n"
+                "      when: image_facts.images | length == 0\n"
+            ),
+        )
+        self.assertEqual(
+            "servicenow.itsm.change_info",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      servicenow.itsm.change_info:\n"
+                "        sys_id: \"{{ item.sys_id }}\"\n"
+                "        register: change_info\n"
+                "        loop: \"{{ change_list }}\"\n"
+            ),
+        )
+        self.assertEqual(
+            "ansible.builtin.include_role",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      ansible.builtin.include_role:\n"
+                "          name: pcs.azure.recovery_services_vault\n"
+                "        vars:\n"
+                "          recovery_service_vault_resource_group: "
+                "\"{{ resource_group_name.sys_id }}\"\n"
+                "          recovery_service_vault_name: "
+                "\"{{ recovery_service_vault_name.sys_id }}\"\n"
+                "          recovery_service_vault_state: absent\n"
+            ),
+        )
+        self.assertEqual(
+            "community.general.maven_map",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      community.general.maven_map:\n"
+                "        name: dto\n"
+                "        version: 3d38c886-0c6d-4b1a-907e-76a0b9a8f996\n"
+                "        repository_url: https://repo.maven.org/maven2\n"
+                "        state: present\n"
+            ),
+        )
+        self.assertEqual(
+            "community.general.maven_map",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      community.general.maven_map:\n"
+                "        name: dto\n"
+                "        version: 1\n"
+                "        repository_url: https://repo.maven.org/maven2:1234\n"
+                "        state: present\n"
+            ),
+        )
+        self.assertEqual(
+            "community.general.maven_map",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      community.general.maven_map:\n"
+                "        name: dto\n"
+                "        version: 1\n"
+                "        repository_url: https://repo.maven.org/maven2:\"{{ port }}\"\n"
+                "        state: present\n"
+            ),
+        )
+        self.assertEqual(
+            "amazon.aws.ec2_vpc_api",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      amazon.aws.ec2_vpc_api:\n"
+                "          state: present\n"
+                "        subnets:\n"
+                "          cidr: 00.01.0.99/24\n"
+                "          az: us-east-1r\n"
+            ),
+        )
+
 
 if __name__ == "__main__":
     tests = AnsibleDumperTestCase()
@@ -466,3 +575,4 @@ if __name__ == "__main__":
     tests.test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_single()
     tests.test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed()
     tests.test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed()
+    tests.test_get_fqcn_module_from_prediction()

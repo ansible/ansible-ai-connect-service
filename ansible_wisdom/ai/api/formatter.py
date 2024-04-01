@@ -355,3 +355,33 @@ def restore_original_task_names(output_yaml, prompt):
                 break
 
     return output_yaml
+
+
+# RegExp Pattern based on ARI sources, see ansible_risk_insight/finder.py
+ansible_fqcn_declaration_pattern = re.compile(r"(([a-z0-9_]+)\.([a-z0-9_]+)\.([a-z0-9_]+)):")
+ansible_module_declaration_pattern = re.compile(r"([a-z0-9_.]+):")
+
+
+def get_fqcn_from_prediction(prediction):
+    return parse_module_from_prediction(ansible_fqcn_declaration_pattern, prediction)
+
+
+def get_module_from_prediction(prediction):
+    return parse_module_from_prediction(ansible_module_declaration_pattern, prediction)
+
+
+def parse_module_from_prediction(re, prediction):
+    try:
+        first = next(re.finditer(prediction))
+        if first:
+            return first.group(1)
+    except StopIteration:
+        pass
+    return None
+
+
+def get_fqcn_or_module_from_prediction(prediction):
+    fqcn = get_fqcn_from_prediction(prediction)
+    if fqcn is None:
+        fqcn = get_module_from_prediction(prediction)
+    return fqcn
