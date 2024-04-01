@@ -65,7 +65,7 @@ class RHSSOAuthentication(authentication.BaseAuthentication):
         )
 
         scope = decoded_token.get("scope")
-        if scope != RHSSO_LIGHTSPEED_SCOPE:
+        if RHSSO_LIGHTSPEED_SCOPE not in scope.split():
             raise ValueError(f"Unexpected scope: {scope}")
 
         social_user_id = decoded_token.get('sub')
