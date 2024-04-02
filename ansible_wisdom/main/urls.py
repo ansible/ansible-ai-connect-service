@@ -49,7 +49,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_wisdom.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
-    path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
     path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
@@ -65,18 +64,20 @@ urlpatterns = [
         name='login',
     ),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('console/', ConsoleView.as_view(), name='console'),
-    path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
-    path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
 ]
 
-urlpatterns += [
-    path(
-        f'api/{WISDOM_API_VERSION}/telemetry/',
-        TelemetrySettingsView.as_view(),
-        name='telemetry_settings',
-    ),
-]
+if settings.DEPLOYMENT_MODE == "saas":
+    urlpatterns += [
+        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
+        path('console/', ConsoleView.as_view(), name='console'),
+        path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
+        path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
+        path(
+            f'api/{WISDOM_API_VERSION}/telemetry/',
+            TelemetrySettingsView.as_view(),
+            name='telemetry_settings',
+        ),
+    ]
 
 if settings.DEBUG:
     urlpatterns += [
