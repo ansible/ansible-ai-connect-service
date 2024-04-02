@@ -43,6 +43,16 @@ class AAPOAuth2(BaseOAuth2):
         resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
         return resp_data.get('results')[0]
 
+    def extra_data(self, user, uid, response, details=None, *args, **kwargs):
+        """Return access_token, token_type, and extra defined names to store in
+        extra_data field"""
+        data = super().extra_data(user, uid, response, details=details, *args, **kwargs)
+        access_token = response.get('access_token')
+        url = f'{settings.AAP_API_URL}/v2/config/'
+        resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
+        data['aap_licensed'] = not resp_data['license_info']['date_expired']
+        return data
+
 
 class RHSSOAuthentication(authentication.BaseAuthentication):
     """Red Hat SSO Access Token authentication backend"""

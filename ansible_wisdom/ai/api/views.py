@@ -62,6 +62,7 @@ from .data.data_model import (
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     AcceptedTermsPermission,
+    BlockUserWithExpiredOnprem,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
@@ -129,14 +130,24 @@ class Completions(APIView):
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
     from rest_framework import permissions
 
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-        BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
-        BlockUserWithSeatButWCANotReady,
-    ]
+    permission_classes = (
+        [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            BlockUserWithExpiredOnprem,
+        ]
+        if settings.DEPLOYMENT_MODE == 'onprem'
+        else [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            AcceptedTermsPermission,
+            BlockUserWithExpiredOnprem,
+            BlockUserWithoutSeat,
+            BlockUserWithoutSeatAndWCAReadyOrg,
+            BlockUserWithSeatButWCANotReady,
+        ]
+    )
+
     required_scopes = ['read', 'write']
 
     throttle_cache_key_suffix = '_completions'
