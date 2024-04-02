@@ -3,7 +3,6 @@
 
 {% block content %}
 
-<!-- TODO: Add DEPLOYMENT_MODE check here as well?-->
 {% if not user.is_authenticated %}
 <!-- Not Auth -->
 {% elif user.rh_org_has_subscription and user.rh_user_is_org_admin and not org_has_api_key %}
@@ -120,7 +119,7 @@
             <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
             <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
 
-            {% if user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+            {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
             <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
             {% endif %}
           </div>

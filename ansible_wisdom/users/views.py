@@ -29,6 +29,7 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
+        context["deployment_mode"] = settings.DEPLOYMENT_MODE
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
