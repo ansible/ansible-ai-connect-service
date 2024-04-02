@@ -58,9 +58,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            return Response(
-                status=HTTP_200_OK, data={'optOut': organization.is_telemetry_opt_out()}
-            )
+            return Response(status=HTTP_200_OK, data={'optOut': organization.telemetry_opt_out})
 
         except ServiceUnavailable:
             raise

@@ -66,7 +66,6 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
 
-# if not settings.DEPLOYMENT_MODE == "onprem" and not settings.DEPLOYMENT_MODE == "upstream"
 if settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
         path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),

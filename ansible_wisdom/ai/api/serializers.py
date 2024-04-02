@@ -359,7 +359,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
 
         if user.rh_user_has_seat is False:
             return value
-        if user.organization and user.organization.is_telemetry_opt_out() is False:
+        if user.organization and user.organization.telemetry_opt_out is False:
             return value
         else:
             raise serializers.ValidationError("invalid feedback type for user")
