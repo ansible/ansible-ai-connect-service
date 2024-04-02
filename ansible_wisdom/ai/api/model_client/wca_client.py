@@ -138,7 +138,7 @@ class BaseWCAClient(ModelMeshClient):
         context = model_input.get("instances", [{}])[0].get("context", "")
         try:
             organization_id = int(model_input["instances"][0]["organization_id"])
-        except (KeyError, IndexError, ValueError):
+        except (KeyError, IndexError, ValueError, TypeError):
             organization_id = None
 
         # WCA codegen fails if a multitask prompt includes the task preamble

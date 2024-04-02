@@ -270,6 +270,14 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_organization_id_is_none(self):
+        self._do_inference(
+            suggestion_id=str(DEFAULT_SUGGESTION_ID),
+            organization_id=None,
+            request_id=str(DEFAULT_SUGGESTION_ID),
+        )
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_without_suggestion_id(self):
         self._do_inference(suggestion_id=None, request_id=str(DEFAULT_SUGGESTION_ID))
 
@@ -277,7 +285,14 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def test_infer_without_request_id_header(self):
         self._do_inference(suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=None)
 
-    def _do_inference(self, suggestion_id=None, request_id=None, prompt=None, codegen_prompt=None):
+    def _do_inference(
+        self,
+        suggestion_id=None,
+        organization_id=123,
+        request_id=None,
+        prompt=None,
+        codegen_prompt=None,
+    ):
         model_id = "zavala"
         api_key = "abc123"
         context = ""
@@ -288,6 +303,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 {
                     "context": context,
                     "prompt": prompt,
+                    "organization_id": organization_id,
                 }
             ]
         }
