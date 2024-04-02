@@ -36,9 +36,11 @@ class HomeView(TemplateView):
         except WcaSecretManagerMissingCredentialsError:
             return context
 
-        if self.request.user.is_authenticated and self.request.user.rh_aap_licensed:
-            pass
-        elif self.request.user.is_authenticated and self.request.user.rh_org_has_subscription:
+        if (
+            self.request.user.is_authenticated
+            and self.request.user.rh_org_has_subscription
+            and not self.request.user.is_aap_user()
+        ):
             org_has_api_key = secret_manager.secret_exists(
                 self.request.user.organization.id, Suffixes.API_KEY
             )
