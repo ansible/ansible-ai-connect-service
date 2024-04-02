@@ -113,13 +113,13 @@ class BlockUserWithoutSeat(permissions.BasePermission):
         return user.rh_user_has_seat
 
 
-class BlockUserWithExpiredOnprem(permissions.BasePermission):
+class IsAAPLicensed(permissions.BasePermission):
     """
-    Block access to users when on prem license expired
+    Block access to users when AAP license expired
     """
 
     code = 'permission_denied__license_expired'
-    message = "Onprem License expired."
+    message = "Ansible Automation Platform License has expired."
 
     def has_permission(self, request, view):
         return request.user.rh_aap_licensed

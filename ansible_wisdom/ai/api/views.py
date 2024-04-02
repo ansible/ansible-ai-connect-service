@@ -14,8 +14,9 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
-from rest_framework import serializers
+from rest_framework import permissions, serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -62,10 +63,10 @@ from .data.data_model import (
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     AcceptedTermsPermission,
-    BlockUserWithExpiredOnprem,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
+    IsAAPLicensed,
 )
 from .serializers import (
     AnsibleContentFeedback,
@@ -127,21 +128,17 @@ class Completions(APIView):
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
-
     permission_classes = (
         [
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
-            BlockUserWithExpiredOnprem,
+            IsAAPLicensed,
         ]
         if settings.DEPLOYMENT_MODE == 'onprem'
         else [
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
             AcceptedTermsPermission,
-            BlockUserWithExpiredOnprem,
             BlockUserWithoutSeat,
             BlockUserWithoutSeatAndWCAReadyOrg,
             BlockUserWithSeatButWCANotReady,
@@ -173,9 +170,6 @@ class Feedback(APIView):
     """
     Feedback API for the AI service
     """
-
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
 
     permission_classes = [
         permissions.IsAuthenticated,
@@ -344,9 +338,6 @@ class Attributions(GenericAPIView):
 
     serializer_class = AttributionRequestSerializer
 
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
-
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
@@ -437,15 +428,21 @@ class ContentMatches(GenericAPIView):
 
     serializer_class = ContentMatchRequestSerializer
 
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
+    permission_classes = (
+        [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            IsAAPLicensed,
+        ]
+        if settings.DEPLOYMENT_MODE == 'onprem'
+        else [
+            permissions.IsAuthenticated,
+            IsAuthenticatedOrTokenHasScope,
+            AcceptedTermsPermission,
+            BlockUserWithoutSeat,
+        ]
+    )
 
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-        BlockUserWithoutSeat,
-    ]
     required_scopes = ['read', 'write']
 
     throttle_cache_key_suffix = '_contentmatches'
@@ -714,9 +711,6 @@ class Explanation(APIView):
     """
     Returns a text that explains a playbook.
     """
-
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
 
     permission_classes = [
         permissions.IsAuthenticated,
