@@ -1,6 +1,14 @@
 from django.urls import path
 
-from .views import Attributions, Completions, ContentMatches, Explanation, Summary, Generation, Feedback
+from .views import (
+    Attributions,
+    Completions,
+    ContentMatches,
+    Explanation,
+    Feedback,
+    Generation,
+    Summary,
+)
 
 urlpatterns = [
     path('attributions/', Attributions.as_view(), name='attributions'),

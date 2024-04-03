@@ -76,15 +76,15 @@ from .serializers import (
     ContentMatchResponseSerializer,
     ExplanationRequestSerializer,
     ExplanationResponseSerializer,
-    SummaryRequestSerializer,
-    SummaryResponseSerializer,
+    FeedbackRequestSerializer,
     GenerationRequestSerializer,
     GenerationResponseSerializer,
-    FeedbackRequestSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
     SentimentFeedback,
     SuggestionQualityFeedback,
+    SummaryRequestSerializer,
+    SummaryResponseSerializer,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsProductFeedback,
@@ -773,6 +773,7 @@ class Explanation(APIView):
             status=rest_framework_status.HTTP_200_OK,
         )
 
+
 class Summary(APIView):
     """
     Returns a text that summarizes an input text.
@@ -846,6 +847,7 @@ class Summary(APIView):
             status=rest_framework_status.HTTP_200_OK,
         )
 
+
 class Generation(APIView):
     """
     Returns a playbook based on a text input.
@@ -880,12 +882,13 @@ class Generation(APIView):
     )
     def post(self, request) -> Response:
         SYSTEM_MESSAGE_TEMPLATE = """
-        You are an Ansible expert. 
+        You are an Ansible expert.
         Your role is to help Ansible developers write playbooks.
         Don't explain the code, just generate the playbook in YAML format.
         """
 
-        HUMAN_MESSAGE_TEMPLATE = """Please write an Ansible playbook as directed in the following sentences:
+        HUMAN_MESSAGE_TEMPLATE = """
+        Please write an Ansible playbook as directed in the followingsentences:
 
         {content}"
         """
@@ -910,8 +913,8 @@ class Generation(APIView):
         request_serializer.is_valid(raise_exception=True)
         output = chain.invoke({"content": request_serializer.validated_data.get("content")})
 
-        postprocessed = [];
-        code_block = False;
+        postprocessed = []
+        code_block = False
         for line in output.split("\n"):
             if not code_block:
                 if re.match(r"^\s*```", line):

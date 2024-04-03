@@ -2496,6 +2496,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event.items() <= actual_event.items())
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
+
 class TestSummaryView(WisdomServiceAPITestCaseBase):
     response_data = """
 1. First, ensure that your Red Hat Enterprise Linux (RHEL) 9 system is up-to-date.
@@ -2503,14 +2504,15 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
 3. After installation, start the ginx service.
 4. Ensure that Nginx starts automatically.
 5. Check if Nginx is running successfully.
-6. Finally, visit the IP address of your system's hostname followed by the default Nginx port number (80 or 443). 
+6. Visit your system's IP address followed by the default Nginx port number (80 or 443).
 """
+
     def test_ok(self):
-        summary_id =  str(uuid.uuid4())
+        summary_id = str(uuid.uuid4())
         payload = {
             "content": "Install nginx on RHEL9",
             "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0"
+            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config('ai'),
@@ -2525,11 +2527,11 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["summaryId"], summary_id)
 
     def test_unauthorized(self):
-        summary_id =  str(uuid.uuid4())
+        summary_id = str(uuid.uuid4())
         payload = {
             "content": "Install nginx on RHEL9",
             "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0"
+            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config('ai'),
@@ -2541,12 +2543,9 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_bad_request(self):
-        summary_id =  str(uuid.uuid4())
+        summary_id = str(uuid.uuid4())
         # No content specified
-        payload = {
-            "summaryId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0"
-        }
+        payload = {"summaryId": summary_id, "ansibleExtensionVersion": "24.4.0"}
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',
@@ -2584,12 +2583,13 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
         state: started
         enabled: yes
 """
+
     def test_ok(self):
-        generation_id =  str(uuid.uuid4())
+        generation_id = str(uuid.uuid4())
         payload = {
             "content": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0"
+            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config('ai'),
@@ -2604,11 +2604,11 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["generationId"], generation_id)
 
     def test_unauthorized(self):
-        generation_id =  str(uuid.uuid4())
+        generation_id = str(uuid.uuid4())
         payload = {
             "content": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0"
+            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config('ai'),
@@ -2620,12 +2620,9 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_bad_request(self):
-        generation_id =  str(uuid.uuid4())
+        generation_id = str(uuid.uuid4())
         # No content specified
-        payload = {
-            "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0"
-        }
+        payload = {"generationId": generation_id, "ansibleExtensionVersion": "24.4.0"}
         with patch.object(
             apps.get_app_config('ai'),
             'model_mesh_client',

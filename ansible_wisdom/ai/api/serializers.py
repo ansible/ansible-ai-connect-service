@@ -421,6 +421,7 @@ class ExplanationResponseSerializer(serializers.Serializer):
         ),
     )
 
+
 class SummaryRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['content', 'summaryId', 'ansibleExtensionVersion']
@@ -434,11 +435,10 @@ class SummaryRequestSerializer(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Summary ID",
-        help_text=(
-            "A UUID that identifies the particular summary data is being requested for."
-        ),
+        help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
     metadata = Metadata(required=False)
+
 
 class SummaryResponseSerializer(serializers.Serializer):
     content = serializers.CharField()
@@ -447,10 +447,9 @@ class SummaryResponseSerializer(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Explanation ID",
-        help_text=(
-            "A UUID that identifies the particular summary data is being requested for."
-        ),
+        help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
+
 
 class GenerationRequestSerializer(serializers.Serializer):
     class Meta:
@@ -465,11 +464,10 @@ class GenerationRequestSerializer(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Summary ID",
-        help_text=(
-            "A UUID that identifies the particular generation data is being requested for."
-        ),
+        help_text=("A UUID that identifies the particular generation data is being requested for."),
     )
     metadata = Metadata(required=False)
+
 
 class GenerationResponseSerializer(serializers.Serializer):
     content = serializers.CharField()
@@ -478,10 +476,9 @@ class GenerationResponseSerializer(serializers.Serializer):
         format='hex_verbose',
         required=False,
         label="Explanation ID",
-        help_text=(
-            "A UUID that identifies the particular summary data is being requested for."
-        ),
+        help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
+
 
 class ContentMatchRequestSerializer(serializers.Serializer):
     class Meta:
