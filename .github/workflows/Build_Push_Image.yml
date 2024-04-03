@@ -73,6 +73,7 @@ jobs:
           GIT_COMMIT=${{ steps.tag_name.outputs.sha-long }}
         extra-args: |
           --target=production
+          --ulimit nofile=4096
 
     - name: Scan Malware
       # Do not scan malware in PR builds
