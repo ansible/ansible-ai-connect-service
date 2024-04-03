@@ -92,7 +92,7 @@ stop-backends:
 .PHONY: update-openapi-schema
 # Update OpenAPI 3.0 schema while running the service in development env
 update-openapi-schema:
-	curl -X GET http://localhost:8000/api/schema/ -o tools/openapi-schema/ansible-wisdom-service.yaml
+	curl -X GET http://localhost:8000/api/schema/ -o tools/openapi-schema/ansible-ai-connect-service.yaml
 
 .PHONY: docker-compose-clean
 docker-compose-clean:

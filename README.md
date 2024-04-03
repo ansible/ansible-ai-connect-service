@@ -581,7 +581,7 @@ Another OpenAPI UI in the ReDoc format is also available at  http://localhost:80
 ### OpenAPI 3.0 Schema
 
 The static OpenAPI Schema YAML file is stored as
-[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml)
+[/tools/openapi-schema/ansible-ai-connect-service.yaml](https://github.com/ansible/ansible-ai-connect-service/blob/main/tools/openapi-schema/ansible-ai-connect-service.yaml)
 in this repository.
 
 When you make code changes, please update the static OpenAPI Schema YAML file

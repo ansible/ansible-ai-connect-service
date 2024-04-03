@@ -118,4 +118,4 @@ jobs:
         sleep 10
         make create-cachetable
         make update-openapi-schema
-        git diff --exit-code -- tools/openapi-schema/ansible-wisdom-service.yaml
+        git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.yaml
