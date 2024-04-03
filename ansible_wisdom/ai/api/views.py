@@ -454,7 +454,12 @@ class ContentMatches(GenericAPIView):
         model_id = str(request_data.get('model', ''))
 
         try:
-            if request.user.rh_user_has_seat:
+            # This is getting ugly.
+            # Ideally we'd just call ModelMeshClient.codematch(..) and let the
+            # different implementations call into WCA or OpenSearch. We'd validate the
+            # combinations of Seats, DEPLOYMENT_MODE and ANSIBLE_AI_MODEL_MESH_API_TYPE
+            # in ansible_wisdom.ai.apps.AiConfig at start-up.
+            if request.user.rh_user_has_seat or settings.DEPLOYMENT_MODE == "onprem":
                 response_serializer = self.perform_content_matching(
                     model_id, suggestion_id, request.user, request_data
                 )

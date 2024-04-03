@@ -1737,6 +1737,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         self.assertEqual(content_match["license"], license)
         self.assertEqual(content_match["data_source_description"], "Ansible Galaxy roles")
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     @patch('ansible_wisdom.ai.search.search')
     def test_wca_contentmatch_with_unseated_user_verify_single_task(self, mock_search):
         self.user.rh_user_has_seat = False
@@ -1773,8 +1774,17 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
         mock_search.assert_called_with(payload["suggestions"][0], None)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_wca_contentmatch_with_seated_user_single_task(self):
         self.user.rh_user_has_seat = True
+        self._test_wca_contentmatch_single_task()
+
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_wca_contentmatch_with_unseated_user_onprem_single_task(self):
+        self.user.rh_user_has_seat = False
+        self._test_wca_contentmatch_single_task()
+
+    def _test_wca_contentmatch_single_task(self):
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
@@ -1860,8 +1870,17 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         self.assertEqual(content_match["license"], license)
         self.assertEqual(content_match["data_source_description"], data_source_description)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_wca_contentmatch_with_seated_user_multi_task(self):
         self.user.rh_user_has_seat = True
+        self._test_wca_contentmatch_multi_task()
+
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_wca_contentmatch_with_unseated_user_onprem_multi_task(self):
+        self.user.rh_user_has_seat = False
+        self._test_wca_contentmatch_multi_task()
+
+    def _test_wca_contentmatch_multi_task(self):
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
