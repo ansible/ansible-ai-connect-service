@@ -103,7 +103,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return True
 
         if self.is_aap_user():
-            return self.rh_aap_licensed()
+            return self.rh_aap_licensed
 
         if not self.is_oidc_user():
             return False
