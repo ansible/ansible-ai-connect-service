@@ -12,7 +12,8 @@ ENV PROMETHEUS_MULTIPROC_DIR=/var/run/django_metrics
 ENV BUILD_PATH=/var/www/wisdom/public/static/console
 
 # Install dependencies
-RUN dnf install -y \
+RUN dnf module enable nodejs:18 -y && \
+    dnf install -y \
     git \
     python3-devel \
     gcc \
