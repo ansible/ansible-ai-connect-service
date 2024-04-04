@@ -88,6 +88,14 @@ from ansible_wisdom.test_utils import (
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
+class MockedLLM(Runnable):
+    def __init__(self, response_data):
+        self.response_data = response_data
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        return self.response_data
+
+
 class MockedMeshClient(ModelMeshClient):
     def __init__(
         self,
@@ -149,13 +157,6 @@ class MockedMeshClient(ModelMeshClient):
         return requested_model_id or ''
 
     def get_chat_model(self, model_id):
-        class MockedLLM(Runnable):
-            def __init__(self, response_data):
-                self.response_data = response_data
-
-            def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
-                return self.response_data
-
         return MockedLLM(self.response_data)
 
 
@@ -2555,6 +2556,24 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('summaries'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    @patch('ansible_wisdom.ai.api.tests.test_views.MockedLLM.invoke')
+    def test_service_unavailable(self, invoke):
+        invoke.side_effect = Exception('Dummy Exception')
+        summary_id = str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "summaryId": summary_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
 
 class TestGenerationView(WisdomServiceAPITestCaseBase):
 
@@ -2631,3 +2650,21 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('generations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    @patch('ansible_wisdom.ai.api.tests.test_views.MockedLLM.invoke')
+    def test_service_unavailable(self, invoke):
+        invoke.side_effect = Exception('Dummy Exception')
+        generation_id = str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)

@@ -837,15 +837,21 @@ class Summary(APIView):
 
         request_serializer = SummaryRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+        summary_id = str(request_serializer.validated_data.get("summaryId", ""))
 
-        answer = {"content": output, "format": "plaintext"}
-        answer["summaryId"] = str(request_serializer.validated_data.get("summaryId", ""))
+        try:
+            output = chain.invoke({"content": request_serializer.validated_data.get("content")})
 
-        return Response(
-            answer,
-            status=rest_framework_status.HTTP_200_OK,
-        )
+            answer = {"content": output, "format": "plaintext"}
+            answer["summaryId"] = summary_id
+
+            return Response(
+                answer,
+                status=rest_framework_status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.exception(f"error requesting playbook summary for {summary_id}")
+            raise ServiceUnavailable(cause=e)
 
 
 class Generation(APIView):
@@ -893,44 +899,50 @@ class Generation(APIView):
         {content}"
         """
 
-        model_client = apps.get_app_config("ai").model_mesh_client
-        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
-
-        chat_template = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(
-                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
-                ),
-                HumanMessagePromptTemplate.from_template(
-                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                ),
-            ]
-        )
-
-        chain = chat_template | llm
-
         request_serializer = GenerationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
-        output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+        generation_id = str(request_serializer.validated_data.get("generationId", ""))
 
-        postprocessed = []
-        code_block = False
-        for line in output.split("\n"):
-            if not code_block:
-                if re.match(r"^\s*```", line):
-                    code_block = True
-            else:
-                if re.match(r"^\s*```", line):
-                    break
-                postprocessed.append(line)
+        try:
+            model_client = apps.get_app_config("ai").model_mesh_client
+            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
 
-        if len(postprocessed) > 0:
-            output = "\n".join(postprocessed)
+            chat_template = ChatPromptTemplate.from_messages(
+                [
+                    SystemMessagePromptTemplate.from_template(
+                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
+                        additional_kwargs={"role": "system"},
+                    ),
+                    HumanMessagePromptTemplate.from_template(
+                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                    ),
+                ]
+            )
 
-        answer = {"content": output, "format": "markdown"}
-        answer["generationId"] = str(request_serializer.validated_data.get("generationId", ""))
+            chain = chat_template | llm
+            output = chain.invoke({"content": request_serializer.validated_data.get("content")})
 
-        return Response(
-            answer,
-            status=rest_framework_status.HTTP_200_OK,
-        )
+            postprocessed = []
+            code_block = False
+            for line in output.split("\n"):
+                if not code_block:
+                    if re.match(r"^\s*```", line):
+                        code_block = True
+                else:
+                    if re.match(r"^\s*```", line):
+                        break
+                    postprocessed.append(line)
+
+            if len(postprocessed) > 0:
+                output = "\n".join(postprocessed)
+
+            answer = {"content": output, "format": "markdown"}
+            answer["generationId"] = generation_id
+
+            return Response(
+                answer,
+                status=rest_framework_status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.exception(f"error requesting playbook generation for {generation_id}")
+            raise ServiceUnavailable(cause=e)
