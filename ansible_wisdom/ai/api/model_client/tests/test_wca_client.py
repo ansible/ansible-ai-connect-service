@@ -512,7 +512,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             suggestion_id=str(DEFAULT_SUGGESTION_ID),
             request_id=str(DEFAULT_SUGGESTION_ID),
             prompt="# - name: install ffmpeg on Red Hat Enterprise Linux",
-            codegen_prompt="# install ffmpeg on Red Hat Enterprise Linux\n",
+            codegen_prompt="# install ffmpeg on red hat enterprise linux\n",
         )
 
 

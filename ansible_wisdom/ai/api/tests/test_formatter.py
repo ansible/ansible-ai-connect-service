@@ -437,6 +437,11 @@ var3: value3
         after = "    # install ffmpeg & start ffmpeg"
         self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
 
+    def test_strip_task_preamble_from_multi_task_prompt_remove_upper_case(self):
+        before = "    # - name: install ffmpeg & - name: start FFMPEG"
+        after = "    # install ffmpeg & start ffmpeg"
+        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+
     def test_get_fqcn_module_from_prediction(self):
         self.assertEqual(
             "ansible.builtin.package",
