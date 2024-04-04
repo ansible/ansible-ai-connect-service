@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  prometheus:
+    platform: linux/amd64
+    image: docker.io/prom/prometheus
+    command:
+      - --config.file=/opt/prometheus/prometheus.yaml
+      - --web.enable-lifecycle
+    volumes:
+      - $PWD/prometheus/:/opt/prometheus/
+    ports:
+      - "9090:9090"
+    networks:
+      - dbnet
+  grafana:
+    platform: linux/amd64
+    image: docker.io/grafana/grafana:7.5.17
+    environment:
+      - GF_LOG_LEVEL=warn
+    ports:
+      - "13000:3000"
+    volumes:
+      - $PWD/grafana:/var/lib/grafana
+    networks:
+      - dbnet
+
+networks:
+  dbnet:

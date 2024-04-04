@@ -68,18 +68,25 @@ run-server-containerized:
 docker-compose:
 	${COMPOSE_RUNTIME} -f tools/docker-compose/compose.yaml up --remove-orphans
 
-# DEPRECATED: Please use start-backends instead
-run-backends: start-backends DEPRECATED
+.PHONY: start-db
+# Run db in container for running Django application from source
+start-db:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-db.yaml up --remove-orphans -d
+
+.PHONY: stop-db
+# stop db container
+stop-db:
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-db.yaml up down
 
 .PHONY: start-backends
 # Run backend services in container for running Django application from source
 start-backends:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml up --remove-orphans -d
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-db.yaml -f tools/docker-compose/compose-prom-grafana.yaml up --remove-orphans -d
 
 .PHONY: stop-backends
 # Stop backend services
 stop-backends:
-	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-backends.yaml down
+	${COMPOSE_RUNTIME} -f tools/docker-compose/compose-db.yaml -f tools/docker-compose/compose-prom-grafana.yaml down
 
 .PHONY: update-openapi-schema
 # Update OpenAPI 3.0 schema while running the service in development env
