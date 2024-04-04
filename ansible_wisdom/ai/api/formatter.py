@@ -294,7 +294,8 @@ def is_multi_task_prompt(prompt):
 def strip_task_preamble_from_multi_task_prompt(prompt):
     if is_multi_task_prompt(prompt):
         prompt_split = prompt.split('#', 1)
-        return f"{prompt_split[0]}# {' & '.join(get_task_names_from_prompt(prompt))}"
+        aggregated = ' & '.join(p.lower() for p in get_task_names_from_prompt(prompt))
+        return f"{prompt_split[0]}# {aggregated}"
     return prompt
 
 
