@@ -74,7 +74,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
         # user is of an on-prem AAP with valid license
         if self.is_aap_user():
-            return self.social_auth.values()[0]['extra_data']['aap_licensed']
+            return self.rh_aap_licensed
 
         # Logic used during the transition and before the removal of the rh_user_has_seat attr
         if self.organization and self.rh_org_has_subscription:

@@ -369,11 +369,18 @@ class TestUserSeat(WisdomAppsBackendMocking):
             self.assertFalse(user.rh_user_has_seat)
 
     def test_rh_user_in_unlimited_org(self):
-        with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
-            user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-            org = Organization(None, None)
-            org.is_subscription_check_should_be_bypassed = True
-            user.organization = org
+        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        org = Organization(None, None)
+        org.is_subscription_check_should_be_bypassed = True
+        user.organization = org
+        self.assertTrue(user.rh_org_has_subscription)
+
+    def test_rh_user_onprem_has_valid_license(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, social_auth_extra_data={"aap_licensed": True}
+        )
+        with patch.object(user, 'is_aap_user') as return_true:
+            return_true.return_value = True
             self.assertTrue(user.rh_org_has_subscription)
 
     def test_rh_user_has_seat_with_github_commercial_group(self):

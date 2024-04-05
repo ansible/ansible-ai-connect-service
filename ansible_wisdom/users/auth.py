@@ -28,8 +28,6 @@ class AAPOAuth2(BaseOAuth2):
     SCOPE_SEPARATOR = ','
     EXTRA_DATA = [('id', 'id'), ('expires', 'expires')]
 
-    is_license_expired = False
-
     def get_user_details(self, response):
         """Return user details"""
         return {
@@ -52,14 +50,9 @@ class AAPOAuth2(BaseOAuth2):
         return data
 
     def user_has_valid_license(self, access_token):
-        data = self.user_configs(access_token)
-        return not data['license_info']['date_expired'] if 'license_info' in data else False
-
-    def user_configs(self, access_token):
-        """Loads additional user data from service"""
         url = f'{settings.AAP_API_URL}/v2/config/'
-        resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
-        return resp_data
+        data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
+        return not data['license_info']['date_expired'] if 'license_info' in data else False
 
 
 class RHSSOAuthentication(authentication.BaseAuthentication):
