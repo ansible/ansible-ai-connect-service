@@ -749,11 +749,12 @@ class Explanation(APIView):
     def post(self, request) -> Response:
         SYSTEM_MESSAGE_TEMPLATE = """
         You're an Ansible expert.
+        You format your output with Markdown.
         You only answer with text paragraphs.
         Write one paragraph per Ansible task.
+        Markdown title starts with the '#' character.
         Write a title before every paragraph.
         Do not return any YAML or Ansible in the output.
-        Please format the output with Markdown.
         Give a lot of details regarding the parameters of each Ansible plugin.
         """
 
