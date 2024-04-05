@@ -43,6 +43,17 @@ class AAPOAuth2(BaseOAuth2):
         resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
         return resp_data.get('results')[0]
 
+    def extra_data(self, user, uid, response, details=None, *args, **kwargs):
+        """Overrides super extra_data to add license check"""
+        data = super().extra_data(user, uid, response, details=details, *args, **kwargs)
+        data['aap_licensed'] = self.user_has_valid_license(response.get('access_token'))
+        return data
+
+    def user_has_valid_license(self, access_token):
+        url = f'{settings.AAP_API_URL}/v2/config/'
+        data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
+        return not data['license_info']['date_expired'] if 'license_info' in data else False
+
 
 class RHSSOAuthentication(authentication.BaseAuthentication):
     """Red Hat SSO Access Token authentication backend"""

@@ -72,6 +72,10 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         if self.groups.filter(name='Commercial').exists():
             return True
 
+        # user is of an on-prem AAP with valid license
+        if self.is_aap_user():
+            return self.rh_aap_licensed
+
         # Logic used during the transition and before the removal of the rh_user_has_seat attr
         if self.organization and self.rh_org_has_subscription:
             if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
@@ -85,14 +89,21 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def rh_org_has_subscription(self) -> bool:
-        """True if the user is in unlimited group or
-        comes from RHSSO and the associated org has access to Wisdom."""
+        """True if the user
+        1. is in unlimited group or
+        2. is of an on-prem AAP with valid license or
+        3. comes from RHSSO and the associated org has access to Wisdom
+        """
+
         if self.organization and self.organization.is_subscription_check_should_be_bypassed:
             logger.info(
                 f"""Bypass organization check for organization ID {self.organization.id}
  and user UUID: {self.uuid}."""
             )
             return True
+
+        if self.is_aap_user():
+            return self.rh_aap_licensed
 
         if not self.is_oidc_user():
             return False
@@ -102,3 +113,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
             return False
         rh_org_id = self.organization.id if self.organization else None
         return seat_checker.rh_org_has_subscription(rh_org_id)
+
+    @cached_property
+    def rh_aap_licensed(self) -> bool:
+        return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_licensed']

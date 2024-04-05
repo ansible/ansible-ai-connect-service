@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import jwt
@@ -14,7 +14,7 @@ from social_django.models import UserSocialAuth
 from social_django.utils import load_strategy
 
 from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
-from ansible_wisdom.users.auth import RHSSOAuthentication
+from ansible_wisdom.users.auth import AAPOAuth2, RHSSOAuthentication
 from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 
@@ -46,6 +46,33 @@ def build_access_token(private_key, issuer, payload, scope=None):
     payload["scope"] = scope if scope else RHSSO_LIGHTSPEED_SCOPE
     payload["iss"] = issuer
     return jwt.encode(payload, key=private_key, algorithm='RS256')
+
+
+class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
+
+    @patch.multiple(
+        'social_core.backends.oauth.BaseOAuth2',
+        extra_data=MagicMock(return_value={"test": "data"}),
+        get_json=MagicMock(return_value={"license_info": {"date_expired": False}}),
+    )
+    def test_date_expired_checked_and_is_true_during_auth(self):
+        self.authentication = AAPOAuth2()
+        request = Mock(headers={'Authorization': 'Bearer some_token'})
+        data = self.authentication.extra_data(request, "UUID", request)
+
+        self.assertTrue(data['aap_licensed'])
+
+    @patch.multiple(
+        'social_core.backends.oauth.BaseOAuth2',
+        extra_data=MagicMock(return_value={"test": "data"}),
+        get_json=MagicMock(return_value={"license_info": {"date_expired": True}}),
+    )
+    def test_date_expired_checked_and_is_false_during_auth(self):
+        self.authentication = AAPOAuth2()
+        request = Mock(headers={'Authorization': 'Bearer some_token'})
+        data = self.authentication.extra_data(request, "UUID", request)
+
+        self.assertFalse(data['aap_licensed'])
 
 
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):

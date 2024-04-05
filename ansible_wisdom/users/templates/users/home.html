@@ -5,6 +5,8 @@
 
 {% if not user.is_authenticated %}
 <!-- Not Auth -->
+{% elif user.rh_app_licensed %}
+
 {% elif user.rh_org_has_subscription and user.rh_user_is_org_admin and not org_has_api_key %}
 <div class="pf-c-alert pf-m-warning" aria-label="Warning alert">
   <div class="pf-c-alert__icon">
@@ -72,7 +74,7 @@
              <div style="padding: 15px">
               <p>Contact your Red Hat Organization's administrator for more information on how to get a licensed seat.
             </div>
-{% elif user.is_authenticated and user.rh_org_has_subscription and user.rh_user_has_seat and not org_has_api_key and not user.rh_user_is_org_admin %}
+{% elif user.is_authenticated and not user.rh_aap_licensed and user.rh_org_has_subscription and user.rh_user_has_seat and not org_has_api_key and not user.rh_user_is_org_admin %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
