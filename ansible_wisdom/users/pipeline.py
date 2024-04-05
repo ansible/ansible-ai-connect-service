@@ -167,5 +167,5 @@ def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
         extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
         user.external_username = extra_data.get("login")
         user.save()
-        social.extra_data.update(extra_data)
+        social.extra_data["aap_licensed"] = extra_data.get("aap_licensed")
         social.save()
