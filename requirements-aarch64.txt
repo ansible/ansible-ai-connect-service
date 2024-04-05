@@ -236,7 +236,7 @@ langsmith==0.1.22
     #   langchain
     #   langchain-community
     #   langchain-core
-launchdarkly-server-sdk==8.1.1
+launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
 levenshtein==0.25.0
     # via ansible-risk-insight

@@ -42,7 +42,7 @@ langchain==0.1.13
 # remove this once langchain is updated to properly pull a version of
 # langchain-core > 0.1.35.
 langchain-core==0.1.35
-launchdarkly-server-sdk==8.1.1
+launchdarkly-server-sdk==8.3.0
 opensearch-py==2.1.1
 protobuf==4.22.1
 psycopg[binary]==3.1.8
