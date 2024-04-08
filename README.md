@@ -309,7 +309,7 @@ Create a local admin user:
 
 > The setup for debugging is different depending on the Python development tool.
 > For PyCharm, please look
-> at [this document](https://docs.google.com/document/d/1QkdvtthnvdHc4TKbWV00pxnEKRU8L8jHNC2IaQ950_E/edit?usp=sharing).
+> at [this document](./docs/pycharm-setup.md).
 
 ## Backup/restore the database (Podman)
 
