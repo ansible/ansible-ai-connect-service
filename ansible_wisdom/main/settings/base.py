@@ -258,6 +258,9 @@ ME_USER_RATE_THROTTLE = os.environ.get('ME_USER_RATE_THROTTLE') or '50/minute'
 SPECIAL_THROTTLING_GROUPS = ['test']
 
 AMS_ORG_CACHE_TIMEOUT_SEC = int(os.environ.get('AMS_ORG_CACHE_TIMEOUT_SEC', 60 * 60 * 24))
+AMS_ACTIVE_SKU_LIST = []
+if 'AMS_ACTIVE_SKU_LIST' in os.environ:
+    AMS_ACTIVE_SKU_LIST = os.environ['AMS_ACTIVE_SKU_LIST'].split(',')
 
 MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
 

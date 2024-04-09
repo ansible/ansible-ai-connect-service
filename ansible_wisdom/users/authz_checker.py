@@ -207,6 +207,7 @@ class AMSCheck(BaseCheck):
         )
         r.raise_for_status()
 
+    # TODO: HERE: actually this check is NEVER called
     def check(self, user_id: str, username: str, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
         params = {
@@ -268,14 +269,20 @@ class AMSCheck(BaseCheck):
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
+        sku_list = list()
+        for i in range(len(settings.AMS_ACTIVE_SKU_LIST)):
+            sku_list.append('\'' + settings.AMS_ACTIVE_SKU_LIST[i] + '\'')
+        sku_param = ','.join(sku_list)
+        sku_param = 'sku in (' + sku_param + ')'
+        # TODO: Are other parameters rather than 'Subscription' we should consider?
+        params = {"search": "type='Subscription' and sku_count>0 and " + sku_param}
         self.update_bearer_token()
 
         try:
             r = self._session.get(
                 (
                     f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
+                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/resource_quota"
                 ),
                 params=params,
                 timeout=0.8,

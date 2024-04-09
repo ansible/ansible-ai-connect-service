@@ -430,7 +430,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
@@ -453,7 +453,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             (
                 'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
+                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/resource_quota'
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
