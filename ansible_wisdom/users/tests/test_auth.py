@@ -104,6 +104,22 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         self.assertEqual(user.id, self.rh_user.id)
 
     @patch('ansible_wisdom.users.auth.load_backend')
+    def test_authenticate_succeeds_with_extra_scopes(self, mock_load_backend):
+        backend = DummyRHBackend()
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={'sub': self.rh_usa.uid},
+            scope='openid api.lightspeed',
+        )
+
+        request = Mock(headers={'Authorization': f"Bearer {access_token}"})
+        user, _ = self.authentication.authenticate(request)
+
+        self.assertEqual(user.id, self.rh_user.id)
+
+    @patch('ansible_wisdom.users.auth.load_backend')
     def test_authenticate_returns_none_on_invalid_scope(self, mock_load_backend):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
@@ -122,7 +138,6 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         access_token = build_access_token(
             private_key=backend.rsa_private_key,
             issuer=backend.issuer,
-            scope='bogus-scope',
             payload={'sub': self.rh_usa.uid},
         )
 
