@@ -15,7 +15,6 @@ boto3==1.26.84
 black==24.3.0
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.4
-datasets==2.18.0
 # pin Django on 4.2.11 to address PYSEC-2024-47.
 Django==4.2.11
 django-deprecate-fields==0.1.1
