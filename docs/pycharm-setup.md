@@ -117,7 +117,7 @@ chcon -t container_file_t -R prometheus/
 
 ## PyCharm Python Setup
 
-As of writing this (2024.3.21), the project is using Python version 3.9 because torch and torchvision
+As of writing this (2024.4.10), the project is using Python version 3.11 because torch and torchvision
 libraries are dependent on the specific version of Python.
 
 It is recommended to use a separate virtual environment for your development. It can be configured with

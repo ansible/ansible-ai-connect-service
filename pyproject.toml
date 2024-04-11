@@ -11,7 +11,7 @@ dependencies = [
   'ansible-core~=2.15.9',
   'ansible-anonymizer~=1.5.0',
   'ansible-risk-insight~=0.2.4',
-  'ansible-lint~=6.22.1',
+  'ansible-lint~=24.2.2',
   'boto3~=1.26.84',
   'cryptography~=42.0.4',
   'Django~=4.2.11',
@@ -51,7 +51,7 @@ dependencies = [
   'django-csp~=3.7',
 ]
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",

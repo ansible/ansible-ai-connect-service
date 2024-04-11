@@ -15,12 +15,12 @@ ENV BUILD_PATH=/var/www/wisdom/public/static/console
 RUN dnf module enable nodejs:18 -y && \
     dnf install -y \
     git \
-    python3-devel \
+    python3.11-devel \
     gcc \
     libpq \
     libpq-devel \
-    python3 \
-    python3-pip \
+    python3.11 \
+    python3.11-pip \
     postgresql \
     less \
     npm
@@ -37,12 +37,12 @@ COPY README.md /var/www/ansible-wisdom-service/README.md
 COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
 
 # Compile Python/Django application
-RUN /usr/bin/python3 -m pip --no-cache-dir install supervisor
-RUN /usr/bin/python3 -m venv /var/www/venv
+RUN /usr/bin/python3.11 -m pip --no-cache-dir install supervisor
+RUN /usr/bin/python3.11 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 COPY model-cache /var/www/model-cache
-RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
-RUN /var/www/venv/bin/python3 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
 RUN mkdir /var/run/uwsgi
 
 RUN echo -e "\
