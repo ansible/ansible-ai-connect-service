@@ -22,6 +22,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_wisdom.ai.api.exceptions import (
     AttributionException,
     BaseWisdomAPIException,
@@ -202,7 +203,6 @@ class Feedback(APIView):
             logger.info(f"feedback request payload from client: {validated_data}")
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
         except serializers.ValidationError as exc:
-            # TODO {manstis} Raise _real_ exceptions!
             exception = exc
             raise FeedbackValidationException(str(exc))
         except Exception as exc:
@@ -229,9 +229,19 @@ class Feedback(APIView):
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
         )
-        org_id = getattr(user, 'org_id', None)
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        model_name = model_mesh_client.get_model_id(org_id, str(validated_data.get('model', '')))
+        model_name = ''
+        try:
+            org_id = getattr(user, 'org_id', None)
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            model_name = model_mesh_client.get_model_id(
+                org_id, str(validated_data.get('model', ''))
+            )
+        except (WcaModelIdNotFound, WcaSecretManagerError):
+            logger.debug(
+                f"Failed to retrieve Model Name for Feedback.\n "
+                f"User has seat: {user.rh_user_has_seat}, "
+                f"has subscription: {user.rh_org_has_subscription}.\n"
+            )
 
         if inline_suggestion_data:
             event = {
