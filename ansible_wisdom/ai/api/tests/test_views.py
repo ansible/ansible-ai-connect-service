@@ -2498,6 +2498,110 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
 
+class TestExplanationView(WisdomServiceAPITestCaseBase):
+    response_data = """# Information
+This playbook installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux 9.
+"""
+
+    def test_ok(self):
+        explanation_id = str(uuid.uuid4())
+        payload = {
+            "content": """---
+- name: Setup nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Install nginx on RHEL9
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+""",
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "markdown")
+            self.assertEqual(r.data["explanationId"], explanation_id)
+
+    def test_unauthorized(self):
+        explanation_id = str(uuid.uuid4())
+        payload = {
+            "content": """---
+- name: Setup nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Install nginx on RHEL9
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+""",
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            # Hit the API without authentication
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+    def test_bad_request(self):
+        explanation_id = str(uuid.uuid4())
+        # No content specified
+        payload = {
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    @patch('ansible_wisdom.ai.api.tests.test_views.MockedLLM.invoke')
+    def test_service_unavailable(self, invoke):
+        invoke.side_effect = Exception('Dummy Exception')
+        explanation_id = str(uuid.uuid4())
+        payload = {
+            "content": """---
+- name: Setup nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Install nginx on RHEL9
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+""",
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+
 class TestSummaryView(WisdomServiceAPITestCaseBase):
     response_data = """
 1. First, ensure that your Red Hat Enterprise Linux (RHEL) 9 system is up-to-date.

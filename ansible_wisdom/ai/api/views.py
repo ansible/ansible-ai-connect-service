@@ -768,15 +768,23 @@ class Explanation(APIView):
 
         chain = chat_template | llm
 
-        output = chain.invoke({"playbook": request.data["content"]})
-        answer = {"content": output, "format": "markdown"}
-        if "explanationId" in request.data:
-            answer["explanationId"] = request.data["explanationId"]
+        request_serializer = ExplanationRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
 
-        return Response(
-            answer,
-            status=rest_framework_status.HTTP_200_OK,
-        )
+        try:
+            output = chain.invoke({"playbook": request_serializer.validated_data.get("content")})
+            answer = {"content": output, "format": "markdown"}
+            if explanation_id:
+                answer["explanationId"] = explanation_id
+
+            return Response(
+                answer,
+                status=rest_framework_status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.exception(f"error requesting playbook explanation for {explanation_id}")
+            raise ServiceUnavailable(cause=e)
 
 
 class Summary(APIView):
