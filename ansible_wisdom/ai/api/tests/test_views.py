@@ -1460,6 +1460,38 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 self.assertTrue('modelName' in properties)
                 self.assertEqual(model_name, properties['modelName'])
 
+    def test_feedback_segment_events_model_name_error(self):
+        model_client = Mock(ModelMeshClient)
+        model_client.get_model_id.side_effect = WcaModelIdNotFound()
+
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            model_client,
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('feedback'), payload, format='json')
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertInLog("Failed to retrieve Model Name for Feedback.", log)
+
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertEqual('', properties['modelName'])
+
     def test_feedback_segment_inline_suggestion_feedback_error(self):
         payload = {
             "inlineSuggestion": {
