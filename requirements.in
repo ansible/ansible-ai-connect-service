@@ -22,6 +22,10 @@ django-test-migrations==1.3.0
 djangorestframework==3.14.0
 drf-spectacular==0.25.1
 grpcio==1.60.1
+# pin idna on 3.7 to address GHSA-jjg7-2v4v-x38h
+# remove this once requests and yarl is updated to properly
+# pull a version of idna >= 3.7.
+idna==3.7
 ipython==8.10.0
 # pin jwcrypto on 1.5.6 to address GHSA-j857-7rvv-vj97
 # remove this once django-oauth-toolkit is updated to properly

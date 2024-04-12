@@ -158,8 +158,9 @@ huggingface-hub==0.21.3
     #   sentence-transformers
     #   tokenizers
     #   transformers
-idna==3.6
+idna==3.7
     # via
+    #   -r requirements.in
     #   requests
     #   yarl
 inflection==0.5.1
