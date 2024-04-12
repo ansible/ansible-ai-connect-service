@@ -21,8 +21,6 @@ from ansible_wisdom.users.authz_checker import (
     authz_ams_rh_org_has_subscription_cache_hit_counter,
     authz_ams_rh_user_is_org_admin_cache_hit_counter,
     authz_ams_service_retry_counter,
-    authz_ciam_check_cache_hit_counter,
-    authz_ciam_service_retry_counter,
     authz_token_service_retry_counter,
     fatal_exception,
 )
@@ -51,7 +49,6 @@ def assert_call_count_metrics(metric):
     return count_metrics_decorator
 
 
-@override_settings(AUTHZ_CIAM_SERVICE_RETRY_COUNT=1)
 @override_settings(AUTHZ_AMS_SERVICE_RETRY_COUNT=1)
 class TestToken(WisdomServiceLogAwareTestCase):
     def get_default_ams_checker(self):
@@ -132,7 +129,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
         b = fatal_exception(exc)
         self.assertTrue(b)
 
-    @assert_call_count_metrics(metric=authz_ciam_check_cache_hit_counter)
     def test_ciam_check(self):
         m_r = Mock()
         m_r.json.return_value = {"result": True}
@@ -154,15 +150,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
             timeout=0.8,
         )
 
-        # Ensure the second call is cached
-        m_r.json.reset_mock()
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-        self.assertEqual(m_r.json.call_count, 0)
-
     def test_ciam_check_with_500_status_code(self):
         m_r = Mock()
-        p = PropertyMock(return_value=500)
-        type(m_r).status_code = p
+        m_r.status_code = 500
 
         checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
         checker._token = Mock()
@@ -170,29 +160,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.post.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.check("my_id", "my_name", 123))
+            self.assertFalse(checker.check("my_id", "my_name", "123"))
             self.assertInLog("Unexpected error code (500) returned by CIAM backend", log)
-            p.assert_called()
-            # Ensure the second call is NOT cached
-            p.reset_mock()
-            self.assertFalse(checker.check("my_id", "my_name", 123))
-            p.assert_called()
-
-    @assert_call_count_metrics(metric=authz_ciam_service_retry_counter)
-    def test_ciam_check_success_on_retry(self):
-        fail_side_effect = HTTPError(
-            "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
-        )
-        success_mock = Mock()
-        success_mock.json.return_value = {"result": True}
-        success_mock.status_code = 200
-
-        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.post.side_effect = [fail_side_effect, success_mock]
-
-        self.assertTrue(checker.check("my_id", "my_name", 123))
 
     def test_ciam_self_test_success(self):
         m_r = Mock()

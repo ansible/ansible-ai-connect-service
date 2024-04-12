@@ -21,18 +21,6 @@ authz_token_service_retry_counter = Counter(
     namespace=NAMESPACE,
 )
 
-authz_ciam_service_retry_counter = Counter(
-    "authz_ciam_service_retries",
-    "Counter of CIAM service retries",
-    namespace=NAMESPACE,
-)
-
-authz_ciam_check_cache_hit_counter = Counter(
-    "authz_ciam_check_cache_hits",
-    "Counter of the number of times the CIAM 'check' cache is hit.",
-    namespace=NAMESPACE,
-)
-
 authz_ams_service_retry_counter = Counter(
     "authz_ams_service_retries",
     "Counter of AMS service retries",
@@ -150,16 +138,10 @@ class Token:
 
 
 class CIAMCheck(BaseCheck):
-
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
         self._api_server = api_server
-        self.retries = settings.AUTHZ_CIAM_SERVICE_RETRY_COUNT
-
-    @staticmethod
-    def on_backoff(_):
-        authz_ciam_service_retry_counter.inc()
 
     def self_test(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
@@ -170,56 +152,30 @@ class CIAMCheck(BaseCheck):
         r.raise_for_status()
 
     def check(self, user_id, username, organization_id) -> bool:
-        # Check cache
-        cache_key = f"ciam_check_{organization_id}_{username}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            authz_ciam_check_cache_hit_counter.inc(
-                exemplar={'organization_id': str(organization_id)}
-            )
-            return cached_result
-
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
         try:
-
-            @backoff.on_exception(
-                backoff.expo,
-                Exception,
-                max_tries=self.retries + 1,
-                giveup=fatal_exception,
-                on_backoff=self.on_backoff,
+            r = self._session.post(
+                self._api_server + "/v1alpha/check",
+                json={
+                    "subject": str(user_id),
+                    "operation": "access",
+                    "resourcetype": "license",
+                    "resourceid": f"{organization_id}/smarts",
+                },
+                # Note: A ping from France against the preprod env, is slightly below 300ms
+                timeout=0.8,
             )
-            def post_request():
-                return self._session.post(
-                    self._api_server + "/v1alpha/check",
-                    json={
-                        "subject": str(user_id),
-                        "operation": "access",
-                        "resourcetype": "license",
-                        "resourceid": f"{organization_id}/smarts",
-                    },
-                    # Note: A ping from France against the preprod env, is slightly below 300ms
-                    timeout=0.8,
-                )
-
-            r = post_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the CIAM backend in time.")
+            logger.error("Cannot reach the CIAM backend in time")
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error(
-                f"Unexpected error code ({r.status_code}) returned by CIAM backend. "
-                f"user_id: {user_id}, organization_id: {organization_id}."
-            )
+            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
             return False
         data = r.json()
         try:
-            result = data["result"]
-            cache.set(cache_key, result, settings.CIAM_ORG_CACHE_TIMEOUT_SEC)
-            return result
-
+            return data["result"]
         except (KeyError, TypeError):
-            logger.error("Unexpected answer from CIAM.")
+            logger.error("Unexpected Answer from CIAM")
             return False
 
 
