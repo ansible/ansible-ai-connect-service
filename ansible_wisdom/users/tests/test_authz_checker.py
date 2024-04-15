@@ -16,10 +16,8 @@ from ansible_wisdom.users.authz_checker import (
     CIAMCheck,
     DummyCheck,
     Token,
-    authz_ams_check_cache_hit_counter,
     authz_ams_org_cache_hit_counter,
     authz_ams_rh_org_has_subscription_cache_hit_counter,
-    authz_ams_rh_user_is_org_admin_cache_hit_counter,
     authz_ams_service_retry_counter,
     authz_token_service_retry_counter,
     fatal_exception,
@@ -160,7 +158,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.post.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.check("my_id", "my_name", "123"))
+            self.assertFalse(checker.check("my_id", "my_name", 123))
             self.assertInLog("Unexpected error code (500) returned by CIAM backend", log)
 
     def test_ciam_self_test_success(self):
@@ -268,7 +266,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
             )
             self.assertInLog("IndexError: list index out of range", log)
 
-    @assert_call_count_metrics(metric=authz_ams_check_cache_hit_counter)
     def test_ams_check(self):
         m_r = Mock()
         m_r.json.side_effect = [{"items": [{"id": "qwe"}]}, {"items": [{"id": "asd"}]}]
@@ -287,11 +284,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
             },
             timeout=0.8,
         )
-
-        # Ensure the second call is cached
-        m_r.json.reset_mock()
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-        self.assertEqual(m_r.json.call_count, 0)
 
     def test_ams_check_multiple_seats(self):
         m_r = Mock()
@@ -317,45 +309,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     def test_ams_check_with_500_status_code(self):
         m_r = Mock()
-        p = PropertyMock(return_value=500)
-        type(m_r).status_code = p
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.return_value = m_r
-        checker.get_ams_org = Mock(return_value="abc")
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertFalse(checker.check("my_id", "my_name", 123))
-            self.assertInLog(
-                "Unexpected error code (500) returned by AMS backend (subscription)", log
-            )
-            p.assert_called()
-            # Ensure the second call is NOT cached
-            p.reset_mock()
-            self.assertFalse(checker.check("my_id", "my_name", 123))
-            p.assert_called()
-
-    @assert_call_count_metrics(metric=authz_ams_service_retry_counter)
-    def test_ams_check_success_on_retry(self):
-        fail_side_effect = HTTPError(
-            "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
-        )
-        success_mock = Mock()
-        success_mock.json.return_value = {"items": [{"id": "qwe"}]}
-        success_mock.status_code = 200
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.side_effect = [fail_side_effect, success_mock]
-        checker.get_ams_org = Mock(return_value="abc")
-
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-
-    def test_ams_check_when_ams_fails(self):
-        m_r = Mock()
         m_r.status_code = 500
 
         checker = self.get_default_ams_checker()
@@ -363,7 +316,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        self.assertTrue(checker.check("my_id", "my_name", 123))
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            self.assertFalse(checker.check("my_id", "my_name", 123))
+            self.assertInLog("Unexpected error code (500) returned by AMS backend (sub)", log)
 
     def test_ams_self_test_success(self):
         m_r = Mock()
@@ -390,7 +345,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertRaises(HTTPError):
             checker.self_test()
 
-    @assert_call_count_metrics(metric=authz_ams_rh_user_is_org_admin_cache_hit_counter)
     def test_rh_user_is_org_admin(self):
         m_r = Mock()
         m_r.json.side_effect = [
@@ -410,28 +364,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
             params={"search": "account.username = 'user' AND organization.id='123'"},
             timeout=0.8,
         )
-
-        # Ensure the second call is cached
-        m_r.json.reset_mock()
-        self.assertTrue(checker.rh_user_is_org_admin("user", 123))
-        self.assertEqual(m_r.json.call_count, 0)
-
-    @assert_call_count_metrics(metric=authz_ams_service_retry_counter)
-    def test_rh_user_is_org_admin_success_on_retry(self):
-        fail_side_effect = HTTPError(
-            "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
-        )
-        success_mock = Mock()
-        success_mock.json.return_value = {"items": [{"role": {"id": "OrganizationAdmin"}}]}
-        success_mock.status_code = 200
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.side_effect = [fail_side_effect, success_mock]
-        checker.get_ams_org = Mock(return_value="abc")
-
-        self.assertTrue(checker.rh_user_is_org_admin("user", 123))
 
     def test_rh_user_is_org_admin_when_ams_fails(self):
         m_r = Mock()
@@ -506,26 +438,19 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     def test_rh_user_is_org_admin_network_error(self):
         m_r = Mock()
-        p = PropertyMock(return_value=500)
-        type(m_r).status_code = p
+        m_r.status_code = 500
 
         checker = self.get_default_ams_checker()
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.return_value = m_r
-        checker.get_ams_org = Mock(return_value="abc")
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", 123))
             self.assertInLog(
-                "Unexpected error code (500) returned by AMS backend (role bindings).",
+                "Unexpected error code (500) returned by AMS backend when listing role bindings",
                 log,
             )
-            p.assert_called()
-            # Ensure the second call is NOT cached
-            p.reset_mock()
-            self.assertFalse(checker.rh_user_is_org_admin("user", 123))
-            p.assert_called()
 
     @assert_call_count_metrics(metric=authz_ams_rh_org_has_subscription_cache_hit_counter)
     def test_rh_org_has_subscription(self):

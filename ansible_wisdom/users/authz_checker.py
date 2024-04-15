@@ -33,18 +33,6 @@ authz_ams_org_cache_hit_counter = Counter(
     namespace=NAMESPACE,
 )
 
-authz_ams_check_cache_hit_counter = Counter(
-    "authz_ams_check_cache_hits",
-    "Counter of the number of times the AMS 'check' cache is hit.",
-    namespace=NAMESPACE,
-)
-
-authz_ams_rh_user_is_org_admin_cache_hit_counter = Counter(
-    "authz_ams_rh_user_is_org_admin_cache_hits",
-    "Counter of the number of times the AMS 'rh_user_is_org_admin' cache is hit.",
-    namespace=NAMESPACE,
-)
-
 authz_ams_rh_org_has_subscription_cache_hit_counter = Counter(
     "authz_ams_rh_org_has_subscription_cache_hits",
     "Counter of the number of times the AMS 'rh_org_has_subscription' cache is hit.",
@@ -267,20 +255,6 @@ class AMSCheck(BaseCheck):
 
     def check(self, user_id: str, username: str, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
-        if not ams_org_id:
-            # See https://issues.redhat.com/browse/AAP-22758
-            # If the AMS Organisation lookup fails assume the User has permission
-            return True
-
-        # Check cache
-        cache_key = f"ams_check_{organization_id}_{username}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            authz_ams_check_cache_hit_counter.inc(
-                exemplar={'organization_id': str(organization_id)}
-            )
-            return cached_result
-
         params = {
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
             f"creator.username = '{username}' AND organization_id='{ams_org_id}'"
@@ -288,85 +262,43 @@ class AMSCheck(BaseCheck):
         self.update_bearer_token()
 
         try:
-
-            @backoff.on_exception(
-                backoff.expo,
-                Exception,
-                max_tries=self.retries + 1,
-                giveup=fatal_exception,
-                on_backoff=self.on_backoff,
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
+                params=params,
+                timeout=0.8,
             )
-            def get_request():
-                return self._session.get(
-                    self._api_server + "/api/accounts_mgmt/v1/subscriptions",
-                    params=params,
-                    timeout=0.8,
-                )
-
-            r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error(
-                f"Unexpected error code ({r.status_code}) returned by AMS backend (subscription). "
-                f"user_id: {user_id}, organization_id: {organization_id}, ams_org_id: {ams_org_id}."
-            )
+            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
             return False
         data = r.json()
         try:
-            result = len(data["items"]) > 0
-            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
-            return result
-
+            return len(data["items"]) > 0
         except (KeyError, ValueError):
-            logger.error("Unexpected subscription answer from AMS (subscription).")
+            logger.error("Unexpected subscription answer from AMS")
             return False
 
     def rh_user_is_org_admin(self, username: str, organization_id: int):
         ams_org_id = self.get_ams_org(organization_id)
-        if not ams_org_id:
-            # See https://issues.redhat.com/browse/AAP-22758
-            # If the AMS Organisation lookup fails assume the User is not an administrator
-            return False
-
-        # Check cache
-        cache_key = f"ams_rh_user_is_org_admin_{organization_id}_{username}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            authz_ams_rh_user_is_org_admin_cache_hit_counter.inc(
-                exemplar={'organization_id': str(organization_id)}
-            )
-            return cached_result
-
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
 
         try:
-
-            @backoff.on_exception(
-                backoff.expo,
-                Exception,
-                max_tries=self.retries + 1,
-                giveup=fatal_exception,
-                on_backoff=self.on_backoff,
+            r = self._session.get(
+                self._api_server + "/api/accounts_mgmt/v1/role_bindings",
+                params=params,
+                timeout=0.8,
             )
-            def get_request():
-                return self._session.get(
-                    self._api_server + "/api/accounts_mgmt/v1/role_bindings",
-                    params=params,
-                    timeout=0.8,
-                )
-
-            r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
 
         if r.status_code != HTTPStatus.OK:
             logger.error(
-                f"Unexpected error code ({r.status_code}) returned by AMS backend (role bindings). "
-                f"organization_id: {organization_id}, ams_org_id: {ams_org_id}."
+                "Unexpected error code (%s) returned by AMS backend when listing role bindings"
+                % r.status_code
             )
             return False
 
@@ -374,7 +306,6 @@ class AMSCheck(BaseCheck):
         try:
             for item in result["items"]:
                 if item['role']['id'] == "OrganizationAdmin":
-                    cache.set(cache_key, True, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
                     return True
         except (KeyError, ValueError):
             return False
@@ -432,7 +363,7 @@ class AMSCheck(BaseCheck):
         data = r.json()
         try:
             result = data["total"] > 0
-            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
+            cache.set(cache_key, result, settings.AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC)
             return result
 
         except (KeyError, ValueError):
