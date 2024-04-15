@@ -138,14 +138,16 @@ def completion_post_process(context: CompletionContext):
 
     # We don't currently expect or support more than one prediction.
     if len(post_processed_predictions["predictions"]) != 1:
-        raise Exception(
+        raise PostprocessException(
             f"unexpected predictions array length {len(post_processed_predictions['predictions'])}"
         )
 
     anonymized_recommendation_yaml = post_processed_predictions["predictions"][0]
 
     if not anonymized_recommendation_yaml:
-        raise Exception(f"unexpected prediction content {anonymized_recommendation_yaml}")
+        raise PostprocessException(
+            f"unexpected prediction content {anonymized_recommendation_yaml}"
+        )
 
     recommendation_yaml = fmtr.restore_original_task_names(
         anonymized_recommendation_yaml, original_prompt
