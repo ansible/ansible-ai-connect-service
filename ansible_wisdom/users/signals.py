@@ -55,10 +55,9 @@ def user_set_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
 @receiver(user_set_telemetry_settings)
 def user_set_telemetry_settings_log(sender, user, org_id, settings, **kwargs):
     """User set Telemetry settings"""
-    logger.info(
-        f"User: '{user}' set Telemetry settings for Organisation "
-        f"'{org_id}' to '{json.dumps(settings, indent = 2) }'."
-    )
+    data = json.dumps(settings, indent=2)
+    message = f"User: '{user}' set Telemetry settings for Organisation " f"'{org_id}' to '{data}'."
+    logger.info(message)
 
 
 def _obfuscate(value: str) -> str:

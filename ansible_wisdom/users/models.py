@@ -96,10 +96,11 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         """
 
         if self.organization and self.organization.is_subscription_check_should_be_bypassed:
-            logger.info(
-                f"""Bypass organization check for organization ID {self.organization.id}
- and user UUID: {self.uuid}."""
+            message = (
+                "Bypass organization check for organization ID "
+                f"{self.organization.id} and user UUID: {self.uuid}."
             )
+            logger.info(message)
             return True
 
         if self.is_aap_user():
