@@ -248,7 +248,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         status_code=None,
         mock_api_key=Mock(return_value='org-api-key'),
         mock_model_id=Mock(return_value='org-model-id'),
-        response_data: dict = {"predictions": ['']},
+        response_data: dict = {
+            "predictions": ['      ansible.builtin.apt:\n        name: apache2']
+        },
     ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",

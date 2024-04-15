@@ -22,7 +22,7 @@ jobs:
       ANSIBLE_AI_DATABASE_USER: wisdom
       ARI_KB_PATH: /etc/ari/kb/
       DJANGO_SETTINGS_MODULE: ansible_wisdom.main.settings.development
-      ENABLE_ARI_POSTPROCESS: True
+      ENABLE_ARI_POSTPROCESS: False
       ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
       SECRET_KEY: somesecret
