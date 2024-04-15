@@ -59,7 +59,9 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
     """
 
     code = 'permission_denied__org_ready_user_has_no_seat'
-    message = "Org's LightSpeed subscription is active but user has no seat."
+    message = (
+        f"Org's {settings.ANSIBLE_AI_PROJECT_NAME} subscription is active but user has no seat."
+    )
 
     def has_permission(self, request, view):
         user = request.user

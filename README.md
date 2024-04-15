@@ -1,5 +1,5 @@
-# Red Hat Ansible Lightspeed with IBM watsonx Code Assistant.
-- [Red Hat Ansible Lightspeed with IBM watsonx Code Assistant.](#red-hat-ansible-lightspeed-with-ibm-watsonx-code-assistant)
+# Ansible AI Connect.
+- [Ansible AI Connect.](#ansible-ai-connect)
       - [Wisdom Service](#wisdom-service)
       - [Admin Portal](#admin-portal)
   - [Using pre-commit](#using-pre-commit)
@@ -419,7 +419,7 @@ and then run the Django command to create the application:
 
 ```bash
   wisdom-manage createapplication \
-    --name "Ansible Lightspeed for VS Code" \
+    --name "Ansible AI Connect for VS Code" \
     --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy \
     --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible code-oss://redhat.ansible checode://redhat.ansible" \
     public authorization-code
@@ -545,7 +545,7 @@ You can enable postprocess with [Ansible Lint](https://github.com/ansible/ansibl
 ## Application metrics as a Prometheus-style endpoint
 
 We enabled the Prometheus endpoint to scrape the configuration and check the service status to build observability into
-the Lightspeed service for monitoring and measuring its availability.
+the service for monitoring and measuring its availability.
 
 To provide feedback for operational needs as well as for continuous service improvement.
 
@@ -558,7 +558,7 @@ the development environment only**.
 
 - **Note:** It is not enabled in the production environment regardless of any settings.
 
-If you want to test Lightspeed APIs using Swagger UI,
+If you want to test APIs using Swagger UI,
 
 1. Open http://localhost:8000/ and get an authentication token by
    following the instructions described in the
@@ -581,7 +581,7 @@ Another OpenAPI UI in the ReDoc format is also available at  http://localhost:80
 ### OpenAPI 3.0 Schema
 
 The static OpenAPI Schema YAML file is stored as
-[/tools/openapi-schema/ansible-wisdom-service.yaml](https://github.com/ansible/ansible-wisdom-service/blob/main/tools/openapi-schema/ansible-wisdom-service.yaml)
+[/tools/openapi-schema/ansible-ai-connect-service.yaml](https://github.com/ansible/ansible-ai-connect-service/blob/main/tools/openapi-schema/ansible-ai-connect-service.yaml)
 in this repository.
 
 When you make code changes, please update the static OpenAPI Schema YAML file
@@ -642,7 +642,7 @@ If the execution was successful, results in HTML are showin in Chrome.
 
 For executing unit tests from command line,
 You need to set some environment variables
-that are read by Lightspeed Service.
+that are read by the Service.
 If you are using PyCharm
 for development, you can use [the EnvFile plugin](https://plugins.jetbrains.com/plugin/7861-envfile)
 with the following `.env` file:

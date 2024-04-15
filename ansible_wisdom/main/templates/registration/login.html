@@ -12,9 +12,9 @@
                 <div class="pf-c-empty-state__content">
 
                     <div class="pf-l-bullseye pf-u-p-xl" style="padding: 20px">
-                        <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="Ansible Lightspeed logo"/>
+                        <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="{{ project_name }} logo"/>
                     </div>
-                    <h1 class="pf-c-title pf-m-lg">Log in to Ansible Lightspeed with IBM watsonx Code Assistant</h1>
+                    <h1 class="pf-c-title pf-m-lg">Log in to {{ project_name }}</h1>
                     {% if not user.is_authenticated %}
                     <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
 
@@ -27,7 +27,7 @@
                     </div>
                     {% endif %}
 
-                    <div class="pf-l-level" style="margin-top: 60px">
+                    <div class="pf-l-level pf-m-gutter" style="margin-top: 60px">
                         <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
                         <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
                         <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>

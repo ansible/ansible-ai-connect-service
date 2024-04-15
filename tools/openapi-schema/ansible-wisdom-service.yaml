@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Ansible Lightspeed with IBM watsonx Code Assistant.
+  title: Ansible AI Connect.
   version: 0.0.8
   description: Equip the automation developer at Lightspeed.
 paths:
@@ -586,7 +586,7 @@ paths:
   /check/:
     get:
       operationId: check_retrieve
-      description: Lightspeed Service Liveness Probe View
+      description: Service Liveness Probe View
       summary: Liveness probe
       tags:
       - check
@@ -599,7 +599,7 @@ paths:
   /check/status/:
     get:
       operationId: check_status_retrieve
-      description: Lightspeed Service Health Check
+      description: Service Health Check
       summary: Health check with backend server status
       tags:
       - check
@@ -1002,7 +1002,7 @@ components:
           type: string
           title: Additional Comment
           description: Additional comment describing why the                    change
-            was required in Lightspeed suggestion.
+            was required in suggestion.
       required:
       - expectedSuggestion
       - prompt

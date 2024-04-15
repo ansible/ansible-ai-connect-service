@@ -7,7 +7,7 @@ ALLOWED_HOSTS = ["*"]
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
-        'TITLE': 'Ansible Lightspeed with IBM watsonx Code Assistant.',
+        'TITLE': f'{ANSIBLE_AI_PROJECT_NAME}.',  # noqa: F405
         'DESCRIPTION': 'Equip the automation developer at Lightspeed.',
         'VERSION': '0.0.8',
         'SERVE_INCLUDE_SCHEMA': False,

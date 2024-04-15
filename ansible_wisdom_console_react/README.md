@@ -1,4 +1,4 @@
-# Ansible Lightspeed "Admin Portal"
+# Ansible AI Connect "Admin Portal"
 
 > **Warning:** `package.json homepage` setting.
 >
@@ -8,7 +8,7 @@
 
 ## Build from source
 
-To start building the Ansible Lightspeed "Admin Portal" project, you're going to need:
+To start building the "Admin Portal" project, you're going to need:
 
 - Node `18.0.0` or higher
 - npm `7.0.0` or higher
@@ -50,4 +50,4 @@ This can be accomplished using `make admin-portal-bundle`.
 
 The `wisdom-service.Containerfile` is configured to compile and link the "Admin Portal" into the container image. This is used by both the GitHub Action `Build_Push_Image.yml`, `make build-wisdom-container` and `make docker-compose`.
 
-Ansible Lightspeed container images built by our Continuous Integration pipeline on GitHub should therefore be pre-configured to include the "Admin Portal".
+Container images built by our Continuous Integration pipeline on GitHub should therefore be pre-configured to include the "Admin Portal".
