@@ -291,7 +291,8 @@ def is_multi_task_prompt(prompt):
     return False
 
 
-def strip_task_preamble_from_multi_task_prompt(prompt):
+def normalize_multi_task_prompt(prompt):
+    """Remove the `- name: ` from the multi_task prompts and convert it to lower case."""
     if is_multi_task_prompt(prompt):
         prompt_split = prompt.split('#', 1)
         aggregated = ' & '.join(p.lower() for p in get_task_names_from_prompt(prompt))

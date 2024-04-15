@@ -14,7 +14,7 @@ from requests.exceptions import HTTPError
 
 from ansible_wisdom.ai.api.formatter import (
     get_task_names_from_prompt,
-    strip_task_preamble_from_multi_task_prompt,
+    normalize_multi_task_prompt,
 )
 from ansible_wisdom.ai.api.model_client.wca_utils import (
     ContentMatchContext,
@@ -143,7 +143,7 @@ class BaseWCAClient(ModelMeshClient):
 
         # WCA codegen fails if a multitask prompt includes the task preamble
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
-        prompt = strip_task_preamble_from_multi_task_prompt(prompt)
+        prompt = normalize_multi_task_prompt(prompt)
 
         # WCA codegen endpoint requires prompt to end with \n
         if prompt.endswith('\n') is False:

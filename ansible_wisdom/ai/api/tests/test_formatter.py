@@ -419,28 +419,28 @@ var3: value3
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
             )
 
-    def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
+    def test_normalize_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"
-        self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
+        self.assertEqual(prompt, fmtr.normalize_multi_task_prompt(prompt))
 
-    def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_single(self):
+    def test_normalize_multi_task_prompt_no_preamble_unchanged_single(self):
         prompt = "    - name: install ffmpeg"
-        self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
+        self.assertEqual(prompt, fmtr.normalize_multi_task_prompt(prompt))
 
-    def test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed(self):
+    def test_normalize_multi_task_prompt_one_preamble_changed(self):
         before = "    # - name: install ffmpeg"
         after = "    # install ffmpeg"
-        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+        self.assertEqual(after, fmtr.normalize_multi_task_prompt(before))
 
-    def test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed(self):
+    def test_normalize_multi_task_prompt_two_preambles_changed(self):
         before = "    # - name: install ffmpeg & - name: start ffmpeg"
         after = "    # install ffmpeg & start ffmpeg"
-        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+        self.assertEqual(after, fmtr.normalize_multi_task_prompt(before))
 
-    def test_strip_task_preamble_from_multi_task_prompt_remove_upper_case(self):
+    def test_normalize_multi_task_prompt_remove_upper_case(self):
         before = "    # - name: install ffmpeg & - name: start FFMPEG"
         after = "    # install ffmpeg & start ffmpeg"
-        self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
+        self.assertEqual(after, fmtr.normalize_multi_task_prompt(before))
 
     def test_get_fqcn_module_from_prediction(self):
         self.assertEqual(
@@ -576,8 +576,8 @@ if __name__ == "__main__":
     tests.test_load_and_merge_vars_in_context()
     tests.test_insert_set_fact_task()
     tests.test_restore_original_task_names()
-    tests.test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi()
-    tests.test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_single()
-    tests.test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed()
-    tests.test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed()
+    tests.test_normalize_multi_task_prompt_no_preamble_unchanged_multi()
+    tests.test_normalize_multi_task_prompt_no_preamble_unchanged_single()
+    tests.test_normalize_multi_task_prompt_one_preamble_changed()
+    tests.test_normalize_multi_task_prompt_two_preambles_changed()
     tests.test_get_fqcn_module_from_prediction()
