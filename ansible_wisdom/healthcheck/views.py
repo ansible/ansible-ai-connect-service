@@ -45,6 +45,7 @@ class HealthCheckCustomView(MainView):
         'ModelServerHealthCheck': 'model-server',
         'AWSSecretManagerHealthCheck': 'secret-manager',
         'WCAHealthCheck': 'wca',
+        'WCAOnPremHealthCheck': 'wca-onprem',
         'AuthorizationHealthCheck': 'authorization',
         'AttributionCheck': 'attribution',
     }

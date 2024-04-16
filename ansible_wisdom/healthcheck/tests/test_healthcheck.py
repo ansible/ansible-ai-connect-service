@@ -129,7 +129,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         timestamp = data['timestamp']
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(6, len(dependencies))
+        self.assertEqual(7, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency['name'],
@@ -140,6 +140,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                     'secret-manager',
                     'attribution',
                     'wca',
+                    'wca-onprem',
                     'authorization',
                 ],
             )
@@ -336,7 +337,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             _, dependencies = self.assert_basic_data(r, 'error')
             for dependency in dependencies:
-                if dependency['name'] == 'wca':
+                if dependency['name'] == 'wca' or dependency['name'] == 'wca-onprem':
                     # If a Token cannot be retrieved we can also not execute Models
                     self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
@@ -366,7 +367,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             _, dependencies = self.assert_basic_data(r, 'error')
             for dependency in dependencies:
-                if dependency['name'] == 'wca':
+                if dependency['name'] == 'wca' or dependency['name'] == 'wca-onprem':
                     self.assertEqual('ok', dependency['status']['tokens'])
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
                 else:
@@ -393,7 +394,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             _, dependencies = self.assert_basic_data(r, 'error')
             for dependency in dependencies:
-                if dependency['name'] == 'wca':
+                if dependency['name'] == 'wca' or dependency['name'] == 'wca-onprem':
                     self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
                 else:
@@ -422,6 +423,36 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             if dependency['name'] == 'wca':
                 self.assertEqual(dependency['status']['tokens'], 'disabled')
                 self.assertEqual(dependency['status']['models'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=False)
+    def test_health_check_wca_on_prem_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca-onprem':
+                self.assertEqual(dependency['status']['tokens'], 'disabled')
+                self.assertEqual(dependency['status']['models'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
+    def test_health_check_wca_on_prem_enable(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca-onprem':
+                self.assertEqual(dependency['status']['tokens'], 'ok')
+                self.assertEqual(dependency['status']['models'], 'ok')
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
