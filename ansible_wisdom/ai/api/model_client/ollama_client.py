@@ -26,7 +26,7 @@ class OllamaClient(ModelMeshClient):
     instance = None
     embeddings = SentenceTransformerEmbeddings()
     #loader = loader = UnstructuredMarkdownLoader("/etc/context/rules.md", mode="single")
-    loader = loader = UnstructuredMarkdownLoader("/etc/context/rules-short.md", mode="single")
+    loader = UnstructuredMarkdownLoader("/etc/context/rules-short.md", mode="single")
     docs = loader.load()
     md_splitter = MarkdownTextSplitter()
     docs = md_splitter.split_documents(docs)
@@ -50,6 +50,18 @@ class OllamaClient(ModelMeshClient):
 
 
     def infer(self, model_input, model_id=None, suggestion_id=None):
+
+        loader = UnstructuredMarkdownLoader("/etc/context/rules-short.md", mode="single")
+        docs = loader.load()
+        md_splitter = MarkdownTextSplitter()
+        docs = md_splitter.split_documents(docs)
+        logger.info(f"loaded {len(docs)} documents")
+
+        logger.info("initializing vector store with embeddings")
+        vectorstore = FAISS.from_documents(docs, self.embeddings)
+        retriever = vectorstore.as_retriever()
+        logger.info("DONE initializing vector store with embeddings")
+
         model_id = model_id or settings.ANSIBLE_AI_MODEL_NAME
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -72,7 +84,7 @@ class OllamaClient(ModelMeshClient):
             # mirostat=0,
             # mirostat_tau=5,
             # mirostat_eta=0.1,
-            # cache=False,
+            cache=False,
         )
 
         rules = [
@@ -108,6 +120,17 @@ class OllamaClient(ModelMeshClient):
         {rules}
         """
 
+        rag_template = """You're an Ansible expert. Return only the Ansible code that best completes the following partial playbook:
+        {context}{prompt}
+
+        Return only YAML.
+        Do not explain your response.
+
+        Understand and apply the following rules to create the task.
+        Change the task to resemble the Correct Code if, and only if, the task resembles the Problematic Code:
+        {rules}
+        """
+
         playbook_template = """You're an Ansible expert. Return only the Ansible code that best completes the following partial playbook:
         {context}{prompt}
 
@@ -138,7 +161,7 @@ class OllamaClient(ModelMeshClient):
             chain = (
                 {
                     "context": itemgetter("context"),
-                    "rules": itemgetter("rules") | self.retriever,
+                    "rules": itemgetter("rules") | retriever,
                     #"rules": itemgetter("rules"),
                     "prompt": itemgetter("prompt"),
                 }
@@ -152,7 +175,8 @@ class OllamaClient(ModelMeshClient):
                 {
                     "context": context,
                     #"rules": rules,
-                    "rules": "what are the rules?",
+                    #"rules": "what are the rules?",
+                    "rules": f"what are the rules?",
                     "prompt": prompt
                 }
             )
