@@ -61,6 +61,7 @@ from ansible_ai_connect.ai.api.model_client.base import ModelMeshClient
 from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
+    WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaException,
     WcaInvalidModelId,
@@ -619,9 +620,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             r = self.client.post(reverse('completions'), payload)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             self.assert_error_detail(
-                r,
-                ModelTimeoutException.default_code,
-                ModelTimeoutException.default_detail,
+                r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
             )
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -1232,7 +1231,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @patch('ansible_ai_connect.ai.api.model_client.wca_client.WCAClient.infer')
     def test_wca_client_postprocess_error(self, infer):
         infer.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
-        self.run_wca_client_error_case(HTTPStatus.NO_CONTENT, PostprocessException())
+        self.run_wca_client_error_case(HTTPStatus.NO_CONTENT, PostprocessException(cause=TypeError))
 
     def run_wca_client_error_case(self, status_code_expected, error: Union[APIException, OSError]):
         """Execute a single WCA client error scenario."""
@@ -2140,7 +2139,7 @@ class TestContentMatchesWCAViewErrors(
     def test_wca_contentmatch_with_non_existing_wca_key(self):
         self.model_client.get_api_key = Mock(side_effect=WcaKeyNotFound)
         self.model_client.get_model_id = Mock(return_value='model-id')
-        self._assert_exception_in_log(WcaKeyNotFoundException)
+        self._assert_exception_in_log(WcaKeyNotFoundException(cause=WcaKeyNotFound()))
 
     def test_wca_contentmatch_with_empty_response(self):
         response = MockResponse(
@@ -2148,7 +2147,7 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.NO_CONTENT,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log(WcaEmptyResponseException)
+        self._assert_exception_in_log(WcaEmptyResponseException(cause=WcaEmptyResponse()))
 
     def test_wca_contentmatch_with_user_not_linked_to_org(self):
         self.model_client.get_model_id = Mock(side_effect=WcaNoDefaultModelId)
@@ -2156,7 +2155,7 @@ class TestContentMatchesWCAViewErrors(
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)
-        self._assert_exception_in_log(WcaModelIdNotFoundException)
+        self._assert_exception_in_log(WcaModelIdNotFoundException(cause=WcaModelIdNotFound()))
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_with_invalid_model_id(self):
@@ -2165,12 +2164,12 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log(WcaInvalidModelIdException)
+        self._assert_exception_in_log(WcaInvalidModelIdException(cause=WcaInvalidModelId()))
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_bad_request(self):
         self.model_client.get_model_id = Mock(side_effect=WcaBadRequest)
-        self._assert_exception_in_log(WcaBadRequestException)
+        self._assert_exception_in_log(WcaBadRequestException(cause=WcaBadRequest()))
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_cloudflare_rejection(self):
@@ -2180,7 +2179,9 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.FORBIDDEN,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log(WcaCloudflareRejectionException)
+        self._assert_exception_in_log(
+            WcaCloudflareRejectionException(cause=WcaCloudflareRejection())
+        )
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -2196,7 +2197,7 @@ class TestContentMatchesWCAViewErrors(
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_user_trial_expired_rejection(self):
         self.model_client.get_model_id = Mock(side_effect=WcaUserTrialExpired)
-        self._assert_exception_in_log(WcaUserTrialExpiredException)
+        self._assert_exception_in_log(WcaUserTrialExpiredException(cause=WcaUserTrialExpired()))
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_wca_contentmatch_trial_expired(self):
@@ -2205,7 +2206,7 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.FORBIDDEN,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log(WcaUserTrialExpiredException)
+        self._assert_exception_in_log(WcaUserTrialExpiredException(cause=WcaUserTrialExpired()))
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -2215,27 +2216,27 @@ class TestContentMatchesWCAViewErrors(
             status_code=HTTPStatus.BAD_REQUEST,
         )
         self.model_client.session.post = Mock(return_value=response)
-        self._assert_exception_in_log(WcaInvalidModelIdException)
+        self._assert_exception_in_log(WcaInvalidModelIdException(WcaInvalidModelId()))
         self._assert_model_id_in_exception(self.payload["model"])
 
     def test_wca_contentmatch_with_model_timeout(self):
         self.model_client.get_model_id = Mock(side_effect=ModelTimeoutError)
-        self._assert_exception_in_log(ModelTimeoutException)
+        self._assert_exception_in_log(ModelTimeoutException(cause=ReadTimeout()))
 
     def test_wca_contentmatch_with_connection_error(self):
         self.model_client.get_model_id = Mock(side_effect=ConnectionError)
-        self._assert_exception_in_log(ServiceUnavailable)
+        self._assert_exception_in_log(ServiceUnavailable(cause=ConnectionError()))
 
-    def _assert_exception_in_log(self, exception: type[APIException]):
+    def _assert_exception_in_log(self, exception: APIException):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.mock_model_client_with(self.model_client)
             r = self.client.post(reverse('contentmatches'), self.payload)
             self.assertEqual(r.status_code, exception.status_code)
-            self.assertInLog(str(exception.__name__), log)
+            self.assertInLog(str(exception.__class__.__name__), log)
 
         self.mock_model_client_with(self.model_client)
         r = self.client.post(reverse('contentmatches'), self.payload)
-        self.assert_error_detail(r, exception().default_code, exception().default_detail)
+        self.assert_error_detail(r, exception.default_code, exception.default_detail)
 
     def _assert_model_id_in_exception(self, expected_model_id):
         self.mock_model_client_with(self.model_client)

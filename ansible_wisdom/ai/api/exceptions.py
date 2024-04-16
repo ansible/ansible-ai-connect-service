@@ -13,6 +13,9 @@
 #  limitations under the License.
 
 import json
+import logging
+import uuid
+from typing import Union
 
 from django.conf import settings
 from prometheus_client import Counter
@@ -33,18 +36,41 @@ process_error_count = Counter(
     ['stage'],
 )
 
+logger = logging.getLogger(__name__)
+
 
 class BaseWisdomAPIException(APIException):
-    def __init__(self, *args, cause=None, **kwargs):
+    def __init__(self, cause: Union[Exception, dict, str, None] = None, *args, **kwargs):
         completions_return_code.labels(code=self.status_code).inc()
-        super().__init__(*args, **kwargs)
-        if settings.SEGMENT_WRITE_KEY and cause:
-            model_id = self.get_model_id_from_exception(cause)
-            if model_id:
-                self.model_id = model_id
+
+        error_context_id = str(uuid.uuid4())
+        error_message = (
+            f'Analysis information:\n- error_context_id: {error_context_id}\n- cause: {cause}\n'
+            if cause
+            else f'Analysis information:\n- error_context_id: {error_context_id}\n'
+        )
+        logger.error(
+            error_message,
+            stack_info=True,
+        )
+
+        super().__init__(
+            detail={
+                "message": self.default_detail,
+                "code": self.default_code,
+                "error_context_id": error_context_id,
+            },
+            **kwargs,
+        )
+        if settings.SEGMENT_WRITE_KEY:
+            self.error_context_id = error_context_id
+            if cause:
+                model_id = self.get_model_id_from_exception(cause)
+                if model_id:
+                    self.model_id = model_id
 
     @staticmethod
-    def get_model_id_from_exception(cause):
+    def get_model_id_from_exception(cause: Union[Exception, dict, str]):
         """Attempt to get model_id in the request data embedded in a cause."""
         model_id = None
         if isinstance(cause, (WcaException, ModelTimeoutError)):

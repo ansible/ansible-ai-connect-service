@@ -27,6 +27,8 @@ def exception_handler_with_error_type(exc, context):
         # of _new_ Segment events with _old_ Segment events.
         if hasattr(exc, 'default_code'):
             response.error_type = exc.default_code
+        if hasattr(exc, 'error_context_id'):
+            response.error_context_id = exc.error_context_id
 
         # Discard the default 'detail' property
         # We add the 'code', 'message' and 'model' to 'data' root

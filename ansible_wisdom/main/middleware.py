@@ -136,6 +136,7 @@ class SegmentMiddleware:
                         # That extracts 'default_code' from Exceptions and stores it
                         # in the Response.
                         "error_type": getattr(response, 'error_type', None),
+                        "error_context_id": getattr(response, 'error_context_id', None),
                         "message": message,
                         "predictions": predictions,
                         "status_code": response.status_code,

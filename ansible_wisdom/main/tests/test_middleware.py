@@ -104,6 +104,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                         )
                         self.assertEqual(1, properties['taskCount'])
                         self.assertEqual('SINGLETASK', properties['promptType'])
+                        self.assertTrue('response' in properties)
+                        self.assertTrue('error_type' in properties['response'])
+                        self.assertTrue('error_context_id' in properties['response'])
+
                     self.assertIsNotNone(event['timestamp'])
 
             with self.assertLogs(logger='root', level='DEBUG') as log:

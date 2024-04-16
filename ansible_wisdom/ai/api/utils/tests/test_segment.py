@@ -214,12 +214,19 @@ class TestSegment(TestCase):
             'rh_user_has_seat': False,
             'exception': 'SomeException',
             'details': 'Some details',
+            'response': {
+                'exception': 'SomeException',
+                'error_type': 'an_error_type',
+                'error_context_id': 'an_error_context_id',
+            },
         }
         send_segment_event(event, 'postprocess', user)
         argument = track_method.call_args[0][2]
 
         self.assertEqual(argument['details'], 'Some details')
         self.assertEqual(argument['exception'], 'SomeException')
+        self.assertEqual(argument.get('response').get('error_type'), 'an_error_type')
+        self.assertEqual(argument.get('response').get('error_context_id'), 'an_error_context_id')
 
     @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -232,12 +239,18 @@ class TestSegment(TestCase):
             'rh_user_has_seat': True,
             'exception': 'SomeException',
             'details': 'Some details',
+            'response': {
+                'exception': 'SomeException',
+                'error_type': 'an_error_type',
+                'error_context_id': 'an_error_context_id',
+            },
         }
         send_segment_event(event, 'postprocess', user)
         argument = track_method.call_args[0][2]
 
         self.assertEqual(argument.get('details'), None)
         self.assertEqual(argument.get('exception'), 'SomeException')
+        self.assertFalse('response' in argument)
 
     def test_redact_contentmatches_response_data(self, *args):
         test_data = {

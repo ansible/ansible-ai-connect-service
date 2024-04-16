@@ -214,7 +214,7 @@ class Feedback(APIView):
         except Exception as exc:
             exception = exc
             logger.exception(f"An exception {exc.__class__} occurred in sending a feedback")
-            raise FeedbackInternalServerException()
+            raise FeedbackInternalServerException(cause=exc)
         finally:
             self.write_to_segment(request.user, validated_data, exception, request.data)
 
@@ -378,7 +378,7 @@ class Attributions(GenericAPIView):
             )
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
-            raise AttributionException()
+            raise AttributionException(cause=exc)
 
         duration = round((time.time() - start_time) * 1000, 2)
         attribution_encoding_hist.observe(encode_duration / 1000)
@@ -526,7 +526,7 @@ class ContentMatches(GenericAPIView):
 
         except ModelTimeoutError as e:
             exception = e
-            logger.warn(
+            logger.warning(
                 f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
                 f" for suggestion {suggestion_id}"
             )

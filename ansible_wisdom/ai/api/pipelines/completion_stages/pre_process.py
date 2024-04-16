@@ -95,7 +95,7 @@ class PreProcessStage(PipelineElement):
             logger.error(
                 f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
             )
-            raise PreprocessInvalidYamlException()
+            raise PreprocessInvalidYamlException(cause=exc)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 from ast import literal_eval
 from http import HTTPStatus
 from typing import Union
@@ -51,10 +52,19 @@ class WisdomTestCase(TestCase):
             self.assertEqual(r['Content-Length'], "0")
             return
 
-        r_code = r.data.get('message').code
+        self.assert_permission_detail(r, code, message)
+        js = json.dumps(r.data)
+        j = json.loads(js)
+        self.assertTrue('error_context_id' in j)
+        self.assertIsNotNone(j['error_context_id'])
+
+    def assert_permission_detail(self, r, code: str, message: str = None):
+        js = json.dumps(r.data)
+        j = json.loads(js)
+        r_code = j.get('code')
         self.assertEqual(r_code, code)
         if message:
-            r_message = r.data.get('message')
+            r_message = j.get('message')
             self.assertEqual(r_message, message)
 
 

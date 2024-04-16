@@ -62,7 +62,9 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('completions'), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-        self.assert_error_detail(r, AcceptedTermsPermission.code, AcceptedTermsPermission.message)
+        self.assert_permission_detail(
+            r, AcceptedTermsPermission.code, AcceptedTermsPermission.message
+        )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_commercial_user_has_not_accepted(self):
@@ -94,7 +96,7 @@ class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-        self.assert_error_detail(
+        self.assert_permission_detail(
             r, IsOrganisationAdministrator.code, IsOrganisationAdministrator.message
         )
 
@@ -106,7 +108,7 @@ class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse('wca_api_key'))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-        self.assert_error_detail(
+        self.assert_permission_detail(
             r, IsOrganisationLightspeedSubscriber.code, IsOrganisationLightspeedSubscriber.message
         )
 
