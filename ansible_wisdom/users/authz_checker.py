@@ -3,7 +3,6 @@ import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from typing import Optional
 
 import backoff
 import requests
@@ -168,7 +167,12 @@ class CIAMCheck(BaseCheck):
 
 
 class AMSCheck(BaseCheck):
+    # An AMS Organization ID that should never match anything
+    ERROR_AMS_ORG_UNDEFINED = "__undefined__"
     ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time."
+
+    class AMSError(Exception):
+        pass
 
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
@@ -188,10 +192,10 @@ class AMSCheck(BaseCheck):
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    def get_ams_org(self, rh_org_id: int) -> Optional[str]:
+    def get_ams_org(self, rh_org_id: int) -> str:
         if not rh_org_id:
             logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
-            return None
+            return AMSCheck.ERROR_AMS_ORG_UNDEFINED
 
         # Check cache
         cache_key = f"rh_org_{rh_org_id}"
@@ -222,14 +226,14 @@ class AMSCheck(BaseCheck):
             r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
-            return None
+            raise AMSCheck.AMSError()
 
         if r.status_code != HTTPStatus.OK:
             logger.error(
                 f"Unexpected error code ({r.status_code}) returned by AMS backend (organizations). "
                 f"rh_org_id: {rh_org_id}."
             )
-            return None
+            raise AMSCheck.AMSError()
 
         data = r.json()
 
@@ -242,7 +246,7 @@ class AMSCheck(BaseCheck):
                 f"Unexpected answer from AMS backend (organizations). "
                 f"rh_org_id: {rh_org_id}, data={data}."
             )
-            return None
+            return AMSCheck.ERROR_AMS_ORG_UNDEFINED
 
     def self_test(self):
         self.update_bearer_token()
@@ -254,7 +258,15 @@ class AMSCheck(BaseCheck):
         r.raise_for_status()
 
     def check(self, user_id: str, username: str, organization_id: int) -> bool:
-        ams_org_id = self.get_ams_org(organization_id)
+        try:
+            ams_org_id = self.get_ams_org(organization_id)
+        except AMSCheck.AMSError:
+            # See https://issues.redhat.com/browse/AAP-22758
+            # If the AMS Organisation lookup fails assume the check failed.
+            # The 'check()' function is obsolete and not called. This code
+            # only exists as a matter of 'completeness'.
+            return False
+
         params = {
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
             f"creator.username = '{username}' AND organization_id='{ams_org_id}'"
@@ -281,7 +293,13 @@ class AMSCheck(BaseCheck):
             return False
 
     def rh_user_is_org_admin(self, username: str, organization_id: int):
-        ams_org_id = self.get_ams_org(organization_id)
+        try:
+            ams_org_id = self.get_ams_org(organization_id)
+        except AMSCheck.AMSError:
+            # See https://issues.redhat.com/browse/AAP-22758
+            # If the AMS Organisation lookup fails assume the User is not an administrator
+            return False
+
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
         self.update_bearer_token()
 
@@ -313,8 +331,9 @@ class AMSCheck(BaseCheck):
         return False
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
-        ams_org_id = self.get_ams_org(organization_id)
-        if not ams_org_id:
+        try:
+            ams_org_id = self.get_ams_org(organization_id)
+        except AMSCheck.AMSError:
             # See https://issues.redhat.com/browse/AAP-22758
             # If the AMS Organisation lookup fails assume the User has a subscription
             return True

@@ -64,7 +64,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertGreater(my_token.expiration_date, datetime.utcnow())
         self.assertEqual(my_token.access_token, "foo_bar")
 
-        # Ensure we server the cached result the second time
+        # Ensure we serve the cached result the second time
         m_r.json.reset_mock()
         self.assertEqual(my_token.get(), "foo_bar")
         self.assertEqual(m_r.json.call_count, 0)
@@ -210,10 +210,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     def test_ams_get_ams_org_with_500_status_code(self):
         m_r = Mock()
-        # use a PropertyMock to verify that the property was accessed
-        # https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock
-        p = PropertyMock(return_value=500)
-        type(m_r).status_code = p
+        m_r.status_code = 500
 
         checker = self.get_default_ams_checker()
         checker._token = Mock()
@@ -221,15 +218,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertIsNone(checker.get_ams_org(123))
+            with self.assertRaises(AMSCheck.AMSError):
+                checker.get_ams_org(123)
             self.assertInLog(
                 "Unexpected error code (500) returned by AMS backend (organizations)", log
             )
-            p.assert_called()
-            # Ensure the second call is NOT cached
-            p.reset_mock()
-            self.assertIsNone(checker.get_ams_org(123))
-            p.assert_called()
 
     @assert_call_count_metrics(metric=authz_ams_service_retry_counter)
     def test_ams_get_ams_org_success_on_retry(self):
@@ -258,7 +251,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         with self.assertLogs(logger='root', level='ERROR') as log:
-            self.assertIsNone(checker.get_ams_org(123))
+            self.assertEqual(checker.get_ams_org(123), AMSCheck.ERROR_AMS_ORG_UNDEFINED)
             self.assertInLog(
                 "Unexpected answer from AMS backend (organizations). "
                 "rh_org_id: 123, data={'items': []}",
@@ -318,7 +311,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.check("my_id", "my_name", 123))
-            self.assertInLog("Unexpected error code (500) returned by AMS backend (sub)", log)
+            self.assertInLog(
+                "Unexpected error code (500) returned by AMS backend (organizations)", log
+            )
 
     def test_ams_self_test_success(self):
         m_r = Mock()
@@ -375,6 +370,31 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         self.assertFalse(checker.rh_user_is_org_admin("user", 123))
+
+    def test_rh_user_is_org_admin_when_get_ams_org_returns_empty_response(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            # AMS get_ams_org() response
+            {"items": []},
+            # AMS rh_user_is_org_admin() response
+            {"items": []},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertFalse(checker.rh_user_is_org_admin("user", 123))
+        checker._session.get.assert_called_with(
+            'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
+            params={
+                "search": f"account.username = 'user' "
+                f"AND organization.id='{AMSCheck.ERROR_AMS_ORG_UNDEFINED}'"
+            },
+            timeout=0.8,
+        )
 
     def test_is_not_org_admin(self):
         m_r = Mock()
@@ -448,7 +468,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         with self.assertLogs(logger='root', level='ERROR') as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", 123))
             self.assertInLog(
-                "Unexpected error code (500) returned by AMS backend when listing role bindings",
+                "Unexpected error code (500) returned by AMS backend (organizations).",
                 log,
             )
 
@@ -508,6 +528,45 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         self.assertTrue(checker.rh_org_has_subscription(123))
+
+    def test_rh_org_has_subscription_when_get_ams_org_returns_empty_response(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            # Invocation 1
+            # AMS get_ams_org() response
+            {"items": []},
+            # AMS rh_org_has_subscription() response
+            {"total": 0},
+            # Invocation 2
+            # AMS get_ams_org() response
+            {"items": []},
+            # AMS rh_org_has_subscription() response
+            {"total": 0},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertFalse(checker.rh_org_has_subscription(123))
+        # JSON call count is 2 being: 1 get_ams_org(), 2 rh_org_has_subscription()
+        self.assertEqual(m_r.json.call_count, 2)
+        checker._session.get.assert_called_with(
+            (
+                'https://some-api.server.host'
+                f'/api/accounts_mgmt/v1/organizations/{AMSCheck.ERROR_AMS_ORG_UNDEFINED}/quota_cost'
+            ),
+            params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
+            timeout=0.8,
+        )
+
+        # Ensure the second call is cached
+        m_r.json.reset_mock()
+        self.assertFalse(checker.rh_org_has_subscription(123))
+        # JSON call count is 1 being: 1 get_ams_org(), cached rh_org_has_subscription() return value
+        self.assertEqual(m_r.json.call_count, 1)
 
     def test_is_org_not_lightspeed_subscriber(self):
         m_r = Mock()
