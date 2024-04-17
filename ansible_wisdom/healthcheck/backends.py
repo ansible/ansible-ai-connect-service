@@ -121,7 +121,7 @@ class WCAHealthCheckBase(BaseLightspeedHealthCheck):
     def get_wca_model_id(self):
         return None
 
-    def get_wca_client():
+    def get_wca_client(self):
         return None
 
     def pretty_status(self):
@@ -147,7 +147,7 @@ class WCAHealthCheck(WCAHealthCheckBase):
         self.enabled = settings.ENABLE_HEALTHCHECK_WCA
         return self.enabled
 
-    def get_wca_client():
+    def get_wca_client(self):
         return apps.get_app_config("ai").get_wca_client()
 
     def get_wca_api_key(self):
@@ -162,7 +162,7 @@ class WCAOnPremHealthCheck(WCAHealthCheckBase):
         self.enabled = settings.ENABLE_HEALTHCHECK_WCA_ONPREM
         return self.enabled
 
-    def get_wca_client():
+    def get_wca_client(self):
         return apps.get_app_config("ai").get_wca_onprem_client()
 
     def get_wca_api_key(self):

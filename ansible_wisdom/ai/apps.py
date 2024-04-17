@@ -29,6 +29,7 @@ class AiConfig(AppConfig):
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_client = UNINITIALIZED
+    _wca_onprem_client = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
 
