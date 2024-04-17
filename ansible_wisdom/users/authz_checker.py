@@ -3,6 +3,7 @@ import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from typing import Optional
 
 import backoff
 import requests
@@ -15,8 +16,26 @@ from requests.exceptions import HTTPError
 logger = logging.getLogger(__name__)
 
 authz_token_service_retry_counter = Counter(
-    'authz_sso_token_service_retries',
+    "authz_sso_token_service_retries",
     "Counter of Red Hat SSO token service retries",
+    namespace=NAMESPACE,
+)
+
+authz_ams_service_retry_counter = Counter(
+    "authz_ams_service_retries",
+    "Counter of AMS service retries",
+    namespace=NAMESPACE,
+)
+
+authz_ams_org_cache_hit_counter = Counter(
+    "authz_ams_org_cache_hits",
+    "Counter of the number of times the AMS 'ams_org' cache is hit.",
+    namespace=NAMESPACE,
+)
+
+authz_ams_rh_org_has_subscription_cache_hit_counter = Counter(
+    "authz_ams_rh_org_has_subscription_cache_hits",
+    "Counter of the number of times the AMS 'rh_org_has_subscription' cache is hit.",
     namespace=NAMESPACE,
 )
 
@@ -35,6 +54,19 @@ class BaseCheck:
         pass
 
 
+def fatal_exception(exc) -> bool:
+    """Determine if an exception is fatal or not"""
+    if isinstance(exc, requests.RequestException):
+        status_code = getattr(getattr(exc, "response", None), "status_code", None)
+        # retry on server errors and client errors
+        # with 429 status code (rate limited),
+        # don't retry on other client errors
+        return bool(status_code and (400 <= status_code < 500) and status_code != 429)
+    else:
+        # retry on all other errors (e.g. network)
+        return False
+
+
 class Token:
     def __init__(self, client_id, client_secret, server="sso.redhat.com") -> None:
         self._client_id = client_id
@@ -46,20 +78,7 @@ class Token:
         self.timeout = settings.AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT
 
     @staticmethod
-    def fatal_exception(exc) -> bool:
-        """Determine if an exception is fatal or not"""
-        if isinstance(exc, requests.RequestException):
-            status_code = getattr(getattr(exc, "response", None), "status_code", None)
-            # retry on server errors and client errors
-            # with 429 status code (rate limited),
-            # don't retry on other client errors
-            return bool(status_code and (400 <= status_code < 500) and status_code != 429)
-        else:
-            # retry on all other errors (e.g. network)
-            return False
-
-    @staticmethod
-    def on_backoff(details):
+    def on_backoff(_):
         authz_token_service_retry_counter.inc()
 
     def refresh(self) -> None:
@@ -75,7 +94,7 @@ class Token:
                 backoff.expo,
                 Exception,
                 max_tries=self.retries + 1,
-                giveup=self.fatal_exception,
+                giveup=fatal_exception,
                 on_backoff=self.on_backoff,
             )
             def post_request():
@@ -87,13 +106,13 @@ class Token:
 
             r = post_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.exception("Cannot reach the SSO backend in time")
+            logger.exception("Cannot reach the SSO backend in time.")
             return None
         except HTTPError:
-            logger.exception("SSO token service failed")
+            logger.exception("SSO token service failed.")
             return None
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by SSO service" % r.status_code)
+            logger.error(f"Unexpected error code ({r.status_code}) returned by SSO service.")
             return None
         data = r.json()
         self.access_token = data["access_token"]
@@ -149,45 +168,69 @@ class CIAMCheck(BaseCheck):
 
 
 class AMSCheck(BaseCheck):
-    ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time"
+    ERROR_AMS_CONNECTION_TIMEOUT = "Cannot reach the AMS backend in time."
 
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
         self._api_server = api_server
         self._ams_org_cache = {}
+        self.retries = settings.AUTHZ_AMS_SERVICE_RETRY_COUNT
 
         if self._api_server.startswith("https://api.stage.openshift.com"):
             proxy = {"https": "http://squid.corp.redhat.com:3128"}
             self._session.proxies.update(proxy)
 
+    @staticmethod
+    def on_backoff(_):
+        authz_ams_service_retry_counter.inc()
+
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    def get_ams_org(self, rh_org_id: int) -> str:
+    def get_ams_org(self, rh_org_id: int) -> Optional[str]:
         if not rh_org_id:
-            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}")
-            return ""
+            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
+            return None
+
+        # Check cache
         cache_key = f"rh_org_{rh_org_id}"
         cached_result = cache.get(cache_key)
         if cached_result is not None:
+            authz_ams_org_cache_hit_counter.inc(exemplar={'organization_id': str(rh_org_id)})
             return cached_result
 
         params = {"search": f"external_id='{rh_org_id}'"}
         self.update_bearer_token()
 
         try:
-            r = self._session.get(
-                self._api_server + "/api/accounts_mgmt/v1/organizations",
-                params=params,
-                timeout=0.8,
+
+            @backoff.on_exception(
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=fatal_exception,
+                on_backoff=self.on_backoff,
             )
+            def get_request():
+                return self._session.get(
+                    self._api_server + "/api/accounts_mgmt/v1/organizations",
+                    params=params,
+                    timeout=0.8,
+                )
+
+            r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
-            return ""
+            return None
+
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by AMS backend (org)" % r.status_code)
-            return ""
+            logger.error(
+                f"Unexpected error code ({r.status_code}) returned by AMS backend (organizations). "
+                f"rh_org_id: {rh_org_id}."
+            )
+            return None
+
         data = r.json()
 
         try:
@@ -195,8 +238,11 @@ class AMSCheck(BaseCheck):
             cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
             return result
         except (IndexError, KeyError, ValueError):
-            logger.exception("Unexpected organization answer from AMS: data=%s" % data)
-            return ""
+            logger.exception(
+                f"Unexpected answer from AMS backend (organizations). "
+                f"rh_org_id: {rh_org_id}, data={data}."
+            )
+            return None
 
     def self_test(self):
         self.update_bearer_token()
@@ -268,32 +314,63 @@ class AMSCheck(BaseCheck):
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
         ams_org_id = self.get_ams_org(organization_id)
+        if not ams_org_id:
+            # See https://issues.redhat.com/browse/AAP-22758
+            # If the AMS Organisation lookup fails assume the User has a subscription
+            return True
+
+        # Check cache
+        cache_key = f"ams_rh_org_has_subscription_{organization_id}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            authz_ams_rh_org_has_subscription_cache_hit_counter.inc(
+                exemplar={'organization_id': str(organization_id)}
+            )
+            return cached_result
+
         params = {"search": "quota_id LIKE 'seat|ansible.wisdom%'"}
         self.update_bearer_token()
 
         try:
-            r = self._session.get(
-                (
-                    f"{self._api_server}"
-                    f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
-                ),
-                params=params,
-                timeout=0.8,
+
+            @backoff.on_exception(
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=fatal_exception,
+                on_backoff=self.on_backoff,
             )
+            def get_request():
+                return self._session.get(
+                    (
+                        f"{self._api_server}"
+                        f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
+                    ),
+                    params=params,
+                    timeout=0.8,
+                )
+
+            r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error(
-                "Unexpected error code (%s) returned by AMS backend when listing resource_quota"
-                % r.status_code
+                f"Unexpected error code ({r.status_code}) returned by AMS backend (quota_cost). "
+                f"organization_id: {organization_id}, ams_org_id: {ams_org_id}."
             )
             return False
         data = r.json()
         try:
-            return data["total"] > 0
+            result = data["total"] > 0
+            cache.set(cache_key, result, settings.AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC)
+            return result
+
         except (KeyError, ValueError):
-            logger.error("Unexpected resource_quota answer from AMS")
+            logger.error(
+                f"Unexpected answer from AMS backend (quota_cost). "
+                f"organization_id {organization_id}, ams_org_id: {ams_org_id}."
+            )
             return False
 
 
