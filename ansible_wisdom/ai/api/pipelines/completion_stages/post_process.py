@@ -320,9 +320,8 @@ def completion_post_process(context: CompletionContext):
 
     # If ARI is not enabled, and suggestion is multi-task, add newlines between tasks
     if not ari_caller and is_multi_task_prompt:
-        predictions = yaml.safe_load(post_processed_predictions["predictions"][0])
-        post_processed_predictions["predictions"][0] = yaml.dump(
-            predictions, Dumper=fmtr.AnsibleDumper, allow_unicode=True, sort_keys=False, width=10000
+        post_processed_predictions["predictions"][0] = fmtr.normalize_yaml(
+            post_processed_predictions["predictions"][0]
         )
 
     # adjust indentation as per default ansible-lint configuration
