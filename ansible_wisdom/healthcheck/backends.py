@@ -99,7 +99,7 @@ class WCAHealthCheckBase(BaseLightspeedHealthCheck):
             return
 
         try:
-            apps.get_app_config("ai").get_wca_client().infer_from_parameters(
+            self.get_wca_client().infer_from_parameters(
                 self.get_wca_api_key(),
                 self.get_wca_model_id(),
                 "",
@@ -119,6 +119,9 @@ class WCAHealthCheckBase(BaseLightspeedHealthCheck):
         return None
 
     def get_wca_model_id(self):
+        return None
+
+    def get_wca_client():
         return None
 
     def pretty_status(self):
@@ -144,6 +147,9 @@ class WCAHealthCheck(WCAHealthCheckBase):
         self.enabled = settings.ENABLE_HEALTHCHECK_WCA
         return self.enabled
 
+    def get_wca_client():
+        return apps.get_app_config("ai").get_wca_client()
+
     def get_wca_api_key(self):
         return settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
 
@@ -155,6 +161,9 @@ class WCAOnPremHealthCheck(WCAHealthCheckBase):
     def is_enabled(self) -> bool:
         self.enabled = settings.ENABLE_HEALTHCHECK_WCA_ONPREM
         return self.enabled
+
+    def get_wca_client():
+        return apps.get_app_config("ai").get_wca_onprem_client()
 
     def get_wca_api_key(self):
         return settings.ANSIBLE_WCA_ONPREM_HEALTHCHECK_API_KEY

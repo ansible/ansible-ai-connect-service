@@ -86,6 +86,12 @@ class AiConfig(AppConfig):
         )
         return self._wca_client
 
+    def get_wca_onprem_client(self):
+        self._wca_onprem_client = self._wca_onprem_client or WCAOnPremClient(
+            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+        )
+        return self._wca_onprem_client
+
     def get_ari_caller(self):
         if not settings.ENABLE_ARI_POSTPROCESS:
             logger.info("Postprocessing is disabled.")

@@ -39,6 +39,7 @@ def is_status_ok(status):
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -149,7 +150,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         return timestamp, dependencies
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_all_healthy(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -168,7 +168,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
     @override_settings(DEPLOYED_REGION="")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_without_deployed_region(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -249,7 +248,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 'unavailable: An error occurred',
             )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_health_check_model_mesh_mock(self):
         cache.clear()
@@ -259,7 +257,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
     def test_health_check_model_mesh_mock_with_launchdarkly(self, LDClient):
@@ -271,7 +268,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ENABLE_HEALTHCHECK_MODEL_MESH=False)
     def test_health_check_model_mesh_mock_disabled(self):
@@ -286,7 +282,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_aws_secret_manager_error(self):
         cache.clear()
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -311,7 +306,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_SECRET_MANAGER=False)
     def test_health_check_aws_secret_manager_disabled(self):
         cache.clear()
@@ -325,7 +319,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_wca_token_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -355,7 +348,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_wca_inference_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -382,7 +374,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_wca_inference_generic_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -412,7 +403,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_WCA=False)
     def test_health_check_wca_disabled(self):
         cache.clear()
@@ -427,7 +417,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=False)
     def test_health_check_wca_on_prem_disabled(self):
         cache.clear()
@@ -442,7 +431,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
     def test_health_check_wca_on_prem_enable(self):
         cache.clear()
@@ -457,7 +445,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertTrue(is_status_ok(dependency['status']))
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_authorization_error(self, *args):
         cache.clear()
         apps.get_app_config('ai')._seat_checker.self_test = Mock(side_effect=HTTPError)
@@ -481,7 +468,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             )
 
     @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_AUTHORIZATION=False)
     def test_health_check_authorization_disabled(self):
         cache.clear()
