@@ -72,3 +72,48 @@ The rule validation will check if permissions are not 0600 and update them to ma
         path: /etc/passwd
         mode: '0600'
 ```
+
+# secure stoage
+
+It's important to encrypt data at-rest to prevent and reduce the impact of data leaks.
+
+This rule ensures that the block storage associated with an RDS instance is encrypted.
+
+## Problematic Code
+
+```yaml
+---
+- name: test playbook
+  hosts: all
+  tasks:
+    - name: deploy engine RDS in region
+      become: yes
+      aws_rds_instance:
+        name: name
+        engine: engine
+        master_username: myuser
+        master_password: "{{ _master_password_ }}"
+        instance_class: db.t2.micro
+        region: region
+        state: present
+```
+
+## Correct Code
+
+```yaml
+---
+- name: test playbook
+  hosts: all
+  tasks:
+    - name: deploy engine RDS in region
+      become: yes
+      aws_rds_instance:
+        name: name
+        engine: engine
+        master_username: myuser
+        master_password: "{{ _master_password_ }}"
+        instance_class: db.t2.micro
+        region: region
+        state: present
+        storage_encrypted: true
+```
