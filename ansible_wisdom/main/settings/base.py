@@ -546,7 +546,9 @@ ENABLE_HEALTHCHECK_SECRET_MANAGER = (
 )
 ENABLE_HEALTHCHECK_WCA = os.getenv('ENABLE_HEALTHCHECK_WCA', 'True').lower() == 'true'
 # On Prem solution by default is false
-ENABLE_HEALTHCHECK_WCA_ONPREM = os.getenv('ENABLE_HEALTHCHECK_WCA_ONPREM', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_WCA_ONPREM = (
+    os.getenv('ENABLE_HEALTHCHECK_WCA_ONPREM', 'False').lower() == 'true'
+)
 ENABLE_HEALTHCHECK_AUTHORIZATION = (
     os.getenv('ENABLE_HEALTHCHECK_AUTHORIZATION', 'True').lower() == 'true'
 )
