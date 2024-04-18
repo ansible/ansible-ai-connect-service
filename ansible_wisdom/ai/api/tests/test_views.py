@@ -2605,6 +2605,22 @@ that are running Red Hat Enterprise Linux 9.
             r = self.client.post(reverse('explanations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    def test_bad_request_with_wca_client(self):
+        explanation_id = str(uuid.uuid4())
+        # No content specified
+        payload = {
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            WCAClient(inference_url='https://wca_api_url'),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
     @patch('ansible_wisdom.ai.api.tests.test_views.MockedLLM.invoke')
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception('Dummy Exception')
@@ -2687,6 +2703,19 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_bad_request_with_wca_client(self):
+        summary_id = str(uuid.uuid4())
+        # No content specified
+        payload = {"summaryId": summary_id, "ansibleExtensionVersion": "24.4.0"}
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            WCAClient(inference_url='https://wca_api_url'),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('summaries'), payload, format='json')
@@ -2782,6 +2811,19 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_bad_request_with_wca_client(self):
+        generation_id = str(uuid.uuid4())
+        # No content specified
+        payload = {"generationId": generation_id, "ansibleExtensionVersion": "24.4.0"}
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            WCAClient(inference_url='https://wca_api_url'),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('generations'), payload, format='json')

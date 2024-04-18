@@ -762,28 +762,30 @@ class Explanation(APIView):
         {playbook}"
         """
 
-        model_client = apps.get_app_config("ai").model_mesh_client
-        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
-
-        chat_template = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(
-                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
-                ),
-                HumanMessagePromptTemplate.from_template(
-                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                ),
-            ]
-        )
-
-        chain = chat_template | llm
-
         request_serializer = ExplanationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
+        content = request_serializer.validated_data.get("content")
 
         try:
-            output = chain.invoke({"playbook": request_serializer.validated_data.get("content")})
+            model_client = apps.get_app_config("ai").model_mesh_client
+            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+
+            chat_template = ChatPromptTemplate.from_messages(
+                [
+                    SystemMessagePromptTemplate.from_template(
+                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
+                        additional_kwargs={"role": "system"},
+                    ),
+                    HumanMessagePromptTemplate.from_template(
+                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                    ),
+                ]
+            )
+
+            chain = chat_template | llm
+
+            output = chain.invoke({"playbook": content})
             answer = {"content": output, "format": "markdown"}
             if explanation_id:
                 answer["explanationId"] = explanation_id
@@ -842,31 +844,34 @@ class Summary(APIView):
         {content}"
         """
 
-        model_client = apps.get_app_config("ai").model_mesh_client
-        llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
-
-        chat_template = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(
-                    textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE), additional_kwargs={"role": "system"}
-                ),
-                HumanMessagePromptTemplate.from_template(
-                    textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                ),
-            ]
-        )
-
-        chain = chat_template | llm
-
         request_serializer = SummaryRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         summary_id = str(request_serializer.validated_data.get("summaryId", ""))
+        content = request_serializer.validated_data.get("content")
 
         try:
-            output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+            model_client = apps.get_app_config("ai").model_mesh_client
+            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+
+            chat_template = ChatPromptTemplate.from_messages(
+                [
+                    SystemMessagePromptTemplate.from_template(
+                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
+                        additional_kwargs={"role": "system"},
+                    ),
+                    HumanMessagePromptTemplate.from_template(
+                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
+                    ),
+                ]
+            )
+
+            chain = chat_template | llm
+
+            output = chain.invoke({"content": content})
 
             answer = {"content": output, "format": "plaintext"}
-            answer["summaryId"] = summary_id
+            if summary_id:
+                answer["summaryId"] = summary_id
 
             return Response(
                 answer,
@@ -925,6 +930,7 @@ class Generation(APIView):
         request_serializer = GenerationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         generation_id = str(request_serializer.validated_data.get("generationId", ""))
+        content = request_serializer.validated_data.get("content")
 
         try:
             model_client = apps.get_app_config("ai").model_mesh_client
@@ -943,7 +949,7 @@ class Generation(APIView):
             )
 
             chain = chat_template | llm
-            output = chain.invoke({"content": request_serializer.validated_data.get("content")})
+            output = chain.invoke({"content": content})
 
             postprocessed = []
             code_block = False
