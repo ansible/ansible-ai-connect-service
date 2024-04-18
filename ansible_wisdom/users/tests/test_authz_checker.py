@@ -250,14 +250,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger='root', level='INFO') as log:
             self.assertEqual(checker.get_ams_org(123), AMSCheck.ERROR_AMS_ORG_UNDEFINED)
             self.assertInLog(
-                "Unexpected answer from AMS backend (organizations). "
-                "rh_org_id: 123, data={'items': []}",
+                "An AMS Organization could not be found. " "rh_org_id: 123.",
                 log,
             )
-            self.assertInLog("IndexError: list index out of range", log)
 
     def test_ams_check(self):
         m_r = Mock()
