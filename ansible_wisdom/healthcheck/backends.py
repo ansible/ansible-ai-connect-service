@@ -90,20 +90,18 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
         return self.__class__.__name__
 
 
-class WCAHealthCheck(BaseLightspeedHealthCheck):
+class WCAHealthCheckBase(BaseLightspeedHealthCheck):
     critical_service = True
+    enabled = False
 
     def check_status(self):
-        self.enabled = settings.ENABLE_HEALTHCHECK_WCA
-        if not self.enabled:
+        if not self.is_enabled():
             return
 
-        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
-        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
         try:
-            apps.get_app_config("ai").get_wca_client().infer_from_parameters(
-                wca_api_key,
-                wca_model_id,
+            self.get_wca_client().infer_from_parameters(
+                self.get_wca_api_key(),
+                self.get_wca_model_id(),
                 "",
                 "- name: install ffmpeg on Red Hat Enterprise Linux",
             )
@@ -114,8 +112,20 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
             self.add_error(WcaTokenRequestException(ERROR_MESSAGE), e)
             self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
 
+    def is_enabled(self) -> bool:
+        return self.enabled
+
+    def get_wca_api_key(self):
+        return None
+
+    def get_wca_model_id(self):
+        return None
+
+    def get_wca_client(self):
+        return None
+
     def pretty_status(self):
-        if not self.enabled:
+        if not self.is_enabled():
             return {
                 "tokens": "disabled",
                 "models": "disabled",
@@ -130,6 +140,36 @@ class WCAHealthCheck(BaseLightspeedHealthCheck):
 
     def identifier(self):
         return self.__class__.__name__
+
+
+class WCAHealthCheck(WCAHealthCheckBase):
+    def is_enabled(self) -> bool:
+        self.enabled = settings.ENABLE_HEALTHCHECK_WCA
+        return self.enabled
+
+    def get_wca_client(self):
+        return apps.get_app_config("ai").get_wca_client()
+
+    def get_wca_api_key(self):
+        return settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
+
+    def get_wca_model_id(self):
+        return settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+
+
+class WCAOnPremHealthCheck(WCAHealthCheckBase):
+    def is_enabled(self) -> bool:
+        self.enabled = settings.ENABLE_HEALTHCHECK_WCA_ONPREM
+        return self.enabled
+
+    def get_wca_client(self):
+        return apps.get_app_config("ai").get_wca_onprem_client()
+
+    def get_wca_api_key(self):
+        return settings.ANSIBLE_WCA_ONPREM_HEALTHCHECK_API_KEY
+
+    def get_wca_model_id(self):
+        return settings.ANSIBLE_WCA_ONPREM_HEALTHCHECK_MODEL_ID
 
 
 class AuthorizationHealthCheck(BaseLightspeedHealthCheck):

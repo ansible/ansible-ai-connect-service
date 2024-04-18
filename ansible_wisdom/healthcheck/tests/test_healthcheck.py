@@ -19,6 +19,7 @@ from ansible_wisdom.ai.api.aws.wca_secret_manager import WcaSecretManagerError
 from ansible_wisdom.ai.api.model_client.wca_client import (
     WCAClient,
     WcaInferenceFailure,
+    WCAOnPremClient,
     WcaTokenFailure,
 )
 from ansible_wisdom.test_utils import (
@@ -37,12 +38,15 @@ def is_status_ok(status):
         return len(child_status) == len(status)
 
 
+@override_settings(LAUNCHDARKLY_SDK_KEY=None)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.mock_wca_client_with(Mock(spec=WCAClient))
+        self.mock_wca_onprem_client_with(Mock(spec=WCAOnPremClient))
         self.mock_seat_checker_with(Mock())
         self.model_server_patcher = patch('ansible_wisdom.healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
@@ -129,7 +133,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         timestamp = data['timestamp']
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(6, len(dependencies))
+        self.assertEqual(7, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency['name'],
@@ -140,6 +144,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                     'secret-manager',
                     'attribution',
                     'wca',
+                    'wca-onprem',
                     'authorization',
                 ],
             )
@@ -147,8 +152,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
         return timestamp, dependencies
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_all_healthy(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -166,8 +169,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         self.assertEqual(timestamp, data['timestamp'])
 
     @override_settings(DEPLOYED_REGION="")
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_without_deployed_region(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -176,7 +177,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
     def test_health_check_model_mesh_http_error(self):
         cache.clear()
@@ -216,7 +216,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 'unavailable: An error occurred',
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     def test_health_check_model_mesh_grpc(self):
         cache.clear()
@@ -226,7 +225,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     def test_health_check_model_mesh_grpc_error(self):
         cache.clear()
@@ -248,8 +246,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 'unavailable: An error occurred',
             )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_health_check_model_mesh_mock(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
@@ -258,7 +254,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
     def test_health_check_model_mesh_mock_with_launchdarkly(self, LDClient):
@@ -270,8 +265,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         for dependency in dependencies:
             self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ENABLE_HEALTHCHECK_MODEL_MESH=False)
     def test_health_check_model_mesh_mock_disabled(self):
         cache.clear()
@@ -284,8 +277,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_aws_secret_manager_error(self):
         cache.clear()
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -309,8 +300,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 'unavailable: An error occurred',
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_SECRET_MANAGER=False)
     def test_health_check_aws_secret_manager_disabled(self):
         cache.clear()
@@ -323,8 +312,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_health_check_wca_token_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -340,6 +327,9 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                     # If a Token cannot be retrieved we can also not execute Models
                     self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
 
@@ -353,8 +343,37 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 },
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    def test_health_check_wca_onprem_token_error(self, *args):
+        cache.clear()
+        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
+        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    # If a Token cannot be retrieved we can also not execute Models
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ansible_wisdom.ai.api.model_client.exceptions.WcaTokenFailure',
+                'wca-onprem',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
+
     def test_health_check_wca_inference_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -367,8 +386,11 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             _, dependencies = self.assert_basic_data(r, 'error')
             for dependency in dependencies:
                 if dependency['name'] == 'wca':
-                    self.assertEqual('ok', dependency['status']['tokens'])
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
                 self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -380,8 +402,34 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 {"tokens": "ok", "models": "unavailable: An error occurred"},
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    def test_health_check_wca_onprem_inference_error(self, *args):
+        cache.clear()
+        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
+        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ansible_wisdom.ai.api.model_client.exceptions.WcaInferenceFailure',
+                'wca-onprem',
+                {"tokens": "ok", "models": "unavailable: An error occurred"},
+            )
+
     def test_health_check_wca_inference_generic_error(self, *args):
         cache.clear()
         mock_wca_client = apps.get_app_config("ai").get_wca_client()
@@ -396,6 +444,9 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 if dependency['name'] == 'wca':
                     self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
                     self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
                 else:
                     self.assertTrue(is_status_ok(dependency['status']))
                 self.assertGreaterEqual(dependency['time_taken'], 0)
@@ -410,8 +461,37 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 },
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    def test_health_check_wca_onprem_inference_generic_error(self, *args):
+        cache.clear()
+        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
+        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=Exception)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertEqual(dependency['status']['models'], 'ok')
+                elif dependency['name'] == 'wca-onprem':
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'Exception',
+                'wca-onprem',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
+
     @override_settings(ENABLE_HEALTHCHECK_WCA=False)
     def test_health_check_wca_disabled(self):
         cache.clear()
@@ -425,8 +505,32 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=False)
+    def test_health_check_wca_on_prem_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca-onprem':
+                self.assertEqual(dependency['status']['tokens'], 'disabled')
+                self.assertEqual(dependency['status']['models'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
+    def test_health_check_wca_on_prem_enable(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca-onprem':
+                self.assertEqual(dependency['status']['tokens'], 'ok')
+                self.assertEqual(dependency['status']['models'], 'ok')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
     def test_health_check_authorization_error(self, *args):
         cache.clear()
         apps.get_app_config('ai')._seat_checker.self_test = Mock(side_effect=HTTPError)
@@ -449,8 +553,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 'unavailable: An error occurred',
             )
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     @override_settings(ENABLE_HEALTHCHECK_AUTHORIZATION=False)
     def test_health_check_authorization_disabled(self):
         cache.clear()
@@ -463,7 +565,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     def test_health_check_attribution_error(self, *args):
         cache.clear()
 
@@ -480,7 +581,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
 
         self.assertTrue(attribution_result['status'].startswith('unavailable:'))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=None)
     @override_settings(ENABLE_HEALTHCHECK_ATTRIBUTION=False)
     def test_health_check_attribution_disabled(self):
         cache.clear()
