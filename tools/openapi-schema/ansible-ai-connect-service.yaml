@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible AI Connect.
-  version: 0.0.8
+  version: 0.0.9
   description: Equip the automation developer at Lightspeed.
 paths:
   /api/v0/ai/attributions/:
@@ -214,20 +214,6 @@ paths:
                 description: A valid inline suggestion feedback sample request to
                   get details about the suggestion like latency time, user decision
                   time, user action and suggestion id.
-              ValidAnsibleContentFeedbackExample:
-                value:
-                  ansibleContent:
-                    content: |
-                      ---
-                      - hosts: all
-                        become: yes
-
-                        tasks:
-                        - name: Install ssh
-                    documentUri: file:///home/user/ansible/test.yaml
-                    trigger: '0'
-                summary: Feedback Request sample for Ansible content upload
-                description: A valid sample request to get ansible content as feedback.
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/FeedbackRequest'
@@ -641,27 +627,6 @@ components:
       - '1'
       - '2'
       type: string
-    AnsibleContentFeedback:
-      type: object
-      properties:
-        content:
-          type: string
-          title: Ansible Content
-          description: Ansible file content.
-        documentUri:
-          type: string
-        trigger:
-          $ref: '#/components/schemas/TriggerEnum'
-        activityId:
-          type: string
-          format: uuid
-          title: Activity ID
-          description: A UUID that identifies a user activity session to the document
-            uploaded.
-      required:
-      - content
-      - documentUri
-      - trigger
     Attribution:
       type: object
       properties:
@@ -866,8 +831,6 @@ components:
     FeedbackRequest:
       type: object
       properties:
-        ansibleContent:
-          $ref: '#/components/schemas/AnsibleContentFeedback'
         inlineSuggestion:
           $ref: '#/components/schemas/InlineSuggestionFeedback'
         issueFeedback:
@@ -1079,12 +1042,6 @@ components:
             collection.
       required:
       - optOut
-    TriggerEnum:
-      enum:
-      - '0'
-      - '1'
-      - '2'
-      type: string
     TypeEnum:
       enum:
       - bug-report
