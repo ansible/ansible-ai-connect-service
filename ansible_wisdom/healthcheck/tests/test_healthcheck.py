@@ -41,6 +41,7 @@ def is_status_ok(status):
 @override_settings(LAUNCHDARKLY_SDK_KEY=None)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
@@ -518,7 +519,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
     def test_health_check_wca_on_prem_enable(self):
         cache.clear()
         r = self.client.get(reverse('health_check'))
