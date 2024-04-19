@@ -238,6 +238,10 @@ class AMSCheck(BaseCheck):
         data = r.json()
 
         try:
+            if len(data["items"]) == 0:
+                logger.info(f"An AMS Organization could not be found. " f"rh_org_id: {rh_org_id}.")
+                return AMSCheck.ERROR_AMS_ORG_UNDEFINED
+
             result = data["items"][0]["id"]
             cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
             return result
@@ -246,7 +250,7 @@ class AMSCheck(BaseCheck):
                 f"Unexpected answer from AMS backend (organizations). "
                 f"rh_org_id: {rh_org_id}, data={data}."
             )
-            return AMSCheck.ERROR_AMS_ORG_UNDEFINED
+            raise AMSCheck.AMSError
 
     def self_test(self):
         self.update_bearer_token()
