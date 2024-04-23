@@ -71,6 +71,21 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
         self.assertEqual(fmtr.normalize_yaml(prompt_and_context), expected)
         # a, b, _ = fmtr.normalize_yaml(prompt_and_context).rsplit('\n', 2)
 
+    def test_missing_lines_between_tasks(self):
+        content = """---
+- name: here is the first task
+  copy:
+    src: a
+    dest: b
+- name: here is the second task
+  copy:
+    src: a
+    dest: b
+"""
+        expected = """- name: here is the first task\n  copy:\n    src: a\n    dest: b\n\n- name: here is the second task\n  copy:\n    src: a\n    dest: b\n"""  # noqa: E501
+        self.assertEqual(fmtr.normalize_yaml(content), expected)
+        # a, b, _ = fmtr.normalize_yaml(prompt_and_context).rsplit('\n', 2)
+
     def test_incorrect_indent_name(self):
         """
         extra spaces after values, do not remove them

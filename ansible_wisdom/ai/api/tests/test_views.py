@@ -248,7 +248,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         status_code=None,
         mock_api_key=Mock(return_value='org-api-key'),
         mock_model_id=Mock(return_value='org-model-id'),
-        response_data: dict = {"predictions": ['']},
+        response_data: dict = {
+            "predictions": ['      ansible.builtin.apt:\n        name: apache2']
+        },
     ):
         model_input = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -767,6 +769,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 
             # confirm prediction has had whitespace lines trimmed
             self.assertEqual(prediction, trim_whitespace_lines(prediction))
+
+            # confirm blank line between two tasks
+            self.assertTrue('\n\n    - name: Start' in prediction)
 
             self.assertSegmentTimestamp(log)
             segment_events = self.extractSegmentEventsFromLog(log)
