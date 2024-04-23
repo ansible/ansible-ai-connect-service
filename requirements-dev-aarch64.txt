@@ -34,8 +34,10 @@ grpcio-tools==1.54.2
     # via -r requirements-dev.in
 identify==2.5.35
     # via pre-commit
-idna==3.6
-    # via requests
+idna==3.7
+    # via
+    #   -r requirements-dev.in
+    #   requests
 isort==5.10.1
     # via -r requirements-dev.in
 mccabe==0.7.0

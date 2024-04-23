@@ -4,8 +4,9 @@
 #
 #    pip-compile --output-file=requirements-aarch64.txt requirements.in
 #
-aiohttp==3.9.3
+aiohttp==3.9.4
     # via
+    #   -r requirements.in
     #   langchain
     #   langchain-community
 aiosignal==1.3.1

@@ -1,3 +1,5 @@
+# pin aiohttp until langchain is updated
+aiohttp==3.9.4
 # pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
 # remove this once ansible-risk-insight is updated to properly
 # pull a version of ansible >= 8.5.0.
