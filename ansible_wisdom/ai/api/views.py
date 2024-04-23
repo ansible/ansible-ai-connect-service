@@ -787,7 +787,9 @@ class Explanation(APIView):
             chain = chat_template | llm
 
             output = chain.invoke({"playbook": content})
-            answer = {"content": output, "format": "markdown"}
+            # Only for Mistral.
+            output_after_cleanup = re.sub(r"# Title: ", "# ", output)
+            answer = {"content": output_after_cleanup, "format": "markdown"}
             if explanation_id:
                 answer["explanationId"] = explanation_id
 

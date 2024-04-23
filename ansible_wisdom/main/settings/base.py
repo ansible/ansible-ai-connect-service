@@ -26,14 +26,10 @@ ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
     'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
 )
 ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
-ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
-    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
-)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = "http://35.183.24.136:11434"
 
 t_model_mesh_api_type = Literal["grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy"]
-ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_TYPE", cast(t_model_mesh_api_type, "http")
-)
+ANSIBLE_AI_MODEL_MESH_API_TYPE="ollama"
 t_model_mesh_healthcheck_protocol = Literal["http", "https"]
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL: t_model_mesh_healthcheck_protocol = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL",
