@@ -1,0 +1,15 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-PYTHON-PYOPENSSL-6149520:
+    - '*':
+        reason: We do not support PowerPC
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-PYOPENSSL-6592766:
+    - '*':
+        reason: SSL_OP_NO_TICKET option isn't enabled
+        expires: 2024-05-24T15:19:11.846Z
+        created: 2024-04-24T15:19:11.851Z
+patch: {}
