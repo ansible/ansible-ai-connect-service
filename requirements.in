@@ -58,7 +58,7 @@ sentence-transformers==2.5.1
 # Remove once a Django>4.2.11 is released with an updated dep on sqlparse
 sqlparse==0.5.0
 social-auth-app-django==5.4.0
-social-auth-core[openidconnect]==4.4.2
+social-auth-core==4.5.3
 # Use torch/torchvision CPU version
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux_x86_64.whl; platform_machine=="x86_64" and sys_platform=="linux"
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1-cp311-none-macosx_10_9_x86_64.whl; platform_machine=="x86_64" and sys_platform=="darwin"
