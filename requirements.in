@@ -47,6 +47,7 @@ psycopg[binary]==3.1.8
 pydantic==2.6.4
 pytz
 pyOpenSSL==24.0.0
+python-jose==3.3.0
 PyYAML==6.0
 requests==2.31.0
 segment-analytics-python==2.2.2
