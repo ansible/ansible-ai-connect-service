@@ -2,7 +2,6 @@ import logging
 
 import jwt
 from django.conf import settings
-from jose import jwk
 from rest_framework import authentication
 from social_core.backends.oauth import BaseOAuth2
 from social_django.models import UserSocialAuth
@@ -64,7 +63,7 @@ class RHSSOAuthentication(authentication.BaseAuthentication):
         strategy = load_strategy()
         backend = load_backend(strategy, 'oidc', redirect_uri=None)
         key = backend.find_valid_key(access_token)
-        rsakey = jwk.construct(key)
+        rsakey = jwt.algorithms.RSAAlgorithm.from_jwk(key)
 
         # Decode and verify access token using extracted public key
         decoded_token = jwt.decode(

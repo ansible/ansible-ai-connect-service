@@ -8,7 +8,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth import get_user_model
 from django.test import override_settings
-from jose import constants, jwk
 from social_django.models import UserSocialAuth
 
 from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
@@ -81,9 +80,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
-        self.jwks_public_key = jwk.RSAKey(
-            algorithm=constants.Algorithms.RS256, key=public_bytes.decode('utf-8')
-        ).to_dict()
+        self.public_key = jwt.algorithms.RSAAlgorithm.from_jwk(public_bytes.decode('utf-8'))
 
     def tearDown(self):
         self.rh_user.delete()

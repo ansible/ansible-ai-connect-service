@@ -5,7 +5,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from jose import jwk
 from social_core.exceptions import AuthCanceled, AuthException
 from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
@@ -79,7 +78,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         return
 
     key = backend.find_valid_key(response['access_token'])
-    rsakey = jwk.construct(key)
+    rsakey = jwt.algorithms.RSAAlgorithm.from_jwk(key)
     payload = jwt.decode(
         response['access_token'],
         rsakey.to_pem().decode("utf-8"),
