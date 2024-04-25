@@ -1,3 +1,5 @@
+# pin aiohttp until it's updated in langchain
+aiohttp==3.9.4
 # pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
 # remove this once ansible-risk-insight is updated to properly
 # pull a version of ansible >= 8.5.0.
@@ -55,7 +57,7 @@ sentence-transformers==2.5.1
 # pin sqlparse on 0.5.0 to address GHSA-2m57-hf25-phgg
 # Remove once a Django>4.2.11 is released with an updated dep on sqlparse
 sqlparse==0.5.0
-social-auth-app-django==5.4.0
+social-auth-app-django==5.4.1
 social-auth-core[openidconnect]==4.4.2
 # Use torch/torchvision CPU version
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux_x86_64.whl; platform_machine=="x86_64" and sys_platform=="linux"
