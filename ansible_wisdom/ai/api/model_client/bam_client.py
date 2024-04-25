@@ -115,9 +115,9 @@ def unwrap_answer(message: Union[str, BaseMessage]) -> str:
     if not task:
         raise ValueError
 
-    m = re.search(r"```yaml\n+(.+)```", task, re.MULTILINE | re.DOTALL)
+    m = re.search(r"```(yaml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
     if m:
-        task = m.group(1)
+        task = m.group(2)
     return dedent(re.split(r'- name: .+\n', task)[-1]).rstrip()
 
 

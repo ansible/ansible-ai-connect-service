@@ -44,6 +44,17 @@ class TestUnwrapAnswer(TestCase):
         """
         self.assertEqual(unwrap_answer(dedent(answer)), self.expectation)
 
+    def test_unwrap_markdown_with_backquotes(self):
+        # e.g: llama3
+        answer = """
+        ```
+        - name: Lapin bleu à réaction!
+          ansible.builtin.debug:
+            msg: something went wrong
+        ```
+        """
+        self.assertEqual(unwrap_answer(dedent(answer)), self.expectation)
+
     def test_unwrap_just_task(self):
         answer = """
         ----
