@@ -28,8 +28,5 @@ class OllamaClient(BAMClient):
         super().__init__(inference_url=inference_url)
         self._prediction_url = self._inference_url
 
-    def get_chat_model(self, model_id):
-        return Ollama(
-            base_url=self._prediction_url,
-            model=model_id,
-        )
+    def get_chat_model(self, model_id, system=None):
+        return Ollama(base_url=self._prediction_url, model=model_id, system=system)

@@ -126,12 +126,13 @@ class BAMClient(ModelMeshClient):
         super().__init__(inference_url=inference_url)
         self._prediction_url = f"{self._inference_url}/v2/text/chat?version=2024-01-10"
 
-    def get_chat_model(self, model_id):
+    def get_chat_model(self, model_id, system=None):
         return ChatBAM(
             api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
             model_id=model_id,
             prediction_url=self._prediction_url,
             timeout=self.timeout,
+            system=system,
         )
 
     def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
@@ -141,13 +142,10 @@ class BAMClient(ModelMeshClient):
         context = model_input.get("instances", [{}])[0].get("context", "")
 
         full_prompt = f"{context}{prompt}\n"
-        llm = self.get_chat_model(model_id)
+        llm = self.get_chat_model(model_id, system=SYSTEM_MESSAGE_TEMPLATE)
 
         chat_template = ChatPromptTemplate.from_messages(
             [
-                SystemMessagePromptTemplate.from_template(
-                    SYSTEM_MESSAGE_TEMPLATE, additional_kwargs={"role": "system"}
-                ),
                 HumanMessagePromptTemplate.from_template(
                     HUMAN_MESSAGE_TEMPLATE, additional_kwargs={"role": "user"}
                 ),
