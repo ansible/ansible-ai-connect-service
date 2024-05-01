@@ -127,8 +127,6 @@ djangorestframework==3.14.0
     #   drf-spectacular
 drf-spectacular==0.25.1
     # via -r requirements.in
-ecdsa==0.18.0
-    # via python-jose
 et-xmlfile==1.1.0
     # via openpyxl
 executing==2.0.1
@@ -313,10 +311,6 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyasn1==0.5.1
-    # via
-    #   python-jose
-    #   rsa
 pycparser==2.21
     # via cffi
 pydantic==2.6.4
@@ -343,10 +337,6 @@ python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   segment-analytics-python
-python-jose==3.3.0
-    # via
-    #   -r requirements.in
-    #   social-auth-core
 python3-openid==3.2.0
     # via social-auth-core
 pytz==2024.1
@@ -404,8 +394,6 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-rsa==4.9
-    # via python-jose
 ruamel-yaml==0.18.6
     # via
     #   ansible-lint
@@ -431,7 +419,6 @@ sentence-transformers==2.5.1
 six==1.16.0
     # via
     #   asttokens
-    #   ecdsa
     #   python-dateutil
 smmap==5.0.1
     # via
@@ -439,7 +426,7 @@ smmap==5.0.1
     #   gitdb
 social-auth-app-django==5.4.1
     # via -r requirements.in
-social-auth-core[openidconnect]==4.4.2
+social-auth-core==4.5.4
     # via
     #   -r requirements.in
     #   social-auth-app-django
