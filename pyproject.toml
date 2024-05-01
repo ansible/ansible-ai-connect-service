@@ -41,7 +41,7 @@ dependencies = [
   'segment-analytics-python~=2.2.2',
   'sentence-transformers==2.*',
   'social-auth-app-django~=5.4.1',
-  'social-auth-core[openidconnect]~=4.4.2',
+  'social-auth-core>=4.4.2',
   'transformers~=4.39.1',
   'tqdm~=4.64.1',
   'urllib3~=1.26.18',

@@ -7,12 +7,18 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/pip_audit.yml
       - ansible_wisdom/**
+      - pyproject.toml
+      - requirements*.txt
   pull_request:
     branches:
       - main
     paths:
+      - .github/workflows/pip_audit.yml
       - ansible_wisdom/**
+      - pyproject.toml
+      - requirements*.txt
 permissions:
   contents: read
 
@@ -30,17 +36,8 @@ jobs:
           python -m venv env/
           source env/bin/activate
           python -m pip install . -rrequirements.txt
-          # See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
-          pip install --upgrade setuptools
-      - uses: pypa/gh-action-pip-audit@v1.0.6
+      - uses: pypa/gh-action-pip-audit@v1.0.8
         with:
           virtual-environment: env/
           ignore-vulns: |
-            GHSA-282v-666c-3fvg
-            GHSA-jh3w-4vvf-mjgr
-            GHSA-ww3m-ffrm-qvqv
-            PYSEC-2023-100
-            PYSEC-2023-228
-            GHSA-mq26-g339-26xf
-            PYSEC-2022-43059
-            GHSA-wj6h-64fc-37mp
+            # e.g: GHSA-283v-666c-3fvg
