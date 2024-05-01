@@ -58,6 +58,7 @@ from ansible_wisdom.ai.api.exceptions import (
     WcaUserTrialExpiredException,
 )
 from ansible_wisdom.ai.api.model_client.base import ModelMeshClient
+from ansible_wisdom.ai.api.model_client.dummy_client import DummyClient
 from ansible_wisdom.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
@@ -2582,6 +2583,34 @@ that are running Red Hat Enterprise Linux 9.
             self.assertEqual(r.data["format"], "markdown")
             self.assertEqual(r.data["explanationId"], explanation_id)
 
+    def test_ok_with_dummy_client(self):
+        explanation_id = str(uuid.uuid4())
+        payload = {
+            "content": """---
+- name: Setup nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Install nginx on RHEL9
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+""",
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyClient(self),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "markdown")
+            self.assertEqual(r.data["explanationId"], explanation_id)
+
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
         payload = {
@@ -2697,6 +2726,25 @@ class TestSummaryView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.data["format"], "plaintext")
             self.assertEqual(r.data["summaryId"], summary_id)
 
+    def test_ok_with_dummy_client(self):
+        summary_id = str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "summaryId": summary_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyClient(self),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('summaries'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "plaintext")
+            self.assertEqual(r.data["summaryId"], summary_id)
+
     def test_unauthorized(self):
         summary_id = str(uuid.uuid4())
         payload = {
@@ -2797,6 +2845,25 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             apps.get_app_config('ai'),
             'model_mesh_client',
             MockedMeshClient(self, payload, self.response_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertEqual(r.data["format"], "markdown")
+            self.assertEqual(r.data["generationId"], generation_id)
+
+    def test_ok_with_dummy_client(self):
+        generation_id = str(uuid.uuid4())
+        payload = {
+            "content": "Install nginx on RHEL9",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            DummyClient(self),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('generations'), payload, format='json')
