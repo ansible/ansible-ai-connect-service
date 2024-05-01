@@ -327,7 +327,7 @@ E.g:
 
 ## Connect to a local model server
 
-To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
+To connect to the Mistal 7b Instruct model running locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
 
 1. Download the Mistral-7b-Instruct [llamafile](https://github.com/Mozilla-Ocho/llamafile?tab=readme-ov-file#other-example-llamafiles)
 1. Make it executable and run it (`$YOUR_REAL_IP` is your local IP address, NOT 127.0.0.1 or localhost)
