@@ -17,11 +17,9 @@ from uuid import uuid4
 
 import jwt
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth import get_user_model
 from django.test import override_settings
-from jose import constants, jwk
 from rest_framework.test import APIRequestFactory
 from social_core.backends.open_id_connect import OpenIdConnectAuth
 from social_django.models import UserSocialAuth
@@ -39,17 +37,7 @@ class DummyRHBackend(OpenIdConnectAuth):
         self.rsa_private_key = rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=default_backend()
         )
-        public_bytes = self.rsa_private_key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        )
-        self.public_key = jwk.RSAKey(
-            algorithm=constants.Algorithms.RS256, key=public_bytes.decode('utf-8')
-        ).to_dict()
         self.issuer = "https://myauth.com/auth/realms/my-realm"
-
-    def find_valid_key(self, id_token):
-        return self.public_key
 
     def id_token_issuer(self):
         return self.issuer
