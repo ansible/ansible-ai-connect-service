@@ -228,7 +228,7 @@ class TestGetModelClient(WisdomServiceAPITestCaseBase):
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertTrue(isinstance(model_client, WCAClient))
+        self.assertTrue(isinstance(model_client, LlamaCPPClient))
         self.assertIsNone(model_name)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='llamacpp')
@@ -256,6 +256,8 @@ class TestGetModelClient(WisdomServiceAPITestCaseBase):
         self.assertIsNone(model_name)
 
 
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def stub_wca_client(
         self,
@@ -727,6 +729,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
 
 @modify_settings()
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 class TestCompletionView(WisdomServiceAPITestCaseBase):
     # An artificial model ID for model-ID related test cases.
     DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"

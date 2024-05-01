@@ -66,7 +66,7 @@ completions_hist = Histogram(
 
 
 def get_model_client(wisdom_app, user):
-    if settings.DEPLOYMENT_MODE != 'onprem' and user.rh_user_has_seat:
+    if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["wca", "wca-onprem"] and user.rh_user_has_seat:
         return wisdom_app.get_wca_client(), None
 
     # either onprem or non-seated customers (e.g. upstream)
