@@ -12,7 +12,7 @@ ENV PROMETHEUS_MULTIPROC_DIR=/var/run/django_metrics
 ENV BUILD_PATH=/var/www/wisdom/public/static/console
 
 # Install dependencies
-RUN dnf module enable nodejs:18 -y && \
+RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     dnf install -y \
     git \
     python3.11-devel \
@@ -23,9 +23,8 @@ RUN dnf module enable nodejs:18 -y && \
     python3.11-pip \
     postgresql \
     less \
-    npm
-
-RUN dnf module install -y nginx/common
+    npm \
+    nginx
 
 # Copy the ansible_wisdom package files
 COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
