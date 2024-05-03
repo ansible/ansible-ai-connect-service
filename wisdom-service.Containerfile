@@ -53,15 +53,15 @@ RUN echo -e "\
 
 # Compile React/TypeScript Console application
 # Copy each source folder individually to avoid copying 'node_modules'
-COPY ansible_wisdom_console_react/config /tmp/ansible_wisdom_console_react/config
-COPY ansible_wisdom_console_react/public /tmp/ansible_wisdom_console_react/public
-COPY ansible_wisdom_console_react/scripts /tmp/ansible_wisdom_console_react/scripts
-COPY ansible_wisdom_console_react/src /tmp/ansible_wisdom_console_react/src
-COPY ansible_wisdom_console_react/package.json /tmp/ansible_wisdom_console_react/package.json
-COPY ansible_wisdom_console_react/package-lock.json /tmp/ansible_wisdom_console_react/package-lock.json
-COPY ansible_wisdom_console_react/tsconfig.json /tmp/ansible_wisdom_console_react/tsconfig.json
-RUN npm --prefix /tmp/ansible_wisdom_console_react ci
-RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+# COPY ansible_wisdom_console_react/config /tmp/ansible_wisdom_console_react/config
+# COPY ansible_wisdom_console_react/public /tmp/ansible_wisdom_console_react/public
+# COPY ansible_wisdom_console_react/scripts /tmp/ansible_wisdom_console_react/scripts
+# COPY ansible_wisdom_console_react/src /tmp/ansible_wisdom_console_react/src
+# COPY ansible_wisdom_console_react/package.json /tmp/ansible_wisdom_console_react/package.json
+# COPY ansible_wisdom_console_react/package-lock.json /tmp/ansible_wisdom_console_react/package-lock.json
+# COPY ansible_wisdom_console_react/tsconfig.json /tmp/ansible_wisdom_console_react/tsconfig.json
+# RUN npm --prefix /tmp/ansible_wisdom_console_react ci
+# RUN npm --prefix /tmp/ansible_wisdom_console_react run build
 
 # Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
