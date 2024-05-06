@@ -312,6 +312,36 @@ class IssueFeedback(serializers.Serializer):
     )
 
 
+class PlaybookOutlineFeedback(serializers.Serializer):
+    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
+
+    class Meta:
+        fields = ['action', 'outlineId']
+
+    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
+    outlineId = serializers.UUIDField(
+        format='hex_verbose',
+        required=True,
+        label="Outline ID",
+        help_text="A UUID that identifies the playbook outline.",
+    )
+
+
+class PlaybookExplanationFeedback(serializers.Serializer):
+    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
+
+    class Meta:
+        fields = ['action', 'explanationId']
+
+    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
+    explanationId = serializers.UUIDField(
+        format='hex_verbose',
+        required=True,
+        label="Explanation ID",
+        help_text="A UUID that identifies the playbook explanation.",
+    )
+
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -352,21 +382,25 @@ class IssueFeedback(serializers.Serializer):
 class FeedbackRequestSerializer(serializers.Serializer):
     class Meta:
         fields = [
-            'inlineSuggestion',
             'ansibleContent',
-            'suggestionQualityFeedback',
-            'sentimentFeedback',
-            'issueFeedback',
             'ansibleExtensionVersion',
+            'inlineSuggestion',
+            'issueFeedback',
+            'playbookExplanationFeedback',
+            'playbookOutlineFeedback',
+            'sentimentFeedback',
+            'suggestionQualityFeedback',
         ]
 
-    inlineSuggestion = InlineSuggestionFeedback(required=False)
     ansibleContent = AnsibleContentFeedback(required=False)
-    suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
-    sentimentFeedback = SentimentFeedback(required=False)
+    inlineSuggestion = InlineSuggestionFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
     metadata = Metadata(required=False)
     model = serializers.CharField(required=False)
+    playbookExplanationFeedback = PlaybookExplanationFeedback(required=False)
+    playbookOutlineFeedback = PlaybookOutlineFeedback(required=False)
+    sentimentFeedback = SentimentFeedback(required=False)
+    suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
 
     def validate_inlineSuggestion(self, value):
         user = self.context.get('request').user
