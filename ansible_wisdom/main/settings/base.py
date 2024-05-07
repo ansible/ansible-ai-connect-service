@@ -26,11 +26,11 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 import sys
+from importlib.resources import files
 from pathlib import Path
 from typing import Literal, cast
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR: Path = files("ansible_wisdom")
 ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Connect"
 
 # Quick-start development settings - unsuitable for production
@@ -357,11 +357,10 @@ LOGGING = {
         "level": os.getenv("DJANGO_LOG_LEVEL") or "WARNING",
     },
 }
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': list(BASE_DIR.glob("*/templates/")),
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -433,7 +432,7 @@ STATIC_ROOT = '/var/www/wisdom/public/static'
 
 # Paths to where static files that are not explicitly part of a
 # particular Django app should be collected from.
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = list(BASE_DIR.glob("*/static/"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
