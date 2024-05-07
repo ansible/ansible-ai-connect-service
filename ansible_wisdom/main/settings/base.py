@@ -362,7 +362,7 @@ print(f"templates: {list(BASE_DIR.glob('*/templates/**/*'))}")
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        'DIRS': BASE_DIR.glob("*/templates/"),
+        'DIRS': list(BASE_DIR.glob("*/templates/")),
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
