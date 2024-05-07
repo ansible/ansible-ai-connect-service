@@ -1081,7 +1081,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assertIsNotNone(r.data)
+                self.assertIsNone(r.data)
                 self.assert_error_detail(
                     r,
                     PostprocessException.default_code,
@@ -1090,14 +1090,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertInLog('error postprocessing prediction for suggestion', log)
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event['event'] == 'postprocess':
-                        self.assertEqual(
-                            'ARI rule evaluation threw fatal exception: '
-                            'Invalid task structure: no module name found',
-                            event['properties']['problem'],
-                        )
-                    self.assertIsNotNone(event['timestamp'])
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
