@@ -119,13 +119,11 @@ class SegmentMiddleware:
                     if isinstance(message, ErrorDetail):
                         message = str(message)
                     model_name = response_data.get('model', model_name)
-                    # Clean up response.data for 204; preserving error information
+                    # Clean up response.data for 204; should be empty to prevent
+                    # issues on the client side
                     if response.status_code == 204:
-                        response.data = {}
-                        if response_data.get('code'):
-                            response.data.update({'code': response_data.get('code')})
-                        if response_data.get('message'):
-                            response.data.update({'message': response_data.get('message')})
+                        response.data = None
+                        response['Content-Length'] = 0
                     # For other error cases, remove 'model' in response data
                     elif response.status_code >= 400:
                         response_data.pop('model', None)
