@@ -358,7 +358,7 @@ LOGGING = {
         "level": os.getenv("DJANGO_LOG_LEVEL") or "WARNING",
     },
 }
-print(f"templates: {list(BASE_DIR.glob('*/templates/'))}")
+print(f"templates: {list(BASE_DIR.glob('*/templates/**/*'))}")
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
