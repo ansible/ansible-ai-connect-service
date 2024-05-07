@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from os import path
+import tempfile
 from unittest.mock import patch
 
 from django.conf import settings
@@ -64,9 +64,23 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         self.assertEqual(config_arg[0].sdk_key, 'dummy_key')
         self.assertEqual(kwargs['start_wait'], 40)
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY=path.join(settings.BASE_DIR, '../../flagdata.json'))
     def test_feature_flags_with_local_file(self):
-        ff = feature_flags.FeatureFlags()
-        value = ff.get('model_name', self.user, 'default_value')
-        self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
-        self.assertEqual(value, 'dev_model')
+        fd = tempfile.NamedTemporaryFile()
+        fd.write(
+            b"""
+        {
+          "flagValues": {
+            "model_name": "dev_model",
+            "my-boolean-flag-key": true,
+            "my-integer-flag-key": 3
+          }
+        }
+        """
+        )
+        fd.seek(0)
+        with self.settings(LAUNCHDARKLY_SDK_KEY=fd.name):
+            ff = feature_flags.FeatureFlags()
+            value = ff.get('model_name', self.user, 'default_value')
+            self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
+            self.assertEqual(value, 'dev_model')
+        fd.close()
