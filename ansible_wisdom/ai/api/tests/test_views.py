@@ -501,6 +501,30 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_wml_api_call_failed(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={"detail": "WML API call failed: Deployment id or name banana was not found."},
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaInvalidModelIdException.default_code,
+                WcaInvalidModelIdException.default_detail,
+            )
+            self.assertInLog("WCA Model ID is invalid", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_trial_expired_rejection(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -2213,6 +2237,16 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log(WcaCloudflareRejectionException)
+        self._assert_model_id_in_exception(self.payload["model"])
+
+    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    def test_wca_completion_wml_api_call_failed(self):
+        response = MockResponse(
+            json={"detail": "WML API call failed: Deployment id or name banana was not found."},
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log(WcaInvalidModelIdException)
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
