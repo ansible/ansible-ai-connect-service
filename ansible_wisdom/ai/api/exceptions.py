@@ -111,6 +111,11 @@ class WcaModelIdNotFoundException(WisdomAccessDenied):
     default_detail = 'A WCA Model ID was expected but not found. Please contact your administrator.'
 
 
+class WcaOrganizationNotLinkedException(WisdomAccessDenied):
+    default_code = 'error__wca_organization_not_linked'
+    default_detail = 'User is not linked to an organization'
+
+
 class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
     status_code = 500
     default_code = 'error__wca_suggestion_correlation_failed'

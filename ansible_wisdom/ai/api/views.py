@@ -51,6 +51,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaOrganizationNotLinkedException,
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
@@ -62,6 +63,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaOrganizationNotLinked,
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
@@ -250,9 +252,10 @@ class Feedback(APIView):
             model_name = model_mesh_client.get_model_id(
                 org_id, str(validated_data.get('model', ''))
             )
-        except (WcaModelIdNotFound, WcaSecretManagerError):
+        except (WcaOrganizationNotLinked, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
                 f"Failed to retrieve Model Name for Feedback.\n "
+                f"Org ID: {user.org_id}, "
                 f"User has seat: {user.rh_user_has_seat}, "
                 f"has subscription: {user.rh_org_has_subscription}.\n"
             )
@@ -587,6 +590,15 @@ class ContentMatches(GenericAPIView):
                 f"content matching suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaOrganizationNotLinked as e:
+            exception = e
+            logger.exception(
+                "User was expected to be linked to an org, "
+                "but it was not for content matching "
+                f"suggestion {suggestion_id}"
+            )
+            raise WcaOrganizationNotLinkedException(cause=e)
 
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e

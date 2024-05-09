@@ -34,6 +34,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaOrganizationNotLinkedException,
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
@@ -46,6 +47,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaOrganizationNotLinked,
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
@@ -147,6 +149,14 @@ class InferenceStage(PipelineElement):
             exception = e
             logger.info(f"A WCA Api Key was expected but not found for suggestion {suggestion_id}")
             raise WcaKeyNotFoundException(cause=e)
+
+        except WcaOrganizationNotLinked as e:
+            exception = e
+            logger.info(
+                "User was expected to be linked to an org, "
+                f"but it was not for suggestion {suggestion_id}"
+            )
+            raise WcaOrganizationNotLinkedException(cause=e)
 
         except WcaModelIdNotFound as e:
             exception = e

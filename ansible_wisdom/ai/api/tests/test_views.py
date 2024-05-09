@@ -54,6 +54,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaOrganizationNotLinkedException,
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
 )
@@ -67,6 +68,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaOrganizationNotLinked,
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_client.llamacpp_client import LlamaCPPClient
@@ -354,6 +356,29 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                     self.assertEqual(properties['response']['status_code'], 403)
                 elif event['event'] == 'prediction':
                     self.assertEqual(properties['problem'], 'WcaKeyNotFound')
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_user_not_linked_to_org(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = None
+        self.client.force_authenticate(user=self.user)
+
+        stub = self.stub_wca_client(
+            200,
+            mock_model_id=Mock(side_effect=WcaOrganizationNotLinked),
+        )
+        model_client, model_input = stub
+        self.mock_wca_client_with(model_client)
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('completions'), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+            self.assert_error_detail(
+                r,
+                WcaOrganizationNotLinkedException.default_code,
+                WcaOrganizationNotLinkedException.default_detail,
+            )
+            self.assertInLog("User was expected to be linked to an org, but it was not", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -1255,6 +1280,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             (WcaBadRequest(), HTTPStatus.NO_CONTENT),
             (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
             (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
+            (WcaOrganizationNotLinked(), HTTPStatus.FORBIDDEN),
             (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
             (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
@@ -1507,6 +1533,39 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 properties = event['properties']
                 self.assertTrue('modelName' in properties)
                 self.assertEqual(model_name, properties['modelName'])
+
+    def test_feedback_segment_events_user_not_linked_to_org_error(self):
+        model_client = Mock(ModelMeshClient)
+        model_client.get_model_id.side_effect = WcaOrganizationNotLinked()
+
+        payload = {
+            "inlineSuggestion": {
+                "latency": 1000,
+                "userActionTime": 3500,
+                "documentUri": "file:///home/user/ansible.yaml",
+                "action": "0",
+                "suggestionId": str(uuid.uuid4()),
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            model_client,
+        ):
+            with self.assertLogs(logger='root', level='DEBUG') as log:
+                r = self.client.post(reverse('feedback'), payload, format='json')
+                self.assertEqual(r.status_code, HTTPStatus.OK)
+                self.assertInLog("Failed to retrieve Model Name for Feedback.", log)
+                self.assertInLog("Org ID: None", log)
+
+                segment_events = self.extractSegmentEventsFromLog(log)
+                self.assertTrue(len(segment_events) > 0)
+                for event in segment_events:
+                    properties = event['properties']
+                    self.assertTrue('modelName' in properties)
+                    self.assertEqual('', properties['modelName'])
 
     def test_feedback_segment_events_model_name_error(self):
         model_client = Mock(ModelMeshClient)
@@ -2212,6 +2271,10 @@ class TestContentMatchesWCAViewErrors(
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log(WcaEmptyResponseException)
+
+    def test_wca_contentmatch_with_user_not_linked_to_org(self):
+        self.model_client.get_model_id = Mock(side_effect=WcaOrganizationNotLinked)
+        self._assert_exception_in_log(WcaOrganizationNotLinkedException)
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)

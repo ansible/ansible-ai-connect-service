@@ -46,6 +46,7 @@ from .exceptions import (
     WcaInferenceFailure,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaOrganizationNotLinked,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
     WcaUsernameNotFound,
@@ -369,9 +370,10 @@ class WCAClient(BaseWCAClient):
 
         if organization_id is None:
             logger.error(
-                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_MODEL_NAME is set"
+                "User is not linked to an organization and no ANSIBLE_AI_MODEL_MESH_MODEL_NAME"
+                " is set"
             )
-            raise WcaModelIdNotFound(model_id=requested_model_id)
+            raise WcaOrganizationNotLinked
 
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.

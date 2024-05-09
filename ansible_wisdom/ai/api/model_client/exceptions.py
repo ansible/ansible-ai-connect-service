@@ -58,6 +58,11 @@ class WcaModelIdNotFound(WcaException):
 
 
 @dataclass
+class WcaOrganizationNotLinked(WcaException):
+    """User is not linked to an organization"""
+
+
+@dataclass
 class WcaEmptyResponse(WcaException):
     """WCA returned an empty response."""
 
