@@ -20,16 +20,18 @@ import django.conf
 from django.test import SimpleTestCase
 from oauth2_provider.settings import oauth2_settings
 
-import ansible_wisdom.main.settings.base
+import ansible_ai_connect.main.settings.base
 
 
 class TestSettings(SimpleTestCase):
     @classmethod
     def reload_settings(cls):
         module_name = os.getenv("DJANGO_SETTINGS_MODULE")
-        settings_module = importlib.import_module(module_name)
+        settings_module = importlib.import_module(
+            module_name.replace("ansible_wisdom.", "ansible_ai_connect.")
+        )
 
-        importlib.reload(ansible_wisdom.main.settings.base)
+        importlib.reload(ansible_ai_connect.main.settings.base)
         importlib.reload(settings_module)
         importlib.reload(django.conf)
         from django.conf import settings

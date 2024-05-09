@@ -23,7 +23,7 @@ from uuid import UUID
 from django.test import override_settings
 from rest_framework import serializers
 
-from ansible_wisdom.ai.api.serializers import (
+from ansible_ai_connect.ai.api.serializers import (
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
     ContentMatchSerializer,

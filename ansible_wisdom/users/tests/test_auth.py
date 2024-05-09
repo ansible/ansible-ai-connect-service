@@ -26,9 +26,9 @@ from social_core.backends.open_id_connect import OpenIdConnectAuth
 from social_django.models import UserSocialAuth
 from social_django.utils import load_strategy
 
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
-from ansible_wisdom.users.auth import AAPOAuth2, RHSSOAuthentication
-from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.users.auth import AAPOAuth2, RHSSOAuthentication
+from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 
 class DummyRHBackend(OpenIdConnectAuth):
@@ -97,7 +97,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
             user=self.rh_user, provider="oidc", uid=str(uuid4())
         )
 
-    @patch('ansible_wisdom.users.auth.load_backend')
+    @patch('ansible_ai_connect.users.auth.load_backend')
     def test_authenticate_returns_existing_user(self, mock_load_backend):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
@@ -112,7 +112,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
 
         self.assertEqual(user.id, self.rh_user.id)
 
-    @patch('ansible_wisdom.users.auth.load_backend')
+    @patch('ansible_ai_connect.users.auth.load_backend')
     def test_authenticate_succeeds_with_extra_scopes(self, mock_load_backend):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
@@ -128,7 +128,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
 
         self.assertEqual(user.id, self.rh_user.id)
 
-    @patch('ansible_wisdom.users.auth.load_backend')
+    @patch('ansible_ai_connect.users.auth.load_backend')
     def test_authenticate_returns_none_on_invalid_scope(self, mock_load_backend):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
@@ -160,7 +160,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         self.assertIsNone(self.authentication.authenticate(request))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
-    @patch('ansible_wisdom.users.auth.load_backend')
+    @patch('ansible_ai_connect.users.auth.load_backend')
     def test_authenticate_creates_new_user(self, mock_load_backend):
         backend = DummyRHBackend()
         backend.strategy = load_strategy()
@@ -181,7 +181,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         self.assertEqual(user.external_username, 'joe-new-user')
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
-    @patch('ansible_wisdom.users.auth.load_backend')
+    @patch('ansible_ai_connect.users.auth.load_backend')
     def test_authenticate_outdated_payload(self, mock_load_backend):
         backend = DummyRHBackend()
         backend.strategy = load_strategy()

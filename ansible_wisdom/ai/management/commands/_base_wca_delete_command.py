@@ -14,7 +14,7 @@
 
 from abc import abstractmethod
 
-from ansible_wisdom.ai.management.commands._base_wca_command import BaseWCACommand
+from ansible_ai_connect.ai.management.commands._base_wca_command import BaseWCACommand
 
 
 class BaseWCADeleteCommand(BaseWCACommand):

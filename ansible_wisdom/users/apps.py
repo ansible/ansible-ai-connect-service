@@ -17,7 +17,7 @@ from django.apps import AppConfig
 
 class UsersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'ansible_wisdom.users'
+    name = 'ansible_ai_connect.users'
 
     def ready(self) -> None:
-        import ansible_wisdom.users.signals  # noqa: F401
+        import ansible_ai_connect.users.signals  # noqa: F401

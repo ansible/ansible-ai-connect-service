@@ -20,14 +20,14 @@ from django.urls import resolve, reverse
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
-import ansible_wisdom.ai.feature_flags as feature_flags
-from ansible_wisdom.ai.api.permissions import (
+import ansible_ai_connect.ai.feature_flags as feature_flags
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.organizations.models import Organization
 
 
 class TestConsoleView(WisdomServiceAPITestCaseBase):

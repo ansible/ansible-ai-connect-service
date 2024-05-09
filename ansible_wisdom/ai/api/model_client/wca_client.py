@@ -26,11 +26,11 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
-from ansible_wisdom.ai.api.formatter import (
+from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
 )
-from ansible_wisdom.ai.api.model_client.wca_utils import (
+from ansible_ai_connect.ai.api.model_client.wca_utils import (
     ContentMatchContext,
     ContentMatchResponseChecks,
     InferenceContext,

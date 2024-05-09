@@ -17,20 +17,20 @@ from unittest.mock import Mock, patch
 from attr import asdict
 from django.test import override_settings
 
-import ansible_wisdom.ai.feature_flags as feature_flags
-from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
-from ansible_wisdom.ai.api.utils.analytics_telemetry_model import (
+import ansible_ai_connect.ai.feature_flags as feature_flags
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.ai.api.utils.analytics_telemetry_model import (
     AnalyticsProductFeedback,
     AnalyticsTelemetryEvents,
 )
-from ansible_wisdom.ai.api.utils.segment_analytics_telemetry import (
+from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     get_segment_analytics_client,
     meets_min_ansible_extension_version,
     send_segment_analytics_error_event,
     send_segment_analytics_event,
 )
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.organizations.models import Organization
 
 
 class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
@@ -81,12 +81,12 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
         self.assertFalse(meets_min_ansible_extension_version(None))
         self.assertFalse(meets_min_ansible_extension_version(''))
 
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.send_segment_event")
     def test_send_segment_analytics_error_value(self, send_segment_event):
         error = ValueError()
         self._assert_segment_analytics_error_sent(error, send_segment_event)
 
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.send_segment_event")
     def test_send_segment_analytics_error_type(self, send_segment_event):
         error = TypeError()
         self._assert_segment_analytics_error_sent(error, send_segment_event)
@@ -105,7 +105,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @override_settings(ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION="v1.0.0")
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event(self, base_send_segment_event, LDClient):
         LDClient.return_value.variation.return_value = True
         analytics_event_object = AnalyticsProductFeedback(3, 123)
@@ -125,7 +125,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @override_settings(ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION="v1.0.0")
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_requires_min_ansible_ext_version(
         self, base_send_segment_event, LDClient
     ):
@@ -139,7 +139,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @override_settings(ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION="v1.0.0")
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.send_segment_event")
     def test_send_segment_analytics_event_error_validation(self, send_segment_event, LDClient):
         LDClient.return_value.variation.return_value = True
         payload = Mock(side_effect=ValueError)
@@ -160,7 +160,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
 
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_not_write_key(
         self, base_send_segment_event, LDClient
     ):
@@ -170,7 +170,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_user_no_seat(
         self, base_send_segment_event, LDClient
     ):
@@ -181,7 +181,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_no_telemetry_enabled(
         self, base_send_segment_event, LDClient
     ):
@@ -191,7 +191,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_no_org(self, base_send_segment_event, LDClient):
         LDClient.return_value.variation.return_value = True
         self.user.organization = None
@@ -200,7 +200,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
     @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
     @patch.object(feature_flags, 'LDClient')
-    @patch("ansible_wisdom.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
+    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_no_org_telemetry_enabled(
         self, base_send_segment_event, LDClient
     ):

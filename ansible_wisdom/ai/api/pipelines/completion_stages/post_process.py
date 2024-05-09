@@ -22,11 +22,14 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
-from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.ai.api.exceptions import PostprocessException, process_error_count
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement
-from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api import formatter as fmtr
+from ansible_ai_connect.ai.api.exceptions import (
+    PostprocessException,
+    process_error_count,
+)
+from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 

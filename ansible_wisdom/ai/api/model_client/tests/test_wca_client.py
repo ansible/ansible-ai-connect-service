@@ -25,13 +25,13 @@ from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError, ReadTimeout
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import (
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
     DummySecretEntry,
     DummySecretManager,
     Suffixes,
     WcaSecretManagerError,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCodeMatchFailure,
@@ -43,7 +43,7 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
-from ansible_wisdom.ai.api.model_client.wca_client import (
+from ansible_ai_connect.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
     WCAOnPremClient,
@@ -54,7 +54,7 @@ from ansible_wisdom.ai.api.model_client.wca_client import (
     wca_codematch_hist,
     wca_codematch_retry_counter,
 )
-from ansible_wisdom.test_utils import (
+from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )

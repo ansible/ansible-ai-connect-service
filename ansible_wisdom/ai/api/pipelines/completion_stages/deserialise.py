@@ -14,15 +14,15 @@
 
 import logging
 
-from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.ai.api.data.data_model import APIPayload
-from ansible_wisdom.ai.api.exceptions import process_error_count
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement
-from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
-from ansible_wisdom.ai.api.pipelines.completion_stages.response import (
+from ansible_ai_connect.ai.api import formatter as fmtr
+from ansible_ai_connect.ai.api.data.data_model import APIPayload
+from ansible_ai_connect.ai.api.exceptions import process_error_count
+from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
-from ansible_wisdom.ai.api.serializers import CompletionRequestSerializer
+from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
 
 logger = logging.getLogger(__name__)
 

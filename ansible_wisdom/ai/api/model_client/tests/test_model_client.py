@@ -16,7 +16,7 @@ from unittest import TestCase
 
 from django.test import override_settings
 
-from ansible_wisdom.ai.api.model_client.base import ModelMeshClient
+from ansible_ai_connect.ai.api.model_client.base import ModelMeshClient
 
 timeout = 271828
 

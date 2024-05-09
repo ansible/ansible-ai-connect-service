@@ -20,8 +20,8 @@ from django.test import TestCase, override_settings
 from requests.exceptions import ReadTimeout
 from responses import matchers
 
-from ansible_wisdom.ai.api.model_client.exceptions import ModelTimeoutError
-from ansible_wisdom.ai.api.model_client.llamacpp_client import LlamaCPPClient
+from ansible_ai_connect.ai.api.model_client.exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.model_client.llamacpp_client import LlamaCPPClient
 
 
 class TestLlamaCPPClient(TestCase):

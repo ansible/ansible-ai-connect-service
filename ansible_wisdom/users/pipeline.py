@@ -24,9 +24,9 @@ from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
 
-from ansible_wisdom.ai.api.utils.segment import send_segment_group
-from ansible_wisdom.organizations.models import Organization
-from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
+from ansible_ai_connect.ai.api.utils.segment import send_segment_group
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 logger = logging.getLogger(__name__)
 

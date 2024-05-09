@@ -21,7 +21,7 @@ import yaml
 from ansible_risk_insight.scanner import ARIScanner
 from django.conf import settings
 
-from ansible_wisdom.ai.api import formatter as fmtr
+from ansible_ai_connect.ai.api import formatter as fmtr
 
 logger = logging.getLogger(__name__)
 
