@@ -18,7 +18,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/devfile-samples/devfile-sample-python-basic/main/docker/Dockerfile
+    value: wisdom-service.Containerfile
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
