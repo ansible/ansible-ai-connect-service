@@ -24,8 +24,8 @@ from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
-from ansible_wisdom.users.authz_checker import (
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.users.authz_checker import (
     AMSCheck,
     CIAMCheck,
     DummyCheck,

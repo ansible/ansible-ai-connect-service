@@ -12,8 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.ai.management.commands._base_wca_delete_command import (
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.management.commands._base_wca_delete_command import (
     BaseWCADeleteCommand,
 )
 

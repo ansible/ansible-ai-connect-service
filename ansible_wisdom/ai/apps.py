@@ -19,9 +19,9 @@ from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
-from ansible_wisdom.ansible_lint import lintpostprocessing
-from ansible_wisdom.ari import postprocessing
-from ansible_wisdom.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
+from ansible_ai_connect.ansible_lint import lintpostprocessing
+from ansible_ai_connect.ari import postprocessing
+from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
@@ -38,7 +38,7 @@ UNINITIALIZED = None
 
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "ansible_wisdom.ai"
+    name = "ansible_ai_connect.ai"
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED

@@ -31,25 +31,25 @@ from prometheus_client.parser import text_string_to_metric_families
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
 
-import ansible_wisdom.ai.feature_flags as feature_flags
-from ansible_wisdom.ai.api.permissions import (
+import ansible_ai_connect.ai.feature_flags as feature_flags
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.tests.test_views import APITransactionTestCase
-from ansible_wisdom.organizations.models import Organization
-from ansible_wisdom.test_utils import (
+from ansible_ai_connect.ai.api.tests.test_views import APITransactionTestCase
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from ansible_wisdom.users.pipeline import _terms_of_service
-from ansible_wisdom.users.views import TermsOfService
+from ansible_ai_connect.users.pipeline import _terms_of_service
+from ansible_ai_connect.users.views import TermsOfService
 
 
 def create_user(
@@ -114,7 +114,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
         self.assertIn('You are currently not logged in.', str(r.content))
 
     def test_users_audit_logging(self):
-        with self.assertLogs(logger='ansible_wisdom.users.signals', level='INFO') as log:
+        with self.assertLogs(logger='ansible_ai_connect.users.signals', level='INFO') as log:
             self.client.login(username=self.user.username, password=self.password)
             self.assertInLog('LOGIN successful', log)
 

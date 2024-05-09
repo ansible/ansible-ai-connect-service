@@ -19,14 +19,14 @@ from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
-from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
-from ansible_wisdom.main.views import LoginView
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.views import LoginView
+from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from ansible_wisdom.users.tests.test_users import create_user
+from ansible_ai_connect.users.tests.test_users import create_user
 
 
 def create_user_with_provider(user_provider):

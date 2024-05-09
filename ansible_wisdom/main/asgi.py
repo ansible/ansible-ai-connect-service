@@ -25,6 +25,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ansible_wisdom.main.settings.development")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ansible_ai_connect.main.settings.development")
 
 application = get_asgi_application()

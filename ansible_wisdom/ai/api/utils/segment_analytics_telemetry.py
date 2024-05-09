@@ -19,12 +19,12 @@ from django.conf import settings
 from packaging.version import InvalidVersion, Version
 from segment.analytics import Client
 
-from ansible_wisdom.ai.api.utils.segment import (
+from ansible_ai_connect.ai.api.utils.segment import (
     base_send_segment_event,
     send_segment_event,
 )
-from ansible_wisdom.organizations.models import Organization
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
 

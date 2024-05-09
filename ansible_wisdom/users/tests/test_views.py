@@ -22,14 +22,14 @@ from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-import ansible_wisdom.users.models
-from ansible_wisdom.ai.api.tests.test_views import APITransactionTestCase
-from ansible_wisdom.test_utils import WisdomAppsBackendMocking
-from ansible_wisdom.users.constants import (
+import ansible_ai_connect.users.models
+from ansible_ai_connect.ai.api.tests.test_views import APITransactionTestCase
+from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
+from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from ansible_wisdom.users.tests.test_users import create_user
+from ansible_ai_connect.users.tests.test_users import create_user
 
 
 def bypass_init(*args, **kwargs):
@@ -75,8 +75,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.user.delete()
         super().tearDown()
 
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_seat_and_no_secret(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -87,8 +87,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", False)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_admin_without_seat_and_with_no_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -103,8 +103,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", False)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_admin_without_seat_and_with_no_secret_no_sub_without_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -115,8 +115,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "The Project Name Technical Preview is no longer available")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_a_seat_and_with_secret(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -142,8 +142,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -160,8 +160,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @override_settings(WCA_SECRET_DUMMY_SECRETS='valid')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_with_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -178,8 +178,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret_without_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -191,8 +191,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "The Project Name Technical Preview is no longer available")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_no_secret(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -202,8 +202,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_with_secret(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -213,8 +213,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_with_no_seat_and_with_secret(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -225,8 +225,8 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_wisdom.users.models.User, "rh_org_has_subscription", False)
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_user_without_seat_and_with_secret_without_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
@@ -242,7 +242,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
         self.password = "somepassword"
 
     @override_settings(COMMERCIAL_DOCUMENTATION_URL="https://official_docs")
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", True)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_docs_url_for_seated_user(self):
         self.user = create_user(
             password=self.password,
@@ -255,7 +255,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(DOCUMENTATION_URL="https://community_docs")
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_docs_url_for_unseated_user_with_tech_preview(self):
         self.user = create_user(
             password=self.password,
@@ -269,7 +269,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_wisdom.users.models.User, "rh_user_has_seat", False)
+    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_docs_url_for_unseated_user_without_tech_preview(self):
         self.user = create_user(
             password=self.password,

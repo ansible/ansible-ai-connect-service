@@ -22,10 +22,10 @@ from django.test import override_settings
 from django.urls import reverse
 from requests.exceptions import ReadTimeout
 
-from ansible_wisdom.ai.api.exceptions import ModelTimeoutException
-from ansible_wisdom.ai.api.model_client.grpc_client import GrpcClient
-from ansible_wisdom.ai.api.model_client.http_client import HttpClient
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
+from ansible_ai_connect.ai.api.exceptions import ModelTimeoutException
+from ansible_ai_connect.ai.api.model_client.grpc_client import GrpcClient
+from ansible_ai_connect.ai.api.model_client.http_client import HttpClient
+from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
 
 from .test_views import WisdomServiceAPITestCaseBase
 

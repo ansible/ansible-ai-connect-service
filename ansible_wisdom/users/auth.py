@@ -21,7 +21,7 @@ from social_core.backends.oauth import BaseOAuth2
 from social_django.models import UserSocialAuth
 from social_django.utils import load_backend, load_strategy
 
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.users.constants import (
     RHSSO_LIGHTSPEED_SCOPE,
     USER_SOCIAL_AUTH_PROVIDER_AAP,
 )

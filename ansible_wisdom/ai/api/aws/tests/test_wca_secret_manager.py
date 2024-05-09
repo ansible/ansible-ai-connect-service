@@ -17,16 +17,16 @@ from unittest.mock import Mock
 from botocore.exceptions import ClientError
 from rest_framework.test import APITestCase
 
-from ansible_wisdom.ai.api.aws.exceptions import (
+from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerError,
     WcaSecretManagerMissingCredentialsError,
 )
-from ansible_wisdom.ai.api.aws.wca_secret_manager import (
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
     SECRET_KEY_PREFIX,
     AWSSecretManager,
     Suffixes,
 )
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
 ORG_ID = "org_123"
 SECRET_VALUE = "secret"

@@ -18,10 +18,10 @@ from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import ServiceUnavailable
 
-import ansible_wisdom.ai.search
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.ai.api.model_client.wca_client import WcaInferenceFailure
-from ansible_wisdom.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
+import ansible_ai_connect.ai.search
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.model_client.wca_client import WcaInferenceFailure
+from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 ERROR_MESSAGE = "An error occurred"
 
@@ -212,7 +212,7 @@ class AttributionCheck(BaseLightspeedHealthCheck):
             return
 
         try:
-            attributions = ansible_wisdom.ai.search.search("aaa")["attributions"]
+            attributions = ansible_ai_connect.ai.search.search("aaa")["attributions"]
             assert len(attributions) > 0, "No attribution found"
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)

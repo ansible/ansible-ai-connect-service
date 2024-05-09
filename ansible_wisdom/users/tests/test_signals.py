@@ -12,8 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
-from ansible_wisdom.users.signals import _obfuscate
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.users.signals import _obfuscate
 
 
 class TestSignals(WisdomServiceLogAwareTestCase):

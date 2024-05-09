@@ -23,7 +23,7 @@ from ldclient.client import LDClient
 from ldclient.config import Config
 from ldclient.integrations import Files
 
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
 

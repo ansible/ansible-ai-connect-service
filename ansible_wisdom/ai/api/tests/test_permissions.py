@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 from django.test import override_settings
 from django.urls import reverse
 
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
@@ -26,9 +26,9 @@ from ansible_wisdom.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_wisdom.test_utils import WisdomAppsBackendMocking
-from ansible_wisdom.users.tests.test_users import create_user
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
+from ansible_ai_connect.users.tests.test_users import create_user
 
 
 # Hack to workaround bug introduced by

@@ -19,7 +19,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
 
 class PostWcaModelIdCommandTestCase(TestCase):
@@ -29,7 +29,7 @@ class PostWcaModelIdCommandTestCase(TestCase):
         ):
             call_command('post_wca_model_id')
 
-    @patch("ansible_wisdom.ai.management.commands._base_wca_command.AWSSecretManager")
+    @patch("ansible_ai_connect.ai.management.commands._base_wca_command.AWSSecretManager")
     def test_model_id_saved(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.save_secret.return_value = "mock_model_id_name"

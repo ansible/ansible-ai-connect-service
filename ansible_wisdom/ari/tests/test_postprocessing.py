@@ -14,7 +14,7 @@
 
 from django.test import TestCase
 
-from ansible_wisdom.ari import postprocessing
+from ansible_ai_connect.ari import postprocessing
 
 
 class ARICallerTestCase(TestCase):

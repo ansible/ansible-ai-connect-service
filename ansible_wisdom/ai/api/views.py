@@ -36,8 +36,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
-from ansible_wisdom.ai.api.exceptions import (
+from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_ai_connect.ai.api.exceptions import (
     AttributionException,
     BaseWisdomAPIException,
     FeedbackInternalServerException,
@@ -55,7 +55,7 @@ from ansible_wisdom.ai.api.exceptions import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
@@ -65,8 +65,8 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ansible_wisdom.ai.api.pipelines.completions import CompletionsPipeline
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
+from ansible_ai_connect.users.models import User
 
 from .. import search as ai_search
 from ..feature_flags import FeatureFlags, WisdomFlags

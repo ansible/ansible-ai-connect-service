@@ -27,9 +27,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from social_django.utils import load_strategy
 
-from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerMissingCredentialsError
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.main.cache.cache_per_user import cache_per_user
+from ansible_ai_connect.ai.api.aws.exceptions import (
+    WcaSecretManagerMissingCredentialsError,
+)
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 
 from .serializers import UserResponseSerializer
 

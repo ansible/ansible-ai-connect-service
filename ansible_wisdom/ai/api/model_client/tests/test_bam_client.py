@@ -20,7 +20,7 @@ from django.test import TestCase, override_settings
 from langchain_core.messages.base import BaseMessage
 from responses import matchers
 
-from ansible_wisdom.ai.api.model_client.bam_client import BAMClient, unwrap_answer
+from ansible_ai_connect.ai.api.model_client.bam_client import BAMClient, unwrap_answer
 
 
 class TestUnwrapAnswer(TestCase):

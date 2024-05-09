@@ -23,13 +23,13 @@ from django.http import HttpResponseRedirect
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.main.base_views import ProtectedTemplateView
-from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.base_views import ProtectedTemplateView
+from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
 

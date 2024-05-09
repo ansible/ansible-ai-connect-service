@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 import grpc
 
-from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError

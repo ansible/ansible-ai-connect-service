@@ -14,11 +14,11 @@
 
 from django.urls import path
 
-from ansible_wisdom.ai.api.wca.api_key_views import (
+from ansible_ai_connect.ai.api.wca.api_key_views import (
     WCAApiKeyValidatorView,
     WCAApiKeyView,
 )
-from ansible_wisdom.ai.api.wca.model_id_views import (
+from ansible_ai_connect.ai.api.wca.model_id_views import (
     WCAModelIdValidatorView,
     WCAModelIdView,
 )

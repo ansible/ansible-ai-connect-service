@@ -43,7 +43,7 @@ if DEBUG:
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
         MIDDLEWARE[index] = (
-            "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
+            "ansible_ai_connect.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
         )
 
 CSP_REPORT_ONLY = True

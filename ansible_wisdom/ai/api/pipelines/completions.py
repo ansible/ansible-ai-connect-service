@@ -17,19 +17,21 @@ import logging
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ansible_wisdom.ai.api.exceptions import InternalServerError
-from ansible_wisdom.ai.api.pipelines.common import Pipeline
-from ansible_wisdom.ai.api.pipelines.completion_stages.deserialise import (
+from ansible_ai_connect.ai.api.exceptions import InternalServerError
+from ansible_ai_connect.ai.api.pipelines.common import Pipeline
+from ansible_ai_connect.ai.api.pipelines.completion_stages.deserialise import (
     DeserializeStage,
 )
-from ansible_wisdom.ai.api.pipelines.completion_stages.inference import InferenceStage
-from ansible_wisdom.ai.api.pipelines.completion_stages.post_process import (
+from ansible_ai_connect.ai.api.pipelines.completion_stages.inference import (
+    InferenceStage,
+)
+from ansible_ai_connect.ai.api.pipelines.completion_stages.post_process import (
     PostProcessStage,
 )
-from ansible_wisdom.ai.api.pipelines.completion_stages.pre_process import (
+from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
     PreProcessStage,
 )
-from ansible_wisdom.ai.api.pipelines.completion_stages.response import ResponseStage
+from ansible_ai_connect.ai.api.pipelines.completion_stages.response import ResponseStage
 
 from .completion_context import CompletionContext
 

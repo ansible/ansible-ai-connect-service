@@ -40,7 +40,7 @@ class Organization(models.Model):
     @cached_property
     def is_subscription_check_should_be_bypassed(self) -> bool:
         # Avoid circular dependency issue with lazy import
-        from ansible_wisdom.ai.feature_flags import WisdomFlags
+        from ansible_ai_connect.ai.feature_flags import WisdomFlags
 
         try:
             return self.__make_organization_request_to_launchdarkly(
@@ -55,7 +55,7 @@ class Organization(models.Model):
             return False
 
         # Avoid circular dependency issue with lazy import
-        from ansible_wisdom.ai.feature_flags import FeatureFlags
+        from ansible_ai_connect.ai.feature_flags import FeatureFlags
 
         feature_flags = FeatureFlags()
         return feature_flags.check_flag(
