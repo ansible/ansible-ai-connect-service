@@ -80,7 +80,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
 
-if settings.DEPLOYMENT_MODE == "saas":
+if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
         path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
         path('console/', ConsoleView.as_view(), name='console'),
