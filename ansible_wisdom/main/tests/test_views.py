@@ -66,6 +66,9 @@ class LogoutTest(TestCase):
         response = self.client.get(reverse('logout'))
         self.assertEqual(response.url, 'http://aap/api/logout/?next=http://testserver/')
 
+    def test_logout_without_login(self):
+        self.client.get(reverse('logout'))
+
 
 class AlreadyAuth(TestCase):
     def test_login(self):
