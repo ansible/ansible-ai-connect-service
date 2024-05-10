@@ -55,11 +55,26 @@
           </span>
 
           <h1 class="pf-c-title pf-m-lg">
-              <p>Your organization doesn't have access to {{ project_name }}.
+            <p>Your organization doesn't have access to {{ project_name }}.
           </h1>
-             <div style="padding: 15px">
-              <p>Contact your Red Hat Organization's administrator for more information.
-            </div>
+          <div style="padding: 15px">
+            <p>Contact your Red Hat Organization's administrator for more information.
+          </div>
+
+{# https://issues.redhat.com/browse/AAP-22398 #}
+{% elif user.is_authenticated and not use_tech_preview and user.rh_user_is_org_admin and not user.rh_org_has_subscription %}
+          <span class="pf-c-icon pf-m-xl pf-m-inline">
+            <span class="pf-c-icon__content  pf-m-danger">
+              <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+            </span>
+          </span>
+
+          <h1 class="pf-c-title pf-m-lg">
+            <p>Your organization doesn't have access to {{ project_name }}.
+          </h1>
+          <div style="padding: 15px">
+            <p>You do not have an Active subscription to Ansible Automation Platform which is required to use {{ project_name }}.
+          </div>
 
 {% elif user.is_authenticated and not use_tech_preview and user.rh_org_has_subscription and not user.rh_user_has_seat %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
@@ -97,15 +112,11 @@
           <h1 class="pf-c-title pf-m-lg">{{ project_name }}</h1>
 {% endif %}
 
-
-
           {% if user.is_authenticated %}
             <div style="padding: 15px">
-              <p>{% firstof user.external_username user.username %}
-              {% if user.rh_org_has_subscription %}
+              <p>{% firstof user.external_username user.username %}</p>
               {% if user.rh_user_is_org_admin or user.rh_user_has_seat %}
-              <p>Role: {% if user.rh_user_is_org_admin %}administrator{% endif %}{% if user.rh_user_is_org_admin and user.rh_user_has_seat %}, {% endif %}{% if user.rh_user_has_seat %}licensed user{% endif %}
-              {% endif %}
+                <p>Role: {% if user.rh_user_is_org_admin %}administrator{% endif %}{% if user.rh_user_is_org_admin and user.rh_user_has_seat %}, {% endif %}{% if user.rh_user_has_seat %}licensed user{% endif %}</p>
               {% endif %}
             </div>
 
@@ -121,7 +132,7 @@
             <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
             <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
 
-            {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+            {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
             <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
             {% endif %}
           </div>

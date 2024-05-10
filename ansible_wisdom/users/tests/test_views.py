@@ -92,14 +92,14 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     def test_rh_admin_without_seat_and_with_no_secret_with_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Role:")
         self.assertContains(response, "pf-c-alert__title", count=1)
-        self.assertNotContains(response, "Admin Portal")
         self.assertNotContains(response, "Your organization doesn't have access to Project Name.")
         self.assertNotContains(response, "You will be limited to features of the Project Name")
         self.assertNotContains(
             response, "The Project Name Technical Preview is no longer available"
         )
+        self.assertContains(response, "Role: administrator")
+        self.assertContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
@@ -108,11 +108,16 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     def test_rh_admin_without_seat_and_with_no_secret_no_sub_without_tech_preview(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Role:")
         self.assertContains(response, "pf-c-alert__title")
-        self.assertNotContains(response, "Admin Portal")
-        self.assertNotContains(response, "Your organization doesn't have access to Project Name.")
+        self.assertContains(response, "Your organization doesn't have access to Project Name.")
+        self.assertContains(
+            response,
+            "You do not have an Active subscription to Ansible Automation Platform "
+            "which is required to use Project Name.",
+        )
         self.assertContains(response, "The Project Name Technical Preview is no longer available")
+        self.assertContains(response, "Role: administrator")
+        self.assertContains(response, "Admin Portal")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
@@ -231,6 +236,9 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Your organization doesn't have access to Project Name.")
+        self.assertContains(
+            response, "Contact your Red Hat Organization's administrator for more information."
+        )
         self.assertContains(response, "fa-exclamation-circle")
         self.assertContains(response, "The Project Name Technical Preview is no longer available")
 
