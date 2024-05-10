@@ -396,6 +396,8 @@ def parse_module_from_prediction(re, prediction):
 
 
 def get_fqcn_or_module_from_prediction(prediction):
+    if prediction is None:
+        return None
     fqcn = get_fqcn_from_prediction(prediction)
     if fqcn is None:
         fqcn = get_module_from_prediction(prediction)

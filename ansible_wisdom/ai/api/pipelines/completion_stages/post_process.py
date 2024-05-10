@@ -364,24 +364,26 @@ def completion_post_process(context: CompletionContext):
             task["prediction"] = post_processed_predictions["predictions"][0]
 
         fqcn_module = None
-
         if ari_results is not None:
             ari_result = ari_results[i]
             fqcn_module = ari_result["fqcn_module"]
-
-        if fqcn_module is None or fqcn_module == "":
-            # In case the module is not part of the collections, ARI does not handle it.
-            # This way, parsing the module from the prediction instead.
-            fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
-
-        if fqcn_module is not None:
-            task["module"] = fqcn_module
-            index = fqcn_module.rfind(".")
-            if index != -1:
-                task["collection"] = fqcn_module[:index]
+        post_process_task(fqcn_module, task)
 
     context.task_results = tasks
     context.post_processed_predictions = post_processed_predictions
+
+
+def post_process_task(fqcn_module, task):
+    if fqcn_module is None or fqcn_module == "":
+        # In case the module is not part of the collections, ARI does not handle it.
+        # This way, parsing the module from the prediction instead.
+        fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
+
+    if fqcn_module is not None:
+        task["module"] = fqcn_module
+        index = fqcn_module.rfind(".")
+        if index != -1:
+            task["collection"] = fqcn_module[:index]
 
 
 class PostProcessStage(PipelineElement):

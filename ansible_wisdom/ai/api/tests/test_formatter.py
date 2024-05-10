@@ -579,6 +579,7 @@ var3: value3
                 "          az: us-east-1r\n"
             ),
         )
+        self.assertIsNone(fmtr.get_fqcn_or_module_from_prediction(None))
 
 
 if __name__ == "__main__":

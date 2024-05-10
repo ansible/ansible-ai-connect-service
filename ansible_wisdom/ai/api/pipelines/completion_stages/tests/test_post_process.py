@@ -39,3 +39,30 @@ class TrimWhitespaceLinesTest(TestCase):
         self.assertEqual(
             post_process.trim_whitespace_lines("hello\ngoodbye\n   "), "hello\ngoodbye\n"
         )
+
+
+class PostProcessTaskTest(TestCase):
+    def test_post_process_task(self):
+        task = dict()
+        post_process.post_process_task("ansible.builtin.package", task)
+        self.assertEqual(task["module"], "ansible.builtin.package")
+        self.assertEqual(task["collection"], "ansible.builtin")
+        task = dict()
+        post_process.post_process_task("community.general.s3_facts", task)
+        self.assertEqual(task["module"], "community.general.s3_facts")
+        self.assertEqual(task["collection"], "community.general")
+        task = dict()
+        post_process.post_process_task("servicenow.itsm.change_info", task)
+        self.assertEqual(task["module"], "servicenow.itsm.change_info")
+        self.assertEqual(task["collection"], "servicenow.itsm")
+        task = dict()
+        post_process.post_process_task("docker_image", task)
+        self.assertEqual(task["module"], "docker_image")
+        self.assertNotIn("collection", task.keys())
+
+    def test_post_process_none_task(self):
+        task = dict()
+        task["prediction"] = None
+        post_process.post_process_task(None, task)
+        self.assertNotIn("module", task.keys())
+        self.assertNotIn("collection", task.keys())
