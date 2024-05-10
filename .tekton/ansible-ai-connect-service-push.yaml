@@ -22,7 +22,7 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/ansible-lightspeed-tenant/ansible-ai-connect-service/ansible-ai-connect-service:{{revision}}
+    value: quay.io/ansible/ansible-ai-connect-service:{{revision}}
   - name: path-context
     value: .
   - name: revision
