@@ -126,7 +126,7 @@ class Token:
             logger.exception("SSO token service failed.")
             return None
         if r.status_code != HTTPStatus.OK:
-            logger.error(f"Unexpected error code ({r.status_code}) returned by SSO service.")
+            logger.warning(f"Unexpected error code ({r.status_code}) returned by SSO service.")
             return None
         data = r.json()
         self.access_token = data["access_token"]
@@ -168,16 +168,16 @@ class CIAMCheck(BaseCheck):
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the CIAM backend in time")
+            logger.exception("Cannot reach the CIAM backend in time")
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
+            logger.warning("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
             return False
         data = r.json()
         try:
             return data["result"]
         except (KeyError, TypeError):
-            logger.error("Unexpected Answer from CIAM")
+            logger.warning("Unexpected Answer from CIAM")
             return False
 
 
@@ -209,7 +209,7 @@ class AMSCheck(BaseCheck):
 
     def get_ams_org(self, rh_org_id: int) -> str:
         if not rh_org_id:
-            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
+            logger.warning(f"Unexpected value for rh_org_id: {rh_org_id}.")
             return AMSCheck.ERROR_AMS_ORG_UNDEFINED
 
         # Check cache
@@ -240,11 +240,11 @@ class AMSCheck(BaseCheck):
 
             r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.exception(self.ERROR_AMS_CONNECTION_TIMEOUT)
             raise AMSCheck.AMSError()
 
         if r.status_code != HTTPStatus.OK:
-            logger.error(
+            logger.warning(
                 f"Unexpected error code ({r.status_code}) returned by AMS backend (organizations). "
                 f"rh_org_id: {rh_org_id}."
             )
@@ -261,7 +261,7 @@ class AMSCheck(BaseCheck):
             cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
             return result
         except (IndexError, KeyError, ValueError):
-            logger.exception(
+            logger.warning(
                 f"Unexpected answer from AMS backend (organizations). "
                 f"rh_org_id: {rh_org_id}, data={data}."
             )
@@ -299,16 +299,18 @@ class AMSCheck(BaseCheck):
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.exception(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
+            logger.warning(
+                "Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code
+            )
             return False
         data = r.json()
         try:
             return len(data["items"]) > 0
         except (KeyError, ValueError):
-            logger.error("Unexpected subscription answer from AMS")
+            logger.warning("Unexpected subscription answer from AMS")
             return False
 
     def rh_user_is_org_admin(self, username: str, organization_id: int):
@@ -329,11 +331,11 @@ class AMSCheck(BaseCheck):
                 timeout=0.8,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.exception(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
 
         if r.status_code != HTTPStatus.OK:
-            logger.error(
+            logger.warning(
                 "Unexpected error code (%s) returned by AMS backend when listing role bindings"
                 % r.status_code
             )
@@ -390,10 +392,10 @@ class AMSCheck(BaseCheck):
 
             r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.exception(self.ERROR_AMS_CONNECTION_TIMEOUT)
             return False
         if r.status_code != HTTPStatus.OK:
-            logger.error(
+            logger.warning(
                 f"Unexpected error code ({r.status_code}) returned by AMS backend (quota_cost). "
                 f"organization_id: {organization_id}, ams_org_id: {ams_org_id}."
             )
@@ -405,7 +407,7 @@ class AMSCheck(BaseCheck):
             return result
 
         except (KeyError, ValueError):
-            logger.error(
+            logger.warning(
                 f"Unexpected answer from AMS backend (quota_cost). "
                 f"organization_id {organization_id}, ams_org_id: {ams_org_id}."
             )
