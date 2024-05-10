@@ -42,27 +42,36 @@ class TrimWhitespaceLinesTest(TestCase):
 
 
 class PostProcessTaskTest(TestCase):
-    def test_post_process_task(self):
+    def test_post_process_ari_task(self):
         task = dict()
-        post_process.post_process_task("ansible.builtin.package", task)
+        post_process.populate_module_and_collection("ansible.builtin.package", task)
         self.assertEqual(task["module"], "ansible.builtin.package")
         self.assertEqual(task["collection"], "ansible.builtin")
         task = dict()
-        post_process.post_process_task("community.general.s3_facts", task)
+        post_process.populate_module_and_collection("community.general.s3_facts", task)
         self.assertEqual(task["module"], "community.general.s3_facts")
         self.assertEqual(task["collection"], "community.general")
         task = dict()
-        post_process.post_process_task("servicenow.itsm.change_info", task)
+        post_process.populate_module_and_collection("servicenow.itsm.change_info", task)
         self.assertEqual(task["module"], "servicenow.itsm.change_info")
         self.assertEqual(task["collection"], "servicenow.itsm")
         task = dict()
-        post_process.post_process_task("docker_image", task)
+        post_process.populate_module_and_collection("docker_image", task)
         self.assertEqual(task["module"], "docker_image")
         self.assertNotIn("collection", task.keys())
 
-    def test_post_process_none_task(self):
+    def test_post_process_none_ari_task(self):
+        task = dict()
+        task["prediction"] = (
+            "    ansible.builtin.package:\n      name: openssh-server\n      state: present"
+        )
+        post_process.populate_module_and_collection(None, task)
+        self.assertEqual(task["module"], "ansible.builtin.package")
+        self.assertEqual(task["collection"], "ansible.builtin")
+
+    def test_post_process_none_ari_task_none_prediction(self):
         task = dict()
         task["prediction"] = None
-        post_process.post_process_task(None, task)
+        post_process.populate_module_and_collection(None, task)
         self.assertNotIn("module", task.keys())
         self.assertNotIn("collection", task.keys())

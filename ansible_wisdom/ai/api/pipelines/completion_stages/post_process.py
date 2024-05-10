@@ -367,13 +367,13 @@ def completion_post_process(context: CompletionContext):
         if ari_results is not None:
             ari_result = ari_results[i]
             fqcn_module = ari_result["fqcn_module"]
-        post_process_task(fqcn_module, task)
+        populate_module_and_collection(fqcn_module, task)
 
     context.task_results = tasks
     context.post_processed_predictions = post_processed_predictions
 
 
-def post_process_task(fqcn_module, task):
+def populate_module_and_collection(fqcn_module, task):
     if fqcn_module is None or fqcn_module == "":
         # In case the module is not part of the collections, ARI does not handle it.
         # This way, parsing the module from the prediction instead.
