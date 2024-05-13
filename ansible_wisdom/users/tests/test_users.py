@@ -45,6 +45,7 @@ from ansible_ai_connect.test_utils import (
 )
 from ansible_ai_connect.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
+    USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
@@ -619,7 +620,18 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.client.force_authenticate(user=user)
         r = self.client.get(reverse('me'))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIsNone(r.data.get('org_telemetry_opt_out'))
+        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+
+    def test_aap_user(self):
+        user = create_user(
+            provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
+            social_auth_extra_data={"login": "aap_username"},
+            external_username="aap_username",
+        )
+        self.client.force_authenticate(user=user)
+        r = self.client.get(reverse('me'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertTrue(r.data.get('org_telemetry_opt_out'))
 
     def test_rhsso_user_with_telemetry_opted_in(self):
         user = create_user(
