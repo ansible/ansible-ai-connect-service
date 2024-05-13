@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 from abc import abstractmethod
 from datetime import datetime, timedelta
@@ -269,6 +284,13 @@ class AMSCheck(BaseCheck):
             # If the AMS Organisation lookup fails assume the check failed.
             # The 'check()' function is obsolete and not called. This code
             # only exists as a matter of 'completeness'.
+            return False
+
+        if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
+            # Organization has not yet been created in AMS, either the organization
+            # is too recent (sync is done every 1h), or the organization has not AMS related
+            # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
+            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
             return False
 
         params = {

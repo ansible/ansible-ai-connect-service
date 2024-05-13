@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 import uuid
 
@@ -9,8 +23,8 @@ from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.organizations.models import Organization
 
 from .constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
@@ -96,10 +110,11 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
         """
 
         if self.organization and self.organization.is_subscription_check_should_be_bypassed:
-            logger.info(
-                f"""Bypass organization check for organization ID {self.organization.id}
- and user UUID: {self.uuid}."""
+            message = (
+                "Bypass organization check for organization ID "
+                f"{self.organization.id} and user UUID: {self.uuid}."
             )
+            logger.info(message)
             return True
 
         if self.is_aap_user():

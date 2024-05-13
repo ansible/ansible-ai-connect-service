@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 
 import jwt
@@ -10,9 +24,9 @@ from social_core.pipeline.partial import partial
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
 
-from ansible_wisdom.ai.api.utils.segment import send_segment_group
-from ansible_wisdom.organizations.models import Organization
-from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
+from ansible_ai_connect.ai.api.utils.segment import send_segment_group
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +92,11 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         return
 
     key = backend.find_valid_key(response['access_token'])
-    rsakey = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+    rsakey = jwt.PyJWK(key)
     payload = jwt.decode(
         response['access_token'],
-        rsakey.to_pem().decode("utf-8"),
-        algorithms=[key['alg']],
+        rsakey.key,
+        algorithms=[key.get('alg', 'RS256')],
         audience=RHSSO_LIGHTSPEED_SCOPE,
     )
 

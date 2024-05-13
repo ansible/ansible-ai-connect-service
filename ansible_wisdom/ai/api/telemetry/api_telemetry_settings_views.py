@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 import time
 
@@ -9,14 +23,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
 
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.serializers import TelemetrySettingsRequestSerializer
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
-from ansible_wisdom.ai.api.views import InternalServerError, ServiceUnavailable
-from ansible_wisdom.users.signals import user_set_telemetry_settings
+from ansible_ai_connect.ai.api.serializers import TelemetrySettingsRequestSerializer
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api.views import InternalServerError, ServiceUnavailable
+from ansible_ai_connect.users.signals import user_set_telemetry_settings
 
 logger = logging.getLogger(__name__)
 

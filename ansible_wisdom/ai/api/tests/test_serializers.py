@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 """
 Test serializers
 """
@@ -9,7 +23,7 @@ from uuid import UUID
 from django.test import override_settings
 from rest_framework import serializers
 
-from ansible_wisdom.ai.api.serializers import (
+from ansible_ai_connect.ai.api.serializers import (
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
     ContentMatchSerializer,
@@ -290,6 +304,44 @@ class FeedbackRequestSerializerTest(TestCase):
         )
 
         # sentimentFeedback allowed regardless of seat
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
+
+    def test_commercial_user_allows_playbookExplanationFeedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "playbookExplanationFeedback": {
+                    "action": 1,
+                    "explanationId": "dd6d0ef8-dfb9-4d38-ae08-b3e5c6056acd",
+                }
+            },
+        )
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
+
+    def test_commercial_user_allows_playbookOutlineFeedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "playbookOutlineFeedback": {
+                    "action": 1,
+                    "outlineId": "dd6d0ef8-dfb9-4d38-ae08-b3e5c6056acd",
+                }
+            },
+        )
+
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:

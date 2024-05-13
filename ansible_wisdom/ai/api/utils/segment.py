@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 import platform
 from typing import Any, Dict
@@ -7,8 +21,8 @@ from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
-from ansible_wisdom.healthcheck.version_info import VersionInfo
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.healthcheck.version_info import VersionInfo
+from ansible_ai_connect.users.models import User
 
 from .seated_users_allow_list import ALLOW_LIST
 

@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import json
 import logging
 
@@ -55,10 +69,9 @@ def user_set_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
 @receiver(user_set_telemetry_settings)
 def user_set_telemetry_settings_log(sender, user, org_id, settings, **kwargs):
     """User set Telemetry settings"""
-    logger.info(
-        f"User: '{user}' set Telemetry settings for Organisation "
-        f"'{org_id}' to '{json.dumps(settings, indent = 2) }'."
-    )
+    data = json.dumps(settings, indent=2)
+    message = f"User: '{user}' set Telemetry settings for Organisation " f"'{org_id}' to '{data}'."
+    logger.info(message)
 
 
 def _obfuscate(value: str) -> str:

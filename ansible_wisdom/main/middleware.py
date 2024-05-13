@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import json
 import logging
 import time
@@ -11,17 +25,17 @@ from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
-from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
-from ansible_wisdom.ai.api.utils.analytics_telemetry_model import (
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.ai.api.utils.analytics_telemetry_model import (
     AnalyticsRecommendationGenerated,
     AnalyticsRecommendationTask,
     AnalyticsTelemetryEvents,
 )
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
-from ansible_wisdom.ai.api.utils.segment_analytics_telemetry import (
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
-from ansible_wisdom.healthcheck.version_info import VersionInfo
+from ansible_ai_connect.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()

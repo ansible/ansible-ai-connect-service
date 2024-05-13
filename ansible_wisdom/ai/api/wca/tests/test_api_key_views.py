@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -8,22 +22,22 @@ from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
-import ansible_wisdom.ai.apps
-from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
-from ansible_wisdom.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ansible_wisdom.ai.api.model_client.exceptions import (
+import ansible_ai_connect.ai.apps
+from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaTokenFailure,
     WcaTokenFailureApiKeyError,
 )
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_wisdom.organizations.models import Organization
-from ansible_wisdom.test_utils import WisdomAppsBackendMocking
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
@@ -34,11 +48,13 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_ai_connect.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(
+            ansible_ai_connect.ai.apps, 'WCAClient', spec=WCAClient
+        )
         self.wca_client_patcher.start()
         apps.get_app_config('ai').ready()
 
@@ -161,7 +177,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
         # Set Key
         mock_wca_client.get_token.return_value = "token"
-        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_ai_connect.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('wca_api_key'),
@@ -277,11 +293,13 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     def setUp(self):
         super().setUp()
         self.secret_manager_patcher = patch.object(
-            ansible_wisdom.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
+            ansible_ai_connect.ai.apps, 'AWSSecretManager', spec=AWSSecretManager
         )
         self.secret_manager_patcher.start()
 
-        self.wca_client_patcher = patch.object(ansible_wisdom.ai.apps, 'WCAClient', spec=WCAClient)
+        self.wca_client_patcher = patch.object(
+            ansible_ai_connect.ai.apps, 'WCAClient', spec=WCAClient
+        )
         self.wca_client_patcher.start()
         apps.get_app_config('ai').ready()
 

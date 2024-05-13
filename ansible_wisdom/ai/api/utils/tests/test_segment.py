@@ -1,18 +1,32 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from unittest import TestCase, mock
 from unittest.mock import MagicMock, Mock
 
 from django.test import override_settings
 from segment import analytics
 
-from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
-from ansible_wisdom.ai.api.utils.seated_users_allow_list import ALLOW_LIST
-from ansible_wisdom.ai.api.utils.segment import (
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.ai.api.utils.seated_users_allow_list import ALLOW_LIST
+from ansible_ai_connect.ai.api.utils.segment import (
     base_send_segment_event,
     redact_seated_users_data,
     send_segment_event,
     send_segment_group,
 )
-from ansible_wisdom.ai.api.utils.segment_analytics_telemetry import (
+from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     get_segment_analytics_client,
 )
 
@@ -185,11 +199,11 @@ class TestSegment(TestCase):
             send_segment_event(event, 'inlineSuggestionFeedback', user)
             self.assertEqual(
                 log.output[0],
-                'ERROR:ansible_wisdom.ai.api.utils.segment:It is not allowed to track'
+                'ERROR:ansible_ai_connect.ai.api.utils.segment:It is not allowed to track'
                 + ' inlineSuggestionFeedback events for seated users',
             )
 
-    @mock.patch("ansible_wisdom.ai.api.utils.segment.analytics.track")
+    @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_send_segment_event_community_user(self, track_method):
@@ -207,7 +221,7 @@ class TestSegment(TestCase):
         self.assertEqual(argument['details'], 'Some details')
         self.assertEqual(argument['exception'], 'SomeException')
 
-    @mock.patch("ansible_wisdom.ai.api.utils.segment.analytics.track")
+    @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_send_segment_event_seated_user(self, track_method):
@@ -283,7 +297,7 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST['trialExpired']), expected_result
         )
 
-    @mock.patch("ansible_wisdom.ai.api.utils.segment.analytics.group")
+    @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.group")
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_send_segment_group(self, group_method):
         user = Mock()

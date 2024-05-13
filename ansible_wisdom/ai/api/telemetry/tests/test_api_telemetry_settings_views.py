@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -7,13 +21,13 @@ from django.urls import resolve, reverse
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
-import ansible_wisdom.ai.feature_flags as feature_flags
-from ansible_wisdom.ai.api.permissions import (
+import ansible_ai_connect.ai.feature_flags as feature_flags
+from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.organizations.models import Organization
 
 
 @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
@@ -109,7 +123,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.assertFalse(r.data['optOut'])
 
         # Set settings
-        with self.assertLogs(logger='ansible_wisdom.users.signals', level='DEBUG') as signals:
+        with self.assertLogs(logger='ansible_ai_connect.users.signals', level='DEBUG') as signals:
             with self.assertLogs(logger='root', level='DEBUG') as log:
                 r = self.client.post(
                     reverse('telemetry_settings'),

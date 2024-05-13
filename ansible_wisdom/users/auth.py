@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 
 import jwt
@@ -7,7 +21,7 @@ from social_core.backends.oauth import BaseOAuth2
 from social_django.models import UserSocialAuth
 from social_django.utils import load_backend, load_strategy
 
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.users.constants import (
     RHSSO_LIGHTSPEED_SCOPE,
     USER_SOCIAL_AUTH_PROVIDER_AAP,
 )
@@ -63,12 +77,12 @@ class RHSSOAuthentication(authentication.BaseAuthentication):
         strategy = load_strategy()
         backend = load_backend(strategy, 'oidc', redirect_uri=None)
         key = backend.find_valid_key(access_token)
-        rsakey = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+        rsakey = jwt.PyJWK(key)
 
         # Decode and verify access token using extracted public key
         decoded_token = jwt.decode(
             access_token,
-            rsakey.to_pem().decode("utf-8"),
+            rsakey.key,
             algorithms=['RS256'],
             issuer=backend.id_token_issuer(),
             audience=RHSSO_LIGHTSPEED_SCOPE,

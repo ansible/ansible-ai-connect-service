@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 """main URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -24,15 +38,15 @@ from drf_spectacular.views import (
 )
 from oauth2_provider.urls import app_name, base_urlpatterns
 
-from ansible_wisdom.ai.api.telemetry.api_telemetry_settings_views import (
+from ansible_ai_connect.ai.api.telemetry.api_telemetry_settings_views import (
     TelemetrySettingsView,
 )
-from ansible_wisdom.healthcheck.views import (
+from ansible_ai_connect.healthcheck.views import (
     WisdomServiceHealthView,
     WisdomServiceLivenessProbeView,
 )
-from ansible_wisdom.main.views import ConsoleView, LoginView, LogoutView
-from ansible_wisdom.users.views import (
+from ansible_ai_connect.main.views import ConsoleView, LoginView, LogoutView
+from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
     TermsOfService,
@@ -47,7 +61,7 @@ urlpatterns = [
     path('', include('social_django.urls', namespace='social')),
     path('', include('django_prometheus.urls')),
     path('admin/', admin.site.urls),
-    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_wisdom.ai.api.urls")),
+    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
@@ -66,9 +80,9 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
 
-if settings.DEPLOYMENT_MODE == "saas":
+if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
-        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
+        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_ai_connect.ai.api.wca.urls')),
         path('console/', ConsoleView.as_view(), name='console'),
         path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
         path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),

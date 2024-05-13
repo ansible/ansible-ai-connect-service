@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import base64
 import json
 import logging
@@ -12,14 +26,13 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
-from ansible_wisdom.ai.api.formatter import (
+from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
 )
-from ansible_wisdom.ai.api.model_client.wca_utils import (
-    ContentMatchContext,
+from ansible_ai_connect.ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
-    InferenceContext,
+    Context,
     InferenceResponseChecks,
     TokenContext,
     TokenResponseChecks,
@@ -202,7 +215,7 @@ class BaseWCAClient(ModelMeshClient):
                         model_id=model_id, x_request_id=x_request_id
                     )
 
-            context = InferenceContext(model_id, response, task_count > 1)
+            context = Context(model_id, response, task_count > 1)
             InferenceResponseChecks().run_checks(context)
             response.raise_for_status()
 
@@ -254,7 +267,7 @@ class BaseWCAClient(ModelMeshClient):
                 )
 
             result = post_request()
-            context = ContentMatchContext(model_id, result, suggestion_count > 1)
+            context = Context(model_id, result, suggestion_count > 1)
             ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
 

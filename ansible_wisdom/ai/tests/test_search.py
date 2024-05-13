@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from copy import copy
 from importlib import reload
 from unittest.mock import patch
@@ -8,7 +22,7 @@ from opensearchpy import AWSV4SignerAuth, OpenSearch
 from rest_framework.test import APITestCase
 from sentence_transformers import SentenceTransformer
 
-import ansible_wisdom.ai.search as search
+import ansible_ai_connect.ai.search as search
 
 
 class TestSearch(APITestCase):
@@ -73,8 +87,8 @@ class TestSearch(APITestCase):
                 self.assertIsNotNone(client)
                 self.assertIsNotNone(model)
 
-        with patch('ansible_wisdom.ai.search.client', self.DummyClient()):
-            with patch('ansible_wisdom.ai.search.model', self.DummySentenceTransformer()):
+        with patch('ansible_ai_connect.ai.search.client', self.DummyClient()):
+            with patch('ansible_ai_connect.ai.search.model', self.DummySentenceTransformer()):
                 ret = search.search(np.array(1))
                 self.assertIsNotNone(ret)
 
@@ -87,13 +101,13 @@ class TestSearch(APITestCase):
                 self.assertIsNone(model)
 
     def test_search(self):
-        with patch('ansible_wisdom.ai.search.client', self.DummyClient()):
-            with patch('ansible_wisdom.ai.search.model', self.DummySentenceTransformer()):
+        with patch('ansible_ai_connect.ai.search.client', self.DummyClient()):
+            with patch('ansible_ai_connect.ai.search.model', self.DummySentenceTransformer()):
                 ret = search.search(np.array(1))
                 self.assertIsNotNone(ret)
 
     def test_search_with_none_client(self):
-        with patch('ansible_wisdom.ai.search.client', None):
+        with patch('ansible_ai_connect.ai.search.client', None):
             with self.assertRaises(Exception):
                 search.search(np.array(1))
 

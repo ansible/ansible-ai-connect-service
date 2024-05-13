@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import logging
 from typing import Union
 
@@ -5,9 +19,9 @@ from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
-from ansible_wisdom.ansible_lint import lintpostprocessing
-from ansible_wisdom.ari import postprocessing
-from ansible_wisdom.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
+from ansible_ai_connect.ansible_lint import lintpostprocessing
+from ansible_ai_connect.ari import postprocessing
+from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
@@ -24,7 +38,7 @@ UNINITIALIZED = None
 
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "ansible_wisdom.ai"
+    name = "ansible_ai_connect.ai"
     model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED

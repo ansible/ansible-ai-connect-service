@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
-from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
-from ansible_wisdom.main.views import LoginView
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.views import LoginView
+from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-from ansible_wisdom.users.tests.test_users import create_user
+from ansible_ai_connect.users.tests.test_users import create_user
 
 
 def create_user_with_provider(user_provider):
@@ -51,6 +65,9 @@ class LogoutTest(TestCase):
 
         response = self.client.get(reverse('logout'))
         self.assertEqual(response.url, 'http://aap/api/logout/?next=http://testserver/')
+
+    def test_logout_without_login(self):
+        self.client.get(reverse('logout'))
 
 
 class AlreadyAuth(TestCase):

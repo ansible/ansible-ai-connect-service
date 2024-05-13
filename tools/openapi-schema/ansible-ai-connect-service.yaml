@@ -866,20 +866,24 @@ components:
     FeedbackRequest:
       type: object
       properties:
-        inlineSuggestion:
-          $ref: '#/components/schemas/InlineSuggestionFeedback'
         ansibleContent:
           $ref: '#/components/schemas/AnsibleContentFeedback'
-        suggestionQualityFeedback:
-          $ref: '#/components/schemas/SuggestionQualityFeedback'
-        sentimentFeedback:
-          $ref: '#/components/schemas/SentimentFeedback'
+        inlineSuggestion:
+          $ref: '#/components/schemas/InlineSuggestionFeedback'
         issueFeedback:
           $ref: '#/components/schemas/IssueFeedback'
         metadata:
           $ref: '#/components/schemas/Metadata'
         model:
           type: string
+        playbookExplanationFeedback:
+          $ref: '#/components/schemas/PlaybookExplanationFeedback'
+        playbookOutlineFeedback:
+          $ref: '#/components/schemas/PlaybookOutlineFeedback'
+        sentimentFeedback:
+          $ref: '#/components/schemas/SentimentFeedback'
+        suggestionQualityFeedback:
+          $ref: '#/components/schemas/SuggestionQualityFeedback'
     GenerationRequest:
       type: object
       properties:
@@ -967,6 +971,32 @@ components:
           title: Ansible vscode/vscodium extension version
           description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
           pattern: v?\d+\.\d+\.\d+
+    PlaybookExplanationFeedback:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        explanationId:
+          type: string
+          format: uuid
+          title: Explanation ID
+          description: A UUID that identifies the playbook explanation.
+      required:
+      - action
+      - explanationId
+    PlaybookOutlineFeedback:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        outlineId:
+          type: string
+          format: uuid
+          title: Outline ID
+          description: A UUID that identifies the playbook outline.
+      required:
+      - action
+      - outlineId
     SentimentFeedback:
       type: object
       properties:

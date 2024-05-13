@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import base64
 import uuid
 from datetime import datetime
@@ -11,13 +25,13 @@ from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError, ReadTimeout
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import (
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
     DummySecretEntry,
     DummySecretManager,
     Suffixes,
     WcaSecretManagerError,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCodeMatchFailure,
@@ -29,7 +43,7 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
-from ansible_wisdom.ai.api.model_client.wca_client import (
+from ansible_ai_connect.ai.api.model_client.wca_client import (
     WCA_REQUEST_ID_HEADER,
     WCAClient,
     WCAOnPremClient,
@@ -40,7 +54,7 @@ from ansible_wisdom.ai.api.model_client.wca_client import (
     wca_codematch_hist,
     wca_codematch_retry_counter,
 )
-from ansible_wisdom.test_utils import (
+from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )

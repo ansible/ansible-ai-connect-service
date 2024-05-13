@@ -1,3 +1,17 @@
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
@@ -60,146 +74,109 @@ class TokenResponseChecks(Checks[TokenContext]):
         )
 
 
-class InferenceContext:
+class Context:
     def __init__(self, model_id, result, is_multi_task_prompt):
         self.model_id = model_id
         self.result = result
         self.is_multi_task_prompt = is_multi_task_prompt
 
 
-class InferenceResponseChecks(Checks[InferenceContext]):
-    class ResponseStatusCode204(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if context.result.status_code == 204:
-                raise WcaEmptyResponse(model_id=context.model_id)
-
-    class ResponseStatusCode400WCABadRequestModelId(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if context.result.status_code == 400:
-                payload_json = context.result.json()
-                if isinstance(payload_json, dict):
-                    payload_error = payload_json.get("error")
-                    if (
-                        payload_error
-                        and "bad request" in payload_error.lower()
-                        and "('body', 'model_id')" in payload_error.lower()
-                    ):
-                        raise WcaInvalidModelId(model_id=context.model_id)
-                    payload_detail = payload_json.get("detail")
-                    if (
-                        payload_detail
-                        and "failed to parse space id and model id" in payload_detail.lower()
-                    ):
-                        raise WcaInvalidModelId(model_id=context.model_id)
-
-    class ResponseStatusCode400(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if context.result.status_code == 400:
-                raise WcaBadRequest(model_id=context.model_id, json_response=context.result.json())
-
-    class ResponseStatusCode403(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if context.result.status_code == 403:
-                raise WcaInvalidModelId(model_id=context.model_id)
-
-    class ResponseStatusCode403Cloudflare(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            if context.result.status_code == 403:
-                text = context.result.text
-                if text and "cloudflare" in text.lower():
-                    raise WcaCloudflareRejection(model_id=context.model_id)
-
-    class ResponseStatusCode403UserTrialExpired(Check[InferenceContext]):
-        def check(self, context: InferenceContext):
-            is_user_trial_expired(
-                context.model_id,
-                context.result.status_code,
-                context.result.json(),
-            )
-
-    def __init__(self):
-        super().__init__(
-            [
-                # The ordering of these checks is important!
-                InferenceResponseChecks.ResponseStatusCode204(),
-                InferenceResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
-                InferenceResponseChecks.ResponseStatusCode400(),
-                InferenceResponseChecks.ResponseStatusCode403Cloudflare(),
-                InferenceResponseChecks.ResponseStatusCode403UserTrialExpired(),
-                InferenceResponseChecks.ResponseStatusCode403(),
-            ]
-        )
+class ResponseStatusCode204(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 204:
+            raise WcaEmptyResponse(model_id=context.model_id)
 
 
-class ContentMatchContext:
-    def __init__(self, model_id, result, is_multi_task_suggestion):
-        self.model_id = model_id
-        self.result = result
-        self.is_multi_task_suggestion = is_multi_task_suggestion
+class ResponseStatusCode400WCABadRequestModelId(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 400:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_error = payload_json.get("error")
+                if (
+                    payload_error
+                    and "bad request" in payload_error.lower()
+                    and "('body', 'model_id')" in payload_error.lower()
+                ):
+                    raise WcaInvalidModelId(model_id=context.model_id)
+                payload_detail = payload_json.get("detail")
+                if (
+                    payload_detail
+                    and "failed to parse space id and model id" in payload_detail.lower()
+                ):
+                    raise WcaInvalidModelId(model_id=context.model_id)
 
 
-class ContentMatchResponseChecks(Checks[ContentMatchContext]):
-    class ResponseStatusCode204(Check[ContentMatchContext]):
-        def check(self, context: ContentMatchContext):
-            if context.result.status_code == 204:
-                raise WcaEmptyResponse(model_id=context.model_id)
+class ResponseStatusCode400(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 400:
+            raise WcaBadRequest(model_id=context.model_id, json_response=context.result.json())
 
-    class ResponseStatusCode400WCABadRequestModelId(Check[ContentMatchContext]):
-        def check(self, context: ContentMatchContext):
-            if context.result.status_code == 400:
-                payload_json = context.result.json()
-                if isinstance(payload_json, dict):
-                    payload_error = payload_json.get("error")
-                    if (
-                        payload_error
-                        and "bad request" in payload_error.lower()
-                        and "('body', 'model_id')" in payload_error.lower()
-                    ):
-                        raise WcaInvalidModelId(model_id=context.model_id)
 
-    class ResponseStatusCode400(Check[ContentMatchContext]):
-        def check(self, context: ContentMatchContext):
-            if context.result.status_code == 400:
-                raise WcaBadRequest(model_id=context.model_id, json_response=context.result.json())
+class ResponseStatusCode403(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 403:
+            raise WcaInvalidModelId(model_id=context.model_id)
 
-    class ResponseStatusCode403(Check[ContentMatchContext]):
-        def check(self, context: ContentMatchContext):
-            if context.result.status_code == 403:
-                raise WcaInvalidModelId(model_id=context.model_id)
 
-    class ResponseStatusCode403Cloudflare(Check[InferenceContext]):
-        def check(self, context: ContentMatchContext):
-            if context.result.status_code == 403:
-                text = context.result.text
-                if text and "cloudflare" in text.lower():
-                    raise WcaCloudflareRejection(model_id=context.model_id)
+class ResponseStatusCode403Cloudflare(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 403:
+            text = context.result.text
+            if text and "cloudflare" in text.lower():
+                raise WcaCloudflareRejection(model_id=context.model_id)
 
-    class ResponseStatusCode403UserTrialExpired(Check[InferenceContext]):
-        def check(self, context: ContentMatchContext):
-            is_user_trial_expired(
-                context.model_id,
-                context.result.status_code,
-                context.result.json(),
-            )
+
+class ResponseStatusCode403UserTrialExpired(Check[Context]):
+
+    def check(self, context: Context):
+        if context.result.status_code == 403:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_message_id = payload_json.get("message_id")
+                if payload_message_id and "wca-0001-e" in payload_message_id.lower():
+                    raise WcaUserTrialExpired(model_id=context.model_id)
+
+
+class ResponseStatusCode404WCABadRequestModelId(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 404:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_detail = payload_json.get("detail")
+                if payload_detail and "wml api call failed" in payload_detail.lower():
+                    raise WcaInvalidModelId(model_id=context.model_id)
+
+
+class InferenceResponseChecks(Checks[Context]):
 
     def __init__(self):
         super().__init__(
             [
                 # The ordering of these checks is important!
-                ContentMatchResponseChecks.ResponseStatusCode204(),
-                ContentMatchResponseChecks.ResponseStatusCode400WCABadRequestModelId(),
-                ContentMatchResponseChecks.ResponseStatusCode400(),
-                ContentMatchResponseChecks.ResponseStatusCode403Cloudflare(),
-                ContentMatchResponseChecks.ResponseStatusCode403UserTrialExpired(),
-                ContentMatchResponseChecks.ResponseStatusCode403(),
+                ResponseStatusCode204(),
+                ResponseStatusCode400WCABadRequestModelId(),
+                ResponseStatusCode400(),
+                ResponseStatusCode403Cloudflare(),
+                ResponseStatusCode403UserTrialExpired(),
+                ResponseStatusCode403(),
+                ResponseStatusCode404WCABadRequestModelId(),
             ]
         )
 
 
-def is_user_trial_expired(model_id, result_code, content):
-    if (
-        result_code == 403
-        and isinstance(content, dict)
-        and "WCA-0001-E" == content.get("message_id")
-    ):
-        raise WcaUserTrialExpired(model_id=model_id)
+class ContentMatchResponseChecks(Checks[Context]):
+
+    def __init__(self):
+        super().__init__(
+            [
+                # The ordering of these checks is important!
+                ResponseStatusCode204(),
+                ResponseStatusCode400WCABadRequestModelId(),
+                ResponseStatusCode400(),
+                ResponseStatusCode403Cloudflare(),
+                ResponseStatusCode403UserTrialExpired(),
+                ResponseStatusCode403(),
+                ResponseStatusCode404WCABadRequestModelId(),
+            ]
+        )

@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 
+#  Copyright Red Hat
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 from uuid import uuid4
 
 import jwt
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 from social_django.models import UserSocialAuth
 
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
-from ansible_wisdom.users.constants import RHSSO_LIGHTSPEED_SCOPE
-from ansible_wisdom.users.pipeline import load_extra_data, redhat_organization
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
+from ansible_ai_connect.users.pipeline import load_extra_data, redhat_organization
 
 
 def build_access_token(private_key, payload):
@@ -74,13 +87,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         self.rsa_private_key = rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=default_backend()
         )
-
-        public_bytes = self.rsa_private_key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        )
-
-        self.public_key = jwt.algorithms.RSAAlgorithm.from_jwk(public_bytes.decode('utf-8'))
+        algo = jwt.algorithms.RSAAlgorithm(jwt.algorithms.RSAAlgorithm.SHA256)
+        self.jwk_public_key = algo.to_jwk(self.rsa_private_key.public_key(), as_dict=True)
+        self.jwk_public_key["alg"] = "RS256"
 
     def tearDown(self):
         self.rh_user.delete()
@@ -89,7 +98,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
 
     def test_load_extra_data(self):
         load_extra_data(
-            backend=DummyRHBackend(public_key=self.jwks_public_key),
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
             details=None,
             response=None,
             uid=None,
@@ -111,7 +120,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         }
 
         answer = redhat_organization(
-            backend=DummyRHBackend(public_key=self.jwks_public_key),
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
             user=self.rh_user,
             response=response,
         )
@@ -137,7 +146,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         }
 
         answer = redhat_organization(
-            backend=DummyRHBackend(public_key=self.jwks_public_key),
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
             user=self.rh_user,
             response=response,
         )
@@ -174,7 +183,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         }
 
         answer = redhat_organization(
-            backend=DummyRHBackend(public_key=self.jwks_public_key),
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
             user=self.rh_user,
             response=response,
         )
@@ -201,7 +210,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         }
 
         answer = redhat_organization(
-            backend=DummyRHBackend(public_key=self.jwks_public_key),
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
             user=self.rh_user,
             response=response,
         )
@@ -226,9 +235,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
                 },
             )
         }
-        with self.assertLogs(logger='ansible_wisdom.users.pipeline', level='ERROR') as log:
+        with self.assertLogs(logger='ansible_ai_connect.users.pipeline', level='ERROR') as log:
             answer = redhat_organization(
-                backend=DummyRHBackend(public_key=self.jwks_public_key),
+                backend=DummyRHBackend(public_key=self.jwk_public_key),
                 user=self.rh_user,
                 response=response,
             )
