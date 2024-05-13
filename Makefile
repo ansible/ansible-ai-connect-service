@@ -1,6 +1,6 @@
 ENVIRONMENT ?= development
 TAG ?= latest
-ANSIBLE_AI_PROJECT_NAME ?= "Ansible AI Connect"
+ANSIBLE_AI_PROJECT_NAME ?= Ansible AI Connect
 
 # Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
