@@ -288,7 +288,7 @@ class AMSCheck(BaseCheck):
 
         if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
             # Organization has not yet been created in AMS, either the organization
-            # is too recent (sync is done every 1h), or the organization has not AMS related
+            # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
             logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
             return False
@@ -324,6 +324,13 @@ class AMSCheck(BaseCheck):
         except AMSCheck.AMSError:
             # See https://issues.redhat.com/browse/AAP-22758
             # If the AMS Organisation lookup fails assume the User is not an administrator
+            return False
+
+        if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
+            # Organization has not yet been created in AMS, either the organization
+            # is too recent (sync is done every 1h), or the organization has no AMS related
+            # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
+            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
             return False
 
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
@@ -363,6 +370,13 @@ class AMSCheck(BaseCheck):
             # See https://issues.redhat.com/browse/AAP-22758
             # If the AMS Organisation lookup fails assume the User has a subscription
             return True
+
+        if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
+            # Organization has not yet been created in AMS, either the organization
+            # is too recent (sync is done every 1h), or the organization has no AMS related
+            # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
+            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
+            return False
 
         # Check cache
         cache_key = f"ams_rh_org_has_subscription_{organization_id}"
