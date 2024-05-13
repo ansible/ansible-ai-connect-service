@@ -17,7 +17,12 @@ jobs:
           pip install -r requirements-dev.txt
           pip install .
 
-      - name: Run Snyk to check for vulnerabilities
+      - name: Monitor project and report vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test
+        run: snyk monitor --all-projects
+
+      - name: Test project for vulnerabilities
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --all-projects
