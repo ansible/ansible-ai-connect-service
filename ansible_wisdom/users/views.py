@@ -101,8 +101,9 @@ class CurrentUserView(RetrieveAPIView):
 
         # Enrich with Organisational data, if necessary
         organization = self.request.user.organization
-        if organization:
-            user_data["org_telemetry_opt_out"] = organization.telemetry_opt_out
+        user_data["org_telemetry_opt_out"] = (
+            organization.telemetry_opt_out if organization else True
+        )
 
         return Response(user_data)
 
