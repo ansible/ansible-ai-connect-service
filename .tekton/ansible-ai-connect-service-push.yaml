@@ -16,6 +16,10 @@ metadata:
   name: ansible-ai-connect-service-on-push
   namespace: ansible-lightspeed-tenant
 spec:
+  timeouts:
+    pipeline: "0"
+    tasks: "0"
+    finally: "0"
   params:
   - name: dockerfile
     value: ./wisdom-service.Containerfile
