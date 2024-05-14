@@ -10,6 +10,13 @@ ignore:
   SNYK-PYTHON-PYOPENSSL-6592766:
     - '*':
         reason: SSL_OP_NO_TICKET option isn't enabled
-        expires: 2024-05-24T15:19:11.846Z
-        created: 2024-04-24T15:19:11.851Z
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-PYOPENSSL-6157250:
+    - '*':
+        reason: |
+          No OpenSSL refresh available yet due to low severity;
+          see https://www.openssl.org/news/secadv/20240115.txt
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
 patch: {}
