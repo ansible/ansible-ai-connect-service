@@ -59,7 +59,6 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-    path('', include('django_prometheus.urls')),
     path('admin/', admin.site.urls),
     path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
@@ -79,6 +78,13 @@ urlpatterns = [
     ),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
+
+# https://issues.redhat.com/browse/AAP-23414
+# /metrics is not available for "onprem" deployments
+if settings.DEPLOYMENT_MODE != "onprem":
+    urlpatterns += [
+        path('', include('django_prometheus.urls')),
+    ]
 
 if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
