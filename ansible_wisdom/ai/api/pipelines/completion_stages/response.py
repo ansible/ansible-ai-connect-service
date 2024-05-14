@@ -17,14 +17,14 @@ from enum import Enum
 
 from rest_framework.response import Response
 
-from ansible_wisdom.ai.api.exceptions import (
+from ansible_ai_connect.ai.api.exceptions import (
     InternalServerError,
     completions_return_code,
     process_error_count,
 )
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement
-from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
-from ansible_wisdom.ai.api.serializers import CompletionResponseSerializer
+from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.serializers import CompletionResponseSerializer
 
 logger = logging.getLogger(__name__)
 

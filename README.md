@@ -147,6 +147,12 @@ In this example, `11009103`` is your organization id. In this case the model is 
 You can also use the following syntax to set both the model and set key_id:
 `WCA_SECRET_DUMMY_SECRETS='11009103:ibm_api_key<sep>model_id<|sepofid|>model_name'`
 
+You can become a fake admin with the `AUTHZ_DUMMY_RH_ORG_ADMINS` and be able to use the admin
+interface, you can use the `AUTHZ_DUMMY_RH_ORG_ADMINS` environment variable:
+
+```bash
+export AUTHZ_DUMMY_RH_ORG_ADMINS="your-user-name"
+```
 
 For deployment and RH SSO integration test/development, set
 environment variables for access to AWS:

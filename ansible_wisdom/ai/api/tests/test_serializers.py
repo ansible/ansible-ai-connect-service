@@ -23,7 +23,7 @@ from uuid import UUID
 from django.test import override_settings
 from rest_framework import serializers
 
-from ansible_wisdom.ai.api.serializers import (
+from ansible_ai_connect.ai.api.serializers import (
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
     ContentMatchSerializer,
@@ -304,6 +304,44 @@ class FeedbackRequestSerializerTest(TestCase):
         )
 
         # sentimentFeedback allowed regardless of seat
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
+
+    def test_commercial_user_allows_playbookExplanationFeedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "playbookExplanationFeedback": {
+                    "action": 1,
+                    "explanationId": "dd6d0ef8-dfb9-4d38-ae08-b3e5c6056acd",
+                }
+            },
+        )
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            self.fail("serializer is_valid should not have raised exception")
+
+    def test_commercial_user_allows_playbookOutlineFeedback(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+
+        serializer = FeedbackRequestSerializer(
+            context={'request': request},
+            data={
+                "playbookOutlineFeedback": {
+                    "action": 1,
+                    "outlineId": "dd6d0ef8-dfb9-4d38-ae08-b3e5c6056acd",
+                }
+            },
+        )
+
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:

@@ -26,14 +26,13 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
-from ansible_wisdom.ai.api.formatter import (
+from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
 )
-from ansible_wisdom.ai.api.model_client.wca_utils import (
-    ContentMatchContext,
+from ansible_ai_connect.ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
-    InferenceContext,
+    Context,
     InferenceResponseChecks,
     TokenContext,
     TokenResponseChecks,
@@ -216,7 +215,7 @@ class BaseWCAClient(ModelMeshClient):
                         model_id=model_id, x_request_id=x_request_id
                     )
 
-            context = InferenceContext(model_id, response, task_count > 1)
+            context = Context(model_id, response, task_count > 1)
             InferenceResponseChecks().run_checks(context)
             response.raise_for_status()
 
@@ -268,7 +267,7 @@ class BaseWCAClient(ModelMeshClient):
                 )
 
             result = post_request()
-            context = ContentMatchContext(model_id, result, suggestion_count > 1)
+            context = Context(model_id, result, suggestion_count > 1)
             ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
 

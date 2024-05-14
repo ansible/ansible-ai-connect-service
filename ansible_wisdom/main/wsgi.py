@@ -37,6 +37,6 @@ try:
 except ImportError:
     pass  # not running in uwsgi
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ansible_wisdom.main.settings.development")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ansible_ai_connect.main.settings.development")
 
 application = get_wsgi_application()

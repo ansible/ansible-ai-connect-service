@@ -17,7 +17,7 @@ from abc import abstractmethod
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import (
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
     AWSSecretManager,
     Suffixes,
     WcaSecretManagerError,

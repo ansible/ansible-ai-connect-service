@@ -24,8 +24,8 @@ from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
 
-from ansible_wisdom.ai.api.exceptions import PostprocessException
-from ansible_wisdom.ai.api.tests.test_views import (
+from ansible_ai_connect.ai.api.exceptions import PostprocessException
+from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomServiceAPITestCaseBase,
 )
@@ -137,7 +137,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch(
-        'ansible_wisdom.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
+        'ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
         side_effect=Exception,
     )
     def test_preprocess_error(self, preprocess):
@@ -150,7 +150,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.post(reverse('completions'), payload, format='json')
             self.assertInLog(
-                "ERROR:ansible_wisdom.ai.api.pipelines.completion_stages.pre_process:failed"
+                "ERROR:ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process:failed"
                 " to preprocess:",
                 log,
             )

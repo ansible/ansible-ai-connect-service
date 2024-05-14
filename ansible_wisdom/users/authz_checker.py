@@ -286,6 +286,13 @@ class AMSCheck(BaseCheck):
             # only exists as a matter of 'completeness'.
             return False
 
+        if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
+            # Organization has not yet been created in AMS, either the organization
+            # is too recent (sync is done every 1h), or the organization has not AMS related
+            # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
+            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
+            return False
+
         params = {
             "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
             f"creator.username = '{username}' AND organization_id='{ams_org_id}'"

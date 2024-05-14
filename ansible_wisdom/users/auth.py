@@ -16,13 +16,12 @@ import logging
 
 import jwt
 from django.conf import settings
-from jose import jwk
 from rest_framework import authentication
 from social_core.backends.oauth import BaseOAuth2
 from social_django.models import UserSocialAuth
 from social_django.utils import load_backend, load_strategy
 
-from ansible_wisdom.users.constants import (
+from ansible_ai_connect.users.constants import (
     RHSSO_LIGHTSPEED_SCOPE,
     USER_SOCIAL_AUTH_PROVIDER_AAP,
 )
@@ -78,12 +77,12 @@ class RHSSOAuthentication(authentication.BaseAuthentication):
         strategy = load_strategy()
         backend = load_backend(strategy, 'oidc', redirect_uri=None)
         key = backend.find_valid_key(access_token)
-        rsakey = jwk.construct(key)
+        rsakey = jwt.PyJWK(key)
 
         # Decode and verify access token using extracted public key
         decoded_token = jwt.decode(
             access_token,
-            rsakey.to_pem().decode("utf-8"),
+            rsakey.key,
             algorithms=['RS256'],
             issuer=backend.id_token_issuer(),
             audience=RHSSO_LIGHTSPEED_SCOPE,

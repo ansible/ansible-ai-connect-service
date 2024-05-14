@@ -17,13 +17,13 @@ from re import compile
 
 from django.test import Client, TestCase, override_settings
 
-import ansible_wisdom.main.urls
+import ansible_ai_connect.main.urls
 
 
 class TestUrls(TestCase):
     @override_settings(DEBUG=True)
     def test_urlpatterns(self):
-        reload(ansible_wisdom.main.urls)
+        reload(ansible_ai_connect.main.urls)
         routes = [
             'api/schema/',
             'api/schema/swagger-ui/',
@@ -32,7 +32,8 @@ class TestUrls(TestCase):
         r = compile("api/schema/")
         patterns = list(
             filter(
-                r.match, [str(pattern.pattern) for pattern in ansible_wisdom.main.urls.urlpatterns]
+                r.match,
+                [str(pattern.pattern) for pattern in ansible_ai_connect.main.urls.urlpatterns],
             )
         )
         self.assertCountEqual(routes, patterns)
@@ -50,7 +51,8 @@ class TestUrls(TestCase):
         r = compile("api/v0/telemetry/")
         patterns = list(
             filter(
-                r.match, [str(pattern.pattern) for pattern in ansible_wisdom.main.urls.urlpatterns]
+                r.match,
+                [str(pattern.pattern) for pattern in ansible_ai_connect.main.urls.urlpatterns],
             )
         )
         self.assertEqual(1, len(patterns))

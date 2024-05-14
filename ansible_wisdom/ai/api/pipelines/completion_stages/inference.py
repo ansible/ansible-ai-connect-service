@@ -23,8 +23,8 @@ from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 
-from ansible_wisdom.ai.api.data.data_model import ModelMeshPayload
-from ansible_wisdom.ai.api.exceptions import (
+from ansible_ai_connect.ai.api.data.data_model import ModelMeshPayload
+from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
     ModelTimeoutException,
     ServiceUnavailable,
@@ -38,7 +38,7 @@ from ansible_wisdom.ai.api.exceptions import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -49,10 +49,10 @@ from ansible_wisdom.ai.api.model_client.exceptions import (
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement
-from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
-from ansible_wisdom.ai.feature_flags import FeatureFlags, WisdomFlags
+from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.feature_flags import FeatureFlags, WisdomFlags
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ completions_hist = Histogram(
 
 
 def get_model_client(wisdom_app, user):
-    if settings.DEPLOYMENT_MODE != 'onprem' and user.rh_user_has_seat:
+    if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE in ["wca", "wca-onprem"] and user.rh_user_has_seat:
         return wisdom_app.get_wca_client(), None
 
     # either onprem or non-seated customers (e.g. upstream)

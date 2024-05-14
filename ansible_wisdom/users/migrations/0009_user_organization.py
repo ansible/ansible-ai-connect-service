@@ -3,7 +3,7 @@
 import django.db.models.deletion
 from django.db import migrations
 
-import ansible_wisdom.users.models
+import ansible_ai_connect.users.models
 
 
 class Migration(migrations.Migration):
@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='organization',
-            field=ansible_wisdom.users.models.NonClashingForeignKey(
+            field=ansible_ai_connect.users.models.NonClashingForeignKey(
                 default=None,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,

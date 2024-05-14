@@ -21,7 +21,7 @@ jobs:
       ANSIBLE_AI_DATABASE_PASSWORD: wisdom
       ANSIBLE_AI_DATABASE_USER: wisdom
       ARI_KB_PATH: /etc/ari/kb/
-      DJANGO_SETTINGS_MODULE: ansible_wisdom.main.settings.development
+      DJANGO_SETTINGS_MODULE: ansible_ai_connect.main.settings.development
       ENABLE_ARI_POSTPROCESS: False
       ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
@@ -52,7 +52,7 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install Dependencies (Python)
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
@@ -71,9 +71,9 @@ jobs:
         AWS_DEFAULT_REGION: us-east-1
         KB_ARI_PATH: ${{ secrets.KB_ARI_PATH }}
 
-    - name: Running Unit Tests
+    - name: Running Unit Tests (Python)
       run: |
-        coverage run --rcfile=setup.cfg -m ansible_wisdom.manage test ansible_wisdom
+        coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect
         coverage xml
         coverage report --rcfile=setup.cfg --format=markdown > code-coverage-results.md
 
@@ -92,11 +92,11 @@ jobs:
         cache: 'npm'
         cache-dependency-path: ./ansible_wisdom_console_react/package-lock.json
 
-    - name: Install Dependencies
+    - name: Install Dependencies (TypeScript)
       run: npm ci
       working-directory: ./ansible_wisdom_console_react
 
-    - name: Run tests
+    - name: Running Unit Tests (TypeScript)
       run: npm run test
       working-directory: ./ansible_wisdom_console_react
 

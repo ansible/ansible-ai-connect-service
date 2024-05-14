@@ -22,7 +22,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from oauth2_provider.models import AccessToken
 
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.organizations.models import Organization
 
 
 class TestCreateToken(TestCase):

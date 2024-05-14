@@ -43,7 +43,7 @@ if DEBUG:
             "social_django.middleware.SocialAuthExceptionMiddleware"
         )
         MIDDLEWARE[index] = (
-            "ansible_wisdom.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
+            "ansible_ai_connect.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
         )
 
 CSP_REPORT_ONLY = True
@@ -60,9 +60,9 @@ AUTHZ_DUMMY_RH_ORG_ADMINS = os.getenv("AUTHZ_DUMMY_RH_ORG_ADMINS", "")
 # note: "*" means that all the orgs have a subscription.
 AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION = os.getenv("AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION", "")
 
-WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = os.getenv(
-    "WCA_SECRET_BACKEND_TYPE", cast(t_wca_secret_backend_type, "dummy")
-)  # or aws_sm
+WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = os.getenv("WCA_SECRET_BACKEND_TYPE") or cast(
+    t_wca_secret_backend_type, "dummy"
+)
 # a list of key:value with a , separator. key is the orgid, value is the secret.
 # when a secret with the string "valid", it means the backend will accept it has
 # a valid string. e.g:

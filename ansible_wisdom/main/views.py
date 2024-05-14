@@ -18,17 +18,18 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.main.base_views import ProtectedTemplateView
-from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.base_views import ProtectedTemplateView
+from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,9 @@ class LogoutView(auth_views.LogoutView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_next_page(self, request):
+        if isinstance(request.user, AnonymousUser):
+            return None
+
         next_url = request.build_absolute_uri("/")
         if request.user.is_oidc_user():
             return (

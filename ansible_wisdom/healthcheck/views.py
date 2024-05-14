@@ -30,8 +30,8 @@ from health_check.views import MainView
 from rest_framework import permissions
 from rest_framework.views import APIView
 
-from ansible_wisdom.ai.feature_flags import FeatureFlags
-from ansible_wisdom.healthcheck.backends import BaseLightspeedHealthCheck
+from ansible_ai_connect.ai.feature_flags import FeatureFlags
+from ansible_ai_connect.healthcheck.backends import BaseLightspeedHealthCheck
 
 from .version_info import VersionInfo
 

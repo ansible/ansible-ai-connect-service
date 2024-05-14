@@ -14,8 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.ai.api import formatter as fmtr
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
 
 class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
@@ -579,6 +579,7 @@ var3: value3
                 "          az: us-east-1r\n"
             ),
         )
+        self.assertIsNone(fmtr.get_fqcn_or_module_from_prediction(None))
 
 
 if __name__ == "__main__":

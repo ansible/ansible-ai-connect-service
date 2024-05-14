@@ -18,7 +18,7 @@ from django.conf import settings
 from prometheus_client import Counter
 from rest_framework.exceptions import APIException
 
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaException,
 )
