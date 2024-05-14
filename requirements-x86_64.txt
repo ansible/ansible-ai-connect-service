@@ -70,7 +70,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via black
-cryptography==42.0.4
+cryptography==42.0.6
     # via
     #   -r requirements.in
     #   ansible-core
@@ -466,7 +466,7 @@ torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux
     #   torchvision
 torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp311-cp311-linux_x86_64.whl ; platform_machine == "x86_64" and sys_platform == "linux"
     # via -r requirements.in
-tqdm==4.64.1
+tqdm==4.66.3
     # via
     #   -r requirements.in
     #   huggingface-hub

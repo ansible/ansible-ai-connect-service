@@ -11,7 +11,7 @@ boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
 # UPDATED MANUALLY: waiting for parent package to be updated
-cryptography==42.0.4
+cryptography==42.0.6
 # pin Django on 4.2.11 to address PYSEC-2024-47.
 Django==4.2.11
 django-deprecate-fields==0.1.1
@@ -67,7 +67,7 @@ torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2-cp311-cp31
 torchvision @ https://download.pytorch.org/whl/torchvision-0.15.2-cp311-cp311-manylinux2014_aarch64.whl; platform_machine=="aarch64"
 # UPDATED MANUALLY: waiting for parent package to be updated
 transformers==4.39.1
-tqdm==4.64.1
+tqdm==4.66.3
 urllib3==1.26.18
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
