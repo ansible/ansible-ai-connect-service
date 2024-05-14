@@ -368,15 +368,21 @@ def get_task_names_from_tasks(tasks):
     return names
 
 
-def restore_original_task_names(output_yaml, prompt):
+def restore_original_task_names(output_yaml, prompt, payload_context):
     if output_yaml and is_multi_task_prompt(prompt):
+        full_yaml = payload_context + output_yaml
+        data = yaml.safe_load(full_yaml)
         prompt_tasks = get_task_names_from_prompt(prompt)
-        matches = re.finditer(r"^- name:\s+(.*)", output_yaml, re.M)
-        for i, match in enumerate(matches):
+        assert isinstance(data, list)
+        if isinstance(data[0], dict):
+            task_list = data[0].get("tasks", [])
+        else:
+            task_list = data[0]
+        for i, task in enumerate(task_list):
             try:
-                task_line = match.group(0)
-                task = match.group(1)
-                restored_task_line = task_line.replace(task, prompt_tasks[i])
+                task_name = task.get("name", "")
+                task_line = "- name:  " + task_name
+                restored_task_line = task_line.replace(task_name, prompt_tasks[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
             except IndexError:
                 logger.error(
