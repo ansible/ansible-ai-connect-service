@@ -17,6 +17,10 @@ metadata:
   name: ansible-ai-connect-service-on-pull-request
   namespace: ansible-lightspeed-tenant
 spec:
+  timeouts:
+    pipeline: "0"
+    tasks: "0"
+    finally: "0"
   params:
   - name: dockerfile
     value: ./wisdom-service.Containerfile
@@ -230,9 +234,9 @@ spec:
       taskRef:
         params:
         - name: name
-          value: buildah
+          value: buildah-10gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:7e5f19d3aa233b9becf90d1ca01697486dc1acb1f1d6d2a0b8d1a1cc07c66249
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-10gb:0.1
         - name: kind
           value: task
         resolver: bundles
@@ -244,6 +248,17 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+    - name: apply-tags
+      runAfter:
+        - build-container
+      taskRef:
+        name: apply-tags
+        version: "0.1"
+      params:
+      - name: IMAGE
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value: ["pr-{{pull_request_number}}"]
     - name: build-source-image
       params:
       - name: BINARY_IMAGE

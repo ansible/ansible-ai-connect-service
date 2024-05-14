@@ -16,9 +16,13 @@ metadata:
   name: ansible-ai-connect-service-on-push
   namespace: ansible-lightspeed-tenant
 spec:
+  timeouts:
+    pipeline: "0"
+    tasks: "0"
+    finally: "0"
   params:
   - name: dockerfile
-    value: ./wisdom-service.Containerfile
+    value: ./test.Containerfile
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
@@ -222,14 +226,16 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
+      - name: BUILD_ARGS
+        value: ["IMAGE_TAGS=$(tasks.clone-repository.results.commit)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
         params:
         - name: name
-          value: buildah
+          value: buildah-10gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:7e5f19d3aa233b9becf90d1ca01697486dc1acb1f1d6d2a0b8d1a1cc07c66249
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-10gb:0.1
         - name: kind
           value: task
         resolver: bundles
@@ -241,6 +247,23 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+    - name: apply-tags
+      params:
+      - name: IMAGE
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value: ["latest", "1.1.madeup"]
+      runAfter:
+      - build-container
+      taskRef:
+        params:
+        - name: name
+          value: apply-tags
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1
+        - name: kind
+          value: task
+        resolver: bundles
     - name: build-source-image
       params:
       - name: BINARY_IMAGE

@@ -70,8 +70,8 @@ COPY tools/configs/nginx.conf /etc/nginx/nginx.conf
 COPY tools/configs/nginx-wisdom.conf /etc/nginx/conf.d/wisdom.conf
 COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
-# COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
-# COPY ari /etc/ari
+COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
+COPY ari /etc/ari
 
 # Set permissions
 RUN for dir in \
@@ -81,7 +81,7 @@ RUN for dir in \
       /var/www/wisdom \
       /var/www/model-cache \
       /var/log/nginx \
-      # /etc/ari \
+      /etc/ari \
       /etc/ansible \
       /var/run/django_metrics \
       /var/www/.cache \
@@ -90,7 +90,7 @@ RUN for dir in \
     echo "\setenv PAGER 'less -SXF'" > /etc/psqlrc
 
 # Install ARI rules
-# RUN /usr/bin/install-ari-rule-requirements.sh
+RUN /usr/bin/install-ari-rule-requirements.sh
 
 # Launch!
 ENV ANSIBLE_HOME=/etc/ansible
