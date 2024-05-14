@@ -54,7 +54,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
-    WcaOrganizationNotLinkedException,
+    WcaNoDefaultModelIdException,
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
 )
@@ -68,7 +68,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
-    WcaOrganizationNotLinked,
+    WcaNoDefaultModelId,
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_client.llamacpp_client import LlamaCPPClient
@@ -366,7 +366,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
         stub = self.stub_wca_client(
             200,
-            mock_model_id=Mock(side_effect=WcaOrganizationNotLinked),
+            mock_model_id=Mock(side_effect=WcaNoDefaultModelId),
         )
         model_client, model_input = stub
         self.mock_wca_client_with(model_client)
@@ -375,10 +375,10 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assert_error_detail(
                 r,
-                WcaOrganizationNotLinkedException.default_code,
-                WcaOrganizationNotLinkedException.default_detail,
+                WcaNoDefaultModelIdException.default_code,
+                WcaNoDefaultModelIdException.default_detail,
             )
-            self.assertInLog("User was expected to be linked to an org, but it was not", log)
+            self.assertInLog("No default WCA Model ID was found for suggestion", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -1280,7 +1280,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             (WcaBadRequest(), HTTPStatus.NO_CONTENT),
             (WcaInvalidModelId(), HTTPStatus.FORBIDDEN),
             (WcaKeyNotFound(), HTTPStatus.FORBIDDEN),
-            (WcaOrganizationNotLinked(), HTTPStatus.FORBIDDEN),
+            (WcaNoDefaultModelId(), HTTPStatus.FORBIDDEN),
             (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
             (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
@@ -1536,7 +1536,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
 
     def test_feedback_segment_events_user_not_linked_to_org_error(self):
         model_client = Mock(ModelMeshClient)
-        model_client.get_model_id.side_effect = WcaOrganizationNotLinked()
+        model_client.get_model_id.side_effect = WcaNoDefaultModelId()
 
         payload = {
             "inlineSuggestion": {
@@ -2273,8 +2273,8 @@ class TestContentMatchesWCAViewErrors(
         self._assert_exception_in_log(WcaEmptyResponseException)
 
     def test_wca_contentmatch_with_user_not_linked_to_org(self):
-        self.model_client.get_model_id = Mock(side_effect=WcaOrganizationNotLinked)
-        self._assert_exception_in_log(WcaOrganizationNotLinkedException)
+        self.model_client.get_model_id = Mock(side_effect=WcaNoDefaultModelId)
+        self._assert_exception_in_log(WcaNoDefaultModelIdException)
 
     def test_wca_contentmatch_with_non_existing_model_id(self):
         self.model_client.get_model_id = Mock(side_effect=WcaModelIdNotFound)

@@ -58,8 +58,8 @@ class WcaModelIdNotFound(WcaException):
 
 
 @dataclass
-class WcaOrganizationNotLinked(WcaException):
-    """User is not linked to an organization"""
+class WcaNoDefaultModelId(WcaException):
+    """No default WCA Model ID was found."""
 
 
 @dataclass

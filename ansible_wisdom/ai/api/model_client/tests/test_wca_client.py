@@ -40,7 +40,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
-    WcaOrganizationNotLinked,
+    WcaNoDefaultModelId,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
@@ -183,7 +183,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
     def test_get_model_id_without_org_id(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaOrganizationNotLinked):
+        with self.assertRaises(WcaNoDefaultModelId):
             model_client.get_model_id(None, None)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:')
