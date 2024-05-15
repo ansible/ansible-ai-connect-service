@@ -319,6 +319,13 @@ var3: value3
         self.assertTrue("ansible.builtin.set_fact" in data[0])
         self.assertEqual(data[0]["ansible.builtin.set_fact"], merged_vars)
 
+    def test_restore_original_task_names_falsy_yaml(self):
+        multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
+        multi_task_yaml = "- name: \n\n - name:"
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
+            self.assertInLog("Error while loading the result role/playbook YAML", log)
+
     def test_restore_original_task_names_in_role(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
