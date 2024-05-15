@@ -368,16 +368,20 @@ def get_task_names_from_tasks(tasks):
     return names
 
 
-def restore_original_task_names(output_yaml, prompt, payload_context):
+def restore_original_task_names(output_yaml, prompt, payload_context=''):
     if output_yaml and is_multi_task_prompt(prompt):
         full_yaml = payload_context + output_yaml
         data = yaml.safe_load(full_yaml)
         prompt_tasks = get_task_names_from_prompt(prompt)
         assert isinstance(data, list)
         if isinstance(data[0], dict):
+            # Tries to get the tasks from the dict if it's a playbook (payload_context!='')
             task_list = data[0].get("tasks", [])
-        else:
-            task_list = data[0]
+            # If it is not a playbook, then it is a role,
+            # so the list is a task list (payload_context='')
+            if not task_list:
+                task_list = data
+
         for i, task in enumerate(task_list):
             try:
                 task_name = task.get("name", "")
