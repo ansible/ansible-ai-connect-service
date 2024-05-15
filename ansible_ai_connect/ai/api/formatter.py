@@ -389,6 +389,8 @@ def restore_original_task_names(output_yaml, prompt, payload_context=''):
         for i, task in enumerate(task_list):
             try:
                 task_name = task.get("name", "")
+                if not task_name:
+                    continue
                 task_line = "- name:  " + task_name
                 restored_task_line = task_line.replace(task_name, prompt_tasks[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
