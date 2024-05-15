@@ -127,20 +127,24 @@
             <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
           {% endif %}
 
-          <div class="pf-l-level pf-m-gutter" style="margin-top: 60px">
-            <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
-            <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
-            <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+            <div class="pf-l-bullseye">
+              <div class="pf-l-bullseye__item">
+                <div class="pf-l-level pf-m-gutter" style="margin-top: 60px">
+                  <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
+                  <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+                  <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
 
-            {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
-            <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
-            {% endif %}
+                  {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
+                  <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
           </div>
-
         </div>
       </div>
     </div>
-
   </div>
 </section>
 {% endblock content %}
