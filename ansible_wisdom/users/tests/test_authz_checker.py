@@ -386,9 +386,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
     def test_rh_user_is_org_admin_when_get_ams_org_returns_empty_response(self):
         m_r = Mock()
         m_r.json.side_effect = [
+            # Invocation 1
             # AMS get_ams_org() response
             {"items": []},
-            # AMS rh_user_is_org_admin() response
+            # Invocation 2
+            # AMS get_ams_org() response
             {"items": []},
         ]
         m_r.status_code = 200
@@ -399,14 +401,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         self.assertFalse(checker.rh_user_is_org_admin("user", 123))
-        checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
-            params={
-                "search": f"account.username = 'user' "
-                f"AND organization.id='{AMSCheck.ERROR_AMS_ORG_UNDEFINED}'"
-            },
-            timeout=0.8,
-        )
+        self.assertEqual(m_r.json.call_count, 1)
+
+        # Ensure the second call is not cached
+        m_r.json.reset_mock()
+        self.assertFalse(checker.rh_user_is_org_admin("user", 123))
+        self.assertEqual(m_r.json.call_count, 1)
 
     def test_is_not_org_admin(self):
         m_r = Mock()
@@ -547,13 +547,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
             # Invocation 1
             # AMS get_ams_org() response
             {"items": []},
-            # AMS rh_org_has_subscription() response
-            {"total": 0},
             # Invocation 2
             # AMS get_ams_org() response
             {"items": []},
-            # AMS rh_org_has_subscription() response
-            {"total": 0},
         ]
         m_r.status_code = 200
 
@@ -563,21 +559,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
 
         self.assertFalse(checker.rh_org_has_subscription(123))
-        # JSON call count is 2 being: 1 get_ams_org(), 2 rh_org_has_subscription()
-        self.assertEqual(m_r.json.call_count, 2)
-        checker._session.get.assert_called_with(
-            (
-                'https://some-api.server.host'
-                f'/api/accounts_mgmt/v1/organizations/{AMSCheck.ERROR_AMS_ORG_UNDEFINED}/quota_cost'
-            ),
-            params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
-            timeout=0.8,
-        )
+        self.assertEqual(m_r.json.call_count, 1)
 
-        # Ensure the second call is cached
+        # Ensure the second call is not cached
         m_r.json.reset_mock()
         self.assertFalse(checker.rh_org_has_subscription(123))
-        # JSON call count is 1 being: 1 get_ams_org(), cached rh_org_has_subscription() return value
         self.assertEqual(m_r.json.call_count, 1)
 
     def test_is_org_not_lightspeed_subscriber(self):
