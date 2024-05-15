@@ -22,7 +22,7 @@ spec:
     finally: "0"
   params:
   - name: dockerfile
-    value: ./wisdom-service.Containerfile
+    value: ./test.Containerfile
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
