@@ -1,5 +1,5 @@
 name: Scan for security vulnerabilities
-on: push
+on: pull_request
 jobs:
   security:
     runs-on: ubuntu-latest
