@@ -2,6 +2,8 @@ black==24.3.0
 coverage==7.2.1
 flake8==6.0.0
 grpcio-tools==1.54.2
+# pin idna until responses -> requests is updated
+idna==3.7
 isort==5.10.1
 pip-tools
 pre-commit
