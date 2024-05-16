@@ -534,6 +534,8 @@ class TestHealthCheckWCAClient(BaseTestHealthCheckWCAClient):
         self._do_test_health_check_wca_disabled()
 
 
+@override_settings(ANSIBLE_WCA_USERNAME="joe")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="some-string")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
 class TestHealthCheckWCAOnPremClient(BaseTestHealthCheckWCAClient):
 

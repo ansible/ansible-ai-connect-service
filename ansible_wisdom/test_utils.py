@@ -97,6 +97,7 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         }
         for key, mocker in self.backend_patchers.items():
             mocker.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         for patcher in self.backend_patchers.values():

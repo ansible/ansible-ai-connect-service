@@ -424,40 +424,17 @@ class ExplanationResponseSerializer(serializers.Serializer):
     )
 
 
-class SummaryRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['content', 'summaryId', 'ansibleExtensionVersion']
-
-    content = serializers.CharField(
-        required=True,
-        label="Description content",
-        help_text=("The description that needs to be summarized."),
-    )
-    summaryId = serializers.UUIDField(
-        format='hex_verbose',
-        required=False,
-        label="Summary ID",
-        help_text=("A UUID that identifies the particular summary data is being requested for."),
-    )
-    metadata = Metadata(required=False)
-
-
-class SummaryResponseSerializer(serializers.Serializer):
-    content = serializers.CharField()
-    format = serializers.CharField()
-    summaryId = serializers.UUIDField(
-        format='hex_verbose',
-        required=False,
-        label="Explanation ID",
-        help_text=("A UUID that identifies the particular summary data is being requested for."),
-    )
-
-
 class GenerationRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['content', 'generationId', 'ansibleExtensionVersion']
+        fields = [
+            'text',
+            'generationId',
+            'createOutline',
+            'ansibleExtensionVersion',
+            'outline',
+        ]
 
-    content = serializers.CharField(
+    text = serializers.CharField(
         required=True,
         label="Description content",
         help_text=("The description that needs to be converted to a playbook."),
@@ -465,14 +442,29 @@ class GenerationRequestSerializer(serializers.Serializer):
     generationId = serializers.UUIDField(
         format='hex_verbose',
         required=False,
-        label="Summary ID",
+        label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
     )
+    createOutline = serializers.BooleanField(
+        required=False,
+        default=False,
+        label='generate outline',
+        help_text=(
+            'Indicates whether the answer should also include an outline '
+            'of the Ansible Playbook.'
+        ),
+    )
+    outline = serializers.CharField(
+        required=False,
+        label="outline",
+        help_text="A long step by step outline of the expected Ansible Playbook.",
+    )
+
     metadata = Metadata(required=False)
 
 
 class GenerationResponseSerializer(serializers.Serializer):
-    content = serializers.CharField()
+    playbook = serializers.CharField()
     format = serializers.CharField()
     generationId = serializers.UUIDField(
         format='hex_verbose',
@@ -480,6 +472,7 @@ class GenerationResponseSerializer(serializers.Serializer):
         label="Explanation ID",
         help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
+    outline = serializers.CharField()
 
 
 class ContentMatchRequestSerializer(serializers.Serializer):

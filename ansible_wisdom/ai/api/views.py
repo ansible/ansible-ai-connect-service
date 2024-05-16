@@ -13,8 +13,6 @@
 #  limitations under the License.
 
 import logging
-import re
-import textwrap
 import time
 from http import HTTPStatus
 
@@ -23,11 +21,6 @@ from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
 from rest_framework import permissions, serializers
@@ -99,8 +92,6 @@ from .serializers import (
     IssueFeedback,
     SentimentFeedback,
     SuggestionQualityFeedback,
-    SummaryRequestSerializer,
-    SummaryResponseSerializer,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsProductFeedback,
@@ -748,140 +739,20 @@ class Explanation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You're an Ansible expert.
-        You format your output with Markdown.
-        You only answer with text paragraphs.
-        Write one paragraph per Ansible task.
-        Markdown title starts with the '#' character.
-        Write a title before every paragraph.
-        Do not return any YAML or Ansible in the output.
-        Give a lot of details regarding the parameters of each Ansible plugin.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """Please explain the following Ansible playbook:
-
-        {playbook}"
-        """
-
         request_serializer = ExplanationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
-        content = request_serializer.validated_data.get("content")
+        playbook = request_serializer.validated_data.get("content")
 
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+        llm = apps.get_app_config("ai").model_mesh_client
+        explanation = llm.explain_playbook(playbook)
 
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
+        answer = {"content": explanation, "format": "markdown", "explanationId": explanation_id}
 
-            chain = chat_template | llm
-
-            output = chain.invoke({"playbook": content})
-            answer = {"content": output, "format": "markdown"}
-            if explanation_id:
-                answer["explanationId"] = explanation_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook explanation for {explanation_id}")
-            raise ServiceUnavailable(cause=e)
-
-
-class Summary(APIView):
-    """
-    Returns a text that summarizes an input text.
-    """
-
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
-
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-        BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
-        BlockUserWithSeatButWCANotReady,
-    ]
-    required_scopes = ['read', 'write']
-
-    throttle_cache_key_suffix = '_explanation'
-
-    @extend_schema(
-        request=SummaryRequestSerializer,
-        responses={
-            200: SummaryResponseSerializer,
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
-        },
-        summary="Elaborate input text",
-    )
-    def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You're a smart and kind software consultant.
-        You only answer with text paragraphs.
-        Do not include any code or command samples.
-        Use a numbered list.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """Please elaborate the following text in plain English:
-
-        {content}"
-        """
-
-        request_serializer = SummaryRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        summary_id = str(request_serializer.validated_data.get("summaryId", ""))
-        content = request_serializer.validated_data.get("content")
-
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
-
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
-
-            chain = chat_template | llm
-
-            output = chain.invoke({"content": content})
-
-            answer = {"content": output, "format": "plaintext"}
-            if summary_id:
-                answer["summaryId"] = summary_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook summary for {summary_id}")
-            raise ServiceUnavailable(cause=e)
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
 
 
 class Generation(APIView):
@@ -917,63 +788,24 @@ class Generation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You are an Ansible expert.
-        Your role is to help Ansible developers write playbooks.
-        Don't explain the code, just generate the playbook in YAML format.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """
-        Please write an Ansible playbook as directed in the followingsentences:
-
-        {content}"
-        """
-
         request_serializer = GenerationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         generation_id = str(request_serializer.validated_data.get("generationId", ""))
-        content = request_serializer.validated_data.get("content")
+        create_outline = request_serializer.validated_data["createOutline"]
+        outline = str(request_serializer.validated_data.get("outline", ""))
+        text = request_serializer.validated_data["text"]
 
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+        llm = apps.get_app_config("ai").model_mesh_client
+        playbook, outline = llm.generate_playbook(text, create_outline, outline)
 
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
+        answer = {
+            "playbook": playbook,
+            "outline": outline,
+            "format": "plaintext",
+            "generationId": generation_id,
+        }
 
-            chain = chat_template | llm
-            output = chain.invoke({"content": content})
-
-            postprocessed = []
-            code_block = False
-            for line in output.split("\n"):
-                if not code_block:
-                    if re.match(r"^\s*```", line):
-                        code_block = True
-                else:
-                    if re.match(r"^\s*```", line):
-                        break
-                    postprocessed.append(line)
-
-            if len(postprocessed) > 0:
-                output = "\n".join(postprocessed)
-
-            answer = {"content": output, "format": "markdown"}
-            answer["generationId"] = generation_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook generation for {generation_id}")
-            raise ServiceUnavailable(cause=e)
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
