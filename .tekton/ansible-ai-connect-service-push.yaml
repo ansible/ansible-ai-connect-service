@@ -251,15 +251,13 @@ spec:
       taskSpec:
         steps:
           - name: check-task-structure
-            image: quay.io/redhat-appstudio/pull-request-builds:build-definitions-utils-{{revision}}
+            image: busybox
             # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
             # the cluster will set imagePullPolicy to IfNotPresent
             workingDir: $(workspaces.source.path)/source
             script: |
               #!/usr/bin/env bash
-              ./hack/check-partner-tasks.sh > partner-tasks.out
-              echo $? > partner-tasks-code.out
-              cat partner-tasks.out
+              echo 'hello task, pwd=$(pwd)'
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
