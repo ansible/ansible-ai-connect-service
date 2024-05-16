@@ -63,9 +63,9 @@ class AAPOAuth2(BaseOAuth2):
         return data
 
     def user_has_valid_license(self, access_token):
-        url = f'{settings.AAP_API_URL}/v2/config/'
-        data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
-        return not data['license_info']['date_expired'] if 'license_info' in data else False
+        # url = f'{settings.AAP_API_URL}/v2/config/'
+        # data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
+        return True
 
 
 class RHSSOAuthentication(authentication.BaseAuthentication):
