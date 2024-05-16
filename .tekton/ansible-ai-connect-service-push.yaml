@@ -227,7 +227,7 @@ spec:
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       runAfter:
-      - preparation-for-build
+      - prefetch-dependencies
       taskRef:
         params:
         - name: name
@@ -245,19 +245,6 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
-    - name: preparation-for-build
-      runAfter:
-        - prefetch-dependencies
-      taskSpec:
-        steps:
-          - name: check-task-structure
-            image: quay.io/redhat-appstudio/tekton-results-watcher@sha256:0d078a0559938313848bc73d1bff6f2e25123277fa0a69c90beba57178a091b1
-            # per https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting
-            # the cluster will set imagePullPolicy to IfNotPresent
-            workingDir: $(workspaces.source.path)/source
-            script: |
-              #!/usr/bin/env bash
-              echo 'hello task, pwd=$(pwd)'
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
