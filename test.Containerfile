@@ -13,10 +13,18 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     dnf install -y \
     git
 RUN pwd && ls -lrt
-RUN _IMAGE_TAGS="$(cat .version).$(git log -n1 --pretty='format:%cd' --date=format:'%Y%m%d%H%M')"
-RUN _GIT_COMMIT=$(git log -n1 --pretty='format:%H')
-RUN echo -e "_IMAGE_TAGS=$_IMAGE_TAGS"
+RUN env
+COPY .version ./
+RUN _IMAGE_TAGS=$(cat .version)
 
+
+COPY * /var/www/temp-src/
+WORKDIR /var/www/temp-src/
+RUN _TS_TAGS=$(git log -n1 --pretty='format:%cd' --date=format:'%Y%m%d%H%M')
+RUN _GIT_COMMIT=$(git log -n1 --pretty='format:%H')
+RUN echo -e "_TS_TAGS=$_TS_TAGS"
+RUN _IMAGE_TAGS=${_IMAGE_TAGS}.${_TS_TAGS}
+RUN echo -e "IMAGE_TAGS=$IMAGE_TAGS"
 ARG IMAGE_TAGS=$_IMAGE_TAGS
 ARG GIT_COMMIT=$_GIT_COMMIT
 
