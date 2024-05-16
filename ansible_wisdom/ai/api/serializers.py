@@ -224,28 +224,6 @@ class InlineSuggestionFeedback(serializers.Serializer):
     )
 
 
-class AnsibleContentFeedback(serializers.Serializer):
-    CONTENT_UPLOAD_TRIGGER = (('0', 'FILE_OPEN'), ('1', 'FILE_CLOSE'), ('2', 'TAB_CHANGE'))
-
-    class Meta:
-        fields = ['content', 'documentUri', 'trigger', 'activityId']
-
-    content = AnonymizedCharField(
-        trim_whitespace=False,
-        required=True,
-        label='Ansible Content',
-        help_text='Ansible file content.',
-    )
-    documentUri = AnonymizedCharField()
-    trigger = serializers.ChoiceField(choices=CONTENT_UPLOAD_TRIGGER)
-    activityId = serializers.UUIDField(
-        format='hex_verbose',
-        required=False,
-        label="Activity ID",
-        help_text="A UUID that identifies a user activity session to the document uploaded.",
-    )
-
-
 class SuggestionQualityFeedback(serializers.Serializer):
     class Meta:
         fields = ['prompt', 'providedSuggestion', 'expectedSuggestion', 'additionalComment']
@@ -362,27 +340,11 @@ class PlaybookExplanationFeedback(serializers.Serializer):
             request_only=True,
             response_only=False,
         ),
-        OpenApiExample(
-            'Valid ansible content feedback example',
-            summary='Feedback Request sample for Ansible content upload',
-            description='A valid sample request to get ansible content as feedback.',
-            value={
-                "ansibleContent": {
-                    "content": "---\n- hosts: all\n  become: yes\n\n  "
-                    "tasks:\n  - name: Install ssh\n",
-                    "documentUri": "file:///home/user/ansible/test.yaml",
-                    "trigger": "0",
-                }
-            },
-            request_only=True,
-            response_only=False,
-        ),
     ]
 )
 class FeedbackRequestSerializer(serializers.Serializer):
     class Meta:
         fields = [
-            'ansibleContent',
             'ansibleExtensionVersion',
             'inlineSuggestion',
             'issueFeedback',
@@ -392,7 +354,6 @@ class FeedbackRequestSerializer(serializers.Serializer):
             'suggestionQualityFeedback',
         ]
 
-    ansibleContent = AnsibleContentFeedback(required=False)
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
     metadata = Metadata(required=False)
@@ -411,13 +372,6 @@ class FeedbackRequestSerializer(serializers.Serializer):
             return value
         else:
             raise serializers.ValidationError("invalid feedback type for user")
-
-    def validate_ansibleContent(self, value):
-        user = self.context.get('request').user
-
-        if user.rh_user_has_seat:
-            raise serializers.ValidationError("invalid feedback type for user")
-        return value
 
 
 class AttributionRequestSerializer(serializers.Serializer):

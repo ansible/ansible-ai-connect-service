@@ -42,7 +42,6 @@ from segment import analytics
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
     AttributionException,
-    FeedbackInternalServerException,
     FeedbackValidationException,
     ModelTimeoutException,
     PostprocessException,
@@ -1405,33 +1404,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertSegmentTimestamp(log)
 
-    def test_missing_content(self):
-        payload = {
-            "ansibleContent": {"documentUri": "file:///home/user/ansible.yaml", "trigger": "0"}
-        }
-        with self.assertLogs(logger='root', level='DEBUG') as log:
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('feedback'), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_error_detail(r, FeedbackValidationException.default_code)
-            self.assertSegmentTimestamp(log)
-
-    def test_anonymize(self):
-        payload = {
-            "ansibleContent": {
-                "content": "---\n- hosts: all\n  become: yes\n\n  "
-                "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/jean-pierre/ansible.yaml",
-                "trigger": "0",
-            }
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='DEBUG') as log:
-            self.client.post(reverse('feedback'), payload, format="json")
-            self.assertNotInLog('file:///home/user/ansible.yaml', log)
-            self.assertInLog('file:///home/ano-user/ansible.yaml', log)
-            self.assertSegmentTimestamp(log)
-
     def test_authentication_error(self):
         payload = {
             "ansibleContent": {
@@ -1569,7 +1541,9 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertIsNotNone(event['timestamp'])
 
-    def test_feedback_segment_ansible_content_feedback_error(self):
+    # Verify that sending an invalid ansibleContent feedback returns 200 as this
+    # type of feedback is no longer supported and no parameter check is done.
+    def test_feedback_segment_ansible_content_feedback(self):
         payload = {
             "ansibleContent": {
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
@@ -1582,54 +1556,9 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('feedback'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_error_detail(r, FeedbackValidationException.default_code)
-
+            self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertTrue(len(segment_events) > 0)
-            for event in segment_events:
-                self.assertTrue('ansibleContentFeedback', event['event'])
-                properties = event['properties']
-                self.assertTrue('data' in properties)
-                self.assertTrue('exception' in properties)
-                self.assertEqual(
-                    "file:///home/ano-user/ansible.yaml",
-                    properties['data']['ansibleContent']['documentUri'],
-                )
-                self.assertIsNotNone(event['timestamp'])
-
-    @patch('ansible_ai_connect.ai.api.serializers.FeedbackRequestSerializer.is_valid')
-    def test_feedback_segment_ansible_content_500_error(self, is_valid):
-        is_valid.side_effect = Exception('Dummy Exception')
-        payload = {
-            "ansibleContent": {
-                "content": "---\n- hosts: all\n  become: yes\n\n  "
-                "tasks:\n    - name: Install Apache\n",
-                "documentUri": "file:///home/rbobbitt/ansible.yaml",
-                "activityId": str(uuid.uuid4()),
-                "trigger": "0",
-            }
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='DEBUG') as log:
-            r = self.client.post(reverse('feedback'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            self.assert_error_detail(r, FeedbackInternalServerException.default_code)
-            self.assertInLog("An exception <class 'Exception'> occurred in sending a feedback", log)
-
-            segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertTrue(len(segment_events) > 0)
-            for event in segment_events:
-                self.assertTrue('ansibleContentFeedback', event['event'])
-                properties = event['properties']
-                self.assertTrue('data' in properties)
-                self.assertTrue('exception' in properties)
-                self.assertEqual('Dummy Exception', properties['exception'])
-                self.assertEqual(
-                    "file:///home/ano-user/ansible.yaml",
-                    properties['data']['ansibleContent']['documentUri'],
-                )
-                self.assertIsNotNone(event['timestamp'])
+            self.assertTrue(len(segment_events) == 0)
 
     def test_feedback_segment_suggestion_quality_feedback_error(self):
         payload = {

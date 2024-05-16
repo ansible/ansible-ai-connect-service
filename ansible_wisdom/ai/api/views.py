@@ -84,7 +84,6 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
-    AnsibleContentFeedback,
     AttributionRequestSerializer,
     AttributionResponseSerializer,
     CompletionRequestSerializer,
@@ -234,7 +233,6 @@ class Feedback(APIView):
         request_data=None,
     ) -> None:
         inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
-        ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
         suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
             "suggestionQualityFeedback"
         )
@@ -278,16 +276,6 @@ class Feedback(APIView):
                 user,
                 ansible_extension_version,
             )
-        if ansible_content_data:
-            event = {
-                "content": ansible_content_data.get('content'),
-                "documentUri": ansible_content_data.get('documentUri'),
-                "trigger": ansible_content_data.get('trigger'),
-                "modelName": model_name,
-                "activityId": str(ansible_content_data.get('activityId', '')),
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "ansibleContentFeedback", user)
         if suggestion_quality_data:
             event = {
                 "prompt": suggestion_quality_data.get('prompt'),
@@ -328,7 +316,6 @@ class Feedback(APIView):
 
         feedback_events = [
             inline_suggestion_data,
-            ansible_content_data,
             suggestion_quality_data,
             sentiment_feedback_data,
             issue_feedback_data,
@@ -346,7 +333,7 @@ class Feedback(APIView):
             elif "issueFeedback" in request_data:
                 event_type = "issueFeedback"
             else:
-                event_type = "ansibleContentFeedback"
+                event_type = "unknown"
 
             event = {
                 "data": ano_request_data,
