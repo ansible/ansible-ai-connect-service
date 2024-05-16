@@ -24,7 +24,6 @@ from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
 
-from ansible_ai_connect.ai.api.exceptions import PostprocessException
 from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomServiceAPITestCaseBase,
