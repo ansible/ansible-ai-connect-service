@@ -46,3 +46,11 @@ class ModelMeshClient:
 
     def get_chat_model(self, model_id):
         raise NotImplementedError
+
+    def generate_playbook(
+        self, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        raise NotImplementedError
+
+    def explain_playbook(self, content) -> str:
+        raise NotImplementedError

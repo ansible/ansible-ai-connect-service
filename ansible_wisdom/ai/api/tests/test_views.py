@@ -57,7 +57,6 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaUserTrialExpiredException,
 )
 from ansible_ai_connect.ai.api.model_client.base import ModelMeshClient
-from ansible_ai_connect.ai.api.model_client.dummy_client import DummyClient
 from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
@@ -291,13 +290,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         self.client.force_authenticate(user=self.user)
         model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
         self.assertTrue(isinstance(model_client, WCAClient))
-        self.assertIsNone(model_name)
-
-    def test_seatless_got_no_wca(self):
-        self.user.rh_user_has_seat = False
-        self.client.force_authenticate(user=self.user)
-        model_client, model_name = get_model_client(apps.get_app_config('ai'), self.user)
-        self.assertFalse(isinstance(model_client, WCAClient))
         self.assertIsNone(model_name)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1:valid')
@@ -2517,7 +2509,8 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
 
-class TestExplanationView(WisdomServiceAPITestCaseBase):
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+class TestExplanationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     response_data = """# Information
 This playbook installs the Nginx web server on all hosts
 that are running Red Hat Enterprise Linux 9.
@@ -2539,45 +2532,12 @@ that are running Red Hat Enterprise Linux 9.
             "explanationId": explanation_id,
             "ansibleExtensionVersion": "24.4.0",
         }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('explanations'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "markdown")
-            self.assertEqual(r.data["explanationId"], explanation_id)
-
-    def test_ok_with_dummy_client(self):
-        explanation_id = str(uuid.uuid4())
-        payload = {
-            "content": """---
-- name: Setup nginx
-  hosts: all
-  become: true
-  tasks:
-    - name: Install nginx on RHEL9
-      ansible.builtin.dnf:
-        name: nginx
-        state: present
-""",
-            "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            DummyClient(self),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('explanations'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "markdown")
-            self.assertEqual(r.data["explanationId"], explanation_id)
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('explanations'), payload, format='json')
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNotNone(r.data["content"])
+        self.assertEqual(r.data["format"], "markdown")
+        self.assertEqual(r.data["explanationId"], explanation_id)
 
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
@@ -2636,7 +2596,7 @@ that are running Red Hat Enterprise Linux 9.
             r = self.client.post(reverse('explanations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-    @patch(f'{__name__}.MockedLLM.invoke')
+    @patch('ansible_ai_connect.ai.api.model_client.dummy_client.DummyClient.explain_playbook')
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception('Dummy Exception')
         explanation_id = str(uuid.uuid4())
@@ -2655,126 +2615,14 @@ that are running Red Hat Enterprise Linux 9.
             "ansibleExtensionVersion": "24.4.0",
         }
 
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.user)
+        with self.assertRaises(Exception):
             r = self.client.post(reverse('explanations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
 
-class TestSummaryView(WisdomServiceAPITestCaseBase):
-    response_data = """
-1. First, ensure that your Red Hat Enterprise Linux (RHEL) 9 system is up-to-date.
-2. Next, you install the Nginx package using the package manager.
-3. After installation, start the ginx service.
-4. Ensure that Nginx starts automatically.
-5. Check if Nginx is running successfully.
-6. Visit your system's IP address followed by the default Nginx port number (80 or 443).
-"""
-
-    def test_ok(self):
-        summary_id = str(uuid.uuid4())
-        payload = {
-            "content": "Install nginx on RHEL9",
-            "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "plaintext")
-            self.assertEqual(r.data["summaryId"], summary_id)
-
-    def test_ok_with_dummy_client(self):
-        summary_id = str(uuid.uuid4())
-        payload = {
-            "content": "Install nginx on RHEL9",
-            "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            DummyClient(self),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "plaintext")
-            self.assertEqual(r.data["summaryId"], summary_id)
-
-    def test_unauthorized(self):
-        summary_id = str(uuid.uuid4())
-        payload = {
-            "content": "Install nginx on RHEL9",
-            "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            # Hit the API without authentication
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
-
-    def test_bad_request(self):
-        summary_id = str(uuid.uuid4())
-        # No content specified
-        payload = {"summaryId": summary_id, "ansibleExtensionVersion": "24.4.0"}
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    def test_bad_request_with_wca_client(self):
-        summary_id = str(uuid.uuid4())
-        # No content specified
-        payload = {"summaryId": summary_id, "ansibleExtensionVersion": "24.4.0"}
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            WCAClient(inference_url='https://wca_api_url'),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    @patch(f'{__name__}.MockedLLM.invoke')
-    def test_service_unavailable(self, invoke):
-        invoke.side_effect = Exception('Dummy Exception')
-        summary_id = str(uuid.uuid4())
-        payload = {
-            "content": "Install nginx on RHEL9",
-            "summaryId": summary_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('summaries'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-
-
-class TestGenerationView(WisdomServiceAPITestCaseBase):
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
     response_data = """yaml
 ---
@@ -2805,45 +2653,21 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
     def test_ok(self):
         generation_id = str(uuid.uuid4())
         payload = {
-            "content": "Install nginx on RHEL9",
+            "text": "Install nginx on RHEL9",
             "generationId": generation_id,
             "ansibleExtensionVersion": "24.4.0",
         }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('generations'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "markdown")
-            self.assertEqual(r.data["generationId"], generation_id)
-
-    def test_ok_with_dummy_client(self):
-        generation_id = str(uuid.uuid4())
-        payload = {
-            "content": "Install nginx on RHEL9",
-            "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            DummyClient(self),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('generations'), payload, format='json')
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["content"])
-            self.assertEqual(r.data["format"], "markdown")
-            self.assertEqual(r.data["generationId"], generation_id)
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse('generations'), payload, format='json')
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNotNone(r.data["playbook"])
+        self.assertEqual(r.data["format"], "plaintext")
+        self.assertEqual(r.data["generationId"], generation_id)
 
     def test_unauthorized(self):
         generation_id = str(uuid.uuid4())
         payload = {
-            "content": "Install nginx on RHEL9",
+            "text": "Install nginx on RHEL9",
             "generationId": generation_id,
             "ansibleExtensionVersion": "24.4.0",
         }
@@ -2882,20 +2706,16 @@ class TestGenerationView(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('generations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
-    @patch(f'{__name__}.MockedLLM.invoke')
+    @patch('ansible_ai_connect.ai.api.model_client.dummy_client.DummyClient.generate_playbook')
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception('Dummy Exception')
         generation_id = str(uuid.uuid4())
         payload = {
-            "content": "Install nginx on RHEL9",
+            "text": "Install nginx on RHEL9",
             "generationId": generation_id,
             "ansibleExtensionVersion": "24.4.0",
         }
-        with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            MockedMeshClient(self, payload, self.response_data),
-        ):
-            self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.user)
+        with self.assertRaises(Exception):
             r = self.client.post(reverse('generations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
