@@ -43,7 +43,6 @@ class AiConfig(AppConfig):
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_client = UNINITIALIZED
-    _wca_onprem_client = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
 
@@ -96,16 +95,17 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_wca_client(self):
-        self._wca_client = self._wca_client or WCAClient(
-            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-        )
-        return self._wca_client
+        if self._wca_client is None:
+            if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
+                self._wca_client = WCAClient(
+                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                )
+            elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
+                self._wca_client = WCAOnPremClient(
+                    inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                )
 
-    def get_wca_onprem_client(self):
-        self._wca_onprem_client = self._wca_onprem_client or WCAOnPremClient(
-            inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
-        )
-        return self._wca_onprem_client
+        return self._wca_client
 
     def get_ari_caller(self):
         if not settings.ENABLE_ARI_POSTPROCESS:

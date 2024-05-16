@@ -55,17 +55,14 @@ def is_status_ok(status):
 @override_settings(LAUNCHDARKLY_SDK_KEY=None)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-@override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=True)
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
-class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
+class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
-        self.mock_wca_client_with(Mock(spec=WCAClient))
-        self.mock_wca_onprem_client_with(Mock(spec=WCAOnPremClient))
         self.mock_seat_checker_with(Mock())
         self.model_server_patcher = patch('ansible_ai_connect.healthcheck.backends.requests')
         self.mock_requests = self.model_server_patcher.start()
-        self.mock_requests.get = TestHealthCheck.mocked_requests_succeed
+        self.mock_requests.get = BaseTestHealthCheck.mocked_requests_succeed
 
         self.attribution_search_patcher = patch('ansible_ai_connect.ai.search.search')
         self.mock_ai_search = self.attribution_search_patcher.start()
@@ -148,7 +145,7 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
         timestamp = data['timestamp']
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(7, len(dependencies))
+        self.assertEqual(6, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency['name'],
@@ -159,13 +156,18 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                     'secret-manager',
                     'attribution',
                     'wca',
-                    'wca-onprem',
                     'authorization',
                 ],
             )
             self.assertGreaterEqual(dependency['time_taken'], 0)
 
         return timestamp, dependencies
+
+
+class TestHealthCheck(BaseTestHealthCheck):
+    def setUp(self):
+        super().setUp()
+        self.mock_wca_client_with(Mock(spec=WCAClient))
 
     def test_health_check_all_healthy(self):
         cache.clear()
@@ -327,224 +329,6 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
 
-    def test_health_check_wca_token_error(self, *args):
-        cache.clear()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
-        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    # If a Token cannot be retrieved we can also not execute Models
-                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'ansible_ai_connect.ai.api.model_client.exceptions.WcaTokenFailure',
-                'wca',
-                {
-                    "tokens": "unavailable: An error occurred",
-                    "models": "unavailable: An error occurred",
-                },
-            )
-
-    def test_health_check_wca_onprem_token_error(self, *args):
-        cache.clear()
-        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
-        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    # If a Token cannot be retrieved we can also not execute Models
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'ansible_ai_connect.ai.api.model_client.exceptions.WcaTokenFailure',
-                'wca-onprem',
-                {
-                    "tokens": "unavailable: An error occurred",
-                    "models": "unavailable: An error occurred",
-                },
-            )
-
-    def test_health_check_wca_inference_error(self, *args):
-        cache.clear()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
-        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-                self.assertGreaterEqual(dependency['time_taken'], 0)
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'ansible_ai_connect.ai.api.model_client.exceptions.WcaInferenceFailure',
-                'wca',
-                {"tokens": "ok", "models": "unavailable: An error occurred"},
-            )
-
-    def test_health_check_wca_onprem_inference_error(self, *args):
-        cache.clear()
-        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
-        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-                self.assertGreaterEqual(dependency['time_taken'], 0)
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'ansible_ai_connect.ai.api.model_client.exceptions.WcaInferenceFailure',
-                'wca-onprem',
-                {"tokens": "ok", "models": "unavailable: An error occurred"},
-            )
-
-    def test_health_check_wca_inference_generic_error(self, *args):
-        cache.clear()
-        mock_wca_client = apps.get_app_config("ai").get_wca_client()
-        mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-                self.assertGreaterEqual(dependency['time_taken'], 0)
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'Exception',
-                'wca',
-                {
-                    "tokens": "unavailable: An error occurred",
-                    "models": "unavailable: An error occurred",
-                },
-            )
-
-    def test_health_check_wca_onprem_inference_generic_error(self, *args):
-        cache.clear()
-        mock_wca_onprem_client = apps.get_app_config("ai").get_wca_onprem_client()
-        mock_wca_onprem_client.infer_from_parameters = Mock(side_effect=Exception)
-
-        with self.assertLogs(logger='root', level='ERROR') as log:
-            r = self.client.get(reverse('health_check'))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, 'error')
-            for dependency in dependencies:
-                if dependency['name'] == 'wca':
-                    self.assertEqual(dependency['status']['tokens'], 'ok')
-                    self.assertEqual(dependency['status']['models'], 'ok')
-                elif dependency['name'] == 'wca-onprem':
-                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
-                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
-                else:
-                    self.assertTrue(is_status_ok(dependency['status']))
-                self.assertGreaterEqual(dependency['time_taken'], 0)
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                'Exception',
-                'wca-onprem',
-                {
-                    "tokens": "unavailable: An error occurred",
-                    "models": "unavailable: An error occurred",
-                },
-            )
-
-    @override_settings(ENABLE_HEALTHCHECK_WCA=False)
-    def test_health_check_wca_disabled(self):
-        cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, 'ok')
-        for dependency in dependencies:
-            if dependency['name'] == 'wca':
-                self.assertEqual(dependency['status']['tokens'], 'disabled')
-                self.assertEqual(dependency['status']['models'], 'disabled')
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
-
-    @override_settings(ENABLE_HEALTHCHECK_WCA_ONPREM=False)
-    def test_health_check_wca_on_prem_disabled(self):
-        cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, 'ok')
-        for dependency in dependencies:
-            if dependency['name'] == 'wca-onprem':
-                self.assertEqual(dependency['status']['tokens'], 'disabled')
-                self.assertEqual(dependency['status']['models'], 'disabled')
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
-
-    def test_health_check_wca_on_prem_enable(self):
-        cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, 'ok')
-        for dependency in dependencies:
-            if dependency['name'] == 'wca-onprem':
-                self.assertEqual(dependency['status']['tokens'], 'ok')
-                self.assertEqual(dependency['status']['models'], 'ok')
-            else:
-                self.assertTrue(is_status_ok(dependency['status']))
-
     def test_health_check_authorization_error(self, *args):
         cache.clear()
         apps.get_app_config('ai')._seat_checker.self_test = Mock(side_effect=HTTPError)
@@ -606,3 +390,169 @@ class TestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwa
                 self.assertEqual(dependency['status'], 'disabled')
             else:
                 self.assertTrue(is_status_ok(dependency['status']))
+
+
+class BaseTestHealthCheckWCAClient(BaseTestHealthCheck):
+    def setUp(self):
+        super().setUp()
+        self.mock_wca_client_with(Mock(spec=self.get_wca_client_type()))
+
+    def get_wca_client_type(self):
+        # Overridden by concrete WCA test classes
+        return WCAClient
+
+    def _do_test_health_check_wca_token_error(self):
+        cache.clear()
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        self.assertIsInstance(mock_wca_client, self.get_wca_client_type())
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaTokenFailure)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    # If a Token cannot be retrieved we can also not execute Models
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ansible_ai_connect.ai.api.model_client.exceptions.WcaTokenFailure',
+                'wca',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
+
+    def _do_test_health_check_wca_inference_error(self):
+        cache.clear()
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        self.assertIsInstance(mock_wca_client, self.get_wca_client_type())
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInferenceFailure)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertEqual(dependency['status']['tokens'], 'ok')
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'ansible_ai_connect.ai.api.model_client.exceptions.WcaInferenceFailure',
+                'wca',
+                {"tokens": "ok", "models": "unavailable: An error occurred"},
+            )
+
+    def _do_test_health_check_wca_inference_generic_error(self):
+        cache.clear()
+        mock_wca_client = apps.get_app_config("ai").get_wca_client()
+        self.assertIsInstance(mock_wca_client, self.get_wca_client_type())
+        mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
+
+        with self.assertLogs(logger='root', level='ERROR') as log:
+            r = self.client.get(reverse('health_check'))
+
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, 'error')
+            for dependency in dependencies:
+                if dependency['name'] == 'wca':
+                    self.assertTrue(dependency['status']['tokens'].startswith('unavailable:'))
+                    self.assertTrue(dependency['status']['models'].startswith('unavailable:'))
+                else:
+                    self.assertTrue(is_status_ok(dependency['status']))
+                self.assertGreaterEqual(dependency['time_taken'], 0)
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                'Exception',
+                'wca',
+                {
+                    "tokens": "unavailable: An error occurred",
+                    "models": "unavailable: An error occurred",
+                },
+            )
+
+    def _do_test_health_check_wca_enable(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca':
+                self.assertEqual(dependency['status']['tokens'], 'ok')
+                self.assertEqual(dependency['status']['models'], 'ok')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+    def _do_test_health_check_wca_disabled(self):
+        cache.clear()
+        r = self.client.get(reverse('health_check'))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, 'ok')
+        for dependency in dependencies:
+            if dependency['name'] == 'wca':
+                self.assertEqual(dependency['status']['tokens'], 'disabled')
+                self.assertEqual(dependency['status']['models'], 'disabled')
+            else:
+                self.assertTrue(is_status_ok(dependency['status']))
+
+
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+class TestHealthCheckWCAClient(BaseTestHealthCheckWCAClient):
+
+    def get_wca_client_type(self):
+        return WCAClient
+
+    def test_health_check_wca_token_error(self):
+        self._do_test_health_check_wca_token_error()
+
+    def test_health_check_wca_inference_error(self):
+        self._do_test_health_check_wca_inference_error()
+
+    def test_health_check_wca_inference_generic_error(self):
+        self._do_test_health_check_wca_inference_generic_error()
+
+    @override_settings(ENABLE_HEALTHCHECK_WCA=True)
+    def test_health_check_wca_enable(self):
+        self._do_test_health_check_wca_enable()
+
+    @override_settings(ENABLE_HEALTHCHECK_WCA=False)
+    def test_health_check_wca_disabled(self):
+        self._do_test_health_check_wca_disabled()
+
+
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+class TestHealthCheckWCAOnPremClient(BaseTestHealthCheckWCAClient):
+
+    def get_wca_client_type(self):
+        return WCAOnPremClient
+
+    def test_health_check_wca_onprem_token_error(self):
+        self._do_test_health_check_wca_token_error()
+
+    def test_health_check_wca_onprem_inference_error(self):
+        self._do_test_health_check_wca_inference_error()
+
+    def test_health_check_wca_onprem_inference_generic_error(self):
+        self._do_test_health_check_wca_inference_generic_error()
+
+    @override_settings(ENABLE_HEALTHCHECK_WCA=True)
+    def test_health_check_wca_on_prem_enable(self):
+        self._do_test_health_check_wca_enable()
+
+    @override_settings(ENABLE_HEALTHCHECK_WCA=False)
+    def test_health_check_wca_on_prem_disabled(self):
+        self._do_test_health_check_wca_disabled()

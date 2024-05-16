@@ -112,10 +112,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         apps.get_app_config('ai')._wca_client = mocked
 
     @staticmethod
-    def mock_wca_onprem_client_with(mocked):
-        apps.get_app_config('ai')._wca_onprem_client = mocked
-
-    @staticmethod
     def mock_ari_caller_with(mocked):
         apps.get_app_config('ai')._ari_caller = mocked
 
