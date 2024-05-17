@@ -14,7 +14,7 @@
 
 import logging
 
-from langchain_community.llms import Ollama
+from langchain.llms import Ollama
 
 from .langchain import LangChainClient
 
