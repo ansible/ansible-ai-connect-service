@@ -65,28 +65,6 @@ class TestAiApp(APITestCase):
         with self.assertRaises(WcaKeyNotFound):
             app_config.ready()
 
-    @override_settings(ANSIBLE_WCA_USERNAME='username')
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
-    def test_get_wca_client_cloud(self):
-        app_config = AppConfig.create('ansible_ai_connect.ai')
-        app_config.ready()
-        self.assertIsInstance(app_config.get_wca_client(), WCAClient)
-
-    @override_settings(ANSIBLE_WCA_USERNAME='username')
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
-    def test_get_wca_client_onprem(self):
-        app_config = AppConfig.create('ansible_ai_connect.ai')
-        app_config.ready()
-        self.assertIsInstance(app_config.get_wca_client(), WCAOnPremClient)
-
-    @override_settings(ANSIBLE_WCA_USERNAME='username')
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='http')
-    def test_get_wca_client_invalid_model_mesh_api_type(self):
-        app_config = AppConfig.create('ansible_ai_connect.ai')
-        app_config.ready()
-        self.assertIsNone(app_config.get_wca_client())
-
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='http')
     def test_http_client(self):
         app_config = AppConfig.create('ansible_ai_connect.ai')

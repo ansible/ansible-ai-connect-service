@@ -17,6 +17,12 @@ from typing import Any, Dict, Optional
 
 from django.conf import settings
 
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+)
+
 
 class ModelMeshClient:
     def __init__(self, inference_url):
@@ -54,3 +60,14 @@ class ModelMeshClient:
 
     def explain_playbook(self, content) -> str:
         raise NotImplementedError
+
+    def self_test(self) -> HealthCheckSummary:
+        """
+        Check the health of the model service.
+        """
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
