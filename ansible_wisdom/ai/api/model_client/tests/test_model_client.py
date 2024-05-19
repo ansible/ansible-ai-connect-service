@@ -42,6 +42,6 @@ class TestModelMeshClient(TestCase):
         with self.assertRaises(NotImplementedError):
             c.get_chat_model("a")
         with self.assertRaises(NotImplementedError):
-            c.generate_playbook("a")
+            c.generate_playbook(None, "a")
         with self.assertRaises(NotImplementedError):
-            c.explain_playbook("a")
+            c.explain_playbook(None, "a")

@@ -240,6 +240,35 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         b = WCAClient.fatal_exception(exc)
         self.assertTrue(b)
 
+    def test_playbook_gen(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        wca_client.get_api_key = Mock(return_value="some-key")
+        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
+        wca_client.get_model_id = Mock(return_value="a-random-model")
+        wca_client.session = Mock()
+        response = Mock
+        response.text = '{"playbook": "Oh!", "outline": "Ahh!"}'
+        wca_client.session.post.return_value = response
+        request = Mock()
+        playbook, outline = wca_client.generate_playbook(
+            request, text="Install Wordpress", create_outline=True
+        )
+        self.assertEqual(playbook, "Oh!")
+        self.assertEqual(outline, "Ahh!")
+
+    def test_playbook_exp(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        wca_client.get_api_key = Mock(return_value="some-key")
+        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
+        wca_client.get_model_id = Mock(return_value="a-random-model")
+        wca_client.session = Mock()
+        response = Mock
+        response.text = '{"explanation": "!Óh¡"}'
+        wca_client.session.post.return_value = response
+        request = Mock()
+        explanation = wca_client.explain_playbook(request, content="Some playbook")
+        self.assertEqual(explanation, "!Óh¡")
+
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
