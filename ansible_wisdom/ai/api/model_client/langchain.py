@@ -121,7 +121,7 @@ class LangChainClient(ModelMeshClient):
             raise ModelTimeoutError
 
     def generate_playbook(
-        self, text: str = "", create_outline: bool = False, outline: str = ""
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
     ) -> tuple[str, str]:
         SYSTEM_MESSAGE_TEMPLATE = """
         You are an Ansible expert.
@@ -178,7 +178,7 @@ class LangChainClient(ModelMeshClient):
 
         return playbook, outline
 
-    def explain_playbook(self, content) -> str:
+    def explain_playbook(self, request, content) -> str:
         SYSTEM_MESSAGE_TEMPLATE = """
         You're an Ansible expert.
         You format your output with Markdown.

@@ -87,11 +87,11 @@ class DummyClient(ModelMeshClient):
         return response_body
 
     def generate_playbook(
-        self, text: str = "", create_outline: bool = False, outline: str = ""
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
     ) -> tuple[str, str]:
         if create_outline:
             return PLAYBOOK, OUTLINE
         return PLAYBOOK, ""
 
-    def explain_playbook(self, content) -> str:
+    def explain_playbook(self, request, content) -> str:
         return EXPLANATION
