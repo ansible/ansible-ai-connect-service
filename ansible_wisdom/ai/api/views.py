@@ -778,7 +778,7 @@ class Generation(APIView):
         text = request_serializer.validated_data["text"]
 
         llm = apps.get_app_config("ai").model_mesh_client
-        playbook, outline = llm.generate_playbook(text, create_outline, outline)
+        playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
 
         answer = {
             "playbook": playbook,

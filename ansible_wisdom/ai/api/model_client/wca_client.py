@@ -25,6 +25,7 @@ from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from health_check.exceptions import ServiceUnavailable
 from prometheus_client import Counter, Histogram
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
 from ansible_ai_connect.ai.api.formatter import (
@@ -314,8 +315,12 @@ class BaseWCAClient(ModelMeshClient):
 class WCAClient(BaseWCAClient):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
+        self._access_token = None
 
     def get_token(self, api_key):
+        basic = None
+        if settings.ANSIBLE_WCA_IDP_LOGIN:
+            basic = HTTPBasicAuth(settings.ANSIBLE_WCA_IDP_LOGIN, settings.ANSIBLE_WCA_IDP_PASSWORD)
         # TODO: store token and only fetch a new one if it has expired
         # https://cloud.ibm.com/docs/account?topic=account-iamtoken_from_apikey
         logger.debug("Fetching WCA token")
@@ -335,9 +340,10 @@ class WCAClient(BaseWCAClient):
         @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
-                "https://iam.cloud.ibm.com/identity/token",
+                f"{settings.ANSIBLE_WCA_IDP_URL}/token",
                 headers=headers,
                 data=data,
+                auth=basic,
             )
 
         try:
@@ -465,6 +471,28 @@ class WCAClient(BaseWCAClient):
             )
 
         return summary
+
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        api_key = self.get_api_key(request.user.organization.id)
+        model_id = self.get_model_id(request.user.organization.id)
+
+        headers = self._get_base_headers(api_key)
+        data = {
+            "model_id": model_id,
+            "text": text,
+            "create_outline": create_outline,
+        }
+        if outline:
+            data["outline"] = outline
+        result = self.session.post(
+            f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
+            headers=headers,
+            json=data,
+        )
+        response = json.loads(result.text)
+        return response["playbook"], response["outline"]
 
 
 class WCAOnPremClient(BaseWCAClient):
