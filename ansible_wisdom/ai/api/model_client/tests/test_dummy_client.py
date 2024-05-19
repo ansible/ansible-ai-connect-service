@@ -58,7 +58,7 @@ class TestDummyClient(SimpleTestCase):
 
     def test_generate_playbook(self):
         client = DummyClient(inference_url="https://ibm.com")
-        playbook, outline = client.generate_playbook(text="foo", create_outline=False)
+        playbook, outline = client.generate_playbook(None, text="foo", create_outline=False)
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
         self.assertEqual(outline, "")

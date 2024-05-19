@@ -121,7 +121,7 @@ class LangChainClient(ModelMeshClient):
             raise ModelTimeoutError
 
     def generate_playbook(
-        self, text: str = "", create_outline: bool = False, outline: str = ""
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
     ) -> tuple[str, str]:
         SYSTEM_MESSAGE_TEMPLATE = """
         You are an Ansible expert.

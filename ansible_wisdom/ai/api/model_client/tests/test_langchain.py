@@ -117,6 +117,7 @@ class TestLangChainClient(TestCase):
 
     def test_generate_playbook(self):
         playbook, outline = self.my_client.generate_playbook(
+            None,
             text="foo",
         )
         self.assertEqual(playbook, "my_playbook")

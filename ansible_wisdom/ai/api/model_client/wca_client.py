@@ -470,6 +470,45 @@ class WCAClient(BaseWCAClient):
 
         return summary
 
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        api_key = self.get_api_key(request.user.organization.id)
+        model_id = self.get_model_id(request.user.organization.id)
+
+        headers = self._get_base_headers(api_key)
+        data = {
+            "model_id": model_id,
+            "text": text,
+            "create_outline": create_outline,
+        }
+        if outline:
+            data["outline"] = outline
+        result = self.session.post(
+            f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
+            headers=headers,
+            json=data,
+        )
+        response = json.loads(result.text)
+        return response["playbook"], response["outline"]
+
+    def explain_playbook(self, request, content: str) -> tuple[str, str]:
+        api_key = self.get_api_key(request.user.organization.id)
+        model_id = self.get_model_id(request.user.organization.id)
+
+        headers = self._get_base_headers(api_key)
+        data = {
+            "model_id": model_id,
+            "playbook": content,
+        }
+        result = self.session.post(
+            f"{self._inference_url}/v1/wca/explain/ansible/playbook",
+            headers=headers,
+            json=data,
+        )
+        response = json.loads(result.text)
+        return response["explanation"]
+
 
 class WCAOnPremClient(BaseWCAClient):
     def __init__(self, inference_url):
