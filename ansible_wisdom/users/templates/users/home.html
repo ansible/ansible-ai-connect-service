@@ -120,7 +120,10 @@
               {% endif %}
             </div>
 
-            <a class="pf-c-button pf-m-secondary" type="button" href="{% url 'logout' %}">Log out</a>
+            <form id="logout-form" method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
+            </form>
 
           {% else %}
             <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
