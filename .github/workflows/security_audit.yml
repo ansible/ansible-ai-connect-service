@@ -25,12 +25,5 @@ jobs:
       - name: Test projects for code vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk code test -d --project-name="ansible/ansible-ai-connect-service" --report --sarif-file-output=snyk-results.sarif ${{ github.workspace }}
+        run: snyk code test --project-name="ansible/ansible-ai-connect-service" ${{ github.workspace }}
         continue-on-error: true
-
-      - name: Upload Snyk results as artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Snyk results
-          path: snyk-results.sarif
-
