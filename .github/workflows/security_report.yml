@@ -1,5 +1,5 @@
 name: Monitor repo for security vulnerabilities
-on: 
+on:
   push:
     branches:
       - 'main'

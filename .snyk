@@ -1,6 +1,9 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.0
 # ignores vulnerabilities until expiry date; change duration by modifying expiry date
+# To format the date now and in 3 months:
+#   date -u +"%Y-%m-%dT%H:%M:%SZ"
+#   date -d 'now + 3 month' -u +"%Y-%m-%dT%H:%M:%SZ"
 ignore:
   SNYK-PYTHON-PYOPENSSL-6149520:
     - '*':
@@ -19,4 +22,36 @@ ignore:
           see https://www.openssl.org/news/secadv/20240115.txt
         expires: 2024-05-24T15:02:32.468Z
         created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-JOBLIB-6913425:
+    - joblib:
+        reason: |
+          ansible-wisdom-service doesn't currently use the
+          vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+    - ansible-risk-insight > joblib:
+        reason: |
+          ansible-risk-insight doesn't currently use the
+          vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+    - sentence-transformers > scikit-learn > joblib:
+        reason: |
+          scikit-learn doesn't currently use the
+          vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+    - scikit-learn > joblib:
+        reason: |
+          scikit-learn doesn't currently use the
+          vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
+        expires: 2024-05-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-CRYPTOGRAPHY-6913422:
+    - '*':
+        reason: |
+          No DSA key validation is done at our level and TLS is handle
+          by OpenShift
+        expires: 2024-08-21T12:19:22Z
+        created: 2024-05-21T12:19:22Z
 patch: {}

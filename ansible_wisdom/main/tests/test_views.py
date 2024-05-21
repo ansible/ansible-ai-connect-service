@@ -88,7 +88,7 @@ class AlreadyAuth(TestCase):
         response.render()
         contents = response.content.decode()
         self.assertIn("You are currently not logged in.", contents)
-        self.assertIn("Log in with AAP", contents)
+        self.assertIn("Log in with Ansible Automation Platform", contents)
 
     @override_settings(DEPLOYMENT_MODE='upstream')
     def test_login_django(self):
