@@ -17,16 +17,16 @@ RUN env
 COPY .version ./
 RUN _IMAGE_TAGS=$(cat .version)
 
+ARG IMAGE_TAGS=not-given
+ARG GIT_COMMIT=not-given
 
 COPY * /var/www/temp-src/
 WORKDIR /var/www/temp-src/
-RUN _TS_TAGS=$(git log -n1 --pretty='format:%cd' --date=format:'%Y%m%d%H%M')
-RUN _GIT_COMMIT=$(git log -n1 --pretty='format:%H')
-RUN echo -e "_TS_TAGS=$_TS_TAGS"
-RUN _IMAGE_TAGS=${_IMAGE_TAGS}.${_TS_TAGS}
-RUN echo -e "IMAGE_TAGS=$IMAGE_TAGS"
-ARG IMAGE_TAGS=$_IMAGE_TAGS
-ARG GIT_COMMIT=$_GIT_COMMIT
+# RUN _TS_TAGS=$(git log -n1 --pretty='format:%cd' --date=format:'%Y%m%d%H%M')
+# RUN _GIT_COMMIT=$(git log -n1 --pretty='format:%H')
+# RUN echo -e "_TS_TAGS=$_TS_TAGS"
+RUN echo "IMAGE_TAGS=${IMAGE_TAGS} GIT_COMMIT=${GIT_COMMIT}"
+
 
 # Copy the ansible_wisdom package files
 COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
