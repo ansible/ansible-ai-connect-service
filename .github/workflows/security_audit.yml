@@ -25,4 +25,4 @@ jobs:
       - name: Test projects for code vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk code test -d --project-name="ansible/ansible-ai-connect-service" --report ../../.
+        run: snyk code test -d --project-name="ansible/ansible-ai-connect-service" --report .
