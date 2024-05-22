@@ -48,6 +48,7 @@ class WisdomTestCase(TestCase):
     def assert_error_detail(self, r, code: str, message: str = None):
         if r.status_code == HTTPStatus.NO_CONTENT:
             self.assertIsNone(r.data)
+            self.assertEqual(r['Content-Length'], "0")
             return
 
         r_code = r.data.get('message').code
