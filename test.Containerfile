@@ -15,4 +15,3 @@ RUN echo -e "\
 CMD sleep 10000
 USER 1000
 RUN echo "IMAGE_TAGS=${IMAGE_TAGS}"
-# LABEL konflux.additional-tags="latest 1.1.madeup"
