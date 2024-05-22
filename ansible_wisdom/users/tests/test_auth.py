@@ -62,26 +62,55 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
     @patch.multiple(
         'social_core.backends.oauth.BaseOAuth2',
         extra_data=MagicMock(return_value={"test": "data"}),
-        get_json=MagicMock(return_value={"license_info": {"date_expired": False}}),
+        get_json=MagicMock(
+            return_value={
+                "license_info": {"date_expired": False},
+            }
+        ),
     )
     def test_date_expired_checked_and_is_true_during_auth(self):
         self.authentication = AAPOAuth2()
-        request = Mock(headers={'Authorization': 'Bearer some_token'})
-        data = self.authentication.extra_data(request, "UUID", request)
+        user = MagicMock()
+        response = {"is_system_auditor": True, "is_superuser": True}
+        data = self.authentication.extra_data(user, "UUID", response)
 
         self.assertTrue(data['aap_licensed'])
+        self.assertTrue(data['aap_system_auditor'])
+        self.assertTrue(data['aap_superuser'])
 
     @patch.multiple(
         'social_core.backends.oauth.BaseOAuth2',
         extra_data=MagicMock(return_value={"test": "data"}),
-        get_json=MagicMock(return_value={"license_info": {"date_expired": True}}),
+        get_json=MagicMock(
+            return_value={
+                "license_info": {"date_expired": True},
+            }
+        ),
     )
     def test_date_expired_checked_and_is_false_during_auth(self):
         self.authentication = AAPOAuth2()
-        request = Mock(headers={'Authorization': 'Bearer some_token'})
-        data = self.authentication.extra_data(request, "UUID", request)
+        user = MagicMock()
+        response = {"is_system_auditor": False, "is_superuser": False}
+        data = self.authentication.extra_data(user, "UUID", response)
 
         self.assertFalse(data['aap_licensed'])
+        self.assertFalse(data['aap_system_auditor'])
+        self.assertFalse(data['aap_superuser'])
+
+    @patch.multiple(
+        'social_core.backends.oauth.BaseOAuth2',
+        extra_data=MagicMock(return_value={"test": "data"}),
+        get_json=MagicMock(return_value={}),
+    )
+    def test_missing_values(self):
+        self.authentication = AAPOAuth2()
+        user = MagicMock()
+        response = {}
+        data = self.authentication.extra_data(user, "UUID", response)
+
+        self.assertFalse(data['aap_licensed'])
+        self.assertFalse(data['aap_system_auditor'])
+        self.assertFalse(data['aap_superuser'])
 
 
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
