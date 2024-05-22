@@ -4,16 +4,17 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/ansible/ansible-ai-connect-service?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
       == "main"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: ansible-ai-connect-service
     appstudio.openshift.io/component: ansible-ai-connect-service
     pipelines.appstudio.openshift.io/type: build
-  name: ansible-ai-connect-service-on-push
+  name: ansible-ai-connect-service-on-pull-request
   namespace: ansible-lightspeed-tenant
 spec:
   timeouts:
@@ -22,11 +23,13 @@ spec:
     finally: "0"
   params:
   - name: dockerfile
-    value: ./test.Containerfile
+    value: ./wisdom-service.Containerfile
   - name: git-url
     value: '{{source_url}}'
+  - name: image-expires-after
+    value: 5d
   - name: output-image
-    value: quay.io/ansible/ansible-ai-connect-service:{{revision}}
+    value: quay.io/ansible/ansible-ai-connect-service:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
@@ -226,8 +229,6 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
-      - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=$(tasks.clone-repository.results.commit)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -252,7 +253,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["latest"]
+        value: ["pr-{{pull_request_number}}"]
       runAfter:
       - build-container
       taskRef:
