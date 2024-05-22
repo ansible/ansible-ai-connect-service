@@ -29,8 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class WisdomFlags(str, Enum):
-    # model name selection
-    MODEL_NAME = "model_name"
     # For some organizations we can bypass the subscription check
     BYPASS_AAP_SUBSCRIPTION_CHECK = "special_wca_access_orgs"
 

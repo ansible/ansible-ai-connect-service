@@ -23,6 +23,7 @@ import requests
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
+from health_check.exceptions import ServiceUnavailable
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
@@ -37,6 +38,13 @@ from ansible_ai_connect.ai.api.model_client.wca_utils import (
     TokenContext,
     TokenResponseChecks,
 )
+from ansible_ai_connect.healthcheck.backends import (
+    ERROR_MESSAGE,
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+)
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
@@ -50,6 +58,8 @@ from .exceptions import (
     WcaTokenFailure,
     WcaUsernameNotFound,
 )
+
+MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
@@ -85,6 +95,14 @@ ibm_cloud_identity_token_retry_counter = Counter(
     "Counter of IBM Cloud identity token API invocation retries",
     namespace=NAMESPACE,
 )
+
+
+class WcaTokenRequestException(ServiceUnavailable):
+    """There was an error trying to get a WCA token."""
+
+
+class WcaModelRequestException(ServiceUnavailable):
+    """There was an error trying to invoke a WCA Model."""
 
 
 class DummyWCAClient(ModelMeshClient):
@@ -411,6 +429,43 @@ class WCAClient(BaseWCAClient):
             "Authorization": f"Bearer {token['access_token']}",
         }
 
+    def self_test(self) -> HealthCheckSummary:
+        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
+        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_TOKENS: "ok",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            self.infer_from_parameters(
+                wca_api_key,
+                wca_model_id,
+                "",
+                "- name: install ffmpeg on Red Hat Enterprise Linux",
+            )
+        except WcaInferenceFailure as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+        except Exception as e:
+            logger.exception(str(e))
+            # For any other failure we assume the whole WCA service is unavailable.
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_TOKENS,
+                HealthCheckSummaryException(WcaTokenRequestException(ERROR_MESSAGE), e),
+            )
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+
+        return summary
+
 
 class WCAOnPremClient(BaseWCAClient):
     def __init__(self, inference_url):
@@ -458,3 +513,28 @@ class WCAOnPremClient(BaseWCAClient):
         return {
             "Authorization": f"ZenApiKey {token}",
         }
+
+    def self_test(self) -> HealthCheckSummary:
+        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
+        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            self.infer_from_parameters(
+                wca_api_key,
+                wca_model_id,
+                "",
+                "- name: install ffmpeg on Red Hat Enterprise Linux",
+            )
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+
+        return summary

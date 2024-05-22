@@ -25,11 +25,9 @@ class HealthCheckAppConfig(AppConfig):
             AuthorizationHealthCheck,
             AWSSecretManagerHealthCheck,
             ModelServerHealthCheck,
-            WCAHealthCheck,
         )
 
         plugin_dir.register(ModelServerHealthCheck)
         plugin_dir.register(AWSSecretManagerHealthCheck)
-        plugin_dir.register(WCAHealthCheck)
         plugin_dir.register(AuthorizationHealthCheck)
         plugin_dir.register(AttributionCheck)

@@ -62,7 +62,7 @@ from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.users.models import User
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags, WisdomFlags
+from ..feature_flags import FeatureFlags
 from .data.data_model import (
     AttributionsResponseDto,
     ContentMatchPayloadData,
@@ -371,7 +371,7 @@ class Attributions(GenericAPIView):
         start_time = time.time()
         try:
             encode_duration, search_duration, response_serializer = self.perform_search(
-                request_serializer, request.user
+                request_serializer
             )
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
@@ -393,17 +393,8 @@ class Attributions(GenericAPIView):
 
         return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
-    def perform_search(self, serializer, user: User):
-        index = None
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            model_parts = model_tuple.split(':')
-            if len(model_parts) == 4:
-                *_, index = model_parts
-                logger.info(f"using index '{index}' for content matching")
-
-        data = ai_search.search(serializer.validated_data['suggestion'], index)
+    def perform_search(self, serializer):
+        data = ai_search.search(serializer.validated_data['suggestion'])
         resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
@@ -487,7 +478,7 @@ class ContentMatches(GenericAPIView):
         user: User,
         request_data,
     ):
-        wca_client = apps.get_app_config("ai").model_mesh_client
+        model_mesh_client = apps.get_app_config("ai").model_mesh_client
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get('suggestions', []),
@@ -508,7 +499,7 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            model_id, client_response = wca_client.codematch(content_match_data, model_id)
+            model_id, client_response = model_mesh_client.codematch(content_match_data, model_id)
 
             response_data = {"contentmatches": []}
 
@@ -637,17 +628,8 @@ class ContentMatches(GenericAPIView):
         model_name = ""
 
         try:
-            index = None
-            if settings.LAUNCHDARKLY_SDK_KEY:
-                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-                logger.debug(f"flag model_name has value {model_tuple}")
-                model_parts = model_tuple.split(':')
-                if len(model_parts) == 4:
-                    *_, model_name, index = model_parts
-                    logger.info(f"using index '{index}' for content matching")
-
             suggestion = request_data['suggestions'][0]
-            response_item = ai_search.search(suggestion, index)
+            response_item = ai_search.search(suggestion)
 
             attributions_dto = AttributionsResponseDto(**response_item)
             response_data = {"contentmatches": []}
