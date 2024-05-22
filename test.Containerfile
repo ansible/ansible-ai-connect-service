@@ -4,6 +4,7 @@ ARG GIT_COMMIT=not-given
 
 RUN echo "IMAGE_TAGS=${IMAGE_TAGS} GIT_COMMIT=${GIT_COMMIT}"
 
+COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
 RUN echo -e "\
 {\n\
   \"imageTags\": \"${IMAGE_TAGS}\", \n\
@@ -13,3 +14,4 @@ RUN echo -e "\
 
 CMD sleep 10000
 USER 1000
+LABEL konflux.additional-tags="${IMAGE_TAGS}"
