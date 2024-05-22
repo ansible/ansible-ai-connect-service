@@ -249,16 +249,22 @@ spec:
       - name: source
         workspace: workspace
     - name: apply-tags
-      runAfter:
-        - build-container
-      taskRef:
-        name: apply-tags
-        version: "0.1"
       params:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
         value: ["pr-{{pull_request_number}}"]
+      runAfter:
+      - build-container
+      taskRef:
+        params:
+        - name: name
+          value: apply-tags
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1
+        - name: kind
+          value: task
+        resolver: bundles
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
