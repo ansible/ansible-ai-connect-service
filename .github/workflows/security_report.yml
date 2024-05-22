@@ -24,3 +24,9 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk monitor --all-projects
+
+      - name: Generate code vulnerability report
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk code test --project-name="ansible/ansible-ai-connect-service" --report ${{ github.workspace }}
+        continue-on-error: true
