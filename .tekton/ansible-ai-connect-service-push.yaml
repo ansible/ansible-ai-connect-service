@@ -22,7 +22,7 @@ spec:
     finally: "0"
   params:
   - name: dockerfile
-    value: ./wisdom-service.Containerfile
+    value: ./test.Containerfile
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
@@ -247,6 +247,17 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+    - name: apply-tags
+      runAfter:
+        - build-container
+      taskRef:
+        name: apply-tags
+        version: "0.1"
+      params:
+      - name: IMAGE
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value: ["latest", "1.1.madeup"]
     - name: build-source-image
       params:
       - name: BINARY_IMAGE

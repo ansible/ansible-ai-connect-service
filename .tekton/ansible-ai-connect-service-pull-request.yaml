@@ -248,6 +248,17 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+    - name: apply-tags
+      runAfter:
+        - build-container
+      taskRef:
+        name: apply-tags
+        version: "0.1"
+      params:
+      - name: IMAGE
+        value: $(tasks.build-container.results.IMAGE_URL)
+      - name: ADDITIONAL_TAGS
+        value: ["pr-{{pull_request_number}}"]
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
