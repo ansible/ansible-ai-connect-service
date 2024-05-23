@@ -25,6 +25,7 @@ from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from health_check.exceptions import ServiceUnavailable
 from prometheus_client import Counter, Histogram
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
 from ansible_ai_connect.ai.api.formatter import (
@@ -317,6 +318,9 @@ class WCAClient(BaseWCAClient):
         super().__init__(inference_url=inference_url)
 
     def get_token(self, api_key):
+        basic = None
+        if settings.ANSIBLE_WCA_IDP_LOGIN:
+            basic = HTTPBasicAuth(settings.ANSIBLE_WCA_IDP_LOGIN, settings.ANSIBLE_WCA_IDP_PASSWORD)
         # TODO: store token and only fetch a new one if it has expired
         # https://cloud.ibm.com/docs/account?topic=account-iamtoken_from_apikey
         logger.debug("Fetching WCA token")
@@ -336,9 +340,10 @@ class WCAClient(BaseWCAClient):
         @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
-                "https://iam.cloud.ibm.com/identity/token",
+                f"{settings.ANSIBLE_WCA_IDP_URL}/token",
                 headers=headers,
                 data=data,
+                auth=basic,
             )
 
         try:
