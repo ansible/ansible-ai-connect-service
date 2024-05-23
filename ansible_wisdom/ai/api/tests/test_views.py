@@ -1092,7 +1092,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 self.assertTrue(len(segment_events) > 0)
                 for event in segment_events:
                     if event['event'] == 'postprocess':
-                        self.assertIsNone(
+                        self.assertEqual(
                             'ARI rule evaluation threw fatal exception: '
                             'Invalid task structure: no module name found',
                             event['properties']['problem'],
