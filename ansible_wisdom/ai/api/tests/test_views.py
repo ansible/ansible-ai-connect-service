@@ -297,7 +297,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             mock_model_id=Mock(side_effect=WcaNoDefaultModelId),
         )
         model_client, model_input = stub
-        self.mock_wca_client_with(model_client)
+        self.mock_model_client_with(model_client)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
