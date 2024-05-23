@@ -133,7 +133,7 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
 ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
-    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'True').lower() == 'true'
+    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'False').lower() == 'true'
 )
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')

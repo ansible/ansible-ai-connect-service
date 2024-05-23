@@ -217,6 +217,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "pf-c-alert__title", count=1)
         self.assertNotContains(response, "Admin Portal")
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
