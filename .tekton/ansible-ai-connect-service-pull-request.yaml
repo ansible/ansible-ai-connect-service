@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: ansible-ai-connect-service
     appstudio.openshift.io/component: ansible-ai-connect-service
     pipelines.appstudio.openshift.io/type: build
-  name: ansible-ai-connect-service-on-pull-request
+  name: ansible-ai-connect-service-on-pr-{{pull_request_number}}
   namespace: ansible-lightspeed-tenant
 spec:
   timeouts:
