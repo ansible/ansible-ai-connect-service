@@ -82,6 +82,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url='http://example.com/')
         self.assertEqual(123 * 2, model_client.timeout(2))
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("requests.Session.post", side_effect=ReadTimeout())
     def test_timeout_http_timeout(self, _):
         self.client.force_authenticate(user=self.user)
@@ -100,6 +101,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
             )
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("grpc._channel._UnaryUnaryMultiCallable.__call__", side_effect=mock_timeout_error())
     def test_timeout_grpc_timeout(self, _):
         self.client.force_authenticate(user=self.user)

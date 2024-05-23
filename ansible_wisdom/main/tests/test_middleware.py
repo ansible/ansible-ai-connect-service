@@ -32,6 +32,7 @@ from ansible_ai_connect.ai.api.tests.test_views import (
 
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -135,6 +136,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("username", log)
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch(
         'ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
@@ -156,6 +158,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             )
             self.assertSegmentTimestamp(log)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
         payload = {
@@ -202,6 +205,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.max_retries = analytics.Client.DefaultConfig.max_retries
             analytics.send = False
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_204_empty_response(self):
         payload = {

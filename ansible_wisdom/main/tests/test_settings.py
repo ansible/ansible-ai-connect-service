@@ -51,6 +51,7 @@ class TestSettings(SimpleTestCase):
     @patch.dict(
         os.environ,
         {
+            'ANSIBLE_AI_ENABLE_TECH_PREVIEW': 'true',
             'SOCIAL_AUTH_GITHUB_TEAM_KEY': 'teamkey',
             'SOCIAL_AUTH_GITHUB_TEAM_SECRET': 'teamsecret',
             'SOCIAL_AUTH_GITHUB_TEAM_ID': '5678',
@@ -69,6 +70,7 @@ class TestSettings(SimpleTestCase):
     @patch.dict(
         os.environ,
         {
+            'ANSIBLE_AI_ENABLE_TECH_PREVIEW': 'true',
             'SOCIAL_AUTH_GITHUB_TEAM_KEY': 'teamkey',
             'SOCIAL_AUTH_GITHUB_TEAM_SECRET': 'teamsecret',
             'SOCIAL_AUTH_GITHUB_TEAM_ID': '',
@@ -86,6 +88,7 @@ class TestSettings(SimpleTestCase):
     @patch.dict(
         os.environ,
         {
+            'ANSIBLE_AI_ENABLE_TECH_PREVIEW': 'true',
             'SOCIAL_AUTH_GITHUB_TEAM_KEY': '',
             'SOCIAL_AUTH_GITHUB_KEY': "key",
             'SOCIAL_AUTH_GITHUB_SECRET': 'secret',
