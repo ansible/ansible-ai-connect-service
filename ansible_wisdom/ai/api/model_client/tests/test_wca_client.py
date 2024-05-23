@@ -17,12 +17,13 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import django.utils.timezone
 import requests
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError, ReadTimeout
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
@@ -268,6 +269,25 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             "https://iam.cloud.ibm.com/identity/token",
             headers=headers,
             data=data,
+            auth=None,
+        )
+
+    @override_settings(ANSIBLE_WCA_IDP_URL='http://some-different-idp')
+    @override_settings(ANSIBLE_WCA_IDP_LOGIN='jimmy')
+    @override_settings(ANSIBLE_WCA_IDP_PASSWORD='jimmy')
+    @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
+    def test_get_token_with_auth(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        model_client.session.post = Mock()
+        basic = HTTPBasicAuth('jimmy', 'jimmy')
+
+        model_client.get_token('abcdef')
+
+        model_client.session.post.assert_called_once_with(
+            "http://some-different-idp/token",
+            headers=ANY,
+            data=ANY,
+            auth=basic,
         )
 
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
