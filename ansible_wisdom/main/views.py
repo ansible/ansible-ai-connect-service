@@ -20,8 +20,11 @@ from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
+from django_prometheus.exports import ExportToDjangoView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
@@ -107,3 +110,22 @@ class ConsoleView(ProtectedTemplateView):
                 )
 
         return context
+
+
+class MetricsView(APIView):
+    schema = None
+
+    def initialize_request(self, request, *args, **kwargs):
+        if settings.ALLOW_METRICS_FOR_ANONYMOUS_USERS:
+            self.permission_classes = (AllowAny,)
+        drf_request = super().initialize_request(request, *args, **kwargs)
+        return drf_request
+
+    def get(self, request):
+        if (
+            settings.ALLOW_METRICS_FOR_ANONYMOUS_USERS
+            or request.user.rh_aap_superuser
+            or request.user.rh_aap_system_auditor
+        ):
+            return ExportToDjangoView(request)
+        raise PermissionDenied()

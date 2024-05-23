@@ -63,6 +63,27 @@ class DummyRHBackend:
         }
 
 
+class DummyAAPBackend:
+    name = "aap"
+
+    def __init__(self, public_key):
+        self.public_key = public_key
+
+    def find_valid_key(self, id_token):
+        return self.public_key
+
+    def extra_data(*args, **kwargs):
+        return {
+            "id": "1231243",
+            "login": "my-login",
+            "id_token": "some-string",
+            "token_type": "Bearer",
+            "aap_licensed": True,
+            "aap_system_auditor": True,
+            "aap_superuser": True,
+        }
+
+
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestExtraData(WisdomServiceLogAwareTestCase):
     def setUp(self):
@@ -78,11 +99,19 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
 
         self.github_user = get_user_model().objects.create_user(
             username="github-user",
-            email="sso@user.nowhere",
+            email="gh@user.nowhere",
             password="bar",
         )
         self.github_usa = UserSocialAuth.objects.create(
-            user=self.rh_user, provider="github", uid=str(uuid4())
+            user=self.github_user, provider="github", uid=str(uuid4())
+        )
+        self.aap_user = get_user_model().objects.create_user(
+            username="aap-user",
+            email="aap@user.nowhere",
+            password="bar",
+        )
+        self.aap_usa = UserSocialAuth.objects.create(
+            user=self.aap_user, provider="aap", uid=str(uuid4())
         )
         self.rsa_private_key = rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=default_backend()
@@ -94,6 +123,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
     def tearDown(self):
         self.rh_user.delete()
         self.github_user.delete()
+        self.aap_user.delete()
         super().tearDown()
 
     def test_load_extra_data(self):
@@ -106,6 +136,23 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             social=self.rh_usa,
         )
         self.assertEqual(self.rh_user.external_username, "my-login")
+        self.assertFalse(self.rh_user.rh_aap_licensed)
+        self.assertFalse(self.rh_user.rh_aap_system_auditor)
+        self.assertFalse(self.rh_user.rh_aap_superuser)
+
+    def test_load_extra_data_aap(self):
+        load_extra_data(
+            backend=DummyAAPBackend(public_key=self.jwk_public_key),
+            details=None,
+            response=None,
+            uid=None,
+            user=self.aap_user,
+            social=self.aap_usa,
+        )
+        self.assertEqual(self.aap_user.external_username, "my-login")
+        self.assertTrue(self.aap_user.rh_aap_licensed)
+        self.assertTrue(self.aap_user.rh_aap_system_auditor)
+        self.assertTrue(self.aap_user.rh_aap_superuser)
 
     def test_redhat_organization_with_rh_admin_user(self):
         response = {

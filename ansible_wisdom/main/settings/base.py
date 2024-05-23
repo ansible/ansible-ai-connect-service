@@ -133,7 +133,7 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
 ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
-    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'True').lower() == 'true'
+    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'False').lower() == 'true'
 )
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
@@ -561,4 +561,10 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 )
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
+)
+
+# Follow AWX naming for this environment variable
+# It is used to protect Prometheus's /metrics endpoint
+ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
+    os.getenv('ALLOW_METRICS_FOR_ANONYMOUS_USERS', 'True').lower() == 'true'
 )
