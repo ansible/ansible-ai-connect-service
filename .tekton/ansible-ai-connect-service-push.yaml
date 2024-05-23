@@ -262,7 +262,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["latest", "1.0.{{tasks.get-timestamp.results.time-stamp}}"]
+        value: ["latest", "1.0.$(tasks.get-timestamp.results.time-stamp)"]
       runAfter:
       - build-container
       taskRef:
