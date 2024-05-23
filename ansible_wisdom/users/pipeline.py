@@ -180,5 +180,13 @@ def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
         extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
         user.external_username = extra_data.get("login")
         user.save()
-        social.extra_data["aap_licensed"] = extra_data.get("aap_licensed")
+        social.extra_data["aap_licensed"] = (
+            extra_data.get("aap_licensed") if user.is_aap_user() else False
+        )
+        social.extra_data["aap_system_auditor"] = (
+            extra_data.get("aap_system_auditor") if user.is_aap_user() else False
+        )
+        social.extra_data["aap_superuser"] = (
+            extra_data.get("aap_superuser") if user.is_aap_user() else False
+        )
         social.save()

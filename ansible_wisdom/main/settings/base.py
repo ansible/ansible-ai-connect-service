@@ -562,3 +562,9 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
 )
+
+# Follow AWX naming for this environment variable
+# It is used to protect Prometheus's /metrics endpoint
+ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
+    os.getenv('ALLOW_METRICS_FOR_ANONYMOUS_USERS', 'True').lower() == 'true'
+)

@@ -45,7 +45,12 @@ from ansible_ai_connect.healthcheck.views import (
     WisdomServiceHealthView,
     WisdomServiceLivenessProbeView,
 )
-from ansible_ai_connect.main.views import ConsoleView, LoginView, LogoutView
+from ansible_ai_connect.main.views import (
+    ConsoleView,
+    LoginView,
+    LogoutView,
+    MetricsView,
+)
 from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
@@ -59,7 +64,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-    path('', include('django_prometheus.urls')),
+    path('metrics/', MetricsView.as_view(), name='prometheus-metrics'),
     path('admin/', admin.site.urls),
     path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),

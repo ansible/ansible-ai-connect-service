@@ -28,6 +28,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from prometheus_client.parser import text_string_to_metric_families
+from rest_framework.test import APITransactionTestCase
 from social_core.exceptions import AuthCanceled
 from social_django.models import UserSocialAuth
 
@@ -37,7 +38,6 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_ai_connect.ai.api.tests.test_views import APITransactionTestCase
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
@@ -582,7 +582,7 @@ class TestUserModelMetrics(APITransactionTestCase):
 
     def test_user_model_metrics(self):
         def get_user_count():
-            r = self.client.get(reverse('prometheus-django-metrics'))
+            r = self.client.get(reverse('prometheus-metrics'))
             for family in text_string_to_metric_families(r.content.decode()):
                 for sample in family.samples:
                     if sample[0] == 'django_model_inserts_total' and sample[1] == {'model': 'user'}:
