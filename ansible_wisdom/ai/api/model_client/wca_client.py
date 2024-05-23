@@ -54,6 +54,7 @@ from .exceptions import (
     WcaInferenceFailure,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaNoDefaultModelId,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
     WcaUsernameNotFound,
@@ -382,19 +383,17 @@ class WCAClient(BaseWCAClient):
         organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
-        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
-            return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
-
-        if organization_id is None:
-            logger.error(
-                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_MODEL_NAME is set"
-            )
-            raise WcaModelIdNotFound(model_id=requested_model_id)
-
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
+        elif settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+        elif organization_id is None:
+            logger.error(
+                "User is not linked to an organization and no default WCA model ID is found"
+            )
+            raise WcaNoDefaultModelId
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
