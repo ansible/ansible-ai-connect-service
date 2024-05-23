@@ -208,6 +208,16 @@ spec:
         workspace: workspace
       - name: git-basic-auth
         workspace: git-auth
+    - name: build-tags
+      taskSpec:
+        steps:
+          - name: output-timestamp
+            image: busybox
+            command: ["/bin/sh", "-c"]
+            args:
+              - echo $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
+        results:
+          - name: time-stamp
     - name: build-container
       params:
       - name: IMAGE
@@ -252,7 +262,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["latest"]
+        value: ["latest.{tasks.build-tags.results.time-stamp}"]
       runAfter:
       - build-container
       taskRef:
