@@ -216,7 +216,7 @@ spec:
       - name: git-basic-auth
         workspace: git-auth
 
-    - name: build-tags
+    - name: get-timestamp
       taskSpec:
         steps:
           - name: output-timestamp
@@ -270,7 +270,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["pr-{{pull_request_number}}.{tasks.build-tags.results.time-stamp}"]
+        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}{{tasks.get-timestamp.results.time-stamp}}"]
       runAfter:
       - build-container
       taskRef:

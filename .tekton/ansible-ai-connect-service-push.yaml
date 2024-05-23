@@ -208,7 +208,7 @@ spec:
         workspace: workspace
       - name: git-basic-auth
         workspace: git-auth
-    - name: build-tags
+    - name: get-timestamp
       taskSpec:
         steps:
           - name: output-timestamp
@@ -237,7 +237,7 @@ spec:
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=1.0.$(tasks.build-tags.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=1.0.$(tasks.get-timestamp.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -262,7 +262,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["latest.${tasks.build-tags.results.time-stamp}"]
+        value: ["latest", "1.0.{{tasks.get-timestamp.results.time-stamp}}"]
       runAfter:
       - build-container
       taskRef:
