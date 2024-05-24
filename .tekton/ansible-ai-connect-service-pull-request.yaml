@@ -223,7 +223,7 @@ spec:
             image: busybox
             command: ["/bin/sh", "-c"]
             args:
-              - echo $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
+              - echo -n $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
         results:
           - name: time-stamp
 
@@ -246,6 +246,8 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
+      - name: BUILD_ARGS
+        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.get-timestamp.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
