@@ -223,7 +223,7 @@ spec:
             image: busybox
             command: ["/bin/sh", "-c"]
             args:
-              - echo $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
+              - echo -n $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
         results:
           - name: time-stamp
 
