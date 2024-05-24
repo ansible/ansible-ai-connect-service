@@ -237,7 +237,7 @@ spec:
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=1.0.$(tasks.get-timestamp.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=latest 1.0.$(tasks.get-timestamp.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
