@@ -79,7 +79,7 @@ class HealthCheckCustomView(MainView):
                 _, _, model_name, _ = model_parts
 
         data = common_data()
-        data['model_name'] = model_name
+        # data['model_name'] = model_name
         data['status'] = 'error' if self.errors else 'ok'
 
         dependencies = []

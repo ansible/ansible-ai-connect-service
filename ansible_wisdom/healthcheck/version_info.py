@@ -21,14 +21,13 @@ class VersionInfo:
     _git_commit = 'git-commit-not-defined'
 
     def __init__(self):
-        try:
-            version_info_file = Path(__file__).parent.parent / 'version_info.json'
-            with open(version_info_file) as info:
-                info_json = json.load(info)
-                self._image_tags = info_json["imageTags"]
-                self._git_commit = info_json["gitCommit"]
-        except Exception:
-            pass
+        version_info_file = Path(__file__).parent.parent / 'version_info.json'
+        print("version_info path:", version_info_file)
+        with open(version_info_file) as info:
+            info_json = json.load(info)
+            print("version_info", version_info_file, info_json)
+            self._image_tags = info_json["imageTags"]
+            self._git_commit = info_json["gitCommit"]
 
     @property
     def image_tags(self):
