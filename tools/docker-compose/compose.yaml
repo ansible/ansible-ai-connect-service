@@ -79,6 +79,7 @@ services:
       - ANSIBLE_WCA_IDP_PASSWORD=${ANSIBLE_WCA_IDP_PASSWORD}
       - ANSIBLE_AI_MODEL_MESH_MODEL_NAME=${ANSIBLE_AI_MODEL_MESH_MODEL_NAME}
       - DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
+      - UWSGI_PROCESSES=1
     command:
       - /etc/wisdom/scripts/launch-wisdom.sh
     networks:
