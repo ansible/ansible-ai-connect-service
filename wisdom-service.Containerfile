@@ -108,6 +108,7 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf remove -y epel-release && \
     dnf clean all
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
+RUN sed -i 's,processes \+=.*,processes = 1,' /etc/wisdom/uwsgi.ini
 RUN mkdir /etc/supervisor/supervisord.d/
 COPY tools/configs/supervisord.d/auto-reload.conf /etc/supervisor/supervisord.d/auto-reload.conf
 USER 1000
