@@ -7,8 +7,9 @@ version: v1.25.0
 ignore:
   SNYK-PYTHON-PYOPENSSL-6149520:
     - '*':
-        reason: We do not support PowerPC
-        expires: 2024-05-24T15:02:32.468Z
+        reason: |
+          Issue fixed by Red Hat
+          See: https://access.redhat.com/errata/RHSA-2024:2447
         created: 2024-04-24T15:02:32.471Z
   SNYK-PYTHON-PYOPENSSL-6592766:
     - '*':
@@ -20,7 +21,8 @@ ignore:
         reason: |
           No OpenSSL refresh available yet due to low severity;
           see https://www.openssl.org/news/secadv/20240115.txt
-        expires: 2024-05-24T15:02:32.468Z
+          Issue fixed by Red Hat
+          See: https://access.redhat.com/errata/RHSA-2024:2447
         created: 2024-04-24T15:02:32.471Z
   SNYK-PYTHON-JOBLIB-6913425:
     - '*':
