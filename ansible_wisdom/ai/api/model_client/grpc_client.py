@@ -52,7 +52,7 @@ class GrpcClient(ModelMeshClient):
         super().set_inference_url(inference_url=inference_url)
         self._inference_stub = self.get_inference_stub()
 
-    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         model_id = self.get_model_id(None, model_id)
         logger.debug(f"Input prompt: {model_input}")
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")

@@ -128,7 +128,7 @@ class DummyWCAClient(ModelMeshClient):
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
         return ""
 
-    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         return {
             "model_id": "mocked_wca_client",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
@@ -166,16 +166,13 @@ class BaseWCAClient(ModelMeshClient):
     def on_backoff_ibm_cloud_identity_token(details):
         ibm_cloud_identity_token_retry_counter.inc()
 
-    def infer(self, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
-        try:
-            organization_id = int(model_input["instances"][0]["organization_id"])
-        except (KeyError, IndexError, ValueError, TypeError):
-            organization_id = None
 
+        organization_id = request.user.organization.id if request.user.organization else None
         # WCA codegen fails if a multitask prompt includes the task preamble
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         prompt = strip_task_preamble_from_multi_task_prompt(prompt)
