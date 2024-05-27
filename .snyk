@@ -27,7 +27,10 @@ ignore:
         reason: |
           ansible-wisdom-service doesn't currently use the
           vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
-        expires: 2024-05-24T15:02:32.468Z
+          We don't use joblib internally and the severity of the issue is challenged
+          by the lib maintainer because NumpyArrayWrapper is not a public class.
+          See: https://github.com/joblib/joblib/issues/1582#issuecomment-2120517671
+        expires: 2024-10-24T15:02:32.468Z
         created: 2024-04-24T15:02:32.471Z
     - ansible-risk-insight > joblib:
         reason: |
