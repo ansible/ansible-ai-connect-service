@@ -90,12 +90,14 @@ from ansible_ai_connect.ai.api.serializers import (
     DataSource,
 )
 from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomLogAwareMixin,
     WisdomServiceLogAwareTestCase,
 )
+from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
@@ -2744,3 +2746,36 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         with self.assertRaises(Exception):
             r = self.client.post(reverse('generations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+
+@modify_settings()
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+@override_settings(ANSIBLE_WCA_USERNAME='bo')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='my-secret-key')
+class TestFeatureEnableForWcaOnprem(WisdomAppsBackendMocking):
+
+    def setUp(self):
+        super().setUp()
+        self.username = 'u' + "".join(random.choices(string.digits, k=5))
+        self.user = create_user_with_provider(
+            USER_SOCIAL_AUTH_PROVIDER_AAP,
+            rh_org_id=1981,
+            social_auth_extra_data={"aap_licensed": True},
+        )
+        self.user.save()
+
+    def tearDown(self):
+        Organization.objects.filter(id=1981).delete()
+        self.user.delete()
+        super().tearDown()
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_feature_not_enabled_yet(self):
+        payload = {
+            "content": "Install Wordpress on a RHEL9",
+            "explanationId": str(uuid.uuid4()),
+        }
+        self.client.force_login(user=self.user)
+        r = self.client.post(reverse('explanations'), payload)
+        self.assertEqual(r.status_code, 404)

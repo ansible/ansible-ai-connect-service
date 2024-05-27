@@ -28,6 +28,7 @@ from prometheus_client import Counter, Histogram
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
+from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
@@ -581,3 +582,11 @@ class WCAOnPremClient(BaseWCAClient):
             )
 
         return summary
+
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        raise FeatureNotAvailable
+
+    def explain_playbook(self, request, content: str) -> str:
+        raise FeatureNotAvailable
