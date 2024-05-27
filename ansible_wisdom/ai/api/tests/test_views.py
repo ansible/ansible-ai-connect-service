@@ -144,9 +144,6 @@ class MockedMeshClient(ModelMeshClient):
                         {
                             "context": context.payload.context,
                             "prompt": context.payload.prompt,
-                            "userId": str(test.user.uuid),
-                            "rh_user_has_seat": rh_user_has_seat,
-                            "organization_id": None,
                             "suggestionId": payload.get("suggestionId"),
                         }
                     ]
@@ -156,7 +153,7 @@ class MockedMeshClient(ModelMeshClient):
 
         self.response_data = response_data
 
-    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         if self.test_inference_match:
             self.test.assertEqual(model_input, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
@@ -200,6 +197,11 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         group_1.user_set.add(self.user)
         group_2.user_set.add(self.user)
         cache.clear()
+
+    def tearDown(self):
+        Organization.objects.filter(id=1).delete()
+        self.user.delete()
+        super().tearDown()
 
     def login(self):
         self.client.login(username=self.username, password=self.password)
@@ -300,6 +302,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         )
         model_client, model_input = stub
         self.mock_model_client_with(model_client)
+        r = self.client.post(reverse('completions'), model_input)
         with self.assertLogs(logger='root', level='DEBUG') as log:
             r = self.client.post(reverse('completions'), model_input)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

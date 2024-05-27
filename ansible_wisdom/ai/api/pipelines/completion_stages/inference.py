@@ -85,9 +85,6 @@ class InferenceStage(PipelineElement):
                 {
                     "prompt": payload.prompt,
                     "context": payload.context,
-                    "userId": str(payload.userId) if payload.userId else None,
-                    "rh_user_has_seat": request._request.user.rh_user_has_seat,
-                    "organization_id": request._request.user.org_id,
                     "suggestionId": str(suggestion_id),
                 }
             ]
@@ -102,7 +99,7 @@ class InferenceStage(PipelineElement):
         start_time = time.time()
         try:
             predictions = model_mesh_client.infer(
-                data, model_id=model_id, suggestion_id=suggestion_id
+                request, data, model_id=model_id, suggestion_id=suggestion_id
             )
             model_id = predictions.get("model_id", model_id)
         except ModelTimeoutError as e:

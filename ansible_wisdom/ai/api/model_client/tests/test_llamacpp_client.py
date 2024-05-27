@@ -66,7 +66,7 @@ class TestLlamaCPPClient(TestCase):
             },
         )
 
-        response = model_client.infer(self.model_input)
+        response = model_client.infer(None, self.model_input)
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
     @responses.activate
@@ -93,7 +93,7 @@ class TestLlamaCPPClient(TestCase):
             },
         )
 
-        response = model_client.infer(self.model_input, model_id=model)
+        response = model_client.infer(None, self.model_input, model_id=model)
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
     @override_settings(ANSIBLE_AI_MODEL_NAME="test")
@@ -102,4 +102,4 @@ class TestLlamaCPPClient(TestCase):
         model_client = LlamaCPPClient(inference_url=self.inference_url)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         with self.assertRaises(ModelTimeoutError):
-            model_client.infer(self.model_input)
+            model_client.infer(None, self.model_input)
