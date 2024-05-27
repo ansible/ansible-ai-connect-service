@@ -30,8 +30,8 @@ class Organization(models.Model):
         # For saas deployment mode, telemetry is opted-in by default (telemetry_opt_out=False)
         # For others, telemetry is not supported, considered opted-out (telemetry_opt_out=True)
         if settings.DEPLOYMENT_MODE == "saas":
-            return self._telemetry_opt_out
-        return True
+            return False
+        return self._telemetry_opt_out
 
     @telemetry_opt_out.setter
     def telemetry_opt_out(self, value):
