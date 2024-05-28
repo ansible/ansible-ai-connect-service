@@ -131,6 +131,16 @@ class TestMetricsView(APITransactionTestCase):
         self.user.delete()
 
     @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
+    def test_content_type_text(self):
+        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'text/plain'})
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
+    def test_content_type_json(self):
+        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'application/json'})
+        self.assertEqual(r.status_code, HTTPStatus.NOT_ACCEPTABLE)
+
+    @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
     def test_anonymous_access(self):
         r = self.client.get(reverse('prometheus-metrics'))
         self.assertEqual(r.status_code, HTTPStatus.OK)

@@ -244,6 +244,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
 class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -281,6 +282,26 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         request.user.organization = None
         self.wca_client.explain_playbook(request, content="Some playbook")
         self.wca_client.get_api_key.assert_called_with(None)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_playbook_gen_with_lint(self):
+        fake_linter = Mock()
+        fake_linter.run_linter.return_value = "I'm super fake!"
+        self.mock_ansible_lint_caller_with(fake_linter)
+        playbook, outline = self.wca_client.generate_playbook(
+            request=Mock(), text="Install Wordpress", create_outline=True
+        )
+        self.assertEqual(playbook, "I'm super fake!")
+        self.assertEqual(outline, "Ahh!")
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_playbook_gen_when_is_not_initialized(self):
+        self.mock_ansible_lint_caller_with(None)
+        playbook, outline = self.wca_client.generate_playbook(
+            request=Mock(), text="Install Wordpress", create_outline=True
+        )
+        # Ensure nothing was done
+        self.assertEqual(playbook, "Oh!")
 
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)

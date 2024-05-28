@@ -23,14 +23,24 @@ from ansible_ai_connect.ansible_lint.lintpostprocessing import (
 )
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
-normal_sample_yaml = """---
+normal_sample_yaml = """
+- name: Hello World Sample
+  hosts: all
+  tasks:
+     - name: Hello Message
+       debug:
+         msg: "Hello World!"
+"""
+
+normal_fixed_sample_yaml = """---
 - name: Hello World Sample
   hosts: all
   tasks:
     - name: Hello Message
       debug:
-        msg: "Hello World!"
+        msg: Hello World!
 """
+
 
 error_sample_yaml = """---
 - name: Hello World Sample
@@ -53,6 +63,7 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
         """Run a normal case"""
         result = self.ansibleLintCaller.run_linter(normal_sample_yaml)
         self.assertIsNotNone(result)
+        self.assertEqual(result, normal_fixed_sample_yaml)
 
     def test_ansible_lint_caller_with_error(self):
         """Run an error case"""
