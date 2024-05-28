@@ -473,8 +473,9 @@ class WCAClient(BaseWCAClient):
     def generate_playbook(
         self, request, text: str = "", create_outline: bool = False, outline: str = ""
     ) -> tuple[str, str]:
-        api_key = self.get_api_key(request.user.organization.id)
-        model_id = self.get_model_id(request.user.organization.id)
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(organization_id)
+        model_id = self.get_model_id(organization_id)
 
         headers = self._get_base_headers(api_key)
         data = {
@@ -493,8 +494,9 @@ class WCAClient(BaseWCAClient):
         return response["playbook"], response["outline"]
 
     def explain_playbook(self, request, content: str) -> str:
-        api_key = self.get_api_key(request.user.organization.id)
-        model_id = self.get_model_id(request.user.organization.id)
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(organization_id)
+        model_id = self.get_model_id(organization_id)
 
         headers = self._get_base_headers(api_key)
         data = {
