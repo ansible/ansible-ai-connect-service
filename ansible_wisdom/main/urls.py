@@ -64,7 +64,9 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-    path('metrics/', MetricsView.as_view(), name='prometheus-metrics'),
+    # Do not add a trailing slash. django_prometheus uses plain /metrics
+    # Adding a trailing slash breaks our metric collection in all sorts of ways.
+    path('metrics', MetricsView.as_view(), name='prometheus-metrics'),
     path('admin/', admin.site.urls),
     path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
