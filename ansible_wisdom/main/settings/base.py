@@ -460,6 +460,9 @@ DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
 )
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
+ENABLE_ARI_POSTPROCESS_FOR_WCA = (
+    os.getenv('ENABLE_ARI_POSTPROCESS_FOR_WCA', 'False').lower() == 'true'
+)
 ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
 ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, 'rules')
 ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, 'data')
