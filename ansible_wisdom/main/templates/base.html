@@ -19,17 +19,6 @@
         </div>
         <br />
         {% endif %}
-        {% if not use_tech_preview %}
-        <div class="pf-c-alert pf-m-info" aria-label="Information alert">
-          <div class="pf-c-alert__icon">
-            <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
-          </div>
-          <p class="pf-c-alert__title">
-            The {{ project_name }} Technical Preview is no longer available. For continued access to the commercial service, please see <a class="pf-l-level__item" href="https://www.redhat.com/en/blog/getting-started-red-hat-ansible-lightspeed-ibm-watsonx-code-assistant" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span>Getting started with {{ project_name }}</a>.
-          </p>
-        </div>
-        <br />
-        {% endif %}
         {% endblock banner %}
         {% if messages %}
             <ul class="messages">
