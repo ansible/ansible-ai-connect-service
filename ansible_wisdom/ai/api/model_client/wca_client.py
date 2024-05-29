@@ -495,7 +495,14 @@ class WCAClient(BaseWCAClient):
             json=data,
         )
         response = json.loads(result.text)
-        return response["playbook"], response["outline"]
+
+        playbook = response["playbook"]
+        outline = response["outline"]
+
+        if ansible_lint_caller := apps.get_app_config("ai").get_ansible_lint_caller():
+            playbook = ansible_lint_caller.run_linter(playbook)
+
+        return playbook, outline
 
     def explain_playbook(self, request, content: str) -> str:
         organization_id = request.user.organization.id if request.user.organization else None
