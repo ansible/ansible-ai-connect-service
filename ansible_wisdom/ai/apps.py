@@ -94,7 +94,9 @@ class AiConfig(AppConfig):
         return super().ready()
 
     def get_ari_caller(self):
-        if not settings.ENABLE_ARI_POSTPROCESS:
+        # Django calls apps.ready() when registering INSTALLED_APPS
+        # We can therefore guarantee self.model_mesh_client is not None
+        if not self.model_mesh_client.supports_ari_postprocessing():
             logger.info("Postprocessing is disabled.")
             self._ari_caller = UNINITIALIZED
             return None

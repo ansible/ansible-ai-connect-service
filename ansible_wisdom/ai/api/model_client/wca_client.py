@@ -313,6 +313,9 @@ class BaseWCAClient(ModelMeshClient):
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         raise NotImplementedError
 
+    def supports_ari_postprocessing(self) -> bool:
+        return settings.ENABLE_ARI_POSTPROCESS and settings.WCA_ENABLE_ARI_POSTPROCESS
+
 
 class WCAClient(BaseWCAClient):
     def __init__(self, inference_url):

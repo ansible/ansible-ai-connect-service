@@ -84,13 +84,87 @@ class TestAiApp(APITestCase):
         self.assertIsInstance(app_config.model_mesh_client, DummyClient)
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    def test_enable_ari(self):
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='dummy')
+    def test_enable_ari_default(self):
         app_config = AppConfig.create('ansible_ai_connect.ai')
         app_config.ready()
         self.assertIsNotNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_disable_ari(self):
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='dummy')
+    def test_disable_ari_default(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    def test_enable_ari_wca_cloud(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNotNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    def test_enable_ari_wca_cloud_disable_wca(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    def test_disable_ari_wca_cloud_enable_wca(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca')
+    def test_disable_ari_wca_cloud_disable_wca(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
+    @override_settings(ANSIBLE_WCA_USERNAME="username")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    def test_enable_ari_wca_onprem(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNotNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
+    @override_settings(ANSIBLE_WCA_USERNAME="username")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    def test_enable_ari_wca_onprem_disable_wca(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
+    @override_settings(ANSIBLE_WCA_USERNAME="username")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    def test_disable_ari_wca_onprem_enable_wca(self):
+        app_config = AppConfig.create('ansible_ai_connect.ai')
+        app_config.ready()
+        self.assertIsNone(app_config.get_ari_caller())
+
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
+    @override_settings(ANSIBLE_WCA_USERNAME="username")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    def test_disable_ari_wca_onprem_disable_wca(self):
         app_config = AppConfig.create('ansible_ai_connect.ai')
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
