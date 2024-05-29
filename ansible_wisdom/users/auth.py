@@ -60,6 +60,10 @@ class AAPOAuth2(BaseOAuth2):
         """Overrides super extra_data to add license check"""
         data = super().extra_data(user, uid, response, details=details, *args, **kwargs)
         data['aap_licensed'] = self.user_has_valid_license(response.get('access_token'))
+        data['aap_system_auditor'] = (
+            response['is_system_auditor'] if 'is_system_auditor' in response else False
+        )
+        data['aap_superuser'] = response['is_superuser'] if 'is_superuser' in response else False
         return data
 
     def user_has_valid_license(self, access_token):

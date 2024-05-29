@@ -17,12 +17,13 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import django.utils.timezone
 import requests
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError, ReadTimeout
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import (
@@ -40,6 +41,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaNoDefaultModelId,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
 )
@@ -130,6 +132,8 @@ def assert_call_count_metrics(metric):
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(WCA_SECRET_DUMMY_SECRETS='11009103:my-key<sep>my-optimized-model')
     def test_mock_wca_get_api_key(self):
@@ -182,7 +186,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
     def test_get_model_id_without_org_id(self):
         model_client = WCAClient(inference_url='http://example.com/')
-        with self.assertRaises(WcaModelIdNotFound):
+        with self.assertRaises(WcaNoDefaultModelId):
             model_client.get_model_id(None, None)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS='123:')
@@ -236,9 +240,42 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         b = WCAClient.fatal_exception(exc)
         self.assertTrue(b)
 
+    def test_playbook_gen(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        wca_client.get_api_key = Mock(return_value="some-key")
+        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
+        wca_client.get_model_id = Mock(return_value="a-random-model")
+        wca_client.session = Mock()
+        response = Mock
+        response.text = '{"playbook": "Oh!", "outline": "Ahh!"}'
+        wca_client.session.post.return_value = response
+        request = Mock()
+        playbook, outline = wca_client.generate_playbook(
+            request, text="Install Wordpress", create_outline=True
+        )
+        self.assertEqual(playbook, "Oh!")
+        self.assertEqual(outline, "Ahh!")
+
+    def test_playbook_exp(self):
+        wca_client = WCAClient(inference_url='http://example.com/')
+        wca_client.get_api_key = Mock(return_value="some-key")
+        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
+        wca_client.get_model_id = Mock(return_value="a-random-model")
+        wca_client.session = Mock()
+        response = Mock
+        response.text = '{"explanation": "!Óh¡"}'
+        wca_client.session.post.return_value = response
+        request = Mock()
+        explanation = wca_client.explain_playbook(request, content="Some playbook")
+        self.assertEqual(explanation, "!Óh¡")
+
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+@override_settings(ANSIBLE_WCA_IDP_URL="https://iam.cloud.ibm.com/identity")
+@override_settings(ANSIBLE_WCA_IDP_LOGIN=None)
+@override_settings(ANSIBLE_WCA_IDP_PASSWORD=None)
 class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
     def test_get_token(self):
@@ -267,6 +304,25 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             "https://iam.cloud.ibm.com/identity/token",
             headers=headers,
             data=data,
+            auth=None,
+        )
+
+    @override_settings(ANSIBLE_WCA_IDP_URL='http://some-different-idp')
+    @override_settings(ANSIBLE_WCA_IDP_LOGIN='jimmy')
+    @override_settings(ANSIBLE_WCA_IDP_PASSWORD='jimmy')
+    @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
+    def test_get_token_with_auth(self):
+        model_client = WCAClient(inference_url='http://example.com/')
+        model_client.session.post = Mock()
+        basic = HTTPBasicAuth('jimmy', 'jimmy')
+
+        model_client.get_token('abcdef')
+
+        model_client.session.post.assert_called_once_with(
+            "http://some-different-idp/token",
+            headers=ANY,
+            data=ANY,
+            auth=basic,
         )
 
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
@@ -530,6 +586,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         )
 
 
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -695,6 +752,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
 
 
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
 class TestDummySecretManager(TestCase):
     def setUp(self):
         super().setUp()
@@ -725,6 +783,9 @@ class TestDummySecretManager(TestCase):
         self.assertEqual(sm.get_secret(123, Suffixes.API_KEY)["SecretString"], "abcdef")
 
 
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
@@ -769,6 +830,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 @override_settings(ANSIBLE_WCA_USERNAME='username')
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
     def test_headers(self):
         suggestion_id = 'suggestion_id'
@@ -813,6 +875,7 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
 @override_settings(ANSIBLE_WCA_USERNAME='username')
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY='12345')
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME='model-name')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
     def test_headers(self):
         suggestions = [

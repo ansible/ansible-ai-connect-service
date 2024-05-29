@@ -255,45 +255,6 @@ class FeedbackRequestSerializerTest(TestCase):
         except Exception:
             self.fail("serializer is_valid should not have raised exception")
 
-    def test_commercial_user_raises_exception_on_ansibleContent(self):
-        user = Mock(rh_user_has_seat=True)
-        request = Mock(user=user)
-
-        serializer = FeedbackRequestSerializer(
-            context={'request': request},
-            data={
-                "ansibleContent": {
-                    "content": "---\n- hosts: all\n  tasks:\n  - name: Install ssh\n",
-                    "documentUri": "file:///home/user/ansible/test.yaml",
-                    "trigger": "0",
-                }
-            },
-        )
-
-        # ansibleContent feedback raises exception when seat
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
-
-    def test_commercial_user_not_opted_out_raises_exception_on_ansibleContent(self):
-        org = Mock(telemetry_opt_out=False)
-        user = Mock(rh_user_has_seat=True, organization=org)
-        request = Mock(user=user)
-
-        serializer = FeedbackRequestSerializer(
-            context={'request': request},
-            data={
-                "ansibleContent": {
-                    "content": "---\n- hosts: all\n  tasks:\n  - name: Install ssh\n",
-                    "documentUri": "file:///home/user/ansible/test.yaml",
-                    "trigger": "0",
-                }
-            },
-        )
-
-        # ansibleContent feedback raises exception when seat
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
-
     def test_commercial_user_allows_sentimentFeedback(self):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)

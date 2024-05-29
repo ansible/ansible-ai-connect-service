@@ -23,7 +23,9 @@ import requests
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
+from health_check.exceptions import ServiceUnavailable
 from prometheus_client import Counter, Histogram
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
 from ansible_ai_connect.ai.api.formatter import (
@@ -37,6 +39,13 @@ from ansible_ai_connect.ai.api.model_client.wca_utils import (
     TokenContext,
     TokenResponseChecks,
 )
+from ansible_ai_connect.healthcheck.backends import (
+    ERROR_MESSAGE,
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+)
 
 from ..aws.wca_secret_manager import Suffixes, WcaSecretManagerError
 from .base import ModelMeshClient
@@ -46,10 +55,13 @@ from .exceptions import (
     WcaInferenceFailure,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaNoDefaultModelId,
     WcaSuggestionIdCorrelationFailure,
     WcaTokenFailure,
     WcaUsernameNotFound,
 )
+
+MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
@@ -85,6 +97,14 @@ ibm_cloud_identity_token_retry_counter = Counter(
     "Counter of IBM Cloud identity token API invocation retries",
     namespace=NAMESPACE,
 )
+
+
+class WcaTokenRequestException(ServiceUnavailable):
+    """There was an error trying to get a WCA token."""
+
+
+class WcaModelRequestException(ServiceUnavailable):
+    """There was an error trying to invoke a WCA Model."""
 
 
 class DummyWCAClient(ModelMeshClient):
@@ -298,6 +318,9 @@ class WCAClient(BaseWCAClient):
         super().__init__(inference_url=inference_url)
 
     def get_token(self, api_key):
+        basic = None
+        if settings.ANSIBLE_WCA_IDP_LOGIN:
+            basic = HTTPBasicAuth(settings.ANSIBLE_WCA_IDP_LOGIN, settings.ANSIBLE_WCA_IDP_PASSWORD)
         # TODO: store token and only fetch a new one if it has expired
         # https://cloud.ibm.com/docs/account?topic=account-iamtoken_from_apikey
         logger.debug("Fetching WCA token")
@@ -317,9 +340,10 @@ class WCAClient(BaseWCAClient):
         @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
-                "https://iam.cloud.ibm.com/identity/token",
+                f"{settings.ANSIBLE_WCA_IDP_URL}/token",
                 headers=headers,
                 data=data,
+                auth=basic,
             )
 
         try:
@@ -364,19 +388,17 @@ class WCAClient(BaseWCAClient):
         organization_id: Optional[int] = None,
         requested_model_id: str = '',
     ) -> str:
-        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
-            return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
-
-        if organization_id is None:
-            logger.error(
-                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_MODEL_NAME is set"
-            )
-            raise WcaModelIdNotFound(model_id=requested_model_id)
-
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
+        elif settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+        elif organization_id is None:
+            logger.error(
+                "User is not linked to an organization and no default WCA model ID is found"
+            )
+            raise WcaNoDefaultModelId
 
         try:
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
@@ -410,6 +432,82 @@ class WCAClient(BaseWCAClient):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
         }
+
+    def self_test(self) -> HealthCheckSummary:
+        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
+        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_TOKENS: "ok",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            self.infer_from_parameters(
+                wca_api_key,
+                wca_model_id,
+                "",
+                "- name: install ffmpeg on Red Hat Enterprise Linux",
+            )
+        except WcaInferenceFailure as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+        except Exception as e:
+            logger.exception(str(e))
+            # For any other failure we assume the whole WCA service is unavailable.
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_TOKENS,
+                HealthCheckSummaryException(WcaTokenRequestException(ERROR_MESSAGE), e),
+            )
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+
+        return summary
+
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        api_key = self.get_api_key(request.user.organization.id)
+        model_id = self.get_model_id(request.user.organization.id)
+
+        headers = self._get_base_headers(api_key)
+        data = {
+            "model_id": model_id,
+            "text": text,
+            "create_outline": create_outline,
+        }
+        if outline:
+            data["outline"] = outline
+        result = self.session.post(
+            f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
+            headers=headers,
+            json=data,
+        )
+        response = json.loads(result.text)
+        return response["playbook"], response["outline"]
+
+    def explain_playbook(self, request, content: str) -> str:
+        api_key = self.get_api_key(request.user.organization.id)
+        model_id = self.get_model_id(request.user.organization.id)
+
+        headers = self._get_base_headers(api_key)
+        data = {
+            "model_id": model_id,
+            "playbook": content,
+        }
+        result = self.session.post(
+            f"{self._inference_url}/v1/wca/explain/ansible/playbook",
+            headers=headers,
+            json=data,
+        )
+        response = json.loads(result.text)
+        return response["explanation"]
 
 
 class WCAOnPremClient(BaseWCAClient):
@@ -458,3 +556,28 @@ class WCAOnPremClient(BaseWCAClient):
         return {
             "Authorization": f"ZenApiKey {token}",
         }
+
+    def self_test(self) -> HealthCheckSummary:
+        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
+        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            self.infer_from_parameters(
+                wca_api_key,
+                wca_model_id,
+                "",
+                "- name: install ffmpeg on Red Hat Enterprise Linux",
+            )
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(WcaModelRequestException(ERROR_MESSAGE), e),
+            )
+
+        return summary

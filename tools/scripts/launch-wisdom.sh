@@ -28,7 +28,7 @@ done
 if [ "${DEPLOYMENT_MODE}" == "upstream" ]; then
     # for upstream, creating a out-of-box tesing user for starting quick
     echo "Creating a testing user for upstream mode..."
-    /var/www/venv/bin/python ansible_wisdom/manage.py createtoken --username testuser --password testuser --token-name testuser_token --create-user
+    /var/www/venv/bin/wisdom-manage createtoken --username testuser --password testuser --token-name testuser_token --create-user
 fi
 if [ ! "${DEPLOYMENT_MODE}" == "saas" ]; then
     /var/www/venv/bin/wisdom-manage createapplication --name "${ANSIBLE_AI_PROJECT_NAME:-Ansible AI Connect} for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy --redirect-uris "vscode://redhat.ansible vscodium://redhat.ansible vscode-insiders://redhat.ansible code-oss://redhat.ansible checode://redhat.ansible" public authorization-code

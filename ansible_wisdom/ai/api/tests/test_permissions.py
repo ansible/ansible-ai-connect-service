@@ -37,6 +37,7 @@ from ansible_ai_connect.users.tests.test_users import create_user
 # that expects both Key and Model ID to be defined.
 @override_settings(DEPLOYMENT_MODE="onprem")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-dummy")
+@override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
     payload = {
         "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -63,6 +64,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(r, AcceptedTermsPermission.code, AcceptedTermsPermission.message)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_commercial_user_has_not_accepted(self):
         self.user.rh_user_has_seat = True
         with self.not_accepted_terms():
@@ -70,6 +72,7 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             r = self.client.post(reverse('completions'), self.payload)
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_community_user_has_accepted(self):
         with self.accepted_terms():
             self.client.force_authenticate(user=self.user)

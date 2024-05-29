@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Ansible AI Connect.
-  version: 0.0.8
+  version: 0.0.9
   description: Equip the automation developer at Lightspeed.
 paths:
   /api/v0/ai/attributions/:
@@ -214,20 +214,6 @@ paths:
                 description: A valid inline suggestion feedback sample request to
                   get details about the suggestion like latency time, user decision
                   time, user action and suggestion id.
-              ValidAnsibleContentFeedbackExample:
-                value:
-                  ansibleContent:
-                    content: |
-                      ---
-                      - hosts: all
-                        become: yes
-
-                        tasks:
-                        - name: Install ssh
-                    documentUri: file:///home/user/ansible/test.yaml
-                    trigger: '0'
-                summary: Feedback Request sample for Ansible content upload
-                description: A valid sample request to get ansible content as feedback.
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/FeedbackRequest'
@@ -276,47 +262,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenerationResponse'
-          description: ''
-        '204':
-          description: Empty response
-        '400':
-          description: Bad Request
-        '401':
-          description: Unauthorized
-        '429':
-          description: Request was throttled
-        '503':
-          description: Service Unavailable
-  /api/v0/ai/summaries/:
-    post:
-      operationId: ai_summaries_create
-      description: Returns a text that summarizes an input text.
-      summary: Elaborate input text
-      tags:
-      - ai
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SummaryRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SummaryRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SummaryRequest'
-        required: true
-      security:
-      - oauth2:
-        - read
-        - write
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SummaryResponse'
           description: ''
         '204':
           description: Empty response
@@ -641,27 +586,6 @@ components:
       - '1'
       - '2'
       type: string
-    AnsibleContentFeedback:
-      type: object
-      properties:
-        content:
-          type: string
-          title: Ansible Content
-          description: Ansible file content.
-        documentUri:
-          type: string
-        trigger:
-          $ref: '#/components/schemas/TriggerEnum'
-        activityId:
-          type: string
-          format: uuid
-          title: Activity ID
-          description: A UUID that identifies a user activity session to the document
-            uploaded.
-      required:
-      - content
-      - documentUri
-      - trigger
     Attribution:
       type: object
       properties:
@@ -866,8 +790,6 @@ components:
     FeedbackRequest:
       type: object
       properties:
-        ansibleContent:
-          $ref: '#/components/schemas/AnsibleContentFeedback'
         inlineSuggestion:
           $ref: '#/components/schemas/InlineSuggestionFeedback'
         issueFeedback:
@@ -887,24 +809,33 @@ components:
     GenerationRequest:
       type: object
       properties:
-        content:
+        text:
           type: string
           title: Description content
           description: The description that needs to be converted to a playbook.
         generationId:
           type: string
           format: uuid
-          title: Summary ID
+          title: generation ID
           description: A UUID that identifies the particular generation data is being
             requested for.
+        createOutline:
+          type: boolean
+          default: false
+          title: generate outline
+          description: Indicates whether the answer should also include an outline
+            of the Ansible Playbook.
+        outline:
+          type: string
+          description: A long step by step outline of the expected Ansible Playbook.
         metadata:
           $ref: '#/components/schemas/Metadata'
       required:
-      - content
+      - text
     GenerationResponse:
       type: object
       properties:
-        content:
+        playbook:
           type: string
         format:
           type: string
@@ -914,9 +845,12 @@ components:
           title: Explanation ID
           description: A UUID that identifies the particular summary data is being
             requested for.
+        outline:
+          type: string
       required:
-      - content
       - format
+      - outline
+      - playbook
     InlineSuggestionFeedback:
       type: object
       properties:
@@ -1037,39 +971,6 @@ components:
       - expectedSuggestion
       - prompt
       - providedSuggestion
-    SummaryRequest:
-      type: object
-      properties:
-        content:
-          type: string
-          title: Description content
-          description: The description that needs to be summarized.
-        summaryId:
-          type: string
-          format: uuid
-          title: Summary ID
-          description: A UUID that identifies the particular summary data is being
-            requested for.
-        metadata:
-          $ref: '#/components/schemas/Metadata'
-      required:
-      - content
-    SummaryResponse:
-      type: object
-      properties:
-        content:
-          type: string
-        format:
-          type: string
-        summaryId:
-          type: string
-          format: uuid
-          title: Explanation ID
-          description: A UUID that identifies the particular summary data is being
-            requested for.
-      required:
-      - content
-      - format
     TelemetrySettingsRequest:
       type: object
       properties:
@@ -1079,12 +980,6 @@ components:
             collection.
       required:
       - optOut
-    TriggerEnum:
-      enum:
-      - '0'
-      - '1'
-      - '2'
-      type: string
     TypeEnum:
       enum:
       - bug-report

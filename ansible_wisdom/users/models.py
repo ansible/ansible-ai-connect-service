@@ -132,3 +132,13 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     @cached_property
     def rh_aap_licensed(self) -> bool:
         return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_licensed']
+
+    @cached_property
+    def rh_aap_system_auditor(self) -> bool:
+        return (
+            self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_system_auditor']
+        )
+
+    @cached_property
+    def rh_aap_superuser(self) -> bool:
+        return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_superuser']

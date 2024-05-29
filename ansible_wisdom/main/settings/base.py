@@ -74,10 +74,12 @@ ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
 ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
 ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
 ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
-ANSIBLE_WCA_ONPREM_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_ONPREM_HEALTHCHECK_API_KEY")
-ANSIBLE_WCA_ONPREM_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_ONPREM_HEALTHCHECK_MODEL_ID")
 ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
 
+# default: https://iam.cloud.ibm.com/identity
+ANSIBLE_WCA_IDP_URL = os.getenv("ANSIBLE_WCA_IDP_URL", "https://iam.cloud.ibm.com/identity")
+ANSIBLE_WCA_IDP_LOGIN = os.getenv("ANSIBLE_WCA_IDP_LOGIN")
+ANSIBLE_WCA_IDP_PASSWORD = os.getenv("ANSIBLE_WCA_IDP_PASSWORD")
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
@@ -135,7 +137,7 @@ LOGOUT_REDIRECT_URL = 'home'
 LOGIN_ERROR_URL = 'login'
 
 ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
-    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'True').lower() == 'true'
+    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'False').lower() == 'true'
 )
 
 SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
@@ -558,14 +560,15 @@ ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv('ENABLE_HEALTHCHECK_MODEL_MESH', 'True
 ENABLE_HEALTHCHECK_SECRET_MANAGER = (
     os.getenv('ENABLE_HEALTHCHECK_SECRET_MANAGER', 'True').lower() == 'true'
 )
-ENABLE_HEALTHCHECK_WCA = os.getenv('ENABLE_HEALTHCHECK_WCA', 'True').lower() == 'true'
-# On Prem solution by default is false
-ENABLE_HEALTHCHECK_WCA_ONPREM = (
-    os.getenv('ENABLE_HEALTHCHECK_WCA_ONPREM', 'False').lower() == 'true'
-)
 ENABLE_HEALTHCHECK_AUTHORIZATION = (
     os.getenv('ENABLE_HEALTHCHECK_AUTHORIZATION', 'True').lower() == 'true'
 )
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
+)
+
+# Follow AWX naming for this environment variable
+# It is used to protect Prometheus's /metrics endpoint
+ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
+    os.getenv('ALLOW_METRICS_FOR_ANONYMOUS_USERS', 'True').lower() == 'true'
 )

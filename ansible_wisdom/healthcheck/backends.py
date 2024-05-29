@@ -12,35 +12,66 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import requests
 from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
-from health_check.exceptions import ServiceUnavailable
+from health_check.exceptions import HealthCheckException, ServiceUnavailable
 
 import ansible_ai_connect.ai.search
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_ai_connect.ai.api.model_client.wca_client import WcaInferenceFailure
 from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 ERROR_MESSAGE = "An error occurred"
+MODEL_MESH_HEALTH_CHECK_MODELS = "models"
+MODEL_MESH_HEALTH_CHECK_PROVIDER = "provider"
 
 
-class WcaTokenRequestException(ServiceUnavailable):
-    """There was an error trying to get a WCA token."""
+class HealthCheckSummaryException:
+    exception: HealthCheckException
+    cause: Exception
+
+    def __init__(self, exception: HealthCheckException, cause: Exception = None) -> None:
+        self.exception = exception
+        self.cause = cause
 
 
-class WcaModelRequestException(ServiceUnavailable):
-    """There was an error trying to invoke a WCA Model."""
+class HealthCheckSummary:
+
+    items: dict[str, HealthCheckSummaryException | str]
+
+    def __init__(self, initial_items: dict[str, HealthCheckSummaryException | str]) -> None:
+        self.items = initial_items
+
+    def add_exception(self, key: str, exception: HealthCheckSummaryException):
+        self.items.update({key: exception})
+
+    def add_message(self, key: str, message: str):
+        self.items.update({key: message})
 
 
 class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
     enabled = True
 
+    summary: HealthCheckSummary = HealthCheckSummary({})
+
     def pretty_status(self):
         if not self.enabled:
-            return "disabled"
-        return str(super().pretty_status()) if self.errors else 'ok'
+            return 'disabled'
+        if len(self.errors) == 0 and len(self.summary.items) == 0:
+            return 'ok'
+
+        if len(self.summary.items) > 0:
+            response = {}
+            for key in self.summary.items:
+                value = self.summary.items[key]
+                if isinstance(value, str):
+                    response[key] = value
+                elif isinstance(value, HealthCheckSummaryException):
+                    response[key] = str(value.exception)
+
+            return response
+
+        return str(super().pretty_status())
 
 
 class ModelServerHealthCheck(BaseLightspeedHealthCheck):
@@ -48,38 +79,18 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
     # status code even if the check errors.
     critical_service = True
 
-    def __init__(self):
-        super().__init__()
-        self.api_type = settings.ANSIBLE_AI_MODEL_MESH_API_TYPE
-        if self.api_type == 'http':
-            self.url = f'{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping'
-        elif self.api_type == 'grpc':
-            self.url = (
-                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL}://'
-                f'{settings.ANSIBLE_AI_MODEL_MESH_HOST}:'
-                f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz'
-            )
-        else:  # 'mock' & 'wca'
-            self.url = None
-
     def check_status(self):
         self.enabled = settings.ENABLE_HEALTHCHECK_MODEL_MESH
         if not self.enabled:
             return
 
-        try:
-            if self.url:
-                # As of today (2023-03-27) SSL Certificate Verification fails with
-                # the gRPC model server in the Staging environment.  The verify
-                # option in the following line is just TEMPORARY and will be removed
-                # as soon as the certificate is replaced with a valid one.
-                res = requests.get(self.url, verify=(self.api_type != 'grpc'))  # !!!!! TODO !!!!!
-                if res.status_code != 200:
-                    raise Exception()
-            else:
-                pass
-        except Exception as e:
-            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
+        model_client = apps.get_app_config("ai").model_mesh_client
+        summary: HealthCheckSummary = model_client.self_test()
+        self.summary = summary
+        for key in self.summary.items:
+            value = self.summary.items[key]
+            if isinstance(value, HealthCheckSummaryException):
+                self.add_error(value.exception, value.cause)
 
     def identifier(self):
         return self.__class__.__name__  # Display name on the endpoint.
@@ -102,88 +113,6 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
 
     def identifier(self):
         return self.__class__.__name__
-
-
-class WCAHealthCheckBase(BaseLightspeedHealthCheck):
-    critical_service = True
-    enabled = False
-
-    def check_status(self):
-        if not self.is_enabled():
-            return
-
-        try:
-            self.get_wca_client().infer_from_parameters(
-                self.get_wca_api_key(),
-                self.get_wca_model_id(),
-                "",
-                "- name: install ffmpeg on Red Hat Enterprise Linux",
-            )
-        except WcaInferenceFailure as e:
-            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
-        except Exception as e:
-            # For any other failure we assume the whole WCA service is unavailable.
-            self.add_error(WcaTokenRequestException(ERROR_MESSAGE), e)
-            self.add_error(WcaModelRequestException(ERROR_MESSAGE), e)
-
-    def is_enabled(self) -> bool:
-        return self.enabled
-
-    def get_wca_api_key(self):
-        return None
-
-    def get_wca_model_id(self):
-        return None
-
-    def get_wca_client(self):
-        return None
-
-    def pretty_status(self):
-        if not self.is_enabled():
-            return {
-                "tokens": "disabled",
-                "models": "disabled",
-            }
-
-        token_error = [item for item in self.errors if isinstance(item, WcaTokenRequestException)]
-        model_error = [item for item in self.errors if isinstance(item, WcaModelRequestException)]
-        return {
-            "tokens": str(token_error[0]) if token_error else "ok",
-            "models": str(model_error[0]) if model_error else "ok",
-        }
-
-    def identifier(self):
-        return self.__class__.__name__
-
-
-class WCAHealthCheck(WCAHealthCheckBase):
-    def is_enabled(self) -> bool:
-        self.enabled = settings.ENABLE_HEALTHCHECK_WCA
-        return self.enabled
-
-    def get_wca_client(self):
-        return apps.get_app_config("ai").get_wca_client()
-
-    def get_wca_api_key(self):
-        return settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
-
-    def get_wca_model_id(self):
-        return settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
-
-
-class WCAOnPremHealthCheck(WCAHealthCheckBase):
-    def is_enabled(self) -> bool:
-        self.enabled = settings.ENABLE_HEALTHCHECK_WCA_ONPREM
-        return self.enabled
-
-    def get_wca_client(self):
-        return apps.get_app_config("ai").get_wca_onprem_client()
-
-    def get_wca_api_key(self):
-        return settings.ANSIBLE_WCA_ONPREM_HEALTHCHECK_API_KEY
-
-    def get_wca_model_id(self):
-        return settings.ANSIBLE_WCA_ONPREM_HEALTHCHECK_MODEL_ID
 
 
 class AuthorizationHealthCheck(BaseLightspeedHealthCheck):

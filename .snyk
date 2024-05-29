@@ -1,0 +1,44 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+# To format the date now and in 3 months:
+#   date -u +"%Y-%m-%dT%H:%M:%SZ"
+#   date -d 'now + 3 month' -u +"%Y-%m-%dT%H:%M:%SZ"
+ignore:
+  SNYK-PYTHON-PYOPENSSL-6149520:
+    - '*':
+        reason: |
+          Issue fixed by Red Hat
+          See: https://access.redhat.com/errata/RHSA-2024:2447
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-PYOPENSSL-6592766:
+    - '*':
+        reason: SSL_OP_NO_TICKET option isn't enabled
+        expires: 2024-10-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-PYOPENSSL-6157250:
+    - '*':
+        reason: |
+          No OpenSSL refresh available yet due to low severity;
+          see https://www.openssl.org/news/secadv/20240115.txt
+          Issue fixed by Red Hat
+          See: https://access.redhat.com/errata/RHSA-2024:2447
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-JOBLIB-6913425:
+    - '*':
+        reason: |
+          ansible-wisdom-service doesn't currently use the
+          vulnerable component 'joblib.numpy_pickle::NumpyArrayWrapper'
+          We don't use joblib internally and the severity of the issue is challenged
+          by the lib maintainer because NumpyArrayWrapper is not a public class.
+          See: https://github.com/joblib/joblib/issues/1582#issuecomment-2120517671
+        expires: 2024-10-24T15:02:32.468Z
+        created: 2024-04-24T15:02:32.471Z
+  SNYK-PYTHON-CRYPTOGRAPHY-6913422:
+    - '*':
+        reason: |
+          No DSA key validation is done at our level and TLS is handle
+          by OpenShift
+        expires: 2024-08-21T12:19:22Z
+        created: 2024-05-21T12:19:22Z
+patch: {}

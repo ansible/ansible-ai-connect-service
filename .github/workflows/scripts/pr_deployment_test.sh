@@ -55,8 +55,9 @@ invoke_pr_test() {
 wait_for_pr_deployment() {
 #############################
   PR_NUMBER=$1
+  CLUSTER_HOST=$2
   echo "wait_for_pr_deployment: PR_NUMBER=${PR_NUMBER}"
-  URL="https://wisdom-service-wisdom-pr-${PR_NUMBER}.apps.stage2-west.v2dz.p1.openshiftapps.com/check/"
+  URL="https://wisdom-service-wisdom-pr-${PR_NUMBER}.apps.${CLUSTER_HOST}/check/"
   # URL=https://stage.ai.ansible.redhat.com/check/
   for i in {1..16} # 8 minutes shouid be enough
   do

@@ -18,34 +18,36 @@
                     {% if not user.is_authenticated %}
                     <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
 
-                    <div style="margin-top: 25px">
                     {% if deployment_mode == 'onprem' %}
-                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with AAP</a>
+                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Ansible Automation Platform</a>
                     {% else %}
                     <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat</a>
                     {% endif %}
-                    </div>
                     {% endif %}
 
+                <div class="pf-l-bullseye">
+                  <div class="pf-l-bullseye__item">
                     <div class="pf-l-level pf-m-gutter" style="margin-top: 60px">
-                        <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
-                        <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
-                        <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
-                        {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
-                        <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
-                        {% endif %}
-                        {% if not user.is_authenticated %}
-                        {% if use_tech_preview %}
-                        {% if use_github_team %}
-                        <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
-                        {% else %}
-                        <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
-                        {% endif %}
-                        {% endif %}
-                        {% endif %}
+                      <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
+                      <a class="pf-l-level__item" href="https://docs.ai.ansible.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+                      <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+                      {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_org_has_subscription and user.rh_user_is_org_admin %}
+                      <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+                      {% endif %}
+                      {% if not user.is_authenticated %}
+                      {% if use_tech_preview %}
+                      {% if use_github_team %}
+                      <a class="pf-l-level__item" href="{% url 'social:begin' 'github-team' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+                      {% else %}
+                      <a class="pf-l-level__item" href="{% url 'social:begin' 'github' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span class="fas fa-sign-in-alt"></span> Log in to Tech Preview</a>
+                      {% endif %}
+                      {% endif %}
+                      {% endif %}
                     </div>
-
+                  </div>
                 </div>
+
+              </div>
             </div>
             {% else %}
             <div class="pf-l-bullseye__item">
