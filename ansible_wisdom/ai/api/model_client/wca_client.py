@@ -313,7 +313,7 @@ class BaseWCAClient(ModelMeshClient):
         raise NotImplementedError
 
     def supports_ari_postprocessing(self) -> bool:
-        return settings.ENABLE_ARI_POSTPROCESS and settings.ENABLE_ARI_POSTPROCESS_FOR_WCA
+        return settings.ENABLE_ARI_POSTPROCESS and settings.WCA_ENABLE_ARI_POSTPROCESS
 
 
 class WCAClient(BaseWCAClient):

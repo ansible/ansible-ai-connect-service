@@ -460,9 +460,6 @@ DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
 )
 
 ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
-ENABLE_ARI_POSTPROCESS_FOR_WCA = (
-    os.getenv('ENABLE_ARI_POSTPROCESS_FOR_WCA', 'False').lower() == 'true'
-)
 ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
 ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, 'rules')
 ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, 'data')
@@ -549,6 +546,7 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
+WCA_ENABLE_ARI_POSTPROCESS = os.getenv('WCA_ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
