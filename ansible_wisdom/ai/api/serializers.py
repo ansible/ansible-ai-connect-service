@@ -395,7 +395,7 @@ class ExplanationRequestSerializer(serializers.Serializer):
     class Meta:
         fields = ['content', 'explanationId', 'ansibleExtensionVersion']
 
-    content = serializers.CharField(
+    content = AnonymizedCharField(
         required=True,
         label="Playbook content",
         help_text=("The playbook that needs to be explained."),
@@ -434,7 +434,7 @@ class GenerationRequestSerializer(serializers.Serializer):
             'outline',
         ]
 
-    text = serializers.CharField(
+    text = AnonymizedCharField(
         required=True,
         label="Description content",
         help_text=("The description that needs to be converted to a playbook."),
@@ -454,7 +454,7 @@ class GenerationRequestSerializer(serializers.Serializer):
             'of the Ansible Playbook.'
         ),
     )
-    outline = serializers.CharField(
+    outline = AnonymizedCharField(
         required=False,
         label="outline",
         help_text="A long step by step outline of the expected Ansible Playbook.",
