@@ -21,7 +21,7 @@ import time
 import uuid
 from http import HTTPStatus
 from typing import Any, Dict, Optional, Union
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import requests
 from django.apps import apps
@@ -2561,6 +2561,22 @@ that are running Red Hat Enterprise Linux 9.
         self.assertEqual(r.data["format"], "markdown")
         self.assertEqual(r.data["explanationId"], explanation_id)
 
+    def test_with_pii(self):
+        payload = {
+            "content": "marc-anthony@bar.foo",
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        mocked_client = Mock()
+        mocked_client.explain_playbook.return_value = "foo"
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            mocked_client,
+        ):
+            self.client.force_authenticate(user=self.user)
+            self.client.post(reverse('explanations'), payload, format='json')
+        mocked_client.explain_playbook.assert_called_with(ANY, "william10@example.com")
+
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
         payload = {
@@ -2688,6 +2704,26 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         self.assertIsNotNone(r.data["playbook"])
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_with_pii(self):
+        payload = {
+            "text": "Install nginx on RHEL9 jean-marc@redhat.com",
+            "generationId": str(uuid.uuid4()),
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        mocked_client = Mock()
+        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            mocked_client,
+        ):
+            self.client.force_authenticate(user=self.user)
+            self.client.post(reverse('generations'), payload, format='json')
+        mocked_client.generate_playbook.assert_called_with(
+            ANY, 'Install nginx on RHEL9 isabella13@example.com', False, ''
+        )
 
     def test_unauthorized(self):
         generation_id = str(uuid.uuid4())
