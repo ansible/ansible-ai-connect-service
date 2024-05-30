@@ -24,6 +24,7 @@ from django_prometheus.exports import ExportToDjangoView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.permissions import (
@@ -112,8 +113,20 @@ class ConsoleView(ProtectedTemplateView):
         return context
 
 
+class PlainTextRenderer(BaseRenderer):
+    media_type = 'text/plain'
+    format = 'txt'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        if not isinstance(data, str):
+            data = str(data)
+        return data.encode(self.charset)
+
+
 class MetricsView(APIView):
     schema = None
+
+    renderer_classes = [PlainTextRenderer]
 
     def initialize_request(self, request, *args, **kwargs):
         if settings.ALLOW_METRICS_FOR_ANONYMOUS_USERS:
