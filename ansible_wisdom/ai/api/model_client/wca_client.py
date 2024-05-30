@@ -494,6 +494,7 @@ class WCAClient(BaseWCAClient):
             headers=headers,
             json=data,
         )
+        result.raise_for_status()
         response = json.loads(result.text)
 
         playbook = response["playbook"]
@@ -519,6 +520,7 @@ class WCAClient(BaseWCAClient):
             headers=headers,
             json=data,
         )
+        result.raise_for_status()
         response = json.loads(result.text)
         return response["explanation"]
 
