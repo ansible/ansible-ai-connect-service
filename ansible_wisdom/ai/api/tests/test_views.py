@@ -1045,7 +1045,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ):
                 r = self.client.post(reverse('completions'), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assertIsNotNone(r.data)
+                self.assertIsNone(r.data)
                 self.assert_error_detail(
                     r,
                     PostprocessException.default_code,

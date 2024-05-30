@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from ast import literal_eval
+from http import HTTPStatus
 from typing import Union
 from unittest.mock import patch
 
@@ -45,6 +46,11 @@ class WisdomLogAwareMixin:
 
 class WisdomTestCase(TestCase):
     def assert_error_detail(self, r, code: str, message: str = None):
+        if r.status_code == HTTPStatus.NO_CONTENT:
+            self.assertIsNone(r.data)
+            self.assertEqual(r['Content-Length'], "0")
+            return
+
         r_code = r.data.get('message').code
         self.assertEqual(r_code, code)
         if message:
