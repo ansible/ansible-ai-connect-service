@@ -471,6 +471,46 @@ var3: value3
         after = "    # install ffmpeg & start ffmpeg"
         self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
 
+    def test_unify_prompt_ending(self):
+        before = "    # Install go & Install nginx & Install git &"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_and_sign_and_with_new_line(self):
+        before = "    # Install go & Install nginx & Install git &\n"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_and_sign_end_with_spaces(self):
+        before = "    # Install go & Install nginx & Install git &    "
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_spaces_and_end_of_line(self):
+        before = "    # Install go & Install git &    \n"
+        after = "    # Install go & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_sticked_and_sign(self):
+        before = "    # Install go & Install nginx & Install git&"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_singl_task(self):
+        before = "    # Install go &\n"
+        after = "    # Install go\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_doubled_and_sign(self):
+        before = "    # Install go & Install nginx & Install git&&"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_doubled_and_sig_and_spaces(self):
+        before = "    # Install go & Install nginx & Install git &  &\n"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
     def test_get_fqcn_module_from_prediction(self):
         self.assertEqual(
             "ansible.builtin.package",

@@ -313,6 +313,12 @@ def strip_task_preamble_from_multi_task_prompt(prompt):
     return prompt
 
 
+def unify_prompt_ending(prompt):
+    # WCA codegen endpoint requires prompt to end with \n and can't contain &
+    prompt = re.sub(r'[&\s]*$', '', prompt)
+    return f"{prompt}\n"
+
+
 def get_task_count_from_prompt(prompt):
     task_count = 0
     if prompt:
