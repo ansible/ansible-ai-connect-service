@@ -314,8 +314,8 @@ def strip_task_preamble_from_multi_task_prompt(prompt):
 
 
 def unify_prompt_ending(prompt):
-    # WCA codegen endpoint requires prompt to end with \n and can't contain &
-    prompt = re.sub(r'[&\s]*$', '', prompt)
+    # WCA codegen endpoint requires prompt to end with \n and can't contain : at the end
+    prompt = re.sub(r'[:\s]*$', '', prompt)
     return f"{prompt}\n"
 
 
