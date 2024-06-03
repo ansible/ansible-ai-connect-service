@@ -71,3 +71,6 @@ class ModelMeshClient:
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
         )
+
+    def supports_ari_postprocessing(self) -> bool:
+        return settings.ENABLE_ARI_POSTPROCESS

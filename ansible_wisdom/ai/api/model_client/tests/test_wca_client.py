@@ -240,34 +240,69 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         b = WCAClient.fatal_exception(exc)
         self.assertTrue(b)
 
-    def test_playbook_gen(self):
+
+@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        super().setUp()
         wca_client = WCAClient(inference_url='http://example.com/')
         wca_client.get_api_key = Mock(return_value="some-key")
         wca_client.get_token = Mock(return_value={"access_token": "a-token"})
         wca_client.get_model_id = Mock(return_value="a-random-model")
         wca_client.session = Mock()
         response = Mock
-        response.text = '{"playbook": "Oh!", "outline": "Ahh!"}'
+        response.text = '{"playbook": "Oh!", "outline": "Ahh!", "explanation": "!Óh¡"}'
+        response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
+        self.wca_client = wca_client
+
+    def test_playbook_gen(self):
         request = Mock()
-        playbook, outline = wca_client.generate_playbook(
+        playbook, outline = self.wca_client.generate_playbook(
             request, text="Install Wordpress", create_outline=True
         )
         self.assertEqual(playbook, "Oh!")
         self.assertEqual(outline, "Ahh!")
 
     def test_playbook_exp(self):
-        wca_client = WCAClient(inference_url='http://example.com/')
-        wca_client.get_api_key = Mock(return_value="some-key")
-        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
-        wca_client.get_model_id = Mock(return_value="a-random-model")
-        wca_client.session = Mock()
-        response = Mock
-        response.text = '{"explanation": "!Óh¡"}'
-        wca_client.session.post.return_value = response
         request = Mock()
-        explanation = wca_client.explain_playbook(request, content="Some playbook")
+        explanation = self.wca_client.explain_playbook(request, content="Some playbook")
         self.assertEqual(explanation, "!Óh¡")
+
+    def test_playbook_gen_no_org(self):
+        request = Mock()
+        request.user.organization = None
+        self.wca_client.generate_playbook(request, text="Install Wordpress")
+        self.wca_client.get_api_key.assert_called_with(None)
+
+    def test_playbook_exp_no_org(self):
+        request = Mock()
+        request.user.organization = None
+        self.wca_client.explain_playbook(request, content="Some playbook")
+        self.wca_client.get_api_key.assert_called_with(None)
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_playbook_gen_with_lint(self):
+        fake_linter = Mock()
+        fake_linter.run_linter.return_value = "I'm super fake!"
+        self.mock_ansible_lint_caller_with(fake_linter)
+        playbook, outline = self.wca_client.generate_playbook(
+            request=Mock(), text="Install Wordpress", create_outline=True
+        )
+        self.assertEqual(playbook, "I'm super fake!")
+        self.assertEqual(outline, "Ahh!")
+
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_playbook_gen_when_is_not_initialized(self):
+        self.mock_ansible_lint_caller_with(None)
+        playbook, outline = self.wca_client.generate_playbook(
+            request=Mock(), text="Install Wordpress", create_outline=True
+        )
+        # Ensure nothing was done
+        self.assertEqual(playbook, "Oh!")
 
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)

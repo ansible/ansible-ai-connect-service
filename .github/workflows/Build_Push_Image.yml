@@ -1,17 +1,17 @@
 name: Build and Push Image
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types:
-      - labeled
-      - opened
-      - edited
-      - reopened
-      - synchronize
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   types:
+  #     - labeled
+  #     - opened
+  #     - edited
+  #     - reopened
+  #     - synchronize
+  #   branches:
+  #     - main
 
   # have the ability to trigger this workflow manually
   workflow_dispatch:

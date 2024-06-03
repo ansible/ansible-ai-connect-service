@@ -41,4 +41,18 @@ ignore:
           by OpenShift
         expires: 2024-08-21T12:19:22Z
         created: 2024-05-21T12:19:22Z
+  SNYK-PYTHON-CRYPTOGRAPHY-7161587:
+    - '*':
+        reason: |
+          There is no fix yet and it will later as an UBI update
+          See: https://access.redhat.com/security/cve/CVE-2024-4741
+        expires: 2024-06-29T19:26:28Z
+        created: 2024-05-29T19:26:28Z
+  SNYK-PYTHON-PYOPENSSL-7161590:
+    - '*':
+        reason: |
+          There is no fix yet and it will later as an UBI update
+          See: https://access.redhat.com/security/cve/CVE-2024-4741
+        expires: 2024-06-29T19:26:28Z
+        created: 2024-05-29T19:26:28Z
 patch: {}

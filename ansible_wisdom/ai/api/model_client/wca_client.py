@@ -28,9 +28,11 @@ from prometheus_client import Counter, Histogram
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
+from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
+    unify_prompt_ending,
 )
 from ansible_ai_connect.ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
@@ -178,9 +180,7 @@ class BaseWCAClient(ModelMeshClient):
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         prompt = strip_task_preamble_from_multi_task_prompt(prompt)
 
-        # WCA codegen endpoint requires prompt to end with \n
-        if prompt.endswith('\n') is False:
-            prompt = f"{prompt}\n"
+        prompt = unify_prompt_ending(prompt)
 
         try:
             api_key = self.get_api_key(organization_id)
@@ -311,6 +311,9 @@ class BaseWCAClient(ModelMeshClient):
     @abstractmethod
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         raise NotImplementedError
+
+    def supports_ari_postprocessing(self) -> bool:
+        return settings.ENABLE_ARI_POSTPROCESS and settings.WCA_ENABLE_ARI_POSTPROCESS
 
 
 class WCAClient(BaseWCAClient):
@@ -473,8 +476,9 @@ class WCAClient(BaseWCAClient):
     def generate_playbook(
         self, request, text: str = "", create_outline: bool = False, outline: str = ""
     ) -> tuple[str, str]:
-        api_key = self.get_api_key(request.user.organization.id)
-        model_id = self.get_model_id(request.user.organization.id)
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(organization_id)
+        model_id = self.get_model_id(organization_id)
 
         headers = self._get_base_headers(api_key)
         data = {
@@ -489,12 +493,21 @@ class WCAClient(BaseWCAClient):
             headers=headers,
             json=data,
         )
+        result.raise_for_status()
         response = json.loads(result.text)
-        return response["playbook"], response["outline"]
+
+        playbook = response["playbook"]
+        outline = response["outline"]
+
+        if ansible_lint_caller := apps.get_app_config("ai").get_ansible_lint_caller():
+            playbook = ansible_lint_caller.run_linter(playbook)
+
+        return playbook, outline
 
     def explain_playbook(self, request, content: str) -> str:
-        api_key = self.get_api_key(request.user.organization.id)
-        model_id = self.get_model_id(request.user.organization.id)
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(organization_id)
+        model_id = self.get_model_id(organization_id)
 
         headers = self._get_base_headers(api_key)
         data = {
@@ -506,6 +519,7 @@ class WCAClient(BaseWCAClient):
             headers=headers,
             json=data,
         )
+        result.raise_for_status()
         response = json.loads(result.text)
         return response["explanation"]
 
@@ -581,3 +595,11 @@ class WCAOnPremClient(BaseWCAClient):
             )
 
         return summary
+
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        raise FeatureNotAvailable
+
+    def explain_playbook(self, request, content: str) -> str:
+        raise FeatureNotAvailable

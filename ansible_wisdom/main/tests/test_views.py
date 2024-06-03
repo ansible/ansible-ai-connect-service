@@ -33,12 +33,13 @@ from ansible_ai_connect.users.constants import (
 from ansible_ai_connect.users.tests.test_users import create_user
 
 
-def create_user_with_provider(user_provider):
+def create_user_with_provider(user_provider, **kwargs):
     return create_user(
         username='test_user_name',
         password='test_passwords',
         provider=user_provider,
         external_username='anexternalusername',
+        **kwargs,
     )
 
 
@@ -128,6 +129,16 @@ class TestMetricsView(APITransactionTestCase):
 
     def tearDown(self):
         self.user.delete()
+
+    @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
+    def test_content_type_text(self):
+        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'text/plain'})
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+
+    @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
+    def test_content_type_json(self):
+        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'application/json'})
+        self.assertEqual(r.status_code, HTTPStatus.NOT_ACCEPTABLE)
 
     @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
     def test_anonymous_access(self):

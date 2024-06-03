@@ -143,6 +143,12 @@ class ServiceUnavailable(BaseWisdomAPIException):
     default_detail = 'An error occurred attempting to complete the request.'
 
 
+class FeatureNotAvailable(BaseWisdomAPIException):
+    status_code = 404
+    default_code = 'feature_not_available'
+    default_detail = 'The feature is not available.'
+
+
 class InternalServerError(BaseWisdomAPIException):
     status_code = 500
     default_code = 'internal_server'

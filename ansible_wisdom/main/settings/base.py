@@ -546,6 +546,7 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
 ]
+WCA_ENABLE_ARI_POSTPROCESS = os.getenv('WCA_ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
