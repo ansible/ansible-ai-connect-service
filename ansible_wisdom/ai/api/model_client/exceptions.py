@@ -58,6 +58,11 @@ class WcaModelIdNotFound(WcaException):
 
 
 @dataclass
+class WcaNoDefaultModelId(WcaException):
+    """No default WCA Model ID was found."""
+
+
+@dataclass
 class WcaEmptyResponse(WcaException):
     """WCA returned an empty response."""
 

@@ -14,32 +14,17 @@
 
 import json
 import logging
-import re
-from textwrap import dedent
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 import requests
 from django.conf import settings
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
 
-from .base import ModelMeshClient
-from .exceptions import ModelTimeoutError
+from .langchain import LangChainClient
 
 logger = logging.getLogger(__name__)
-
-SYSTEM_MESSAGE_TEMPLATE = (
-    "You are an Ansible expert. Return a single task that best completes the "
-    "partial playbook. Return only the task as YAML. Do not return multiple tasks. "
-    "Do not explain your response. Do not include the prompt in your response."
-)
-HUMAN_MESSAGE_TEMPLATE = "{prompt}"
 
 
 class ChatBAM(SimpleChatModel):
@@ -98,68 +83,11 @@ class ChatBAM(SimpleChatModel):
         return response
 
 
-def unwrap_answer(message: Union[str, BaseMessage]) -> str:
-    task: str = ""
-    if isinstance(message, BaseMessage):
-        if (
-            isinstance(message.content, list)
-            and len(message.content)
-            and isinstance(message.content[0], str)
-        ):
-            task = message.content[0]
-        elif isinstance(message.content, str):
-            task = message.content
-    elif isinstance(message, str):
-        # Ollama currently answers with just a string
-        task = message
-    if not task:
-        raise ValueError
-
-    m = re.search(r"```yaml\n+(.+)```", task, re.MULTILINE | re.DOTALL)
-    if m:
-        task = m.group(1)
-    return dedent(re.split(r'- name: .+\n', task)[-1]).rstrip()
-
-
-class BAMClient(ModelMeshClient):
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-        self._prediction_url = f"{self._inference_url}/v2/text/chat?version=2024-01-10"
-
+class BAMClient(LangChainClient):
     def get_chat_model(self, model_id):
         return ChatBAM(
             api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
             model_id=model_id,
-            prediction_url=self._prediction_url,
+            prediction_url=f"{self._inference_url}/v2/text/chat?version=2024-01-10",
             timeout=self.timeout,
         )
-
-    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
-        model_id = self.get_model_id(None, model_id)
-
-        prompt = model_input.get("instances", [{}])[0].get("prompt", "")
-        context = model_input.get("instances", [{}])[0].get("context", "")
-
-        full_prompt = f"{context}{prompt}\n"
-        llm = self.get_chat_model(model_id)
-
-        chat_template = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(
-                    SYSTEM_MESSAGE_TEMPLATE, additional_kwargs={"role": "system"}
-                ),
-                HumanMessagePromptTemplate.from_template(
-                    HUMAN_MESSAGE_TEMPLATE, additional_kwargs={"role": "user"}
-                ),
-            ]
-        )
-
-        try:
-            chain = chat_template | llm
-            message = chain.invoke({"prompt": full_prompt})
-            response = {"predictions": [unwrap_answer(message)], "model_id": model_id}
-
-            return response
-
-        except requests.exceptions.Timeout:
-            raise ModelTimeoutError

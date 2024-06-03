@@ -1,6 +1,6 @@
 ENVIRONMENT ?= development
 TAG ?= latest
-ANSIBLE_AI_PROJECT_NAME ?= "Ansible AI Connect"
+ANSIBLE_AI_PROJECT_NAME ?= Ansible AI Connect
 
 # Choose between docker and podman based on what is available
 ifeq (, $(shell which podman))
@@ -22,7 +22,7 @@ ifeq ($(ENVIRONMENT),development)
 	export ANSIBLE_AI_DATABASE_PASSWORD := wisdom
 	export ANSIBLE_AI_DATABASE_USER := wisdom
 	export ARI_KB_PATH := ../ari/kb/
-	export DJANGO_SETTINGS_MODULE := ansible_wisdom.main.settings.development
+	export DJANGO_SETTINGS_MODULE := ansible_ai_connect.main.settings.development
 	export ENABLE_ARI_POSTPROCESS := False
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
@@ -138,7 +138,7 @@ test:
 # Run unit tests, calculate code coverage and display results in chrome
 code-coverage:
 	coverage erase && \
-	coverage run --rcfile=setup.cfg -m ansible_wisdom.manage test ansible_wisdom && \
+	coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect && \
 	coverage html && \
 	google-chrome htmlcov/index.html
 

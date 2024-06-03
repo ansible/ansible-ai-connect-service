@@ -23,7 +23,7 @@ from django.utils.timezone import now
 from oauth2_provider.models import AccessToken
 from oauthlib.common import generate_token
 
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.organizations.models import Organization
 
 
 class Command(BaseCommand):

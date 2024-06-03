@@ -24,14 +24,14 @@ from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
 
-from ansible_wisdom.ai.api.exceptions import PostprocessException
-from ansible_wisdom.ai.api.tests.test_views import (
+from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomServiceAPITestCaseBase,
 )
 
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
@@ -135,9 +135,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("username", log)
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     @patch(
-        'ansible_wisdom.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
+        'ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
         side_effect=Exception,
     )
     def test_preprocess_error(self, preprocess):
@@ -150,12 +151,13 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger='root', level='DEBUG') as log:
             self.client.post(reverse('completions'), payload, format='json')
             self.assertInLog(
-                "ERROR:ansible_wisdom.ai.api.pipelines.completion_stages.pre_process:failed"
+                "ERROR:ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process:failed"
                 " to preprocess:",
                 log,
             )
             self.assertSegmentTimestamp(log)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_segment_error(self):
         payload = {
@@ -202,6 +204,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.max_retries = analytics.Client.DefaultConfig.max_retries
             analytics.send = False
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_204_empty_response(self):
         payload = {
@@ -236,9 +239,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     r = self.client.post(reverse('completions'), payload, format='json')
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-                    self.assert_error_detail(
-                        r, PostprocessException.default_code, PostprocessException.default_detail
-                    )
+                    self.assertIsNone(r.data)
+                    self.assertEqual(r['Content-Length'], "0")
                     self.assertSegmentTimestamp(log)
         finally:
             # Restore defaults and set the 'send' flag to False during test execution

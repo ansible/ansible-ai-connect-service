@@ -313,6 +313,12 @@ def strip_task_preamble_from_multi_task_prompt(prompt):
     return prompt
 
 
+def unify_prompt_ending(prompt):
+    # WCA codegen endpoint requires prompt to end with \n and can't contain : at the end
+    prompt = re.sub(r'[:\s]*$', '', prompt)
+    return f"{prompt}\n"
+
+
 def get_task_count_from_prompt(prompt):
     task_count = 0
     if prompt:
@@ -396,6 +402,8 @@ def parse_module_from_prediction(re, prediction):
 
 
 def get_fqcn_or_module_from_prediction(prediction):
+    if prediction is None:
+        return None
     fqcn = get_fqcn_from_prediction(prediction)
     if fqcn is None:
         fqcn = get_module_from_prediction(prediction)

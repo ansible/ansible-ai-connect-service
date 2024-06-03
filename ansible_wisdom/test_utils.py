@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from ast import literal_eval
+from http import HTTPStatus
 from typing import Union
 from unittest.mock import patch
 
@@ -45,6 +46,11 @@ class WisdomLogAwareMixin:
 
 class WisdomTestCase(TestCase):
     def assert_error_detail(self, r, code: str, message: str = None):
+        if r.status_code == HTTPStatus.NO_CONTENT:
+            self.assertIsNone(r.data)
+            self.assertEqual(r['Content-Length'], "0")
+            return
+
         r_code = r.data.get('message').code
         self.assertEqual(r_code, code)
         if message:
@@ -88,7 +94,7 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         self.backend_patchers = {
             key: patch.object(apps.get_app_config('ai'), key, None)
             for key in [
-                "_wca_client",
+                "_ansible_lint_caller",
                 "_ari_caller",
                 "_seat_checker",
                 "_wca_secret_manager",
@@ -97,6 +103,7 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         }
         for key, mocker in self.backend_patchers.items():
             mocker.start()
+        apps.get_app_config('ai').ready()
 
     def tearDown(self):
         for patcher in self.backend_patchers.values():
@@ -104,16 +111,12 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         super().tearDown()
 
     @staticmethod
+    def mock_ansible_lint_caller_with(mocked):
+        apps.get_app_config('ai')._ansible_lint_caller = mocked
+
+    @staticmethod
     def mock_model_client_with(mocked):
         apps.get_app_config('ai').model_mesh_client = mocked
-
-    @staticmethod
-    def mock_wca_client_with(mocked):
-        apps.get_app_config('ai')._wca_client = mocked
-
-    @staticmethod
-    def mock_wca_onprem_client_with(mocked):
-        apps.get_app_config('ai')._wca_onprem_client = mocked
 
     @staticmethod
     def mock_ari_caller_with(mocked):

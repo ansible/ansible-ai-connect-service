@@ -25,17 +25,17 @@ from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
-from ansible_wisdom.ai.api.utils import segment_analytics_telemetry
-from ansible_wisdom.ai.api.utils.analytics_telemetry_model import (
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.ai.api.utils.analytics_telemetry_model import (
     AnalyticsRecommendationGenerated,
     AnalyticsRecommendationTask,
     AnalyticsTelemetryEvents,
 )
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
-from ansible_wisdom.ai.api.utils.segment_analytics_telemetry import (
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
-from ansible_wisdom.healthcheck.version_info import VersionInfo
+from ansible_ai_connect.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
@@ -119,15 +119,8 @@ class SegmentMiddleware:
                     if isinstance(message, ErrorDetail):
                         message = str(message)
                     model_name = response_data.get('model', model_name)
-                    # Clean up response.data for 204; preserving error information
-                    if response.status_code == 204:
-                        response.data = {}
-                        if response_data.get('code'):
-                            response.data.update({'code': response_data.get('code')})
-                        if response_data.get('message'):
-                            response.data.update({'message': response_data.get('message')})
                     # For other error cases, remove 'model' in response data
-                    elif response.status_code >= 400:
+                    if response.status_code >= 400:
                         response_data.pop('model', None)
                 elif response.status_code >= 400 and getattr(response, 'content', None):
                     message = str(response.content)
@@ -179,6 +172,11 @@ class SegmentMiddleware:
                         getattr(request, '_ansible_extension_version', None),
                     )
 
+        # Clean up response.data for 204; should be empty to prevent
+        # issues on the client side
+        if response.status_code == 204:
+            response.data = None
+            response['Content-Length'] = 0
         return response
 
 

@@ -21,8 +21,8 @@ from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
-from ansible_wisdom.healthcheck.version_info import VersionInfo
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.healthcheck.version_info import VersionInfo
+from ansible_ai_connect.users.models import User
 
 from .seated_users_allow_list import ALLOW_LIST
 

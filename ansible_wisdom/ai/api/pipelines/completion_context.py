@@ -18,7 +18,7 @@ from typing import Any, Union
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ansible_wisdom.ai.api.data.data_model import APIPayload
+from ansible_ai_connect.ai.api.data.data_model import APIPayload
 
 
 @dataclass

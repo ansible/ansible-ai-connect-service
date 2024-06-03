@@ -13,8 +13,6 @@
 #  limitations under the License.
 
 import logging
-import re
-import textwrap
 import time
 from http import HTTPStatus
 
@@ -23,11 +21,6 @@ from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from langchain_core.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
 from rest_framework import permissions, serializers
@@ -36,8 +29,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
-from ansible_wisdom.ai.api.exceptions import (
+from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_ai_connect.ai.api.exceptions import (
     AttributionException,
     BaseWisdomAPIException,
     FeedbackInternalServerException,
@@ -51,25 +44,27 @@ from ansible_wisdom.ai.api.exceptions import (
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
+    WcaNoDefaultModelIdException,
     WcaSuggestionIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
+    WcaNoDefaultModelId,
     WcaSuggestionIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ansible_wisdom.ai.api.pipelines.completions import CompletionsPipeline
-from ansible_wisdom.users.models import User
+from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
+from ansible_ai_connect.users.models import User
 
 from .. import search as ai_search
-from ..feature_flags import FeatureFlags, WisdomFlags
+from ..feature_flags import FeatureFlags
 from .data.data_model import (
     AttributionsResponseDto,
     ContentMatchPayloadData,
@@ -84,7 +79,6 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
-    AnsibleContentFeedback,
     AttributionRequestSerializer,
     AttributionResponseSerializer,
     CompletionRequestSerializer,
@@ -100,8 +94,6 @@ from .serializers import (
     IssueFeedback,
     SentimentFeedback,
     SuggestionQualityFeedback,
-    SummaryRequestSerializer,
-    SummaryResponseSerializer,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsProductFeedback,
@@ -234,7 +226,6 @@ class Feedback(APIView):
         request_data=None,
     ) -> None:
         inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
-        ansible_content_data: AnsibleContentFeedback = validated_data.get("ansibleContent")
         suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
             "suggestionQualityFeedback"
         )
@@ -250,9 +241,10 @@ class Feedback(APIView):
             model_name = model_mesh_client.get_model_id(
                 org_id, str(validated_data.get('model', ''))
             )
-        except (WcaModelIdNotFound, WcaSecretManagerError):
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
                 f"Failed to retrieve Model Name for Feedback.\n "
+                f"Org ID: {user.org_id}, "
                 f"User has seat: {user.rh_user_has_seat}, "
                 f"has subscription: {user.rh_org_has_subscription}.\n"
             )
@@ -278,16 +270,6 @@ class Feedback(APIView):
                 user,
                 ansible_extension_version,
             )
-        if ansible_content_data:
-            event = {
-                "content": ansible_content_data.get('content'),
-                "documentUri": ansible_content_data.get('documentUri'),
-                "trigger": ansible_content_data.get('trigger'),
-                "modelName": model_name,
-                "activityId": str(ansible_content_data.get('activityId', '')),
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "ansibleContentFeedback", user)
         if suggestion_quality_data:
             event = {
                 "prompt": suggestion_quality_data.get('prompt'),
@@ -328,7 +310,6 @@ class Feedback(APIView):
 
         feedback_events = [
             inline_suggestion_data,
-            ansible_content_data,
             suggestion_quality_data,
             sentiment_feedback_data,
             issue_feedback_data,
@@ -346,7 +327,7 @@ class Feedback(APIView):
             elif "issueFeedback" in request_data:
                 event_type = "issueFeedback"
             else:
-                event_type = "ansibleContentFeedback"
+                event_type = "unknown"
 
             event = {
                 "data": ano_request_data,
@@ -393,7 +374,7 @@ class Attributions(GenericAPIView):
         start_time = time.time()
         try:
             encode_duration, search_duration, response_serializer = self.perform_search(
-                request_serializer, request.user
+                request_serializer
             )
         except Exception as exc:
             logger.error(f"Failed to search for attributions\nException:\n{exc}")
@@ -415,17 +396,8 @@ class Attributions(GenericAPIView):
 
         return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
 
-    def perform_search(self, serializer, user: User):
-        index = None
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-            logger.debug(f"flag model_name has value {model_tuple}")
-            model_parts = model_tuple.split(':')
-            if len(model_parts) == 4:
-                *_, index = model_parts
-                logger.info(f"using index '{index}' for content matching")
-
-        data = ai_search.search(serializer.validated_data['suggestion'], index)
+    def perform_search(self, serializer):
+        data = ai_search.search(serializer.validated_data['suggestion'])
         resp_serializer = AttributionResponseSerializer(data={'attributions': data['attributions']})
         if not resp_serializer.is_valid():
             logging.error(resp_serializer.errors)
@@ -509,7 +481,7 @@ class ContentMatches(GenericAPIView):
         user: User,
         request_data,
     ):
-        wca_client = apps.get_app_config("ai").model_mesh_client
+        model_mesh_client = apps.get_app_config("ai").model_mesh_client
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get('suggestions', []),
@@ -530,7 +502,7 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            model_id, client_response = wca_client.codematch(content_match_data, model_id)
+            model_id, client_response = model_mesh_client.codematch(content_match_data, model_id)
 
             response_data = {"contentmatches": []}
 
@@ -587,6 +559,14 @@ class ContentMatches(GenericAPIView):
                 f"content matching suggestion {suggestion_id}"
             )
             raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaNoDefaultModelId as e:
+            exception = e
+            logger.exception(
+                "A default WCA Model ID was expected but not found for "
+                f"content matching suggestion {suggestion_id}"
+            )
+            raise WcaNoDefaultModelIdException(cause=e)
 
         except WcaSuggestionIdCorrelationFailure as e:
             exception = e
@@ -659,17 +639,8 @@ class ContentMatches(GenericAPIView):
         model_name = ""
 
         try:
-            index = None
-            if settings.LAUNCHDARKLY_SDK_KEY:
-                model_tuple = feature_flags.get(WisdomFlags.MODEL_NAME, user, "")
-                logger.debug(f"flag model_name has value {model_tuple}")
-                model_parts = model_tuple.split(':')
-                if len(model_parts) == 4:
-                    *_, model_name, index = model_parts
-                    logger.info(f"using index '{index}' for content matching")
-
             suggestion = request_data['suggestions'][0]
-            response_item = ai_search.search(suggestion, index)
+            response_item = ai_search.search(suggestion)
 
             attributions_dto = AttributionsResponseDto(**response_item)
             response_data = {"contentmatches": []}
@@ -761,140 +732,20 @@ class Explanation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You're an Ansible expert.
-        You format your output with Markdown.
-        You only answer with text paragraphs.
-        Write one paragraph per Ansible task.
-        Markdown title starts with the '#' character.
-        Write a title before every paragraph.
-        Do not return any YAML or Ansible in the output.
-        Give a lot of details regarding the parameters of each Ansible plugin.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """Please explain the following Ansible playbook:
-
-        {playbook}"
-        """
-
         request_serializer = ExplanationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
-        content = request_serializer.validated_data.get("content")
+        playbook = request_serializer.validated_data.get("content")
 
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+        llm = apps.get_app_config("ai").model_mesh_client
+        explanation = llm.explain_playbook(request, playbook)
 
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
+        answer = {"content": explanation, "format": "markdown", "explanationId": explanation_id}
 
-            chain = chat_template | llm
-
-            output = chain.invoke({"playbook": content})
-            answer = {"content": output, "format": "markdown"}
-            if explanation_id:
-                answer["explanationId"] = explanation_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook explanation for {explanation_id}")
-            raise ServiceUnavailable(cause=e)
-
-
-class Summary(APIView):
-    """
-    Returns a text that summarizes an input text.
-    """
-
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
-
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-        BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
-        BlockUserWithSeatButWCANotReady,
-    ]
-    required_scopes = ['read', 'write']
-
-    throttle_cache_key_suffix = '_explanation'
-
-    @extend_schema(
-        request=SummaryRequestSerializer,
-        responses={
-            200: SummaryResponseSerializer,
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
-        },
-        summary="Elaborate input text",
-    )
-    def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You're a smart and kind software consultant.
-        You only answer with text paragraphs.
-        Do not include any code or command samples.
-        Use a numbered list.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """Please elaborate the following text in plain English:
-
-        {content}"
-        """
-
-        request_serializer = SummaryRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        summary_id = str(request_serializer.validated_data.get("summaryId", ""))
-        content = request_serializer.validated_data.get("content")
-
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
-
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
-
-            chain = chat_template | llm
-
-            output = chain.invoke({"content": content})
-
-            answer = {"content": output, "format": "plaintext"}
-            if summary_id:
-                answer["summaryId"] = summary_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook summary for {summary_id}")
-            raise ServiceUnavailable(cause=e)
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
 
 
 class Generation(APIView):
@@ -930,63 +781,24 @@ class Generation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        SYSTEM_MESSAGE_TEMPLATE = """
-        You are an Ansible expert.
-        Your role is to help Ansible developers write playbooks.
-        Don't explain the code, just generate the playbook in YAML format.
-        """
-
-        HUMAN_MESSAGE_TEMPLATE = """
-        Please write an Ansible playbook as directed in the followingsentences:
-
-        {content}"
-        """
-
         request_serializer = GenerationRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         generation_id = str(request_serializer.validated_data.get("generationId", ""))
-        content = request_serializer.validated_data.get("content")
+        create_outline = request_serializer.validated_data["createOutline"]
+        outline = str(request_serializer.validated_data.get("outline", ""))
+        text = request_serializer.validated_data["text"]
 
-        try:
-            model_client = apps.get_app_config("ai").model_mesh_client
-            llm = model_client.get_chat_model(settings.ANSIBLE_AI_MODEL_NAME)
+        llm = apps.get_app_config("ai").model_mesh_client
+        playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
 
-            chat_template = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessagePromptTemplate.from_template(
-                        textwrap.dedent(SYSTEM_MESSAGE_TEMPLATE),
-                        additional_kwargs={"role": "system"},
-                    ),
-                    HumanMessagePromptTemplate.from_template(
-                        textwrap.dedent(HUMAN_MESSAGE_TEMPLATE), additional_kwargs={"role": "user"}
-                    ),
-                ]
-            )
+        answer = {
+            "playbook": playbook,
+            "outline": outline,
+            "format": "plaintext",
+            "generationId": generation_id,
+        }
 
-            chain = chat_template | llm
-            output = chain.invoke({"content": content})
-
-            postprocessed = []
-            code_block = False
-            for line in output.split("\n"):
-                if not code_block:
-                    if re.match(r"^\s*```", line):
-                        code_block = True
-                else:
-                    if re.match(r"^\s*```", line):
-                        break
-                    postprocessed.append(line)
-
-            if len(postprocessed) > 0:
-                output = "\n".join(postprocessed)
-
-            answer = {"content": output, "format": "markdown"}
-            answer["generationId"] = generation_id
-
-            return Response(
-                answer,
-                status=rest_framework_status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.exception(f"error requesting playbook generation for {generation_id}")
-            raise ServiceUnavailable(cause=e)
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )

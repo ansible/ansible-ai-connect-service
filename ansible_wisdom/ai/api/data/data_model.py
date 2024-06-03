@@ -20,7 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, validator
 from typing_extensions import TypedDict
 
-from ansible_wisdom.ai.api.serializers import DataSource
+from ansible_ai_connect.ai.api.serializers import DataSource
 
 logger = logging.getLogger(__name__)
 

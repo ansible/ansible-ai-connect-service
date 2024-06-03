@@ -16,8 +16,18 @@ import logging
 from typing import Any, Dict
 
 import grpc
+import requests
+from django.conf import settings
+from health_check.exceptions import ServiceUnavailable
 
-from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.healthcheck.backends import (
+    ERROR_MESSAGE,
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+)
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
@@ -70,3 +80,31 @@ class GrpcClient(ModelMeshClient):
             else:
                 logger.error(f"gRPC client error: {exc.details()}")  # type: ignore
                 raise
+
+    def self_test(self) -> HealthCheckSummary:
+        url = (
+            f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL}://'
+            f'{settings.ANSIBLE_AI_MODEL_MESH_HOST}:'
+            f'{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz'
+        )
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            # As of today (2023-03-27) SSL Certificate Verification fails with
+            # the gRPC model server in the Staging environment.  The verify
+            # option in the following line is just TEMPORARY and will be removed
+            # as soon as the certificate is replaced with a valid one.
+            verify = False
+            res = requests.get(url, verify=verify)
+            res.raise_for_status()
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
+            )
+        return summary

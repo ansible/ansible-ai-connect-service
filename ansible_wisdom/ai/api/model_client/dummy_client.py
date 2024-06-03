@@ -25,6 +25,48 @@ from .base import ModelMeshClient
 
 logger = logging.getLogger(__name__)
 
+PLAYBOOK = """
+```yaml
+---
+- hosts: rhel9
+  become: yes
+  tasks:
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Update package list
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Install nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Start and enable nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+```
+"""
+
+OUTLINE = """
+1. First, ensure that your RHEL 9 system is up-to-date.
+2. Next, you install the Nginx package using the package manager.
+3. After installation, start the ginx service.
+4. Ensure that Nginx starts automatically.
+5. Check if Nginx is running successfully.
+6. Visit your system's IP address followed by the default Nginx port number (80 or 443).
+"""
+
+EXPLANATION = """# Information
+This playbook installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux (RHEL) 9.
+"""
+
 
 class DummyClient(ModelMeshClient):
     def __init__(self, inference_url):
@@ -43,3 +85,13 @@ class DummyClient(ModelMeshClient):
         response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
         response_body['model_id'] = '_'
         return response_body
+
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        if create_outline:
+            return PLAYBOOK, OUTLINE
+        return PLAYBOOK, ""
+
+    def explain_playbook(self, request, content) -> str:
+        return EXPLANATION

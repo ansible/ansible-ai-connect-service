@@ -23,8 +23,8 @@ from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.organizations.models import Organization
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.organizations.models import Organization
 
 from .constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
@@ -132,3 +132,13 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     @cached_property
     def rh_aap_licensed(self) -> bool:
         return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_licensed']
+
+    @cached_property
+    def rh_aap_system_auditor(self) -> bool:
+        return (
+            self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_system_auditor']
+        )
+
+    @cached_property
+    def rh_aap_superuser(self) -> bool:
+        return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_superuser']

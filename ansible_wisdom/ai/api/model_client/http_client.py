@@ -17,8 +17,17 @@ import logging
 from typing import Any, Dict
 
 import requests
+from django.conf import settings
+from health_check.exceptions import ServiceUnavailable
 
-from ansible_wisdom.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.healthcheck.backends import (
+    ERROR_MESSAGE,
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+)
 
 from .base import ModelMeshClient
 from .exceptions import ModelTimeoutError
@@ -52,3 +61,22 @@ class HttpClient(ModelMeshClient):
             return response
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
+
+    def self_test(self) -> HealthCheckSummary:
+        url = f'{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping'
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            res = requests.get(url, verify=True)
+            res.raise_for_status()
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
+            )
+        return summary

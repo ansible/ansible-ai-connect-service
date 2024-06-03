@@ -22,11 +22,14 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
-from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.ai.api.exceptions import PostprocessException, process_error_count
-from ansible_wisdom.ai.api.pipelines.common import PipelineElement
-from ansible_wisdom.ai.api.pipelines.completion_context import CompletionContext
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api import formatter as fmtr
+from ansible_ai_connect.ai.api.exceptions import (
+    PostprocessException,
+    process_error_count,
+)
+from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
@@ -362,21 +365,28 @@ def completion_post_process(context: CompletionContext):
             )
         else:
             task["prediction"] = post_processed_predictions["predictions"][0]
+
+        fqcn_module = None
         if ari_results is not None:
             ari_result = ari_results[i]
             fqcn_module = ari_result["fqcn_module"]
-            if fqcn_module is None or fqcn_module == "":
-                # In case the module is not part of the collections, ARI does not handle it.
-                # This way, parsing the module from the prediction instead.
-                fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
-            if fqcn_module is not None:
-                task["module"] = fqcn_module
-                index = fqcn_module.rfind(".")
-                if index != -1:
-                    task["collection"] = fqcn_module[:index]
+        populate_module_and_collection(fqcn_module, task)
 
     context.task_results = tasks
     context.post_processed_predictions = post_processed_predictions
+
+
+def populate_module_and_collection(fqcn_module, task):
+    if fqcn_module is None or fqcn_module == "":
+        # In case the module is not part of the collections, ARI does not handle it.
+        # This way, parsing the module from the prediction instead.
+        fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
+
+    if fqcn_module is not None:
+        task["module"] = fqcn_module
+        index = fqcn_module.rfind(".")
+        if index != -1:
+            task["collection"] = fqcn_module[:index]
 
 
 class PostProcessStage(PipelineElement):

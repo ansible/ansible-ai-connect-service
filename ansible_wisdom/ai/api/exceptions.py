@@ -18,7 +18,7 @@ from django.conf import settings
 from prometheus_client import Counter
 from rest_framework.exceptions import APIException
 
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     ModelTimeoutError,
     WcaException,
 )
@@ -111,6 +111,11 @@ class WcaModelIdNotFoundException(WisdomAccessDenied):
     default_detail = 'A WCA Model ID was expected but not found. Please contact your administrator.'
 
 
+class WcaNoDefaultModelIdException(WisdomAccessDenied):
+    default_code = 'error__no_default_model_id'
+    default_detail = 'No default WCA Model ID was found.'
+
+
 class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
     status_code = 500
     default_code = 'error__wca_suggestion_correlation_failed'
@@ -136,6 +141,12 @@ class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
     default_code = 'service_unavailable'
     default_detail = 'An error occurred attempting to complete the request.'
+
+
+class FeatureNotAvailable(BaseWisdomAPIException):
+    status_code = 404
+    default_code = 'feature_not_available'
+    default_detail = 'The feature is not available.'
 
 
 class InternalServerError(BaseWisdomAPIException):

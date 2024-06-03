@@ -14,8 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_wisdom.ai.api import formatter as fmtr
-from ansible_wisdom.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.ai.api import formatter as fmtr
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
 
 class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
@@ -471,6 +471,46 @@ var3: value3
         after = "    # install ffmpeg & start ffmpeg"
         self.assertEqual(after, fmtr.strip_task_preamble_from_multi_task_prompt(before))
 
+    def test_unify_prompt_ending(self):
+        before = "    # Install go & Install nginx & Install git :"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_colon_and_with_new_line(self):
+        before = "    # Install go & Install nginx & Install git :\n"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_colon_end_with_spaces(self):
+        before = "    # Install go & Install nginx & Install git :    "
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_spaces_and_end_of_line(self):
+        before = "    # Install go & Install git :    \n"
+        after = "    # Install go & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_sticked_colon(self):
+        before = "    # Install go & Install nginx & Install git:"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_singl_task(self):
+        before = "    # Install go :\n"
+        after = "    # Install go\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_doubled_colon(self):
+        before = "    # Install go & Install nginx & Install git::"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_with_doubled_colon_and_spaces(self):
+        before = "    # Install go & Install nginx & Install git :  :\n"
+        after = "    # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
     def test_get_fqcn_module_from_prediction(self):
         self.assertEqual(
             "ansible.builtin.package",
@@ -579,6 +619,7 @@ var3: value3
                 "          az: us-east-1r\n"
             ),
         )
+        self.assertIsNone(fmtr.get_fqcn_or_module_from_prediction(None))
 
 
 if __name__ == "__main__":

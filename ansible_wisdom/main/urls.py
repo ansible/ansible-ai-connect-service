@@ -38,15 +38,20 @@ from drf_spectacular.views import (
 )
 from oauth2_provider.urls import app_name, base_urlpatterns
 
-from ansible_wisdom.ai.api.telemetry.api_telemetry_settings_views import (
+from ansible_ai_connect.ai.api.telemetry.api_telemetry_settings_views import (
     TelemetrySettingsView,
 )
-from ansible_wisdom.healthcheck.views import (
+from ansible_ai_connect.healthcheck.views import (
     WisdomServiceHealthView,
     WisdomServiceLivenessProbeView,
 )
-from ansible_wisdom.main.views import ConsoleView, LoginView, LogoutView
-from ansible_wisdom.users.views import (
+from ansible_ai_connect.main.views import (
+    ConsoleView,
+    LoginView,
+    LogoutView,
+    MetricsView,
+)
+from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
     TermsOfService,
@@ -59,9 +64,11 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     # add the GitHub OAuth redirect URL /complete/github-team/
     path('', include('social_django.urls', namespace='social')),
-    path('', include('django_prometheus.urls')),
+    # Do not add a trailing slash. django_prometheus uses plain /metrics
+    # Adding a trailing slash breaks our metric collection in all sorts of ways.
+    path('metrics', MetricsView.as_view(), name='prometheus-metrics'),
     path('admin/', admin.site.urls),
-    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_wisdom.ai.api.urls")),
+    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
     path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
     path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
     path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
@@ -80,9 +87,9 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
 
-if settings.DEPLOYMENT_MODE == "saas":
+if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
-        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_wisdom.ai.api.wca.urls')),
+        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_ai_connect.ai.api.wca.urls')),
         path('console/', ConsoleView.as_view(), name='console'),
         path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
         path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),

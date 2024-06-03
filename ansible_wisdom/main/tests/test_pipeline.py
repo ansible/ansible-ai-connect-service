@@ -14,7 +14,7 @@
 
 from unittest import TestCase
 
-import ansible_wisdom.main.pipeline as pipeline
+import ansible_ai_connect.main.pipeline as pipeline
 
 
 class TestPipeline(TestCase):

@@ -18,17 +18,22 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
+from django_prometheus.exports import ExportToDjangoView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import BaseRenderer
+from rest_framework.views import APIView
 
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.main.base_views import ProtectedTemplateView
-from ansible_wisdom.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.base_views import ProtectedTemplateView
+from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +59,9 @@ class LogoutView(auth_views.LogoutView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_next_page(self, request):
+        if isinstance(request.user, AnonymousUser):
+            return None
+
         next_url = request.build_absolute_uri("/")
         if request.user.is_oidc_user():
             return (
@@ -103,3 +111,34 @@ class ConsoleView(ProtectedTemplateView):
                 )
 
         return context
+
+
+class PlainTextRenderer(BaseRenderer):
+    media_type = 'text/plain'
+    format = 'txt'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        if not isinstance(data, str):
+            data = str(data)
+        return data.encode(self.charset)
+
+
+class MetricsView(APIView):
+    schema = None
+
+    renderer_classes = [PlainTextRenderer]
+
+    def initialize_request(self, request, *args, **kwargs):
+        if settings.ALLOW_METRICS_FOR_ANONYMOUS_USERS:
+            self.permission_classes = (AllowAny,)
+        drf_request = super().initialize_request(request, *args, **kwargs)
+        return drf_request
+
+    def get(self, request):
+        if (
+            settings.ALLOW_METRICS_FOR_ANONYMOUS_USERS
+            or request.user.rh_aap_superuser
+            or request.user.rh_aap_system_auditor
+        ):
+            return ExportToDjangoView(request)
+        raise PermissionDenied()

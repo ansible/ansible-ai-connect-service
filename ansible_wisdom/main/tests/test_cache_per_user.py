@@ -21,7 +21,7 @@ from django.views.generic.base import View
 from rest_framework.request import HttpRequest, Request
 from rest_framework.response import Response
 
-from ansible_wisdom.main.cache.cache_per_user import cache_per_user
+from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 
 
 class TestCachePerUser(TestCase):

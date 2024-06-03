@@ -29,28 +29,28 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
-from ansible_wisdom.ai.api.aws.exceptions import WcaSecretManagerError
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_wisdom.ai.api.exceptions import (
+from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.exceptions import (
     ServiceUnavailable,
     WcaKeyNotFoundException,
     WcaUserTrialExpiredException,
 )
-from ansible_wisdom.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaTokenFailure,
     WcaUserTrialExpired,
 )
-from ansible_wisdom.ai.api.permissions import (
+from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_wisdom.ai.api.serializers import WcaModelIdRequestSerializer
-from ansible_wisdom.ai.api.utils.segment import send_segment_event
-from ansible_wisdom.users.signals import user_set_wca_model_id
+from ansible_ai_connect.ai.api.serializers import WcaModelIdRequestSerializer
+from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.users.signals import user_set_wca_model_id
 
 UNKNOWN_MODEL_ID = "Unknown"
 

@@ -16,7 +16,7 @@ from django.apps import apps
 from django.conf import settings
 from rest_framework import permissions
 
-from ansible_wisdom.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
 
 class AcceptedTermsPermission(permissions.BasePermission):

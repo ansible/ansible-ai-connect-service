@@ -22,10 +22,10 @@ from django.test import override_settings
 from django.urls import reverse
 from requests.exceptions import ReadTimeout
 
-from ansible_wisdom.ai.api.exceptions import ModelTimeoutException
-from ansible_wisdom.ai.api.model_client.grpc_client import GrpcClient
-from ansible_wisdom.ai.api.model_client.http_client import HttpClient
-from ansible_wisdom.ai.api.model_client.wca_client import WCAClient
+from ansible_ai_connect.ai.api.exceptions import ModelTimeoutException
+from ansible_ai_connect.ai.api.model_client.grpc_client import GrpcClient
+from ansible_ai_connect.ai.api.model_client.http_client import HttpClient
+from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
 
 from .test_views import WisdomServiceAPITestCaseBase
 
@@ -82,6 +82,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url='http://example.com/')
         self.assertEqual(123 * 2, model_client.timeout(2))
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("requests.Session.post", side_effect=ReadTimeout())
     def test_timeout_http_timeout(self, _):
         self.client.force_authenticate(user=self.user)
@@ -100,6 +101,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
             )
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("grpc._channel._UnaryUnaryMultiCallable.__call__", side_effect=mock_timeout_error())
     def test_timeout_grpc_timeout(self, _):
         self.client.force_authenticate(user=self.user)

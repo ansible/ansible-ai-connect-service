@@ -13,7 +13,7 @@ dependencies = [
   'ansible-risk-insight~=0.2.4',
   'ansible-lint~=24.2.2',
   'boto3~=1.26.84',
-  'cryptography~=42.0.4',
+  'cryptography~=42.0.6',
   'Django~=4.2.11',
   'django-deprecate-fields~=0.1.1',
   'django-extensions~=3.2.1',
@@ -37,13 +37,13 @@ dependencies = [
   'pytz',
   'pyOpenSSL~=24.0.0',
   'PyYAML~=6.0',
-  'requests~=2.31.0',
+  'requests~=2.32.0',
   'segment-analytics-python~=2.2.2',
   'sentence-transformers==2.*',
   'social-auth-app-django~=5.4.1',
-  'social-auth-core[openidconnect]~=4.4.2',
+  'social-auth-core[openidconnect]>=4.4.2',
   'transformers~=4.39.1',
-  'tqdm~=4.64.1',
+  'tqdm~=4.66.3',
   'urllib3~=1.26.18',
   'uwsgi~=2.0.22',
   'uwsgi-readiness-check~=0.2.0',
@@ -82,14 +82,15 @@ profile = "black"
 [tool.pyright]
 include = [
   "ansible_wisdom/ai/api/aws/wca_secret_manager.py",
-  "ansible_wisdom/users/authz_checker.py",
   "ansible_wisdom/ai/api/model_client/bam_client.py",
   "ansible_wisdom/ai/api/model_client/dummy_client.py",
   "ansible_wisdom/ai/api/model_client/grpc_client.py",
   "ansible_wisdom/ai/api/model_client/http_client.py",
+  "ansible_wisdom/ai/api/model_client/langchain.py",
   "ansible_wisdom/ai/api/model_client/llamacpp_client.py",
   "ansible_wisdom/ai/api/model_client/ollama_client.py",
-  "ansible_wisdom/ai/api/model_client/wca_client.py"
+  "ansible_wisdom/ai/api/model_client/wca_client.py",
+  "ansible_wisdom/users/authz_checker.py"
 ]
 exclude = ["**/test_*.py", "ansible_wisdom/*/migrations/*.py"]
 

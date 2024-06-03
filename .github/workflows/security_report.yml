@@ -1,0 +1,32 @@
+name: Monitor repo for security vulnerabilities
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: snyk/actions/setup@master
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
+
+      - name: Monitor project and report vulnerabilities
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk monitor --all-projects
+
+      - name: Generate code vulnerability report
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk code test --project-name="ansible/ansible-ai-connect-service" --report ${{ github.workspace }}
+        continue-on-error: true
