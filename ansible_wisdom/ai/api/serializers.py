@@ -290,26 +290,20 @@ class IssueFeedback(serializers.Serializer):
     )
 
 
-class PlaybookOutlineFeedback(serializers.Serializer):
+class PlaybookGenerationFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
 
-    class Meta:
-        fields = ['action', 'outlineId']
-
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
-    outlineId = serializers.UUIDField(
+    wizardId = serializers.UUIDField(
         format='hex_verbose',
         required=True,
         label="Outline ID",
-        help_text="A UUID that identifies the playbook outline.",
+        help_text="A UUID that identifies the UI session.",
     )
 
 
 class PlaybookExplanationFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
-
-    class Meta:
-        fields = ['action', 'explanationId']
 
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
     explanationId = serializers.UUIDField(
@@ -359,7 +353,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
     metadata = Metadata(required=False)
     model = serializers.CharField(required=False)
     playbookExplanationFeedback = PlaybookExplanationFeedback(required=False)
-    playbookOutlineFeedback = PlaybookOutlineFeedback(required=False)
+    playbookGenerationFeedback = PlaybookGenerationFeedback(required=False)
     sentimentFeedback = SentimentFeedback(required=False)
     suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
 
