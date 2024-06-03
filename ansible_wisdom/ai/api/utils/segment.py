@@ -78,7 +78,6 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
 
     if event['rh_user_has_seat']:
         allow_list = ALLOW_LIST.get(event_name)
-
         if allow_list:
             event = redact_seated_users_data(event, allow_list)
         else:
