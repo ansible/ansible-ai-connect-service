@@ -52,15 +52,15 @@ class AiConfig(AppConfig):
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
             self.model_mesh_client = WCAClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
             self.model_mesh_client = WCAOnPremClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
             self.model_mesh_client = DummyWCAClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
             self.model_mesh_client = HttpClient(
