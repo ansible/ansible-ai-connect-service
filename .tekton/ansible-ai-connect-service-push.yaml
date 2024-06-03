@@ -208,16 +208,6 @@ spec:
         workspace: workspace
       - name: git-basic-auth
         workspace: git-auth
-    - name: get-timestamp
-      taskSpec:
-        steps:
-          - name: output-timestamp
-            image: busybox
-            command: ["/bin/sh", "-c"]
-            args:
-              - echo -n $(date "+%Y%m%d%H%M") > $(results.time-stamp.path)
-        results:
-          - name: time-stamp
     - name: build-container
       params:
       - name: IMAGE
@@ -239,7 +229,7 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=latest 1.0.$(tasks.get-timestamp.results.time-stamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=latest 1.0.$(tasks.git-metadata.results.commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -264,7 +254,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["latest", "1.0.$(tasks.get-timestamp.results.time-stamp)"]
+        value: ["latest", "1.0.$(tasks.git-metadata.results.commit-timestamp)"]
       runAfter:
       - build-container
       taskRef:
@@ -276,6 +266,25 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: git-metadata
+      runAfter:
+      - clone-repository
+      workspaces:
+        - name: source
+          workspace: workspace
+      taskSpec:
+        workspaces:
+          - name: source
+        steps:
+          - name: get-commit-timestamp
+            image: alpine/git
+            script: |
+              #!/bin/sh
+              set -euo pipefail
+              cd "$(workspaces.source.path)/source"
+              echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
+        results:
+          - name: commit-timestamp
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
