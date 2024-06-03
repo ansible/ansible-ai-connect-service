@@ -63,7 +63,7 @@ class HttpClient(ModelMeshClient):
             raise ModelTimeoutError
 
     def self_test(self) -> HealthCheckSummary:
-        url = f"{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping"
+        url = f"{self._inference_url}/ping"
         summary: HealthCheckSummary = HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,

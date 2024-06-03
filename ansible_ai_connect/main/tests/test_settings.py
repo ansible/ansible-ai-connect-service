@@ -21,9 +21,10 @@ from django.test import SimpleTestCase
 from oauth2_provider.settings import oauth2_settings
 
 import ansible_ai_connect.main.settings.base
+from ansible_ai_connect.test_utils import WisdomLogAwareMixin
 
 
-class TestSettings(SimpleTestCase):
+class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     @classmethod
     def reload_settings(cls):
         module_name = os.getenv("DJANGO_SETTINGS_MODULE")
@@ -101,3 +102,40 @@ class TestSettings(SimpleTestCase):
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SECRET, "secret")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SCOPE, [""])
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_EXTRA_DATA, ["login"])
+
+    @patch.dict(
+        os.environ,
+        {
+            "ANSIBLE_AI_MODEL_MESH_MODEL_NAME": "a-model",
+        },
+    )
+    def test_use_of_model_mesh_model_name(self):
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            settings = self.reload_settings()
+            self.assertEqual(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID, "a-model")
+            self.assertTrue(
+                self.searchInLogOutput("Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated", log)
+            )
+            self.assertTrue(
+                self.searchInLogOutput("Setting the value of ANSIBLE_AI_MODEL_MESH_MODEL_ID", log)
+            )
+
+    @patch.dict(
+        os.environ,
+        {
+            "ANSIBLE_AI_MODEL_MESH_MODEL_NAME": "a-model",
+            "ANSIBLE_AI_MODEL_MESH_MODEL_ID": "b-model",
+        },
+    )
+    def test_use_of_model_mesh_model_name_and_model_id(self):
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            settings = self.reload_settings()
+            self.assertEqual(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID, "b-model")
+            self.assertTrue(
+                self.searchInLogOutput("Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated", log)
+            )
+            self.assertTrue(
+                self.searchInLogOutput(
+                    "ANSIBLE_AI_MODEL_MESH_MODEL_ID is set and will take precedence", log
+                )
+            )

@@ -45,7 +45,7 @@ class ModelMeshClient:
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
-        return requested_model_id or settings.ANSIBLE_AI_MODEL_NAME
+        return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
 
     def timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None

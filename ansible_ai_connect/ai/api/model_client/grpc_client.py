@@ -82,11 +82,7 @@ class GrpcClient(ModelMeshClient):
                 raise
 
     def self_test(self) -> HealthCheckSummary:
-        url = (
-            f"{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL}://"
-            f"{settings.ANSIBLE_AI_MODEL_MESH_HOST}:"
-            f"{settings.ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT}/oauth/healthz"
-        )
+        url = f"{settings.ANSIBLE_GRPC_HEALTHCHECK_URL}/oauth/healthz"
         summary: HealthCheckSummary = HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
