@@ -617,7 +617,7 @@ class ContentMatches(GenericAPIView):
                 event['modelName'] = model_id
                 send_segment_event(event, event_name, user)
             else:
-                self._write_to_segment(
+                self.write_to_segment(
                     request_data,
                     duration,
                     exception,
@@ -664,7 +664,7 @@ class ContentMatches(GenericAPIView):
             )
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
-            self._write_to_segment(
+            self.write_to_segment(
                 request_data,
                 duration,
                 exception,
@@ -677,7 +677,7 @@ class ContentMatches(GenericAPIView):
 
         return response_serializer
 
-    def _write_to_segment(
+    def write_to_segment(
         self,
         request_data,
         duration,
@@ -758,6 +758,14 @@ class Explanation(APIView):
             status=rest_framework_status.HTTP_200_OK,
         )
 
+    def write_to_segment(self, user, suggestion_id, duration, playbook_length):
+        event = {
+            'suggestionId': suggestion_id,
+            'duration': duration,
+            'playbook_length': playbook_length,
+        }
+        send_segment_event(event, "explanation", user)
+
 
 class Generation(APIView):
     """
@@ -792,12 +800,14 @@ class Generation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        request_serializer = GenerationRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        generation_id = str(request_serializer.validated_data.get("generationId", ""))
-        create_outline = request_serializer.validated_data["createOutline"]
-        outline = str(request_serializer.validated_data.get("outline", ""))
-        text = request_serializer.validated_data["text"]
+        request.serializer = GenerationRequestSerializer(data=request.data)
+        print(f"api/view={id(request)}")
+        setattr(request, "_serializer", request.serializer)
+        request.serializer.is_valid(raise_exception=True)
+        generation_id = str(request.serializer.validated_data.get("generationId", ""))
+        create_outline = request.serializer.validated_data["createOutline"]
+        outline = str(request.serializer.validated_data.get("outline", ""))
+        text = request.serializer.validated_data["text"]
 
         llm = apps.get_app_config("ai").model_mesh_client
         playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
@@ -810,13 +820,6 @@ class Generation(APIView):
         anonymized_outline = anonymizer.anonymize_struct(
             outline, value_template=Template("{{ _${variable_name}_ }}")
         )
-
-        answer = {
-            "playbook": anonymized_playbook,
-            "outline": anonymized_outline,
-            "format": "plaintext",
-            "generationId": generation_id,
-        }
 
         return Response(
             answer,
