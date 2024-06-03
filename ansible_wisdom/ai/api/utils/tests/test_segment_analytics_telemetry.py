@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 from ansible_ai_connect.organizations.models import Organization
 
 
+@override_settings(DEPLOYMENT_MODE='saas')
 class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @classmethod
     def setUpClass(cls):

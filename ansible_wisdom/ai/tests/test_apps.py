@@ -60,6 +60,7 @@ class TestAiApp(APITestCase):
 
     @override_settings(ANSIBLE_WCA_USERNAME='username')
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE='wca-onprem')
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
     def test_wca_on_prem_client_missing_api_key(self):
         app_config = AppConfig.create('ansible_ai_connect.ai')
         with self.assertRaises(WcaKeyNotFound):
