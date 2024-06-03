@@ -95,6 +95,17 @@ class AlreadyAuth(TestCase):
         self.assertIn("You are currently not logged in.", contents)
         self.assertIn("Log in with Ansible Automation Platform", contents)
 
+    @override_settings(DEPLOYMENT_MODE='onprem')
+    @override_settings(AAP_API_PROVIDER_NAME='Ansible Automation Controller')
+    def test_login_aap_override_provider_name(self):
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("You are currently not logged in.", contents)
+        self.assertIn("Log in with Ansible Automation Controller", contents)
+
     @override_settings(DEPLOYMENT_MODE='upstream')
     def test_login_django(self):
         request = RequestFactory().get("/login")

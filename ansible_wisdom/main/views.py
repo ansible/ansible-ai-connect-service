@@ -45,6 +45,7 @@ class LoginView(auth_views.LoginView):
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
         return context
 
     def dispatch(self, request, *args, **kwargs):
