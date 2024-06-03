@@ -32,6 +32,7 @@ from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
+    unify_prompt_ending,
 )
 from ansible_ai_connect.ai.api.model_client.wca_utils import (
     ContentMatchResponseChecks,
@@ -179,9 +180,7 @@ class BaseWCAClient(ModelMeshClient):
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         prompt = strip_task_preamble_from_multi_task_prompt(prompt)
 
-        # WCA codegen endpoint requires prompt to end with \n
-        if prompt.endswith('\n') is False:
-            prompt = f"{prompt}\n"
+        prompt = unify_prompt_ending(prompt)
 
         try:
             api_key = self.get_api_key(organization_id)
