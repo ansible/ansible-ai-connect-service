@@ -800,8 +800,8 @@ components:
           type: string
         playbookExplanationFeedback:
           $ref: '#/components/schemas/PlaybookExplanationFeedback'
-        playbookOutlineFeedback:
-          $ref: '#/components/schemas/PlaybookOutlineFeedback'
+        playbookGenerationFeedback:
+          $ref: '#/components/schemas/PlaybookGenerationFeedback'
         sentimentFeedback:
           $ref: '#/components/schemas/SentimentFeedback'
         suggestionQualityFeedback:
@@ -923,19 +923,19 @@ components:
       required:
       - action
       - explanationId
-    PlaybookOutlineFeedback:
+    PlaybookGenerationFeedback:
       type: object
       properties:
         action:
           $ref: '#/components/schemas/ActionEnum'
-        outlineId:
+        wizardId:
           type: string
           format: uuid
           title: Outline ID
-          description: A UUID that identifies the playbook outline.
+          description: A UUID that identifies the UI session.
       required:
       - action
-      - outlineId
+      - wizardId
     SentimentFeedback:
       type: object
       properties:

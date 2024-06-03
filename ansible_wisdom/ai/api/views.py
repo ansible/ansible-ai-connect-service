@@ -617,7 +617,7 @@ class ContentMatches(GenericAPIView):
                 event['modelName'] = model_id
                 send_segment_event(event, event_name, user)
             else:
-                self._write_to_segment(
+                self.write_to_segment(
                     request_data,
                     duration,
                     exception,
@@ -664,7 +664,7 @@ class ContentMatches(GenericAPIView):
             )
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
-            self._write_to_segment(
+            self.write_to_segment(
                 request_data,
                 duration,
                 exception,
@@ -677,7 +677,7 @@ class ContentMatches(GenericAPIView):
 
         return response_serializer
 
-    def _write_to_segment(
+    def write_to_segment(
         self,
         request_data,
         duration,
@@ -739,7 +739,9 @@ class Explanation(APIView):
         playbook = request_serializer.validated_data.get("content")
 
         llm = apps.get_app_config("ai").model_mesh_client
+        start_time = time.time()
         explanation = llm.explain_playbook(request, playbook)
+        duration = round((time.time() - start_time) * 1000, 2)
 
         # Anonymize response
         # Anonymized in the View to be consistent with where Completions are anonymized
@@ -753,10 +755,25 @@ class Explanation(APIView):
             "explanationId": explanation_id,
         }
 
+        self.write_to_segment(
+            request.user,
+            explanation_id,
+            duration,
+            playbook_length=len(playbook),
+        )
+
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
+
+    def write_to_segment(self, user, suggestion_id, duration, playbook_length):
+        event = {
+            'suggestionId': suggestion_id,
+            'duration': duration,
+            'playbook_length': playbook_length,
+        }
+        send_segment_event(event, "explanation", user)
 
 
 class Generation(APIView):
@@ -798,9 +815,12 @@ class Generation(APIView):
         create_outline = request_serializer.validated_data["createOutline"]
         outline = str(request_serializer.validated_data.get("outline", ""))
         text = request_serializer.validated_data["text"]
+        wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
 
         llm = apps.get_app_config("ai").model_mesh_client
+        start_time = time.time()
         playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
+        duration = round((time.time() - start_time) * 1000, 2)
 
         # Anonymize responses
         # Anonymized in the View to be consistent with where Completions are anonymized
@@ -817,8 +837,28 @@ class Generation(APIView):
             "format": "plaintext",
             "generationId": generation_id,
         }
+        self.write_to_segment(
+            request.user,
+            generation_id,
+            wizard_id,
+            duration,
+            create_outline,
+            playbook_length=len(playbook),
+        )
 
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
+
+    def write_to_segment(
+        self, user, generation_id, wizard_id, duration, create_outline, playbook_length
+    ):
+        event = {
+            'generationId': generation_id,
+            'wizardId': wizard_id,
+            'duration': duration,
+            'create_outline': create_outline,
+            'playbook_length': playbook_length,
+        }
+        send_segment_event(event, "generation", user)
