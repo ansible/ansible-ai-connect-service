@@ -19,6 +19,7 @@ ollama run mistral:instruct
 ### Set environment variables
 Populate the `tools/docker-compose/.env` file with the following values:
 ```bash
+DEPLOYMENT_MODE=upstream
 SECRET_KEY="somesecretvalue"
 ENABLE_ARI_POSTPROCESS="False"
 WCA_SECRET_BACKEND_TYPE="dummy"
