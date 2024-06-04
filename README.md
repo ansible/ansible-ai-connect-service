@@ -81,10 +81,13 @@ export WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
 ```
 See [here](#aws-config) for details.
 
+### Admin Portal
+This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located in the `ansible_wisdom_console_react` directory. Further details can be found in `ansible_wisdom_console_react/README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
+
 ## Debugging
 
-Either version can be run in debug mode by exporting or adding to the
-command line the variable `DEBUG_VALUE=True`.
+The service can be run in debug mode by exporting or adding to the
+command line the variable `DEBUG=True`.
 
 The Django service listens on <http://127.0.0.1:8000>.
 
