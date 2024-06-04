@@ -1,51 +1,160 @@
-# Ansible AI Connect.
-- [Ansible AI Connect.](#ansible-ai-connect)
-      - [Wisdom Service](#wisdom-service)
-      - [Admin Portal](#admin-portal)
-  - [Using pre-commit](#using-pre-commit)
-  - [Updating the Python dependencies](#updating-the-python-dependencies)
-  - [Full Development Environment](#full-development-environment)
-  - [Running the Django application standalone (from container)](#running-the-django-application-standalone-from-container)
-  - [Running the Django application standalone (from source)](#running-the-django-application-standalone-from-source)
-  - [Backup/restore the database (Podman)](#backuprestore-the-database-podman)
-  - [Connect to a local model server](#connect-to-a-local-model-server)
-  - [Use the WCA API Keys Manager](#use-the-wca-api-keys-manager)
-  - [Deploy the service via OpenShift S2I](#deploy-the-service-via-openshift-s2i)
-  - [Testing the completion API](#testing-the-completion-api)
-  - [Using the VS Code extension](#using-the-vs-code-extension)
-  - [Authenticating with the completion API](#authenticating-with-the-completion-api)
-    - [Authenticate with GitHub](#authenticate-with-github)
-    - [Authenticate with Red Hat](#authenticate-with-red-hat)
-    - [After authentication](#after-authentication)
-  - [Enabling postprocess with ARI](#enabling-postprocess-with-ari)
-  - [Enabling postprocess with Ansible Lint](#enabling-postprocess-with-ansible-lint)
-  - [Application metrics as a Prometheus-style endpoint](#application-metrics-as-a-prometheus-style-endpoint)
-  - [Swagger UI, ReDoc UI and OpenAPI 3.0 Schema](#swagger-ui-redoc-ui-and-openapi-30-schema)
-    - [Swagger UI](#swagger-ui)
-    - [ReDoc UI](#redoc-ui)
-    - [OpenAPI 3.0 Schema](#openapi-30-schema)
-  - [Test cases](#test-cases)
-    - [Unit-test Guidelines](#unit-test-guidelines)
-    - [Execute Unit Tests and Measure Code Coverage](#execute-unit-tests-and-measure-code-coverage)
-      - [Preparation](#preparation)
-      - [Use make](#use-make)
-      - [Running Unit Tests from Command Line or PyCharm](#running-unit-tests-from-command-line-or-pycharm)
-      - [Measuring Code Coverage from Command Line](#measuring-code-coverage-from-command-line)
+# Ansible AI Connect
+
+This repository contains the application that serves Ansible task suggestions for consumption by the Ansible VS Code extension.
+
+## Getting started
+
+### Install dependencies
+1. Podman Desktop
+2. Ollama
+3. VS Code and the Ansible extension
+
+### Start the model server
+```bash
+export OLLAMA_HOST=0.0.0.0
+ollama serve &
+ollama run mistral:instruct
+```
+
+### Set environment variables
+Populate the `tools/docker-compose/.env` file with the following values:
+```bash
+DEPLOYMENT_MODE=upstream
+SECRET_KEY="somesecretvalue"
+ENABLE_ARI_POSTPROCESS="False"
+WCA_SECRET_BACKEND_TYPE="dummy"
+# configure model server
+ANSIBLE_AI_MODEL_MESH_HOST="http://host.containers.internal"
+ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT="11434"
+ANSIBLE_AI_MODEL_MESH_API_TYPE="ollama"
+ANSIBLE_AI_MODEL_NAME="mistral:instruct"
+```
+
+### Start service and dependencies
+
+```bash
+podman compose -f tools/docker-compose/compose.yaml up
+```
+
+### Configure VS Code to connect to your local machine
+
+TODO
+
+### Stop service and dependencies
+```bash
+podman compose -f tools/docker-compose/compose.yaml down
+```
+
+## Development
+
+### Project structure
+| Path | Description |
+|------|-------------|
+| ansible_wisdom | Service backend application |
+| ansible_wisdom_console_react | Admin portal application |
+
+### Service configuration
+
+### Secret storage
+For most development usages, you can skip the call to AWS Secrets Manager
+and always use the dummy `WCA_SECRET_BACKEND_TYPE` by setting the following in your
+`tools/docker-compose/.env` file:
+
+```bash
+WCA_SECRET_BACKEND_TYPE="dummy"
+WCA_SECRET_DUMMY_SECRETS="11009103:valid"
+```
+
+In this example, `11009103`` is your organization id. In this case the model is set to `valid`.
+You can also use the following syntax to set both the model and set key_id:
+`WCA_SECRET_DUMMY_SECRETS='11009103:ibm_api_key<sep>model_id<|sepofid|>model_name'`
 
 
-> **Note:** This repository is under active development and is not yet ready for production use.
+For deployment and RH SSO integration test/development, add the following to your
+`tools/docker-compose/.env` file:
 
-#### Wisdom Service
-This repository contains a Python/Django application under the `ansible-wisdom-service/ansible_wisdom` path. This application serves Ansible task suggestions for consumption by the Ansible VS Code
-extension. In the future it will also serve playbook suggestions and integrate with Ansible Risk Insights, ansible lint,
-etc.
+```bash
+DEPLOYMENT_MODE=saas
+WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
+WCA_SECRET_MANAGER_KMS_KEY_ID=<kms-key-id>
+WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
+WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
+```
+See [here](#aws-config) for details.
 
-The Django application depends on a separate model server to perform the task suggestion predictions. There is a
-torchserve configuration in this repository that can be stood up for this purpose, or you can point the Django
-application at the dev model server running at model.wisdom.testing.ansible.com as described below.
+### Admin Portal
+This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located in the `ansible_wisdom_console_react` directory. Further details can be found in `ansible_wisdom_console_react/README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
 
-#### Admin Portal
-This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located under `ansible-wisdom-service/ansible_wisdom_console_react`. Further details can be found in the corresponding `README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
+## Debugging
+
+The service can be run in debug mode by exporting or adding to the
+command line the variable `DEBUG=True`.
+
+The Django service listens on <http://127.0.0.1:8000>.
+
+Note that there is no pytorch service defined in the docker-compose
+file. You should adjust the `ANSIBLE_AI_MODEL_MESH_HOST`
+configuration key to point on an existing service.
+
+## <a name="aws-config">Use the WCA API Keys Manager</a>
+
+To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following
+variables to you environment file:
+
+```shell
+WCA_SECRET_MANAGER_ACCESS_KEY=<AWS access key>
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<AWS secret access key>
+WCA_SECRET_MANAGER_KMS_KEY_ID=<KMS key id or alias>
+WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
+WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
+```
+
+The AWS key and secret key must belong to a user who has both the `AnsibleWisdomWCASecretsReader` and
+`AnsibleWisdomWCASecretsWriter` policies.
+
+The KMS Secret needs to either be a multi region secret (when using the id) or a secret with the same name in the
+primary and replica regions (when using the alias).
+
+Note: when using a KMS key alias, prefix with `alias/<actual alias>`.
+
+Refer to [the set up document](https://github.com/ansible/ansible-wisdom-ops/blob/main/docs/wca-vault.md) for the AWS accounts and secrets.
+
+## Deploy the service via OpenShift S2I
+
+```
+oc new-build --strategy=docker --binary --name wisdom-service
+oc start-build wisdom-service --from-dir . --exclude='(^|\/)(.git|.venv|.tox|model)(\/|$)' --wait=true
+oc new-app wisdom-service
+```
+
+## Testing the completion API
+
+The sample request below tests the task suggestion prediction API provided by the Django application. This is the same
+request the VS Code extension will make.
+
+Request:
+
+```bash
+# Post a request using curl
+curl -X 'POST' \
+  'http://127.0.0.1:8000/api/v0/ai/completions/' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "prompt": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n"
+    }'
+```
+
+Response:
+
+```json
+{
+  "predictions": [
+    "- name: ansible Convert instance config dict to a list\n      set_fact:\n        ansible_list: \"{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}\"\n      when: server.changed | bool\n"
+  ]
+}
+```
 
 ## Using pre-commit
 
@@ -124,292 +233,8 @@ our dependencies involved. Due to differences in architecture and
 version of Python between developers' machines, we do not recommend
 running the pip-compile commands directly.
 
-## Full Development Environment
 
-You can deploy a development environment using `docker-compose` or
-`podman-compose`.
-
-First, set an environment variable with your desired Django secret
-key:
-
-```bash
-export SECRET_KEY=somesecretvalue
-```
-
-For most development usages, you can skip the call to AWS Secrets Manager
-and always use the dummy `WCA_SECRET_BACKEND_TYPE`:
-
-```bash
-export WCA_SECRET_BACKEND_TYPE="dummy"
-export WCA_SECRET_DUMMY_SECRETS="11009103:valid"
-```
-In this example, `11009103`` is your organization id. In this case the model is set to `valid`.
-You can also use the following syntax to set both the model and set key_id:
-`WCA_SECRET_DUMMY_SECRETS='11009103:ibm_api_key<sep>model_id<|sepofid|>model_name'`
-
-You can become a fake admin with the `AUTHZ_DUMMY_RH_ORG_ADMINS` and be able to use the admin
-interface, you can use the `AUTHZ_DUMMY_RH_ORG_ADMINS` environment variable:
-
-```bash
-export AUTHZ_DUMMY_RH_ORG_ADMINS="your-user-name"
-```
-
-For deployment and RH SSO integration test/development, set
-environment variables for access to AWS:
-
-```bash
-export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
-export WCA_SECRET_MANAGER_KMS_KEY_ID=<kms-key-id>
-export WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
-export WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
-export WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
-```
-See [here](#aws-config) for details.
-
-For convenience, we have a make target to bring up all of the
-containers:
-
-```bash
-make docker-compose
-```
-
-The same result can still be accomplished manually, by running
-
-```bash
-podman-compose -f tools/docker-compose/compose.yaml up
-```
-
-or
-
-```bash
-docker-compose -f tools/docker-compose/compose.yaml up
-```
-
-Either version can be run in debug mode by exporting or adding to the
-command line the variable `DEBUG_VALUE=True`.
-
-The Django service listens on <http://127.0.0.1:8000>.
-
-Note that there is no pytorch service defined in the docker-compose
-file. You should adjust the `ANSIBLE_AI_MODEL_MESH_HOST`
-configuration key to point on an existing service.
-
-If you get a permission denied error when attempting to start the
-containers, you may need to set the permissions on the
-`ansible_wisdom/`, `prometheus/` and `ari/` directories:
-
-```bash
-chcon -t container_file_t -R ansible_wisdom/
-chcon -t container_file_t -R prometheus/
-chcon -t container_file_t -R grafana/
-chcon -t container_file_t -R ari/
-```
-
-Also run `chmod` against the `ari/` directory so that ARI can
-write temporary data in it:
-
-```bash
-chmod -R 777 ari/
-```
-
-If your django container build fails with the following error, you've
-probably run out of memory running webpack.
-```bash
-STEP 30/46: RUN npm --prefix /tmp/ansible_wisdom_console_react run build
-
-> admin-portal@0.1.0 build
-> node scripts/build.js
-
-Creating an optimized production build...
-npm ERR! path /tmp/ansible_wisdom_console_react
-npm ERR! command failed
-npm ERR! signal SIGKILL
-npm ERR! command sh -c -- node scripts/build.js
-```
-You can increase the memory of your existing podman machine
-by issuing the following:
-```bash
-podman machine set --memory 8192
-```
-
-Recreating the dev containers might be useful:
-
-```bash
-make docker-compose-clean
-```
-
-It may be necessary to recreate the dev image if anything has changed in the nginx settings:
-
-```bash
- docker rmi docker-compose_django_1
-```
-
-Create a local admin user:
-
-```bash
- make docker-create-superuser
-```
-
-## Running the Django application standalone (from container)
-
-1. Build the container
-
-   ```bash
-   make build-wisdom-container
-   ```
-
-2. Start the container
-
-   ```bash
-   make run-server-containerized
-   ```
-
-## Running the Django application standalone (from source)
-
-1. Clone the repository and install all the dependencies
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   If you are attempting to do this on a Mac, do instead:
-
-   ```bash
-   pip install -r requirements.in
-   ```
-
-   This will avoid problems with the Python Nvidia CUDA libraries which are
-   unavailable on Mac.
-
-2. Export the host and port for the model server.
-
-   > Skip this step if you want to use the model server on model.wisdom.testing.ansible.com.
-   See [Running the model server locally](#running-the-model-server-locally) below to spin up your own model server.
-
-   ```bash
-   export ANSIBLE_AI_MODEL_MESH_HOST="http://localhost"
-   export ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=7080
-   ```
-
-3. Start backend services.
-
-    ```bash
-    make start-backends
-    ```
-
-4. Create the application.
-   > Skip this step if you already created the application.
-
-   > Before running this step, make sure you set the `SOCIAL_AUTH_GITHUB_KEY` and `SOCIAL_AUTH_GITHUB_SECRET`
-   environment variables for VS Code connection.
-
-    ```bash
-    make create-application
-    ```
-
-5. Start the django application
-
-   ```bash
-   make run-server
-   ```
-
-> The setup for debugging is different depending on the Python development tool.
-> For PyCharm, please look
-> at [this document](./docs/pycharm-setup.md).
-
-## Backup/restore the database (Podman)
-
-You can do a backup and restore the database with the following scripts:
-
-- `./tools/scripts/dump-db.sh`
-- `./tools/scripts/restore-db.sh`
-
-E.g:
-
-```bash
-./tools/scripts/dump-db.sh /tmp/my-backup.dump
-./tools/scripts/restore-db.sh /tmp/my-backup.dump
-```
-
-## Connect to a local model server
-
-To connect to the Mistal 7b Instruct model running locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
-
-1. Download the Mistral-7b-Instruct [llamafile](https://github.com/Mozilla-Ocho/llamafile?tab=readme-ov-file#other-example-llamafiles)
-1. Make it executable and run it (`$YOUR_REAL_IP` is your local IP address, NOT 127.0.0.1 or localhost)
-   ```bash
-   chmod +x ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile
-   ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile --host $YOUR_REAL_IP
-   ```
-1. Set the appropriate environment variables
-   ```bash
-   ANSIBLE_AI_MODEL_MESH_HOST=http://$YOUR_REAL_IP
-   ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=8080
-   ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
-   ANSIBLE_AI_MODEL_NAME=mistral-7b-instruct-v0.2.Q5_K_M.gguf
-   ENABLE_ARI_POSTPROCESS=False
-   ```
-
-## <a name="aws-config">Use the WCA API Keys Manager</a>
-
-To interact with the WCA key management API, or use WCA commercial inference locally, you need to add the following
-variables to you environment file:
-
-```shell
-WCA_SECRET_MANAGER_ACCESS_KEY=<AWS access key>
-WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<AWS secret access key>
-WCA_SECRET_MANAGER_KMS_KEY_ID=<KMS key id or alias>
-WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
-WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
-```
-
-The AWS key and secret key must belong to a user who has both the `AnsibleWisdomWCASecretsReader` and
-`AnsibleWisdomWCASecretsWriter` policies.
-
-The KMS Secret needs to either be a multi region secret (when using the id) or a secret with the same name in the
-primary and replica regions (when using the alias).
-
-Note: when using a KMS key alias, prefix with `alias/<actual alias>`.
-
-Refer to [the set up document](https://github.com/ansible/ansible-wisdom-ops/blob/main/docs/wca-vault.md) for the AWS accounts and secrets.
-
-## Deploy the service via OpenShift S2I
-
-```
-oc new-build --strategy=docker --binary --name wisdom-service
-oc start-build wisdom-service --from-dir . --exclude='(^|\/)(.git|.venv|.tox|model)(\/|$)' --wait=true
-oc new-app wisdom-service
-```
-
-## Testing the completion API
-
-The sample request below tests the task suggestion prediction API provided by the Django application. This is the same
-request the VS Code extension will make.
-
-Request:
-
-```bash
-# Post a request using curl
-curl -X 'POST' \
-  'http://127.0.0.1:8000/api/v0/ai/completions/' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "prompt": "---\n- hosts: all\n  tasks:\n  - name: Install nginx and nodejs 12 Packages\n"
-    }'
-```
-
-Response:
-
-```json
-{
-  "predictions": [
-    "- name: ansible Convert instance config dict to a list\n      set_fact:\n        ansible_list: \"{{ instance_config_dict.results | map(attribute='ansible_facts.instance_conf_dict') | list }}\"\n      when: server.changed | bool\n"
-  ]
-}
-```
-
-## Using the VS Code extension
+# Using the VS Code extension
 
 Install the latest Ansible VS Code Extension from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=redhat.ansible).
 
@@ -603,6 +428,29 @@ Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded eith
 - Click the /api/schema/ link on Swagger UI, or
 - Click the Download button on ReDoc UI
 
+# Connect to additional model servers
+
+## Connect to a local model server
+
+To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](https://github.com/ggerganov/llama.cpp) modelserver:
+
+1. Download the Mistral-7b-Instruct [llamafile](https://github.com/Mozilla-Ocho/llamafile?tab=readme-ov-file#other-example-llamafiles)
+1. Make it executable and run it (`$YOUR_REAL_IP` is your local IP address, NOT 127.0.0.1 or localhost)
+   ```bash
+   chmod +x ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile
+   ./mistral-7b-instruct-v0.2-Q5_K_M-server.llamafile --host $YOUR_REAL_IP
+   ```
+1. Set the appropriate environment variables
+   ```bash
+   ANSIBLE_AI_MODEL_MESH_HOST=http://$YOUR_REAL_IP
+   ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT=8080
+   ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
+   ANSIBLE_AI_MODEL_NAME=mistral-7b-instruct-v0.2.Q5_K_M.gguf
+   ENABLE_ARI_POSTPROCESS=False
+   ```
+
+# Testing
+
 ## Test cases
 
 Unit-tests are based on Python's [unittest library](https://docs.python.org/3/library/unittest.html#module-unittest) and
@@ -620,9 +468,9 @@ rely on [Django REST framework APIClient](https://www.django-rest-framework.org/
   Additionally if you are hitting the same endpoint over a bunch of methods on the same test class, you can always store
   the results of `reverse()` in an attribute and make use of that, to reduce the repetition.
 
-### Execute Unit Tests and Measure Code Coverage
+## Execute Unit Tests and Measure Code Coverage
 
-#### Preparation
+### Preparation
 
 For running Unit Tests in this repository, you need to
 have backend services (Postgres, Prometheus and Grafana) running.
@@ -634,7 +482,7 @@ install the `coverage` module, which is included
 in `requirements-dev.txt` with the instructions in the
 [Using pre-commit](#using-pre-commit) section.
 
-#### Use make
+### Use make
 
 The easiest way to run unit tests and measure code coverage report is to run
 
@@ -644,7 +492,7 @@ make code-coverage
 
 If the execution was successful, results in HTML are showin in Chrome.
 
-#### Running Unit Tests from Command Line or PyCharm
+### Running Unit Tests from Command Line or PyCharm
 
 For executing unit tests from command line,
 You need to set some environment variables
@@ -694,7 +542,7 @@ cd ansible_wisdom
 python3 manage.py test
 ```
 
-#### Measuring Code Coverage from Command Line
+### Measuring Code Coverage from Command Line
 
 If you want to get code coverage by
 running unit tests from command line,
@@ -724,4 +572,72 @@ Alternatively you can run the following command for code coverage:
 
 ```bash
 make code-coverage
+```
+
+# Utilities
+
+## Backup/restore the database (Podman)
+
+You can do a backup and restore the database with the following scripts:
+
+- `./tools/scripts/dump-db.sh`
+- `./tools/scripts/restore-db.sh`
+
+E.g:
+
+```bash
+./tools/scripts/dump-db.sh /tmp/my-backup.dump
+./tools/scripts/restore-db.sh /tmp/my-backup.dump
+```
+
+# Troubleshooting
+
+If you get a permission denied error when attempting to start the
+containers, you may need to set the permissions on the
+`ansible_wisdom/`, `prometheus/` and `ari/` directories:
+
+```bash
+chcon -t container_file_t -R ansible_wisdom/
+chcon -t container_file_t -R prometheus/
+chcon -t container_file_t -R grafana/
+chcon -t container_file_t -R ari/
+```
+
+Also run `chmod` against the `ari/` directory so that ARI can
+write temporary data in it:
+
+```bash
+chmod -R 777 ari/
+```
+
+If your django container build fails with the following error, you've
+probably run out of memory running webpack.
+```bash
+STEP 30/46: RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+
+> admin-portal@0.1.0 build
+> node scripts/build.js
+
+Creating an optimized production build...
+npm ERR! path /tmp/ansible_wisdom_console_react
+npm ERR! command failed
+npm ERR! signal SIGKILL
+npm ERR! command sh -c -- node scripts/build.js
+```
+You can increase the memory of your existing podman machine
+by issuing the following:
+```bash
+podman machine set --memory 8192
+```
+
+Recreating the dev containers might be useful:
+
+```bash
+podman compose -f tools/docker-compose/compose.yaml down
+```
+
+It may be necessary to recreate the dev image if anything has changed in the nginx settings:
+
+```bash
+podman rmi localhost/docker-compose_django_1
 ```
