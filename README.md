@@ -73,11 +73,12 @@ For deployment and RH SSO integration test/development, add the following to you
 `tools/docker-compose/.env` file:
 
 ```bash
-export WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
-export WCA_SECRET_MANAGER_KMS_KEY_ID=<kms-key-id>
-export WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
-export WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
-export WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
+DEPLOYMENT_MODE=saas
+WCA_SECRET_MANAGER_ACCESS_KEY=<access-key>
+WCA_SECRET_MANAGER_KMS_KEY_ID=<kms-key-id>
+WCA_SECRET_MANAGER_PRIMARY_REGION=us-east-2
+WCA_SECRET_MANAGER_REPLICA_REGIONS=us-west-1
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
 ```
 See [here](#aws-config) for details.
 
