@@ -511,6 +511,21 @@ var3: value3
         after = "    # Install go & Install nginx & Install git\n"
         self.assertEqual(after, fmtr.unify_prompt_ending(before))
 
+    def test_unify_prompt_ending_with_fully_valid_string(self):
+        before = "  # Install go & Install nginx & Install git"
+        after = "  # Install go & Install nginx & Install git\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_empty_string(self):
+        before = ""
+        after = "\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
+    def test_unify_prompt_ending_whitespaces_string(self):
+        before = "   \n \t:  \n \t:: "
+        after = "\n"
+        self.assertEqual(after, fmtr.unify_prompt_ending(before))
+
     def test_get_fqcn_module_from_prediction(self):
         self.assertEqual(
             "ansible.builtin.package",
