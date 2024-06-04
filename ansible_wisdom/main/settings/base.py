@@ -170,6 +170,7 @@ else:
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
 
 AAP_API_URL = os.environ.get("AAP_API_URL")
+AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
 SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", 'True').lower() in ('true', '1', 't')
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")

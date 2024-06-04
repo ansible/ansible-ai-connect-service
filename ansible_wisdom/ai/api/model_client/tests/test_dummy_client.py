@@ -43,7 +43,7 @@ class TestDummyClient(SimpleTestCase):
     def test_infer_with_jitter(self, loads, randbelow, sleep):
         client = DummyClient(inference_url="https://example.com")
         randbelow.return_value = random_value
-        client.infer(model_input="input")
+        client.infer(None, model_input="input")
         sleep.assert_called_once_with(latency / 1000)
         loads.assert_called_once_with(body)
 
@@ -52,7 +52,7 @@ class TestDummyClient(SimpleTestCase):
     @mock.patch("json.loads")
     def test_infer_without_jitter(self, loads, sleep):
         client = DummyClient(inference_url="https://ibm.com")
-        client.infer(model_input="input")
+        client.infer(None, model_input="input")
         sleep.assert_called_once_with(latency / 1000)
         loads.assert_called_once_with(body)
 

@@ -31,7 +31,7 @@ class ModelMeshClient:
         self._timeout = int(i) if i is not None else None
 
     @abstractmethod
-    def infer(self, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
         pass
 
     def codematch(self, model_input, model_id):

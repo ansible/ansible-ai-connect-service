@@ -19,7 +19,7 @@
                     <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
 
                     {% if deployment_mode == 'onprem' %}
-                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Ansible Automation Platform</a>
+                    <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'aap' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with {{ aap_api_provider_name }}</a>
                     {% else %}
                     <a class="pf-c-button pf-m-primary" href="{% url 'social:begin' 'oidc' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in with Red Hat</a>
                     {% endif %}

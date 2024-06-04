@@ -444,6 +444,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_api_key = Mock(return_value=api_key)
 
         result = model_client.infer(
+            request=Mock(),
             model_input=model_input,
             model_id=model_id,
             suggestion_id=suggestion_id,
@@ -485,7 +486,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(ModelTimeoutError) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -517,7 +521,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(WcaInferenceFailure) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -555,7 +562,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
         with self.assertRaises(WcaSuggestionIdCorrelationFailure) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -569,7 +579,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -579,7 +592,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -589,7 +605,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse) as e:
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -608,7 +627,10 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaBadRequest):
             model_client.infer(
-                model_input=model_input, model_id=model_id, suggestion_id=DEFAULT_SUGGESTION_ID
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_SUGGESTION_ID,
             )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
@@ -894,6 +916,7 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
         model_client.infer(
+            request=Mock(),
             model_input=model_input,
             suggestion_id=suggestion_id,
         )

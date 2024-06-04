@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 from ansible_ai_connect.organizations.models import Organization
 
 
+@override_settings(DEPLOYMENT_MODE='saas')
 class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @classmethod
     def setUpClass(cls):
@@ -44,7 +45,12 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.organization.telemetry_opt_out = False
+        self.user.organization.save()
         feature_flags.FeatureFlags.instance = None
+
+    def tearDown(self):
+        Organization.objects.filter(id=123).delete()
+        super().tearDown()
 
     @staticmethod
     def on_segment_error(self, error, items):
@@ -194,6 +200,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
     def test_send_segment_analytics_event_error_no_org(self, base_send_segment_event, LDClient):
         LDClient.return_value.variation.return_value = True
+        self.user.organization.delete()
         self.user.organization = None
         self._assert_event_not_sent(base_send_segment_event)
 

@@ -46,5 +46,5 @@ class TestOllama(TestCase):
 
         m_ollama.return_value = final
         model_client = OllamaClient("http://localhost")
-        response = model_client.infer(self.model_input, model_id="test")
+        response = model_client.infer(None, self.model_input, model_id="test")
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

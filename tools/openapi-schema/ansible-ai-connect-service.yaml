@@ -828,6 +828,11 @@ components:
         outline:
           type: string
           description: A long step by step outline of the expected Ansible Playbook.
+        wizardId:
+          type: string
+          format: uuid
+          title: wizard ID
+          description: A UUID to track the succession of interaction from the user.
         metadata:
           $ref: '#/components/schemas/Metadata'
       required:

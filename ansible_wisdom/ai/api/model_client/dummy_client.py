@@ -74,7 +74,7 @@ class DummyClient(ModelMeshClient):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def infer(self, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
         if settings.DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER:

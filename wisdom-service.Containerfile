@@ -11,6 +11,8 @@ ENV PROMETHEUS_MULTIPROC_DIR=/var/run/django_metrics
 
 ENV BUILD_PATH=/var/www/wisdom/public/static/console
 
+ENV UWSGI_PROCESSES=10
+
 # Install dependencies
 RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     dnf install -y \

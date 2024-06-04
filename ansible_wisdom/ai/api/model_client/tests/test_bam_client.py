@@ -87,5 +87,5 @@ class TestBam(TestCase):
             },
         )
 
-        response = model_client.infer(self.model_input, model_id=model)
+        response = model_client.infer(None, self.model_input, model_id=model)
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

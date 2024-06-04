@@ -3,6 +3,15 @@ on:
   # push:
   #   branches:
   #     - main
+  # pull_request:
+  #   types:
+  #     - labeled
+  #     - opened
+  #     - edited
+  #     - reopened
+  #     - synchronize
+  #   branches:
+  #     - main
 
   # have the ability to trigger this workflow manually
   workflow_dispatch:
@@ -105,6 +114,9 @@ jobs:
         body: ${{ steps.get-comment-body.outputs.body }}
 
     - name: Push To quay.io
+      if: |
+        (github.event.label.name == 'pr-deployment' && github.event_name == 'pull_request') ||
+        github.event.label.name == 'push'
       id: push-to-quay
       uses: redhat-actions/push-to-registry@v2
       with:

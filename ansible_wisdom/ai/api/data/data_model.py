@@ -37,9 +37,6 @@ class APIPayload(BaseModel):
 class ModelMeshData(TypedDict):
     prompt: str
     context: str
-    userId: Optional[str]
-    rh_user_has_seat: bool
-    organization_id: Optional[int] = None
     suggestionId: Optional[str] = None
 
 
