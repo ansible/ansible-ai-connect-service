@@ -429,6 +429,7 @@ class GenerationRequestSerializer(serializers.Serializer):
         fields = [
             'text',
             'generationId',
+            'wizardId',
             'createOutline',
             'ansibleExtensionVersion',
             'outline',
@@ -458,6 +459,12 @@ class GenerationRequestSerializer(serializers.Serializer):
         required=False,
         label="outline",
         help_text="A long step by step outline of the expected Ansible Playbook.",
+    )
+    wizardId = serializers.UUIDField(
+        format='hex_verbose',
+        required=False,
+        label="wizard ID",
+        help_text=("A UUID to track the succession of interaction from the user."),
     )
 
     metadata = Metadata(required=False)
