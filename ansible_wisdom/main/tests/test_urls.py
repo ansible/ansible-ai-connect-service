@@ -42,10 +42,10 @@ class TestUrls(TestCase):
     def test_headers(self):
         client = Client()
         response = client.get("/")
-        self.assertIn(
-            "style-src 'self' 'unsafe-inline'", response.headers.get('Content-Security-Policy')
-        )
-        self.assertIn("default-src 'self' data:", response.headers.get('Content-Security-Policy'))
+        csp_headers = response.headers.get('Content-Security-Policy')
+        self.assertIn("style-src 'self' 'unsafe-inline'", csp_headers)
+        self.assertIn("default-src 'self' data:", csp_headers)
+        self.assertIn("connect-src 'self'", csp_headers)
 
     def test_telemetry_patterns(self):
         r = compile("api/v0/telemetry/")

@@ -552,6 +552,7 @@ WCA_ENABLE_ARI_POSTPROCESS = os.getenv('WCA_ENABLE_ARI_POSTPROCESS', 'False').lo
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_INCLUDE_NONCE_IN = ['script-src-elem']
+CSP_CONNECT_SRC = "'self'"
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
 DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')
