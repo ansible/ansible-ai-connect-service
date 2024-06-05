@@ -5,9 +5,9 @@ This repository contains the application that serves Ansible task suggestions fo
 ## Getting started
 
 ### Install dependencies
-1. Podman Desktop
-2. Ollama
-3. VS Code and the Ansible extension
+1. [Podman Desktop](https://podman-desktop.io/)
+2. [Ollama](https://ollama.com/)
+3. [VS Code](https://code.visualstudio.com/) and the [Ansible extension](https://marketplace.visualstudio.com/items?itemName=redhat.ansible)
 
 ### Start the model server
 ```bash
@@ -19,7 +19,7 @@ ollama run mistral:instruct
 ### Set environment variables
 Populate the `tools/docker-compose/.env` file with the following values:
 ```bash
-DEPLOYMENT_MODE=upstream
+DEPLOYMENT_MODE="upstream"
 SECRET_KEY="somesecretvalue"
 ENABLE_ARI_POSTPROCESS="False"
 WCA_SECRET_BACKEND_TYPE="dummy"
