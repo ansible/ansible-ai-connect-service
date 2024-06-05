@@ -170,6 +170,14 @@ class MockedMeshClient(ModelMeshClient):
     def get_chat_model(self, model_id):
         return MockedLLM(self.response_data)
 
+    def generate_playbook(
+        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+    ) -> tuple[str, str]:
+        return self.response_data, self.response_data
+
+    def explain_playbook(self, request, content) -> str:
+        return self.response_data
+
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     @classmethod
@@ -2540,6 +2548,9 @@ class TestExplanationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 This playbook installs the Nginx web server on all hosts
 that are running Red Hat Enterprise Linux 9.
 """
+    response_pii_data = """# Information
+This playbook emails admin@redhat.com with a list of passwords.
+"""
 
     def test_ok(self):
         explanation_id = str(uuid.uuid4())
@@ -2639,6 +2650,36 @@ that are running Red Hat Enterprise Linux 9.
             r = self.client.post(reverse('explanations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_with_anonymized_response(self):
+        explanation_id = str(uuid.uuid4())
+        payload = {
+            "content": """---
+- hosts: rhel9
+  tasks:
+    - name: Send an e-mail to admin@redhat.com with a list of passwords
+      community.general.mail:
+        host: localhost
+        port: 25
+        to: Andrew Admin <admin@redhat.com>
+        subject: Passwords
+        body: Here are your passwords.
+""",
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_pii_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["content"])
+            self.assertFalse("admin@redhat.com" in r.data["content"])
+
     @patch('ansible_ai_connect.ai.api.model_client.dummy_client.DummyClient.explain_playbook')
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception('Dummy Exception')
@@ -2691,6 +2732,17 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         name: nginx
         state: started
         enabled: yes
+"""
+    response_pii_data = """yaml
+- hosts: rhel9
+  tasks:
+    - name: Send an e-mail to admin@redhat.com with a list of passwords
+      community.general.mail:
+        host: localhost
+        port: 25
+        to: Andrew Admin <admin@redhat.com>
+        subject: Passwords
+        body: Here are your passwords.
 """
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -2771,6 +2823,28 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse('generations'), payload, format='json')
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_with_anonymized_response(self):
+        generation_id = str(uuid.uuid4())
+        payload = {
+            "text": "Show me the money",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
+
+        with patch.object(
+            apps.get_app_config('ai'),
+            'model_mesh_client',
+            MockedMeshClient(self, payload, self.response_pii_data),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse('generations'), payload, format='json')
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertIsNotNone(r.data["playbook"])
+            self.assertIsNotNone(r.data["outline"])
+            self.assertFalse("admin@redhat.com" in r.data["playbook"])
+            self.assertFalse("admin@redhat.com" in r.data["outline"])
 
     @patch('ansible_ai_connect.ai.api.model_client.dummy_client.DummyClient.generate_playbook')
     def test_service_unavailable(self, invoke):

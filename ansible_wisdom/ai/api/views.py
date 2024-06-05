@@ -15,6 +15,7 @@
 import logging
 import time
 from http import HTTPStatus
+from string import Template
 
 from ansible_anonymizer import anonymizer
 from django.apps import apps
@@ -740,7 +741,17 @@ class Explanation(APIView):
         llm = apps.get_app_config("ai").model_mesh_client
         explanation = llm.explain_playbook(request, playbook)
 
-        answer = {"content": explanation, "format": "markdown", "explanationId": explanation_id}
+        # Anonymize response
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_explanation = anonymizer.anonymize_struct(
+            explanation, value_template=Template("{{ _${variable_name}_ }}")
+        )
+
+        answer = {
+            "content": anonymized_explanation,
+            "format": "markdown",
+            "explanationId": explanation_id,
+        }
 
         return Response(
             answer,
@@ -791,9 +802,18 @@ class Generation(APIView):
         llm = apps.get_app_config("ai").model_mesh_client
         playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
 
+        # Anonymize responses
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_playbook = anonymizer.anonymize_struct(
+            playbook, value_template=Template("{{ _${variable_name}_ }}")
+        )
+        anonymized_outline = anonymizer.anonymize_struct(
+            outline, value_template=Template("{{ _${variable_name}_ }}")
+        )
+
         answer = {
-            "playbook": playbook,
-            "outline": outline,
+            "playbook": anonymized_playbook,
+            "outline": anonymized_outline,
             "format": "plaintext",
             "generationId": generation_id,
         }
