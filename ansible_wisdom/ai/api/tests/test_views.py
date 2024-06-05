@@ -722,6 +722,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
 @modify_settings()
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(ANSIBLE_AI_MODEL_NAME="my-model")
 class TestCompletionView(WisdomServiceAPITestCaseBase):
     # An artificial model ID for model-ID related test cases.
     DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
