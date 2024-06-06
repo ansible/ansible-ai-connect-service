@@ -88,9 +88,7 @@ class CompletionMetadata(Metadata):
         ),
     ]
 )
-class CompletionRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['prompt', 'suggestionId', 'metadata', 'model', 'ansibleExtensionVersion']
+class CompletionRequestSerializer(Metadata):
 
     prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
@@ -183,9 +181,6 @@ class CompletionRequestSerializer(serializers.Serializer):
     ]
 )
 class CompletionResponseSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['predictions', 'suggestionId', 'model']
-
     model = serializers.CharField(required=False)
     suggestionId = serializers.UUIDField(required=False)
     predictions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
@@ -193,17 +188,6 @@ class CompletionResponseSerializer(serializers.Serializer):
 
 class InlineSuggestionFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
-
-    class Meta:
-        fields = [
-            'latency',
-            'userActionTime',
-            'documentUri',
-            'action',
-            'error',
-            'suggestionId',
-            'activityId',
-        ]
 
     latency = serializers.FloatField(required=False)
     userActionTime = serializers.FloatField(required=False)
@@ -225,9 +209,6 @@ class InlineSuggestionFeedback(serializers.Serializer):
 
 
 class SuggestionQualityFeedback(serializers.Serializer):
-    class Meta:
-        fields = ['prompt', 'providedSuggestion', 'expectedSuggestion', 'additionalComment']
-
     prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
@@ -256,9 +237,6 @@ class SuggestionQualityFeedback(serializers.Serializer):
 
 
 class SentimentFeedback(serializers.Serializer):
-    class Meta:
-        fields = ['value', 'feedback']
-
     value = serializers.IntegerField(required=True, min_value=1, max_value=5)
 
     feedback = serializers.CharField(
@@ -271,9 +249,6 @@ class SentimentFeedback(serializers.Serializer):
 
 class IssueFeedback(serializers.Serializer):
     ISSUE_TYPE = (('bug-report', 'Bug Report'), ('feature-request', 'Feature Request'))
-
-    class Meta:
-        fields = ['type', 'title', 'description']
 
     type = serializers.ChoiceField(choices=ISSUE_TYPE, required=True)
     title = serializers.CharField(
@@ -342,17 +317,7 @@ class PlaybookExplanationFeedback(serializers.Serializer):
         ),
     ]
 )
-class FeedbackRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = [
-            'ansibleExtensionVersion',
-            'inlineSuggestion',
-            'issueFeedback',
-            'playbookExplanationFeedback',
-            'playbookOutlineFeedback',
-            'sentimentFeedback',
-            'suggestionQualityFeedback',
-        ]
+class FeedbackRequestSerializer(Metadata):
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
@@ -374,9 +339,7 @@ class FeedbackRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("invalid feedback type for user")
 
 
-class AttributionRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['suggestion', 'suggestionId', 'ansibleExtensionVersion']
+class AttributionRequestSerializer(Metadata):
 
     suggestion = serializers.CharField(trim_whitespace=False)
     suggestionId = serializers.UUIDField(
@@ -391,9 +354,7 @@ class AttributionRequestSerializer(serializers.Serializer):
     metadata = Metadata(required=False)
 
 
-class ExplanationRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['content', 'explanationId', 'ansibleExtensionVersion']
+class ExplanationRequestSerializer(Metadata):
 
     content = AnonymizedCharField(
         required=True,
@@ -482,10 +443,7 @@ class GenerationResponseSerializer(serializers.Serializer):
     outline = serializers.CharField()
 
 
-class ContentMatchRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['suggestions', 'suggestionId', 'model', 'ansibleExtensionVersion']
-
+class ContentMatchRequestSerializer(Metadata):
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format='hex_verbose',
@@ -564,9 +522,6 @@ class AttributionSerializer(serializers.Serializer):
 
 
 class AttributionResponseSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['attributions']
-
     attributions = serializers.ListField(child=AttributionSerializer())
 
 
@@ -580,16 +535,10 @@ class ContentMatchSerializer(serializers.Serializer):
 
 
 class ContentMatchListSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['contentmatch']
-
     contentmatch = serializers.ListField(child=ContentMatchSerializer())
 
 
 class ContentMatchResponseSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['contentmatches']
-
     contentmatches = serializers.ListField(child=ContentMatchListSerializer())
 
 
@@ -634,9 +583,6 @@ class WcaKeyRequestSerializer(serializers.Serializer):
     ]
 )
 class WcaModelIdRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['model_id']
-
     model_id = serializers.CharField(
         trim_whitespace=False,
         required=True,
@@ -660,9 +606,6 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
     ]
 )
 class TelemetrySettingsRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = ['optOut']
-
     optOut = serializers.BooleanField(
         required=True,
         label='OptOut',
