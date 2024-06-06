@@ -1,3 +1,5 @@
+<img width="150" height="150" align="left" style="z-index: 2; float: left; margin: 0 10px 0 0;" alt="Ansible AI Connect logo" src="./ansible-ai-connect.svg">
+
 # Ansible AI Connect
 
 This repository contains the application that serves Ansible task suggestions for consumption by the Ansible VS Code extension.
