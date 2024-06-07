@@ -44,7 +44,9 @@ ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
 )
 
-t_model_mesh_api_type = Literal["grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy"]
+t_model_mesh_api_type = Literal[
+    "grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy", "ollama", "llamacpp", "bam"
+]
 ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", cast(t_model_mesh_api_type, "http")
 )
