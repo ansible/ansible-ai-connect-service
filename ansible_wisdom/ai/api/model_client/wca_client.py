@@ -172,7 +172,7 @@ class BaseWCAClient(ModelMeshClient):
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
 
-        organization_id = request.user.organization.id if request.user.organization else None
+        organization_id = request.user.org_id
         # WCA codegen fails if a multitask prompt includes the task preamble
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         prompt = strip_task_preamble_from_multi_task_prompt(prompt)
