@@ -35,7 +35,7 @@ ANSIBLE_AI_MODEL_NAME="mistral:instruct"
 ### Start service and dependencies
 
 ```bash
-podman compose -f tools/docker-compose/compose.yaml up
+podman compose -f tools/docker-compose/compose.yaml --env-file ./.env up
 ```
 
 ### Configure VS Code to connect to your local machine
@@ -594,6 +594,8 @@ E.g:
 
 # Troubleshooting
 
+## Permission denied errors
+
 If you get a permission denied error when attempting to start the
 containers, you may need to set the permissions on the
 `ansible_wisdom/`, `prometheus/` and `ari/` directories:
@@ -642,4 +644,21 @@ It may be necessary to recreate the dev image if anything has changed in the ngi
 
 ```bash
 podman rmi localhost/docker-compose_django_1
+```
+
+## Too many open files error
+
+If you encounter a 'too many open files' error when building containers or starting
+the development environment, you must increase the maximum number of files a process
+is allowed to open. On most platforms this is done using the `ulimit` command.
+
+```bash
+ulimit -n <a larger value>
+```
+
+ex: the following will set the number of allowed open files to the maximum
+number for your platform and user:
+
+```bash
+ulimit -n unlimited
 ```

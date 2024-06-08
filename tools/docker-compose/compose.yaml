@@ -10,9 +10,9 @@ services:
     depends_on:
       - db
     volumes:
-      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom
-      - $PWD/ari/kb:/etc/ari/kb
-      - $PWD/tools/scripts:/etc/wisdom/scripts
+      - $PWD/ansible_wisdom:/var/www/ansible-wisdom-service/ansible_wisdom:Z
+      - $PWD/ari/kb:/etc/ari/kb:Z
+      - $PWD/tools/scripts:/etc/wisdom/scripts:Z
     ports:
       - "8000:8000"
     expose:
@@ -105,7 +105,7 @@ services:
       - --config.file=/opt/prometheus/prometheus.yaml
       - --web.enable-lifecycle
     volumes:
-      - $PWD/prometheus/:/opt/prometheus/
+      - $PWD/prometheus:/opt/prometheus:Z
     ports:
       - "9090:9090"
     networks:
@@ -117,7 +117,7 @@ services:
     ports:
       - "13000:3000"
     volumes:
-      - $PWD/grafana:/var/lib/grafana
+      - $PWD/grafana:/var/lib/grafana:Z
     networks:
       - dbnet
 
