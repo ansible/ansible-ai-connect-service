@@ -52,7 +52,7 @@ pyOpenSSL==24.0.0
 PyYAML==6.0
 requests==2.32.0
 segment-analytics-python==2.2.2
-sentence-transformers==2.5.1
+sentence-transformers==2.6.1
 # pin sqlparse on 0.5.0 to address GHSA-2m57-hf25-phgg
 # Remove once a Django>4.2.11 is released with an updated dep on sqlparse
 sqlparse==0.5.0
