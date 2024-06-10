@@ -49,6 +49,7 @@ class WisdomUserAdmin(ExportMixin, UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         (None, {'fields': ('community_terms_accepted', 'commercial_terms_accepted')}),
     )
+    search_fields = UserAdmin.search_fields + ('uuid',)
 
 
 @admin.register(Group)

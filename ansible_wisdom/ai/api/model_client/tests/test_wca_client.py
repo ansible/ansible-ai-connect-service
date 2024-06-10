@@ -21,6 +21,7 @@ from unittest.mock import ANY, Mock, patch
 
 import django.utils.timezone
 import requests
+from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.auth import HTTPBasicAuth
@@ -60,6 +61,8 @@ from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )
+from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
+from ansible_ai_connect.users.tests.test_users import create_user
 
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
@@ -632,6 +635,44 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 model_id=model_id,
                 suggestion_id=DEFAULT_SUGGESTION_ID,
             )
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_with_faux_commercial_user_uses_faux_commercial_org(self):
+        model_client = WCAClient(inference_url='https://wca_api_url')
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        user = create_user(
+            username='test_user_name',
+            password='test_passwords',
+            provider=None,
+            external_username='anexternalusername',
+        )
+        commercial_group, _ = Group.objects.get_or_create(name='Commercial')
+        user.groups.add(commercial_group)
+
+        token = {
+            "access_token": "access_token",
+        }
+        model_client.get_model_id = Mock(return_value='xxx')
+        model_client.get_api_key = Mock(return_value='yyy')
+        model_client.get_token = Mock(return_value=token)
+        response = MockResponse(json={}, status_code=200)
+        model_client.session.post = Mock(return_value=response)
+        model_client.infer(
+            request=Mock(user=user),
+            model_input=model_input,
+            model_id=None,
+            suggestion_id=DEFAULT_SUGGESTION_ID,
+        )
+
+        model_client.get_model_id.assert_called_once_with(FAUX_COMMERCIAL_USER_ORG_ID, None)
+        model_client.get_api_key.assert_called_once_with(FAUX_COMMERCIAL_USER_ORG_ID)
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_multitask_with_task_preamble(self):
