@@ -55,4 +55,8 @@ ignore:
           See: https://access.redhat.com/security/cve/CVE-2024-4741
         expires: 2024-06-29T19:26:28Z
         created: 2024-05-29T19:26:28Z
+  SNYK-PYTHON-LANGCHAIN-7217837:
+    - '*':
+        reason: We don't use the Web Research Retriever
+        created: 2024-06-07T16:15:54Z
 patch: {}
