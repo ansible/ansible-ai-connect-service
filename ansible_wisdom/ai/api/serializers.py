@@ -277,6 +277,28 @@ class PlaybookGenerationFeedback(serializers.Serializer):
     )
 
 
+class PlaybookGenerationAction(serializers.Serializer):
+    ACTIONS = (('0', 'OPEN'), ('1', 'CLOSE'), ('2', 'TRANSITION'))
+
+    action = serializers.ChoiceField(choices=ACTIONS, required=True)
+    wizardId = serializers.UUIDField(
+        format='hex_verbose',
+        required=True,
+        label="wizard ID",
+        help_text="A UUID that identifies the UI session.",
+    )
+    fromPage = serializers.IntegerField(
+        required=False,
+        label="page of origin",
+        help_text=("A number that indicate the page of origin"),
+    )
+    toPage = serializers.IntegerField(
+        required=False,
+        label="destination page",
+        help_text=("A number that indicate the destination page"),
+    )
+
+
 class PlaybookExplanationFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
 
@@ -319,6 +341,7 @@ class FeedbackRequestSerializer(Metadata):
     model = serializers.CharField(required=False)
     playbookExplanationFeedback = PlaybookExplanationFeedback(required=False)
     playbookGenerationFeedback = PlaybookGenerationFeedback(required=False)
+    playbookGenerationAction = PlaybookGenerationAction(required=False)
     sentimentFeedback = SentimentFeedback(required=False)
     suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
 
