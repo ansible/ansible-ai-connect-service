@@ -65,22 +65,21 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
         self.assertEqual(kwargs['start_wait'], 40)
 
     def test_feature_flags_with_local_file(self):
-        fd = tempfile.NamedTemporaryFile()
-        fd.write(
-            b"""
-        {
-          "flagValues": {
-            "model_name": "dev_model",
-            "my-boolean-flag-key": true,
-            "my-integer-flag-key": 3
-          }
-        }
-        """
-        )
-        fd.seek(0)
-        with self.settings(LAUNCHDARKLY_SDK_KEY=fd.name):
-            ff = feature_flags.FeatureFlags()
-            value = ff.get('model_name', self.user, 'default_value')
-            self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
-            self.assertEqual(value, 'dev_model')
-        fd.close()
+        with tempfile.NamedTemporaryFile() as fd:
+            fd.write(
+                b"""
+            {
+            "flagValues": {
+                "model_name": "dev_model",
+                "my-boolean-flag-key": true,
+                "my-integer-flag-key": 3
+            }
+            }
+            """
+            )
+            fd.seek(0)
+            with self.settings(LAUNCHDARKLY_SDK_KEY=fd.name):
+                ff = feature_flags.FeatureFlags()
+                value = ff.get('model_name', self.user, 'default_value')
+                self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
+                self.assertEqual(value, 'dev_model')
