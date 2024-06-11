@@ -10,4 +10,3 @@ pre-commit
 responses==0.24.1
 torch-model-archiver
 yamllint==1.32.0
-langchain-community==0.2.4
