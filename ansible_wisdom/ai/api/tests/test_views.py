@@ -2544,6 +2544,7 @@ class TestContentMatchesWCAViewSegmentEvents(
 
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
 class TestExplanationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     response_data = """# Information
 This playbook installs the Nginx web server on all hosts
@@ -2570,7 +2571,10 @@ This playbook emails admin@redhat.com with a list of passwords.
             "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse('explanations'), payload, format='json')
+        with self.assertLogs(logger='root', level='DEBUG') as log:
+            r = self.client.post(reverse('explanations'), payload, format='json')
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(segment_events[0]["properties"]["playbook_length"], 165)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["content"])
         self.assertEqual(r.data["format"], "markdown")

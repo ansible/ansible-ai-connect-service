@@ -14,14 +14,17 @@
 
 import logging
 import platform
+import time
 from typing import Any, Dict
 
 from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
+from ansible_ai_connect.main.utils import anonymize_request_data
 from ansible_ai_connect.users.models import User
 
 from .seated_users_allow_list import ALLOW_LIST
