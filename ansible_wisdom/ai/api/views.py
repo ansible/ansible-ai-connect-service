@@ -130,28 +130,33 @@ contentmatch_search_hist = Histogram(
     namespace=NAMESPACE,
 )
 
+PERMISSIONS_MAP = {
+    'onprem': [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        IsAAPLicensed,
+    ],
+    'upstream': [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+    ],
+    'saas': [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        AcceptedTermsPermission,
+        BlockUserWithoutSeat,
+        BlockUserWithoutSeatAndWCAReadyOrg,
+        BlockUserWithSeatButWCANotReady,
+    ],
+}
+
 
 class Completions(APIView):
     """
     Returns inline code suggestions based on a given Ansible editor context.
     """
 
-    permission_classes = (
-        [
-            permissions.IsAuthenticated,
-            IsAuthenticatedOrTokenHasScope,
-            IsAAPLicensed,
-        ]
-        if settings.DEPLOYMENT_MODE == 'onprem'
-        else [
-            permissions.IsAuthenticated,
-            IsAuthenticatedOrTokenHasScope,
-            AcceptedTermsPermission,
-            BlockUserWithoutSeat,
-            BlockUserWithoutSeatAndWCAReadyOrg,
-            BlockUserWithSeatButWCANotReady,
-        ]
-    )
+    permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
 
     required_scopes = ['read', 'write']
 
