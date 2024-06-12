@@ -827,6 +827,8 @@ components:
           $ref: '#/components/schemas/PlaybookExplanationFeedback'
         playbookGenerationFeedback:
           $ref: '#/components/schemas/PlaybookGenerationFeedback'
+        playbookGenerationAction:
+          $ref: '#/components/schemas/PlaybookGenerationAction'
         sentimentFeedback:
           $ref: '#/components/schemas/SentimentFeedback'
         suggestionQualityFeedback:
@@ -948,6 +950,27 @@ components:
       required:
       - action
       - explanationId
+    PlaybookGenerationAction:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        wizardId:
+          type: string
+          format: uuid
+          title: wizard ID
+          description: A UUID that identifies the UI session.
+        fromPage:
+          type: integer
+          title: page of origin
+          description: A number that indicate the page of origin
+        toPage:
+          type: integer
+          title: destination page
+          description: A number that indicate the destination page
+      required:
+      - action
+      - wizardId
     PlaybookGenerationFeedback:
       type: object
       properties:
