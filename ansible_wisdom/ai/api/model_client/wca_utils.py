@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
@@ -19,12 +20,15 @@ from .exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
+    WcaInferenceFailure,
     WcaInvalidModelId,
     WcaTokenFailureApiKeyError,
     WcaUserTrialExpired,
 )
 
 T = TypeVar('T')
+
+logger = logging.getLogger(__name__)
 
 
 class Check(Generic[T]):
@@ -141,11 +145,24 @@ class ResponseStatusCode403UserTrialExpired(Check[Context]):
 class ResponseStatusCode404WCABadRequestModelId(Check[Context]):
     def check(self, context: Context):
         if context.result.status_code == 404:
-            payload_json = context.result.json()
-            if isinstance(payload_json, dict):
-                payload_detail = payload_json.get("detail")
-                if payload_detail and "wml api call failed" in payload_detail.lower():
-                    raise WcaInvalidModelId(model_id=context.model_id)
+            content_type = context.result.headers.get('Content-Type')
+            if content_type is not None and content_type.lower() == 'application/json':
+                payload_json = context.result.json()
+                if isinstance(payload_json, dict):
+                    payload_detail = payload_json.get("detail")
+                    if payload_detail and "wml api call failed" in payload_detail.lower():
+                        raise WcaInvalidModelId(model_id=context.model_id)
+
+
+class ResponseStatusCode404(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 404:
+            logger.error(
+                f"WCA request failed with unrecognized 404. "
+                f"Content-Type:{context.result.headers.get('Content-Type')}, "
+                f"Content:{context.result.content}"
+            )
+            raise WcaInferenceFailure(model_id=context.model_id)
 
 
 class InferenceResponseChecks(Checks[Context]):
@@ -161,6 +178,7 @@ class InferenceResponseChecks(Checks[Context]):
                 ResponseStatusCode403UserTrialExpired(),
                 ResponseStatusCode403(),
                 ResponseStatusCode404WCABadRequestModelId(),
+                ResponseStatusCode404(),
             ]
         )
 

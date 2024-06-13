@@ -237,7 +237,7 @@ class BaseWCAClient(ModelMeshClient):
             response.raise_for_status()
 
         except HTTPError as e:
-            logger.error(f"WCA inference failed due to {e}.")
+            logger.error(f"WCA inference failed for suggestion {suggestion_id} due to {e}.")
             raise WcaInferenceFailure(model_id=model_id)
 
         return response
