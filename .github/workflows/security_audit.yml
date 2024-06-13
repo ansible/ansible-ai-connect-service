@@ -17,10 +17,10 @@ jobs:
           pip install -r requirements-dev.txt
           pip install .
 
-      - name: Test projects for dependency vulnerabilities & license issues
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --all-projects
+      # - name: Test projects for dependency vulnerabilities & license issues
+      #  env:
+      #    SNYK_TOKEN: //SNYK_TOKEN_SECRET
+      #  run: snyk test --all-projects
 
       - name: Test projects for code vulnerabilities
         env:

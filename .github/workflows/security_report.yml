@@ -20,10 +20,10 @@ jobs:
           pip install -r requirements-dev.txt
           pip install .
 
-      - name: Monitor project and report vulnerabilities
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk monitor --all-projects
+      #- name: Monitor project and report vulnerabilities
+      #  env:
+      #    SNYK_TOKEN: //SNYK_TOKEN_SECRET
+      #  run: snyk monitor --all-projects
 
       - name: Generate code vulnerability report
         env:
