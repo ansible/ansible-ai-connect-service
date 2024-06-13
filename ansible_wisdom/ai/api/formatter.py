@@ -17,6 +17,7 @@ import re
 from io import StringIO
 
 import yaml
+from ansible.playbook.task import Task
 from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
@@ -381,24 +382,58 @@ def restore_original_task_names(output_yaml, prompt):
     return output_yaml
 
 
+# List of Task keywords to filter out during prediction results parsing.
+ansible_task_keywords = None
 # RegExp Pattern based on ARI sources, see ansible_risk_insight/finder.py
 ansible_fqcn_declaration_pattern = re.compile(r"(([a-z0-9_]+)\.([a-z0-9_]+)\.([a-z0-9_]+)):")
 ansible_module_declaration_pattern = re.compile(r"([a-z0-9_.]+):")
 
 
-def get_fqcn_from_prediction(prediction):
-    return parse_module_from_prediction(ansible_fqcn_declaration_pattern, prediction)
+def get_ansible_task_keywords() -> {}:
+    # Compute the keywords for Task, just once, shared across modules.
+    global ansible_task_keywords
+    if not ansible_task_keywords:
+        ansible_task_keywords = _get_class_keywords(Task)
+        for c in Task.__mro__:
+            ansible_task_keywords.update(_get_class_keywords(c))
+    return ansible_task_keywords
 
 
-def get_module_from_prediction(prediction):
-    return parse_module_from_prediction(ansible_module_declaration_pattern, prediction)
+def _get_class_keywords(c):
+    # Filter out callable objects (functions)
+    # Filter out "private" (_) fields
+    # Delete "<attr>_val" suffixes (eg: Task.async_val -> async)
+    return {
+        attr.replace("_val", "")
+        for attr in c.__dict__
+        if not callable(c.__dict__[attr]) and not attr.startswith("_")
+    }
 
 
-def parse_module_from_prediction(re, prediction):
+def _get_fqcn_from_prediction(prediction):
+    return _parse_module_from_prediction(
+        ansible_fqcn_declaration_pattern, prediction, lambda value: False
+    )
+
+
+def _get_module_from_prediction(prediction):
+    return _parse_module_from_prediction(
+        ansible_module_declaration_pattern,
+        prediction,
+        lambda value: value in get_ansible_task_keywords(),
+    )
+
+
+def _parse_module_from_prediction(re, prediction, predicate):
     try:
-        first = next(re.finditer(prediction))
-        if first:
-            return first.group(1)
+        iter = re.finditer(prediction)
+        item = next(iter)
+        while item:
+            item_value = item.group(1)
+            if predicate(item_value):
+                item = next(iter)
+                continue
+            return item_value
     except StopIteration:
         pass
     return None
@@ -407,7 +442,7 @@ def parse_module_from_prediction(re, prediction):
 def get_fqcn_or_module_from_prediction(prediction):
     if prediction is None:
         return None
-    fqcn = get_fqcn_from_prediction(prediction)
+    fqcn = _get_fqcn_from_prediction(prediction)
     if fqcn is None:
-        fqcn = get_module_from_prediction(prediction)
+        fqcn = _get_module_from_prediction(prediction)
     return fqcn
