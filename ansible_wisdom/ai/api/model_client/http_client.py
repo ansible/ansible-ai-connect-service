@@ -57,13 +57,13 @@ class HttpClient(ModelMeshClient):
             )
             result.raise_for_status()
             response = json.loads(result.text)
-            response['model_id'] = model_id
+            response["model_id"] = model_id
             return response
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
     def self_test(self) -> HealthCheckSummary:
-        url = f'{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping'
+        url = f"{settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL}/ping"
         summary: HealthCheckSummary = HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,

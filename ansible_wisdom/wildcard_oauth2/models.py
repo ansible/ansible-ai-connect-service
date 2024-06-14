@@ -33,22 +33,22 @@ def validate_uris(value):
     for url in urls:
         obj = urlparse(url)
         if obj.fragment:
-            raise ValidationError('Redirect URIs must not contain fragments')
+            raise ValidationError("Redirect URIs must not contain fragments")
         if obj.scheme.lower() not in oauth2_settings.ALLOWED_REDIRECT_URI_SCHEMES:
-            raise ValidationError('Redirect URI scheme is not allowed.')
+            raise ValidationError("Redirect URI scheme is not allowed.")
         if not obj.netloc:
-            raise ValidationError('Redirect URI must contain a domain.')
+            raise ValidationError("Redirect URI must contain a domain.")
         if not is_acceptable_netloc(obj.netloc):
-            raise ValidationError('Redirect URI is not acceptable.')
+            raise ValidationError("Redirect URI is not acceptable.")
 
 
 def wildcard_string_to_regex(value):
-    return re.escape(value).replace('\\*', '[^\\/]*')
+    return re.escape(value).replace("\\*", "[^\\/]*")
 
 
 def is_acceptable_netloc(value):
-    if '*' in value:
-        return re.fullmatch(r'.*\.[^\.\*]+\.[^\.\*]+', value) is not None
+    if "*" in value:
+        return re.fullmatch(r".*\.[^\.\*]+\.[^\.\*]+", value) is not None
     else:
         return True
 
@@ -71,7 +71,7 @@ class Application(AbstractApplication):
 
         # Wildcards ('*') in netloc is supposed to be matched to a hostname,
         # not an ip address.
-        if '*' in allowed_uri.netloc and is_ip_address(uri.hostname):
+        if "*" in allowed_uri.netloc and is_ip_address(uri.hostname):
             netloc_matches_pattern = None
         else:
             regex = wildcard_string_to_regex(allowed_uri.netloc)
@@ -88,7 +88,7 @@ class Application(AbstractApplication):
 
     def __init__(self, *args, **kwargs):
         """Relax the validator to allow for uris with regular expressions."""
-        self._meta.get_field('redirect_uris').validators = [
+        self._meta.get_field("redirect_uris").validators = [
             validate_uris,
         ]
         super().__init__(*args, **kwargs)
@@ -115,29 +115,29 @@ class Application(AbstractApplication):
         return False
 
     def clean(self):
-        uris_with_wildcard = [uri for uri in self.redirect_uris.split(' ') if '*' in uri]
+        uris_with_wildcard = [uri for uri in self.redirect_uris.split(" ") if "*" in uri]
         if uris_with_wildcard:
-            self.redirect_uris = ' '.join(
-                [uri for uri in self.redirect_uris.split(' ') if '*' not in uri]
+            self.redirect_uris = " ".join(
+                [uri for uri in self.redirect_uris.split(" ") if "*" not in uri]
             )
         super().clean()
         if uris_with_wildcard:
-            self.redirect_uris += ' ' + ' '.join(uris_with_wildcard)
+            self.redirect_uris += " " + " ".join(uris_with_wildcard)
 
     def is_usable(self, request):
         # This is a hacky way to decode redirect_uri stored in an oauthlib.Request instance.
         # Once the oauthlib.Request class started decoding redirect_uri correctly, this will
         # be removed.
-        if getattr(request, '_params'):
-            redirect_uri = request._params.get('redirect_uri')
+        if getattr(request, "_params"):
+            redirect_uri = request._params.get("redirect_uri")
             if redirect_uri:
-                request._params['redirect_uri'] = unquote(redirect_uri)
+                request._params["redirect_uri"] = unquote(redirect_uri)
 
         return True
 
     class Meta:
-        db_table = 'oauth2_provider_application'
+        db_table = "oauth2_provider_application"
         # Without the following line, tests fail with:
         #   RuntimeError: Model class wildcard_oauth2.models.Application doesn't declare
         #   an explicit app_label and isn't in an application in INSTALLED_APPS.
-        app_label = 'wildcard_oauth2'
+        app_label = "wildcard_oauth2"

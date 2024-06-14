@@ -30,7 +30,7 @@ from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionCon
 logger = logging.getLogger(__name__)
 
 preprocess_hist = Histogram(
-    'preprocessing_latency_seconds',
+    "preprocessing_latency_seconds",
     "Histogram of pre-processing time",
     namespace=NAMESPACE,
 )
@@ -54,7 +54,7 @@ def completion_pre_process(context: CompletionContext):
         additionalContext = {}
 
     multi_task = fmtr.is_multi_task_prompt(prompt)
-    context.original_indent = prompt.find('#' if multi_task else "name")
+    context.original_indent = prompt.find("#" if multi_task else "name")
 
     # fmtr.preprocess() performs:
     #
@@ -90,10 +90,10 @@ class PreProcessStage(PipelineElement):
         try:
             completion_pre_process(context)
         except Exception as exc:
-            process_error_count.labels(stage='pre-processing').inc()
+            process_error_count.labels(stage="pre-processing").inc()
             # return the original prompt, context
             logger.error(
-                f'failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}'
+                f"failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}"
             )
             raise PreprocessInvalidYamlException()
 

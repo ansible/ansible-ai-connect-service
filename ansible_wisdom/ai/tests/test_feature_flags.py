@@ -32,37 +32,37 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
     def test_feature_flags_without_sdk_key(self):
         ff = feature_flags.FeatureFlags()
         with self.assertRaises(Exception) as ex:
-            ff.get('model_name', None, 'default_value')
-            self.assertEqual(str(ex), 'feature flag client is not initialized')
+            ff.get("model_name", None, "default_value")
+            self.assertEqual(str(ex), "feature flag client is not initialized")
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
+    @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
+    @patch.object(feature_flags, "LDClient")
     def test_feature_flags_with_sdk_key(self, LDClient):
-        LDClient.return_value.variation.return_value = 'server:port:model_name:index'
+        LDClient.return_value.variation.return_value = "server:port:model_name:index"
 
         ff = feature_flags.FeatureFlags()
-        value = ff.get('model_name', self.user, 'default_value')
+        value = ff.get("model_name", self.user, "default_value")
 
-        self.assertEqual(value, 'server:port:model_name:index')
+        self.assertEqual(value, "server:port:model_name:index")
         LDClient.assert_called_once()
         _, config_arg, kwargs = LDClient.mock_calls[0]
         self.assertIsInstance(config_arg[0], Config)
-        self.assertEqual(config_arg[0].sdk_key, 'dummy_key')
-        self.assertEqual(kwargs['start_wait'], settings.LAUNCHDARKLY_SDK_TIMEOUT)
+        self.assertEqual(config_arg[0].sdk_key, "dummy_key")
+        self.assertEqual(kwargs["start_wait"], settings.LAUNCHDARKLY_SDK_TIMEOUT)
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
+    @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
     @override_settings(LAUNCHDARKLY_SDK_TIMEOUT=40)
-    @patch.object(feature_flags, 'LDClient')
+    @patch.object(feature_flags, "LDClient")
     def test_feature_flags_with_sdk_timeout(self, LDClient):
-        LDClient.return_value.variation.return_value = 'server:port:model_name:index'
+        LDClient.return_value.variation.return_value = "server:port:model_name:index"
 
         feature_flags.FeatureFlags()
 
         LDClient.assert_called_once()
         _, config_arg, kwargs = LDClient.mock_calls[0]
         self.assertIsInstance(config_arg[0], Config)
-        self.assertEqual(config_arg[0].sdk_key, 'dummy_key')
-        self.assertEqual(kwargs['start_wait'], 40)
+        self.assertEqual(config_arg[0].sdk_key, "dummy_key")
+        self.assertEqual(kwargs["start_wait"], 40)
 
     def test_feature_flags_with_local_file(self):
         with tempfile.NamedTemporaryFile() as fd:
@@ -80,6 +80,6 @@ class TestFeatureFlags(WisdomServiceAPITestCaseBase):
             fd.seek(0)
             with self.settings(LAUNCHDARKLY_SDK_KEY=fd.name):
                 ff = feature_flags.FeatureFlags()
-                value = ff.get('model_name', self.user, 'default_value')
-                self.assertEqual(ff.client.get_sdk_key(), 'sdk-key-123abc')
-                self.assertEqual(value, 'dev_model')
+                value = ff.get("model_name", self.user, "default_value")
+                self.assertEqual(ff.client.get_sdk_key(), "sdk-key-123abc")
+                self.assertEqual(value, "dev_model")

@@ -27,16 +27,16 @@ class AnalyticsTelemetryEvents(Enum):
 
 @frozen
 class AnalyticsRecommendationTask:
-    collection: str = field(validator=validators.instance_of(str), converter=str, default='')
-    module: str = field(validator=validators.instance_of(str), converter=str, default='')
+    collection: str = field(validator=validators.instance_of(str), converter=str, default="")
+    module: str = field(validator=validators.instance_of(str), converter=str, default="")
 
 
 @frozen
 class AnalyticsRecommendationGenerated:
     tasks: list[AnalyticsRecommendationTask] = field(factory=list, validator=validators.min_len(1))
-    suggestion_id: str = field(validator=validators.instance_of(str), converter=str, default='')
+    suggestion_id: str = field(validator=validators.instance_of(str), converter=str, default="")
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
-    model_name: str = field(default='')
+    model_name: str = field(default="")
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )
@@ -47,7 +47,7 @@ class AnalyticsRecommendationAction:
     action: int = field(
         validator=[validators.instance_of(int), validators.in_([0, 1, 2])], converter=int
     )
-    suggestion_id: str = field(validator=validators.instance_of(str), converter=str, default='')
+    suggestion_id: str = field(validator=validators.instance_of(str), converter=str, default="")
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
@@ -60,7 +60,7 @@ class AnalyticsProductFeedback:
         validator=[validators.instance_of(int), validators.in_([1, 2, 3, 4, 5])], converter=int
     )
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
-    model_name: str = field(default='')
+    model_name: str = field(default="")
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )

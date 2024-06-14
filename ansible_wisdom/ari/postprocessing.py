@@ -29,13 +29,13 @@ logger = logging.getLogger(__name__)
 @contextlib.contextmanager
 def time_activity(activity_name: str):
     """Context Manager to report duration of an activity"""
-    logger.info(f'[Timing] {activity_name} start.')
+    logger.info(f"[Timing] {activity_name} start.")
     start = timeit.default_timer()
     try:
         yield
     finally:
         duration = timeit.default_timer() - start
-        logger.info(f'[Timing] {activity_name} finished (Took {duration:.2f}s)')
+        logger.info(f"[Timing] {activity_name} finished (Took {duration:.2f}s)")
 
 
 class ARICaller:
@@ -61,7 +61,7 @@ class ARICaller:
             first_line = lines[0]
             first_line_lstrip = first_line.lstrip()
             extra_indent = 0
-            if first_line_lstrip.startswith('- ') is False:
+            if first_line_lstrip.startswith("- ") is False:
                 # single-line suggestions indent two extra spaces
                 extra_indent = 2
             suggestion_indent = len(first_line) - len(first_line_lstrip)
@@ -98,7 +98,7 @@ class ARICaller:
                 ):
                     is_playbook = True
             except Exception:
-                logger.exception('the received context could not be loaded as a YAML')
+                logger.exception("the received context could not be loaded as a YAML")
         suggestion = cls.indent_suggestion(inference_output, prompt_indent)
         playbook_yaml = context + "\n" + prompt + "\n" + suggestion
         try:
@@ -106,8 +106,8 @@ class ARICaller:
             _ = yaml.safe_load(playbook_yaml)
         except Exception:
             logger.exception(
-                f'failed to create a valid playbook YAML which can be loaded correctly: '
-                f'the created one is the following:\n{playbook_yaml}'
+                f"failed to create a valid playbook YAML which can be loaded correctly: "
+                f"the created one is the following:\n{playbook_yaml}"
             )
             raise
 
@@ -192,9 +192,9 @@ class ARICaller:
                         rule_detail["error"] = _result.error
                     detail_data[rule_id] = rule_detail
             else:
-                raise Exception('task not found in ARI postprocess results')
+                raise Exception("task not found in ARI postprocess results")
 
-        modified_yaml = '\n'.join(modified_yamls)
+        modified_yaml = "\n".join(modified_yamls)
         # return inference_output
         logger.debug("--before--")
         logger.debug(inference_output)

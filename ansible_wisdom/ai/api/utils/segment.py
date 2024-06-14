@@ -36,7 +36,7 @@ def send_segment_group(group_id: str, group_type: str, group_value: str, user: U
         return
     try:
         analytics.group(
-            str(user.uuid), group_id, {'group_type': group_type, 'group_value': group_value}
+            str(user.uuid), group_id, {"group_type": group_type, "group_value": group_value}
         )
 
         logger.info("sent segment group: %s", group_id)
@@ -54,35 +54,35 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
 
     timestamp = timezone.now().isoformat()
 
-    if 'modelName' not in event:
+    if "modelName" not in event:
         # Set an empty string if model name is not found in the event
-        event['modelName'] = ''
+        event["modelName"] = ""
 
-    if 'imageTags' not in event:
-        event['imageTags'] = version_info.image_tags
+    if "imageTags" not in event:
+        event["imageTags"] = version_info.image_tags
 
-    if 'hostname' not in event:
-        event['hostname'] = platform.node()
+    if "hostname" not in event:
+        event["hostname"] = platform.node()
 
-    if 'groups' not in event:
-        event['groups'] = list(user.groups.values_list('name', flat=True))
+    if "groups" not in event:
+        event["groups"] = list(user.groups.values_list("name", flat=True))
 
-    if 'rh_user_has_seat' not in event:
-        event['rh_user_has_seat'] = getattr(user, 'rh_user_has_seat', False)
+    if "rh_user_has_seat" not in event:
+        event["rh_user_has_seat"] = getattr(user, "rh_user_has_seat", False)
 
-    if 'rh_user_org_id' not in event:
-        event['rh_user_org_id'] = getattr(user, 'org_id', None)
+    if "rh_user_org_id" not in event:
+        event["rh_user_org_id"] = getattr(user, "org_id", None)
 
-    if 'timestamp' not in event:
-        event['timestamp'] = timestamp
+    if "timestamp" not in event:
+        event["timestamp"] = timestamp
 
-    if event['rh_user_has_seat']:
+    if event["rh_user_has_seat"]:
         allow_list = ALLOW_LIST.get(event_name)
         if allow_list:
             event = redact_seated_users_data(event, allow_list)
         else:
             # If event should be tracked, please update ALLOW_LIST appropriately
-            logger.error(f'It is not allowed to track {event_name} events for seated users')
+            logger.error(f"It is not allowed to track {event_name} events for seated users")
             return
     base_send_segment_event(event, event_name, user, analytics)
 
@@ -92,7 +92,7 @@ def base_send_segment_event(
 ) -> None:
     try:
         client.track(
-            str(user.uuid) if getattr(user, 'uuid', None) else 'unknown',
+            str(user.uuid) if getattr(user, "uuid", None) else "unknown",
             event_name,
             event,
         )
@@ -102,11 +102,11 @@ def base_send_segment_event(
             f"An exception {ex.__class__} occurred in sending event to segment: %s",
             event_name,
         )
-        args = getattr(ex, 'args')
+        args = getattr(ex, "args")
         # Log RuntimeError and send the error to Segment if it is for an event exceeding size limit
         if (
             isinstance(args, tuple)
-            and args[0] == 'Message exceeds %skb limit. (%s)'
+            and args[0] == "Message exceeds %skb limit. (%s)"
             and len(args) == 3
         ):
             msg_len = len(args[2])
@@ -118,7 +118,7 @@ def base_send_segment_event(
                     "event_name": event_name,
                     "msg_len": msg_len,
                 },
-                "timestamp": event['timestamp'],
+                "timestamp": event["timestamp"],
             }
             send_segment_event(event, "segmentError", user)
 

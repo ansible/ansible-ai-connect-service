@@ -61,56 +61,56 @@ from ansible_ai_connect.users.views import (
 WISDOM_API_VERSION = "v0"
 
 urlpatterns = [
-    path('', HomeView.as_view(), name='home'),
+    path("", HomeView.as_view(), name="home"),
     # add the GitHub OAuth redirect URL /complete/github-team/
-    path('', include('social_django.urls', namespace='social')),
+    path("", include("social_django.urls", namespace="social")),
     # Do not add a trailing slash. django_prometheus uses plain /metrics
     # Adding a trailing slash breaks our metric collection in all sorts of ways.
-    path('metrics', MetricsView.as_view(), name='prometheus-metrics'),
-    path('admin/', admin.site.urls),
-    path(f'api/{WISDOM_API_VERSION}/ai/', include("ansible_ai_connect.ai.api.urls")),
-    path(f'api/{WISDOM_API_VERSION}/me/', CurrentUserView.as_view(), name='me'),
-    path('unauthorized/', UnauthorizedView.as_view(), name='unauthorized'),
-    path('check/status/', WisdomServiceHealthView.as_view(), name='health_check'),
-    path('check/', WisdomServiceLivenessProbeView.as_view(), name='liveness_probe'),
+    path("metrics", MetricsView.as_view(), name="prometheus-metrics"),
+    path("admin/", admin.site.urls),
+    path(f"api/{WISDOM_API_VERSION}/ai/", include("ansible_ai_connect.ai.api.urls")),
+    path(f"api/{WISDOM_API_VERSION}/me/", CurrentUserView.as_view(), name="me"),
+    path("unauthorized/", UnauthorizedView.as_view(), name="unauthorized"),
+    path("check/status/", WisdomServiceHealthView.as_view(), name="health_check"),
+    path("check/", WisdomServiceLivenessProbeView.as_view(), name="liveness_probe"),
     path(
-        'community-terms/',
-        TermsOfService.as_view(template_name='users/community-terms.html'),
-        name='community_terms',
+        "community-terms/",
+        TermsOfService.as_view(template_name="users/community-terms.html"),
+        name="community_terms",
     ),
-    path('o/', include((base_urlpatterns, app_name), namespace='oauth2_provider')),
+    path("o/", include((base_urlpatterns, app_name), namespace="oauth2_provider")),
     path(
-        'login/',
+        "login/",
         LoginView.as_view(),
-        name='login',
+        name="login",
     ),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path("logout/", LogoutView.as_view(), name="logout"),
 ]
 
 if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
     urlpatterns += [
-        path(f'api/{WISDOM_API_VERSION}/wca/', include('ansible_ai_connect.ai.api.wca.urls')),
-        path('console/', ConsoleView.as_view(), name='console'),
-        path('console/<slug:slug1>/', ConsoleView.as_view(), name='console'),
-        path('console/<slug:slug1>/<slug:slug2>/', ConsoleView.as_view(), name='console'),
+        path(f"api/{WISDOM_API_VERSION}/wca/", include("ansible_ai_connect.ai.api.wca.urls")),
+        path("console/", ConsoleView.as_view(), name="console"),
+        path("console/<slug:slug1>/", ConsoleView.as_view(), name="console"),
+        path("console/<slug:slug1>/<slug:slug2>/", ConsoleView.as_view(), name="console"),
         path(
-            f'api/{WISDOM_API_VERSION}/telemetry/',
+            f"api/{WISDOM_API_VERSION}/telemetry/",
             TelemetrySettingsView.as_view(),
-            name='telemetry_settings',
+            name="telemetry_settings",
         ),
     ]
 
 if settings.DEBUG:
     urlpatterns += [
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
-            'api/schema/swagger-ui/',
-            SpectacularSwaggerView.as_view(url_name='schema'),
-            name='swagger-ui',
+            "api/schema/swagger-ui/",
+            SpectacularSwaggerView.as_view(url_name="schema"),
+            name="swagger-ui",
         ),
         path(
-            'api/schema/redoc/',
-            SpectacularRedocView.as_view(url_name='schema'),
-            name='redoc',
+            "api/schema/redoc/",
+            SpectacularRedocView.as_view(url_name="schema"),
+            name="redoc",
         ),
     ]

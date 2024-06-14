@@ -24,7 +24,7 @@ from .exceptions import (
     WcaUserTrialExpired,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Check(Generic[T]):

@@ -37,9 +37,9 @@ ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Co
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
-    'ANSIBLE_AI_MODEL_MESH_HOST', 'https://model.wisdom.testing.ansible.com'
+    "ANSIBLE_AI_MODEL_MESH_HOST", "https://model.wisdom.testing.ansible.com"
 )
-ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv('ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT', 443)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv("ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT", 443)
 ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
     f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
 )
@@ -57,18 +57,18 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL: t_model_mesh_healthcheck_protoco
 )
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'http'
+    if ANSIBLE_AI_MODEL_MESH_API_TYPE == "http"
     else (
-        os.getenv('ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT', "8443")
-        if ANSIBLE_AI_MODEL_MESH_API_TYPE == 'grpc'
+        os.getenv("ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT", "8443")
+        if ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc"
         else None
     )
 )
 
 ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
 
-ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv('ANSIBLE_AI_MODEL_MESH_API_KEY')
-ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv('ANSIBLE_AI_MODEL_MESH_MODEL_NAME')
+ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv("ANSIBLE_AI_MODEL_MESH_API_KEY")
+ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME")
 
 # WCA OnPrem
 ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
@@ -108,7 +108,7 @@ INSTALLED_APPS = [
     "health_check.db",
     "ansible_ai_connect.healthcheck",
     "oauth2_provider",
-    'import_export',
+    "import_export",
 ]
 
 MIDDLEWARE = [
@@ -129,61 +129,61 @@ MIDDLEWARE = [
 ]
 
 # Allow Prometheus to scrape metrics
-ALLOWED_CIDR_NETS = [os.environ.get('ALLOWED_CIDR_NETS', '10.0.0.0/8')]
+ALLOWED_CIDR_NETS = [os.environ.get("ALLOWED_CIDR_NETS", "10.0.0.0/8")]
 
 AUTH_USER_MODEL = "users.User"
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
-LOGIN_ERROR_URL = 'login'
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+LOGIN_ERROR_URL = "login"
 
 ANSIBLE_AI_ENABLE_TECH_PREVIEW = (
-    os.getenv('ANSIBLE_AI_ENABLE_TECH_PREVIEW', 'False').lower() == 'true'
+    os.getenv("ANSIBLE_AI_ENABLE_TECH_PREVIEW", "False").lower() == "true"
 )
 
-SIGNUP_URL = os.environ.get('SIGNUP_URL', 'https://www.redhat.com/en/engage/project-wisdom')
+SIGNUP_URL = os.environ.get("SIGNUP_URL", "https://www.redhat.com/en/engage/project-wisdom")
 COMMERCIAL_DOCUMENTATION_URL = os.getenv(
-    'COMMERCIAL_DOCUMENTATION_URL',
-    'https://access.redhat.com/documentation/en-us/'
-    'red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest',
+    "COMMERCIAL_DOCUMENTATION_URL",
+    "https://access.redhat.com/documentation/en-us/"
+    "red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest",
 )
-DOCUMENTATION_URL = os.getenv('DOCUMENTATION_URL', 'https://docs.ai.ansible.redhat.com')
+DOCUMENTATION_URL = os.getenv("DOCUMENTATION_URL", "https://docs.ai.ansible.redhat.com")
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
     # No GitHub login after the Tech Preview
     USE_GITHUB_TEAM = False
-elif os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY'):
+elif os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY"):
     USE_GITHUB_TEAM = True
-    SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_KEY')
-    SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_SECRET')
-    SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get('SOCIAL_AUTH_GITHUB_TEAM_ID') or 7188893
+    SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY")
+    SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_SECRET")
+    SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_ID") or 7188893
     SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
-    SOCIAL_AUTH_GITHUB_TEAM_EXTRA_DATA = ['login']
+    SOCIAL_AUTH_GITHUB_TEAM_EXTRA_DATA = ["login"]
 else:
     USE_GITHUB_TEAM = False
-    SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY')
-    SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET')
+    SOCIAL_AUTH_GITHUB_KEY = os.environ.get("SOCIAL_AUTH_GITHUB_KEY")
+    SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("SOCIAL_AUTH_GITHUB_SECRET")
     SOCIAL_AUTH_GITHUB_SCOPE = [""]
-    SOCIAL_AUTH_GITHUB_EXTRA_DATA = ['login']
+    SOCIAL_AUTH_GITHUB_EXTRA_DATA = ["login"]
 
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/unauthorized/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = "/unauthorized/"
 
 AAP_API_URL = os.environ.get("AAP_API_URL")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
-SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", 'True').lower() in ('true', '1', 't')
+SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True").lower() in ("true", "1", "t")
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
 SOCIAL_AUTH_AAP_SCOPE = ["read"]
-SOCIAL_AUTH_AAP_EXTRA_DATA = ['login']
+SOCIAL_AUTH_AAP_EXTRA_DATA = ["login"]
 
-SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get('SOCIAL_AUTH_OIDC_OIDC_ENDPOINT')
-SOCIAL_AUTH_OIDC_KEY = os.environ.get('SOCIAL_AUTH_OIDC_KEY')
-SOCIAL_AUTH_OIDC_SECRET = os.environ.get('SOCIAL_AUTH_OIDC_SECRET')
-SOCIAL_AUTH_OIDC_SCOPE = ['api.lightspeed']
-SOCIAL_AUTH_OIDC_EXTRA_DATA = [('preferred_username', 'login')]
+SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get("SOCIAL_AUTH_OIDC_OIDC_ENDPOINT")
+SOCIAL_AUTH_OIDC_KEY = os.environ.get("SOCIAL_AUTH_OIDC_KEY")
+SOCIAL_AUTH_OIDC_SECRET = os.environ.get("SOCIAL_AUTH_OIDC_SECRET")
+SOCIAL_AUTH_OIDC_SCOPE = ["api.lightspeed"]
+SOCIAL_AUTH_OIDC_EXTRA_DATA = [("preferred_username", "login")]
 
 AUTHZ_BACKEND_TYPE = os.environ.get("AUTHZ_BACKEND_TYPE")
 AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
@@ -211,23 +211,23 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
-    'terms_accepted',
+    "terms_accepted",
 ]
 SOCIAL_AUTH_PIPELINE = (
-    'ansible_ai_connect.users.pipeline.block_auth_users',
-    'social_core.pipeline.social_auth.social_details',
-    'social_core.pipeline.social_auth.social_uid',
-    'social_core.pipeline.social_auth.social_user',
-    'ansible_ai_connect.main.pipeline.remove_pii',
-    'social_core.pipeline.social_auth.auth_allowed',
-    'ansible_ai_connect.users.pipeline.github_get_username',
+    "ansible_ai_connect.users.pipeline.block_auth_users",
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.social_user",
+    "ansible_ai_connect.main.pipeline.remove_pii",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "ansible_ai_connect.users.pipeline.github_get_username",
     # 'social_core.pipeline.user.get_username',
-    'social_core.pipeline.user.create_user',
-    'ansible_ai_connect.users.pipeline.redhat_organization',
-    'social_core.pipeline.social_auth.associate_user',
-    'social_core.pipeline.user.user_details',
-    'ansible_ai_connect.users.pipeline.load_extra_data',
-    'ansible_ai_connect.users.pipeline.terms_of_service',
+    "social_core.pipeline.user.create_user",
+    "ansible_ai_connect.users.pipeline.redhat_organization",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.user.user_details",
+    "ansible_ai_connect.users.pipeline.load_extra_data",
+    "ansible_ai_connect.users.pipeline.terms_of_service",
 )
 
 # Wisdom Eng Team:
@@ -241,21 +241,21 @@ ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION = os.environ.get(
 )
 
 OAUTH2_PROVIDER = {
-    'SCOPES': {
-        'read': "Read basic user information",
-        'write': "Request Ansible content suggestions",
+    "SCOPES": {
+        "read": "Read basic user information",
+        "write": "Request Ansible content suggestions",
     },
-    'ALLOWED_REDIRECT_URI_SCHEMES': [
-        'http',
-        'https',
-        'vscode',
-        'vscodium',
-        'vscode-insiders',
-        'code-oss',
-        'checode',
+    "ALLOWED_REDIRECT_URI_SCHEMES": [
+        "http",
+        "https",
+        "vscode",
+        "vscodium",
+        "vscode-insiders",
+        "code-oss",
+        "checode",
     ],
     # 14 hours, to match the duration of the Red Hat SSO sessions
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 50_400,
+    "REFRESH_TOKEN_EXPIRE_SECONDS": 50_400,
 }
 
 #
@@ -266,51 +266,51 @@ OAUTH2_PROVIDER = {
 # Also, if these lines are executed in testing, test fails with:
 #   django.db.utils.ProgrammingError: relation "users_user" does not exist
 #
-if sys.argv[1:2] not in [['migrate'], ['test']]:
-    INSTALLED_APPS.append('ansible_ai_connect.wildcard_oauth2')
-    OAUTH2_PROVIDER_APPLICATION_MODEL = 'wildcard_oauth2.Application'
+if sys.argv[1:2] not in [["migrate"], ["test"]]:
+    INSTALLED_APPS.append("ansible_ai_connect.wildcard_oauth2")
+    OAUTH2_PROVIDER_APPLICATION_MODEL = "wildcard_oauth2.Application"
 
 # OAUTH: todo
 # - remove ansible_wisdom/users/auth.py module
 # - remove ansible_wisdom/users/views.py module
 # - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
 
-COMPLETION_USER_RATE_THROTTLE = os.environ.get('COMPLETION_USER_RATE_THROTTLE') or '10/minute'
-ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get('ME_USER_CACHE_TIMEOUT_SEC', 30))
-ME_USER_RATE_THROTTLE = os.environ.get('ME_USER_RATE_THROTTLE') or '50/minute'
-SPECIAL_THROTTLING_GROUPS = ['test']
+COMPLETION_USER_RATE_THROTTLE = os.environ.get("COMPLETION_USER_RATE_THROTTLE") or "10/minute"
+ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get("ME_USER_CACHE_TIMEOUT_SEC", 30))
+ME_USER_RATE_THROTTLE = os.environ.get("ME_USER_RATE_THROTTLE") or "50/minute"
+SPECIAL_THROTTLING_GROUPS = ["test"]
 
-AMS_ORG_CACHE_TIMEOUT_SEC = int(os.environ.get('AMS_ORG_CACHE_TIMEOUT_SEC', 60 * 60 * 24))
+AMS_ORG_CACHE_TIMEOUT_SEC = int(os.environ.get("AMS_ORG_CACHE_TIMEOUT_SEC", 60 * 60 * 24))
 AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC = int(
-    os.environ.get('AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC', 60 * 15)
+    os.environ.get("AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC", 60 * 15)
 )
 
-MULTI_TASK_MAX_REQUESTS = os.environ.get('MULTI_TASK_MAX_REQUESTS', 10)
+MULTI_TASK_MAX_REQUESTS = os.environ.get("MULTI_TASK_MAX_REQUESTS", 10)
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'DEFAULT_THROTTLE_CLASSES': ['ansible_ai_connect.users.throttling.GroupSpecificThrottle'],
-    'DEFAULT_THROTTLE_RATES': {
-        'user': COMPLETION_USER_RATE_THROTTLE,
-        'test': "100000/minute",
-        'me': ME_USER_RATE_THROTTLE,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_THROTTLE_CLASSES": ["ansible_ai_connect.users.throttling.GroupSpecificThrottle"],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": COMPLETION_USER_RATE_THROTTLE,
+        "test": "100000/minute",
+        "me": ME_USER_RATE_THROTTLE,
     },
-    'PAGE_SIZE': 10,
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework.authentication.SessionAuthentication',
+    "PAGE_SIZE": 10,
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'EXCEPTION_HANDLER': 'ansible_ai_connect.main.exception_handler.'
-    'exception_handler_with_error_type',
-    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "ansible_ai_connect.main.exception_handler."
+    "exception_handler_with_error_type",
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
 }
 
 # Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
     REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(
-        -1, 'ansible_ai_connect.users.auth.RHSSOAuthentication'
+        -1, "ansible_ai_connect.users.auth.RHSSOAuthentication"
     )
 
 ROOT_URLCONF = "ansible_ai_connect.main.urls"
@@ -366,7 +366,7 @@ LOGGING = {
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        'DIRS': list(BASE_DIR.glob("*/templates/")),
+        "DIRS": list(BASE_DIR.glob("*/templates/")),
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -434,7 +434,7 @@ STATIC_URL = "static/"
 
 # Absolute filesystem path to the directory where static file are collected via
 # the collectstatic command.
-STATIC_ROOT = '/var/www/wisdom/public/static'
+STATIC_ROOT = "/var/www/wisdom/public/static"
 
 # Paths to where static files that are not explicitly part of a
 # particular Django app should be collected from.
@@ -448,7 +448,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 APPEND_SLASH = True
 
 DUMMY_MODEL_RESPONSE_BODY = os.environ.get(
-    'DUMMY_MODEL_RESPONSE_BODY',
+    "DUMMY_MODEL_RESPONSE_BODY",
     (
         '{"predictions":["ansible.builtin.apt:\\n  name: nginx\\n'
         '  update_cache: true\\n  state: present\\n"]}'
@@ -456,16 +456,16 @@ DUMMY_MODEL_RESPONSE_BODY = os.environ.get(
 )
 
 DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
-    os.environ.get('DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC', 3000)
+    os.environ.get("DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC", 3000)
 )
 DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
-    os.environ.get('DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER', False)
+    os.environ.get("DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER", False)
 )
 
-ENABLE_ARI_POSTPROCESS = os.getenv('ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
-ARI_BASE_DIR = os.getenv('ARI_KB_PATH', '/etc/ari/kb/')
-ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, 'rules')
-ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, 'data')
+ENABLE_ARI_POSTPROCESS = os.getenv("ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
+ARI_BASE_DIR = os.getenv("ARI_KB_PATH", "/etc/ari/kb/")
+ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, "rules")
+ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, "data")
 ARI_RULES = [
     "P001",
     "P002",
@@ -497,38 +497,38 @@ ARI_RULES = [
     "W026",
     "W027",
 ]
-if 'ARI_RULES' in os.environ:
-    ARI_RULES = os.environ['ARI_RULES'].split(',')
-ARI_RULE_FOR_OUTPUT_RESULT = os.getenv('ARI_RULE_FOR_OUTPUT_RESULT', "W007")
+if "ARI_RULES" in os.environ:
+    ARI_RULES = os.environ["ARI_RULES"].split(",")
+ARI_RULE_FOR_OUTPUT_RESULT = os.getenv("ARI_RULE_FOR_OUTPUT_RESULT", "W007")
 
 ENABLE_ANSIBLE_LINT_POSTPROCESS = (
-    os.getenv('ENABLE_ANSIBLE_LINT_POSTPROCESS', 'False').lower() == 'true'
+    os.getenv("ENABLE_ANSIBLE_LINT_POSTPROCESS", "False").lower() == "true"
 )
 
 ANSIBLE_LINT_TRANSFORM_RULES = ["all"]
 
-ENABLE_ADDITIONAL_CONTEXT = os.getenv('ENABLE_ADDITIONAL_CONTEXT', 'False').lower() == 'true'
+ENABLE_ADDITIONAL_CONTEXT = os.getenv("ENABLE_ADDITIONAL_CONTEXT", "False").lower() == "true"
 
-LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
-LAUNCHDARKLY_SDK_TIMEOUT = os.getenv('LAUNCHDARKLY_SDK_TIMEOUT', 20)
+LAUNCHDARKLY_SDK_KEY = os.getenv("LAUNCHDARKLY_SDK_KEY", "")
+LAUNCHDARKLY_SDK_TIMEOUT = os.getenv("LAUNCHDARKLY_SDK_TIMEOUT", 20)
 
 ANSIBLE_AI_SEARCH = {
-    'HOST': os.getenv('ANSIBLE_AI_SEARCH_HOST', ''),
-    'PORT': int(os.getenv('ANSIBLE_AI_SEARCH_PORT') or '443'),
-    'KEY': os.getenv('ANSIBLE_AI_SEARCH_KEY'),
-    'SECRET': os.getenv('ANSIBLE_AI_SEARCH_SECRET'),
-    'REGION': os.getenv('ANSIBLE_AI_SEARCH_REGION'),
-    'USE_SSL': True,
-    'VERIFY_CERTS': True,
-    'INDEX': os.getenv('ANSIBLE_AI_SEARCH_INDEX', 'attribution'),
+    "HOST": os.getenv("ANSIBLE_AI_SEARCH_HOST", ""),
+    "PORT": int(os.getenv("ANSIBLE_AI_SEARCH_PORT") or "443"),
+    "KEY": os.getenv("ANSIBLE_AI_SEARCH_KEY"),
+    "SECRET": os.getenv("ANSIBLE_AI_SEARCH_SECRET"),
+    "REGION": os.getenv("ANSIBLE_AI_SEARCH_REGION"),
+    "USE_SSL": True,
+    "VERIFY_CERTS": True,
+    "INDEX": os.getenv("ANSIBLE_AI_SEARCH_INDEX", "attribution"),
     # MODEL, DIMENSION, and METHOD all need to match for the underlying model chosen
-    'MODEL': os.getenv('ANSIBLE_AI_SEARCH_MODEL', 'all-MiniLM-L6-v2'),
-    'DIMENSION': int(os.getenv('ANSIBLE_AI_SEARCH_DIMENSION') or '384'),
-    'METHOD': dict(
-        x.split(':')
+    "MODEL": os.getenv("ANSIBLE_AI_SEARCH_MODEL", "all-MiniLM-L6-v2"),
+    "DIMENSION": int(os.getenv("ANSIBLE_AI_SEARCH_DIMENSION") or "384"),
+    "METHOD": dict(
+        x.split(":")
         for x in os.getenv(
-            'ANSIBLE_AI_SEARCH_METHOD', 'name:hnsw,space_type:innerproduct,engine:nmslib'
-        ).split(',')
+            "ANSIBLE_AI_SEARCH_METHOD", "name:hnsw,space_type:innerproduct,engine:nmslib"
+        ).split(",")
     ),
 }
 
@@ -542,38 +542,38 @@ CACHES = {
 t_wca_secret_backend_type = Literal["dummy", "aws_sm"]
 WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = cast(t_wca_secret_backend_type, "aws_sm")
 
-WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_ACCESS_KEY', '')
-WCA_SECRET_MANAGER_SECRET_ACCESS_KEY = os.getenv('WCA_SECRET_MANAGER_SECRET_ACCESS_KEY', '')
-WCA_SECRET_MANAGER_KMS_KEY_ID = os.getenv('WCA_SECRET_MANAGER_KMS_KEY_ID', '')
-WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv('WCA_SECRET_MANAGER_PRIMARY_REGION', '')
+WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv("WCA_SECRET_MANAGER_ACCESS_KEY", "")
+WCA_SECRET_MANAGER_SECRET_ACCESS_KEY = os.getenv("WCA_SECRET_MANAGER_SECRET_ACCESS_KEY", "")
+WCA_SECRET_MANAGER_KMS_KEY_ID = os.getenv("WCA_SECRET_MANAGER_KMS_KEY_ID", "")
+WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv("WCA_SECRET_MANAGER_PRIMARY_REGION", "")
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
-    c.strip() for c in os.getenv('WCA_SECRET_MANAGER_REPLICA_REGIONS', '').split(',') if c
+    c.strip() for c in os.getenv("WCA_SECRET_MANAGER_REPLICA_REGIONS", "").split(",") if c
 ]
-WCA_ENABLE_ARI_POSTPROCESS = os.getenv('WCA_ENABLE_ARI_POSTPROCESS', 'False').lower() == 'true'
+WCA_ENABLE_ARI_POSTPROCESS = os.getenv("WCA_ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_INCLUDE_NONCE_IN = ['script-src-elem']
+CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 CSP_CONNECT_SRC = "'self'"
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
-DEPLOYED_REGION = os.getenv('DEPLOYED_REGION', 'unknown')
+DEPLOYED_REGION = os.getenv("DEPLOYED_REGION", "unknown")
 
 # Support to disable health checks. The default is that they are enabled.
 # The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
-ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv('ENABLE_HEALTHCHECK_MODEL_MESH', 'True').lower() == 'true'
+ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv("ENABLE_HEALTHCHECK_MODEL_MESH", "True").lower() == "true"
 ENABLE_HEALTHCHECK_SECRET_MANAGER = (
-    os.getenv('ENABLE_HEALTHCHECK_SECRET_MANAGER', 'True').lower() == 'true'
+    os.getenv("ENABLE_HEALTHCHECK_SECRET_MANAGER", "True").lower() == "true"
 )
 ENABLE_HEALTHCHECK_AUTHORIZATION = (
-    os.getenv('ENABLE_HEALTHCHECK_AUTHORIZATION', 'True').lower() == 'true'
+    os.getenv("ENABLE_HEALTHCHECK_AUTHORIZATION", "True").lower() == "true"
 )
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
-    os.getenv('ENABLE_HEALTHCHECK_ATTRIBUTION', 'True').lower() == 'true'
+    os.getenv("ENABLE_HEALTHCHECK_ATTRIBUTION", "True").lower() == "true"
 )
 
 # Follow AWX naming for this environment variable
 # It is used to protect Prometheus's /metrics endpoint
 ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
-    os.getenv('ALLOW_METRICS_FOR_ANONYMOUS_USERS', 'True').lower() == 'true'
+    os.getenv("ALLOW_METRICS_FOR_ANONYMOUS_USERS", "True").lower() == "true"
 )

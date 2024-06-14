@@ -56,9 +56,9 @@ class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
 
     def pretty_status(self):
         if not self.enabled:
-            return 'disabled'
+            return "disabled"
         if len(self.errors) == 0 and len(self.summary.items) == 0:
-            return 'ok'
+            return "ok"
 
         if len(self.summary.items) > 0:
             response = {}

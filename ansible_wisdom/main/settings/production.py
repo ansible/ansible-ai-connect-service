@@ -19,7 +19,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = list(filter(len, os.getenv("ANSIBLE_WISDOM_DOMAIN", "").split(",")))
 
-SOCIAL_AUTH_REDIRECT_IS_HTTPS = os.getenv('SOCIAL_AUTH_REDIRECT_IS_HTTPS', 'True').lower() == 'true'
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = os.getenv("SOCIAL_AUTH_REDIRECT_IS_HTTPS", "True").lower() == "true"
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"

@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('users', '0004_split_terms_timestamps'),
+        ("users", "0004_split_terms_timestamps"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='organization_id',
+            model_name="user",
+            name="organization_id",
             field=models.IntegerField(default=None, null=True),
         ),
     ]

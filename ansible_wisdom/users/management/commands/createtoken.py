@@ -30,20 +30,20 @@ class Command(BaseCommand):
     help = "Create an accesstoken for API access (e.g: to run the tests)"
 
     def add_arguments(self, parser):
-        parser.add_argument('--username', type=str, help="User associated with the token")
-        parser.add_argument('--password', type=str, help="User password when creating a new user")
-        parser.add_argument('--organization-id', type=str, help="Org id of the user")
+        parser.add_argument("--username", type=str, help="User associated with the token")
+        parser.add_argument("--password", type=str, help="User password when creating a new user")
+        parser.add_argument("--organization-id", type=str, help="Org id of the user")
         parser.add_argument(
-            '--token-name', type=str, help="Name of the token", default=generate_token()
+            "--token-name", type=str, help="Name of the token", default=generate_token()
         )
         parser.add_argument(
-            '--create-user', action='store_true', help="Also create the user.", default=False
+            "--create-user", action="store_true", help="Also create the user.", default=False
         )
         parser.add_argument(
-            '--groups', type=str, nargs='*', help="Names of the groups to assign the user to"
+            "--groups", type=str, nargs="*", help="Names of the groups to assign the user to"
         )
         parser.add_argument(
-            '--duration', type=int, help="How long the token is valid (minute)", default=60
+            "--duration", type=int, help="How long the token is valid (minute)", default=60
         )
 
     def handle(
@@ -89,7 +89,7 @@ class Command(BaseCommand):
             group_objs.append(group_obj)
 
         if group_objs:
-            u.groups.add(*(set(group_objs) - set(u.groups.values_list('name', flat=True))))
+            u.groups.add(*(set(group_objs) - set(u.groups.values_list("name", flat=True))))
 
         if AccessToken.objects.filter(token=token_name).exists():
             self.stdout.write(f"Token {token_name} already exists")

@@ -8,19 +8,19 @@ import ansible_ai_connect.users.models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('organizations', '0001_initial'),
-        ('users', '0008_user_external_username'),
+        ("organizations", "0001_initial"),
+        ("users", "0008_user_external_username"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='organization',
+            model_name="user",
+            name="organization",
             field=ansible_ai_connect.users.models.NonClashingForeignKey(
                 default=None,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to='organizations.organization',
+                to="organizations.organization",
             ),
         ),
     ]

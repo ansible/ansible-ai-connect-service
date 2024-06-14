@@ -16,7 +16,7 @@ class WisdomExtServiceStub:
             channel: A grpc.Channel.
         """
         self.AnsiblePredict = channel.unary_unary(
-            '/caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict',
+            "/caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict",
             request_serializer=ansiblerequest__pb2.AnsibleRequest.SerializeToString,
             response_deserializer=generatedresult__pb2.GeneratedResult.FromString,
         )
@@ -28,20 +28,20 @@ class WisdomExtServiceServicer:
     def AnsiblePredict(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
 
 def add_WisdomExtServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'AnsiblePredict': grpc.unary_unary_rpc_method_handler(
+        "AnsiblePredict": grpc.unary_unary_rpc_method_handler(
             servicer.AnsiblePredict,
             request_deserializer=ansiblerequest__pb2.AnsibleRequest.FromString,
             response_serializer=generatedresult__pb2.GeneratedResult.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        'caikit.runtime.WisdomExt.WisdomExtService', rpc_method_handlers
+        "caikit.runtime.WisdomExt.WisdomExtService", rpc_method_handlers
     )
     server.add_generic_rpc_handlers((generic_handler,))
 
@@ -66,7 +66,7 @@ class WisdomExtService:
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict',
+            "/caikit.runtime.WisdomExt.WisdomExtService/AnsiblePredict",
             ansiblerequest__pb2.AnsibleRequest.SerializeToString,
             generatedresult__pb2.GeneratedResult.FromString,
             options,

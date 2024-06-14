@@ -23,7 +23,7 @@ class Command(BaseWCAPostCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument('secret', type=str, help="IBM WCA Model Id")
+        parser.add_argument("secret", type=str, help="IBM WCA Model Id")
 
     def get_secret_suffix(self) -> Suffixes:
         return Suffixes.MODEL_ID

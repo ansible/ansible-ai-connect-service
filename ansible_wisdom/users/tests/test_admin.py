@@ -21,5 +21,5 @@ from django.test import TestCase
 class TestWisdomUserAdmin(TestCase):
     def test_search_fields_includes_uuid(self):
         wisdom_admin = admin.site._registry[get_user_model()]
-        expected_search_fields = UserAdmin.search_fields + ('uuid',)
+        expected_search_fields = UserAdmin.search_fields + ("uuid",)
         self.assertEqual(wisdom_admin.search_fields, expected_search_fields)

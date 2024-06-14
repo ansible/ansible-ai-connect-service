@@ -33,10 +33,10 @@ from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
-STRIP_YAML_LINE = '---\n'
+STRIP_YAML_LINE = "---\n"
 
 postprocess_hist = Histogram(
-    'postprocessing_latency_seconds',
+    "postprocessing_latency_seconds",
     "Histogram of post-processing time",
     namespace=NAMESPACE,
 )
@@ -49,13 +49,13 @@ def get_ansible_lint_caller(user):
         ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
         if not ansible_lint_caller:
             logger.warn(
-                'skipped ansible lint post processing because ansible lint was not initialized'
+                "skipped ansible lint post processing because ansible lint was not initialized"
             )
     else:
         ansible_lint_caller = None
         logger.debug(
-            'skipped ansible lint post processing as lint processing is allowed for'
-            ' Commercial Users only!'
+            "skipped ansible lint post processing as lint processing is allowed for"
+            " Commercial Users only!"
         )
     return ansible_lint_caller
 
@@ -107,7 +107,7 @@ def write_to_segment(
 
 
 def trim_whitespace_lines(input: str):
-    return '\n'.join(line if line.strip() else '' for line in input.split('\n'))
+    return "\n".join(line if line.strip() else "" for line in input.split("\n"))
 
 
 def truncate_recommendation_yaml(recommendation_yaml: str) -> tuple[bool, str]:
@@ -147,7 +147,7 @@ def completion_post_process(context: CompletionContext):
 
     ari_caller = apps.get_app_config("ai").get_ari_caller()
     if not ari_caller:
-        logger.warning('skipped ari post processing because ari was not initialized')
+        logger.warning("skipped ari post processing because ari was not initialized")
 
     ansible_lint_caller = get_ansible_lint_caller(user)
 
@@ -197,9 +197,9 @@ def completion_post_process(context: CompletionContext):
             recommendation_problem = exc
         if recommendation_problem:
             logger.error(
-                f'recommendation_yaml is not a valid YAML: '
-                f'\n{recommendation_yaml}'
-                f'\nException:\n{recommendation_problem}'
+                f"recommendation_yaml is not a valid YAML: "
+                f"\n{recommendation_yaml}"
+                f"\nException:\n{recommendation_problem}"
             )
             # if the recommentation is not a valid yaml, record it as an exception
             exception = recommendation_problem
@@ -242,13 +242,13 @@ def completion_post_process(context: CompletionContext):
                 pp = (
                     postprocessed_yaml.replace(" ", "")
                     .replace("\n", "")
-                    .replace("\"", "")
+                    .replace('"', "")
                     .replace("'", "")
                 )
                 orig = (
                     recommendation_yaml.replace(" ", "")
                     .replace("\n", "")
-                    .replace("\"", "")
+                    .replace('"', "")
                     .replace("'", "")
                 )
 
@@ -272,8 +272,8 @@ def completion_post_process(context: CompletionContext):
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {prompt} '
-                f'context {payload_context} and model recommendation {post_processed_predictions}'
+                f"failed to postprocess recommendation with prompt {prompt} "
+                f"context {payload_context} and model recommendation {post_processed_predictions}"
             )
         finally:
             write_to_segment(
@@ -299,22 +299,22 @@ def completion_post_process(context: CompletionContext):
             # Single task predictions are missing the `- name: ` line and fail linter schema check
             if not is_multi_task_prompt:
                 input_yaml = (
-                    f'{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}'
+                    f"{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}"
                 )
             postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
                 postprocessed_yaml = postprocessed_yaml[len(STRIP_YAML_LINE) :]
             # Strip the task name line if single task
-            if not is_multi_task_prompt and postprocessed_yaml.lstrip().startswith('- name:'):
-                postprocessed_yaml = '\n'.join(postprocessed_yaml.split('\n')[1:])
+            if not is_multi_task_prompt and postprocessed_yaml.lstrip().startswith("- name:"):
+                postprocessed_yaml = "\n".join(postprocessed_yaml.split("\n")[1:])
             post_processed_predictions["predictions"][0] = postprocessed_yaml
         except Exception as exc:
             exception = exc
             # return the original recommendation if we failed to postprocess
             logger.exception(
-                f'failed to postprocess recommendation with prompt {prompt} '
-                f'context {payload_context} and model recommendation {post_processed_predictions}'
+                f"failed to postprocess recommendation with prompt {prompt} "
+                f"context {payload_context} and model recommendation {post_processed_predictions}"
             )
         finally:
             anonymized_input_yaml = (
@@ -351,7 +351,7 @@ def completion_post_process(context: CompletionContext):
     indented_yaml = trim_whitespace_lines(indented_yaml)
 
     # add a newline to the end if there isn't one
-    if indented_yaml.endswith('\n') is False:
+    if indented_yaml.endswith("\n") is False:
         indented_yaml = f"{indented_yaml}\n"
 
     post_processed_predictions["predictions"][0] = indented_yaml
@@ -397,7 +397,7 @@ class PostProcessStage(PipelineElement):
         try:
             completion_post_process(context)
         except Exception:
-            process_error_count.labels(stage='post-processing').inc()
+            process_error_count.labels(stage="post-processing").inc()
             logger.exception(
                 f"error postprocessing prediction for suggestion {payload.suggestionId}"
             )

@@ -48,7 +48,7 @@ class ChatBAM(SimpleChatModel):
             raise ValueError("stop kwargs are not permitted.")
 
         bam_messages = list(
-            map(lambda x: {"role": x.additional_kwargs['role'], "content": x.content}, messages)
+            map(lambda x: {"role": x.additional_kwargs["role"], "content": x.content}, messages)
         )
         session = requests.Session()
         headers = {

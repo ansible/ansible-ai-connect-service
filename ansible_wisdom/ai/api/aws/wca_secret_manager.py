@@ -23,14 +23,14 @@ from django.utils import timezone
 
 from .exceptions import WcaSecretManagerError, WcaSecretManagerMissingCredentialsError
 
-SECRET_KEY_PREFIX = 'wca'
+SECRET_KEY_PREFIX = "wca"
 
 logger = logging.getLogger(__name__)
 
 
 class Suffixes(Enum):
-    API_KEY = 'api_key'
-    MODEL_ID = 'model_id'
+    API_KEY = "api_key"
+    MODEL_ID = "model_id"
 
 
 class BaseSecretManager:
@@ -126,7 +126,7 @@ class AWSSecretManager(BaseSecretManager):
                 raise WcaSecretManagerMissingCredentialsError
 
             self._client = boto3.client(
-                'secretsmanager',
+                "secretsmanager",
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
                 region_name=self.primary_region,
@@ -153,7 +153,7 @@ class AWSSecretManager(BaseSecretManager):
 
         else:
             replica_regions = [
-                {'Region': region, 'KmsKeyId': self.kms_secret_id}
+                {"Region": region, "KmsKeyId": self.kms_secret_id}
                 for region in self.replica_regions
             ]
             try:
@@ -166,7 +166,7 @@ class AWSSecretManager(BaseSecretManager):
             except ClientError as e:
                 raise WcaSecretManagerError(e)
 
-        return response['Name']
+        return response["Name"]
 
     def delete_secret(self, org_id, suffix: Suffixes) -> None:
         """

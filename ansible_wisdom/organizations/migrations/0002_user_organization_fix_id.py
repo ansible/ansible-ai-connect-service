@@ -2,7 +2,7 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [('organizations', '0001_initial'), ('users', '0009_user_organization')]
+    dependencies = [("organizations", "0001_initial"), ("users", "0009_user_organization")]
 
     operations = [
         migrations.RunSQL(

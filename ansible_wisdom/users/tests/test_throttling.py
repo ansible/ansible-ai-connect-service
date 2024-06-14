@@ -30,28 +30,28 @@ class TestThrottling(WisdomServiceAPITestCaseBase):
         request = DummyRequest(self.user)
 
         cache_key = throttling.get_cache_key(request, Completions())
-        expected = f'throttle_user_{self.user.pk}_completions'
+        expected = f"throttle_user_{self.user.pk}_completions"
         self.assertEqual(expected, cache_key)
 
         cache_key = throttling.get_cache_key(request, Attributions())
-        expected = f'throttle_user_{self.user.pk}_attributions'
+        expected = f"throttle_user_{self.user.pk}_attributions"
         self.assertEqual(expected, cache_key)
 
         cache_key = throttling.get_cache_key(request, Feedback())
-        expected = f'throttle_user_{self.user.pk}_feedback'
+        expected = f"throttle_user_{self.user.pk}_feedback"
         self.assertEqual(expected, cache_key)
 
     def test_format_rate(self):
         num_requests = 60
 
         rate = GroupSpecificThrottle.format_rate(num_requests, 1)
-        self.assertEqual(rate, '60/second')
+        self.assertEqual(rate, "60/second")
         rate = GroupSpecificThrottle.format_rate(num_requests, 60)
-        self.assertEqual(rate, '60/minute')
+        self.assertEqual(rate, "60/minute")
         rate = GroupSpecificThrottle.format_rate(num_requests, 3600)
-        self.assertEqual(rate, '60/hour')
+        self.assertEqual(rate, "60/hour")
         rate = GroupSpecificThrottle.format_rate(num_requests, 86400)
-        self.assertEqual(rate, '60/day')
+        self.assertEqual(rate, "60/day")
 
     def test_multiplier(self):
         throttling = GroupSpecificThrottle()
@@ -59,13 +59,13 @@ class TestThrottling(WisdomServiceAPITestCaseBase):
         user_rate_throttle = settings.COMPLETION_USER_RATE_THROTTLE
 
         view = Completions()
-        multiplier = getattr(view, 'throttle_cache_multiplier', None)
+        multiplier = getattr(view, "throttle_cache_multiplier", None)
         self.assertIsNone(multiplier)
         rate = throttling.get_rate(view)
         self.assertEqual(rate, user_rate_throttle)
 
         view = Feedback()
-        multiplier = getattr(view, 'throttle_cache_multiplier', None)
+        multiplier = getattr(view, "throttle_cache_multiplier", None)
         self.assertIsNotNone(multiplier)
         self.assertEqual(multiplier, 6.0)
         num_requests, duration = throttling.parse_rate(user_rate_throttle)
