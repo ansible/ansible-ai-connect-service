@@ -278,7 +278,7 @@ class PlaybookGenerationFeedback(serializers.Serializer):
 
 
 class PlaybookGenerationAction(serializers.Serializer):
-    ACTIONS = (("0", "OPEN"), ("1", "CLOSE"), ("2", "TRANSITION"))
+    ACTIONS = (("0", "OPEN"), ("1", "CLOSE_CANCEL"), ("2", "TRANSITION"), ("3", "CLOSE_ACCEPT"))
 
     action = serializers.ChoiceField(choices=ACTIONS, required=True)
     wizardId = serializers.UUIDField(
