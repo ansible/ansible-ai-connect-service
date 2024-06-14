@@ -23,6 +23,8 @@ class AnalyticsTelemetryEvents(Enum):
     RECOMMENDATION_GENERATED = "Recommendation Generated"
     RECOMMENDATION_ACTION = "Recommendation Action"
     PRODUCT_FEEDBACK = "Product Feedback"
+    PLAYBOOK_GENERATION_ACTION = "Action on the Playbook Generation Wizard"
+    PLAYBOOK_EXPLANATION_GENERATED = "Playbook Explanation Generated"
 
 
 @frozen
@@ -37,6 +39,31 @@ class AnalyticsRecommendationGenerated:
     suggestion_id: str = field(validator=validators.instance_of(str), converter=str, default="")
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
     model_name: str = field(default="")
+    timestamp: str = field(
+        default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
+    )
+
+
+@frozen
+class AnalyticsPlaybookExplanationGenerated:
+    explanation_id: str = field(validator=validators.instance_of(str), converter=str, default="")
+    rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
+    timestamp: str = field(
+        default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
+    )
+
+
+@frozen
+class AnalyticsPlaybookGenerationWizard:
+    #  OPEN = 0, // Open wizard
+    #  CLOSE = 1, // Close wizard
+    #  TRANSITION = 2, // Page transition
+    #  ACCEPT = 3
+    action: int = field(
+        validator=[validators.instance_of(int), validators.in_([0, 1, 2, 3])], converter=int
+    )
+    wizard_id: str = field(validator=validators.instance_of(str), converter=str, default="")
+    rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )

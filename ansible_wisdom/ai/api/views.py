@@ -93,10 +93,14 @@ from .serializers import (
     GenerationResponseSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
+    PlaybookExplanationFeedback,
+    PlaybookGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
 from .utils.analytics_telemetry_model import (
+    AnalyticsPlaybookExplanationGenerated,
+    AnalyticsPlaybookGenerationWizard,
     AnalyticsProductFeedback,
     AnalyticsRecommendationAction,
     AnalyticsTelemetryEvents,
@@ -210,6 +214,7 @@ class Feedback(APIView):
             request_serializer = FeedbackRequestSerializer(
                 data=request.data, context={"request": request}
             )
+
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             logger.info(f"feedback request payload from client: {validated_data}")
@@ -237,6 +242,13 @@ class Feedback(APIView):
         )
         sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
         issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
+        playbook_explanation_feedback_data: PlaybookExplanationFeedback = validated_data.get(
+            "playbookExplanationFeedback"
+        )
+        playbook_generation_action_data: PlaybookGenerationAction = validated_data.get(
+            "playbookGenerationAction"
+        )
+
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
         )
@@ -313,6 +325,37 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "issueFeedback", user)
+        if playbook_explanation_feedback_data:
+            event = {
+                "action": playbook_explanation_feedback_data.get("action"),
+                "explanation_id": str(playbook_explanation_feedback_data.get("explanationId", "")),
+                "modelName": model_name,
+            }
+            send_segment_event(event, "playbookExplanationFeedback", user)
+        if playbook_generation_action_data:
+            action = int(playbook_generation_action_data.get("action"))
+            from_page = playbook_generation_action_data.get("fromPage", 0)
+            to_page = playbook_generation_action_data.get("toPage", 0)
+            wizard_id = str(playbook_generation_action_data.get("wizardId", ""))
+            event = {
+                "action": action,
+                "wizardId": wizard_id,
+                "fromPage": from_page,
+                "toPage": to_page,
+                "modelName": model_name,
+            }
+            send_segment_event(event, "playbookGenerationAction", user)
+            if from_page > 1 and action in [1, 3]:
+                send_segment_analytics_event(
+                    AnalyticsTelemetryEvents.PLAYBOOK_GENERATION_ACTION,
+                    lambda: AnalyticsPlaybookGenerationWizard(
+                        action=action,
+                        wizard_id=str(playbook_generation_action_data.get("wizardId", "")),
+                        rh_user_org_id=org_id,
+                    ),
+                    user,
+                    ansible_extension_version,
+                )
 
         feedback_events = [
             inline_suggestion_data,
@@ -785,12 +828,27 @@ class Explanation(APIView):
 
     def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
         event = {
-            "explanationId": explanation_id,
-            "exception": exception is not None,
             "duration": duration,
+            "exception": exception is not None,
+            "explanationId": explanation_id,
             "playbook_length": playbook_length,
+            "rh_user_org_id": user.org_id,
         }
+        if exception:
+            event["response"] = (
+                {
+                    "exception": str(exception),
+                },
+            )
         send_segment_event(event, "explanation", user)
+        send_segment_analytics_event(
+            AnalyticsTelemetryEvents.PLAYBOOK_EXPLANATION_GENERATED,
+            lambda: AnalyticsPlaybookExplanationGenerated(
+                explanation_id=explanation_id,
+                rh_user_org_id=user.org_id,
+            ),
+            user,
+        )
 
 
 class Generation(APIView):
@@ -894,4 +952,10 @@ class Generation(APIView):
             "create_outline": create_outline,
             "playbook_length": playbook_length,
         }
+        if exception:
+            event["response"] = (
+                {
+                    "exception": str(exception),
+                },
+            )
         send_segment_event(event, "generation", user)

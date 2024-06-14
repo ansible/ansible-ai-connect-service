@@ -278,7 +278,7 @@ class PlaybookGenerationFeedback(serializers.Serializer):
 
 
 class PlaybookGenerationAction(serializers.Serializer):
-    ACTIONS = (("0", "OPEN"), ("1", "CLOSE"), ("2", "TRANSITION"))
+    ACTIONS = (("0", "OPEN"), ("1", "CLOSE_CANCEL"), ("2", "TRANSITION"), ("3", "CLOSE_ACCEPT"))
 
     action = serializers.ChoiceField(choices=ACTIONS, required=True)
     wizardId = serializers.UUIDField(
@@ -296,6 +296,12 @@ class PlaybookGenerationAction(serializers.Serializer):
         required=False,
         label="destination page",
         help_text=("A number that indicate the destination page"),
+    )
+    openEditor = serializers.BooleanField(
+        required=False,
+        default=False,
+        label="openEditor",
+        help_text="Indicates whether the user opened the playbook in an editor",
     )
 
 
