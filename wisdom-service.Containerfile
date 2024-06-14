@@ -42,7 +42,6 @@ RUN  ln -s /var/www/ansible-wisdom-service/ansible_wisdom /var/www/ansible-wisdo
 RUN /usr/bin/python3.11 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3.11 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
-COPY model-cache /var/www/model-cache
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
 RUN mkdir /var/run/uwsgi
@@ -81,7 +80,6 @@ RUN for dir in \
       /var/run/supervisor \
       /var/run/uwsgi \
       /var/www/wisdom \
-      /var/www/model-cache \
       /var/log/nginx \
       /etc/ari \
       /etc/ansible \

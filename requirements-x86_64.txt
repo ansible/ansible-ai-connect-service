@@ -151,7 +151,6 @@ grpcio==1.60.1
     # via -r requirements.in
 huggingface-hub==0.22.2
     # via
-    #   sentence-transformers
     #   tokenizers
     #   transformers
 idna==3.7
@@ -247,7 +246,6 @@ numpy==1.26.4
     #   langchain-community
     #   scikit-learn
     #   scipy
-    #   sentence-transformers
     #   torchvision
     #   transformers
 oauthlib==3.2.2
@@ -286,9 +284,7 @@ pexpect==4.9.0
 pickleshare==0.7.5
     # via ipython
 pillow==10.3.0
-    # via
-    #   sentence-transformers
-    #   torchvision
+    # via torchvision
 platformdirs==4.2.1
     # via black
 prometheus-client==0.20.0
@@ -400,19 +396,13 @@ s3transfer==0.6.2
 safetensors==0.4.3
     # via transformers
 scikit-learn==1.5.0
-    # via
-    #   -r requirements.in
-    #   sentence-transformers
+    # via -r requirements.in
 scipy==1.13.0
-    # via
-    #   scikit-learn
-    #   sentence-transformers
+    # via scikit-learn
 segment-analytics-python==2.2.2
     # via -r requirements.in
 semver==3.0.2
     # via launchdarkly-server-sdk
-sentence-transformers==2.5.1
-    # via -r requirements.in
 six==1.16.0
     # via
     #   asttokens
@@ -459,7 +449,6 @@ tokenizers==0.15.2
 torch @ https://download.pytorch.org/whl/cpu/torch-2.0.1%2Bcpu-cp311-cp311-linux_x86_64.whl ; platform_machine == "x86_64" and sys_platform == "linux"
     # via
     #   -r requirements.in
-    #   sentence-transformers
     #   torchvision
 torchvision @ https://download.pytorch.org/whl/cpu/torchvision-0.15.2%2Bcpu-cp311-cp311-linux_x86_64.whl ; platform_machine == "x86_64" and sys_platform == "linux"
     # via -r requirements.in
@@ -467,16 +456,13 @@ tqdm==4.66.3
     # via
     #   -r requirements.in
     #   huggingface-hub
-    #   sentence-transformers
     #   transformers
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
 transformers==4.39.1
-    # via
-    #   -r requirements.in
-    #   sentence-transformers
+    # via -r requirements.in
 typing-extensions==4.11.0
     # via
     #   django-test-migrations
