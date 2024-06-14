@@ -512,26 +512,6 @@ ENABLE_ADDITIONAL_CONTEXT = os.getenv('ENABLE_ADDITIONAL_CONTEXT', 'False').lowe
 LAUNCHDARKLY_SDK_KEY = os.getenv('LAUNCHDARKLY_SDK_KEY', '')
 LAUNCHDARKLY_SDK_TIMEOUT = os.getenv('LAUNCHDARKLY_SDK_TIMEOUT', 20)
 
-ANSIBLE_AI_SEARCH = {
-    'HOST': os.getenv('ANSIBLE_AI_SEARCH_HOST', ''),
-    'PORT': int(os.getenv('ANSIBLE_AI_SEARCH_PORT') or '443'),
-    'KEY': os.getenv('ANSIBLE_AI_SEARCH_KEY'),
-    'SECRET': os.getenv('ANSIBLE_AI_SEARCH_SECRET'),
-    'REGION': os.getenv('ANSIBLE_AI_SEARCH_REGION'),
-    'USE_SSL': True,
-    'VERIFY_CERTS': True,
-    'INDEX': os.getenv('ANSIBLE_AI_SEARCH_INDEX', 'attribution'),
-    # MODEL, DIMENSION, and METHOD all need to match for the underlying model chosen
-    'MODEL': os.getenv('ANSIBLE_AI_SEARCH_MODEL', 'all-MiniLM-L6-v2'),
-    'DIMENSION': int(os.getenv('ANSIBLE_AI_SEARCH_DIMENSION') or '384'),
-    'METHOD': dict(
-        x.split(':')
-        for x in os.getenv(
-            'ANSIBLE_AI_SEARCH_METHOD', 'name:hnsw,space_type:innerproduct,engine:nmslib'
-        ).split(',')
-    ),
-}
-
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",

@@ -55,12 +55,6 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
     def setUp(self):
         super().setUp()
         self.mock_seat_checker_with(Mock())
-        self.attribution_search_patcher = patch('ansible_ai_connect.ai.search.search')
-        self.mock_ai_search = self.attribution_search_patcher.start()
-        self.mock_ai_search.return_value = {"attributions": ["an attribution"]}
-
-    def tearDown(self):
-        self.attribution_search_patcher.stop()
 
     def is_status_ok(self, status):
         if isinstance(status, str):
@@ -128,7 +122,7 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
         timestamp = data['timestamp']
         self.assertIsNotNone(data['model_name'])
         dependencies = data.get('dependencies', [])
-        self.assertEqual(5, len(dependencies))
+        self.assertEqual(4, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency['name'],
@@ -137,7 +131,6 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
                     'db',
                     'model-server',
                     'secret-manager',
-                    'attribution',
                     'authorization',
                 ],
             )
@@ -278,34 +271,6 @@ class TestHealthCheck(BaseTestHealthCheck):
         _, dependencies = self.assert_basic_data(r, 'ok')
         for dependency in dependencies:
             if dependency['name'] == 'authorization':
-                self.assertEqual(dependency['status'], 'disabled')
-            else:
-                self.assertTrue(self.is_status_ok(dependency['status']))
-
-    def test_health_check_attribution_error(self, *args):
-        cache.clear()
-
-        self.mock_ai_search.return_value = {"something": "is_wrong"}
-        r = self.client.get(reverse('health_check'))
-
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, 'ok')
-        attribution_result = None
-        for dependency in dependencies:
-            if dependency['name'] == 'attribution':
-                attribution_result = dependency
-                break
-
-        self.assertTrue(attribution_result['status'].startswith('unavailable:'))
-
-    @override_settings(ENABLE_HEALTHCHECK_ATTRIBUTION=False)
-    def test_health_check_attribution_disabled(self):
-        cache.clear()
-        r = self.client.get(reverse('health_check'))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, 'ok')
-        for dependency in dependencies:
-            if dependency['name'] == 'attribution':
                 self.assertEqual(dependency['status'], 'disabled')
             else:
                 self.assertTrue(self.is_status_ok(dependency['status']))

@@ -155,36 +155,6 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST['prediction']), expected_result
         )
 
-    def test_redact_seated_users_data_nested_parameter(self, *args):
-        test_data = {
-            # nested parameter should not be redacted
-            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
-            'attributions': [
-                {
-                    'repo_name': 'Repository_mock_name',
-                    'path': '/some/path',
-                    'ansible_type': 1,
-                    'score': 1.5,
-                },
-            ],
-        }
-
-        expected_result = {
-            'suggestionId': 'ce5eb017-d917-47b3-a5f7-ee764277ff6e',
-            'attributions': [
-                {
-                    'ansible_type': 1,
-                    'score': 1.5,
-                    'repo_name': 'Repository_mock_name',
-                    'path': '/some/path',
-                },
-            ],
-        }
-
-        self.assertEqual(
-            redact_seated_users_data(test_data, ALLOW_LIST['attribution']), expected_result
-        )
-
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
     def test_send_segment_event_commercial_forbidden_event(self, *args):

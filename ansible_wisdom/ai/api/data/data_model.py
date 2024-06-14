@@ -97,10 +97,3 @@ class ContentMatchResponseDto(BaseContentMatchResponseDto):
 
     def data(self):
         return self.dict()["code_matches"]
-
-
-class AttributionsResponseDto(BaseContentMatchResponseDto):
-    attributions: list[ContentMatchResponseData]
-
-    def data(self):
-        return self.dict()["attributions"]

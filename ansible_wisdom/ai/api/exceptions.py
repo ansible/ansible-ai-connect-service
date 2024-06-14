@@ -166,9 +166,3 @@ class FeedbackInternalServerException(BaseWisdomAPIException):
     status_code = 500
     default_code = 'error__feedback_internal_server'
     default_detail = 'Failed to send feedback'
-
-
-class AttributionException(BaseWisdomAPIException):
-    status_code = 503
-    default_code = 'error__attribution_exception'
-    default_detail = 'Unable to complete the request'

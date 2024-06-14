@@ -17,7 +17,6 @@ from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import HealthCheckException, ServiceUnavailable
 
-import ansible_ai_connect.ai.search
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
@@ -125,24 +124,6 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
 
         try:
             apps.get_app_config("ai").get_seat_checker().self_test()
-        except Exception as e:
-            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
-
-    def identifier(self):
-        return self.__class__.__name__
-
-
-class AttributionCheck(BaseLightspeedHealthCheck):
-    critical_service = False
-
-    def check_status(self):
-        self.enabled = settings.ENABLE_HEALTHCHECK_ATTRIBUTION
-        if not self.enabled:
-            return
-
-        try:
-            attributions = ansible_ai_connect.ai.search.search("aaa")["attributions"]
-            assert len(attributions) > 0, "No attribution found"
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
