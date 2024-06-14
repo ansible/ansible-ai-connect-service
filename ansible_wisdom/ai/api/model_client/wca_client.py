@@ -485,6 +485,7 @@ class WCAClient(BaseWCAClient):
         }
         if outline:
             data["outline"] = outline
+
         result = self.session.post(
             f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
             headers=headers,
