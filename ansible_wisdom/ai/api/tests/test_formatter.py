@@ -660,7 +660,7 @@ var3: value3
                 "        - 8080\n"
                 "        - 8081\n"
                 "      community.windows.win_iis_website:\n"
-                "        name: \"name1\"\n"
+                '        name: "name1"\n'
                 "        state: started\n"
             ),
         )
@@ -668,7 +668,7 @@ var3: value3
             "community.windows.win_iis_website",
             fmtr.get_fqcn_or_module_from_prediction(
                 "      community.windows.win_iis_website:\n"
-                "        name: \"name1\"\n"
+                '        name: "name1"\n'
                 "        state: started\n"
                 "      loop:\n"
                 "        - 8080\n"
@@ -682,7 +682,7 @@ var3: value3
                 "        - 8080\n"
                 "        - 8081\n"
                 "      win_iis_website:\n"
-                "        name: \"name1\"\n"
+                '        name: "name1"\n'
                 "        state: started\n"
             ),
         )
@@ -690,7 +690,7 @@ var3: value3
             "win_iis_website",
             fmtr.get_fqcn_or_module_from_prediction(
                 "      win_iis_website:\n"
-                "        name: \"name1\"\n"
+                '        name: "name1"\n'
                 "        state: started\n"
                 "      loop:\n"
                 "        - 8080\n"
@@ -702,7 +702,7 @@ var3: value3
             fmtr.get_fqcn_or_module_from_prediction(
                 "      timeout: 200\n"
                 "      win_iis_website:\n"
-                "        name: \"name1\"\n"
+                '        name: "name1"\n'
                 "        state: started\n"
             ),
         )

@@ -145,8 +145,8 @@ class ResponseStatusCode403UserTrialExpired(Check[Context]):
 class ResponseStatusCode404WCABadRequestModelId(Check[Context]):
     def check(self, context: Context):
         if context.result.status_code == 404:
-            content_type = context.result.headers.get('Content-Type')
-            if content_type is not None and content_type.lower() == 'application/json':
+            content_type = context.result.headers.get("Content-Type")
+            if content_type is not None and content_type.lower() == "application/json":
                 payload_json = context.result.json()
                 if isinstance(payload_json, dict):
                     payload_detail = payload_json.get("detail")
