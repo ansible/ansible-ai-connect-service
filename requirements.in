@@ -34,8 +34,8 @@ jwcrypto==1.5.6
 # pin jinja2 on 3.1.4 to address GHSA-h75v-3vvj-5mfj
 # remove this once ansible-core or torch are updated
 jinja2==3.1.4
-langchain==0.2.3
-langchain-community==0.2.4
+langchain==0.2.5
+langchain-community==0.2.5
 launchdarkly-server-sdk==8.3.0
 opensearch-py==2.1.1
 protobuf==4.25.3

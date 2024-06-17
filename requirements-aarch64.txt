@@ -195,20 +195,20 @@ jwcrypto==1.5.6
     # via
     #   -r requirements.in
     #   django-oauth-toolkit
-langchain==0.2.3
+langchain==0.2.5
     # via
     #   -r requirements.in
     #   langchain-community
-langchain-community==0.2.4
+langchain-community==0.2.5
     # via -r requirements.in
-langchain-core==0.2.2
+langchain-core==0.2.7
     # via
     #   langchain
     #   langchain-community
     #   langchain-text-splitters
 langchain-text-splitters==0.2.1
     # via langchain
-langsmith==0.1.50
+langsmith==0.1.75
     # via
     #   langchain
     #   langchain-community
