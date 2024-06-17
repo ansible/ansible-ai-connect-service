@@ -634,7 +634,78 @@ var3: value3
                 "          az: us-east-1r\n"
             ),
         )
+
+    def test_get_fqcn_module_from_prediction_none(self):
         self.assertIsNone(fmtr.get_fqcn_or_module_from_prediction(None))
+
+    def test_get_ansible_task_keywords(self):
+        keywords = fmtr.get_ansible_task_keywords()
+        self.assertTrue("loop" in keywords)
+        self.assertTrue("action" in keywords)
+        self.assertTrue("async" in keywords)
+        self.assertTrue("become_method" in keywords)
+        self.assertTrue("collections" in keywords)
+        self.assertTrue("connection" in keywords)
+        self.assertTrue("delay" in keywords)
+        self.assertTrue("no_log" in keywords)
+        self.assertTrue("when" in keywords)
+        self.assertTrue("tags" in keywords)
+        self.assertTrue("timeout" in keywords)
+
+    def test_get_fqcn_module_from_prediction_with_task_keywords(self):
+        self.assertEqual(
+            "community.windows.win_iis_website",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      loop:\n"
+                "        - 8080\n"
+                "        - 8081\n"
+                "      community.windows.win_iis_website:\n"
+                "        name: \"name1\"\n"
+                "        state: started\n"
+            ),
+        )
+        self.assertEqual(
+            "community.windows.win_iis_website",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      community.windows.win_iis_website:\n"
+                "        name: \"name1\"\n"
+                "        state: started\n"
+                "      loop:\n"
+                "        - 8080\n"
+                "        - 8081\n"
+            ),
+        )
+        self.assertEqual(
+            "win_iis_website",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      loop:\n"
+                "        - 8080\n"
+                "        - 8081\n"
+                "      win_iis_website:\n"
+                "        name: \"name1\"\n"
+                "        state: started\n"
+            ),
+        )
+        self.assertEqual(
+            "win_iis_website",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      win_iis_website:\n"
+                "        name: \"name1\"\n"
+                "        state: started\n"
+                "      loop:\n"
+                "        - 8080\n"
+                "        - 8081\n"
+            ),
+        )
+        self.assertEqual(
+            "win_iis_website",
+            fmtr.get_fqcn_or_module_from_prediction(
+                "      timeout: 200\n"
+                "      win_iis_website:\n"
+                "        name: \"name1\"\n"
+                "        state: started\n"
+            ),
+        )
 
 
 if __name__ == "__main__":
@@ -666,3 +737,6 @@ if __name__ == "__main__":
     tests.test_strip_task_preamble_from_multi_task_prompt_one_preamble_changed()
     tests.test_strip_task_preamble_from_multi_task_prompt_two_preambles_changed()
     tests.test_get_fqcn_module_from_prediction()
+    tests.test_get_fqcn_module_from_prediction_none()
+    tests.test_get_ansible_task_keywords()
+    tests.test_get_fqcn_module_from_prediction_with_task_keywords()
