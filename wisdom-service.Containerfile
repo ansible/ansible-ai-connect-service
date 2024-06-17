@@ -109,6 +109,8 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.n
     dnf install -y inotify-tools && \
     dnf remove -y epel-release && \
     dnf clean all
+# Install extra dependencies
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir --use-feature=langchain -e/var/www/ansible-wisdom-service/
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 RUN mkdir /etc/supervisor/supervisord.d/
 COPY tools/configs/supervisord.d/auto-reload.conf /etc/supervisor/supervisord.d/auto-reload.conf
