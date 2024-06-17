@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class LoginView(auth_views.LoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['use_github_team'] = settings.USE_GITHUB_TEAM
+        context["use_github_team"] = settings.USE_GITHUB_TEAM
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
@@ -66,19 +66,19 @@ class LogoutView(auth_views.LogoutView):
         next_url = request.build_absolute_uri("/")
         if request.user.is_oidc_user():
             return (
-                'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout'
-                f'?post_logout_redirect_uri={next_url}'
-                f'&client_id={SOCIAL_AUTH_OIDC_KEY}'
+                "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/logout"
+                f"?post_logout_redirect_uri={next_url}"
+                f"&client_id={SOCIAL_AUTH_OIDC_KEY}"
             )
 
         if request.user.is_aap_user():
-            return f'{settings.AAP_API_URL}/logout/?next={next_url}'
+            return f"{settings.AAP_API_URL}/logout/?next={next_url}"
 
         return None
 
 
 class ConsoleView(ProtectedTemplateView):
-    template_name = 'console/console.html'
+    template_name = "console/console.html"
 
     # Permission checks for the following are handled when the template selection is made.
     # - IsOrganisationAdministrator,
@@ -115,8 +115,8 @@ class ConsoleView(ProtectedTemplateView):
 
 
 class PlainTextRenderer(BaseRenderer):
-    media_type = 'text/plain'
-    format = 'txt'
+    media_type = "text/plain"
+    format = "txt"
 
     def render(self, data, media_type=None, renderer_context=None):
         if not isinstance(data, str):

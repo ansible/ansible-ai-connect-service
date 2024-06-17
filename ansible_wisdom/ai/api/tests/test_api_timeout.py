@@ -31,7 +31,7 @@ from .test_views import WisdomServiceAPITestCaseBase
 
 
 def mock_timeout_error():
-    e = grpc.RpcError(grpc.StatusCode.DEADLINE_EXCEEDED, 'Deadline exceeded')
+    e = grpc.RpcError(grpc.StatusCode.DEADLINE_EXCEEDED, "Deadline exceeded")
     e.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
     return e
 
@@ -39,47 +39,47 @@ def mock_timeout_error():
 class TestApiTimeout(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none(self):
-        model_client = HttpClient(inference_url='http://example.com/')
+        model_client = HttpClient(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none(self):
-        model_client = HttpClient(inference_url='http://example.com/')
+        model_client = HttpClient(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_multi_task(self):
-        model_client = HttpClient(inference_url='http://example.com/')
+        model_client = HttpClient(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_grpc(self):
-        model_client = GrpcClient(inference_url='http://example.com/')
+        model_client = GrpcClient(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc(self):
-        model_client = GrpcClient(inference_url='http://example.com/')
+        model_client = GrpcClient(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc_multi_task(self):
-        model_client = GrpcClient(inference_url='http://example.com/')
+        model_client = GrpcClient(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_wca(self):
-        model_client = WCAClient(inference_url='http://example.com/')
+        model_client = WCAClient(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca(self):
-        model_client = WCAClient(inference_url='http://example.com/')
+        model_client = WCAClient(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca_multitask(self):
-        model_client = WCAClient(inference_url='http://example.com/')
+        model_client = WCAClient(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -91,11 +91,11 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            HttpClient(inference_url='http://example.com/'),
+            apps.get_app_config("ai"),
+            "model_mesh_client",
+            HttpClient(inference_url="http://example.com/"),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assert_error_detail(
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
@@ -110,11 +110,11 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
-            GrpcClient(inference_url='http://example.com/'),
+            apps.get_app_config("ai"),
+            "model_mesh_client",
+            GrpcClient(inference_url="http://example.com/"),
         ):
-            r = self.client.post(reverse('completions'), payload)
+            r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assert_error_detail(
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail

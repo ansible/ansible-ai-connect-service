@@ -43,18 +43,18 @@ PERMISSION_CLASSES = [
 
 
 class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
-    required_scopes = ['read', 'write']
-    throttle_cache_key_suffix = '_telemetry_settings'
+    required_scopes = ["read", "write"]
+    throttle_cache_key_suffix = "_telemetry_settings"
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            200: OpenApiResponse(description="OK"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Get the telemetry settings for an Organisation",
         operation_id="telemetry_settings_get",
@@ -72,7 +72,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            return Response(status=HTTP_200_OK, data={'optOut': organization.telemetry_opt_out})
+            return Response(status=HTTP_200_OK, data={"optOut": organization.telemetry_opt_out})
 
         except ServiceUnavailable:
             raise
@@ -95,12 +95,12 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     @extend_schema(
         request=TelemetrySettingsRequestSerializer,
         responses={
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Set the Telemetry settings for an Organisation",
         operation_id="telemetry_settings_set",

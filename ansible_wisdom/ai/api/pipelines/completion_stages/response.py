@@ -43,13 +43,13 @@ class ResponseStage(PipelineElement):
         try:
             response_data = {
                 "predictions": post_processed_predictions["predictions"],
-                "model": predictions['model_id'],
+                "model": predictions["model_id"],
                 "suggestionId": payload.suggestionId,
             }
             response_serializer = CompletionResponseSerializer(data=response_data)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
-            process_error_count.labels(stage='completion-response_serialization_validation').inc()
+            process_error_count.labels(stage="completion-response_serialization_validation").inc()
             logger.exception(
                 f"error serializing final response for suggestion {payload.suggestionId}"
             )

@@ -162,12 +162,12 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
     def test_casing_and_spacing_prompt(self):
         # leading space should not be removed, only spaces in the text
         prompt = "    - name:      Install NGINX        on RHEL"
-        self.assertEqual('    - name: install nginx on rhel', fmtr.handle_spaces_and_casing(prompt))
+        self.assertEqual("    - name: install nginx on rhel", fmtr.handle_spaces_and_casing(prompt))
 
         # if there is a missing space between - name: , return as is and not try to fix it
         prompt = "    - name:Install NGINX        on RHEL"
         self.assertEqual(
-            '    - name:install nginx        on rhel', fmtr.handle_spaces_and_casing(prompt)
+            "    - name:install nginx        on rhel", fmtr.handle_spaces_and_casing(prompt)
         )
 
     def test_adjust_indentation(self):
@@ -175,7 +175,7 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
         adjust list indentation as per ansible-lint default configuration
         """
         original_yaml = "loop:\n- 'ssh'\n- nginx\n- '{{ name }}'"
-        expected = "loop:\n  - ssh\n  - nginx\n  - \"{{ name }}\""
+        expected = 'loop:\n  - ssh\n  - nginx\n  - "{{ name }}"'
         self.assertEqual(fmtr.adjust_indentation(original_yaml), expected)
 
     def test_empty_yaml(self):
@@ -199,14 +199,14 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
             self.assertEqual(context_expected, context)
 
         # test standard single-task context+prompt
-        PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n'
+        PROMPT_IN = "---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install Apache\n"
         CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
         PROMPT_OUT = "  - name: Install Apache\n"
 
         run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
 
         # test standard multi-task context+prompt
-        PROMPT_IN = '---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache\n'
+        PROMPT_IN = "---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache\n"
         CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
         PROMPT_OUT = "  # Install Apache\n"
 
@@ -214,7 +214,7 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
 
         # test standard multi-task context+prompt with multiple tasks
         PROMPT_IN = (
-            '---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache & Start Apache\n'
+            "---\n- hosts: all\n  become: yes\n\n  tasks:\n  # Install Apache & Start Apache\n"
         )
         CONTEXT_OUT = "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
         PROMPT_OUT = "  # Install Apache & Start Apache\n"
@@ -222,12 +222,12 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
         run_a_test(PROMPT_IN, CONTEXT_OUT, PROMPT_OUT)
 
         # test single task prompt with no additional context
-        run_a_test('- name: Install Apache\n', '', '- name: Install Apache\n')
+        run_a_test("- name: Install Apache\n", "", "- name: Install Apache\n")
 
         # test multi-task prompt with no additional context
-        run_a_test('# Install SSH\n', '', '# Install SSH\n')
+        run_a_test("# Install SSH\n", "", "# Install SSH\n")
 
-        run_a_test(None, '', '')
+        run_a_test(None, "", "")
 
     def test_extract_task(self):
         tasks = """  - name: Install ssh
@@ -287,7 +287,7 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
             "  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
         self.assertEqual(
-            ['Install Apache', 'say hello fred@example.com'],
+            ["Install Apache", "say hello fred@example.com"],
             fmtr.get_task_names_from_tasks(tasks_txt),
         )
 
@@ -296,28 +296,28 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
 
     def test_load_and_merge_vars_in_context(self):
         vars_in_context = [
-            '''\
+            """\
 var1: value1
 var2:
   key: value2
-''',
-            '''\
+""",
+            """\
 var3: value3
-''',
+""",
         ]
-        expected = {'var1': 'value1', 'var2': {'key': 'value2'}, 'var3': 'value3'}
+        expected = {"var1": "value1", "var2": {"key": "value2"}, "var3": "value3"}
         returned = fmtr.load_and_merge_vars_in_context(vars_in_context)
         self.assertEqual(expected, returned)
 
     def test_insert_set_fact_task(self):
         data = [{"dummy data"}]
-        merged_vars = {'var1': 'value1', 'var2': {'key': 'value2'}, 'var3': 'value3'}
+        merged_vars = {"var1": "value1", "var2": {"key": "value2"}, "var3": "value3"}
         fmtr.insert_set_fact_task(data, merged_vars)
         self.assertEqual(2, len(data))
-        self.assertTrue('name' in data[0])
-        self.assertEqual(data[0]['name'], 'Set variables from context')
-        self.assertTrue('ansible.builtin.set_fact' in data[0])
-        self.assertEqual(data[0]['ansible.builtin.set_fact'], merged_vars)
+        self.assertTrue("name" in data[0])
+        self.assertEqual(data[0]["name"], "Set variables from context")
+        self.assertTrue("ansible.builtin.set_fact" in data[0])
+        self.assertEqual(data[0]["ansible.builtin.set_fact"], merged_vars)
 
     def test_restore_original_task_names(self):
         single_task_prompt = "- name: Install ssh\n"
@@ -349,20 +349,20 @@ var3: value3
             "Azure resource group called 'test' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
         )
         multi_task_yaml_with_loop_extra_task = (
             "- name:  Delete all virtual machines in my Azure resource group\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
             "- name:  say hello to ada@anemail.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
@@ -380,20 +380,20 @@ var3: value3
             "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
         )
         expected_multi_task_yaml_with_loop_extra_task = (
             "- name:  Delete all virtual machines in my Azure resource group\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
             "- name:  say hello to ada@anemail.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
@@ -403,7 +403,7 @@ var3: value3
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
         )
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             fmtr.restore_original_task_names(multi_task_yaml_extra_task, multi_task_prompt),
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
@@ -442,7 +442,7 @@ var3: value3
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt)
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
@@ -576,9 +576,9 @@ var3: value3
             "servicenow.itsm.change_info",
             fmtr.get_fqcn_or_module_from_prediction(
                 "      servicenow.itsm.change_info:\n"
-                "        sys_id: \"{{ item.sys_id }}\"\n"
+                '        sys_id: "{{ item.sys_id }}"\n'
                 "        register: change_info\n"
-                "        loop: \"{{ change_list }}\"\n"
+                '        loop: "{{ change_list }}"\n'
             ),
         )
         self.assertEqual(
@@ -588,9 +588,9 @@ var3: value3
                 "          name: pcs.azure.recovery_services_vault\n"
                 "        vars:\n"
                 "          recovery_service_vault_resource_group: "
-                "\"{{ resource_group_name.sys_id }}\"\n"
+                '"{{ resource_group_name.sys_id }}"\n'
                 "          recovery_service_vault_name: "
-                "\"{{ recovery_service_vault_name.sys_id }}\"\n"
+                '"{{ recovery_service_vault_name.sys_id }}"\n'
                 "          recovery_service_vault_state: absent\n"
             ),
         )
@@ -620,7 +620,7 @@ var3: value3
                 "      community.general.maven_map:\n"
                 "        name: dto\n"
                 "        version: 1\n"
-                "        repository_url: https://repo.maven.org/maven2:\"{{ port }}\"\n"
+                '        repository_url: https://repo.maven.org/maven2:"{{ port }}"\n'
                 "        state: present\n"
             ),
         )

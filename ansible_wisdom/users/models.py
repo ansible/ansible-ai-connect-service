@@ -47,7 +47,7 @@ class NonClashingForeignKey(models.ForeignKey):
         return "fk_%s_id" % self.name
 
 
-class User(ExportModelOperationsMixin('user'), AbstractUser):
+class User(ExportModelOperationsMixin("user"), AbstractUser):
     uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
     community_terms_accepted = models.DateTimeField(default=None, null=True)
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
@@ -63,7 +63,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @property
     def org_id(self):
-        if self.groups.filter(name='Commercial').exists():
+        if self.groups.filter(name="Commercial").exists():
             return FAUX_COMMERCIAL_USER_ORG_ID
         if self.organization and self.organization.id:
             return self.organization.id
@@ -83,7 +83,7 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
     def rh_user_has_seat(self) -> bool:
         """True if the user comes from RHSSO and has a Wisdom Seat."""
         # For dev/test purposes only:
-        if self.groups.filter(name='Commercial').exists():
+        if self.groups.filter(name="Commercial").exists():
             return True
 
         # user is of an on-prem AAP with valid license
@@ -131,14 +131,14 @@ class User(ExportModelOperationsMixin('user'), AbstractUser):
 
     @cached_property
     def rh_aap_licensed(self) -> bool:
-        return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_licensed']
+        return self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_licensed"]
 
     @cached_property
     def rh_aap_system_auditor(self) -> bool:
         return (
-            self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_system_auditor']
+            self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_system_auditor"]
         )
 
     @cached_property
     def rh_aap_superuser(self) -> bool:
-        return self.is_aap_user() and self.social_auth.values()[0]['extra_data']['aap_superuser']
+        return self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_superuser"]

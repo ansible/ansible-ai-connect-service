@@ -25,17 +25,17 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 class GetWcaKeyCommandTestCase(TestCase):
     def test_missing_required_args(self):
         with self.assertRaisesMessage(
-            CommandError, 'Error: the following arguments are required: org_id'
+            CommandError, "Error: the following arguments are required: org_id"
         ):
-            call_command('get_wca_key')
+            call_command("get_wca_key")
 
     @patch("ansible_ai_connect.ai.management.commands._base_wca_command.AWSSecretManager")
     def test_key_found(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = {"CreatedDate": "xxx"}
 
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            call_command('get_wca_key', 'mock_org_id')
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            call_command("get_wca_key", "mock_org_id")
             instance.get_secret.assert_called_once_with("mock_org_id", Suffixes.API_KEY)
             captured_output = mock_stdout.getvalue()
             self.assertIn(
@@ -47,8 +47,8 @@ class GetWcaKeyCommandTestCase(TestCase):
         instance = mock_secret_manager.return_value
         instance.get_secret.return_value = None
 
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            call_command('get_wca_key', 'mock_org_id')
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            call_command("get_wca_key", "mock_org_id")
             instance.get_secret.assert_called_once_with("mock_org_id", Suffixes.API_KEY)
             captured_output = mock_stdout.getvalue()
             self.assertIn("No API Key for orgId 'mock_org_id' found.", captured_output)

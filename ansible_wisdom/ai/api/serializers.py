@@ -35,7 +35,7 @@ from .fields import AnonymizedCharField, AnonymizedPromptCharField
 
 class Metadata(serializers.Serializer):
     class Meta:
-        fields = ['ansibleExtensionVersion']
+        fields = ["ansibleExtensionVersion"]
 
     ansibleExtensionVersion = serializers.RegexField(
         r"v?\d+\.\d+\.\d+",
@@ -48,16 +48,16 @@ class Metadata(serializers.Serializer):
 class CompletionMetadata(Metadata):
     class Meta:
         fields = [
-            'documentUri',
-            'activityId',
-            'ansibleFileType',
-            'additionalContext',
-            'ansibleExtensionVersion',
+            "documentUri",
+            "activityId",
+            "ansibleFileType",
+            "additionalContext",
+            "ansibleExtensionVersion",
         ]
 
     documentUri = AnonymizedCharField(required=False)
     activityId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Activity ID",
         help_text="A UUID that identifies a user activity session within a given document.",
@@ -77,11 +77,11 @@ class CompletionMetadata(Metadata):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid example',
-            summary='Request Sample',
-            description='A valid sample request.',
+            "Valid example",
+            summary="Request Sample",
+            description="A valid sample request.",
             value={
-                'prompt': '---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n',
+                "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n",
             },
             request_only=True,
             response_only=False,
@@ -93,11 +93,11 @@ class CompletionRequestSerializer(Metadata):
     prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
         required=True,
-        label='Prompt',
-        help_text='Editor prompt.',
+        label="Prompt",
+        help_text="Editor prompt.",
     )
     suggestionId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
@@ -115,7 +115,7 @@ class CompletionRequestSerializer(Metadata):
                     {"prompt": "requested prompt format is not supported"}
                 )
 
-            if '&&' in prompt:
+            if "&&" in prompt:
                 raise serializers.ValidationError(
                     {"prompt": "multiple task requests should be separated by a single '&'"}
                 )
@@ -131,18 +131,18 @@ class CompletionRequestSerializer(Metadata):
                 or len(prompt_list) != 1
                 or not isinstance(prompt_list[0], dict)
                 or len(prompt_list[0]) != 1
-                or 'name' not in prompt_list[0]
+                or "name" not in prompt_list[0]
             ):
                 raise serializers.ValidationError(
                     {"prompt": "prompt does not contain the name parameter"}
                 )
-            if isinstance(prompt_list[0]['name'], list):
+            if isinstance(prompt_list[0]["name"], list):
                 raise serializers.ValidationError({"prompt": "prompt contains a list"})
-            if isinstance(prompt_list[0]['name'], dict):
+            if isinstance(prompt_list[0]["name"], dict):
                 raise serializers.ValidationError({"prompt": "prompt contains a dictionary"})
 
     def validate_model(self, value):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.rh_user_has_seat is False:
             raise serializers.ValidationError("user is not entitled to customized model")
         return value
@@ -150,14 +150,14 @@ class CompletionRequestSerializer(Metadata):
     def validate(self, data):
         data = super().validate(data)
 
-        data['prompt'], data['context'] = fmtr.extract_prompt_and_context(data['prompt'])
+        data["prompt"], data["context"] = fmtr.extract_prompt_and_context(data["prompt"])
         CompletionRequestSerializer.validate_extracted_prompt(
-            data['prompt'], self.context.get('request').user
+            data["prompt"], self.context.get("request").user
         )
 
         # If suggestion ID was not included in the request, set a random UUID to it.
-        if data.get('suggestionId') is None:
-            data['suggestionId'] = uuid.uuid4()
+        if data.get("suggestionId") is None:
+            data["suggestionId"] = uuid.uuid4()
 
         if "model" in data and not data["model"].strip():
             del data["model"]
@@ -167,12 +167,12 @@ class CompletionRequestSerializer(Metadata):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid example',
-            summary='Response sample',
-            description='A valid sample response.',
+            "Valid example",
+            summary="Response sample",
+            description="A valid sample response.",
             value={
-                'predictions': [
-                    '    ansible.builtin.package:\n      name: openssh-server\n      state: present'
+                "predictions": [
+                    "    ansible.builtin.package:\n      name: openssh-server\n      state: present"
                 ]
             },
             request_only=False,
@@ -187,7 +187,7 @@ class CompletionResponseSerializer(serializers.Serializer):
 
 
 class InlineSuggestionFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
+    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
 
     latency = serializers.FloatField(required=False)
     userActionTime = serializers.FloatField(required=False)
@@ -195,13 +195,13 @@ class InlineSuggestionFeedback(serializers.Serializer):
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES)
     error = AnonymizedCharField(required=False)
     suggestionId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=True,
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
     )
     activityId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Activity ID",
         help_text="A UUID that identifies a user activity session to the document uploaded.",
@@ -212,27 +212,27 @@ class SuggestionQualityFeedback(serializers.Serializer):
     prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='File Content used as context',
-        help_text='File Content till end of task name description before cursor position.',
+        label="File Content used as context",
+        help_text="File Content till end of task name description before cursor position.",
     )
     providedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Provided Model suggestion',
-        help_text='Inline suggestion from model as shared by user for given prompt.',
+        label="Provided Model suggestion",
+        help_text="Inline suggestion from model as shared by user for given prompt.",
     )
     expectedSuggestion = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Expected Model suggestion',
-        help_text='Suggestion expected by the user.',
+        label="Expected Model suggestion",
+        help_text="Suggestion expected by the user.",
     )
     additionalComment = serializers.CharField(
         trim_whitespace=False,
         required=False,
-        label='Additional Comment',
-        help_text='Additional comment describing why the \
-                   change was required in suggestion.',
+        label="Additional Comment",
+        help_text="Additional comment describing why the \
+                   change was required in suggestion.",
     )
 
 
@@ -242,35 +242,35 @@ class SentimentFeedback(serializers.Serializer):
     feedback = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Free form text feedback',
-        help_text='Free form text feedback describing the reason for sentiment value.',
+        label="Free form text feedback",
+        help_text="Free form text feedback describing the reason for sentiment value.",
     )
 
 
 class IssueFeedback(serializers.Serializer):
-    ISSUE_TYPE = (('bug-report', 'Bug Report'), ('feature-request', 'Feature Request'))
+    ISSUE_TYPE = (("bug-report", "Bug Report"), ("feature-request", "Feature Request"))
 
     type = serializers.ChoiceField(choices=ISSUE_TYPE, required=True)
     title = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Issue title',
-        help_text='The title of the issue.',
+        label="Issue title",
+        help_text="The title of the issue.",
     )
     description = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Issue description',
-        help_text='The description of the issue.',
+        label="Issue description",
+        help_text="The description of the issue.",
     )
 
 
 class PlaybookGenerationFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
+    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
 
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
     wizardId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=True,
         label="Outline ID",
         help_text="A UUID that identifies the UI session.",
@@ -278,11 +278,11 @@ class PlaybookGenerationFeedback(serializers.Serializer):
 
 
 class PlaybookGenerationAction(serializers.Serializer):
-    ACTIONS = (('0', 'OPEN'), ('1', 'CLOSE'), ('2', 'TRANSITION'))
+    ACTIONS = (("0", "OPEN"), ("1", "CLOSE"), ("2", "TRANSITION"))
 
     action = serializers.ChoiceField(choices=ACTIONS, required=True)
     wizardId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=True,
         label="wizard ID",
         help_text="A UUID that identifies the UI session.",
@@ -300,11 +300,11 @@ class PlaybookGenerationAction(serializers.Serializer):
 
 
 class PlaybookExplanationFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (('0', 'ACCEPTED'), ('1', 'REJECTED'), ('2', 'IGNORED'))
+    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
 
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
     explanationId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=True,
         label="Explanation ID",
         help_text="A UUID that identifies the playbook explanation.",
@@ -314,12 +314,12 @@ class PlaybookExplanationFeedback(serializers.Serializer):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid inline suggestion feedback example',
-            summary='Feedback Request sample for inline suggestion '
-            'to identify if the suggestion is accepted or ignored.',
-            description='A valid inline suggestion feedback sample '
-            'request to get details about the suggestion like latency time, '
-            'user decision time, user action and suggestion id.',
+            "Valid inline suggestion feedback example",
+            summary="Feedback Request sample for inline suggestion "
+            "to identify if the suggestion is accepted or ignored.",
+            description="A valid inline suggestion feedback sample "
+            "request to get details about the suggestion like latency time, "
+            "user decision time, user action and suggestion id.",
             value={
                 "inlineSuggestion": {
                     "latency": 1000,
@@ -346,7 +346,7 @@ class FeedbackRequestSerializer(Metadata):
     suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
 
     def validate_inlineSuggestion(self, value):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
 
         if user.rh_user_has_seat is False:
             return value
@@ -360,7 +360,7 @@ class AttributionRequestSerializer(Metadata):
 
     suggestion = serializers.CharField(trim_whitespace=False)
     suggestionId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Suggestion ID",
         help_text=(
@@ -379,7 +379,7 @@ class ExplanationRequestSerializer(Metadata):
         help_text=("The playbook that needs to be explained."),
     )
     explanationId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Explanation ID",
         help_text=(
@@ -393,7 +393,7 @@ class ExplanationResponseSerializer(serializers.Serializer):
     content = serializers.CharField()
     format = serializers.CharField()
     explanationId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Explanation ID",
         help_text=(
@@ -405,12 +405,12 @@ class ExplanationResponseSerializer(serializers.Serializer):
 class GenerationRequestSerializer(serializers.Serializer):
     class Meta:
         fields = [
-            'text',
-            'generationId',
-            'wizardId',
-            'createOutline',
-            'ansibleExtensionVersion',
-            'outline',
+            "text",
+            "generationId",
+            "wizardId",
+            "createOutline",
+            "ansibleExtensionVersion",
+            "outline",
         ]
 
     text = AnonymizedCharField(
@@ -419,7 +419,7 @@ class GenerationRequestSerializer(serializers.Serializer):
         help_text=("The description that needs to be converted to a playbook."),
     )
     generationId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
@@ -427,10 +427,10 @@ class GenerationRequestSerializer(serializers.Serializer):
     createOutline = serializers.BooleanField(
         required=False,
         default=False,
-        label='generate outline',
+        label="generate outline",
         help_text=(
-            'Indicates whether the answer should also include an outline '
-            'of the Ansible Playbook.'
+            "Indicates whether the answer should also include an outline "
+            "of the Ansible Playbook."
         ),
     )
     outline = AnonymizedCharField(
@@ -439,7 +439,7 @@ class GenerationRequestSerializer(serializers.Serializer):
         help_text="A long step by step outline of the expected Ansible Playbook.",
     )
     wizardId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
@@ -452,7 +452,7 @@ class GenerationResponseSerializer(serializers.Serializer):
     playbook = serializers.CharField()
     format = serializers.CharField()
     generationId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Explanation ID",
         help_text=("A UUID that identifies the particular summary data is being requested for."),
@@ -463,7 +463,7 @@ class GenerationResponseSerializer(serializers.Serializer):
 class ContentMatchRequestSerializer(Metadata):
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
-        format='hex_verbose',
+        format="hex_verbose",
         required=False,
         label="Suggestion ID",
         help_text=(
@@ -505,11 +505,11 @@ class AnsibleType(models.IntegerChoices):
 
 @extend_schema_field(str)
 class EnumField(serializers.Field):
-    default_error_messages = {'invalid_choice': _('"{input}" is not a valid choice.')}
+    default_error_messages = {"invalid_choice": _('"{input}" is not a valid choice.')}
 
     def __init__(self, choices, **kwargs):
         self.choices = choices
-        self.allow_blank = kwargs.pop('allow_blank', False)
+        self.allow_blank = kwargs.pop("allow_blank", False)
 
         super().__init__(**kwargs)
 
@@ -520,9 +520,9 @@ class EnumField(serializers.Field):
             pass
 
         try:
-            return self.choices['UNKNOWN']
+            return self.choices["UNKNOWN"]
         except KeyError:
-            self.fail('invalid_choice', input=data)
+            self.fail("invalid_choice", input=data)
 
     def to_representation(self, value):
         return value.label
@@ -562,11 +562,11 @@ class ContentMatchResponseSerializer(serializers.Serializer):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid example',
-            summary='Request Sample',
-            description='A valid WCA Key request.',
+            "Valid example",
+            summary="Request Sample",
+            description="A valid WCA Key request.",
             value={
-                'key': '1234567890',
+                "key": "1234567890",
             },
             request_only=True,
             response_only=False,
@@ -575,24 +575,24 @@ class ContentMatchResponseSerializer(serializers.Serializer):
 )
 class WcaKeyRequestSerializer(serializers.Serializer):
     class Meta:
-        fields = ['key']
+        fields = ["key"]
 
     key = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Key',
-        help_text='WCA API Key.',
+        label="Key",
+        help_text="WCA API Key.",
     )
 
 
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid example',
-            summary='Request Sample',
-            description='A valid WCA Model Id request.',
+            "Valid example",
+            summary="Request Sample",
+            description="A valid WCA Model Id request.",
             value={
-                'model_id': '1234567890',
+                "model_id": "1234567890",
             },
             request_only=True,
             response_only=False,
@@ -603,19 +603,19 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
     model_id = serializers.CharField(
         trim_whitespace=False,
         required=True,
-        label='Model Id',
-        help_text='WCA Model Id.',
+        label="Model Id",
+        help_text="WCA Model Id.",
     )
 
 
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            'Valid example',
-            summary='Request Telemetry settings',
-            description='A valid request to set the Telemetry settings.',
+            "Valid example",
+            summary="Request Telemetry settings",
+            description="A valid request to set the Telemetry settings.",
             value={
-                'optOut': 'true',
+                "optOut": "true",
             },
             request_only=True,
             response_only=False,
@@ -625,6 +625,6 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
 class TelemetrySettingsRequestSerializer(serializers.Serializer):
     optOut = serializers.BooleanField(
         required=True,
-        label='OptOut',
-        help_text='Indicates whether the Red Hat Organization opts out of telemetry collection.',
+        label="OptOut",
+        help_text="Indicates whether the Red Hat Organization opts out of telemetry collection.",
     )

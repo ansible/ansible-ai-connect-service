@@ -30,27 +30,27 @@ logger = logging.getLogger(__name__)
 class DeserializeStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         request = context.request
-        request._request._suggestion_id = request.data.get('suggestionId')
+        request._request._suggestion_id = request.data.get("suggestionId")
 
         request_serializer = CompletionRequestSerializer(
-            data=request.data, context={'request': request}
+            data=request.data, context={"request": request}
         )
 
         try:
             request_serializer.is_valid(raise_exception=True)
-            request._request._suggestion_id = str(request_serializer.validated_data['suggestionId'])
+            request._request._suggestion_id = str(request_serializer.validated_data["suggestionId"])
             request._request._ansible_extension_version = str(
                 request_serializer.validated_data.get("metadata", {}).get(
                     "ansibleExtensionVersion", None
                 )
             )
-            context.metadata = request_serializer.validated_data.get('metadata', {})
+            context.metadata = request_serializer.validated_data.get("metadata", {})
             prompt = request_serializer.validated_data.get("prompt")
         except Exception as exc:
-            process_error_count.labels(stage='completion-request_serialization_validation').inc()
-            logger.warning(f'failed to validate request:\nException:\n{exc}')
+            process_error_count.labels(stage="completion-request_serialization_validation").inc()
+            logger.warning(f"failed to validate request:\nException:\n{exc}")
             prompt, _ = fmtr.extract_prompt_and_context(
-                request_serializer.initial_data.get('prompt')
+                request_serializer.initial_data.get("prompt")
             )
             raise exc
         finally:

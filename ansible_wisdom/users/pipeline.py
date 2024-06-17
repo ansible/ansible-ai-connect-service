@@ -34,20 +34,20 @@ logger = logging.getLogger(__name__)
 # Replace original get_username function to avoid a random hash at the end if
 # user authenticates with more than one github provider.
 def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
-    if backend.name not in ['github', 'github-team']:
+    if backend.name not in ["github", "github-team"]:
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
     # If django user is already known, fall back to default behavior
     if user:
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
-    github_username = details.get('username')
+    github_username = details.get("username")
     User = get_user_model()
 
     # If there's no django user with this username yet, we can use it
     if not User.objects.filter(username=github_username).exists():
         # No django user with this username yet
-        return {'username': github_username}
+        return {"username": github_username}
 
     # There is an existing django user with this username. We need to determine if he
     # is the same as the user logging in now. Ensure he only has github social auth users associated
@@ -66,16 +66,16 @@ def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
     # Loop through the social users and confirm they are github users with same uid
     same_user = True
     for social_user in social_auth_users:
-        if social_user.uid != str(kwargs['uid']):
+        if social_user.uid != str(kwargs["uid"]):
             same_user = False
             break
-        if social_user.provider not in ['github', 'github-team']:
+        if social_user.provider not in ["github", "github-team"]:
             same_user = False
             break
 
     if same_user:
         # Allow the username to pass through.
-        return {'username': github_username}
+        return {"username": github_username}
 
     else:
         # This doesn't really need to be a warn. This can happen in acceptable scenarios, like a
@@ -88,22 +88,22 @@ def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
 
 
 def redhat_organization(backend, user, response, *args, **kwargs):
-    if backend.name != 'oidc':
+    if backend.name != "oidc":
         return
 
-    key = backend.find_valid_key(response['access_token'])
+    key = backend.find_valid_key(response["access_token"])
     rsakey = jwt.PyJWK(key)
     payload = jwt.decode(
-        response['access_token'],
+        response["access_token"],
         rsakey.key,
-        algorithms=[key.get('alg', 'RS256')],
+        algorithms=[key.get("alg", "RS256")],
         audience=RHSSO_LIGHTSPEED_SCOPE,
     )
 
     realm_access = payload.get("realm_access", {})
     roles = realm_access.get("roles", [])
     user.external_username = payload.get("preferred_username")
-    user.rh_user_is_org_admin = 'admin:org:all' in roles
+    user.rh_user_is_org_admin = "admin:org:all" in roles
 
     if settings.AUTHZ_BACKEND_TYPE == "dummy":
         if settings.AUTHZ_DUMMY_RH_ORG_ADMINS == "*":
@@ -114,20 +114,20 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         else:
             logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
-    user.organization = Organization.objects.get_or_create(id=int(payload['organization']['id']))[0]
+    user.organization = Organization.objects.get_or_create(id=int(payload["organization"]["id"]))[0]
     user.save()
     send_segment_group(
-        f'rhsso-{user.organization.id}', 'Red Hat Organization', user.organization.id, user
+        f"rhsso-{user.organization.id}", "Red Hat Organization", user.organization.id, user
     )
     return {
-        'organization_id': user.organization.id,
-        'rh_user_is_org_admin': user.rh_user_is_org_admin,
-        'external_username': user.external_username,
+        "organization_id": user.organization.id,
+        "rh_user_is_org_admin": user.rh_user_is_org_admin,
+        "external_username": user.external_username,
     }
 
 
 def _terms_of_service(strategy, user, backend, **kwargs):
-    accepted = 'terms_accepted'
+    accepted = "terms_accepted"
     is_commercial = user.rh_user_has_seat
     if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
         return {accepted: True}
@@ -135,8 +135,8 @@ def _terms_of_service(strategy, user, backend, **kwargs):
     if settings.TERMS_NOT_APPLICABLE or is_commercial:
         return {accepted: True}
 
-    field_name = 'community_terms_accepted'
-    view_name = 'community_terms'
+    field_name = "community_terms_accepted"
+    view_name = "community_terms"
     terms_accepted = strategy.session_get(accepted, None)
     if getattr(user, field_name, None) is not None:
         # User had previously accepted, so short-circuit the T&C page.
@@ -144,8 +144,8 @@ def _terms_of_service(strategy, user, backend, **kwargs):
 
     if terms_accepted is None:
         # We haven't gone through the flow yet -- go to the T&C page
-        current_partial = kwargs.get('current_partial')
-        return strategy.redirect(f'{reverse(view_name)}?partial_token={current_partial.token}')
+        current_partial = kwargs.get("current_partial")
+        return strategy.redirect(f"{reverse(view_name)}?partial_token={current_partial.token}")
 
     if not terms_accepted:
         raise AuthCanceled("Terms and conditions were not accepted.")

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Organization(models.Model):
     id = models.IntegerField(primary_key=True)
-    _telemetry_opt_out = models.BooleanField(default=False, db_column='telemetry_opt_out')
+    _telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
 
     @property
     def telemetry_opt_out(self):
@@ -60,5 +60,5 @@ class Organization(models.Model):
         feature_flags = FeatureFlags()
         return feature_flags.check_flag(
             flag,
-            {'kind': 'organization', 'key': str(self.id)},
+            {"kind": "organization", "key": str(self.id)},
         )

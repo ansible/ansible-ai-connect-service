@@ -216,7 +216,7 @@ class AMSCheck(BaseCheck):
         cache_key = f"rh_org_{rh_org_id}"
         cached_result = cache.get(cache_key)
         if cached_result is not None:
-            authz_ams_org_cache_hit_counter.inc(exemplar={'organization_id': str(rh_org_id)})
+            authz_ams_org_cache_hit_counter.inc(exemplar={"organization_id": str(rh_org_id)})
             return cached_result
 
         params = {"search": f"external_id='{rh_org_id}'"}
@@ -356,7 +356,7 @@ class AMSCheck(BaseCheck):
         result = r.json()
         try:
             for item in result["items"]:
-                if item['role']['id'] == "OrganizationAdmin":
+                if item["role"]["id"] == "OrganizationAdmin":
                     return True
         except (KeyError, ValueError):
             return False
@@ -383,7 +383,7 @@ class AMSCheck(BaseCheck):
         cached_result = cache.get(cache_key)
         if cached_result is not None:
             authz_ams_rh_org_has_subscription_cache_hit_counter.inc(
-                exemplar={'organization_id': str(organization_id)}
+                exemplar={"organization_id": str(organization_id)}
             )
             return cached_result
 

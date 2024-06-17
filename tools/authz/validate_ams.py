@@ -48,7 +48,7 @@ class Token:
             "scope": "api.iam.access",
         }
 
-        url = urlsplit(os.environ['AUTHZ_SSO_SERVER'])
+        url = urlsplit(os.environ["AUTHZ_SSO_SERVER"])
         url = url._replace(path="/auth/realms/redhat-external/protocol/openid-connect/token")
 
         if not re.search(AUTHZ_SSO_PATTERN, url.netloc):
@@ -81,7 +81,7 @@ my_token = Token(os.environ["AUTHZ_SSO_CLIENT_ID"], os.environ["AUTHZ_SSO_CLIENT
 def get_ams_org(rh_org_id: int) -> str:
     params = {"search": f"external_id='{rh_org_id}'"}
 
-    url = urlsplit(os.environ['AUTHZ_API_SERVER'])
+    url = urlsplit(os.environ["AUTHZ_API_SERVER"])
     url = url._replace(path="/api/accounts_mgmt/v1/organizations")
 
     if not re.search(AUTHZ_API_PATTERN, url.netloc):
@@ -139,8 +139,8 @@ def rh_user_is_org_admin(username: str, organization_id: str) -> bool:
         return False
 
     result = r.json()
-    for item in result['items']:
-        if item['role']['id'] == "OrganizationAdmin":
+    for item in result["items"]:
+        if item["role"]["id"] == "OrganizationAdmin":
             return True
 
     return False

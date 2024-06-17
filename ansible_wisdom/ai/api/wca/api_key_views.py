@@ -54,18 +54,18 @@ PERMISSION_CLASSES = [
 
 
 class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
-    required_scopes = ['read', 'write']
-    throttle_cache_key_suffix = '_wca_api_key'
+    required_scopes = ["read", "write"]
+    throttle_cache_key_suffix = "_wca_api_key"
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            200: OpenApiResponse(description="OK"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Get WCA key for an Organisation",
         operation_id="wca_api_key_get",
@@ -88,7 +88,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 return Response(status=HTTP_200_OK)
             # Once written the Key value is never returned to the User,
             # instead we return when the secret was last updated.
-            return Response(status=HTTP_200_OK, data={'last_update': wca_key['CreatedDate']})
+            return Response(status=HTTP_200_OK, data={"last_update": wca_key["CreatedDate"]})
 
         except WcaSecretManagerError as e:
             exception = e
@@ -107,12 +107,12 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
     @extend_schema(
         request=WcaKeyRequestSerializer,
         responses={
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Set the WCA key for an Organisation",
         operation_id="wca_api_key_set",
@@ -133,7 +133,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
             # Extract API Key from request
             key_serializer = WcaKeyRequestSerializer(data=request.data)
             key_serializer.is_valid(raise_exception=True)
-            wca_key = key_serializer.validated_data['key']
+            wca_key = key_serializer.validated_data["key"]
 
             # Validate API Key
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
@@ -184,18 +184,18 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
 
 class WCAApiKeyValidatorView(RetrieveAPIView):
-    required_scopes = ['read']
-    throttle_cache_key_suffix = '_wca_api_key_validator'
+    required_scopes = ["read"]
+    throttle_cache_key_suffix = "_wca_api_key_validator"
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            200: OpenApiResponse(description="OK"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Validate WCA key for an Organisation",
         operation_id="wca_api_key_validator_get",
@@ -219,7 +219,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
             api_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if api_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
-            token = model_mesh_client.get_token(api_key['SecretString'])
+            token = model_mesh_client.get_token(api_key["SecretString"])
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 

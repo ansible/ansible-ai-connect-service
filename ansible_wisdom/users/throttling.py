@@ -28,10 +28,10 @@ class GroupSpecificThrottle(UserRateThrottle):
     GROUPS = settings.SPECIAL_THROTTLING_GROUPS
 
     # The attribute name that may be defined in views to add a suffix to cache keys
-    cache_key_suffix_attr = 'throttle_cache_key_suffix'
+    cache_key_suffix_attr = "throttle_cache_key_suffix"
 
     # The attribute name that may be definied in views to give a larger (or smaller) rate limit
-    cache_key_multipiler_attr = 'throttle_cache_multiplier'
+    cache_key_multipiler_attr = "throttle_cache_multiplier"
 
     def __init__(self):
         # Override, since we can't decide what the scope and rate are
@@ -39,8 +39,8 @@ class GroupSpecificThrottle(UserRateThrottle):
         pass
 
     def get_scope(self, request, view):
-        user_groups = set(request.user.groups.values_list('name', flat=True))
-        return next((group for group in self.GROUPS if group in user_groups), 'user')
+        user_groups = set(request.user.groups.values_list("name", flat=True))
+        return next((group for group in self.GROUPS if group in user_groups), "user")
 
     def allow_request(self, request, view):
         # Allow the normal UserRateThrottle scope ('user') to be overridden if
@@ -77,9 +77,9 @@ class GroupSpecificThrottle(UserRateThrottle):
     @staticmethod
     def format_rate(num_requests, duration):
         duration_unit = {
-            1: 'second',
-            60: 'minute',
-            3600: 'hour',
-            86400: 'day',
+            1: "second",
+            60: "minute",
+            3600: "hour",
+            86400: "day",
         }[duration]
-        return f'{num_requests}/{duration_unit}'
+        return f"{num_requests}/{duration_unit}"

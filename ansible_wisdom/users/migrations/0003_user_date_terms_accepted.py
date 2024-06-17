@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('users', '0002_user_uuid'),
+        ("users", "0002_user_uuid"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='date_terms_accepted',
+            model_name="user",
+            name="date_terms_accepted",
             field=models.DateTimeField(default=None, null=True),
         ),
     ]

@@ -46,21 +46,21 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
     def accepted_terms(self):
         return patch.object(
             self.user,
-            'community_terms_accepted',
+            "community_terms_accepted",
             True,
         )
 
     def not_accepted_terms(self):
         return patch.object(
             self.user,
-            'community_terms_accepted',
+            "community_terms_accepted",
             None,
         )
 
     def test_community_user_has_not_accepted(self):
         with self.not_accepted_terms():
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), self.payload)
+            r = self.client.post(reverse("completions"), self.payload)
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(r, AcceptedTermsPermission.code, AcceptedTermsPermission.message)
 
@@ -69,42 +69,42 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
         self.user.rh_user_has_seat = True
         with self.not_accepted_terms():
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), self.payload)
+            r = self.client.post(reverse("completions"), self.payload)
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_community_user_has_accepted(self):
         with self.accepted_terms():
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), self.payload)
+            r = self.client.post(reverse("completions"), self.payload)
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
     def test_commercial_user_has_accepted(self):
         self.user.rh_user_has_seat = True
         with self.accepted_terms():
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse('completions'), self.payload)
+            r = self.client.post(reverse("completions"), self.payload)
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
-@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=False)
-@patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
+@patch.object(IsOrganisationAdministrator, "has_permission", return_value=False)
+@patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
 class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
     def test_user_rh_user_is_org_admin(self, *args):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse('wca_api_key'))
+        r = self.client.get(reverse("wca_api_key"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(
             r, IsOrganisationAdministrator.code, IsOrganisationAdministrator.message
         )
 
 
-@patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
-@patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=False)
+@patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
+@patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
 class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
     def test_user_is_lightspeed_subscriber_admin(self, *args):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse('wca_api_key'))
+        r = self.client.get(reverse("wca_api_key"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(
             r, IsOrganisationLightspeedSubscriber.code, IsOrganisationLightspeedSubscriber.message
@@ -147,8 +147,8 @@ class TestAcceptedTermsPermission(WisdomAppsBackendMocking):
         self.assertTrue(self.p.has_permission(self.request, None))
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
 class TestBlockUserWithoutSeatAndWCAReadyOrg(WisdomAppsBackendMocking):
     def setUp(self):
         super().setUp()
@@ -174,8 +174,8 @@ class TestBlockUserWithoutSeatAndWCAReadyOrg(WisdomAppsBackendMocking):
         self.assertFalse(self.p.has_permission(self.request, None))
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
     def setUp(self):
         super().setUp()
@@ -201,8 +201,8 @@ class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
         self.assertFalse(self.p.has_permission(self.request, None))
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class TestBlockUserWithoutSeat(WisdomAppsBackendMocking):
     def setUp(self):
         super().setUp()

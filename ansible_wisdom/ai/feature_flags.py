@@ -58,7 +58,7 @@ class FeatureFlags:
                 # send_event needed to prevent analytics event to raise
                 self.client = LDClient(
                     Config(
-                        'sdk-key-123abc',
+                        "sdk-key-123abc",
                         update_processor_class=data_source_callback,
                         send_events=False,
                     )

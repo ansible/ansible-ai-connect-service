@@ -35,10 +35,10 @@ from ansible_ai_connect.users.tests.test_users import create_user
 
 def create_user_with_provider(user_provider, **kwargs):
     return create_user(
-        username='test_user_name',
-        password='test_passwords',
+        username="test_user_name",
+        password="test_passwords",
         provider=user_provider,
-        external_username='anexternalusername',
+        external_username="anexternalusername",
         **kwargs,
     )
 
@@ -48,31 +48,31 @@ class LogoutTest(TestCase):
         user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
 
-        response = self.client.get(reverse('logout'))
+        response = self.client.get(reverse("logout"))
         self.assertEqual(
             response.url,
-            'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid'
-            '-connect/logout?post_logout_redirect_uri=http://testserver/'
-            f'&client_id={SOCIAL_AUTH_OIDC_KEY}',
+            "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid"
+            "-connect/logout?post_logout_redirect_uri=http://testserver/"
+            f"&client_id={SOCIAL_AUTH_OIDC_KEY}",
         )
 
     def test_gh_sso_redirect(self):
         user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.client.force_login(user)
 
-        response = self.client.get(reverse('logout'))
-        self.assertEqual(response.url, '/')
+        response = self.client.get(reverse("logout"))
+        self.assertEqual(response.url, "/")
 
-    @override_settings(AAP_API_URL='http://aap/api')
+    @override_settings(AAP_API_URL="http://aap/api")
     def test_aap_sso_redirect(self):
         user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_AAP)
         self.client.force_login(user)
 
-        response = self.client.get(reverse('logout'))
-        self.assertEqual(response.url, 'http://aap/api/logout/?next=http://testserver/')
+        response = self.client.get(reverse("logout"))
+        self.assertEqual(response.url, "http://aap/api/logout/?next=http://testserver/")
 
     def test_logout_without_login(self):
-        self.client.get(reverse('logout'))
+        self.client.get(reverse("logout"))
 
 
 class AlreadyAuth(TestCase):
@@ -85,7 +85,7 @@ class AlreadyAuth(TestCase):
         self.assertIn("You are currently not logged in.", contents)
         self.assertIn("Log in with Red Hat", contents)
 
-    @override_settings(DEPLOYMENT_MODE='onprem')
+    @override_settings(DEPLOYMENT_MODE="onprem")
     def test_login_aap(self):
         request = RequestFactory().get("/login")
         request.user = AnonymousUser()
@@ -95,8 +95,8 @@ class AlreadyAuth(TestCase):
         self.assertIn("You are currently not logged in.", contents)
         self.assertIn("Log in with Ansible Automation Platform", contents)
 
-    @override_settings(DEPLOYMENT_MODE='onprem')
-    @override_settings(AAP_API_PROVIDER_NAME='Ansible Automation Controller')
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    @override_settings(AAP_API_PROVIDER_NAME="Ansible Automation Controller")
     def test_login_aap_override_provider_name(self):
         request = RequestFactory().get("/login")
         request.user = AnonymousUser()
@@ -106,7 +106,7 @@ class AlreadyAuth(TestCase):
         self.assertIn("You are currently not logged in.", contents)
         self.assertIn("Log in with Ansible Automation Controller", contents)
 
-    @override_settings(DEPLOYMENT_MODE='upstream')
+    @override_settings(DEPLOYMENT_MODE="upstream")
     def test_login_django(self):
         request = RequestFactory().get("/login")
         request.user = AnonymousUser()
@@ -143,33 +143,33 @@ class TestMetricsView(APITransactionTestCase):
 
     @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
     def test_content_type_text(self):
-        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'text/plain'})
+        r = self.client.get(reverse("prometheus-metrics"), headers={"Accept": "text/plain"})
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
     @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
     def test_content_type_json(self):
-        r = self.client.get(reverse('prometheus-metrics'), headers={'Accept': 'application/json'})
+        r = self.client.get(reverse("prometheus-metrics"), headers={"Accept": "application/json"})
         self.assertEqual(r.status_code, HTTPStatus.NOT_ACCEPTABLE)
 
     @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=True)
     def test_anonymous_access(self):
-        r = self.client.get(reverse('prometheus-metrics'))
+        r = self.client.get(reverse("prometheus-metrics"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
     def test_protected_access(self):
-        r = self.client.get(reverse('prometheus-metrics'))
+        r = self.client.get(reverse("prometheus-metrics"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_protected_access_aap_superuser(self):
         self.user.rh_aap_superuser = True
 
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse('prometheus-metrics'))
+        r = self.client.get(reverse("prometheus-metrics"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
     def test_protected_access_aap_system_auditor(self):
         self.user.rh_aap_system_auditor = True
 
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse('prometheus-metrics'))
+        r = self.client.get(reverse("prometheus-metrics"))
         self.assertEqual(r.status_code, HTTPStatus.OK)

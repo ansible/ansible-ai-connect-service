@@ -36,7 +36,7 @@ def bypass_init(*args, **kwargs):
     return None
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
@@ -61,8 +61,8 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Log in to Tech Preview")
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
         super().setUp()
@@ -116,7 +116,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "Role: administrator")
         self.assertContains(response, "Admin Portal")
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_admin_with_a_seat_and_with_secret(self):
@@ -126,8 +126,8 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "Admin Portal")
 
 
-@override_settings(WCA_SECRET_BACKEND_TYPE='dummy')
-@override_settings(WCA_SECRET_DUMMY_SECRETS='')
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
     def setUp(self):
@@ -142,7 +142,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret_with_tech_preview(self):
@@ -160,7 +160,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="valid")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_with_secret_with_tech_preview(self):
@@ -178,7 +178,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_without_seat_and_no_secret_without_tech_preview(self):
@@ -189,7 +189,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "You will be limited to features of the Project Name")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
     def test_rh_user_with_a_seat_and_no_secret(self):
@@ -199,7 +199,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "but your administrator has not configured the service")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", True)
@@ -211,7 +211,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='1234567:valid')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
     @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
     def test_rh_user_with_no_seat_and_with_secret(self):
@@ -236,7 +236,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "fa-exclamation-circle")
 
 
-@override_settings(AUTHZ_BACKEND_TYPE='dummy')
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -250,7 +250,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
         )
         self.client.login(username=self.user.username, password=self.password)
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn("https://official_docs", str(r.content))
 
@@ -263,7 +263,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
         )
         self.client.login(username=self.user.username, password=self.password)
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, "pf-c-alert__title", count=1)
         self.assertIn("https://community_docs", str(r.content))
@@ -277,19 +277,19 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
             provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
         )
         self.client.login(username=self.user.username, password=self.password)
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertContains(r, "Your organization doesn't have access to Project Name.")
         self.assertIn(settings.COMMERCIAL_DOCUMENTATION_URL, str(r.content))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(DOCUMENTATION_URL="https://community_docs")
     def test_docs_url_for_not_logged_in_user_with_tech_preview(self):
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn("https://community_docs", str(r.content))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     def test_docs_url_for_not_logged_in_user_without_tech_preview(self):
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn(settings.COMMERCIAL_DOCUMENTATION_URL, str(r.content))

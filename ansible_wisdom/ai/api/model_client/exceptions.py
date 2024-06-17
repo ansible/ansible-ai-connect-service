@@ -20,14 +20,14 @@ from dataclasses import dataclass
 class ModelTimeoutError(Exception):
     """The model server did not provide a prediction in the allotted time."""
 
-    model_id: str = ''
+    model_id: str = ""
 
 
 @dataclass
 class WcaException(Exception):
     """Base WCA Exception"""
 
-    model_id: str = ''
+    model_id: str = ""
     json_response: dict = None
 
 

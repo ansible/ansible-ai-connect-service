@@ -50,25 +50,25 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         self.m_boto3_client.exceptions.ResourceNotFoundException = MockResourceNotFoundException
         self.m_boto3_client.exceptions.InvalidParameterException = MockInvalidParameterException
 
-        self.c = AWSSecretManager('dummy', 'dummy', 'dummy', 'dummy', [])
+        self.c = AWSSecretManager("dummy", "dummy", "dummy", "dummy", [])
         self.c._client = self.m_boto3_client
 
     def test_get_secret_name(self):
         self.assertEqual(
             AWSSecretManager.get_secret_id(ORG_ID, Suffixes.API_KEY),
-            f'{SECRET_KEY_PREFIX}/{ORG_ID}/{Suffixes.API_KEY.value}',
+            f"{SECRET_KEY_PREFIX}/{ORG_ID}/{Suffixes.API_KEY.value}",
         )
 
     def test_get_key(self):
         self.m_boto3_client.get_secret_value.return_value = {"SecretString": SECRET_VALUE}
         response = self.c.get_secret(ORG_ID, Suffixes.API_KEY)
-        self.assertEqual(response['SecretString'], SECRET_VALUE)
+        self.assertEqual(response["SecretString"], SECRET_VALUE)
 
     def test_get_key_error(self):
         self.m_boto3_client.get_secret_value.side_effect = ClientError({}, "raah")
 
         with self.assertRaises(WcaSecretManagerError):
-            with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger="root", level="ERROR") as log:
                 self.c.get_secret(ORG_ID, Suffixes.API_KEY)
                 self.assertInLog(f"Error reading secret for org_id '{ORG_ID}'", log)
 
@@ -78,7 +78,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
 
     def test_key_doesnt_exist(self):
         self.m_boto3_client.get_secret_value.return_value = None
-        self.assertEqual(self.c.secret_exists('does_not_exist', Suffixes.API_KEY), False)
+        self.assertEqual(self.c.secret_exists("does_not_exist", Suffixes.API_KEY), False)
 
     def test_save_new_key(self):
         self.m_boto3_client.get_secret_value.return_value = None
@@ -112,7 +112,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         self.m_boto3_client.remove_regions_from_replication.side_effect = (
             MockResourceNotFoundException
         )
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.c.delete_secret(ORG_ID, Suffixes.API_KEY)
             self.assertInLog(
                 f"Error removing replica regions, Secret does not exist for org_id '{ORG_ID}'",
@@ -123,7 +123,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         self.m_boto3_client.remove_regions_from_replication.side_effect = (
             MockInvalidParameterException
         )
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.c.delete_secret(ORG_ID, Suffixes.API_KEY)
             self.assertInLog(
                 f"Error removing replica regions, invalid region(s) for org_id '{ORG_ID}'", log
@@ -133,7 +133,7 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
         self.m_boto3_client.remove_regions_from_replication.side_effect = ClientError(
             {}, "An error occurred"
         )
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.c.delete_secret(ORG_ID, Suffixes.API_KEY)
             self.assertInLog(
                 "An error occurred",
@@ -143,11 +143,11 @@ class TestWcaApiKeyClient(APITestCase, WisdomServiceLogAwareTestCase):
     def test_delete_key_client_error(self):
         self.m_boto3_client.delete_secret.side_effect = ClientError({}, "An error occurred")
         with self.assertRaises(WcaSecretManagerError):
-            with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger="root", level="ERROR") as log:
                 self.c.delete_secret(ORG_ID, Suffixes.API_KEY)
                 self.assertInLog(f"Error removing Secret for org_id '{ORG_ID}'", log)
 
     def test_missing_creds_exception(self):
-        c = AWSSecretManager('dummy', None, 'dummy', 'dummy', [])
+        c = AWSSecretManager("dummy", None, "dummy", "dummy", [])
         with self.assertRaises(WcaSecretManagerMissingCredentialsError):
             c.get_client()

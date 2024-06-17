@@ -25,17 +25,17 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 class PostWcaModelIdCommandTestCase(TestCase):
     def test_missing_required_args(self):
         with self.assertRaisesMessage(
-            CommandError, 'Error: the following arguments are required: org_id, secret'
+            CommandError, "Error: the following arguments are required: org_id, secret"
         ):
-            call_command('post_wca_model_id')
+            call_command("post_wca_model_id")
 
     @patch("ansible_ai_connect.ai.management.commands._base_wca_command.AWSSecretManager")
     def test_model_id_saved(self, mock_secret_manager):
         instance = mock_secret_manager.return_value
         instance.save_secret.return_value = "mock_model_id_name"
 
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            call_command('post_wca_model_id', 'mock_org_id', 'mock_model_id')
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            call_command("post_wca_model_id", "mock_org_id", "mock_model_id")
             instance.save_secret.assert_called_once_with(
                 "mock_org_id", Suffixes.MODEL_ID, "mock_model_id"
             )

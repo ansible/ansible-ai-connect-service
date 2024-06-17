@@ -44,10 +44,10 @@ class ARICallerTestCase(TestCase):
         self.assertEqual(result, multi_task_suggestion)
 
     def test_make_input_yaml_is_playbook(self):
-        context = '- hosts: all\n  become: true\n  tasks:\n'
-        prompt = '    - name: Install ssh\n'
+        context = "- hosts: all\n  become: true\n  tasks:\n"
+        prompt = "    - name: Install ssh\n"
         inference_output = (
-            '      ansible.builtin.package:\n        name: openssh-server\n        state: present'
+            "      ansible.builtin.package:\n        name: openssh-server\n        state: present"
         )
 
         ari_caller = postprocessing.ARICaller(
@@ -58,10 +58,10 @@ class ARICallerTestCase(TestCase):
         self.assertTrue(is_playbook)
 
     def test_make_input_yaml_is_playbook_empty_play(self):
-        context = '---\n- hosts: localhost\n\n- hosts: all\n  become: true\n  tasks:\n'
-        prompt = '    - name: Install ssh\n'
+        context = "---\n- hosts: localhost\n\n- hosts: all\n  become: true\n  tasks:\n"
+        prompt = "    - name: Install ssh\n"
         inference_output = (
-            '      ansible.builtin.package:\n        name: openssh-server\n        state: present'
+            "      ansible.builtin.package:\n        name: openssh-server\n        state: present"
         )
 
         ari_caller = postprocessing.ARICaller(
@@ -72,10 +72,10 @@ class ARICallerTestCase(TestCase):
         self.assertTrue(is_playbook)
 
     def test_make_input_yaml_is_taskfile(self):
-        context = ''
-        prompt = '- name: Install ssh\n'
+        context = ""
+        prompt = "- name: Install ssh\n"
         inference_output = (
-            '  ansible.builtin.package:\n        name: openssh-server\n        state: present'
+            "  ansible.builtin.package:\n        name: openssh-server\n        state: present"
         )
 
         ari_caller = postprocessing.ARICaller(

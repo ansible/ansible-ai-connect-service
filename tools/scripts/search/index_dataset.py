@@ -23,11 +23,11 @@ from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from opensearchpy.helpers import streaming_bulk
 from sentence_transformers import SentenceTransformer
 
-host = os.getenv('OS_HOST')
-region = os.getenv('AWS_REGION')
+host = os.getenv("OS_HOST")
+region = os.getenv("AWS_REGION")
 
 credentials = boto3.Session().get_credentials()
-auth = AWSV4SignerAuth(credentials, region, 'es')
+auth = AWSV4SignerAuth(credentials, region, "es")
 
 INDEX = {
     "settings": {"number_of_shards": 2, "index.knn": "true", "index.refresh_interval": "-1"},
@@ -56,7 +56,7 @@ INDEX = {
 INDEX_ENABLE = {"settings": {"index.refresh_interval": "1s"}}
 
 client = OpenSearch(
-    hosts=[{'host': host, 'port': 443}],
+    hosts=[{"host": host, "port": 443}],
     http_auth=auth,
     use_ssl=True,
     verify_certs=True,
@@ -66,13 +66,13 @@ client = OpenSearch(
 
 
 def main():
-    model = SentenceTransformer(f'sentence-transformers/{args.model}')
+    model = SentenceTransformer(f"sentence-transformers/{args.model}")
     print(f"loading dataset {args.input}")
     df = load_from_disk(args.input)
 
     print(f"encoding dataset {args.input}")
     encoded_df = df.map(
-        lambda x: {"output_body_vector": model.encode(x['output_body'], normalize_embeddings=True)},
+        lambda x: {"output_body_vector": model.encode(x["output_body"], normalize_embeddings=True)},
         batched=True,
     )
 
@@ -93,15 +93,15 @@ def main():
     ):
         progress.update(1)
 
-    print(f'updating index: {args.index}')
+    print(f"updating index: {args.index}")
     response = client.indices.put_settings(index=args.index, body=INDEX_ENABLE)
     print(json.dumps(response))
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Bulk load the Elasticsearch index')
-    parser.add_argument('--input', required=True, help='path to the dataset files')
-    parser.add_argument('--model', default='all-mpnet-base-v2', help='NLP model to use')
-    parser.add_argument('--index', required=True, help='Elasticsearch index')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Bulk load the Elasticsearch index")
+    parser.add_argument("--input", required=True, help="path to the dataset files")
+    parser.add_argument("--model", default="all-mpnet-base-v2", help="NLP model to use")
+    parser.add_argument("--index", required=True, help="Elasticsearch index")
     args = parser.parse_args()
     main()

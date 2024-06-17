@@ -26,7 +26,7 @@ from .exceptions import (
     WcaUserTrialExpired,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
 

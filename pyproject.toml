@@ -73,7 +73,6 @@ include = ["ansible_wisdom*", "ansible_ai_connect*"]
 [tool.black]
 line-length = 100
 fast = true
-skip-string-normalization = true
 
 [tool.isort]
 profile = "black"
