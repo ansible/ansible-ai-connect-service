@@ -74,7 +74,7 @@ class MockResponse:
         self.status_code = status_code
         self.headers = {} if headers is None else headers
         self.text = text
-        self.content = JSON.dumps(json).encode('utf-8')
+        self.content = JSON.dumps(json).encode("utf-8")
 
     def json(self):
         return self._json
@@ -556,15 +556,15 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         response = MockResponse(
             json={"some": "mystery 404 response"},
             status_code=404,
-            headers={'Content-Type': 'application/json'},
+            headers={"Content-Type": "application/json"},
         )
-        model_client = WCAClient(inference_url='https://example.com')
+        model_client = WCAClient(inference_url="https://example.com")
         model_client.get_token = Mock(return_value=token)
         model_client.session.post = Mock(return_value=response)
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(WcaInferenceFailure) as e:
-            with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger="root", level="ERROR") as log:
                 model_client.infer(
                     request=Mock(),
                     model_input=model_input,
@@ -574,7 +574,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
         self.assertInLog(
             "WCA request failed with unrecognized 404. Content-Type:application/json, "
-            "Content:b'{\"some\": \"mystery 404 response\"}'",
+            'Content:b\'{"some": "mystery 404 response"}\'',
             log,
         )
 
