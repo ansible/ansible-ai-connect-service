@@ -57,9 +57,7 @@ certifi==2024.2.2
     #   opensearch-py
     #   requests
 cffi==1.16.0
-    # via
-    #   cryptography
-    #   pygit2
+    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -210,8 +208,6 @@ langsmith==0.1.75
     #   langchain-core
 launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
-levenshtein==0.25.1
-    # via ansible-risk-insight
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
@@ -310,8 +306,6 @@ pydantic==2.6.4
     #   langsmith
 pydantic-core==2.16.3
     # via pydantic
-pygit2==1.14.1
-    # via ansible-risk-insight
 pygments==2.17.2
     # via
     #   ipython
@@ -351,7 +345,7 @@ pyyaml==6.0
     #   transformers
     #   yamllint
 rapidfuzz==3.8.1
-    # via levenshtein
+    # via ansible-risk-insight
 referencing==0.35.0
     # via
     #   jsonschema
@@ -487,7 +481,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 uritemplate==4.1.1
     # via drf-spectacular
-urllib3==1.26.18
+urllib3==1.26.19
     # via
     #   -r requirements.in
     #   botocore
