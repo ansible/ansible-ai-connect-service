@@ -478,6 +478,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         response = MockResponse(
             json={"detail": "WML API call failed: Deployment id or name banana was not found."},
             status_code=HTTPStatus.NOT_FOUND,
+            headers={"Content-Type": "application/json"},
         )
         model_client.session.post = Mock(return_value=response)
         self.mock_model_client_with(model_client)
@@ -2200,6 +2201,7 @@ class TestContentMatchesWCAViewErrors(
         response = MockResponse(
             json={"detail": "WML API call failed: Deployment id or name banana was not found."},
             status_code=HTTPStatus.NOT_FOUND,
+            headers={"Content-Type": "application/json"},
         )
         self.model_client.session.post = Mock(return_value=response)
         self._assert_exception_in_log(WcaInvalidModelIdException)

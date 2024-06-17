@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import base64
+import json as JSON
 import uuid
 from datetime import datetime
 from functools import wraps
@@ -73,6 +74,7 @@ class MockResponse:
         self.status_code = status_code
         self.headers = {} if headers is None else headers
         self.text = text
+        self.content = JSON.dumps(json).encode('utf-8')
 
     def json(self):
         return self._json
@@ -530,6 +532,51 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 suggestion_id=DEFAULT_SUGGESTION_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_unrecognized_404(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        response = MockResponse(
+            json={"some": "mystery 404 response"},
+            status_code=404,
+            headers={'Content-Type': 'application/json'},
+        )
+        model_client = WCAClient(inference_url='https://example.com')
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        with self.assertRaises(WcaInferenceFailure) as e:
+            with self.assertLogs(logger='root', level='ERROR') as log:
+                model_client.infer(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_SUGGESTION_ID,
+                )
+        self.assertEqual(e.exception.model_id, model_id)
+        self.assertInLog(
+            "WCA request failed with unrecognized 404. Content-Type:application/json, "
+            "Content:b'{\"some\": \"mystery 404 response\"}'",
+            log,
+        )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_request_id_correlation_failure(self):
