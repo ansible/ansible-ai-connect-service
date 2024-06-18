@@ -1,0 +1,51 @@
+.ls_bottom_menu {
+    margin-top: 60px;
+}
+
+.ls_tech_preview_banner {
+    margin-top:3px;
+}
+
+.ls_font_normal {
+    font-weight: normal;
+}
+
+.ls_message_body {
+    padding: 15px;
+}
+
+.ls_logo_padding {
+    padding: 20px;
+}
+
+.ls_logo_home {
+    padding: 20px;
+}
+
+.ls_terms_main {
+    text-align: left;
+}
+
+.ls_terms_logo {
+    padding-bottom: 45px;
+}
+
+.ls_terms_external_terms {
+    padding-bottom: 15px;
+}
+
+.ls_terms_divider_padding {
+    padding-bottom: 35px;
+}
+
+.ls_terms_bottom {
+    padding-bottom: 20px;
+}
+
+.ls_terms_accept_buttons {
+    padding-bottom: 10px;
+}
+
+.ls_text_underline {
+    text-decoration: underline;
+}

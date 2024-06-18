@@ -4,6 +4,7 @@
     <head>
         <title>{% block title %}{{ project_name }}{% endblock title %}</title>
         <link rel="stylesheet" href="/static/patternfly.css">
+        <link rel="stylesheet" href="/static/styles.css">
         <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGlkPSJ1dWlkLTNhNTAyZTQ2LWM3ZDYtNDFkMC05YWYzLWRjNDkxNzhkNDZkYiIgdmlld0JveD0iMCAwIDM4IDM4Ij48ZGVmcz48c3R5bGU+LnV1aWQtMTk4YTE0YjgtNWE3NC00OGMxLTg5NDItNDRhZmZlZTQyNDkwe2ZpbGw6I2UwMH08L3N0eWxlPjwvZGVmcz48ZyBpZD0idXVpZC1mMmU0YmIxOC0wY2ZiLTQ4M2ItODEwNC0yNzAzOTUwMTAzZjQiPjxwYXRoIGQ9Ik0yNy43IDEuNTk4SDEwLjNBOC43IDguNyAwIDAgMCAxLjU5NyAxMC4zdjE3LjQwMmE4LjcgOC43IDAgMCAwIDguNzAxIDguN2gxNy40MDJhOC43IDguNyAwIDAgMCA4LjctOC43VjEwLjI5OWE4LjcgOC43IDAgMCAwLTguNy04LjdaIiBzdHlsZT0iZmlsbDojZmZmIi8+PHBhdGggZD0iTTI4IDIuMjVjNC4yNzMgMCA3Ljc1IDMuNDc3IDcuNzUgNy43NXYxOGMwIDQuMjczLTMuNDc3IDcuNzUtNy43NSA3Ljc1SDEwYy00LjI3MyAwLTcuNzUtMy40NzctNy43NS03Ljc1VjEwYzAtNC4yNzMgMy40NzctNy43NSA3Ljc1LTcuNzVoMThNMjggMUgxMGE5IDkgMCAwIDAtOSA5djE4YTkgOSAwIDAgMCA5IDloMThhOSA5IDAgMCAwIDktOVYxMGE5IDkgMCAwIDAtOS05WiIvPjwvZz48cGF0aCBkPSJNMjAgNy4zNzVhLjYyNS42MjUgMCAwIDAtLjYyNS42MjV2N2EuNjI1LjYyNSAwIDAgMCAxLjI1IDBWOEEuNjI1LjYyNSAwIDAgMCAyMCA3LjM3NVpNMTYuNjI1IDE5YS42MjUuNjI1IDAgMCAwLS42MjUtLjYyNUg5YS42MjUuNjI1IDAgMCAwIDAgMS4yNWg3Yy4zNDUgMCAuNjI1LS4yOC42MjUtLjYyNVpNMjAgMjIuMzc1YS42MjUuNjI1IDAgMCAwLS42MjUuNjI1djdhLjYyNS42MjUgMCAwIDAgMS4yNSAwdi03YS42MjUuNjI1IDAgMCAwLS42MjUtLjYyNVpNMTcuNjExIDEwLjg3YS42MjUuNjI1IDAgMCAwLTEuMjIyLjI2bC40MjUgMmEuNjI1LjYyNSAwIDAgMCAxLjIyMi0uMjZsLS40MjUtMlpNMTEuODcgMTYuNjExbDIgLjQyNmEuNjI1LjYyNSAwIDAgMCAuMjYtMS4yMjNsLTItLjQyNWEuNjI1LjYyNSAwIDEgMC0uMjYgMS4yMjJaTTE3LjU1NSAyNC4zODlhLjYyNC42MjQgMCAwIDAtLjc0MS40ODFsLS40MjUgMmEuNjI1LjYyNSAwIDAgMCAxLjIyMi4yNmwuNDI1LTJhLjYyNS42MjUgMCAwIDAtLjQ4MS0uNzQxWk0xMy44NyAyMC45NjNsLTIgLjQyNmEuNjI0LjYyNCAwIDEgMCAuMjYgMS4yMjJsMi0uNDI1YS42MjQuNjI0IDAgMSAwLS4yNi0xLjIyM1oiIGNsYXNzPSJ1dWlkLTE5OGExNGI4LTVhNzQtNDhjMS04OTQyLTQ0YWZmZWU0MjQ5MCIvPjxwYXRoIGQ9Ik0zMC42MiAxOC45N2EuNjIyLjYyMiAwIDAgMC0uMDQzLS4yMDkuNjE3LjYxNyAwIDAgMC0uMTA2LS4xNmMtLjAxMS0uMDEzLS4wMTYtLjAzLS4wMjktLjA0M2wtMi0yYS42MjYuNjI2IDAgMCAwLS44ODQuODg0bC45MzMuOTMzSDE5YS42MjUuNjI1IDAgMCAwIDAgMS4yNWg5LjQ5MWwtLjkzMy45MzNhLjYyNi42MjYgMCAwIDAgLjg4NC44ODRsMi0yYy4wMTMtLjAxMy4wMTgtLjAzLjAyOS0uMDQzYS42Mi42MiAwIDAgMCAuMTA2LS4xNi42MjQuNjI0IDAgMCAwIC4wNDItLjIxYzAtLjAxLjAwNi0uMDE5LjAwNi0uMDMgMC0uMDEtLjAwNS0uMDE4LS4wMDYtLjAyOFpNMTMuNDQyIDExLjU1OGEuNjI2LjYyNiAwIDAgMC0uODg0Ljg4NGw0IDRhLjYyNC42MjQgMCAwIDAgLjg4NCAwIC42MjYuNjI2IDAgMCAwIDAtLjg4NGwtNC00Wk0xNi41NTggMjEuNTU4bC00IDRhLjYyNi42MjYgMCAwIDAgLjg4NC44ODRsNC00YS42MjYuNjI2IDAgMCAwLS44ODQtLjg4NFpNOS40NCAxNC41NmEuNjM3LjYzNyAwIDAgMC0xLjAyLjJjLS4wMy4wOC0uMDUuMTYtLjA1LjI0IDAgLjE2LjA3LjMyLjE5LjQ0cy4yOC4xOS40NC4xOWMuMTcgMCAuMzMtLjA3LjQ0LS4xOS4xMi0uMTEuMTktLjI4LjE5LS40NCAwLS4wOC0uMDItLjE2LS4wNS0uMjRhLjY1Ni42NTYgMCAwIDAtLjE0LS4yWk04LjU2IDIyLjU2Yy0uMTIuMTItLjE5LjI4LS4xOS40NCAwIC4xNi4wNy4zMy4xOS40NC4xMi4xMi4yOC4xOS40NC4xOS4xNyAwIC4zMy0uMDcuNDQtLjE5LjEyLS4xMS4xOS0uMjguMTktLjQ0YS42My42MyAwIDAgMC0uMTktLjQ0Yy0uMjMtLjIzLS42NC0uMjMtLjg4IDBaIi8+PC9zdmc+"/>
         {% block header %} {% endblock header %}
     </head>
@@ -11,11 +12,11 @@
     <body>
         {% block banner %}
         {% if use_tech_preview %}
-        <div class="pf-c-alert pf-m-warning" style="margin-top:3px;">
+        <div class="pf-c-alert pf-m-warning ls_tech_preview_banner">
             <div class="pf-c-alert__icon">
                 <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
             </div>
-            <p class="pf-c-alert__title" style="font-weight: normal;"><b>NOTE</b>: Due to overwhelming positive demand, we have extended the availability of the {{ project_name }} Technical Preview from December 31, 2023 to <b>March 11, 2024</b>.</p>
+            <p class="pf-c-alert__title ls_font_normal"><b>NOTE</b>: Due to overwhelming positive demand, we have extended the availability of the {{ project_name }} Technical Preview from December 31, 2023 to <b>March 11, 2024</b>.</p>
         </div>
         <br />
         {% endif %}
