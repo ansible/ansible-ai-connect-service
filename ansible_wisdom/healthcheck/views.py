@@ -55,12 +55,12 @@ def common_data():
 
 class HealthCheckCustomView(MainView):
     _plugin_name_map = {
-        'DatabaseBackend': 'db',
-        'ModelServerHealthCheck': 'model-server',
-        'AWSSecretManagerHealthCheck': 'secret-manager',
-        'WCAHealthCheck': 'wca',
-        'WCAOnPremHealthCheck': 'wca-onprem',
-        'AuthorizationHealthCheck': 'authorization',
+        "DatabaseBackend": "db",
+        "ModelServerHealthCheck": "model-server",
+        "AWSSecretManagerHealthCheck": "secret-manager",
+        "WCAHealthCheck": "wca",
+        "WCAOnPremHealthCheck": "wca-onprem",
+        "AuthorizationHealthCheck": "authorization",
     }
 
     @method_decorator(cache_page(CACHE_TIMEOUT))

@@ -2147,8 +2147,8 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value="org-api-key")
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @patch('ansible_ai_connect.ai.api.views.send_segment_event')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @patch("ansible_ai_connect.ai.api.views.send_segment_event")
     def test_wca_contentmatch_segment_events_with_seated_user(self, mock_send_segment_event):
         self.user.rh_user_has_seat = True
         self.model_client.get_model_id = Mock(return_value="model-id")

@@ -19,19 +19,19 @@ See https://issues.redhat.com/browse/AAP-15568 for more details.
 """
 
 ALLOW_LIST = {
-    'contentmatch': {
-        'suggestionId': None,
-        'duration': None,
-        'exception': None,
-        'problem': None,
-        'metadata': {'encode_duration:': None, 'search_duration': None},
-        'modelName': None,
-        'imageTags': None,
-        'hostname': None,
-        'groups': None,
-        'rh_user_has_seat': None,
-        'rh_user_org_id': None,
-        'timestamp': None,
+    "contentmatch": {
+        "suggestionId": None,
+        "duration": None,
+        "exception": None,
+        "problem": None,
+        "metadata": {"encode_duration:": None, "search_duration": None},
+        "modelName": None,
+        "imageTags": None,
+        "hostname": None,
+        "groups": None,
+        "rh_user_has_seat": None,
+        "rh_user_org_id": None,
+        "timestamp": None,
     },
     "completion": {
         "duration": None,

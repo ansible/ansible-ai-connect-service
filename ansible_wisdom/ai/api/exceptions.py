@@ -164,5 +164,5 @@ class FeedbackValidationException(WisdomBadRequest):
 
 class FeedbackInternalServerException(BaseWisdomAPIException):
     status_code = 500
-    default_code = 'error__feedback_internal_server'
-    default_detail = 'Failed to send feedback'
+    default_code = "error__feedback_internal_server"
+    default_detail = "Failed to send feedback"
