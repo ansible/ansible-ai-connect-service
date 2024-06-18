@@ -83,7 +83,7 @@ def unwrap_task_answer(message: str | BaseMessage) -> str:
     m = re.search(r"```(yaml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
     if m:
         task = m.group(2)
-    return dedent(re.split(r'- name: .+\n', task)[-1]).rstrip()
+    return dedent(re.split(r"- name: .+\n", task)[-1]).rstrip()
 
 
 class LangChainClient(ModelMeshClient):

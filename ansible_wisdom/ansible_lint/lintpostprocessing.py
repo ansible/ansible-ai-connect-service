@@ -63,7 +63,7 @@ class AnsibleLintCaller:
                 raise RuntimeError("Task directory already exists")
             os.mkdir(tmp_dir)
             with tempfile.NamedTemporaryFile(
-                suffix='.yml', dir=tmp_dir, mode="w", delete=False
+                suffix=".yml", dir=tmp_dir, mode="w", delete=False
             ) as temp_file:
                 # write the YAML string to the file
                 temp_file.write(inline_completion)
@@ -78,7 +78,7 @@ class AnsibleLintCaller:
             with open(temp_completion_path, encoding="utf-8") as yaml_file:
                 transformed_completion = yaml_file.read()
         except Exception as exc:
-            logger.exception(f'Lint Post-Processing resulted into exception: {exc}')
+            logger.exception(f"Lint Post-Processing resulted into exception: {exc}")
         return transformed_completion
 
     def run_transform(self, lint_result: LintResult, config_options: Options):

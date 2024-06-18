@@ -80,9 +80,9 @@ class ProtectedTemplateView(TemplateView):
         Returns the initial request object.
         """
         parser_context = {
-            'view': self,
-            'args': getattr(self, 'args', ()),
-            'kwargs': getattr(self, 'kwargs', {}),
+            "view": self,
+            "args": getattr(self, "args", ()),
+            "kwargs": getattr(self, "kwargs", {}),
         }
 
         return Request(
@@ -138,6 +138,6 @@ class ProtectedTemplateView(TemplateView):
             if not permission.has_permission(request, self):
                 permission_denied(
                     request,
-                    message=getattr(permission, 'message', None),
-                    code=getattr(permission, 'code', None),
+                    message=getattr(permission, "message", None),
+                    code=getattr(permission, "code", None),
                 )

@@ -34,8 +34,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
-    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY='DUMMY_KEY_ANALYTICS_VALUE')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="DUMMY_KEY_ANALYTICS_VALUE")
     def test_full_payload(self):
         suggestionId = str(uuid.uuid4())
         activityId = str(uuid.uuid4())
@@ -64,14 +64,14 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
+            apps.get_app_config("ai"),
+            "model_mesh_client",
             MockedMeshClient(self, expected, response_data),
         ):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                r = self.client.post(reverse('completions'), payload, format='json')
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                r = self.client.post(reverse("completions"), payload, format="json")
                 self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data['predictions'])
+                self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("DEBUG:segment:queueing:", log)
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
@@ -83,37 +83,37 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertTrue(len(segment_events) > 0)
                 hostname = platform.node()
                 for event in segment_events:
-                    properties = event['properties']
-                    self.assertTrue('modelName' in properties)
-                    self.assertEqual(properties['modelName'], settings.ANSIBLE_AI_MODEL_NAME)
-                    self.assertTrue('imageTags' in properties)
-                    self.assertTrue('groups' in properties)
-                    self.assertTrue('Group 1' in properties['groups'])
-                    self.assertTrue('Group 2' in properties['groups'])
-                    self.assertTrue('rh_user_has_seat' in properties)
-                    self.assertTrue('rh_user_org_id' in properties)
-                    self.assertEqual(hostname, properties['hostname'])
-                    if event['event'] == 'completion':
+                    properties = event["properties"]
+                    self.assertTrue("modelName" in properties)
+                    self.assertEqual(properties["modelName"], settings.ANSIBLE_AI_MODEL_NAME)
+                    self.assertTrue("imageTags" in properties)
+                    self.assertTrue("groups" in properties)
+                    self.assertTrue("Group 1" in properties["groups"])
+                    self.assertTrue("Group 2" in properties["groups"])
+                    self.assertTrue("rh_user_has_seat" in properties)
+                    self.assertTrue("rh_user_org_id" in properties)
+                    self.assertEqual(hostname, properties["hostname"])
+                    if event["event"] == "completion":
                         self.assertEqual(
-                            'ansible.builtin.package', properties['tasks'][0]['module']
+                            "ansible.builtin.package", properties["tasks"][0]["module"]
                         )
-                        self.assertEqual('ansible.builtin', properties['tasks'][0]['collection'])
-                        self.assertIsNotNone(properties['tasks'][0]['prediction'])
+                        self.assertEqual("ansible.builtin", properties["tasks"][0]["collection"])
+                        self.assertIsNotNone(properties["tasks"][0]["prediction"])
                         self.assertEqual(
-                            'install apache for james8@example.com', properties['tasks'][0]['name']
+                            "install apache for james8@example.com", properties["tasks"][0]["name"]
                         )
-                        self.assertEqual(1, properties['taskCount'])
-                        self.assertEqual('SINGLETASK', properties['promptType'])
-                    self.assertIsNotNone(event['timestamp'])
+                        self.assertEqual(1, properties["taskCount"])
+                        self.assertEqual("SINGLETASK", properties["promptType"])
+                    self.assertIsNotNone(event["timestamp"])
 
-            with self.assertLogs(logger='root', level='DEBUG') as log:
+            with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    reverse('completions'),
+                    reverse("completions"),
                     urlencode(payload),
-                    content_type='application/x-www-form-urlencoded',
+                    content_type="application/x-www-form-urlencoded",
                 )
                 self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data['predictions'])
+                self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("DEBUG:segment:queueing:", log)
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
@@ -122,9 +122,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("ano-user", log)
                 self.assertSegmentTimestamp(log)
 
-            with self.assertLogs(logger='root', level='DEBUG') as log:
+            with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    reverse('completions'), urlencode(payload), content_type='application/json'
+                    reverse("completions"), urlencode(payload), content_type="application/json"
                 )
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("DEBUG:segment:queueing:", log)
@@ -136,9 +136,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @patch(
-        'ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess',
+        "ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess",
         side_effect=Exception,
     )
     def test_preprocess_error(self, preprocess):
@@ -148,8 +148,8 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         }
 
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger='root', level='DEBUG') as log:
-            self.client.post(reverse('completions'), payload, format='json')
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            self.client.post(reverse("completions"), payload, format="json")
             self.assertInLog(
                 "ERROR:ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process:failed"
                 " to preprocess:",
@@ -158,7 +158,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             self.assertSegmentTimestamp(log)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_segment_error(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -178,21 +178,21 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         if analytics.default_client:
             analytics.shutdown()
             analytics.default_client = None
-        analytics.host = 'invalid_host_without_protocol'
+        analytics.host = "invalid_host_without_protocol"
         analytics.max_retries = 1
         analytics.send = True
 
         try:
             with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
+                apps.get_app_config("ai"),
+                "model_mesh_client",
                 MockedMeshClient(self, payload, response_data),
             ):
-                with self.assertLogs(logger='root', level='DEBUG') as log:
-                    r = self.client.post(reverse('completions'), payload, format='json')
+                with self.assertLogs(logger="root", level="DEBUG") as log:
+                    r = self.client.post(reverse("completions"), payload, format="json")
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.OK)
-                    self.assertIsNotNone(r.data['predictions'])
+                    self.assertIsNotNone(r.data["predictions"])
                     self.assertInLog("An error occurred in sending data to Segment: ", log)
                     self.assertSegmentTimestamp(log)
         finally:
@@ -205,7 +205,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.send = False
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_204_empty_response(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
@@ -225,22 +225,22 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         if analytics.default_client:
             analytics.shutdown()
             analytics.default_client = None
-        analytics.host = 'invalid_host_without_protocol'
+        analytics.host = "invalid_host_without_protocol"
         analytics.max_retries = 1
         analytics.send = True
 
         try:
             with patch.object(
-                apps.get_app_config('ai'),
-                'model_mesh_client',
+                apps.get_app_config("ai"),
+                "model_mesh_client",
                 MockedMeshClient(self, payload, response_data),
             ):
-                with self.assertLogs(logger='root', level='DEBUG') as log:
-                    r = self.client.post(reverse('completions'), payload, format='json')
+                with self.assertLogs(logger="root", level="DEBUG") as log:
+                    r = self.client.post(reverse("completions"), payload, format="json")
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                     self.assertIsNone(r.data)
-                    self.assertEqual(r['Content-Length'], "0")
+                    self.assertEqual(r["Content-Length"], "0")
                     self.assertSegmentTimestamp(log)
         finally:
             # Restore defaults and set the 'send' flag to False during test execution
@@ -251,16 +251,16 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.max_retries = analytics.Client.DefaultConfig.max_retries
             analytics.send = False
 
-    @override_settings(SEGMENT_WRITE_KEY='DUMMY_KEY_VALUE')
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_segment_error_with_data_exceeding_limit(self):
-        prompt = '''---
+        prompt = """---
 - hosts: localhost
   connection: local
 
   tasks:
-'''
+"""
         prompt += (
-            '''
+            """
     - name: Create x
 
       amazon.aws.ec2_vpc_net:
@@ -273,11 +273,11 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         tags:
           tag-name: tag-value
       register: ec2_vpc_net
-'''
+"""
             * 100
         )
 
-        prompt += '\n    - name: Create x\n'
+        prompt += "\n    - name: Create x\n"
 
         payload = {
             "prompt": prompt,
@@ -294,19 +294,19 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         with patch.object(
-            apps.get_app_config('ai'),
-            'model_mesh_client',
+            apps.get_app_config("ai"),
+            "model_mesh_client",
             MockedMeshClient(self, payload, response_data),
         ):
-            with self.assertLogs(logger='root', level='DEBUG') as log:
-                self.client.post(reverse('completions'), payload, format='json')
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                self.client.post(reverse("completions"), payload, format="json")
                 analytics.flush()
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log)
                 self.assertInLog("sent segment event: segmentError", log)
                 events = self.extractSegmentEventsFromLog(log)
                 n = len(events)
                 self.assertTrue(n > 0)
-                self.assertEqual(events[n - 1]['properties']['error_type'], 'event_exceeds_limit')
-                self.assertIsNotNone(events[n - 1]['properties']['details']['event_name'])
-                self.assertIsNotNone(events[n - 1]['properties']['details']['msg_len'] > 32 * 1024)
+                self.assertEqual(events[n - 1]["properties"]["error_type"], "event_exceeds_limit")
+                self.assertIsNotNone(events[n - 1]["properties"]["details"]["event_name"])
+                self.assertIsNotNone(events[n - 1]["properties"]["details"]["msg_len"] > 32 * 1024)
                 self.assertSegmentTimestamp(log)

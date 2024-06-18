@@ -1,9 +1,5 @@
-# pin ansible on 8.5.0 to address GHSA-jpvw-p8pr-9g2x
-# remove this once ansible-risk-insight is updated to properly
-# pull a version of ansible >= 8.5.0.
-ansible==8.5.0
 ansible-anonymizer==1.5.0
-ansible-risk-insight==0.2.4
+ansible-risk-insight==0.2.6
 ansible-lint==24.2.2
 boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
@@ -34,8 +30,8 @@ jwcrypto==1.5.6
 # pin jinja2 on 3.1.4 to address GHSA-h75v-3vvj-5mfj
 # remove this once ansible-core or torch are updated
 jinja2==3.1.4
-langchain==0.2.3
-langchain-community==0.2.4
+langchain==0.2.5
+langchain-community==0.2.5
 launchdarkly-server-sdk==8.3.0
 opensearch-py==2.1.1
 protobuf==4.25.3

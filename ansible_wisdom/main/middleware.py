@@ -42,11 +42,11 @@ version_info = VersionInfo()
 
 
 def on_segment_error(error, _):
-    logger.error(f'An error occurred in sending data to Segment: {error}')
+    logger.error(f"An error occurred in sending data to Segment: {error}")
 
 
 def on_segment_analytics_error(error, _):
-    logger.error(f'An error occurred in sending analytics data to Segment: {error}')
+    logger.error(f"An error occurred in sending analytics data to Segment: {error}")
 
 
 def anonymize_request_data(data):
@@ -82,8 +82,8 @@ class SegmentMiddleware:
                 # analytics.send = False # for code development only
                 analytics.on_error = on_segment_error
 
-            if request.path == reverse('completions') and request.method == 'POST':
-                if request.content_type == 'application/json':
+            if request.path == reverse("completions") and request.method == "POST":
+                if request.content_type == "application/json":
                     try:
                         request_data = (
                             json.loads(request.body.decode("utf-8")) if request.body else {}
@@ -97,49 +97,49 @@ class SegmentMiddleware:
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
-            if request.path == reverse('completions') and request.method == 'POST':
+            if request.path == reverse("completions") and request.method == "POST":
                 request_suggestion_id = getattr(
-                    request, '_suggestion_id', request_data.get('suggestionId')
+                    request, "_suggestion_id", request_data.get("suggestionId")
                 )
                 if not request_suggestion_id:
                     request_suggestion_id = str(uuid.uuid4())
-                context = request_data.get('context')
-                prompt = request_data.get('prompt')
-                model_name = request_data.get('model', '')
-                metadata = request_data.get('metadata', {})
-                promptType = getattr(request, '_prompt_type', None)
+                context = request_data.get("context")
+                prompt = request_data.get("prompt")
+                model_name = request_data.get("model", "")
+                metadata = request_data.get("metadata", {})
+                promptType = getattr(request, "_prompt_type", None)
 
                 predictions = None
                 message = None
-                response_data = getattr(response, 'data', {})
+                response_data = getattr(response, "data", {})
 
                 if isinstance(response_data, dict):
-                    predictions = response_data.get('predictions')
-                    message = response_data.get('message')
+                    predictions = response_data.get("predictions")
+                    message = response_data.get("message")
                     if isinstance(message, ErrorDetail):
                         message = str(message)
-                    model_name = response_data.get('model', model_name)
+                    model_name = response_data.get("model", model_name)
                     # For other error cases, remove 'model' in response data
                     if response.status_code >= 400:
-                        response_data.pop('model', None)
-                elif response.status_code >= 400 and getattr(response, 'content', None):
+                        response_data.pop("model", None)
+                elif response.status_code >= 400 and getattr(response, "content", None):
                     message = str(response.content)
 
                 duration = round((time.time() - start_time) * 1000, 2)
-                tasks = getattr(response, 'tasks', [])
+                tasks = getattr(response, "tasks", [])
                 event = {
                     "duration": duration,
                     "request": {"context": context, "prompt": prompt},
                     "response": {
-                        "exception": getattr(response, 'exception', None),
+                        "exception": getattr(response, "exception", None),
                         # See main.exception_handler.exception_handler_with_error_type
                         # That extracts 'default_code' from Exceptions and stores it
                         # in the Response.
-                        "error_type": getattr(response, 'error_type', None),
+                        "error_type": getattr(response, "error_type", None),
                         "message": message,
                         "predictions": predictions,
                         "status_code": response.status_code,
-                        "status_text": getattr(response, 'status_text', None),
+                        "status_text": getattr(response, "status_text", None),
                     },
                     "suggestionId": request_suggestion_id,
                     "metadata": metadata,
@@ -159,29 +159,29 @@ class SegmentMiddleware:
                         lambda: AnalyticsRecommendationGenerated(
                             tasks=[
                                 AnalyticsRecommendationTask(
-                                    collection=task.get('collection', ''),
-                                    module=task.get('module', ''),
+                                    collection=task.get("collection", ""),
+                                    module=task.get("module", ""),
                                 )
                                 for task in tasks
                             ],
-                            rh_user_org_id=getattr(request.user, 'org_id', None),
+                            rh_user_org_id=getattr(request.user, "org_id", None),
                             suggestion_id=request_suggestion_id,
                             model_name=model_name,
                         ),
                         request.user,
-                        getattr(request, '_ansible_extension_version', None),
+                        getattr(request, "_ansible_extension_version", None),
                     )
 
         # Clean up response.data for 204; should be empty to prevent
         # issues on the client side
         if response.status_code == 204:
             response.data = None
-            response['Content-Length'] = 0
+            response["Content-Length"] = 0
         return response
 
 
 class WisdomSocialAuthExceptionMiddleware(SocialAuthExceptionMiddleware):
     def raise_exception(self, request, exception):
-        strategy = getattr(request, 'social_strategy', None)
+        strategy = getattr(request, "social_strategy", None)
         if strategy is not None:
-            return strategy.setting('RAISE_EXCEPTIONS')  # or settings.DEBUG
+            return strategy.setting("RAISE_EXCEPTIONS")  # or settings.DEBUG

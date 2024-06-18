@@ -33,12 +33,12 @@ class WisdomLogAwareMixin:
     def extractSegmentEventsFromLog(logs):
         events = []
         for log in logs.output:
-            if log.startswith('DEBUG:segment:queueing: '):
+            if log.startswith("DEBUG:segment:queueing: "):
                 obj = literal_eval(
-                    log.replace('DEBUG:segment:queueing: ', '')
-                    .replace('\n', '')
-                    .replace('DataSource.UNKNOWN', '0')
-                    .replace('AnsibleType.UNKNOWN', '0')
+                    log.replace("DEBUG:segment:queueing: ", "")
+                    .replace("\n", "")
+                    .replace("DataSource.UNKNOWN", "0")
+                    .replace("AnsibleType.UNKNOWN", "0")
                 )
                 events.append(obj)
         return events
@@ -48,13 +48,13 @@ class WisdomTestCase(TestCase):
     def assert_error_detail(self, r, code: str, message: str = None):
         if r.status_code == HTTPStatus.NO_CONTENT:
             self.assertIsNone(r.data)
-            self.assertEqual(r['Content-Length'], "0")
+            self.assertEqual(r["Content-Length"], "0")
             return
 
-        r_code = r.data.get('message').code
+        r_code = r.data.get("message").code
         self.assertEqual(r_code, code)
         if message:
-            r_message = r.data.get('message')
+            r_message = r.data.get("message")
             self.assertEqual(r_message, message)
 
 
@@ -68,7 +68,7 @@ class WisdomServiceLogAwareTestCase(WisdomTestCase, WisdomLogAwareMixin):
     def assertSegmentTimestamp(self, log):
         segment_events = self.extractSegmentEventsFromLog(log)
         for event in segment_events:
-            self.assertIsNotNone(event['timestamp'])
+            self.assertIsNotNone(event["timestamp"])
 
     def assert_segment_log(self, log, event: str, problem: Union[str, None], **kwargs):
         segment_events = self.extractSegmentEventsFromLog(log)
@@ -92,7 +92,7 @@ class WisdomAppsBackendMocking(WisdomTestCase):
     def setUp(self):
         super().setUp()
         self.backend_patchers = {
-            key: patch.object(apps.get_app_config('ai'), key, None)
+            key: patch.object(apps.get_app_config("ai"), key, None)
             for key in [
                 "_ansible_lint_caller",
                 "_ari_caller",
@@ -103,7 +103,7 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         }
         for key, mocker in self.backend_patchers.items():
             mocker.start()
-        apps.get_app_config('ai').ready()
+        apps.get_app_config("ai").ready()
 
     def tearDown(self):
         for patcher in self.backend_patchers.values():
@@ -112,20 +112,20 @@ class WisdomAppsBackendMocking(WisdomTestCase):
 
     @staticmethod
     def mock_ansible_lint_caller_with(mocked):
-        apps.get_app_config('ai')._ansible_lint_caller = mocked
+        apps.get_app_config("ai")._ansible_lint_caller = mocked
 
     @staticmethod
     def mock_model_client_with(mocked):
-        apps.get_app_config('ai').model_mesh_client = mocked
+        apps.get_app_config("ai").model_mesh_client = mocked
 
     @staticmethod
     def mock_ari_caller_with(mocked):
-        apps.get_app_config('ai')._ari_caller = mocked
+        apps.get_app_config("ai")._ari_caller = mocked
 
     @staticmethod
     def mock_seat_checker_with(mocked):
-        apps.get_app_config('ai')._seat_checker = mocked
+        apps.get_app_config("ai")._seat_checker = mocked
 
     @staticmethod
     def mock_wca_secret_manager_with(mocked):
-        apps.get_app_config('ai')._wca_secret_manager = mocked
+        apps.get_app_config("ai")._wca_secret_manager = mocked

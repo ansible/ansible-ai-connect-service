@@ -36,86 +36,86 @@ class CompletionRequestSerializerTest(TestCase):
     def test_validate(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
         data = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
         }
         serializer.validate(data)
-        self.assertIsNotNone(data['suggestionId'])
-        self.assertTrue(isinstance(data['suggestionId'], UUID))
+        self.assertIsNotNone(data["suggestionId"])
+        self.assertTrue(isinstance(data["suggestionId"], UUID))
 
     def test_ignore_empty_model(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
         data = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "model": "    ",
         }
         serializer.validate(data)
-        self.assertIsNone(data.get('model'))
+        self.assertIsNone(data.get("model"))
 
     def test_validate_raises_exception(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': None})
+            serializer.validate({"prompt": None})
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "---\n"})
+            serializer.validate({"prompt": "---\n"})
         with self.assertRaises(serializers.ValidationError):
             # Prompt does not contain multitask prompt comment or - name:
-            serializer.validate({'prompt': "Install Apache\n"})
+            serializer.validate({"prompt": "Install Apache\n"})
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "- name: [This is a list]"})
+            serializer.validate({"prompt": "- name: [This is a list]"})
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "- name: {This is a dict}"})
+            serializer.validate({"prompt": "- name: {This is a dict}"})
 
     def test_validate_multitask_commercial(self):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
 
         # basic multitask prompt validates without exception
-        serializer.validate({'prompt': "#Install SSH\n"})
+        serializer.validate({"prompt": "#Install SSH\n"})
 
         # too-many-tasks raises an exception
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "#1&2&3&4&5&6&7&8&9&10&11\n"})
+            serializer.validate({"prompt": "#1&2&3&4&5&6&7&8&9&10&11\n"})
 
         # multiple && raises an exception
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "#install ssh && start ssh\n"})
+            serializer.validate({"prompt": "#install ssh && start ssh\n"})
 
     @override_settings(MULTI_TASK_MAX_REQUESTS=3)
     def test_validate_max_multitask_requests_setting(self):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
 
         # two tasks multitask prompt validates without exception
-        serializer.validate({'prompt': "#Install SSH & start service\n"})
+        serializer.validate({"prompt": "#Install SSH & start service\n"})
 
         # too-many-tasks raises an exception
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "#1&2&3&4\n"})
+            serializer.validate({"prompt": "#1&2&3&4\n"})
 
     def test_validate_multitask_no_seat(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
 
         # basic multitask prompt raises exception when no seat
         with self.assertRaises(serializers.ValidationError):
-            serializer.validate({'prompt': "#Install SSH\n"})
+            serializer.validate({"prompt": "#Install SSH\n"})
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_validate_custom_model_no_seat_with_tech_preview(self):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(
-            context={'request': request},
-            data={'prompt': "- name: Install SSH\n", 'model': 'custom-model'},
+            context={"request": request},
+            data={"prompt": "- name: Install SSH\n", "model": "custom-model"},
         )
 
         # model raises exception when no seat
@@ -127,8 +127,8 @@ class CompletionRequestSerializerTest(TestCase):
         user = Mock(rh_user_has_seat=False)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(
-            context={'request': request},
-            data={'prompt': "- name: Install SSH\n", 'model': 'custom-model'},
+            context={"request": request},
+            data={"prompt": "- name: Install SSH\n", "model": "custom-model"},
         )
 
         self.assertTrue(serializer.is_valid())
@@ -144,7 +144,7 @@ class ContentMatchRequestSerializerTest(TestCase):
             "suggestionId": "fe0ec82d-e71f-47eb-97da-0a2b32ceb344",
         }
         serializer.validate(data)
-        self.assertTrue(data['suggestionId'])
+        self.assertTrue(data["suggestionId"])
 
     def test_ignore_empty_model(self):
         serializer = ContentMatchRequestSerializer()
@@ -183,7 +183,7 @@ class SuggestionQualityFeedbackTest(TestCase):
         }
         serializer = SuggestionQualityFeedback(data=data)
         self.assertTrue(serializer.is_valid())
-        self.assertIn("# create vpc & create security group", serializer.validated_data['prompt'])
+        self.assertIn("# create vpc & create security group", serializer.validated_data["prompt"])
 
 
 class FeedbackRequestSerializerTest(TestCase):
@@ -191,7 +191,7 @@ class FeedbackRequestSerializerTest(TestCase):
         user = Mock(rh_user_has_seat=True)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={
                 "inlineSuggestion": {
                     "latency": 1000,
@@ -215,7 +215,7 @@ class FeedbackRequestSerializerTest(TestCase):
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={
                 "inlineSuggestion": {
                     "latency": 1000,
@@ -238,7 +238,7 @@ class FeedbackRequestSerializerTest(TestCase):
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={
                 "inlineSuggestion": {
                     "latency": 1000,
@@ -260,7 +260,7 @@ class FeedbackRequestSerializerTest(TestCase):
         request = Mock(user=user)
 
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={"sentimentFeedback": {"value": 3, "feedback": "double meh"}},
         )
 
@@ -275,7 +275,7 @@ class FeedbackRequestSerializerTest(TestCase):
         request = Mock(user=user)
 
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={
                 "playbookExplanationFeedback": {
                     "action": 1,
@@ -294,7 +294,7 @@ class FeedbackRequestSerializerTest(TestCase):
         request = Mock(user=user)
 
         serializer = FeedbackRequestSerializer(
-            context={'request': request},
+            context={"request": request},
             data={
                 "playbookOutlineFeedback": {
                     "action": 1,

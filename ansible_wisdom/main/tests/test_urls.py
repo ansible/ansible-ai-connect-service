@@ -25,9 +25,9 @@ class TestUrls(TestCase):
     def test_urlpatterns(self):
         reload(ansible_ai_connect.main.urls)
         routes = [
-            'api/schema/',
-            'api/schema/swagger-ui/',
-            'api/schema/redoc/',
+            "api/schema/",
+            "api/schema/swagger-ui/",
+            "api/schema/redoc/",
         ]
         r = compile("api/schema/")
         patterns = list(
@@ -42,7 +42,7 @@ class TestUrls(TestCase):
     def test_headers(self):
         client = Client()
         response = client.get("/")
-        csp_headers = response.headers.get('Content-Security-Policy')
+        csp_headers = response.headers.get("Content-Security-Policy")
         self.assertIn("style-src 'self' 'unsafe-inline'", csp_headers)
         self.assertIn("default-src 'self' data:", csp_headers)
         self.assertIn("connect-src 'self'", csp_headers)

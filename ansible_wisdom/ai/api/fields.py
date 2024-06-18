@@ -35,8 +35,8 @@ class AnonymizedPromptMixin:
         if fmtr.is_multi_task_prompt(prompt):
             anon_context = anonymizer.anonymize_struct(context)
             # Split the prompt to preserve the original leading whitespace
-            segs = prompt.split('#', 1)
-            anon_prompt = segs[0] + '#' + anonymizer.anonymize_text_block(segs[1])
+            segs = prompt.split("#", 1)
+            anon_prompt = segs[0] + "#" + anonymizer.anonymize_text_block(segs[1])
             return f"{anon_context}{anon_prompt}"
         else:
             return anonymizer.anonymize_struct(data)

@@ -21,18 +21,18 @@ ALLOWED_HOSTS = ["*"]
 
 if DEBUG:
     SPECTACULAR_SETTINGS = {
-        'TITLE': f'{ANSIBLE_AI_PROJECT_NAME}.',  # noqa: F405
-        'DESCRIPTION': 'Equip the automation developer at Lightspeed.',
-        'VERSION': '0.0.9',
-        'SERVE_INCLUDE_SCHEMA': False,
+        "TITLE": f"{ANSIBLE_AI_PROJECT_NAME}.",  # noqa: F405
+        "DESCRIPTION": "Equip the automation developer at Lightspeed.",
+        "VERSION": "0.0.9",
+        "SERVE_INCLUDE_SCHEMA": False,
         # OTHER SETTINGS
-        'TAGS': [
+        "TAGS": [
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
             {"name": "check", "description": "Health check"},
             {"name": "wca", "description": "watsonx Code Assistant"},
         ],
-        'SCHEMA_PATH_PREFIX': r'/api/v[0-9]+',
+        "SCHEMA_PATH_PREFIX": r"/api/v[0-9]+",
     }
 
     # social_django does not process auth exceptions when DEBUG=True by default.

@@ -12,11 +12,11 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x10producerid.proto\x12\x18\x63\x61ikit_data_model.common\"+\n\nProducerId\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\tb\x06proto3'
+    b'\n\x10producerid.proto\x12\x18\x63\x61ikit_data_model.common"+\n\nProducerId\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\tb\x06proto3'
 )
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'producerid_pb2', globals())
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "producerid_pb2", globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
     _PRODUCERID._serialized_start = 46

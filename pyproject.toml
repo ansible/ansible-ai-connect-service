@@ -7,10 +7,9 @@ name = "ansible-wisdom"
 description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
-  'ansible~=8.5.0',
   'ansible-core~=2.15.9',
   'ansible-anonymizer~=1.5.0',
-  'ansible-risk-insight~=0.2.4',
+  'ansible-risk-insight~=0.2.6',
   'ansible-lint~=24.2.2',
   'boto3~=1.26.84',
   'cryptography~=42.0.6',
@@ -28,7 +27,7 @@ dependencies = [
   'ipython~=8.10.0',
   'jwcrypto~=1.5.6',
   'jinja2~=3.1.3',
-  'langchain~=0.2.3',
+  'langchain~=0.2.5',
   'launchdarkly-server-sdk~=8.3.0',
   'opensearch-py~=2.1.1',
   'protobuf~=4.25.3',
@@ -73,7 +72,6 @@ include = ["ansible_wisdom*", "ansible_ai_connect*"]
 [tool.black]
 line-length = 100
 fast = true
-skip-string-normalization = true
 
 [tool.isort]
 profile = "black"

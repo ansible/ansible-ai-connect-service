@@ -22,8 +22,8 @@ class PipelineElement:
         pass
 
 
-T = TypeVar('T')
-C = TypeVar('C')
+T = TypeVar("T")
+C = TypeVar("C")
 
 
 class Pipeline(Generic[T, C]):

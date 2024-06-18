@@ -26,7 +26,7 @@ RefreshToken = get_refresh_token_model()
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('--dry-run', action='store_true', help="Do nothing", default=False)
+        parser.add_argument("--dry-run", action="store_true", help="Do nothing", default=False)
 
     def handle(self, dry_run, *args, **options):
         print(args)

@@ -12,11 +12,11 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x10stopreason.proto\x12\x15\x63\x61ikit_data_model.ext*o\n\nStopReason\x12\x10\n\x0cNOT_FINISHED\x10\x00\x12\x0e\n\nMAX_TOKENS\x10\x01\x12\r\n\tEOS_TOKEN\x10\x02\x12\r\n\tCANCELLED\x10\x03\x12\x0e\n\nTIME_LIMIT\x10\x04\x12\x11\n\rSTOP_SEQUENCE\x10\x05\x62\x06proto3'
+    b"\n\x10stopreason.proto\x12\x15\x63\x61ikit_data_model.ext*o\n\nStopReason\x12\x10\n\x0cNOT_FINISHED\x10\x00\x12\x0e\n\nMAX_TOKENS\x10\x01\x12\r\n\tEOS_TOKEN\x10\x02\x12\r\n\tCANCELLED\x10\x03\x12\x0e\n\nTIME_LIMIT\x10\x04\x12\x11\n\rSTOP_SEQUENCE\x10\x05\x62\x06proto3"
 )
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'stopreason_pb2', globals())
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "stopreason_pb2", globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
     DESCRIPTOR._options = None
     _STOPREASON._serialized_start = 43

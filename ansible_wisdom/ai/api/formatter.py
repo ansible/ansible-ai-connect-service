@@ -17,6 +17,7 @@ import re
 from io import StringIO
 
 import yaml
+from ansible.playbook.task import Task
 from ruamel.yaml import YAML, scalarstring
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ as blank rather than "null"
 
 
 def represent_none(self, _):
-    return self.represent_scalar('tag:yaml.org,2002:null', '')
+    return self.represent_scalar("tag:yaml.org,2002:null", "")
 
 
 yaml.add_representer(type(None), represent_none)
@@ -63,7 +64,7 @@ class AnsibleDumper(yaml.Dumper):
 
     # Insert newline before all top-level list items except the first
     def write_indicator(self, indicator, need_whitespace, whitespace=False, indention=False):
-        if self.indent == 0 and indicator == '-':
+        if self.indent == 0 and indicator == "-":
             if self.first_item_:
                 self.first_item_ = False
             else:
@@ -184,10 +185,10 @@ def preprocess(
     """
     Add a newline between the input context and prompt in case context doesn't end with one
     """
-    formatted = normalize_yaml(f'{context}\n{prompt}', ansible_file_type, additional_context)
+    formatted = normalize_yaml(f"{context}\n{prompt}", ansible_file_type, additional_context)
 
     if formatted is not None:
-        logger.debug(f'initial user input {context}\n{prompt}')
+        logger.debug(f"initial user input {context}\n{prompt}")
 
         if multi_task:
             context = formatted
@@ -197,9 +198,9 @@ def preprocess(
             Format and split off the last line as the prompt
             Append a newline to both context and prompt (as the model expects)
             """
-            segs = formatted.rsplit('\n', 2)  # Last will be the final newline
+            segs = formatted.rsplit("\n", 2)  # Last will be the final newline
             if len(segs) == 3:
-                context = segs[0] + '\n'
+                context = segs[0] + "\n"
                 prompt = segs[1]
             elif len(segs) == 2:  # Context is empty
                 context = ""
@@ -209,7 +210,7 @@ def preprocess(
 
             prompt = handle_spaces_and_casing(prompt)
 
-        logger.debug(f'preprocessed user input {context}\n{prompt}')
+        logger.debug(f"preprocessed user input {context}\n{prompt}")
     return context, prompt
 
 
@@ -218,11 +219,11 @@ def handle_spaces_and_casing(prompt):
         prompt = prompt.lower()  # lowercasing the prompt always to ensure consistent results
 
         # before can be any leading space that might be present in `- name:` eg `      - name: `
-        before, sep, after = prompt.partition('- name: ')  # keep the space at the end
+        before, sep, after = prompt.partition("- name: ")  # keep the space at the end
         text = " ".join(after.split())  # remove additional spaces in the prompt
-        prompt = f'{before}{sep}{text}'
+        prompt = f"{before}{sep}{text}"
     except Exception:
-        logger.exception(f'failed to handle spacing and casing for prompt {prompt}')
+        logger.exception(f"failed to handle spacing and casing for prompt {prompt}")
         # return the prompt as is if failed to process
 
     return prompt
@@ -237,7 +238,7 @@ def handle_jinja2_variable_quotes(obj):
     elif isinstance(obj, list):
         for key, value in enumerate(obj):
             obj[key] = handle_jinja2_variable_quotes(value)
-    elif isinstance(obj, str) and obj.startswith('{{') and obj.endswith('}}'):
+    elif isinstance(obj, str) and obj.startswith("{{") and obj.endswith("}}"):
         obj = scalarstring.DoubleQuotedScalarString(obj)
     return obj
 
@@ -273,18 +274,18 @@ def restore_indentation(yaml, original_indent):
 
 
 def extract_prompt_and_context(input):
-    context = ''
-    prompt = ''
+    context = ""
+    prompt = ""
     if input:
         _input = input.rstrip()
-        segs = _input.rsplit('\n', 1)
+        segs = _input.rsplit("\n", 1)
 
         if len(segs) == 2:
-            context = segs[0] + '\n'
-            prompt = segs[1] + '\n'
+            context = segs[0] + "\n"
+            prompt = segs[1] + "\n"
         else:  # Context is empty
             context = ""
-            prompt = segs[0] + '\n'
+            prompt = segs[0] + "\n"
     return prompt, context
 
 
@@ -301,14 +302,14 @@ def extract_task(tasks, task_name):
 
 def is_multi_task_prompt(prompt):
     if prompt:
-        return prompt.lstrip().startswith('#')
+        return prompt.lstrip().startswith("#")
     return False
 
 
 def strip_task_preamble_from_multi_task_prompt(prompt):
     if is_multi_task_prompt(prompt):
-        prompt_split = prompt.split('#', 1)
-        aggregated = ' & '.join(p.lower() for p in get_task_names_from_prompt(prompt))
+        prompt_split = prompt.split("#", 1)
+        aggregated = " & ".join(p.lower() for p in get_task_names_from_prompt(prompt))
         return f"{prompt_split[0]}# {aggregated}"
     return prompt
 
@@ -317,27 +318,27 @@ def unify_prompt_ending(prompt):
     # WCA codegen endpoint requires prompt to end with \n and can't contain : at the end
     # Rewritten from regexp to linear algorythm to avoid backtracking and denial of service
     for i in range(len(prompt) - 1, 0, -1):
-        if not (prompt[i] == ':' or prompt[i].isspace()):
+        if not (prompt[i] == ":" or prompt[i].isspace()):
             return f"{prompt[0:i + 1]}\n"
-    return '\n'
+    return "\n"
 
 
 def get_task_count_from_prompt(prompt):
     task_count = 0
     if prompt:
-        task_count = len(prompt.strip().split('&'))
+        task_count = len(prompt.strip().split("&"))
     return task_count
 
 
 def get_task_names_from_prompt(prompt):
     if is_multi_task_prompt(prompt):
-        prompt = prompt.split('#', 1)[1].strip()
-        split_list = prompt.split('&')
+        prompt = prompt.split("#", 1)[1].strip()
+        split_list = prompt.split("&")
         trimmed_list = [task_prompt.strip() for task_prompt in split_list]
         fixed_list = [
             (
-                trimmed_prompt.replace('- name:', '', 1).strip()
-                if trimmed_prompt.startswith('- name:')
+                trimmed_prompt.replace("- name:", "", 1).strip()
+                if trimmed_prompt.startswith("- name:")
                 else trimmed_prompt
             )
             for trimmed_prompt in trimmed_list
@@ -352,8 +353,8 @@ def get_task_names_from_tasks(tasks):
     if (
         not isinstance(task_list, list)
         or not isinstance(task_list[0], dict)
-        or 'name' not in task_list[0]
-        or not isinstance(task_list[0]['name'], str)
+        or "name" not in task_list[0]
+        or not isinstance(task_list[0]["name"], str)
     ):
         raise Exception("unexpected tasks yaml")
     names = []
@@ -381,24 +382,58 @@ def restore_original_task_names(output_yaml, prompt):
     return output_yaml
 
 
+# List of Task keywords to filter out during prediction results parsing.
+ansible_task_keywords = None
 # RegExp Pattern based on ARI sources, see ansible_risk_insight/finder.py
 ansible_fqcn_declaration_pattern = re.compile(r"(([a-z0-9_]+)\.([a-z0-9_]+)\.([a-z0-9_]+)):")
 ansible_module_declaration_pattern = re.compile(r"([a-z0-9_.]+):")
 
 
-def get_fqcn_from_prediction(prediction):
-    return parse_module_from_prediction(ansible_fqcn_declaration_pattern, prediction)
+def get_ansible_task_keywords() -> {}:
+    # Compute the keywords for Task, just once, shared across modules.
+    global ansible_task_keywords
+    if not ansible_task_keywords:
+        ansible_task_keywords = _get_class_keywords(Task)
+        for c in Task.__mro__:
+            ansible_task_keywords.update(_get_class_keywords(c))
+    return ansible_task_keywords
 
 
-def get_module_from_prediction(prediction):
-    return parse_module_from_prediction(ansible_module_declaration_pattern, prediction)
+def _get_class_keywords(c):
+    # Filter out callable objects (functions)
+    # Filter out "private" (_) fields
+    # Delete "<attr>_val" suffixes (eg: Task.async_val -> async)
+    return {
+        attr.replace("_val", "")
+        for attr in c.__dict__
+        if not callable(c.__dict__[attr]) and not attr.startswith("_")
+    }
 
 
-def parse_module_from_prediction(re, prediction):
+def _get_fqcn_from_prediction(prediction):
+    return _parse_module_from_prediction(
+        ansible_fqcn_declaration_pattern, prediction, lambda value: False
+    )
+
+
+def _get_module_from_prediction(prediction):
+    return _parse_module_from_prediction(
+        ansible_module_declaration_pattern,
+        prediction,
+        lambda value: value in get_ansible_task_keywords(),
+    )
+
+
+def _parse_module_from_prediction(re, prediction, predicate):
     try:
-        first = next(re.finditer(prediction))
-        if first:
-            return first.group(1)
+        iter = re.finditer(prediction)
+        item = next(iter)
+        while item:
+            item_value = item.group(1)
+            if predicate(item_value):
+                item = next(iter)
+                continue
+            return item_value
     except StopIteration:
         pass
     return None
@@ -407,7 +442,7 @@ def parse_module_from_prediction(re, prediction):
 def get_fqcn_or_module_from_prediction(prediction):
     if prediction is None:
         return None
-    fqcn = get_fqcn_from_prediction(prediction)
+    fqcn = _get_fqcn_from_prediction(prediction)
     if fqcn is None:
-        fqcn = get_module_from_prediction(prediction)
+        fqcn = _get_module_from_prediction(prediction)
     return fqcn

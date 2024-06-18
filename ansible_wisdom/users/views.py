@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class HomeView(TemplateView):
-    template_name = 'users/home.html'
+    template_name = "users/home.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -74,8 +74,8 @@ class HomeView(TemplateView):
 
 
 class UnauthorizedView(TemplateView):
-    template_name = 'users/unauthorized.html'
-    extra_context = {'signup_url': settings.SIGNUP_URL}
+    template_name = "users/unauthorized.html"
+    extra_context = {"signup_url": settings.SIGNUP_URL}
 
 
 class CurrentUserView(RetrieveAPIView):
@@ -111,33 +111,33 @@ class CurrentUserView(RetrieveAPIView):
 class TermsOfService(TemplateView):
     template_name = None  # passed in via the urlpatterns
     extra_context = {
-        'form': Form(),
+        "form": Form(),
     }
 
     def get(self, request, *args, **kwargs):
-        partial_token = request.GET.get('partial_token')
-        self.extra_context['partial_token'] = partial_token
+        partial_token = request.GET.get("partial_token")
+        self.extra_context["partial_token"] = partial_token
         if partial_token is None:
-            logger.warning('GET TermsOfService was invoked without partial_token')
+            logger.warning("GET TermsOfService was invoked without partial_token")
             return HttpResponseForbidden()
         return super().get(request, args, kwargs)
 
     def post(self, request, *args, **kwargs):
         form = Form(request.POST)
         form.is_valid()
-        partial_token = form.data.get('partial_token')
+        partial_token = form.data.get("partial_token")
         if partial_token is None:
-            logger.warning('POST TermsOfService was invoked without partial_token')
+            logger.warning("POST TermsOfService was invoked without partial_token")
             return HttpResponseBadRequest()
 
         strategy = load_strategy()
         partial = strategy.partial_load(partial_token)
         if partial is None:
-            logger.error('strategy.partial_load(partial_token) returned None')
+            logger.error("strategy.partial_load(partial_token) returned None")
             return HttpResponseBadRequest()
 
-        accepted = request.POST.get('accepted') == 'True'
-        request.session['terms_accepted'] = accepted
+        accepted = request.POST.get("accepted") == "True"
+        request.session["terms_accepted"] = accepted
         request.session.save()
 
         backend = partial.backend

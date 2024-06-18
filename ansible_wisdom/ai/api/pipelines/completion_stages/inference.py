@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 feature_flags = FeatureFlags()
 
 completions_hist = Histogram(
-    'model_prediction_latency_seconds',
+    "model_prediction_latency_seconds",
     "Histogram of model prediction processing time",
     namespace=NAMESPACE,
 )
@@ -166,7 +166,7 @@ class InferenceStage(PipelineElement):
                 "modelName": model_id,
                 "suggestionId": str(suggestion_id),
             }
-            event_name = 'trialExpired'
+            event_name = "trialExpired"
             raise WcaUserTrialExpiredException(cause=e)
 
         except Exception as e:
@@ -183,14 +183,14 @@ class InferenceStage(PipelineElement):
             # If an exception was thrown during the backend call, try to get the model ID
             # that is contained in the exception.
             if exception:
-                process_error_count.labels(stage='prediction').inc()
+                process_error_count.labels(stage="prediction").inc()
                 model_id_in_exception = BaseWisdomAPIException.get_model_id_from_exception(
                     exception
                 )
                 if model_id_in_exception:
                     model_id = model_id_in_exception
             if event:
-                event['modelName'] = model_id
+                event["modelName"] = model_id
             else:
                 event = {
                     "duration": duration,

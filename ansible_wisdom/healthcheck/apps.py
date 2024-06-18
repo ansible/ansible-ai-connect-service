@@ -17,7 +17,7 @@ from health_check.plugins import plugin_dir
 
 
 class HealthCheckAppConfig(AppConfig):
-    name = 'ansible_ai_connect.healthcheck'
+    name = "ansible_ai_connect.healthcheck"
 
     def ready(self):
         from .backends import (

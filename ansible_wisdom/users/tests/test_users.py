@@ -65,9 +65,9 @@ def create_user(
     org_opt_out: bool = False,
 ):
     (org, _) = Organization.objects.get_or_create(id=rh_org_id, _telemetry_opt_out=org_opt_out)
-    username = username or 'u' + "".join(random.choices(string.digits, k=5))
-    password = password or 'secret'
-    email = username + '@example.com'
+    username = username or "u" + "".join(random.choices(string.digits, k=5))
+    password = password or "secret"
+    email = username + "@example.com"
     user = get_user_model().objects.create_user(
         username=username,
         email=email,
@@ -99,25 +99,25 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
 
     def test_users(self):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(self.user.username, r.data.get('username'))
+        self.assertEqual(self.user.username, r.data.get("username"))
 
     def test_home_view(self):
         self.client.login(username=self.user.username, password=self.password)
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn(self.user.external_username, str(r.content))
 
     def test_home_view_without_login(self):
-        r = self.client.get(reverse('home'))
+        r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn('You are currently not logged in.', str(r.content))
+        self.assertIn("You are currently not logged in.", str(r.content))
 
     def test_users_audit_logging(self):
-        with self.assertLogs(logger='ansible_ai_connect.users.signals', level='INFO') as log:
+        with self.assertLogs(logger="ansible_ai_connect.users.signals", level="INFO") as log:
             self.client.login(username=self.user.username, password=self.password)
-            self.assertInLog('LOGIN successful', log)
+            self.assertInLog("LOGIN successful", log)
 
 
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -137,7 +137,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
                 self.session = MockSession()
 
         class MockBackend:
-            name = 'github'
+            name = "github"
 
         class MockStrategy:
             session = None
@@ -147,10 +147,10 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
                 self.redirect_url = redirect_url
 
             def partial_load(self, partial_token):
-                if partial_token == 'invalid_token':
+                if partial_token == "invalid_token":
                     return None
                 else:
-                    return SimpleNamespace(backend='backend', token=partial_token)
+                    return SimpleNamespace(backend="backend", token=partial_token)
 
             def session_get(self, key, default=None):
                 return self.session.get(key, default)
@@ -166,7 +166,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.backend = MockBackend()
         self.strategy = MockStrategy()
         self.strategy.session = self.request.session
-        self.partial = SimpleNamespace(token='token')
+        self.partial = SimpleNamespace(token="token")
         self.user = Mock(
             community_terms_accepted=None, commercial_terms_accepted=None, rh_user_has_seat=False
         )
@@ -180,15 +180,15 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             request=self.request,
             current_partial=self.partial,
         )
-        self.assertIsNone(self.request.session.get('terms_accepted', None))
-        self.assertEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertIsNone(self.request.session.get("terms_accepted", None))
+        self.assertEqual(self.strategy.redirect_url, "/community-terms/?partial_token=token")
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
 
     def test_terms_of_service_first_commercial(self):
         # We must be using the Red Hat SSO and be a member of the Community placeholder group
         # Commercial Users enclosed Terms of Service by default earlier, no need to ask them again
-        self.backend.name = 'oidc'
+        self.backend.name = "oidc"
         self.user.rh_user_has_seat = True
 
         _terms_of_service(
@@ -198,15 +198,15 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             request=self.request,
             current_partial=self.partial,
         )
-        self.assertIsNone(self.request.session.get('terms_accepted', None))
-        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertIsNone(self.request.session.get("terms_accepted", None))
+        self.assertNotEqual(self.strategy.redirect_url, "/community-terms/?partial_token=token")
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
 
     def test_terms_of_service_commercial_previously_accepted(self):
         now = timezone.now()
         self.user.community_terms_accepted = now
-        self.backend.name = 'oidc'
+        self.backend.name = "oidc"
         self.user.rh_user_has_seat = True
         _terms_of_service(
             self.strategy,
@@ -216,7 +216,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             current_partial=self.partial,
         )
 
-        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertNotEqual(self.strategy.redirect_url, "/community-terms/?partial_token=token")
         self.assertFalse(self.user.save.called)
         self.assertEqual(self.user.community_terms_accepted, now)
 
@@ -231,12 +231,12 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             current_partial=self.partial,
         )
 
-        self.assertNotEqual(self.strategy.redirect_url, '/community-terms/?partial_token=token')
+        self.assertNotEqual(self.strategy.redirect_url, "/community-terms/?partial_token=token")
         self.assertFalse(self.user.save.called)
         self.assertEqual(self.user.community_terms_accepted, now)
 
     def test_terms_of_service_with_acceptance(self):
-        self.request.session['terms_accepted'] = True
+        self.request.session["terms_accepted"] = True
         _terms_of_service(
             self.strategy,
             self.user,
@@ -248,7 +248,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
         self.assertIsNotNone(self.user.community_terms_accepted)
 
     def test_terms_of_service_without_acceptance(self):
-        self.request.session['terms_accepted'] = False
+        self.request.session["terms_accepted"] = False
         with self.assertRaises(AuthCanceled):
             _terms_of_service(
                 self.strategy,
@@ -262,7 +262,7 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 
     @override_settings(TERMS_NOT_APPLICABLE=True)
     def test_terms_of_service_with_override(self):
-        self.request.session['terms_accepted'] = False
+        self.request.session["terms_accepted"] = False
         result = _terms_of_service(
             self.strategy,
             self.user,
@@ -270,14 +270,14 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             request=self.request,
             current_partial=self.partial,
         )
-        self.assertEqual(result, {'terms_accepted': True})
+        self.assertEqual(result, {"terms_accepted": True})
         self.assertIsNone(self.strategy.redirect_url)
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     def test_terms_of_service_after_tech_preview(self):
-        self.request.session['terms_accepted'] = False
+        self.request.session["terms_accepted"] = False
         result = _terms_of_service(
             self.strategy,
             self.user,
@@ -285,74 +285,74 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
             request=self.request,
             current_partial=self.partial,
         )
-        self.assertEqual(result, {'terms_accepted': True})
+        self.assertEqual(result, {"terms_accepted": True})
         self.assertIsNone(self.strategy.redirect_url)
         self.assertFalse(self.user.save.called)
         self.assertIsNone(self.user.community_terms_accepted)
 
-    @patch('social_django.utils.get_strategy')
+    @patch("social_django.utils.get_strategy")
     def test_post_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.POST['partial_token'] = 'token'
-        self.request.POST['accepted'] = 'True'
-        view = TermsOfService(template_name='users/community-terms.html')
+        self.request.POST["partial_token"] = "token"
+        self.request.POST["accepted"] = "True"
+        view = TermsOfService(template_name="users/community-terms.html")
         view.post(self.request)
-        self.assertTrue(self.request.session['terms_accepted'])
-        self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
+        self.assertTrue(self.request.session["terms_accepted"])
+        self.assertEqual("/complete/backend/?partial_token=token", self.strategy.redirect_url)
 
-    @patch('social_django.utils.get_strategy')
+    @patch("social_django.utils.get_strategy")
     def test_post_not_accepted(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.POST['partial_token'] = 'token'
-        self.request.POST['accepted'] = 'False'
-        view = TermsOfService(template_name='users/community-terms.html')
+        self.request.POST["partial_token"] = "token"
+        self.request.POST["accepted"] = "False"
+        view = TermsOfService(template_name="users/community-terms.html")
         view.post(self.request)
-        self.assertFalse(self.request.session['terms_accepted'])
-        self.assertEqual('/complete/backend/?partial_token=token', self.strategy.redirect_url)
+        self.assertFalse(self.request.session["terms_accepted"])
+        self.assertEqual("/complete/backend/?partial_token=token", self.strategy.redirect_url)
 
-    @patch('social_django.utils.get_strategy')
+    @patch("social_django.utils.get_strategy")
     def test_post_without_partial_token(self, get_strategy):
         get_strategy.return_value = self.strategy
         # self.request.POST['partial_token'] = 'token'
-        self.request.POST['accepted'] = 'False'
-        view = TermsOfService(template_name='users/community-terms.html')
-        with self.assertLogs(logger='root', level='WARN') as log:
+        self.request.POST["accepted"] = "False"
+        view = TermsOfService(template_name="users/community-terms.html")
+        with self.assertLogs(logger="root", level="WARN") as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
-            self.assertInLog('POST TermsOfService was invoked without partial_token', log)
+            self.assertInLog("POST TermsOfService was invoked without partial_token", log)
 
-    @patch('social_django.utils.get_strategy')
+    @patch("social_django.utils.get_strategy")
     def test_post_with_invalid_partial_token(self, get_strategy):
         get_strategy.return_value = self.strategy
-        self.request.POST['partial_token'] = 'invalid_token'
-        self.request.POST['accepted'] = 'False'
-        view = TermsOfService(template_name='users/community-terms.html')
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        self.request.POST["partial_token"] = "invalid_token"
+        self.request.POST["accepted"] = "False"
+        view = TermsOfService(template_name="users/community-terms.html")
+        with self.assertLogs(logger="root", level="ERROR") as log:
             res = view.post(self.request)
             self.assertEqual(400, res.status_code)
-            self.assertInLog('strategy.partial_load(partial_token) returned None', log)
+            self.assertInLog("strategy.partial_load(partial_token) returned None", log)
 
     def test_get(self):
-        view = TermsOfService(template_name='users/community-terms.html')
-        setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
-        self.request.GET['partial_token'] = 'token'
+        view = TermsOfService(template_name="users/community-terms.html")
+        setattr(view, "request", self.request)  # needed for TemplateResponseMixin
+        self.request.GET["partial_token"] = "token"
         res = view.get(self.request)
         self.assertEqual(200, res.status_code)
-        self.assertIn('form', res.context_data)
-        self.assertIn('partial_token', res.context_data)
+        self.assertIn("form", res.context_data)
+        self.assertIn("partial_token", res.context_data)
 
     def test_get_without_partial_token(self):
-        view = TermsOfService(template_name='users/community-terms.html')
-        setattr(view, 'request', self.request)  # needed for TemplateResponseMixin
+        view = TermsOfService(template_name="users/community-terms.html")
+        setattr(view, "request", self.request)  # needed for TemplateResponseMixin
         # self.request.GET['partial_token'] = 'token'
-        with self.assertLogs(logger='root', level='WARN') as log:
+        with self.assertLogs(logger="root", level="WARN") as log:
             res = view.get(self.request)
             self.assertEqual(403, res.status_code)
-            self.assertInLog('GET TermsOfService was invoked without partial_token', log)
+            self.assertInLog("GET TermsOfService was invoked without partial_token", log)
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-@override_settings(WCA_SECRET_DUMMY_SECRETS='1981:valid')
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
@@ -379,7 +379,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         self.assertTrue(user.rh_user_has_seat)
 
     def test_rh_user_has_seat_with_no_seat_checker(self):
-        with patch.object(apps.get_app_config('ai'), 'get_seat_checker', lambda: None):
+        with patch.object(apps.get_app_config("ai"), "get_seat_checker", lambda: None):
             user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
             self.assertFalse(user.rh_user_has_seat)
 
@@ -394,7 +394,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, social_auth_extra_data={"aap_licensed": True}
         )
-        with patch.object(user, 'is_aap_user') as return_true:
+        with patch.object(user, "is_aap_user") as return_true:
             return_true.return_value = True
             self.assertTrue(user.rh_org_has_subscription)
 
@@ -402,14 +402,14 @@ class TestUserSeat(WisdomAppsBackendMocking):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, social_auth_extra_data={"aap_licensed": False}
         )
-        with patch.object(user, 'is_aap_user') as return_true:
+        with patch.object(user, "is_aap_user") as return_true:
             return_true.return_value = True
             self.assertFalse(user.rh_org_has_subscription)
 
     def test_rh_user_has_seat_with_github_commercial_group(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
 
-        commercial_group, _ = Group.objects.get_or_create(name='Commercial')
+        commercial_group, _ = Group.objects.get_or_create(name="Commercial")
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)
@@ -418,7 +418,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
     def test_rh_user_has_seat_with_rhsso_commercial_group(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
 
-        commercial_group, _ = Group.objects.get_or_create(name='Commercial')
+        commercial_group, _ = Group.objects.get_or_create(name="Commercial")
         user.groups.add(commercial_group)
 
         self.assertTrue(user.rh_user_has_seat)
@@ -434,7 +434,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         self.assertTrue(user.rh_user_has_seat)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_rh_user_org_with_sub_but_no_sec_and_tech_preview(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -445,7 +445,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         self.assertFalse(user.rh_user_has_seat)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS='')
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_rh_user_org_with_sub_but_no_sec_after_tech_preview(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -535,10 +535,10 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
             external_username=external_username,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(external_username, r.data.get('external_username'))
-        self.assertNotEqual(user.username, r.data.get('external_username'))
+        self.assertEqual(external_username, r.data.get("external_username"))
+        self.assertNotEqual(user.username, r.data.get("external_username"))
 
     def test_rhsso_user_login(self):
         external_username = "sso_username"
@@ -547,10 +547,10 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
             external_username=external_username,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertEqual(external_username, r.data.get('external_username'))
-        self.assertNotEqual(user.username, r.data.get('external_username'))
+        self.assertEqual(external_username, r.data.get("external_username"))
+        self.assertNotEqual(user.username, r.data.get("external_username"))
 
     def test_user_login_with_same_usernames(self):
         external_username = "a_username"
@@ -564,12 +564,12 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
         )
 
         self.client.force_authenticate(user=oidc_user)
-        r = self.client.get(reverse('me'))
-        self.assertEqual(external_username, r.data.get('external_username'))
+        r = self.client.get(reverse("me"))
+        self.assertEqual(external_username, r.data.get("external_username"))
 
         self.client.force_authenticate(user=github_user)
-        r = self.client.get(reverse('me'))
-        self.assertEqual(external_username, r.data.get('external_username'))
+        r = self.client.get(reverse("me"))
+        self.assertEqual(external_username, r.data.get("external_username"))
 
         self.assertNotEqual(oidc_user.username, github_user.username)
         self.assertEqual(oidc_user.external_username, github_user.external_username)
@@ -582,19 +582,19 @@ class TestUserModelMetrics(APITransactionTestCase):
 
     def test_user_model_metrics(self):
         def get_user_count():
-            r = self.client.get(reverse('prometheus-metrics'))
+            r = self.client.get(reverse("prometheus-metrics"))
             for family in text_string_to_metric_families(r.content.decode()):
                 for sample in family.samples:
-                    if sample[0] == 'django_model_inserts_total' and sample[1] == {'model': 'user'}:
+                    if sample[0] == "django_model_inserts_total" and sample[1] == {"model": "user"}:
                         return sample[2]
 
         # Obtain the user count before creating a dummy user
         before = get_user_count()
 
         # Create a dummy user
-        username = 'u' + "".join(random.choices(string.digits, k=5))
-        password = 'secret'
-        email = username + '@example.com'
+        username = "u" + "".join(random.choices(string.digits, k=5))
+        password = "secret"
+        email = username + "@example.com"
         get_user_model().objects.create_user(
             username=username,
             email=email,
@@ -618,9 +618,9 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             external_username="github_username",
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+        self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
     def test_aap_user(self):
         user = create_user(
@@ -629,9 +629,9 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             external_username="aap_username",
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+        self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
     def test_rhsso_user_with_telemetry_opted_in(self):
         user = create_user(
@@ -641,12 +641,12 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             org_opt_out=False,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+        self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(feature_flags, 'LDClient')
+    @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
+    @patch.object(feature_flags, "LDClient")
     def test_rhsso_user_with_telemetry_opted_out(self, LDClient):
         LDClient.return_value.variation.return_value = True
         user = create_user(
@@ -656,15 +656,15 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             org_opt_out=True,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+        self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
-    @override_settings(LAUNCHDARKLY_SDK_KEY='dummy_key')
-    @patch.object(IsOrganisationAdministrator, 'has_permission', return_value=True)
-    @patch.object(IsOrganisationLightspeedSubscriber, 'has_permission', return_value=True)
-    @patch.object(AcceptedTermsPermission, 'has_permission', return_value=True)
-    @patch.object(feature_flags, 'LDClient')
+    @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
+    @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
+    @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
+    @patch.object(AcceptedTermsPermission, "has_permission", return_value=True)
+    @patch.object(feature_flags, "LDClient")
     def test_rhsso_user_caching(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
         user = create_user(
@@ -675,27 +675,27 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.client.force_authenticate(user=user)
 
         # Default is False
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+        self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
         # Update to True
         r = self.client.post(
-            reverse('telemetry_settings'),
+            reverse("telemetry_settings"),
             data='{ "optOut": "True" }',
-            content_type='application/json',
+            content_type="application/json",
         )
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
 
         # Cached value should persist
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertFalse(r.data.get('org_telemetry_opt_out'))
+        self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
         # Emulate cache expiring
         cache.clear()
 
         # Cache should update
-        r = self.client.get(reverse('me'))
+        r = self.client.get(reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertTrue(r.data.get('org_telemetry_opt_out'))
+        self.assertTrue(r.data.get("org_telemetry_opt_out"))

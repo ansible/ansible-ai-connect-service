@@ -42,14 +42,14 @@ _version_info = VersionInfo()
 
 def common_data():
     data = {
-        'timestamp': str(datetime.now().isoformat()),
-        'version': _version_info.image_tags,
-        'git_commit': _version_info.git_commit,
+        "timestamp": str(datetime.now().isoformat()),
+        "version": _version_info.image_tags,
+        "git_commit": _version_info.git_commit,
     }
     deployed_region = settings.DEPLOYED_REGION
     # Only include 'deployed_region' if set
     if deployed_region:
-        data = {**data, 'deployed_region': deployed_region}
+        data = {**data, "deployed_region": deployed_region}
     return data
 
 
@@ -73,28 +73,28 @@ class HealthCheckCustomView(MainView):
         if settings.LAUNCHDARKLY_SDK_KEY:
             # Lazy instantiation of FeatureFlags to ensure it honours settings.LAUNCHDARKLY_SDK_KEY
             model_tuple = FeatureFlags().get("model_name", user, f".:.:{model_name}:.")
-            model_parts = model_tuple.split(':')
+            model_parts = model_tuple.split(":")
             if len(model_parts) == 4:
                 _, _, model_name, _ = model_parts
 
         data = common_data()
-        data['model_name'] = model_name
-        data['status'] = 'error' if self.errors else 'ok'
+        data["model_name"] = model_name
+        data["status"] = "error" if self.errors else "ok"
 
         dependencies = []
         for p in plugins:
-            plugins_id = self._plugin_name_map.get(p.identifier(), 'unknown')
+            plugins_id = self._plugin_name_map.get(p.identifier(), "unknown")
             if isinstance(p, BaseLightspeedHealthCheck):
                 plugin_status = p.pretty_status()
             else:
-                plugin_status = str(p.pretty_status()) if p.errors else 'ok'
+                plugin_status = str(p.pretty_status()) if p.errors else "ok"
             time_taken = round(p.time_taken * 1000, 3)
-            plugin_data = {'name': plugins_id, 'status': plugin_status, 'time_taken': time_taken}
+            plugin_data = {"name": plugins_id, "status": plugin_status, "time_taken": time_taken}
             if not p.status:
                 logger.error(f"HEALTH CHECK ERROR: {json.dumps(plugin_data)}")
             dependencies.append(plugin_data)
 
-        data['dependencies'] = dependencies
+        data["dependencies"] = dependencies
 
         return JsonResponse(data, status=status)
 
@@ -113,7 +113,7 @@ class WisdomServiceHealthView(APIView):
     @extend_schema(
         responses={
             200: OpenApiTypes.OBJECT,
-            500: OpenApiResponse(description='One or more backend services are unavailable.'),
+            500: OpenApiResponse(description="One or more backend services are unavailable."),
         },
         examples=[
             OpenApiExample(
@@ -133,7 +133,7 @@ class WisdomServiceHealthView(APIView):
                 response_only=True,
             )
         ],
-        methods=['GET'],
+        methods=["GET"],
         summary="Health check with backend server status",
     )
     def get(self, request, *args, **kwargs):
@@ -141,7 +141,7 @@ class WisdomServiceHealthView(APIView):
         # res contains status_code = 200 for utilizing view cache.  We need to set the correct
         # status code based on the status attribute stored in the JSON content
         data = json.loads(res.content)
-        if data['status'] != 'ok':
+        if data["status"] != "ok":
             res.status_code = 500
         return res
 
@@ -155,13 +155,13 @@ class WisdomServiceLivenessProbeView(APIView):
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
+            200: OpenApiResponse(description="OK"),
         },
         summary="Liveness probe",
     )
     @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
         data = common_data()
-        data['status'] = 'ok'
+        data["status"] = "ok"
         data_json = json.dumps(data)
-        return HttpResponse(data_json, content_type='application/json')
+        return HttpResponse(data_json, content_type="application/json")

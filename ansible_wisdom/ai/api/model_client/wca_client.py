@@ -70,32 +70,32 @@ WCA_REQUEST_ID_HEADER = "X-Request-ID"
 logger = logging.getLogger(__name__)
 
 wca_codegen_hist = Histogram(
-    'wca_codegen_latency_seconds',
+    "wca_codegen_latency_seconds",
     "Histogram of WCA codegen API processing time",
     namespace=NAMESPACE,
 )
 wca_codematch_hist = Histogram(
-    'wca_codematch_latency_seconds',
+    "wca_codematch_latency_seconds",
     "Histogram of WCA codematch API processing time",
     namespace=NAMESPACE,
 )
 ibm_cloud_identity_token_hist = Histogram(
-    'wca_ibm_identity_token_latency_seconds',
+    "wca_ibm_identity_token_latency_seconds",
     "Histogram of IBM Cloud identity token API processing time",
     namespace=NAMESPACE,
 )
 wca_codegen_retry_counter = Counter(
-    'wca_codegen_retries',
+    "wca_codegen_retries",
     "Counter of WCA codegen API invocation retries",
     namespace=NAMESPACE,
 )
 wca_codematch_retry_counter = Counter(
-    'wca_codematch_retries',
+    "wca_codematch_retries",
     "Counter of WCA codematch API invocation retries",
     namespace=NAMESPACE,
 )
 ibm_cloud_identity_token_retry_counter = Counter(
-    'ibm_cloud_identity_token_retries',
+    "ibm_cloud_identity_token_retries",
     "Counter of IBM Cloud identity token API invocation retries",
     namespace=NAMESPACE,
 )
@@ -119,9 +119,9 @@ class DummyWCAClient(ModelMeshClient):
     def get_model_id(
         self,
         organization_id: Optional[int] = None,
-        requested_model_id: str = '',
+        requested_model_id: str = "",
     ) -> str:
-        return requested_model_id or ''
+        return requested_model_id or ""
 
     def get_token(self, api_key):
         if api_key != "valid":
@@ -185,7 +185,7 @@ class BaseWCAClient(ModelMeshClient):
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
-            response['model_id'] = model_id
+            response["model_id"] = model_id
             logger.debug(f"Inference API response: {response}")
             return response
 
@@ -237,7 +237,7 @@ class BaseWCAClient(ModelMeshClient):
             response.raise_for_status()
 
         except HTTPError as e:
-            logger.error(f"WCA inference failed due to {e}.")
+            logger.error(f"WCA inference failed for suggestion {suggestion_id} due to {e}.")
             raise WcaInferenceFailure(model_id=model_id)
 
         return response
@@ -386,7 +386,7 @@ class WCAClient(BaseWCAClient):
     def get_model_id(
         self,
         organization_id: Optional[int] = None,
-        requested_model_id: str = '',
+        requested_model_id: str = "",
     ) -> str:
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
@@ -537,7 +537,7 @@ class WCAOnPremClient(BaseWCAClient):
     def get_model_id(
         self,
         organization_id: Optional[int] = None,
-        requested_model_id: str = '',
+        requested_model_id: str = "",
     ) -> str:
         if requested_model_id:
             # requested_model_id defined: let them use what they ask for
@@ -563,7 +563,7 @@ class WCAOnPremClient(BaseWCAClient):
     def _get_base_headers(self, api_key: str) -> dict[str, str]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
         username = settings.ANSIBLE_WCA_USERNAME
-        token = base64.b64encode(bytes(f'{username}:{api_key}', 'ascii')).decode("ascii")
+        token = base64.b64encode(bytes(f"{username}:{api_key}", "ascii")).decode("ascii")
         return {
             "Authorization": f"ZenApiKey {token}",
         }

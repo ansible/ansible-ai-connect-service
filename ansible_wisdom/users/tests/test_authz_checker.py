@@ -91,7 +91,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
             "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
         )
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             my_token = Token("foo", "bar")
             self.assertIsNone(my_token.refresh())
             self.assertInLog("SSO token service failed", log)
@@ -152,12 +152,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.post.return_value = m_r
         self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.post.assert_called_with(
-            'https://some-api.server.host/v1alpha/check',
+            "https://some-api.server.host/v1alpha/check",
             json={
-                'subject': 'my_id',
-                'operation': 'access',
-                'resourcetype': 'license',
-                'resourceid': '123/smarts',
+                "subject": "my_id",
+                "operation": "access",
+                "resourcetype": "license",
+                "resourceid": "123/smarts",
             },
             timeout=0.8,
         )
@@ -171,7 +171,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.post.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.check("my_id", "my_name", 123))
             self.assertInLog("Unexpected error code (500) returned by CIAM backend", log)
 
@@ -212,8 +212,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
         self.assertEqual(checker.get_ams_org(123), "qwe")
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/organizations',
-            params={'search': "external_id='123'"},
+            "https://some-api.server.host/api/accounts_mgmt/v1/organizations",
+            params={"search": "external_id='123'"},
             timeout=0.8,
         )
 
@@ -231,7 +231,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             with self.assertRaises(AMSCheck.AMSError):
                 checker.get_ams_org(123)
             self.assertInLog(
@@ -264,7 +264,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='INFO') as log:
+        with self.assertLogs(logger="root", level="INFO") as log:
             self.assertEqual(checker.get_ams_org(123), AMSCheck.ERROR_AMS_ORG_UNDEFINED)
             self.assertInLog(
                 "An AMS Organization could not be found. " "rh_org_id: 123.",
@@ -282,9 +282,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
         self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            "https://some-api.server.host/api/accounts_mgmt/v1/subscriptions",
             params={
-                'search': "plan.id = 'AnsibleWisdom' AND status = 'Active' "
+                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' "
                 "AND creator.username = 'my_name' AND organization_id='qwe'"
             },
             timeout=0.8,
@@ -304,9 +304,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
         self.assertTrue(checker.check("my_id", "my_name", 123))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/subscriptions',
+            "https://some-api.server.host/api/accounts_mgmt/v1/subscriptions",
             params={
-                'search': "plan.id = 'AnsibleWisdom' AND status = 'Active' "
+                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' "
                 "AND creator.username = 'my_name' AND organization_id='qwe'"
             },
             timeout=0.8,
@@ -321,7 +321,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.check("my_id", "my_name", 123))
             self.assertInLog(
                 "Unexpected error code (500) returned by AMS backend (organizations)", log
@@ -367,7 +367,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         self.assertTrue(checker.rh_user_is_org_admin("user", 123))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
+            "https://some-api.server.host/api/accounts_mgmt/v1/role_bindings",
             params={"search": "account.username = 'user' AND organization.id='123'"},
             timeout=0.8,
         )
@@ -423,7 +423,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         self.assertFalse(checker.rh_user_is_org_admin("user", 123))
         checker._session.get.assert_called_with(
-            'https://some-api.server.host/api/accounts_mgmt/v1/role_bindings',
+            "https://some-api.server.host/api/accounts_mgmt/v1/role_bindings",
             params={"search": "account.username = 'user' AND organization.id='123'"},
             timeout=0.8,
         )
@@ -464,7 +464,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._token = Mock()
         checker._session = Mock()
         checker._session.get.side_effect = side_effect
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", 123))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
 
@@ -477,7 +477,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.rh_user_is_org_admin("user", 123))
             self.assertInLog(
                 "Unexpected error code (500) returned by AMS backend (organizations).",
@@ -501,8 +501,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertTrue(checker.rh_org_has_subscription(123))
         checker._session.get.assert_called_with(
             (
-                'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
+                "https://some-api.server.host"
+                "/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost"
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
@@ -582,8 +582,8 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertFalse(checker.rh_org_has_subscription(123))
         checker._session.get.assert_called_with(
             (
-                'https://some-api.server.host'
-                '/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost'
+                "https://some-api.server.host"
+                "/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost"
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
             timeout=0.8,
@@ -599,7 +599,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.side_effect = side_effect
         checker.get_ams_org = Mock(return_value="abc")
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.rh_org_has_subscription(123))
             self.assertInLog(AMSCheck.ERROR_AMS_CONNECTION_TIMEOUT, log)
 
@@ -614,7 +614,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.return_value = m_r
         checker.get_ams_org = Mock(return_value="abc")
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.rh_org_has_subscription(123))
             self.assertInLog(
                 "Unexpected error code (500) returned by AMS backend (quota_cost).",
@@ -639,7 +639,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.return_value = m_r
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             self.assertFalse(checker.rh_org_has_subscription(123))
             self.assertInLog("Unexpected answer from AMS backend (quota_cost).", log)
 

@@ -31,7 +31,7 @@ class MembershipInline(admin.TabularInline):
 class UserTermsResource(resources.ModelResource):
     class Meta:
         model = User
-        fields = ['username', 'community_terms_accepted', 'commercial_terms_accepted']
+        fields = ["username", "community_terms_accepted", "commercial_terms_accepted"]
         name = "Export only user terms"
 
 
@@ -40,16 +40,16 @@ class WisdomUserAdmin(ExportMixin, UserAdmin):
     resource_classes = [UserTermsResource]
     # add any additional fields you want to display in the User page
     list_display = (
-        'username',
-        'is_staff',
-        'community_terms_accepted',
-        'commercial_terms_accepted',
-        'uuid',
+        "username",
+        "is_staff",
+        "community_terms_accepted",
+        "commercial_terms_accepted",
+        "uuid",
     )
     fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('community_terms_accepted', 'commercial_terms_accepted')}),
+        (None, {"fields": ("community_terms_accepted", "commercial_terms_accepted")}),
     )
-    search_fields = UserAdmin.search_fields + ('uuid',)
+    search_fields = UserAdmin.search_fields + ("uuid",)
 
 
 @admin.register(Group)

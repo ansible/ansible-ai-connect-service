@@ -34,7 +34,7 @@ def add_indents(vars, n):
 # Test data for the playbook use case
 ######################################
 
-VARS_1 = '''\
+VARS_1 = """\
 mattermost_app:
   env: ""
   MM_TEAMSETTINGS_SITENAME: ""
@@ -46,7 +46,7 @@ mattermost_app:
   container_prefix: ""
   restart_policy: ""
   ports:
-    - 8065:8065'''
+    - 8065:8065"""
 
 VARS_2 = '''\
 var_from_var_files_2:
@@ -62,7 +62,7 @@ VARS_3 = 'var_from_include_vars: ""'
 
 PLAYBOOK_PAYLOAD = {
     "suggestionId": uuid.uuid4(),
-    "prompt": '''\
+    "prompt": """\
 ---
 - hosts: all
   remote_user: root
@@ -76,7 +76,7 @@ PLAYBOOK_PAYLOAD = {
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
     - name: Run container with podman using mattermost_app var
-''',
+""",
     "metadata": {
         "documentUri": f"document-{uuid.uuid4()}",
         "ansibleFileType": "playbook",
@@ -84,12 +84,12 @@ PLAYBOOK_PAYLOAD = {
         "additionalContext": {
             "playbookContext": {
                 "varInfiles": {
-                    './vars/external_vars_1.yml': VARS_1,
-                    './vars/external_vars_2.yml': VARS_2,
+                    "./vars/external_vars_1.yml": VARS_1,
+                    "./vars/external_vars_2.yml": VARS_2,
                 },
                 "roles": {},
                 "includeVars": {
-                    '/home/anouser/ansible/var_test/scenario_1/vars/external_vars_3.yml': VARS_3,
+                    "/home/anouser/ansible/var_test/scenario_1/vars/external_vars_3.yml": VARS_3,
                 },
             },
             "roleContext": {},
@@ -102,7 +102,7 @@ PLAYBOOK_PAYLOAD = {
 # If the prompt is processed with the formatter with inserting variables, following context
 # will be generated:
 #
-PLAYBOOK_CONTEXT_WITH_VARS = f'''\
+PLAYBOOK_CONTEXT_WITH_VARS = f"""\
 - hosts: all
   remote_user: root
   vars:
@@ -117,9 +117,9 @@ PLAYBOOK_CONTEXT_WITH_VARS = f'''\
     - name: Include variable
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
-'''
+"""
 
-PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS = '''\
+PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS = """\
 ---
 - hosts: all
   remote_user: root
@@ -131,14 +131,14 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS = '''\
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
     - name: Run container with podman using mattermost_app var
-'''
+"""
 
 #
 # If the prompt is processed with the formatter with inserting variables,
 # with no other pre-existing vars, following context
 # will be generated:
 #
-PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
+PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS = f"""\
 - hosts: all
   remote_user: root
   vars_files:
@@ -152,9 +152,9 @@ PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
     - name: Include variable
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
-'''
+"""
 
-PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT = '''\
+PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT = """\
 ---
 - hosts: all
   remote_user: root
@@ -163,14 +163,14 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT = '''\
     - ./vars/external_vars_2.yml
   tasks:
     # Include variable
-'''
+"""
 
 #
 # If the prompt is processed with the formatter with inserting variables,
 # with no other pre-existing vars, following context
 # will be generated:
 #
-PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS = f'''\
+PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS = f"""\
 - hosts: all
   remote_user: root
   vars_files:
@@ -181,9 +181,9 @@ PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS = f'''\
 {add_indents(VARS_2, 4)}
 {add_indents(VARS_3, 4)}
   tasks:
-'''
+"""
 
-PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS = '''\
+PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS = """\
 ---
 - hosts: all
   remote_user: root
@@ -195,14 +195,14 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS = '''\
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
     - name: Run container with podman using mattermost_app var
-'''
+"""
 
 #
 # If the prompt is processed with the formatter with inserting variables,
 # with no other pre-existing vars, following context
 # will be generated:
 #
-PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
+PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS = f"""\
 - hosts: all
   remote_user: root
   vars_files:
@@ -216,7 +216,7 @@ PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS = f'''\
     - name: Include variable
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
-'''
+"""
 #
 # If the prompt is processed with the formatter without inserting variables, following
 # changes will be made to generate the context:
@@ -234,7 +234,7 @@ PLAYBOOK_CONTEXT_WITHOUT_FORMATTING = "\n".join(PLAYBOOK_PAYLOAD["prompt"].split
 
 PLAYBOOK_TWO_PLAYS_PAYLOAD = {
     "suggestionId": uuid.uuid4(),
-    "prompt": '''\
+    "prompt": """\
 ---
 - hosts: all
   remote_user: root
@@ -250,7 +250,7 @@ PLAYBOOK_TWO_PLAYS_PAYLOAD = {
     - ./vars/external_vars_1.yml
   tasks:
     - name: Print goodbye
-''',
+""",
     "metadata": {
         "documentUri": f"document-{uuid.uuid4()}",
         "ansibleFileType": "playbook",
@@ -258,7 +258,7 @@ PLAYBOOK_TWO_PLAYS_PAYLOAD = {
         "additionalContext": {
             "playbookContext": {
                 "varInfiles": {
-                    './vars/external_vars_1.yml': VARS_1,
+                    "./vars/external_vars_1.yml": VARS_1,
                 },
                 "roles": {},
                 "includeVars": {},
@@ -273,7 +273,7 @@ PLAYBOOK_TWO_PLAYS_PAYLOAD = {
 # If the prompt is processed with the formatter with inserting variables, following context
 # will be generated:
 #
-PLAYBOOK_TWO_PLAYS_CONTEXT_WITH_VARS = f'''\
+PLAYBOOK_TWO_PLAYS_CONTEXT_WITH_VARS = f"""\
 - hosts: all
   remote_user: root
   vars_files:
@@ -292,7 +292,7 @@ PLAYBOOK_TWO_PLAYS_CONTEXT_WITH_VARS = f'''\
   vars:
 {add_indents(VARS_1, 4)}
   tasks:
-'''
+"""
 
 ###########################################
 # Test data for the tasks_in_role use case
@@ -341,7 +341,7 @@ openvpn_service: ""'''
 
 TASKS_IN_ROLE_PAYLOAD = {
     "suggestionId": uuid.uuid4(),
-    "prompt": '''\
+    "prompt": """\
 ---
 - name: import assert.yml
   ansible.builtin.import_tasks: assert.yml
@@ -349,7 +349,7 @@ TASKS_IN_ROLE_PAYLOAD = {
   delegate_to: localhost
 
 - name: install openvpn packages
-''',
+""",
     "metadata": {
         "documentUri": f"document-{uuid.uuid4()}",
         "ansibleFileType": "tasks_in_role",
@@ -367,7 +367,7 @@ TASKS_IN_ROLE_PAYLOAD = {
     },
 }
 
-TASKS_IN_ROLE_CONTEXT_WITH_VARS = f'''\
+TASKS_IN_ROLE_CONTEXT_WITH_VARS = f"""\
 - name: Set variables from context
   ansible.builtin.set_fact:
 {add_indents(VARS_4, 4)}
@@ -378,7 +378,7 @@ TASKS_IN_ROLE_CONTEXT_WITH_VARS = f'''\
   run_once: true
   delegate_to: localhost
 
-'''
+"""
 
 #
 # If the prompt is processed with the formatter without inserting variables, following
@@ -396,7 +396,7 @@ TASKS_IN_ROLE_CONTEXT_WITHOUT_VARS = (
 ###################################
 TASKS_PAYLOAD = {
     "suggestionId": uuid.uuid4(),
-    "prompt": '''\
+    "prompt": """\
 ---
 - name: import assert.yml
   ansible.builtin.import_tasks: assert.yml
@@ -404,7 +404,7 @@ TASKS_PAYLOAD = {
   delegate_to: localhost
 
 - name: install openvpn packages
-''',
+""",
     "metadata": {
         "documentUri": f"document-{uuid.uuid4()}",
         "ansibleFileType": "tasks",
@@ -417,7 +417,7 @@ TASKS_PAYLOAD = {
     },
 }
 
-TASKS_CONTEXT_WITH_VARS = f'''\
+TASKS_CONTEXT_WITH_VARS = f"""\
 - name: Set variables from context
   ansible.builtin.set_fact:
 {add_indents(VARS_4, 4)}
@@ -427,7 +427,7 @@ TASKS_CONTEXT_WITH_VARS = f'''\
   run_once: true
   delegate_to: localhost
 
-'''
+"""
 #
 # If the prompt is processed with the formatter without inserting variables, following
 # changes will be made to generate the context:
@@ -437,7 +437,7 @@ TASKS_CONTEXT_WITH_VARS = f'''\
 #
 TASKS_CONTEXT_WITHOUT_VARS = "\n".join(TASKS_PAYLOAD["prompt"].split("\n")[1:-2]) + "\n"
 
-TASKS_PAYLOAD_PROMPT_WITH_QUOTED_TASKS = '''\
+TASKS_PAYLOAD_PROMPT_WITH_QUOTED_TASKS = """\
 ---
 - name: "import assert.yml"
   ansible.builtin.import_tasks: assert.yml
@@ -445,15 +445,15 @@ TASKS_PAYLOAD_PROMPT_WITH_QUOTED_TASKS = '''\
   delegate_to: localhost
 
 - name: "install openvpn packages"
-'''
+"""
 
-TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK = '''\
+TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK = """\
 - name: import assert.yml
   ansible.builtin.import_tasks: assert.yml
   run_once: true
   delegate_to: localhost
 
-'''
+"""
 
 
 @modify_settings()
@@ -462,7 +462,7 @@ class CompletionPreProcessTest(TestCase):
         original_prompt = payload.get("prompt")
         user = Mock(rh_user_has_seat=is_commercial_user)
         request = Mock(user=user)
-        serializer = CompletionRequestSerializer(context={'request': request})
+        serializer = CompletionRequestSerializer(context={"request": request})
         data = serializer.validate(payload.copy())
         context = CompletionContext(
             request=request,

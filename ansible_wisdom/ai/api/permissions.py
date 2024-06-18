@@ -24,7 +24,7 @@ class AcceptedTermsPermission(permissions.BasePermission):
     Allow access only to users who have accepted terms and conditions or paid users.
     """
 
-    code = 'permission_denied__terms_of_use_not_accepted'
+    code = "permission_denied__terms_of_use_not_accepted"
     message = "Terms of use have not been accepted."
 
     def has_permission(self, request, view):
@@ -45,7 +45,7 @@ class IsOrganisationAdministrator(permissions.BasePermission):
     Allow access only to users who are an administrator.
     """
 
-    code = 'permission_denied__user_not_org_administrator'
+    code = "permission_denied__user_not_org_administrator"
     message = "The User is not an Administrator of the Organization."
 
     def has_permission(self, request, view):
@@ -58,7 +58,7 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
     Allow access only to users who have a Light Speed subscription.
     """
 
-    code = 'permission_denied__user_has_no_subscription'
+    code = "permission_denied__user_has_no_subscription"
     message = "The User does not have a subscription."
 
     def has_permission(self, request, view):
@@ -72,7 +72,7 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
     Block access to seat-less user from of WCA-ready Commercial Org.
     """
 
-    code = 'permission_denied__org_ready_user_has_no_seat'
+    code = "permission_denied__org_ready_user_has_no_seat"
     message = (
         f"Org's {settings.ANSIBLE_AI_PROJECT_NAME} subscription is active but user has no seat."
     )
@@ -96,7 +96,7 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
     Block access to seated users if the WCA key was not set yet.
     """
 
-    code = 'permission_denied__org_not_ready_because_wca_not_configured'
+    code = "permission_denied__org_not_ready_because_wca_not_configured"
     message = "The IBM watsonx Code Assistant model is not configured yet."
 
     def has_permission(self, request, view):
@@ -118,7 +118,7 @@ class BlockUserWithoutSeat(permissions.BasePermission):
     Block access to un-seated users when Tech Preview is finished
     """
 
-    code = 'permission_denied__user_with_no_seat'
+    code = "permission_denied__user_with_no_seat"
     message = "User doesn't have access to the IBM watsonx Code Assistant."
 
     def has_permission(self, request, view):
@@ -134,7 +134,7 @@ class IsAAPLicensed(permissions.BasePermission):
     Block access to users when AAP license expired
     """
 
-    code = 'permission_denied__license_expired'
+    code = "permission_denied__license_expired"
     message = "Ansible Automation Platform License has expired."
 
     def has_permission(self, request, view):

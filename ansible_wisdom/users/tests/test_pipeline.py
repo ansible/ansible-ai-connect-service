@@ -30,7 +30,7 @@ from ansible_ai_connect.users.pipeline import load_extra_data, redhat_organizati
 
 def build_access_token(private_key, payload):
     payload["aud"] = [RHSSO_LIGHTSPEED_SCOPE]
-    return jwt.encode(payload, key=private_key, algorithm='RS256')
+    return jwt.encode(payload, key=private_key, algorithm="RS256")
 
 
 class DummyGithubBackend:
@@ -172,9 +172,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             response=response,
         )
         assert answer == {
-            'organization_id': 345,
-            'rh_user_is_org_admin': True,
-            'external_username': "jean-michel",
+            "organization_id": 345,
+            "rh_user_is_org_admin": True,
+            "external_username": "jean-michel",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
@@ -198,9 +198,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             response=response,
         )
         assert answer == {
-            'organization_id': 345,
-            'rh_user_is_org_admin': False,
-            'external_username': "yves",
+            "organization_id": 345,
+            "rh_user_is_org_admin": False,
+            "external_username": "yves",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is False
@@ -235,9 +235,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             response=response,
         )
         assert answer == {
-            'organization_id': 345,
-            'rh_user_is_org_admin': True,
-            'external_username': "yves",
+            "organization_id": 345,
+            "rh_user_is_org_admin": True,
+            "external_username": "yves",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
@@ -262,9 +262,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             response=response,
         )
         assert answer == {
-            'organization_id': 345,
-            'rh_user_is_org_admin': True,
-            'external_username': "yves",
+            "organization_id": 345,
+            "rh_user_is_org_admin": True,
+            "external_username": "yves",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is True
@@ -282,7 +282,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
                 },
             )
         }
-        with self.assertLogs(logger='ansible_ai_connect.users.pipeline', level='ERROR') as log:
+        with self.assertLogs(logger="ansible_ai_connect.users.pipeline", level="ERROR") as log:
             answer = redhat_organization(
                 backend=DummyRHBackend(public_key=self.jwk_public_key),
                 user=self.rh_user,
@@ -291,9 +291,9 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             self.assertInLog("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.", log)
 
         assert answer == {
-            'organization_id': 345,
-            'rh_user_is_org_admin': False,
-            'external_username': "yves",
+            "organization_id": 345,
+            "rh_user_is_org_admin": False,
+            "external_username": "yves",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is False

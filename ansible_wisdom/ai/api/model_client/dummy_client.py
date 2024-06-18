@@ -83,7 +83,7 @@ class DummyClient(ModelMeshClient):
             jitter: float = 0.001
         time.sleep(settings.DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter)
         response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
-        response_body['model_id'] = '_'
+        response_body["model_id"] = "_"
         return response_body
 
     def generate_playbook(

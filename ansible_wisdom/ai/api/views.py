@@ -100,27 +100,27 @@ logger = logging.getLogger(__name__)
 feature_flags = FeatureFlags()
 
 contentmatch_encoding_hist = Histogram(
-    'model_contentmatch_encoding_latency_seconds',
+    "model_contentmatch_encoding_latency_seconds",
     "Histogram of model contentmatch encoding processing time",
     namespace=NAMESPACE,
 )
 contentmatch_search_hist = Histogram(
-    'model_contentmatch_search_latency_seconds',
+    "model_contentmatch_search_latency_seconds",
     "Histogram of model contentmatch search processing time",
     namespace=NAMESPACE,
 )
 
 PERMISSIONS_MAP = {
-    'onprem': [
+    "onprem": [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         IsAAPLicensed,
     ],
-    'upstream': [
+    "upstream": [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
     ],
-    'saas': [
+    "saas": [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
@@ -138,19 +138,19 @@ class Completions(APIView):
 
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
 
-    required_scopes = ['read', 'write']
+    required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = '_completions'
+    throttle_cache_key_suffix = "_completions"
 
     @extend_schema(
         request=CompletionRequestSerializer,
         responses={
             200: CompletionResponseSerializer,
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Request was throttled"),
+            503: OpenApiResponse(description="Service Unavailable"),
         },
         summary="Inline code suggestions",
     )
@@ -169,17 +169,17 @@ class Feedback(APIView):
         IsAuthenticatedOrTokenHasScope,
         AcceptedTermsPermission,
     ]
-    required_scopes = ['read', 'write']
+    required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = '_feedback'
+    throttle_cache_key_suffix = "_feedback"
     throttle_cache_multiplier = 6.0
 
     @extend_schema(
         request=FeedbackRequestSerializer,
         responses={
-            200: OpenApiResponse(description='Success'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
+            200: OpenApiResponse(description="Success"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
         },
         summary="Feedback API for the AI service",
     )
@@ -188,7 +188,7 @@ class Feedback(APIView):
         validated_data = {}
         try:
             request_serializer = FeedbackRequestSerializer(
-                data=request.data, context={'request': request}
+                data=request.data, context={"request": request}
             )
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
@@ -220,12 +220,12 @@ class Feedback(APIView):
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
         )
-        model_name = ''
+        model_name = ""
         try:
-            org_id = getattr(user, 'org_id', None)
+            org_id = getattr(user, "org_id", None)
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
             model_name = model_mesh_client.get_model_id(
-                org_id, str(validated_data.get('model', ''))
+                org_id, str(validated_data.get("model", ""))
             )
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
@@ -237,20 +237,20 @@ class Feedback(APIView):
 
         if inline_suggestion_data:
             event = {
-                "latency": inline_suggestion_data.get('latency'),
-                "userActionTime": inline_suggestion_data.get('userActionTime'),
-                "action": inline_suggestion_data.get('action'),
-                "suggestionId": str(inline_suggestion_data.get('suggestionId', '')),
+                "latency": inline_suggestion_data.get("latency"),
+                "userActionTime": inline_suggestion_data.get("userActionTime"),
+                "action": inline_suggestion_data.get("action"),
+                "suggestionId": str(inline_suggestion_data.get("suggestionId", "")),
                 "modelName": model_name,
-                "activityId": str(inline_suggestion_data.get('activityId', '')),
+                "activityId": str(inline_suggestion_data.get("activityId", "")),
                 "exception": exception is not None,
             }
             send_segment_event(event, "inlineSuggestionFeedback", user)
             send_segment_analytics_event(
                 AnalyticsTelemetryEvents.RECOMMENDATION_ACTION,
                 lambda: AnalyticsRecommendationAction(
-                    action=inline_suggestion_data.get('action'),
-                    suggestion_id=inline_suggestion_data.get('suggestionId', ''),
+                    action=inline_suggestion_data.get("action"),
+                    suggestion_id=inline_suggestion_data.get("suggestionId", ""),
                     rh_user_org_id=org_id,
                 ),
                 user,
@@ -258,18 +258,18 @@ class Feedback(APIView):
             )
         if suggestion_quality_data:
             event = {
-                "prompt": suggestion_quality_data.get('prompt'),
-                "providedSuggestion": suggestion_quality_data.get('providedSuggestion'),
-                "expectedSuggestion": suggestion_quality_data.get('expectedSuggestion'),
-                "additionalComment": suggestion_quality_data.get('additionalComment'),
+                "prompt": suggestion_quality_data.get("prompt"),
+                "providedSuggestion": suggestion_quality_data.get("providedSuggestion"),
+                "expectedSuggestion": suggestion_quality_data.get("expectedSuggestion"),
+                "additionalComment": suggestion_quality_data.get("additionalComment"),
                 "modelName": model_name,
                 "exception": exception is not None,
             }
             send_segment_event(event, "suggestionQualityFeedback", user)
         if sentiment_feedback_data:
             event = {
-                "value": sentiment_feedback_data.get('value'),
-                "feedback": sentiment_feedback_data.get('feedback'),
+                "value": sentiment_feedback_data.get("value"),
+                "feedback": sentiment_feedback_data.get("feedback"),
                 "modelName": model_name,
                 "exception": exception is not None,
             }
@@ -277,7 +277,7 @@ class Feedback(APIView):
             send_segment_analytics_event(
                 AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
                 lambda: AnalyticsProductFeedback(
-                    value=sentiment_feedback_data.get('value'),
+                    value=sentiment_feedback_data.get("value"),
                     rh_user_org_id=org_id,
                     model_name=model_name,
                 ),
@@ -286,9 +286,9 @@ class Feedback(APIView):
             )
         if issue_feedback_data:
             event = {
-                "type": issue_feedback_data.get('type'),
-                "title": issue_feedback_data.get('title'),
-                "description": issue_feedback_data.get('description'),
+                "type": issue_feedback_data.get("type"),
+                "title": issue_feedback_data.get("title"),
+                "description": issue_feedback_data.get("description"),
                 "modelName": model_name,
                 "exception": exception is not None,
             }
@@ -335,7 +335,7 @@ class ContentMatches(GenericAPIView):
             IsAuthenticatedOrTokenHasScope,
             IsAAPLicensed,
         ]
-        if settings.DEPLOYMENT_MODE == 'onprem'
+        if settings.DEPLOYMENT_MODE == "onprem"
         else [
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
@@ -344,18 +344,18 @@ class ContentMatches(GenericAPIView):
         ]
     )
 
-    required_scopes = ['read', 'write']
+    required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = '_contentmatches'
+    throttle_cache_key_suffix = "_contentmatches"
 
     @extend_schema(
         request=ContentMatchRequestSerializer,
         responses={
             200: ContentMatchResponseSerializer,
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Request was throttled"),
+            503: OpenApiResponse(description="Service Unavailable"),
         },
         summary="Code suggestion attributions",
     )
@@ -364,8 +364,8 @@ class ContentMatches(GenericAPIView):
         request_serializer.is_valid(raise_exception=True)
 
         request_data = request_serializer.validated_data
-        suggestion_id = str(request_data.get('suggestionId', ''))
-        model_id = str(request_data.get('model', ''))
+        suggestion_id = str(request_data.get("suggestionId", ""))
+        model_id = str(request_data.get("model", ""))
 
         try:
             response_serializer = self.perform_content_matching(
@@ -386,7 +386,7 @@ class ContentMatches(GenericAPIView):
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
-            "suggestions": request_data.get('suggestions', []),
+            "suggestions": request_data.get("suggestions", []),
             "user_id": str(user_id) if user_id else None,
             "rh_user_has_seat": user.rh_user_has_seat,
             "organization_id": user.org_id,
@@ -421,7 +421,7 @@ class ContentMatches(GenericAPIView):
                 response_serializer.is_valid(raise_exception=True)
             except Exception:
                 process_error_count.labels(
-                    stage='contentmatch-response_serialization_validation'
+                    stage="contentmatch-response_serialization_validation"
                 ).inc()
                 logger.exception(f"error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
@@ -515,7 +515,7 @@ class ContentMatches(GenericAPIView):
                 if model_id_in_exception:
                     model_id = model_id_in_exception
             if event:
-                event['modelName'] = model_id
+                event["modelName"] = model_id
                 send_segment_event(event, event_name, user)
             else:
                 self.write_to_segment(
@@ -570,19 +570,19 @@ class Explanation(APIView):
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
-    required_scopes = ['read', 'write']
+    required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = '_explanation'
+    throttle_cache_key_suffix = "_explanation"
 
     @extend_schema(
         request=ExplanationRequestSerializer,
         responses={
             200: ExplanationResponseSerializer,
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Request was throttled"),
+            503: OpenApiResponse(description="Service Unavailable"),
         },
         summary="Inline code suggestions",
     )
@@ -634,10 +634,10 @@ class Explanation(APIView):
 
     def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
         event = {
-            'explanationId': explanation_id,
-            'exception': exception is not None,
-            'duration': duration,
-            'playbook_length': playbook_length,
+            "explanationId": explanation_id,
+            "exception": exception is not None,
+            "duration": duration,
+            "playbook_length": playbook_length,
         }
         send_segment_event(event, "explanation", user)
 
@@ -658,19 +658,19 @@ class Generation(APIView):
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
-    required_scopes = ['read', 'write']
+    required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = '_generation'
+    throttle_cache_key_suffix = "_generation"
 
     @extend_schema(
         request=GenerationRequestSerializer,
         responses={
             200: GenerationResponseSerializer,
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            429: OpenApiResponse(description='Request was throttled'),
-            503: OpenApiResponse(description='Service Unavailable'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Request was throttled"),
+            503: OpenApiResponse(description="Service Unavailable"),
         },
         summary="Inline code suggestions",
     )
@@ -736,11 +736,11 @@ class Generation(APIView):
         self, user, generation_id, wizard_id, exception, duration, create_outline, playbook_length
     ):
         event = {
-            'generationId': generation_id,
-            'wizardId': wizard_id,
-            'exception': exception is not None,
-            'duration': duration,
-            'create_outline': create_outline,
-            'playbook_length': playbook_length,
+            "generationId": generation_id,
+            "wizardId": wizard_id,
+            "exception": exception is not None,
+            "duration": duration,
+            "create_outline": create_outline,
+            "playbook_length": playbook_length,
         }
         send_segment_event(event, "generation", user)

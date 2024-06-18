@@ -24,13 +24,13 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
 )
 
 completions_return_code = Counter(
-    'model_prediction_return_code', 'The return code of model prediction requests', ['code']
+    "model_prediction_return_code", "The return code of model prediction requests", ["code"]
 )
 
 process_error_count = Counter(
-    'wisdom_service_processing_error',
+    "wisdom_service_processing_error",
     "Error counts at pre-process/prediction/post-process etc stages",
-    ['stage'],
+    ["stage"],
 )
 
 
@@ -75,88 +75,88 @@ class WisdomAccessDenied(BaseWisdomAPIException):
 
 
 class PreprocessInvalidYamlException(WisdomBadRequest):
-    default_code = 'error__preprocess_invalid_yaml'
-    default_detail = 'Request contains invalid yaml.'
+    default_code = "error__preprocess_invalid_yaml"
+    default_detail = "Request contains invalid yaml."
 
 
 class PostprocessException(WisdomEmptyResponse):
     # Do not prefix with error__ to allow correlation with older Segment events
-    default_code = 'postprocess_error'
-    default_detail = 'A postprocess error occurred.'
+    default_code = "postprocess_error"
+    default_detail = "A postprocess error occurred."
 
 
 class ModelTimeoutException(WisdomEmptyResponse):
     # Do not prefix with error__ to allow correlation with older Segment events
-    default_code = 'model_timeout'
-    default_detail = 'An timeout occurred attempting to complete the request.'
+    default_code = "model_timeout"
+    default_detail = "An timeout occurred attempting to complete the request."
 
 
 class WcaBadRequestException(WisdomEmptyResponse):
-    default_code = 'error__wca_bad_request'
-    default_detail = 'WCA returned a bad request response.'
+    default_code = "error__wca_bad_request"
+    default_detail = "WCA returned a bad request response."
 
 
 class WcaInvalidModelIdException(WisdomAccessDenied):
-    default_code = 'error__wca_invalid_model_id'
-    default_detail = 'WCA Model ID is invalid. Please contact your administrator.'
+    default_code = "error__wca_invalid_model_id"
+    default_detail = "WCA Model ID is invalid. Please contact your administrator."
 
 
 class WcaKeyNotFoundException(WisdomAccessDenied):
-    default_code = 'error__wca_key_not_found'
-    default_detail = 'A WCA Api Key was expected but not found. Please contact your administrator.'
+    default_code = "error__wca_key_not_found"
+    default_detail = "A WCA Api Key was expected but not found. Please contact your administrator."
 
 
 class WcaModelIdNotFoundException(WisdomAccessDenied):
-    default_code = 'error__wca_model_id_not_found'
-    default_detail = 'A WCA Model ID was expected but not found. Please contact your administrator.'
+    default_code = "error__wca_model_id_not_found"
+    default_detail = "A WCA Model ID was expected but not found. Please contact your administrator."
 
 
 class WcaNoDefaultModelIdException(WisdomAccessDenied):
-    default_code = 'error__no_default_model_id'
-    default_detail = 'No default WCA Model ID was found.'
+    default_code = "error__no_default_model_id"
+    default_detail = "No default WCA Model ID was found."
 
 
 class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
     status_code = 500
-    default_code = 'error__wca_suggestion_correlation_failed'
-    default_detail = 'WCA Request/Response Suggestion ID correlation failed.'
+    default_code = "error__wca_suggestion_correlation_failed"
+    default_detail = "WCA Request/Response Suggestion ID correlation failed."
 
 
 class WcaEmptyResponseException(WisdomEmptyResponse):
-    default_code = 'error__wca_empty_response'
-    default_detail = 'WCA returned an empty response.'
+    default_code = "error__wca_empty_response"
+    default_detail = "WCA returned an empty response."
 
 
 class WcaCloudflareRejectionException(WisdomBadRequest):
-    default_code = 'error__wca_cloud_flare_rejection'
-    default_detail = 'Cloudflare rejected the request. Please contact your administrator.'
+    default_code = "error__wca_cloud_flare_rejection"
+    default_detail = "Cloudflare rejected the request. Please contact your administrator."
 
 
 class WcaUserTrialExpiredException(WisdomAccessDenied):
     default_code = "permission_denied__user_trial_expired"
-    default_detail = 'User trial expired. Please contact your administrator.'
+    default_detail = "User trial expired. Please contact your administrator."
 
 
 class ServiceUnavailable(BaseWisdomAPIException):
     status_code = 503
-    default_code = 'service_unavailable'
-    default_detail = 'An error occurred attempting to complete the request.'
+    default_code = "service_unavailable"
+    default_detail = "An error occurred attempting to complete the request."
 
 
 class FeatureNotAvailable(BaseWisdomAPIException):
     status_code = 404
-    default_code = 'feature_not_available'
-    default_detail = 'The feature is not available.'
+    default_code = "feature_not_available"
+    default_detail = "The feature is not available."
 
 
 class InternalServerError(BaseWisdomAPIException):
     status_code = 500
-    default_code = 'internal_server'
-    default_detail = 'An error occurred attempting to complete the request.'
+    default_code = "internal_server"
+    default_detail = "An error occurred attempting to complete the request."
 
 
 class FeedbackValidationException(WisdomBadRequest):
-    default_code = 'error__feedback_validation'
+    default_code = "error__feedback_validation"
 
     def __init__(self, detail, *args, **kwargs):
         super().__init__(detail, *args, **kwargs)

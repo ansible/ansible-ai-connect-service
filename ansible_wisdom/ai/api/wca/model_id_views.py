@@ -66,18 +66,18 @@ PERMISSION_CLASSES = [
 
 
 class WCAModelIdView(RetrieveAPIView, CreateAPIView):
-    required_scopes = ['read', 'write']
-    throttle_cache_key_suffix = '_wca_model_id'
+    required_scopes = ["read", "write"]
+    throttle_cache_key_suffix = "_wca_model_id"
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
-            400: OpenApiResponse(description='Bad request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            200: OpenApiResponse(description="OK"),
+            400: OpenApiResponse(description="Bad request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Get WCA Model Id for an Organisation",
         operation_id="wca_model_id_get",
@@ -100,10 +100,10 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
             if response is None:
                 return Response(status=HTTP_200_OK)
 
-            model_id = response['SecretString']
+            model_id = response["SecretString"]
             return Response(
                 status=HTTP_200_OK,
-                data={'model_id': model_id, 'last_update': response['CreatedDate']},
+                data={"model_id": model_id, "last_update": response["CreatedDate"]},
             )
 
         except WcaSecretManagerError as e:
@@ -124,12 +124,12 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
     @extend_schema(
         request=WcaModelIdRequestSerializer,
         responses={
-            204: OpenApiResponse(description='Empty response'),
-            400: OpenApiResponse(description='Bad request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Set the Model Id to be used for an Organisation",
         operation_id="wca_model_id_set",
@@ -145,7 +145,7 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
         def get_model_id(*_):
             model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
             model_id_serializer.is_valid(raise_exception=True)
-            return model_id_serializer.validated_data['model_id']
+            return model_id_serializer.validated_data["model_id"]
 
         def on_success(org_id, model_id):
             secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
@@ -165,18 +165,18 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
 
 
 class WCAModelIdValidatorView(RetrieveAPIView):
-    required_scopes = ['read']
-    throttle_cache_key_suffix = '_wca_model_id_validator'
+    required_scopes = ["read"]
+    throttle_cache_key_suffix = "_wca_model_id_validator"
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description='OK'),
-            400: OpenApiResponse(description='Bad Request'),
-            401: OpenApiResponse(description='Unauthorized'),
-            403: OpenApiResponse(description='Forbidden'),
-            429: OpenApiResponse(description='Request was throttled'),
-            500: OpenApiResponse(description='Internal service error'),
+            200: OpenApiResponse(description="OK"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
         },
         summary="Validate WCA Model Id for an Organisation",
         operation_id="wca_model_id_validator_get",
@@ -203,10 +203,10 @@ class WCAModelIdValidatorView(RetrieveAPIView):
 
 def validate(api_key, model_id):
     if api_key is None:
-        logger.error('No API key specified.')
+        logger.error("No API key specified.")
         raise WcaKeyNotFound
     if model_id is None:
-        logger.error('No Model Id key specified.')
+        logger.error("No Model Id key specified.")
         raise WcaModelIdNotFound
 
     # If no validation issues, let's infer (given an api_key and model_id)
@@ -260,7 +260,7 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
             "type": event_name,
             "modelName": model_id,
         }
-        event_name = 'trialExpired'
+        event_name = "trialExpired"
         raise WcaUserTrialExpiredException(cause=e)
 
     except Exception as e:
@@ -271,7 +271,7 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
     finally:
         duration = round((time.time() - start_time) * 1000, 2)
         if event:
-            event['modelName'] = model_id
+            event["modelName"] = model_id
         else:
             event = {
                 "duration": duration,
@@ -285,4 +285,4 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
 def get_secret_value(secret):
     if secret is None:
         return None
-    return str(secret['SecretString']) if secret['SecretString'] else None
+    return str(secret["SecretString"]) if secret["SecretString"] else None

@@ -67,7 +67,7 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
 
     def test_ansible_lint_caller_with_error(self):
         """Run an error case"""
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             result = self.ansibleLintCaller.run_linter(error_sample_yaml)
             self.assertIsNotNone(result)
             self.assertInLog(
@@ -81,7 +81,7 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
         def run_lint():
             AnsibleLintCaller().run_linter(normal_sample_yaml)
 
-        with self.assertLogs(logger='root', level='DEBUG') as log:
+        with self.assertLogs(logger="root", level="DEBUG") as log:
             with ThreadPool(5) as pool:
                 for _ in range(5):
                     pool.apply(run_lint)
@@ -97,7 +97,7 @@ class TestLintPostprocessing(WisdomServiceLogAwareTestCase):
             AnsibleLintCaller()._run_linter(normal_sample_yaml, tempfile.tempdir)
 
         try:
-            with self.assertLogs(logger='root', level='ERROR') as log:
+            with self.assertLogs(logger="root", level="ERROR") as log:
                 with ThreadPool(5) as pool:
                     for _ in range(5):
                         pool.apply(run_lint_in_a_fixed_dir)

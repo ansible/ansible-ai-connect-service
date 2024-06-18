@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class APIPayload(BaseModel):
-    model: str = ''
+    model: str = ""
     prompt: str = ""
     original_prompt: str = ""
     context: str = ""
@@ -53,7 +53,7 @@ class ContentMatchPayloadData(TypedDict):
 
 
 class ContentMatchResponseData(BaseModel):
-    repo_name: str = ''
+    repo_name: str = ""
     repo_url: str = ""
     path: str = ""
     license: str = ""
@@ -90,7 +90,7 @@ class BaseContentMatchResponseDto(BaseModel):
 class ContentMatchResponseDto(BaseContentMatchResponseDto):
     code_matches: list[ContentMatchResponseData]
 
-    @validator('code_matches')
+    @validator("code_matches")
     @classmethod
     def trim_to_first_three(cls, items):
         return items[:3]
