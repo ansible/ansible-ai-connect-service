@@ -195,8 +195,8 @@ AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RET
 AUTHZ_AMS_SERVICE_RETRY_COUNT = int(os.getenv("AMS_SERVICE_RETRY_COUNT", "3"))
 
 t_deployment_mode = Literal["saas", "upstream", "onprem"]
-DEPLOYMENT_MODE: t_deployment_mode = os.environ.get(
-    "DEPLOYMENT_MODE", cast(t_deployment_mode, "saas")
+DEPLOYMENT_MODE: t_deployment_mode = cast(
+    t_deployment_mode, os.environ.get("DEPLOYMENT_MODE") or "saas"
 )
 AUTHENTICATION_BACKENDS = [
     (

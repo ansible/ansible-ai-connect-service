@@ -60,7 +60,7 @@ torchvision @ https://download.pytorch.org/whl/torchvision-0.15.2-cp311-cp311-ma
 # UPDATED MANUALLY: waiting for parent package to be updated
 transformers==4.39.1
 tqdm==4.66.3
-urllib3==1.26.18
+urllib3==1.26.19
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
 django-allow-cidr==0.6.0
