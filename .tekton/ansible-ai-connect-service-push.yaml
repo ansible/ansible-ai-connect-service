@@ -280,6 +280,7 @@ spec:
             image: alpine/git
             script: |
               #!/bin/sh
+              ls
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
               echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
