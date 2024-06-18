@@ -111,7 +111,7 @@ from podman-compose (or docker-compose) using [tools/docker-compose/compose.yaml
 For running Django service from the compose file, you need to run following three chcon commands:
 
 ```bash
-chcon -t container_file_t -R ansible_wisdom/
+chcon -t container_file_t -R ansible_ai_connect/
 chcon -t container_file_t -R prometheus/
 ```
 
@@ -217,9 +217,9 @@ ENABLE_ARI_POSTPROCESS=False
 
 Go to Run > Edit Configurations menu and create the `runserver` configuration:
 
-- Script path: point to `ansible_wisdom/manage.py`
+- Script path: point to `ansible_ai_connect/manage.py`
 - Script arguments: `runserver --noreload`
-- Working directory: point to `ansible_wisdom`
+- Working directory: point to `ansible_ai_connect`
 - Paths to '.env' files: path to point your `.env` file
 
 ![runserver](./images/pycharm-runserver-config.png)
@@ -229,9 +229,9 @@ Go to Run > Edit Configurations menu and create the `runserver` configuration:
 The `test` configuration is similar to the `runserver` configuration. The only difference is
 in Script arguments:
 
-- Script path: point to `ansible_wisdom/manage.py`
+- Script path: point to `ansible_ai_connect/manage.py`
 - Script arguments: `test`
-- Working directory: point to `ansible_wisdom`
+- Working directory: point to `ansible_ai_connect`
 - Paths to '.env' files: path to point your `.env` file
 
 ![test](./images/pycharm-test-config.png)
@@ -265,7 +265,7 @@ Once both the runserver and test configurations are created, make sure the backe
 Then run `runserver` in Debug mode with PyCharms Run > Debug… menu. Console output would be like:
 
 ```bash
-/home/ttakamiy/git/ansible/ansible-wisdom-service/venv/bin/python /home/ttakamiy/git/ansible/ansible-wisdom-service/ansible_wisdom/manage.py runserver --noreload
+/home/ttakamiy/git/ansible/ansible-wisdom-service/venv/bin/python /home/ttakamiy/git/ansible/ansible-wisdom-service/ansible_ai_connect/manage.py runserver --noreload
 Performing system checks...
 
 System check identified no issues (0 silenced).

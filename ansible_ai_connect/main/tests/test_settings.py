@@ -27,9 +27,7 @@ class TestSettings(SimpleTestCase):
     @classmethod
     def reload_settings(cls):
         module_name = os.getenv("DJANGO_SETTINGS_MODULE")
-        settings_module = importlib.import_module(
-            module_name.replace("ansible_wisdom.", "ansible_ai_connect.")
-        )
+        settings_module = importlib.import_module(module_name)
 
         importlib.reload(ansible_ai_connect.main.settings.base)
         importlib.reload(settings_module)

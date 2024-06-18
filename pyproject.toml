@@ -58,17 +58,17 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ansible/ansible-wisdom-service"
+Homepage = "https://github.com/ansible/ansible-ai-connect-service"
 
 [project.scripts]
-wisdom-manage = "ansible_wisdom.manage:main"
+wisdom-manage = "ansible_ai_connect.manage:main"
 
 
 
 [tool]
 
 [tool.setuptools.packages.find]
-include = ["ansible_wisdom*", "ansible_ai_connect*"]
+include = ["ansible_ai_connect*"]
 
 [tool.black]
 line-length = 100
@@ -79,18 +79,18 @@ profile = "black"
 
 [tool.pyright]
 include = [
-  "ansible_wisdom/ai/api/aws/wca_secret_manager.py",
-  "ansible_wisdom/ai/api/model_client/bam_client.py",
-  "ansible_wisdom/ai/api/model_client/dummy_client.py",
-  "ansible_wisdom/ai/api/model_client/grpc_client.py",
-  "ansible_wisdom/ai/api/model_client/http_client.py",
-  "ansible_wisdom/ai/api/model_client/langchain.py",
-  "ansible_wisdom/ai/api/model_client/llamacpp_client.py",
-  "ansible_wisdom/ai/api/model_client/ollama_client.py",
-  "ansible_wisdom/ai/api/model_client/wca_client.py",
-  "ansible_wisdom/users/authz_checker.py"
+  "ansible_ai_connect/ai/api/aws/wca_secret_manager.py",
+  "ansible_ai_connect/ai/api/model_client/bam_client.py",
+  "ansible_ai_connect/ai/api/model_client/dummy_client.py",
+  "ansible_ai_connect/ai/api/model_client/grpc_client.py",
+  "ansible_ai_connect/ai/api/model_client/http_client.py",
+  "ansible_ai_connect/ai/api/model_client/langchain.py",
+  "ansible_ai_connect/ai/api/model_client/llamacpp_client.py",
+  "ansible_ai_connect/ai/api/model_client/ollama_client.py",
+  "ansible_ai_connect/ai/api/model_client/wca_client.py",
+  "ansible_ai_connect/users/authz_checker.py"
 ]
-exclude = ["**/test_*.py", "ansible_wisdom/*/migrations/*.py"]
+exclude = ["**/test_*.py", "ansible_ai_connect/*/migrations/*.py"]
 
 reportMissingImports = true
 reportMissingTypeStubs = false

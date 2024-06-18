@@ -1,9 +1,3 @@
-include ansible_wisdom/version_info.json
-include ansible_wisdom/main/static/patternfly.css
-include ansible_wisdom/users/static/users/lightspeed.png
-recursive-include ansible_wisdom/main/templates *.html
-recursive-include ansible_wisdom/main/static/assets *.css *.svg *.woff *.woff2
-recursive-include ansible_wisdom/users/templates *.html
 include ansible_ai_connect/version_info.json
 include ansible_ai_connect/main/static/patternfly.css
 include ansible_ai_connect/users/static/users/lightspeed.png

@@ -30,7 +30,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal, cast
 
-BASE_DIR: Path = files("ansible_wisdom")
+BASE_DIR: Path = files("ansible_ai_connect")
 ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Connect"
 
 # Quick-start development settings - unsuitable for production
@@ -269,9 +269,9 @@ if sys.argv[1:2] not in [["migrate"], ["test"]]:
     OAUTH2_PROVIDER_APPLICATION_MODEL = "wildcard_oauth2.Application"
 
 # OAUTH: todo
-# - remove ansible_wisdom/users/auth.py module
-# - remove ansible_wisdom/users/views.py module
-# - remove "Authentication Token" line from ansible_wisdom/users/templates/users/home.html
+# - remove ansible_ai_connect/users/auth.py module
+# - remove ansible_ai_connect/users/views.py module
+# - remove "Authentication Token" line from ansible_ai_connect/users/templates/users/home.html
 
 COMPLETION_USER_RATE_THROTTLE = os.environ.get("COMPLETION_USER_RATE_THROTTLE") or "10/minute"
 ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get("ME_USER_CACHE_TIMEOUT_SEC", 30))
@@ -481,7 +481,7 @@ ARI_RULES = [
     "W011",  # replace with_* loop with the modern loop:
     "W012",
     "W013",
-    # "W014",  # anonymizer: already done by the ansible_wisdom app
+    # "W014",  # anonymizer: already done by the ansible_ai_connect app
     "W015",
     "W016",
     "W017",

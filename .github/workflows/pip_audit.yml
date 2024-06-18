@@ -8,7 +8,7 @@ on:
       - main
     paths:
       - .github/workflows/pip_audit.yml
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
       - pyproject.toml
       - requirements*.txt
   pull_request:
@@ -16,7 +16,7 @@ on:
       - main
     paths:
       - .github/workflows/pip_audit.yml
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
       - pyproject.toml
       - requirements*.txt
 permissions:
