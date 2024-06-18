@@ -790,7 +790,7 @@ class Explanation(APIView):
             "duration": duration,
             "playbook_length": playbook_length,
         }
-        send_segment_event(event, "explanation", user)
+        send_segment_event(event, "explainPlaybook", user)
 
 
 class Generation(APIView):
@@ -894,4 +894,4 @@ class Generation(APIView):
             "create_outline": create_outline,
             "playbook_length": playbook_length,
         }
-        send_segment_event(event, "generation", user)
+        send_segment_event(event, "codegenPlaybook", user)
