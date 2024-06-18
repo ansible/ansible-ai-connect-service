@@ -552,7 +552,6 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
 WCA_ENABLE_ARI_POSTPROCESS = os.getenv("WCA_ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 CSP_CONNECT_SRC = "'self'"
 
