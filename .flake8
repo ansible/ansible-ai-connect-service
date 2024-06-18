@@ -58,8 +58,8 @@ per-file-ignores =
   # S101: Allow the use of assert within the tests directory, since tests require it.
   tests/**.py: S101
   # ignores for auto-generated files
-  ansible_wisdom/ai/api/model_client/grpc_pb/**.py: E402, E501, E712, F401, F821
-  ansible_wisdom/users/migrations/0001_initial.py: E501
+  ansible_ai_connect/ai/api/model_client/grpc_pb/**.py: E402, E501, E712, F401, F821
+  ansible_ai_connect/users/migrations/0001_initial.py: E501
 
 # Count the number of occurrences of each error/warning code and print a report:
 statistics = true
