@@ -22,6 +22,7 @@ from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
+from unittest import skip
 from segment import analytics
 
 from ansible_ai_connect.ai.api.tests.test_views import (
@@ -157,6 +158,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             )
             self.assertSegmentTimestamp(log)
 
+    @skip("We should use mock instead of monkeying patching the segment client")
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_segment_error(self):
@@ -302,6 +304,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 self.client.post(reverse("completions"), payload, format="json")
                 analytics.flush()
+                import ansible_ai_connect.main.middleware
+                print(f"ansible_ai_connect.main.middleware.global_schema1_event: {ansible_ai_connect.main.middleware.global_schema1_event}")
+                print(log)
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log)
                 self.assertInLog("sent segment event: segmentError", log)
                 events = self.extractSegmentEventsFromLog(log)

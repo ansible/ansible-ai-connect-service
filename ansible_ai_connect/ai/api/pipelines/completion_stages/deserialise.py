@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 class DeserializeStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         request = context.request
+        # NOTE: This line is probably useless
         request._request._suggestion_id = request.data.get("suggestionId")
 
         request_serializer = CompletionRequestSerializer(
@@ -37,6 +38,8 @@ class DeserializeStage(PipelineElement):
         )
 
         try:
+            # TODO: is_valid() is already called in ai/api/views.py and we should
+            # reuse the validated_data here
             request_serializer.is_valid(raise_exception=True)
             request._request._suggestion_id = str(request_serializer.validated_data["suggestionId"])
             request._request._ansible_extension_version = str(

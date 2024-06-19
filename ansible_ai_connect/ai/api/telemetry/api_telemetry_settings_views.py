@@ -23,13 +23,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
 
+from ansible_ai_connect.ai.api.exceptions import InternalServerError, ServiceUnavailable
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.ai.api.serializers import TelemetrySettingsRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
-from ansible_ai_connect.ai.api.views import InternalServerError, ServiceUnavailable
 from ansible_ai_connect.users.signals import user_set_telemetry_settings
 
 logger = logging.getLogger(__name__)

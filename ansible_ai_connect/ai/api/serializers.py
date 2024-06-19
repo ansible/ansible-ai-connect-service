@@ -38,9 +38,6 @@ from .fields import (
 
 
 class Metadata(serializers.Serializer):
-    class Meta:
-        fields = ["ansibleExtensionVersion"]
-
     ansibleExtensionVersion = serializers.RegexField(
         r"v?\d+\.\d+\.\d+",
         required=False,
@@ -118,7 +115,6 @@ class CompletionRequestSerializer(Metadata):
                 raise serializers.ValidationError(
                     {"prompt": "requested prompt format is not supported"}
                 )
-
             if "&&" in prompt:
                 raise serializers.ValidationError(
                     {"prompt": "multiple task requests should be separated by a single '&'"}
@@ -155,6 +151,7 @@ class CompletionRequestSerializer(Metadata):
         data = super().validate(data)
 
         data["prompt"], data["context"] = fmtr.extract_prompt_and_context(data["prompt"])
+
         CompletionRequestSerializer.validate_extracted_prompt(
             data["prompt"], self.context.get("request").user
         )

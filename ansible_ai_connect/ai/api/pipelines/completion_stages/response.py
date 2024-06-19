@@ -63,6 +63,7 @@ class ResponseStage(PipelineElement):
         # Note: Currently we return an array of predictions, but there's only ever one.
         # The tasks array added to the completion event is representative of the first (only)
         # entry in the predictions array
+        # https://github.com/ansible/ansible-ai-connect-service/blob/0e083a83fab57e6567197697bad60d306c6e06eb/ansible_ai_connect/ai/api/pipelines/completion_stages/response.py#L64
         response.tasks = tasks_results
 
         context.response = response
