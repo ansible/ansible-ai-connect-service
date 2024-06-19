@@ -22,6 +22,7 @@ from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 from yaml.error import MarkedYAMLError
 
+import ansible_ai_connect.ai.api.telemetry.schema1 as schema1
 from ansible_ai_connect.ai.api import formatter as fmtr
 from ansible_ai_connect.ai.api.exceptions import (
     PostprocessException,
@@ -29,7 +30,7 @@ from ansible_ai_connect.ai.api.exceptions import (
 )
 from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
 from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
-from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 
 logger = logging.getLogger(__name__)
 
@@ -78,32 +79,29 @@ def write_to_segment(
         if isinstance(exception, MarkedYAMLError)
         else str(exception) if str(exception) else exception.__class__.__name__
     )
+
     if event_type == "ARI":
-        event_name = "postprocess"
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "details": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
-    if event_type == "ansible-lint":
-        event_name = "postprocessLint"
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "postprocessed": postprocessed_yaml,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
+        schema1_event = schema1.Postprocess()
+        schema1_event.details = postprocess_detail
+        schema1_event.truncated = truncated_yaml
+
+    elif event_type == "ansible-lint":
+
+        schema1_event = schema1.PostprocessLint()
+        schema1_event.postprocessed = postprocessed_yaml
+        schema1_event.problem = problem
+
+    schema1_event.set_user(user)
+    schema1_event.set_exception(exception)
+    schema1_event.duration = duration
+    schema1_event.postprocessed = postprocessed_yaml
+    schema1_event.problem = problem
+    schema1_event.recommendation = recommendation_yaml
+    schema1_event.suggestionId = str(suggestion_id) if suggestion_id else ""
 
     if model_id:
-        event["modelName"] = model_id
-    send_segment_event(event, event_name, user)
+        schema1_event.modelName = model_id
+    send_schema1_event(schema1_event)
 
 
 def trim_whitespace_lines(input: str):
@@ -253,6 +251,7 @@ def completion_post_process(context: CompletionContext):
                         f"rules_with_applied_changes: {tasks_with_applied_changes} "
                         f"recommendation_yaml: [{repr(recommendation_yaml)}] "
                         f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
+                        f"prompt: [{repr(prompt)}] "
                         f"payload_context: [{repr(payload_context)}] "
                         f"postprocess_details: [{json.dumps(postprocess_details)}] "
                     )
@@ -350,6 +349,8 @@ def completion_post_process(context: CompletionContext):
     logger.debug(f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}")
 
     # gather data for completion segment event
+    # WARNING: the block below do inplace transformation of 'tasks', we should refact the
+    # code to avoid that.
     for i, task in enumerate(tasks):
         if fmtr.is_multi_task_prompt(prompt):
             task["prediction"] = fmtr.extract_task(

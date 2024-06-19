@@ -23,20 +23,17 @@ from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
-from rest_framework import permissions, serializers
+from rest_framework import permissions
 from rest_framework import status as rest_framework_status
-from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+import ansible_ai_connect.ai.api.telemetry.schema1 as schema1
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
-    BaseWisdomAPIException,
     FeedbackInternalServerException,
-    FeedbackValidationException,
     InternalServerError,
     ModelTimeoutException,
-    ServiceUnavailable,
     WcaBadRequestException,
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
@@ -83,11 +80,8 @@ from .serializers import (
     GenerationRequestSerializer,
     GenerationResponseSerializer,
     InlineSuggestionFeedback,
-    IssueFeedback,
-    PlaybookExplanationFeedback,
     PlaybookGenerationAction,
     SentimentFeedback,
-    SuggestionQualityFeedback,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsPlaybookGenerationWizard,
@@ -95,7 +89,6 @@ from .utils.analytics_telemetry_model import (
     AnalyticsRecommendationAction,
     AnalyticsTelemetryEvents,
 )
-from .utils.segment import send_segment_event
 from .utils.segment_analytics_telemetry import send_segment_analytics_event
 
 logger = logging.getLogger(__name__)
@@ -134,10 +127,101 @@ PERMISSIONS_MAP = {
 }
 
 
-class Completions(APIView):
+class OurAPIView(APIView):
+    exception = None
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        self.request = request
+        print("initial()")
+        request_serializer = self.serializer_class(data=request.data, context={"request": request})
+        request_serializer.is_valid(raise_exception=True)
+        self.validated_data = request_serializer.validated_data
+        print(f"initial self.schema1_event_class={self.schema1_event_class}")
+        if self.schema1_event_class:
+            self.schema1_event = self.schema1_event_class.init(request.user, self.validated_data)
+
+    def _get_model_name(self, org_id: str) -> str:
+        try:
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            model_name = model_mesh_client.get_model_id(
+                org_id, self.validated_data.get("model", "")
+            )
+            return model_name
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+            return ""
+
+    def handle_exception(self, exc):
+        self.exception = exc
+        print(f"EXCEPTION!: exc={exc}")
+
+        # Mapping between the internal exceptions and the API exceptions (with a message and a code)
+        mapping = [
+           (WcaInvalidModelId, WcaInvalidModelIdException),
+           (WcaBadRequest, WcaBadRequestException),
+           (WcaKeyNotFound, WcaKeyNotFoundException),
+           (WcaModelIdNotFound, WcaModelIdNotFoundException),
+           (WcaNoDefaultModelId, WcaNoDefaultModelIdException),
+           (WcaEmptyResponse, WcaEmptyResponseException),
+           (WcaCloudflareRejection, WcaCloudflareRejectionException),
+           (WcaUserTrialExpired, WcaUserTrialExpiredException),
+        ]
+
+        for original_class, new_class in mapping:
+            if isinstance(exc, original_class):
+                exc = new_class(cause=exc)
+                break
+        response = super().handle_exception(exc)
+        return response
+
+    def get_ids(self):
+        allowed = ["explanationId", "generationId", "suggestionId"]
+        # Return the ids we want to include in the exception messages
+        ret = {}
+        for k, v in self.validated_data.items():
+            if k in allowed and v:
+                ret[k] = v
+            elif isinstance(v, dict):
+                for subk, subv in v.items():
+                    if subk in allowed and subv:
+                        ret[subk] = subv
+        return ret
+
+    def dispatch(self, request, *args, **kwargs):
+        start_time = time.time()
+        self.exception = False
+        self.schema1_event = None
+        response = super().dispatch(request, *args, **kwargs)
+
+        print(f"api/views self.schema1_event={self.schema1_event}")
+        if self.schema1_event:
+            if hasattr(self.schema1_event, "duration"):
+                duration = round((time.time() - start_time) * 1000, 2)
+                self.schema1_event.duration = duration
+            self.schema1_event.modelName = self._get_model_name(request.user.org_id)
+            self.schema1_event.set_exception(self.exception)
+            # NOTE: We need to wait to store the request because keys like
+            # request._request._prompt_type are stored in the request object
+            # during the processing of the request.
+            self.schema1_event.set_request(request)  # Read the note above
+            # before moving the line ^
+
+            # NOTE: We also want to include the final response in the event, we do that
+            # we need to jump back and do it from within a final middleware that wrap
+            # everything.
+            import ansible_ai_connect.main.middleware
+            ansible_ai_connect.main.middleware.global_schema1_event = self.schema1_event
+
+        return response
+
+
+class Completions(OurAPIView):
     """
     Returns inline code suggestions based on a given Ansible editor context.
     """
+
+    serializer_class = CompletionRequestSerializer
+    schema1_event_class = schema1.CompletionEvent
 
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
 
@@ -162,10 +246,13 @@ class Completions(APIView):
         return pipeline.execute()
 
 
-class Feedback(APIView):
+class Feedback(OurAPIView):
     """
     Feedback API for the AI service
     """
+
+    serializer_class = FeedbackRequestSerializer
+    schema1_event_class = schema1.BaseFeedbackEvent
 
     permission_classes = [
         permissions.IsAuthenticated,
@@ -187,43 +274,25 @@ class Feedback(APIView):
         summary="Feedback API for the AI service",
     )
     def post(self, request) -> Response:
-        exception = None
         validated_data = {}
         try:
-            request_serializer = FeedbackRequestSerializer(
-                data=request.data, context={"request": request}
-            )
-
-            request_serializer.is_valid(raise_exception=True)
-            validated_data = request_serializer.validated_data
-            logger.info(f"feedback request payload from client: {validated_data}")
+            logger.info(f"feedback request payload from client: {self.validated_data}")
             return Response({"message": "Success"}, status=rest_framework_status.HTTP_200_OK)
-        except serializers.ValidationError as exc:
-            exception = exc
-            raise FeedbackValidationException(str(exc))
         except Exception as exc:
-            exception = exc
+            self.exception = exc
             logger.exception(f"An exception {exc.__class__} occurred in sending a feedback")
             raise FeedbackInternalServerException()
         finally:
-            self.write_to_segment(request.user, validated_data, exception, request.data)
+            self.send_schema2(request.user, validated_data, request.data)
 
-    def write_to_segment(
+    def send_schema2(
         self,
         user: User,
         validated_data: dict,
-        exception: Exception = None,
         request_data=None,
     ) -> None:
         inline_suggestion_data: InlineSuggestionFeedback = validated_data.get("inlineSuggestion")
-        suggestion_quality_data: SuggestionQualityFeedback = validated_data.get(
-            "suggestionQualityFeedback"
-        )
         sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
-        issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
-        playbook_explanation_feedback_data: PlaybookExplanationFeedback = validated_data.get(
-            "playbookExplanationFeedback"
-        )
         playbook_generation_action_data: PlaybookGenerationAction = validated_data.get(
             "playbookGenerationAction"
         )
@@ -247,16 +316,6 @@ class Feedback(APIView):
             )
 
         if inline_suggestion_data:
-            event = {
-                "latency": inline_suggestion_data.get("latency"),
-                "userActionTime": inline_suggestion_data.get("userActionTime"),
-                "action": inline_suggestion_data.get("action"),
-                "suggestionId": str(inline_suggestion_data.get("suggestionId", "")),
-                "modelName": model_name,
-                "activityId": str(inline_suggestion_data.get("activityId", "")),
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "inlineSuggestionFeedback", user)
             send_segment_analytics_event(
                 AnalyticsTelemetryEvents.RECOMMENDATION_ACTION,
                 lambda: AnalyticsRecommendationAction(
@@ -267,24 +326,7 @@ class Feedback(APIView):
                 user,
                 ansible_extension_version,
             )
-        if suggestion_quality_data:
-            event = {
-                "prompt": suggestion_quality_data.get("prompt"),
-                "providedSuggestion": suggestion_quality_data.get("providedSuggestion"),
-                "expectedSuggestion": suggestion_quality_data.get("expectedSuggestion"),
-                "additionalComment": suggestion_quality_data.get("additionalComment"),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "suggestionQualityFeedback", user)
         if sentiment_feedback_data:
-            event = {
-                "value": sentiment_feedback_data.get("value"),
-                "feedback": sentiment_feedback_data.get("feedback"),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "sentimentFeedback", user)
             send_segment_analytics_event(
                 AnalyticsTelemetryEvents.PRODUCT_FEEDBACK,
                 lambda: AnalyticsProductFeedback(
@@ -295,40 +337,16 @@ class Feedback(APIView):
                 user,
                 ansible_extension_version,
             )
-        if issue_feedback_data:
-            event = {
-                "type": issue_feedback_data.get("type"),
-                "title": issue_feedback_data.get("title"),
-                "description": issue_feedback_data.get("description"),
-                "modelName": model_name,
-                "exception": exception is not None,
-            }
-            send_segment_event(event, "issueFeedback", user)
-        if playbook_explanation_feedback_data:
-            event = {
-                "action": playbook_explanation_feedback_data.get("action"),
-                "explanation_id": str(playbook_explanation_feedback_data.get("explanationId", "")),
-                "modelName": model_name,
-            }
-            send_segment_event(event, "playbookExplanationFeedback", user)
         if playbook_generation_action_data:
-            action = int(playbook_generation_action_data.get("action"))
-            from_page = playbook_generation_action_data.get("fromPage", 0)
-            to_page = playbook_generation_action_data.get("toPage", 0)
-            wizard_id = str(playbook_generation_action_data.get("wizardId", ""))
-            event = {
-                "action": action,
-                "wizardId": wizard_id,
-                "fromPage": from_page,
-                "toPage": to_page,
-                "modelName": model_name,
-            }
-            send_segment_event(event, "playbookGenerationAction", user)
-            if False and from_page > 1 and action in [1, 3]:
+            if (
+                False
+                and playbook_generation_action_data["from_page"] > 1
+                and playbook_generation_action_data["action"] in [1, 3]
+            ):
                 send_segment_analytics_event(
                     AnalyticsTelemetryEvents.PLAYBOOK_GENERATION_ACTION,
                     lambda: AnalyticsPlaybookGenerationWizard(
-                        action=action,
+                        action=playbook_generation_action_data["action"],
                         model_name=model_name,
                         rh_user_org_id=org_id,
                         wizard_id=str(playbook_generation_action_data.get("wizardId", "")),
@@ -337,40 +355,14 @@ class Feedback(APIView):
                     ansible_extension_version,
                 )
 
-        feedback_events = [
-            inline_suggestion_data,
-            suggestion_quality_data,
-            sentiment_feedback_data,
-            issue_feedback_data,
-        ]
-        if exception and all(not data for data in feedback_events):
-            # When an exception is thrown before inline_suggestion_data or ansible_content_data
-            # is set, we send request_data to Segment after having anonymized it.
-            ano_request_data = anonymizer.anonymize_struct(request_data)
-            if "inlineSuggestion" in request_data:
-                event_type = "inlineSuggestionFeedback"
-            elif "suggestionQualityFeedback" in request_data:
-                event_type = "suggestionQualityFeedback"
-            elif "sentimentFeedback" in request_data:
-                event_type = "sentimentFeedback"
-            elif "issueFeedback" in request_data:
-                event_type = "issueFeedback"
-            else:
-                event_type = "unknown"
 
-            event = {
-                "data": ano_request_data,
-                "exception": str(exception),
-            }
-            send_segment_event(event, event_type, user)
-
-
-class ContentMatches(GenericAPIView):
+class ContentMatches(OurAPIView):
     """
     Returns content matches that were the highest likelihood sources for a given code suggestion.
     """
 
     serializer_class = ContentMatchRequestSerializer
+    schema1_event_class = schema1.ContentMatchEvent
 
     permission_classes = (
         [
@@ -403,16 +395,12 @@ class ContentMatches(GenericAPIView):
         summary="Code suggestion attributions",
     )
     def post(self, request) -> Response:
-        request_serializer = self.get_serializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-
-        request_data = request_serializer.validated_data
-        suggestion_id = str(request_data.get("suggestionId", ""))
-        model_id = str(request_data.get("model", ""))
+        suggestion_id = str(self.validated_data.get("suggestionId", ""))
+        model_id = str(self.validated_data.get("model", ""))
 
         try:
             response_serializer = self.perform_content_matching(
-                model_id, suggestion_id, request.user, request_data
+                model_id, suggestion_id, request.user
             )
             return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
         except Exception:
@@ -424,12 +412,11 @@ class ContentMatches(GenericAPIView):
         model_id: str,
         suggestion_id: str,
         user: User,
-        request_data,
     ):
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
         user_id = user.uuid
         content_match_data: ContentMatchPayloadData = {
-            "suggestions": request_data.get("suggestions", []),
+            "suggestions": self.validated_data.get("suggestions", []),
             "user_id": str(user_id) if user_id else None,
             "rh_user_has_seat": user.rh_user_has_seat,
             "organization_id": user.org_id,
@@ -439,10 +426,6 @@ class ContentMatches(GenericAPIView):
             f"input to content matches for suggestion id {suggestion_id}:\n{content_match_data}"
         )
 
-        exception = None
-        event = None
-        event_name = None
-        start_time = time.time()
         response_serializer = None
         metadata = []
 
@@ -459,6 +442,14 @@ class ContentMatches(GenericAPIView):
                 contentmatch_encoding_hist.observe(content_match_dto.encode_duration / 1000)
                 contentmatch_search_hist.observe(content_match_dto.search_duration / 1000)
 
+            # TODO: See if we can isolate the lines
+            self.schema1_event.request = self.validated_data
+            # NOTE: in the original payload response was a copy of the answer
+            # however, for the other events, it's a structure that hold things
+            # like the status_code
+            # self.schema1_event.response = response_data
+            self.schema1_event.metadata = metadata
+
             try:
                 response_serializer = ContentMatchResponseSerializer(data=response_data)
                 response_serializer.is_valid(raise_exception=True)
@@ -469,142 +460,91 @@ class ContentMatches(GenericAPIView):
                 logger.exception(f"error serializing final response for suggestion {suggestion_id}")
                 raise InternalServerError
 
-        except ModelTimeoutError as e:
-            exception = e
+        except ModelTimeoutError as exc:
+            self.exception = exc
             logger.warn(
                 f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
                 f" for suggestion {suggestion_id}"
             )
-            raise ModelTimeoutException(cause=e)
+            raise ModelTimeoutException(cause=exc)
 
-        except WcaBadRequest as e:
-            exception = e
+        except WcaBadRequest as exc:
+            self.exception = exc
             logger.exception(f"bad request for content matching suggestion {suggestion_id}")
-            raise WcaBadRequestException(cause=e)
+            raise WcaBadRequestException(cause=exc)
 
-        except WcaInvalidModelId as e:
-            exception = e
+        except WcaInvalidModelId as exc:
+            self.exception = exc
             logger.exception(
                 f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
             )
-            raise WcaInvalidModelIdException(cause=e)
+            raise WcaInvalidModelIdException(cause=exc)
 
-        except WcaKeyNotFound as e:
-            exception = e
+        except WcaKeyNotFound as exc:
+            self.exception = exc
             logger.exception(
                 f"A WCA Api Key was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
-            raise WcaKeyNotFoundException(cause=e)
+            raise WcaKeyNotFoundException(cause=exc)
 
-        except WcaModelIdNotFound as e:
-            exception = e
+        except WcaModelIdNotFound as exc:
+            self.exception = exc
             logger.exception(
                 f"A WCA Model ID was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
-            raise WcaModelIdNotFoundException(cause=e)
+            raise WcaModelIdNotFoundException(cause=exc)
 
-        except WcaNoDefaultModelId as e:
-            exception = e
+        except WcaNoDefaultModelId as exc:
+            self.exception = exc
             logger.exception(
                 "A default WCA Model ID was expected but not found for "
                 f"content matching suggestion {suggestion_id}"
             )
-            raise WcaNoDefaultModelIdException(cause=e)
+            raise WcaNoDefaultModelIdException(cause=exc)
 
-        except WcaSuggestionIdCorrelationFailure as e:
-            exception = e
+        except WcaSuggestionIdCorrelationFailure as exc:
+            self.exception = exc
             logger.exception(
                 f"WCA Request/Response SuggestionId correlation failed "
                 f"for suggestion {suggestion_id}"
             )
-            raise WcaSuggestionIdCorrelationFailureException(cause=e)
+            raise WcaSuggestionIdCorrelationFailureException(cause=exc)
 
-        except WcaEmptyResponse as e:
-            exception = e
+        except WcaEmptyResponse as exc:
+            self.exception = exc
             logger.exception(
                 f"WCA returned an empty response for content matching suggestion {suggestion_id}"
             )
-            raise WcaEmptyResponseException(cause=e)
+            raise WcaEmptyResponseException(cause=exc)
 
-        except WcaCloudflareRejection as e:
-            exception = e
+        except WcaCloudflareRejection as exc:
+            self.exception = exc
             logger.exception(f"Cloudflare rejected the request for {suggestion_id}")
-            raise WcaCloudflareRejectionException(cause=e)
+            raise WcaCloudflareRejectionException(cause=exc)
 
-        except WcaUserTrialExpired as e:
-            exception = e
+        except WcaUserTrialExpired as exc:
+            # NOTE: exception should be removed
+            self.exception = exc
             logger.exception(f"User trial expired, when requesting suggestion {suggestion_id}")
-            event_name = "trialExpired"
-            event = {
-                "type": "contentmatch",
-                "modelName": model_id,
-                "suggestionId": str(suggestion_id),
-            }
-            raise WcaUserTrialExpiredException(cause=e)
+            raise WcaUserTrialExpiredException(cause=exc)
 
-        except Exception as e:
-            exception = e
+        except Exception as exc:
+            self.exception = exc
             logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
-            raise ServiceUnavailable(cause=e)
-
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            if exception:
-                model_id_in_exception = BaseWisdomAPIException.get_model_id_from_exception(
-                    exception
-                )
-                if model_id_in_exception:
-                    model_id = model_id_in_exception
-            if event:
-                event["modelName"] = model_id
-                send_segment_event(event, event_name, user)
-            else:
-                self.write_to_segment(
-                    request_data,
-                    duration,
-                    exception,
-                    metadata,
-                    model_id,
-                    response_serializer.data if response_serializer else {},
-                    suggestion_id,
-                    user,
-                )
+            raise
 
         return response_serializer
 
-    def write_to_segment(
-        self,
-        request_data,
-        duration,
-        exception,
-        metadata,
-        model_id,
-        response_data,
-        suggestion_id,
-        user,
-    ):
-        event = {
-            "duration": duration,
-            "exception": exception is not None,
-            "modelName": model_id,
-            "problem": None if exception is None else exception.__class__.__name__,
-            "request": request_data,
-            "response": response_data,
-            "suggestionId": str(suggestion_id),
-            "rh_user_has_seat": user.rh_user_has_seat,
-            "rh_user_org_id": user.org_id,
-            "metadata": metadata,
-        }
-        send_segment_event(event, "contentmatch", user)
 
-
-class Explanation(APIView):
+class Explanation(OurAPIView):
     """
     Returns a text that explains a playbook.
     """
 
+    serializer_class = ExplanationRequestSerializer
+    schema1_event_class = schema1.ExplainPlaybookEvent
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
@@ -630,134 +570,31 @@ class Explanation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        duration = None
-        exception = None
-        explanation_id = None
-        playbook = ""
-        answer = {}
-        request_serializer = ExplanationRequestSerializer(data=request.data)
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
-            playbook = request_serializer.validated_data.get("content")
+        explanation_id = str(self.validated_data.get("explanationId", ""))
+        playbook = self.validated_data.get("content")
 
-            llm = apps.get_app_config("ai").model_mesh_client
-            start_time = time.time()
-            explanation = llm.explain_playbook(request, playbook)
-            duration = round((time.time() - start_time) * 1000, 2)
+        llm = apps.get_app_config("ai").model_mesh_client
+        explanation = llm.explain_playbook(request, playbook)
 
-            # Anonymize response
-            # Anonymized in the View to be consistent with where Completions are anonymized
-            anonymized_explanation = anonymizer.anonymize_struct(
-                explanation, value_template=Template("{{ _${variable_name}_ }}")
-            )
+        # Anonymize response
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_explanation = anonymizer.anonymize_struct(
+            explanation, value_template=Template("{{ _${variable_name}_ }}")
+        )
 
-            answer = {
-                "content": anonymized_explanation,
-                "format": "markdown",
-                "explanationId": explanation_id,
-            }
-
-        except WcaBadRequest as e:
-            exception = e
-            logger.exception(f"bad request for playbook explanation {explanation_id}")
-            raise WcaBadRequestException(cause=e)
-
-        except WcaInvalidModelId as e:
-            exception = e
-            logger.exception(f"WCA Model ID is invalid for playbook explanation {explanation_id}")
-            raise WcaInvalidModelIdException(cause=e)
-
-        except WcaKeyNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaKeyNotFoundException(cause=e)
-
-        except WcaModelIdNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaModelIdNotFoundException(cause=e)
-
-        except WcaNoDefaultModelId as e:
-            exception = e
-            logger.exception(
-                "A default WCA Model ID was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaNoDefaultModelIdException(cause=e)
-
-        except WcaEmptyResponse as e:
-            exception = e
-            logger.exception(
-                f"WCA returned an empty response for playbook explanation {explanation_id}"
-            )
-            raise WcaEmptyResponseException(cause=e)
-
-        except WcaCloudflareRejection as e:
-            exception = e
-            logger.exception(
-                f"Cloudflare rejected the request for playbook explanation {explanation_id}"
-            )
-            raise WcaCloudflareRejectionException(cause=e)
-
-        except WcaUserTrialExpired as e:
-            exception = e
-            logger.exception(
-                f"User trial expired, when requesting playbook explanation {explanation_id}"
-            )
-            raise WcaUserTrialExpiredException(cause=e)
-
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook explanation")
-            raise
-
-        finally:
-            self.write_to_segment(
-                request.user,
-                explanation_id,
-                exception,
-                duration,
-                playbook_length=len(playbook),
-            )
+        answer = {
+            "content": anonymized_explanation,
+            "format": "markdown",
+            "explanationId": explanation_id,
+        }
 
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
 
-    def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
-        model_name = ""
-        try:
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user.org_id, "")
-        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-            pass
 
-        event = {
-            "duration": duration,
-            "exception": exception is not None,
-            "explanationId": explanation_id,
-            "modelName": model_name,
-            "playbook_length": playbook_length,
-            "rh_user_org_id": user.org_id,
-        }
-        if exception:
-            event["response"] = (
-                {
-                    "exception": str(exception),
-                },
-            )
-        send_segment_event(event, "explainPlaybook", user)
-
-
-class Generation(APIView):
+class Generation(OurAPIView):
     """
     Returns a playbook based on a text input.
     """
@@ -765,6 +602,8 @@ class Generation(APIView):
     from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
     from rest_framework import permissions
 
+    serializer_class = GenerationRequestSerializer
+    schema1_event_class = schema1.CodegenPlaybookEvent
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
@@ -790,142 +629,31 @@ class Generation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        exception = None
-        generation_id = None
-        wizard_id = None
-        duration = None
-        create_outline = None
-        anonymized_playbook = ""
-        playbook = ""
-        request_serializer = GenerationRequestSerializer(data=request.data)
-        answer = {}
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            generation_id = str(request_serializer.validated_data.get("generationId", ""))
-            create_outline = request_serializer.validated_data["createOutline"]
-            outline = str(request_serializer.validated_data.get("outline", ""))
-            text = request_serializer.validated_data["text"]
-            wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
+        generation_id = str(self.validated_data.get("generationId", ""))
+        create_outline = self.validated_data["createOutline"]
+        outline = str(self.validated_data.get("outline", ""))
+        text = self.validated_data["text"]
 
-            llm = apps.get_app_config("ai").model_mesh_client
-            start_time = time.time()
-            playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
-            duration = round((time.time() - start_time) * 1000, 2)
+        llm = apps.get_app_config("ai").model_mesh_client
+        playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
 
-            # Anonymize responses
-            # Anonymized in the View to be consistent with where Completions are anonymized
-            anonymized_playbook = anonymizer.anonymize_struct(
-                playbook, value_template=Template("{{ _${variable_name}_ }}")
-            )
-            anonymized_outline = anonymizer.anonymize_struct(
-                outline, value_template=Template("{{ _${variable_name}_ }}")
-            )
+        # Anonymize responses
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_playbook = anonymizer.anonymize_struct(
+            playbook, value_template=Template("{{ _${variable_name}_ }}")
+        )
+        anonymized_outline = anonymizer.anonymize_struct(
+            outline, value_template=Template("{{ _${variable_name}_ }}")
+        )
 
-            answer = {
-                "playbook": anonymized_playbook,
-                "outline": anonymized_outline,
-                "format": "plaintext",
-                "generationId": generation_id,
-            }
-
-        except WcaBadRequest as e:
-            exception = e
-            logger.exception(f"bad request for playbook generation {generation_id}")
-            raise WcaBadRequestException(cause=e)
-
-        except WcaInvalidModelId as e:
-            exception = e
-            logger.exception(f"WCA Model ID is invalid for playbook generation {generation_id}")
-            raise WcaInvalidModelIdException(cause=e)
-
-        except WcaKeyNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaKeyNotFoundException(cause=e)
-
-        except WcaModelIdNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaModelIdNotFoundException(cause=e)
-
-        except WcaNoDefaultModelId as e:
-            exception = e
-            logger.exception(
-                "A default WCA Model ID was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaNoDefaultModelIdException(cause=e)
-
-        except WcaEmptyResponse as e:
-            exception = e
-            logger.exception(
-                f"WCA returned an empty response for playbook generation {generation_id}"
-            )
-            raise WcaEmptyResponseException(cause=e)
-
-        except WcaCloudflareRejection as e:
-            exception = e
-            logger.exception(
-                f"Cloudflare rejected the request for playbook generation {generation_id}"
-            )
-            raise WcaCloudflareRejectionException(cause=e)
-
-        except WcaUserTrialExpired as e:
-            exception = e
-            logger.exception(
-                f"User trial expired, when requesting playbook generation {generation_id}"
-            )
-            raise WcaUserTrialExpiredException(cause=e)
-
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
-            raise
-
-        finally:
-            self.write_to_segment(
-                request.user,
-                generation_id,
-                wizard_id,
-                exception,
-                duration,
-                create_outline,
-                playbook_length=len(anonymized_playbook),
-            )
+        answer = {
+            "playbook": anonymized_playbook,
+            "outline": anonymized_outline,
+            "format": "plaintext",
+            "generationId": generation_id,
+        }
 
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
-
-    def write_to_segment(
-        self, user, generation_id, wizard_id, exception, duration, create_outline, playbook_length
-    ):
-        model_name = ""
-        try:
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user.org_id, "")
-        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-            pass
-        event = {
-            "create_outline": create_outline,
-            "duration": duration,
-            "exception": exception is not None,
-            "generationId": generation_id,
-            "modelName": model_name,
-            "playbook_length": playbook_length,
-            "wizardId": wizard_id,
-        }
-        if exception:
-            event["response"] = (
-                {
-                    "exception": str(exception),
-                },
-            )
-        send_segment_event(event, "codegenPlaybook", user)
