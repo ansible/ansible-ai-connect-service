@@ -298,7 +298,7 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "timestamp": None,
     },
-    "explanation": {
+    "explainPlaybook": {
         "duration": None,
         "exception": None,
         "explanationId": None,
@@ -310,7 +310,7 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "timestamp": None,
     },
-    "generation": {
+    "codegenPlaybook": {
         "duration": None,
         "exception": None,
         "generationId": None,
