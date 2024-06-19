@@ -30,7 +30,11 @@ from drf_spectacular.utils import (
 from rest_framework import serializers
 
 from . import formatter as fmtr
-from .fields import AnonymizedCharField, AnonymizedPromptCharField
+from .fields import (
+    AnonymizedAdditionalContextField,
+    AnonymizedCharField,
+    AnonymizedPromptCharField,
+)
 
 
 class Metadata(serializers.Serializer):
@@ -67,7 +71,7 @@ class CompletionMetadata(Metadata):
         label="Ansible File Type",
         help_text="Ansible file type (playbook/tasks_in_role/tasks)",
     )
-    additionalContext = serializers.DictField(
+    additionalContext = AnonymizedAdditionalContextField(
         required=False,
         label="Additional Context",
         help_text="Additional context for completion API",

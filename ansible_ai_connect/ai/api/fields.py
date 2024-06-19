@@ -48,3 +48,7 @@ class AnonymizedCharField(AnonymizedFieldMixin, serializers.CharField):
 
 class AnonymizedPromptCharField(AnonymizedPromptMixin, serializers.CharField):
     pass
+
+
+class AnonymizedAdditionalContextField(AnonymizedFieldMixin, serializers.DictField):
+    pass
