@@ -281,6 +281,7 @@ spec:
             script: |
               #!/bin/sh
               ls
+              pwd
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
               echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
