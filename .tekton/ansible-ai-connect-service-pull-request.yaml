@@ -297,7 +297,7 @@ spec:
         - clone-repository
       taskSpec:
         steps:
-          - name: echo commit-timestamp
+          - name: echo-commit-timestamp
             image: alpine/git
             script: |
               echo $(tasks.clone-repository.results.commit)
