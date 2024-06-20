@@ -468,7 +468,7 @@ class ContentMatchRequestSerializer(Metadata):
         label="Suggestion ID",
         help_text=(
             "A UUID that identifies the particular suggestion"
-            " attribution data is being requested for."
+            " content match data is being requested for."
         ),
     )
     model = serializers.CharField(required=False, allow_blank=True)
