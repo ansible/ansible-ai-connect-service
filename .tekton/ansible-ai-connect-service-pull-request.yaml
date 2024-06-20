@@ -185,17 +185,27 @@ spec:
         operator: in
         values:
         - "true"
-      taskSpec:
-        steps:
-          - name: test
-            image: alpine/git
-            script: |
-              echo "hi"
       workspaces:
       - name: output
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+    - name: format-timestamp
+      runAfter:
+         - name: clone-repository
+      taskSpec:
+        steps:
+          - name: format-commit-timestamp
+            image: alpine/git
+            script: |
+              echo -n $(date -d @$(tasks.clone-repository.results.commit-timestamp) "+%Y%m%d%H%M") > $(results.formatted-commit-timestamp.path)
+        results:
+          - name: formatted-commit-timestamp
+
+
+
+
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -242,9 +252,10 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp) +%Y%m%d%H%M)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
+      - format-timestamp
       taskRef:
         params:
         - name: name
@@ -267,9 +278,10 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)"]
+        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp) +%Y%m%d%H%M)"]
       runAfter:
       - build-container
+      - format-timestamp
       taskRef:
         params:
         - name: name
