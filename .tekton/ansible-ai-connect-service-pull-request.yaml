@@ -292,6 +292,16 @@ spec:
               echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
         results:
           - name: commit-timestamp
+    - name: test-result
+      runAfter:
+        - clone-repository
+      taskSpec:
+        steps:
+          - name: echo commit-timestamp
+            image: alpine/git
+            script: |
+              echo $(tasks.clone-repository.results.commit)
+              echo $(tasks.clone-repository.results.commit-timestamp)
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
