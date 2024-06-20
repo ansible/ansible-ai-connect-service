@@ -303,6 +303,7 @@ spec:
               echo $(tasks.clone-repository.results.commit)
               echo $(tasks.clone-repository.results.commit-timestamp)
               echo $(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)
+              echo $(tasks.git-metadata.results.commit-timestamp)
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
