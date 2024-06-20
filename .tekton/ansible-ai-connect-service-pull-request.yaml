@@ -236,7 +236,7 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -261,7 +261,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)"]
+        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)"]
       runAfter:
       - build-container
       taskRef:
@@ -292,18 +292,6 @@ spec:
               echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
         results:
           - name: commit-timestamp
-    - name: test-result
-      runAfter:
-        - clone-repository
-      taskSpec:
-        steps:
-          - name: echo-commit-timestamp
-            image: alpine/git
-            script: |
-              echo $(tasks.clone-repository.results.commit)
-              echo $(tasks.clone-repository.results.commit-timestamp)
-              echo $(date -d @$(tasks.clone-repository.results.commit-timestamp) +%Y%m%d%H%M)
-              echo $(tasks.git-metadata.results.commit-timestamp)
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
