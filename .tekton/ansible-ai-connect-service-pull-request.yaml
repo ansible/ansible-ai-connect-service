@@ -276,6 +276,7 @@ spec:
     - name: git-metadata
       runAfter:
       - clone-repository
+      - format-commit-timestamp
       workspaces:
         - name: source
           workspace: workspace
@@ -290,8 +291,23 @@ spec:
               set -euo pipefail
               cd "$(workspaces.source.path)/source"
               echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
+              echo $(tasks.format-commit-timestamp.results.formatted-commit-timestamp)
         results:
           - name: commit-timestamp
+    
+    - name: format-commit-timestamp
+      runAfter:
+        - clone-repository
+      taskSpec:
+        steps:
+          - name: format-commit-timestamp
+            image: alpine/git
+            script: |
+              echo -n $(date -d @$(tasks.clone-repository.results.commit-timestamp) "+%Y%m%d%H%M") > $(results.formatted-commit-timestamp.path)
+        results:
+          - name: formatted-commit-timestamp
+
+
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
