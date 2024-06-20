@@ -21,6 +21,7 @@ import time
 import uuid
 from http import HTTPStatus
 from typing import Any, Dict, Optional, Union
+from unittest import skip
 from unittest.mock import ANY, Mock, patch
 
 import requests
@@ -1679,6 +1680,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             properties = segment_events[0]["properties"]
             self.assertEqual(properties["action"], "1")
 
+    @skip("Schema2 event is not enabled yet")
     def test_feedback_generation(self):
         payload = {
             "playbookGenerationAction": {
