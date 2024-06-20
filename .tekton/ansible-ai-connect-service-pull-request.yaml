@@ -185,6 +185,12 @@ spec:
         operator: in
         values:
         - "true"
+      taskSpec:
+        steps:
+          - name: test
+            image: alpine/git
+            script: |
+              echo "hi"
       workspaces:
       - name: output
         workspace: workspace
