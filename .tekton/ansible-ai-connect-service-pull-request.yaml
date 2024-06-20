@@ -252,7 +252,7 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp) +%Y%m%d%H%M)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       - format-timestamp
@@ -278,7 +278,7 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp) +%Y%m%d%H%M)"]
+        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.format-timestamp.results.formatted-commit-timestamp)"]
       runAfter:
       - build-container
       - format-timestamp
