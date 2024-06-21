@@ -50,7 +50,7 @@ class InferenceStage2(PipelineElement):
         payload = context.payload
         suggestion_id = payload.suggestionId
 
-        @call("suggestions", suggestion_id)
+        @call("suggestions", str(suggestion_id))
         def get_predictions() -> None:
             request = context.request
             model_mesh_client = apps.get_app_config("ai").model_mesh_client

@@ -14,7 +14,12 @@
 
 from django.urls import path
 
+<<<<<<< HEAD:ansible_ai_connect/ai/api/urls.py
 from .views import Completions, ContentMatches, Explanation, Feedback, Generation
+=======
+from .views import Attributions, Completions, Explanation, Feedback, Generation
+from .views2 import ContentMatches
+>>>>>>> 4a5b54df (ContentMatch refactor):ansible_wisdom/ai/api/urls.py
 
 urlpatterns = [
     path("completions/", Completions.as_view(), name="completions"),

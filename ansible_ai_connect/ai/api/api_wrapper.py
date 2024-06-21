@@ -15,8 +15,6 @@
 import functools
 import json
 import logging
-from typing import Optional
-from uuid import UUID
 
 from django.conf import settings
 
@@ -49,7 +47,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-def call(api_type: str, identifier: Optional[UUID]):
+def call(api_type: str, identifier: str):
 
     def decorator(func):
         @functools.wraps(func)
