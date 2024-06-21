@@ -3,7 +3,7 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS production
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
 
-ARG DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.production
+ARG DJANGO_SETTINGS_MODULE=ansible_ai_connect.main.settings.production
 
 ENV DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 
@@ -29,22 +29,21 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     nginx
 
 # Copy the ansible_wisdom package files
-COPY requirements-x86_64.txt /var/www/ansible-wisdom-service/
-COPY requirements-aarch64.txt /var/www/ansible-wisdom-service/
-COPY requirements.txt /var/www/ansible-wisdom-service/
-COPY setup.cfg /var/www/ansible-wisdom-service/setup.cfg
-COPY pyproject.toml /var/www/ansible-wisdom-service/pyproject.toml
-COPY README.md /var/www/ansible-wisdom-service/README.md
-COPY ansible_wisdom /var/www/ansible-wisdom-service/ansible_wisdom
-RUN  ln -s /var/www/ansible-wisdom-service/ansible_wisdom /var/www/ansible-wisdom-service/ansible_ai_connect
+COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/
+COPY requirements-aarch64.txt /var/www/ansible-ai-connect-service/
+COPY requirements.txt /var/www/ansible-ai-connect-service/
+COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
+COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
+COPY README.md /var/www/ansible-ai-connect-service/README.md
+COPY ansible_ai_connect /var/www/ansible-ai-connect-service/ansible_ai_connect
 
 # Compile Python/Django application
 RUN /usr/bin/python3.11 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3.11 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 COPY model-cache /var/www/model-cache
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-wisdom-service/requirements.txt
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-wisdom-service/
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi
 
 RUN echo -e "\
@@ -52,7 +51,7 @@ RUN echo -e "\
   \"imageTags\": \"${IMAGE_TAGS}\", \n\
   \"gitCommit\": \"${GIT_COMMIT}\" \n\
 }\n\
-" > /var/www/ansible-wisdom-service/ansible_wisdom/version_info.json
+" > /var/www/ansible-ai-connect-service/ansible_ai_connect/version_info.json
 
 # Compile React/TypeScript Console application
 # Copy each source folder individually to avoid copying 'node_modules'

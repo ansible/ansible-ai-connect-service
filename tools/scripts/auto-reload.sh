@@ -7,7 +7,7 @@ if [ $# -lt 2 ]; then
 fi
 
 if [[ -n ${DJANGO_SETTINGS_MODULE} ]] && [[ ${DJANGO_SETTINGS_MODULE} == main.settings* ]]; then
-    export DJANGO_SETTINGS_MODULE=ansible_wisdom.${DJANGO_SETTINGS_MODULE}
+    export DJANGO_SETTINGS_MODULE=ansible_ai_connect.${DJANGO_SETTINGS_MODULE}
 fi
 
 last_reload=$(date +%s)

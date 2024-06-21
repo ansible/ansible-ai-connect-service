@@ -30,7 +30,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal, cast
 
-BASE_DIR: Path = files("ansible_wisdom")
+BASE_DIR: Path = files("ansible_ai_connect")
 ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Connect"
 
 # Quick-start development settings - unsuitable for production
