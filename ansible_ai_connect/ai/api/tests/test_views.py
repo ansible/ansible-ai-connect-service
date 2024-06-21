@@ -680,8 +680,8 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                     properties = event["properties"]
                     self.assertTrue(properties["exception"])
                     self.assertEqual(properties["problem"], "WcaSuggestionIdCorrelationFailure")
-            self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
-            self.assertInLog(f"x_request_id: '{x_request_id}'", log)
+            self.assertInLog(f"suggestions: {DEFAULT_SUGGESTION_ID}", log)
+            self.assertInLog(f"x_request_id: {x_request_id}", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")

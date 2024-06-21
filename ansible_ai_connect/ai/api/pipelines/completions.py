@@ -22,8 +22,8 @@ from ansible_ai_connect.ai.api.pipelines.common import Pipeline
 from ansible_ai_connect.ai.api.pipelines.completion_stages.deserialise import (
     DeserializeStage,
 )
-from ansible_ai_connect.ai.api.pipelines.completion_stages.inference import (
-    InferenceStage,
+from ansible_ai_connect.ai.api.pipelines.completion_stages.inference2 import (
+    InferenceStage2,
 )
 from ansible_ai_connect.ai.api.pipelines.completion_stages.post_process import (
     PostProcessStage,
@@ -45,7 +45,7 @@ class CompletionsPipeline(Pipeline[Response, CompletionContext]):
             [
                 DeserializeStage(),
                 PreProcessStage(),
-                InferenceStage(),
+                InferenceStage2(),
                 PostProcessStage(),
                 ResponseStage(),
             ],
