@@ -61,7 +61,6 @@ class HealthCheckCustomView(MainView):
         "WCAHealthCheck": "wca",
         "WCAOnPremHealthCheck": "wca-onprem",
         "AuthorizationHealthCheck": "authorization",
-        "AttributionCheck": "attribution",
     }
 
     @method_decorator(cache_page(CACHE_TIMEOUT))

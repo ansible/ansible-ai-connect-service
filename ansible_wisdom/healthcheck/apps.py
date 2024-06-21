@@ -21,7 +21,6 @@ class HealthCheckAppConfig(AppConfig):
 
     def ready(self):
         from .backends import (
-            AttributionCheck,
             AuthorizationHealthCheck,
             AWSSecretManagerHealthCheck,
             ModelServerHealthCheck,
@@ -30,4 +29,3 @@ class HealthCheckAppConfig(AppConfig):
         plugin_dir.register(ModelServerHealthCheck)
         plugin_dir.register(AWSSecretManagerHealthCheck)
         plugin_dir.register(AuthorizationHealthCheck)
-        plugin_dir.register(AttributionCheck)

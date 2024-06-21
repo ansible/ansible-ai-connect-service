@@ -356,21 +356,6 @@ class FeedbackRequestSerializer(Metadata):
             raise serializers.ValidationError("invalid feedback type for user")
 
 
-class AttributionRequestSerializer(Metadata):
-
-    suggestion = serializers.CharField(trim_whitespace=False)
-    suggestionId = serializers.UUIDField(
-        format="hex_verbose",
-        required=False,
-        label="Suggestion ID",
-        help_text=(
-            "A UUID that identifies the particular suggestion"
-            " attribution data is being requested for."
-        ),
-    )
-    metadata = Metadata(required=False)
-
-
 class ExplanationRequestSerializer(Metadata):
 
     content = AnonymizedCharField(
@@ -526,20 +511,6 @@ class EnumField(serializers.Field):
 
     def to_representation(self, value):
         return value.label
-
-
-class AttributionSerializer(serializers.Serializer):
-    repo_name = serializers.CharField()
-    repo_url = serializers.URLField()
-    path = serializers.CharField(allow_blank=True)
-    license = serializers.CharField()
-    data_source = EnumField(choices=DataSource)
-    ansible_type = EnumField(choices=AnsibleType)
-    score = serializers.FloatField()
-
-
-class AttributionResponseSerializer(serializers.Serializer):
-    attributions = serializers.ListField(child=AttributionSerializer())
 
 
 class ContentMatchSerializer(serializers.Serializer):

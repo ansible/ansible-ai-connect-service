@@ -38,7 +38,6 @@ dependencies = [
   'PyYAML~=6.0',
   'requests~=2.32.0',
   'segment-analytics-python~=2.2.2',
-  'sentence-transformers==2.*',
   'social-auth-app-django~=5.4.1',
   'social-auth-core[openidconnect]>=4.4.2',
   'transformers~=4.39.1',

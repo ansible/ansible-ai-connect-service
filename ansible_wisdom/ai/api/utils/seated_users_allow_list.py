@@ -19,30 +19,6 @@ See https://issues.redhat.com/browse/AAP-15568 for more details.
 """
 
 ALLOW_LIST = {
-    "attribution": {
-        "suggestionId": None,
-        "duration": None,
-        "encode_duration": None,
-        "search_duration": None,
-        "attributions": [
-            {
-                "repo_name": None,
-                "repo_url": None,
-                "path": None,
-                "license": None,
-                "data_source": None,
-                "ansible_type": None,
-                "score": None,
-            },
-        ],
-        "modelName": None,
-        "imageTags": None,
-        "hostname": None,
-        "groups": None,
-        "rh_user_has_seat": None,
-        "rh_user_org_id": None,
-        "timestamp": None,
-    },
     "contentmatch": {
         "suggestionId": None,
         "duration": None,

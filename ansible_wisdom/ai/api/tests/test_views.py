@@ -42,7 +42,6 @@ from segment import analytics
 
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
-    AttributionException,
     FeedbackValidationException,
     ModelTimeoutException,
     PostprocessException,
@@ -85,11 +84,7 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
 from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
-from ansible_ai_connect.ai.api.serializers import (
-    AnsibleType,
-    CompletionRequestSerializer,
-    DataSource,
-)
+from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
 from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization
@@ -1702,160 +1697,8 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertEqual(properties["action"], 3)
 
 
-@patch("ansible_ai_connect.ai.search.search")
-@override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-class TestAttributionsView(WisdomServiceAPITestCaseBase):
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_segment_events(self, mock_search):
-        mock_search.return_value = {
-            "attributions": [
-                {
-                    "repo_name": "repo_name",
-                    "repo_url": "http://example.com",
-                    "path": "/path",
-                    "license": "license",
-                    "data_source": DataSource.UNKNOWN,
-                    "ansible_type": AnsibleType.UNKNOWN,
-                    "score": 0.0,
-                },
-            ],
-            "meta": {
-                "encode_duration": 1000,
-                "search_duration": 2000,
-            },
-        }
-        payload = {
-            "suggestion": "suggestion",
-            "suggestionId": str(uuid.uuid4()),
-        }
-
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("attributions"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-
-            segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertTrue(len(segment_events) > 0)
-            hostname = platform.node()
-            for event in segment_events:
-                properties = event["properties"]
-                self.assertTrue("modelName" in properties)
-                self.assertTrue("imageTags" in properties)
-                self.assertTrue("groups" in properties)
-                self.assertTrue("Group 1" in properties["groups"])
-                self.assertTrue("Group 2" in properties["groups"])
-                self.assertTrue("rh_user_has_seat" in properties)
-                self.assertTrue("rh_user_org_id" in properties)
-                self.assertEqual(hostname, properties["hostname"])
-                self.assertIsNotNone(event["timestamp"])
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_segment_events_with_exception(self, mock_search):
-        mock_search.side_effect = Exception("Search Exception")
-        payload = {
-            "suggestion": "suggestion",
-            "suggestionId": str(uuid.uuid4()),
-        }
-
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("attributions"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
-            self.assert_error_detail(
-                r, AttributionException.default_code, AttributionException.default_detail
-            )
-
-            segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(len(segment_events), 0)
-            self.assertInLog("Failed to search for attributions", log)
-
-
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @patch("ansible_ai_connect.ai.search.search")
-    def test_wca_contentmatch_with_no_seated_user(self, mock_search):
-        self.user.rh_user_has_seat = False
-
-        repo_name = "robertdebock.nginx"
-        repo_url = "https://galaxy.ansible.com/robertdebock/nginx"
-        path = "tasks/main.yml"
-        license = "apache-2.0"
-
-        mock_search.return_value = {
-            "attributions": [
-                {
-                    "repo_name": repo_name,
-                    "repo_url": repo_url,
-                    "path": path,
-                    "license": license,
-                    "data_source": DataSource.GALAXY_R,
-                    "ansible_type": AnsibleType.UNKNOWN,
-                    "score": 0.0,
-                },
-            ],
-            "meta": {
-                "encode_duration": 1000,
-                "search_duration": 2000,
-            },
-        }
-
-        self.client.force_authenticate(user=self.user)
-        payload = {
-            "suggestions": [
-                "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n"
-            ],
-            "suggestionId": str(uuid.uuid4()),
-        }
-
-        r = self.client.post(reverse("contentmatches"), payload)
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
-        content_match = r.data["contentmatches"][0]["contentmatch"][0]
-
-        self.assertEqual(content_match["repo_name"], repo_name)
-        self.assertEqual(content_match["repo_url"], repo_url)
-        self.assertEqual(content_match["path"], path)
-        self.assertEqual(content_match["license"], license)
-        self.assertEqual(content_match["data_source_description"], "Ansible Galaxy roles")
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @patch("ansible_ai_connect.ai.search.search")
-    def test_wca_contentmatch_with_unseated_user_verify_single_task(self, mock_search):
-        self.user.rh_user_has_seat = False
-        self.client.force_authenticate(user=self.user)
-
-        mock_search.return_value = {
-            "attributions": [
-                {
-                    "repo_name": "repo_name",
-                    "repo_url": "http://example.com",
-                    "path": "/path",
-                    "license": "license",
-                    "data_source": DataSource.UNKNOWN,
-                    "ansible_type": AnsibleType.UNKNOWN,
-                    "score": 0.0,
-                },
-            ],
-            "meta": {
-                "encode_duration": 1000,
-                "search_duration": 2000,
-            },
-        }
-
-        payload = {
-            "suggestions": [
-                "\n- name: install nginx on RHEL\n",
-                "\n- name: Copy Fathom config into place.\n",
-            ],
-            "suggestionId": str(uuid.uuid4()),
-        }
-
-        r = self.client.post(reverse("contentmatches"), payload)
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
-        mock_search.assert_called_with(payload["suggestions"][0])
-
-    def test_wca_contentmatch_with_seated_user_single_task(self):
+    def test_wca_contentmatch_single_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -1942,7 +1785,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         self.assertEqual(content_match["license"], license)
         self.assertEqual(content_match["data_source_description"], data_source_description)
 
-    def test_wca_contentmatch_with_seated_user_multi_task(self):
+    def test_wca_contentmatch_multi_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -2037,7 +1880,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         self.assertEqual(content_match2["license"], license2)
         self.assertEqual(content_match2["data_source_description"], data_source_description2)
 
-    def test_wca_contentmatch_with_seated_user_with_custom_model_id(self):
+    def test_wca_contentmatch_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -2089,7 +1932,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
         )
 
-    def test_wca_contentmatch_with_seated_user_without_custom_model_id(self):
+    def test_wca_contentmatch_without_custom_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -2342,73 +2185,6 @@ class TestContentMatchesWCAViewSegmentEvents(
         self.model_client.session.post = Mock(return_value=wca_response)
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value="org-api-key")
-
-        self.search_response = {
-            "attributions": [
-                {
-                    "repo_name": repo_name,
-                    "repo_url": repo_url,
-                    "path": path,
-                    "license": license,
-                    "data_source": DataSource.GALAXY_R,
-                    "ansible_type": AnsibleType.UNKNOWN,
-                    "score": 0.0,
-                },
-            ],
-            "meta": {
-                "encode_duration": 1000,
-                "search_duration": 2000,
-            },
-        }
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    @patch("ansible_ai_connect.ai.api.views.send_segment_event")
-    @patch("ansible_ai_connect.ai.search.search")
-    def test_wca_contentmatch_segment_events_with_unseated_user(
-        self, mock_search, mock_send_segment_event
-    ):
-        self.user.rh_user_has_seat = False
-
-        mock_search.return_value = self.search_response
-
-        r = self.client.post(reverse("contentmatches"), self.payload)
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-
-        event = {
-            "exception": False,
-            "modelName": "",
-            "problem": None,
-            "response": {
-                "contentmatches": [
-                    {
-                        "contentmatch": [
-                            {
-                                "repo_name": "robertdebock.nginx",
-                                "repo_url": "https://galaxy.ansible.com/robertdebock/nginx",
-                                "path": "tasks/main.yml",
-                                "license": "apache-2.0",
-                                "score": 0.0,
-                                "data_source_description": "Ansible Galaxy roles",
-                            }
-                        ]
-                    }
-                ]
-            },
-            "metadata": [{"encode_duration": 1000, "search_duration": 2000}],
-        }
-
-        event_request = {
-            "suggestions": [
-                "\n - name: install nginx on RHEL\n become: true\n "
-                "ansible.builtin.package:\n name: nginx\n state: present\n"
-            ]
-        }
-
-        actual_event = mock_send_segment_event.call_args_list[0][0][0]
-
-        self.assertTrue(event.items() <= actual_event.items())
-        self.assertTrue(event_request.items() <= actual_event.get("request").items())
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @patch("ansible_ai_connect.ai.api.views.send_segment_event")

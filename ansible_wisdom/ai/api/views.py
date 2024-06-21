@@ -14,7 +14,6 @@
 
 import logging
 import time
-from http import HTTPStatus
 from string import Template
 
 from ansible_anonymizer import anonymizer
@@ -32,7 +31,6 @@ from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
-    AttributionException,
     BaseWisdomAPIException,
     FeedbackInternalServerException,
     FeedbackValidationException,
@@ -64,13 +62,8 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.users.models import User
 
-from .. import search as ai_search
 from ..feature_flags import FeatureFlags
-from .data.data_model import (
-    AttributionsResponseDto,
-    ContentMatchPayloadData,
-    ContentMatchResponseDto,
-)
+from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     AcceptedTermsPermission,
@@ -80,8 +73,6 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
-    AttributionRequestSerializer,
-    AttributionResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     ContentMatchRequestSerializer,
@@ -110,17 +101,6 @@ from .utils.segment_analytics_telemetry import send_segment_analytics_event
 logger = logging.getLogger(__name__)
 
 feature_flags = FeatureFlags()
-
-attribution_encoding_hist = Histogram(
-    "model_attribution_encoding_latency_seconds",
-    "Histogram of model attribution encoding processing time",
-    namespace=NAMESPACE,
-)
-attribution_search_hist = Histogram(
-    "model_attribution_search_latency_seconds",
-    "Histogram of model attribution search processing time",
-    namespace=NAMESPACE,
-)
 
 contentmatch_encoding_hist = Histogram(
     "model_contentmatch_encoding_latency_seconds",
@@ -385,87 +365,6 @@ class Feedback(APIView):
             send_segment_event(event, event_type, user)
 
 
-class Attributions(GenericAPIView):
-    """
-    Returns attributions that were the highest likelihood sources for a given code suggestion.
-    """
-
-    serializer_class = AttributionRequestSerializer
-
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
-        BlockUserWithoutSeat,
-    ]
-    required_scopes = ["read", "write"]
-
-    throttle_cache_key_suffix = "_attributions"
-
-    @extend_schema(
-        request=AttributionRequestSerializer,
-        responses={
-            200: AttributionResponseSerializer,
-            400: OpenApiResponse(description="Bad Request"),
-            401: OpenApiResponse(description="Unauthorized"),
-            429: OpenApiResponse(description="Request was throttled"),
-            503: OpenApiResponse(description="Service Unavailable"),
-        },
-        summary="Code suggestion attributions",
-    )
-    def post(self, request) -> Response:
-        request_serializer = self.get_serializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-
-        request_data = request_serializer.validated_data
-        suggestion_id = str(request_data.get("suggestionId", ""))
-
-        start_time = time.time()
-        try:
-            encode_duration, search_duration, response_serializer = self.perform_search(
-                request_serializer
-            )
-        except Exception as exc:
-            logger.error(f"Failed to search for attributions\nException:\n{exc}")
-            raise AttributionException()
-
-        duration = round((time.time() - start_time) * 1000, 2)
-        attribution_encoding_hist.observe(encode_duration / 1000)
-        attribution_search_hist.observe(search_duration / 1000)
-        # Currently the only thing from Attributions that is going to Segment is the
-        # inferred sources, which do not seem to need anonymizing.
-        self.write_to_segment(
-            request.user,
-            suggestion_id,
-            duration,
-            encode_duration,
-            search_duration,
-            response_serializer.validated_data,
-        )
-
-        return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
-
-    def perform_search(self, serializer):
-        data = ai_search.search(serializer.validated_data["suggestion"])
-        resp_serializer = AttributionResponseSerializer(data={"attributions": data["attributions"]})
-        if not resp_serializer.is_valid():
-            logging.error(resp_serializer.errors)
-        return data["meta"]["encode_duration"], data["meta"]["search_duration"], resp_serializer
-
-    def write_to_segment(
-        self, user, suggestion_id, duration, encode_duration, search_duration, attribution_data
-    ):
-        attributions = attribution_data.get("attributions", [])
-        event = {
-            "suggestionId": suggestion_id,
-            "duration": duration,
-            "encode_duration": encode_duration,
-            "search_duration": search_duration,
-            "attributions": attributions,
-        }
-        send_segment_event(event, "attribution", user)
-
-
 class ContentMatches(GenericAPIView):
     """
     Returns content matches that were the highest likelihood sources for a given code suggestion.
@@ -512,12 +411,9 @@ class ContentMatches(GenericAPIView):
         model_id = str(request_data.get("model", ""))
 
         try:
-            if request.user.rh_user_has_seat:
-                response_serializer = self.perform_content_matching(
-                    model_id, suggestion_id, request.user, request_data
-                )
-            else:
-                response_serializer = self.perform_search(request_data, request.user)
+            response_serializer = self.perform_content_matching(
+                model_id, suggestion_id, request.user, request_data
+            )
             return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
         except Exception:
             logger.exception("Error requesting content matches")
@@ -675,53 +571,6 @@ class ContentMatches(GenericAPIView):
                     suggestion_id,
                     user,
                 )
-
-        return response_serializer
-
-    def perform_search(self, request_data, user: User):
-        suggestion_id = str(request_data.get("suggestionId", ""))
-        response_serializer = None
-
-        exception = None
-        start_time = time.time()
-        metadata = []
-        model_name = ""
-
-        try:
-            suggestion = request_data["suggestions"][0]
-            response_item = ai_search.search(suggestion)
-
-            attributions_dto = AttributionsResponseDto(**response_item)
-            response_data = {"contentmatches": []}
-            response_data["contentmatches"].append(attributions_dto.content_matches)
-            metadata.append(attributions_dto.meta)
-
-            try:
-                response_serializer = ContentMatchResponseSerializer(data=response_data)
-                response_serializer.is_valid(raise_exception=True)
-            except Exception:
-                process_error_count.labels(stage="attr-response_serialization_validation").inc()
-                logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
-                raise InternalServerError
-
-        except Exception as e:
-            exception = e
-            logger.exception("Failed to search for attributions for content matching")
-            return Response(
-                {"message": "Unable to complete the request"}, status=HTTPStatus.SERVICE_UNAVAILABLE
-            )
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            self.write_to_segment(
-                request_data,
-                duration,
-                exception,
-                metadata,
-                model_name,
-                response_serializer.data if response_serializer else {},
-                suggestion_id,
-                user,
-            )
 
         return response_serializer
 
