@@ -21,6 +21,7 @@ from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from ansible_ai_connect.ai.api.exceptions import (
+    FeatureNotAvailable,
     ModelTimeoutException,
     ServiceUnavailable,
     WcaBadRequestException,
@@ -118,8 +119,17 @@ def call(api_type: str, identifier_provider: Callable[[], str]):
                 )
                 raise
 
+            except FeatureNotAvailable:
+                logger.exception(
+                    f"The requested feature is unavailable for {api_type}: {identifier}"
+                )
+                raise
+
             except Exception as e:
-                logger.exception(f"error requesting completion for {api_type}: {identifier}")
+                logger.exception(
+                    f"An unhandled exception {e.__class__} occurred "
+                    f"during processing of {api_type}: {identifier}"
+                )
                 raise ServiceUnavailable(cause=e)
 
         return wrapper

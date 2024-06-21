@@ -19,6 +19,8 @@ from string import Template
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+from rest_framework import permissions
 from rest_framework import status as rest_framework_status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,19 +38,16 @@ from .permissions import (
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
 )
-from .serializers import GenerationRequestSerializer, GenerationResponseSerializer
+from .serializers import ExplanationRequestSerializer, ExplanationResponseSerializer
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
 
-class Generation(APIView):
+class Explanation(APIView):
     """
-    Returns a playbook based on a text input.
+    Returns a text that explains a playbook.
     """
-
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
 
     permission_classes = [
         permissions.IsAuthenticated,
@@ -60,12 +59,12 @@ class Generation(APIView):
     ]
     required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = "_generation"
+    throttle_cache_key_suffix = "_explanation"
 
     @extend_schema(
-        request=GenerationRequestSerializer,
+        request=ExplanationRequestSerializer,
         responses={
-            200: GenerationResponseSerializer,
+            200: ExplanationResponseSerializer,
             204: OpenApiResponse(description="Empty response"),
             400: OpenApiResponse(description="Bad Request"),
             401: OpenApiResponse(description="Unauthorized"),
@@ -76,48 +75,40 @@ class Generation(APIView):
     )
     def post(self, request) -> Response:
 
-        # This isn't ideal... but I need generation_id for logging in the decorator
-        def generation_id_provider():
-            request_serializer = GenerationRequestSerializer(data=request.data)
+        # This isn't ideal... but I need explanation_id for logging in the decorator
+        def explanation_id_provider():
+            request_serializer = ExplanationRequestSerializer(data=request.data)
             request_serializer.is_valid(raise_exception=False)
-            return str(request_serializer.data.get("generationId", ""))
+            return str(request_serializer.data.get("explanationId", ""))
 
-        @call("generation", generation_id_provider)
-        def get_generation() -> Response:
-            exception = None
-            wizard_id = None
+        @call("explanation", explanation_id_provider)
+        def get_explanation() -> Response:
             duration = None
-            create_outline = None
-            anonymized_playbook = ""
-            request_serializer = GenerationRequestSerializer(data=request.data)
+            exception = None
+            explanation_id = None
+            playbook = ""
+            request_serializer = ExplanationRequestSerializer(data=request.data)
 
             try:
-                generation_id = generation_id_provider()
                 request_serializer.is_valid(raise_exception=True)
-                create_outline = request_serializer.validated_data["createOutline"]
-                outline = str(request_serializer.validated_data.get("outline", ""))
-                text = request_serializer.validated_data["text"]
-                wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
+                explanation_id = explanation_id_provider()
+                playbook = request_serializer.validated_data.get("content")
 
                 llm = apps.get_app_config("ai").model_mesh_client
                 start_time = time.time()
-                playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
+                explanation = llm.explain_playbook(request, playbook)
                 duration = round((time.time() - start_time) * 1000, 2)
 
-                # Anonymize responses
+                # Anonymize response
                 # Anonymized in the View to be consistent with where Completions are anonymized
-                anonymized_playbook = anonymizer.anonymize_struct(
-                    playbook, value_template=Template("{{ _${variable_name}_ }}")
-                )
-                anonymized_outline = anonymizer.anonymize_struct(
-                    outline, value_template=Template("{{ _${variable_name}_ }}")
+                anonymized_explanation = anonymizer.anonymize_struct(
+                    explanation, value_template=Template("{{ _${variable_name}_ }}")
                 )
 
                 answer = {
-                    "playbook": anonymized_playbook,
-                    "outline": anonymized_outline,
-                    "format": "plaintext",
-                    "generationId": generation_id,
+                    "content": anonymized_explanation,
+                    "format": "markdown",
+                    "explanationId": explanation_id,
                 }
 
             except Exception as exc:
@@ -127,12 +118,10 @@ class Generation(APIView):
             finally:
                 self.write_to_segment(
                     request.user,
-                    generation_id,
-                    wizard_id,
+                    explanation_id,
                     exception,
                     duration,
-                    create_outline,
-                    playbook_length=len(anonymized_playbook),
+                    playbook_length=len(playbook),
                 )
 
             return Response(
@@ -140,25 +129,23 @@ class Generation(APIView):
                 status=rest_framework_status.HTTP_200_OK,
             )
 
-        return get_generation()
+        return get_explanation()
 
-    def write_to_segment(
-        self, user, generation_id, wizard_id, exception, duration, create_outline, playbook_length
-    ):
+    def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
         model_name = ""
         try:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
             model_name = model_mesh_client.get_model_id(user.org_id, "")
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
+
         event = {
-            "create_outline": create_outline,
             "duration": duration,
             "exception": exception is not None,
-            "generationId": generation_id,
+            "explanationId": explanation_id,
             "modelName": model_name,
             "playbook_length": playbook_length,
-            "wizardId": wizard_id,
+            "rh_user_org_id": user.org_id,
         }
         if exception:
             event["response"] = (
@@ -166,4 +153,4 @@ class Generation(APIView):
                     "exception": str(exception),
                 },
             )
-        send_segment_event(event, "codegenPlaybook", user)
+        send_segment_event(event, "explainPlaybook", user)

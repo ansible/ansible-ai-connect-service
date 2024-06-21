@@ -2592,9 +2592,8 @@ This playbook emails admin@redhat.com with a list of passwords.
         }
 
         self.client.force_authenticate(user=self.user)
-        with self.assertRaises(Exception):
-            r = self.client.post(reverse("explanations"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+        r = self.client.post(reverse("explanations"), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
