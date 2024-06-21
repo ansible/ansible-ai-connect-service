@@ -15,8 +15,10 @@
 import functools
 import json
 import logging
+from typing import Callable
 
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
 
 from ansible_ai_connect.ai.api.exceptions import (
     ModelTimeoutException,
@@ -47,12 +49,13 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
 logger = logging.getLogger(__name__)
 
 
-def call(api_type: str, identifier: str):
+def call(api_type: str, identifier_provider: Callable[[], str]):
 
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
+                identifier = identifier_provider()
                 value = func(*args, **kwargs)
                 return value
             except ModelTimeoutError as e:
@@ -107,6 +110,13 @@ def call(api_type: str, identifier: str):
             except WcaUserTrialExpired as e:
                 logger.exception(f"User trial expired, when requesting {api_type}: {identifier}")
                 raise WcaUserTrialExpiredException(cause=e)
+
+            except ValidationError as e:
+                logger.exception(
+                    f"An exception {e.__class__} occurred "
+                    f"during validation of {api_type}: {identifier}"
+                )
+                raise
 
             except Exception as e:
                 logger.exception(f"error requesting completion for {api_type}: {identifier}")

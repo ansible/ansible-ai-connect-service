@@ -115,7 +115,7 @@ class ContentMatches(GenericAPIView):
     ):
         _model_id = model_id
 
-        @call("suggestions", suggestion_id)
+        @call("suggestions", lambda: suggestion_id)
         def get_content_matches() -> ContentMatchResponseSerializer:
             __model_id = _model_id
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
