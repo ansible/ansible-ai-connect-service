@@ -540,7 +540,7 @@ paths:
           description: One or more backend services are unavailable.
 components:
   schemas:
-    ActionEnum:
+    ActionDe0Enum:
       enum:
       - '0'
       - '1'
@@ -656,7 +656,7 @@ components:
           type: string
           format: uuid
           title: Suggestion ID
-          description: A UUID that identifies the particular suggestion attribution
+          description: A UUID that identifies the particular suggestion content match
             data is being requested for.
         model:
           type: string
@@ -799,7 +799,7 @@ components:
         documentUri:
           type: string
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ActionDe0Enum'
         error:
           type: string
         suggestionId:
@@ -845,7 +845,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ActionDe0Enum'
         explanationId:
           type: string
           format: uuid
@@ -858,7 +858,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/PlaybookGenerationActionActionEnum'
         wizardId:
           type: string
           format: uuid
@@ -875,11 +875,18 @@ components:
       required:
       - action
       - wizardId
+    PlaybookGenerationActionActionEnum:
+      enum:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      type: string
     PlaybookGenerationFeedback:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionEnum'
+          $ref: '#/components/schemas/ActionDe0Enum'
         wizardId:
           type: string
           format: uuid

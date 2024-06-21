@@ -30,7 +30,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal, cast
 
-BASE_DIR: Path = files("ansible_wisdom")
+BASE_DIR: Path = files("ansible_ai_connect")
 ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Connect"
 
 # Quick-start development settings - unsuitable for production
@@ -532,7 +532,6 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
 WCA_ENABLE_ARI_POSTPROCESS = os.getenv("WCA_ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 CSP_CONNECT_SRC = "'self'"
 

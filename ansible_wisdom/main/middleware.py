@@ -177,6 +177,9 @@ class SegmentMiddleware:
         if response.status_code == 204:
             response.data = None
             response["Content-Length"] = 0
+            # Set content to empty string so that underlying streaming TCP connections
+            # do not read incorrect content when processing HTTP responses after 204s
+            response.content = ""
         return response
 
 

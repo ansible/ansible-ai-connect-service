@@ -52,7 +52,7 @@ podman compose -f tools/docker-compose/compose.yaml down
 ### Project structure
 | Path | Description |
 |------|-------------|
-| ansible_wisdom | Service backend application |
+| ansible_ai_connect | Service backend application |
 | ansible_wisdom_console_react | Admin portal application |
 
 ### Service configuration

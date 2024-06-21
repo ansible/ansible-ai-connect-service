@@ -21,6 +21,7 @@ import time
 import uuid
 from http import HTTPStatus
 from typing import Any, Dict, Optional, Union
+from unittest import skip
 from unittest.mock import ANY, Mock, patch
 
 import requests
@@ -1656,6 +1657,44 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                     properties["data"]["issueFeedback"]["description"],
                 )
                 self.assertIsNotNone(event["timestamp"])
+
+    def test_feedback_explanation(self):
+        payload = {
+            "playbookExplanationFeedback": {
+                "action": 1,
+                "explanationId": "2832e159-e0fe-4efc-9288-d60c96c88666",
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("feedback"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            properties = segment_events[0]["properties"]
+            self.assertEqual(properties["action"], "1")
+
+    @skip("Schema2 event is not enabled yet")
+    def test_feedback_generation(self):
+        payload = {
+            "playbookGenerationAction": {
+                "action": 3,
+                "generationId": "2832e159-e0fe-4efc-9288-d60c96c88666",
+                "wizardId": "f3c5a9c4-9170-40b3-b46f-de387234410b",
+                "fromPage": 2,
+                "toPage": 3,
+            },
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("feedback"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            properties = segment_events[0]["properties"]
+            self.assertEqual(properties["action"], 3)
 
 
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):

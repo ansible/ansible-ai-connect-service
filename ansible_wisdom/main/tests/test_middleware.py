@@ -241,6 +241,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                     self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                     self.assertIsNone(r.data)
                     self.assertEqual(r["Content-Length"], "0")
+                    self.assertEqual(r.content, b"")
                     self.assertSegmentTimestamp(log)
         finally:
             # Restore defaults and set the 'send' flag to False during test execution

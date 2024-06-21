@@ -7,12 +7,12 @@ on:
     branches:
       - main
     paths:
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
   pull_request:
     branches:
       - main
     paths:
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
 permissions:
   contents: read
 

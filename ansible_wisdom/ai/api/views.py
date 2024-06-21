@@ -84,10 +84,13 @@ from .serializers import (
     GenerationResponseSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
+    PlaybookExplanationFeedback,
+    PlaybookGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
 from .utils.analytics_telemetry_model import (
+    AnalyticsPlaybookGenerationWizard,
     AnalyticsProductFeedback,
     AnalyticsRecommendationAction,
     AnalyticsTelemetryEvents,
@@ -190,6 +193,7 @@ class Feedback(APIView):
             request_serializer = FeedbackRequestSerializer(
                 data=request.data, context={"request": request}
             )
+
             request_serializer.is_valid(raise_exception=True)
             validated_data = request_serializer.validated_data
             logger.info(f"feedback request payload from client: {validated_data}")
@@ -217,6 +221,13 @@ class Feedback(APIView):
         )
         sentiment_feedback_data: SentimentFeedback = validated_data.get("sentimentFeedback")
         issue_feedback_data: IssueFeedback = validated_data.get("issueFeedback")
+        playbook_explanation_feedback_data: PlaybookExplanationFeedback = validated_data.get(
+            "playbookExplanationFeedback"
+        )
+        playbook_generation_action_data: PlaybookGenerationAction = validated_data.get(
+            "playbookGenerationAction"
+        )
+
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
         )
@@ -293,6 +304,38 @@ class Feedback(APIView):
                 "exception": exception is not None,
             }
             send_segment_event(event, "issueFeedback", user)
+        if playbook_explanation_feedback_data:
+            event = {
+                "action": playbook_explanation_feedback_data.get("action"),
+                "explanation_id": str(playbook_explanation_feedback_data.get("explanationId", "")),
+                "modelName": model_name,
+            }
+            send_segment_event(event, "playbookExplanationFeedback", user)
+        if playbook_generation_action_data:
+            action = int(playbook_generation_action_data.get("action"))
+            from_page = playbook_generation_action_data.get("fromPage", 0)
+            to_page = playbook_generation_action_data.get("toPage", 0)
+            wizard_id = str(playbook_generation_action_data.get("wizardId", ""))
+            event = {
+                "action": action,
+                "wizardId": wizard_id,
+                "fromPage": from_page,
+                "toPage": to_page,
+                "modelName": model_name,
+            }
+            send_segment_event(event, "playbookGenerationAction", user)
+            if False and from_page > 1 and action in [1, 3]:
+                send_segment_analytics_event(
+                    AnalyticsTelemetryEvents.PLAYBOOK_GENERATION_ACTION,
+                    lambda: AnalyticsPlaybookGenerationWizard(
+                        action=action,
+                        model_name=model_name,
+                        rh_user_org_id=org_id,
+                        wizard_id=str(playbook_generation_action_data.get("wizardId", "")),
+                    ),
+                    user,
+                    ansible_extension_version,
+                )
 
         feedback_events = [
             inline_suggestion_data,
@@ -633,13 +676,28 @@ class Explanation(APIView):
         )
 
     def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
+        model_name = ""
+        try:
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            model_name = model_mesh_client.get_model_id(user.org_id, "")
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+            pass
+
         event = {
-            "explanationId": explanation_id,
-            "exception": exception is not None,
             "duration": duration,
+            "exception": exception is not None,
+            "explanationId": explanation_id,
+            "modelName": model_name,
             "playbook_length": playbook_length,
+            "rh_user_org_id": user.org_id,
         }
-        send_segment_event(event, "explanation", user)
+        if exception:
+            event["response"] = (
+                {
+                    "exception": str(exception),
+                },
+            )
+        send_segment_event(event, "explainPlaybook", user)
 
 
 class Generation(APIView):
@@ -735,12 +793,25 @@ class Generation(APIView):
     def write_to_segment(
         self, user, generation_id, wizard_id, exception, duration, create_outline, playbook_length
     ):
+        model_name = ""
+        try:
+            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            model_name = model_mesh_client.get_model_id(user.org_id, "")
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+            pass
         event = {
-            "generationId": generation_id,
-            "wizardId": wizard_id,
-            "exception": exception is not None,
-            "duration": duration,
             "create_outline": create_outline,
+            "duration": duration,
+            "exception": exception is not None,
+            "generationId": generation_id,
+            "modelName": model_name,
             "playbook_length": playbook_length,
+            "wizardId": wizard_id,
         }
-        send_segment_event(event, "generation", user)
+        if exception:
+            event["response"] = (
+                {
+                    "exception": str(exception),
+                },
+            )
+        send_segment_event(event, "codegenPlaybook", user)

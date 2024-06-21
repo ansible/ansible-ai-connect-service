@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
       - requirements.in
       - requirements.txt
       - requirements-x86_64.txt
@@ -19,7 +19,7 @@ on:
     branches:
       - main
     paths:
-      - ansible_wisdom/**
+      - ansible_ai_connect/**
       - requirements.in
       - requirements.txt
       - requirements-x86_64.txt
