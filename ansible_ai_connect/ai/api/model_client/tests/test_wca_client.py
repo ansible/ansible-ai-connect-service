@@ -260,6 +260,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         wca_client.session = Mock()
         response = Mock
         response.text = '{"playbook": "Oh!", "outline": "Ahh!", "explanation": "!Óh¡"}'
+        response.status_code = 200
         response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
