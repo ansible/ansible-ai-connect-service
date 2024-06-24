@@ -322,7 +322,7 @@ var3: value3
     def test_restore_original_task_names_falsy_yaml(self):
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
         multi_task_yaml = "- name: \n\n - name:"
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
             self.assertInLog("Error while loading the result role/playbook YAML", log)
 
@@ -356,20 +356,20 @@ var3: value3
             "Azure resource group called 'test' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
         )
         multi_task_yaml_with_loop_extra_task = (
             "- name:  Delete all virtual machines in my Azure resource group\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
             "- name:  say hello to ada@anemail.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
@@ -387,20 +387,20 @@ var3: value3
             "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
         )
         expected_multi_task_yaml_with_loop_extra_task = (
             "- name:  Delete all virtual machines in my Azure resource group\n"
             "  azure.azcollection.azure_rm_virtualmachine:\n"
-            "    name: \"{{ _name_ }}\"\n    state: absent\n    resource_group: myResourceGroup\n"
+            '    name: "{{ _name_ }}"\n    state: absent\n    resource_group: myResourceGroup\n'
             "    vm_size: Standard_A0\n"
-            "    image: \"{{ _image_ }}\"\n  loop:\n    - name: \"{{ vm_name }}\"\n"
-            "      password: \"{{ _password_ }}\"\n"
-            "      user: \"{{ vm_user }}\"\n      location: \"{{ vm_location }}\"\n"
+            '    image: "{{ _image_ }}"\n  loop:\n    - name: "{{ vm_name }}"\n'
+            '      password: "{{ _password_ }}"\n'
+            '      user: "{{ vm_user }}"\n      location: "{{ vm_location }}"\n'
             "- name:  say hello to ada@anemail.com\n  "
             "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
         )
@@ -410,7 +410,7 @@ var3: value3
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
         )
 
-        with self.assertLogs(logger='root', level='ERROR') as log:
+        with self.assertLogs(logger="root", level="ERROR") as log:
             fmtr.restore_original_task_names(multi_task_yaml_extra_task, multi_task_prompt),
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
@@ -471,22 +471,22 @@ var3: value3
             "Azure resource group called 'test' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "      azure.azcollection.azure_rm_virtualmachine:\n"
-            "        name: \"{{ _name_ }}\"\n        state: absent\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
             "        resource_group: myResourceGroup\n"
             "        vm_size: Standard_A0\n"
-            "        image: \"{{ _image_ }}\"\n      loop:\n        - name: \"{{ vm_name }}\"\n"
-            "          password: \"{{ _password_ }}\"\n"
-            "          user: \"{{ vm_user }}\"\n          location: \"{{ vm_location }}\"\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
         )
         multi_task_yaml_with_loop_extra_task = (
             "    - name:  Delete all virtual machines in my Azure resource group\n"
             "      azure.azcollection.azure_rm_virtualmachine:\n"
-            "        name: \"{{ _name_ }}\"\n        state: absent\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
             "        resource_group: myResourceGroup\n"
             "        vm_size: Standard_A0\n"
-            "        image: \"{{ _image_ }}\"\n      loop:\n        - name: \"{{ vm_name }}\"\n"
-            "          password: \"{{ _password_ }}\"\n"
-            "          user: \"{{ vm_user }}\"\n          location: \"{{ vm_location }}\"\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
             "    - name:  say hello to ada@anemail.com\n      "
             "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
         )
@@ -505,22 +505,22 @@ var3: value3
             "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
             "delete virtual machines that exists less than 24 hours.\n"
             "      azure.azcollection.azure_rm_virtualmachine:\n"
-            "        name: \"{{ _name_ }}\"\n        state: absent\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
             "        resource_group: myResourceGroup\n"
             "        vm_size: Standard_A0\n"
-            "        image: \"{{ _image_ }}\"\n      loop:\n        - name: \"{{ vm_name }}\"\n"
-            "          password: \"{{ _password_ }}\"\n"
-            "          user: \"{{ vm_user }}\"\n          location: \"{{ vm_location }}\"\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
         )
         expected_multi_task_yaml_with_loop_extra_task = (
             "    - name:  Delete all virtual machines in my Azure resource group\n"
             "      azure.azcollection.azure_rm_virtualmachine:\n"
-            "        name: \"{{ _name_ }}\"\n        state: absent\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
             "        resource_group: myResourceGroup\n"
             "        vm_size: Standard_A0\n"
-            "        image: \"{{ _image_ }}\"\n      loop:\n        - name: \"{{ vm_name }}\"\n"
-            "          password: \"{{ _password_ }}\"\n"
-            "          user: \"{{ vm_user }}\"\n          location: \"{{ vm_location }}\"\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
             "    - name:  say hello to ada@anemail.com\n      "
             "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
         )
