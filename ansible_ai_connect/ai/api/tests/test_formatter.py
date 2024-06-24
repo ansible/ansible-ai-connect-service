@@ -580,6 +580,21 @@ var3: value3
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
             )
 
+    def test_restore_original_task_names_for_task_inclusions(self):
+        payload_context = "- name: Playbook\n  hosts: all\n  tasks:\n"
+        multi_task_prompt = (
+            "# use include_tasks and task file install_pkg.yml, install git, tree and wget\n"
+        )
+        multi_task_yaml = (
+            "    - include_tasks: install_pkg.yml\n      loop:\n"
+            "        - git\n        - wget\n        - tree\n"
+        )
+
+        self.assertEqual(
+            multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
+        )
+
     def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"
         self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
