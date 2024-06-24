@@ -378,7 +378,7 @@ def restore_original_task_names(output_yaml, prompt, payload_context=''):
             return
         prompt_tasks = get_task_names_from_prompt(prompt)
         task_list = []
-        if isinstance(data, list) and isinstance(data[0], dict):
+        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
             # Tries to get the tasks from the dict if it's a playbook (payload_context!='')
             task_list = data[0].get("tasks", [])
             # If it is not a playbook, then it is a role,
@@ -389,6 +389,8 @@ def restore_original_task_names(output_yaml, prompt, payload_context=''):
         for i, task in enumerate(task_list):
             try:
                 task_name = task.get("name", "")
+                # We have a list, but not all lists can be task lists
+                # This is for
                 if not task_name:
                     continue
                 task_line = "- name:  " + task_name
