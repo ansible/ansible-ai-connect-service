@@ -374,8 +374,11 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
         try:
             data = yaml.safe_load(full_yaml)
         except Exception as exc:
-            logger.exception(f"Error while loading the result role/playbook YAML:{exc}")
-            return
+            logger.exception(
+                f"Error while loading the result role/playbook YAML:{exc} "
+                f"for restoring the original task names"
+            )
+            return output_yaml
         prompt_tasks = get_task_names_from_prompt(prompt)
         task_list = []
         if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
@@ -390,7 +393,7 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
             try:
                 task_name = task.get("name", "")
                 # We have a list, but not all lists can be task lists
-                # This is for
+                # This is for handling the non-task lists case
                 if not task_name:
                     continue
                 task_line = "- name:  " + task_name
