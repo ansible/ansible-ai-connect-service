@@ -323,7 +323,6 @@ python3-openid==3.2.0
 pytz==2024.1
     # via
     #   -r requirements.in
-    #   djangorestframework
     #   pyrfc3339
 pyyaml==6.0
     # via
