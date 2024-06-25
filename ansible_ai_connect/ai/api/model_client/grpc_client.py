@@ -94,12 +94,7 @@ class GrpcClient(ModelMeshClient):
             }
         )
         try:
-            # As of today (2023-03-27) SSL Certificate Verification fails with
-            # the gRPC model server in the Staging environment.  The verify
-            # option in the following line is just TEMPORARY and will be removed
-            # as soon as the certificate is replaced with a valid one.
-            verify = False
-            res = requests.get(url, verify=verify)
+            res = requests.get(url)
             res.raise_for_status()
         except Exception as e:
             logger.exception(str(e))
