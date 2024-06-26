@@ -133,6 +133,40 @@ class CompletionRequestSerializerTest(TestCase):
 
         self.assertTrue(serializer.is_valid())
 
+    def test_anonymized_additional_context(self):
+        user = Mock(rh_user_has_seat=True)
+        request = Mock(user=user)
+        data = {
+            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
+            "metadata": {
+                "additionalContext": {
+                    "playbookContext": {
+                        "varInfiles": {
+                            "vars.yml": "external_var_1: value1\n"
+                            "external_var_2: value2\n"
+                            "password: magic\n"
+                        },
+                        "roles": {},
+                        "includeVars": {},
+                    },
+                    "roleContext": {},
+                    "standaloneTaskContext": {},
+                },
+            },
+        }
+        serializer = CompletionRequestSerializer(context={"request": request}, data=data)
+        self.assertTrue(serializer.is_valid())
+        validated_data = serializer.validated_data["metadata"]
+        self.assertIsNotNone(validated_data)
+        self.assertTrue("additionalContext" in validated_data)
+        additional_context = validated_data["additionalContext"]
+        self.assertTrue("playbookContext" in additional_context)
+        playbook_context = additional_context["playbookContext"]
+        self.assertTrue("varInfiles" in playbook_context)
+        var_in_files = playbook_context["varInfiles"]
+        self.assertTrue("vars.yml" in var_in_files)
+        self.assertFalse("magic" in var_in_files["vars.yml"])
+
 
 class ContentMatchRequestSerializerTest(TestCase):
     def test_validate(self):
