@@ -540,12 +540,16 @@ paths:
           description: One or more backend services are unavailable.
 components:
   schemas:
-    ActionDe0Enum:
+    Action4c6Enum:
       enum:
       - '0'
       - '1'
       - '2'
       type: string
+      description: |-
+        * `0` - ACCEPTED
+        * `1` - REJECTED
+        * `2` - IGNORED
     CompletionMetadata:
       type: object
       properties:
@@ -799,7 +803,7 @@ components:
         documentUri:
           type: string
         action:
-          $ref: '#/components/schemas/ActionDe0Enum'
+          $ref: '#/components/schemas/Action4c6Enum'
         error:
           type: string
         suggestionId:
@@ -845,7 +849,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionDe0Enum'
+          $ref: '#/components/schemas/Action4c6Enum'
         explanationId:
           type: string
           format: uuid
@@ -882,11 +886,16 @@ components:
       - '2'
       - '3'
       type: string
+      description: |-
+        * `0` - OPEN
+        * `1` - CLOSE_CANCEL
+        * `2` - TRANSITION
+        * `3` - CLOSE_ACCEPT
     PlaybookGenerationFeedback:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/ActionDe0Enum'
+          $ref: '#/components/schemas/Action4c6Enum'
         wizardId:
           type: string
           format: uuid
@@ -949,6 +958,9 @@ components:
       - bug-report
       - feature-request
       type: string
+      description: |-
+        * `bug-report` - Bug Report
+        * `feature-request` - Feature Request
     UserResponse:
       type: object
       properties:
