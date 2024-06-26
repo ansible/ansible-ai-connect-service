@@ -54,12 +54,9 @@ bracex==2.4
 certifi==2024.2.2
     # via
     #   launchdarkly-server-sdk
-    #   opensearch-py
     #   requests
 cffi==1.16.0
-    # via
-    #   cryptography
-    #   pygit2
+    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -129,25 +126,16 @@ filelock==3.13.4
     # via
     #   ansible-lint
     #   ansible-risk-insight
-    #   huggingface-hub
-    #   torch
-    #   transformers
 frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.3.1
-    # via huggingface-hub
 gitdb==4.0.11
     # via ansible-risk-insight
 greenlet==3.0.3
     # via sqlalchemy
 grpcio==1.60.1
     # via -r requirements.in
-huggingface-hub==0.22.2
-    # via
-    #   tokenizers
-    #   transformers
 idna==3.7
     # via
     #   -r requirements.in
@@ -163,15 +151,12 @@ jinja2==3.1.4
     # via
     #   -r requirements.in
     #   ansible-core
-    #   torch
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
 joblib==1.4.0
-    # via
-    #   ansible-risk-insight
-    #   scikit-learn
+    # via ansible-risk-insight
 jsonpatch==1.33
     # via langchain-core
 jsonpickle==3.0.4
@@ -209,8 +194,6 @@ langsmith==0.1.75
     #   langchain-core
 launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
-levenshtein==0.25.1
-    # via ansible-risk-insight
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
@@ -223,8 +206,6 @@ mdurl==0.1.2
     # via markdown-it-py
 monotonic==1.6
     # via segment-analytics-python
-mpmath==1.3.0
-    # via sympy
 multidict==6.0.5
     # via
     #   aiohttp
@@ -233,16 +214,10 @@ mypy-extensions==1.0.0
     # via
     #   black
     #   typing-inspect
-networkx==3.3
-    # via torch
 numpy==1.26.4
     # via
     #   langchain
     #   langchain-community
-    #   scikit-learn
-    #   scipy
-    #   torchvision
-    #   transformers
 oauthlib==3.2.2
     # via
     #   django-oauth-toolkit
@@ -252,8 +227,6 @@ odfpy==1.4.1
     # via tablib
 openpyxl==3.1.2
     # via tablib
-opensearch-py==2.1.1
-    # via -r requirements.in
 orjson==3.10.1
     # via langsmith
 packaging==23.2
@@ -263,10 +236,8 @@ packaging==23.2
     #   ansible-lint
     #   black
     #   django-allow-cidr
-    #   huggingface-hub
     #   langchain-core
     #   marshmallow
-    #   transformers
 parso==0.8.4
     # via jedi
 pathspec==0.12.1
@@ -278,8 +249,6 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.3.0
-    # via torchvision
 platformdirs==4.2.1
     # via black
 prometheus-client==0.20.0
@@ -306,8 +275,6 @@ pydantic==2.6.4
     #   langsmith
 pydantic-core==2.16.3
     # via pydantic
-pygit2==1.14.1
-    # via ansible-risk-insight
 pygments==2.17.2
     # via
     #   ipython
@@ -338,36 +305,28 @@ pyyaml==6.0
     #   ansible-lint
     #   ansible-risk-insight
     #   drf-spectacular
-    #   huggingface-hub
     #   langchain
     #   langchain-community
     #   langchain-core
     #   tablib
-    #   transformers
     #   yamllint
 rapidfuzz==3.8.1
-    # via levenshtein
+    # via ansible-risk-insight
 referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.4.16
-    # via transformers
 requests==2.32.0
     # via
     #   -r requirements.in
     #   ansible-risk-insight
     #   django-oauth-toolkit
-    #   huggingface-hub
     #   langchain
     #   langchain-community
     #   langsmith
-    #   opensearch-py
     #   requests-oauthlib
     #   segment-analytics-python
     #   social-auth-core
-    #   torchvision
-    #   transformers
     #   uwsgi-readiness-check
 requests-oauthlib==2.0.0
     # via social-auth-core
@@ -387,12 +346,6 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.6.2
     # via boto3
-safetensors==0.4.3
-    # via transformers
-scikit-learn==1.5.0
-    # via -r requirements.in
-scipy==1.13.0
-    # via scikit-learn
 segment-analytics-python==2.2.2
     # via -r requirements.in
 semver==3.0.2
@@ -425,8 +378,6 @@ subprocess-tee==0.4.1
     # via
     #   ansible-compat
     #   ansible-lint
-sympy==1.12
-    # via torch
 tablib[html,ods,xls,xlsx,yaml]==3.6.1
     # via django-import-export
 tabulate==0.9.0
@@ -436,37 +387,18 @@ tenacity==8.2.3
     #   langchain
     #   langchain-community
     #   langchain-core
-threadpoolctl==3.4.0
-    # via scikit-learn
-tokenizers==0.15.2
-    # via transformers
-torch @ https://download.pytorch.org/whl/torch-2.0.1-cp311-cp311-manylinux2014_aarch64.whl ; platform_machine == "aarch64"
-    # via
-    #   -r requirements.in
-    #   torchvision
-torchvision @ https://download.pytorch.org/whl/torchvision-0.15.2-cp311-cp311-manylinux2014_aarch64.whl ; platform_machine == "aarch64"
-    # via -r requirements.in
-tqdm==4.66.3
-    # via
-    #   -r requirements.in
-    #   huggingface-hub
-    #   transformers
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-transformers==4.39.1
-    # via -r requirements.in
 typing-extensions==4.11.0
     # via
     #   django-test-migrations
-    #   huggingface-hub
     #   jwcrypto
     #   psycopg
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
-    #   torch
     #   typing-inspect
 typing-inspect==0.9.0
     # via dataclasses-json
@@ -477,7 +409,6 @@ urllib3==1.26.19
     #   -r requirements.in
     #   botocore
     #   launchdarkly-server-sdk
-    #   opensearch-py
     #   requests
 uwsgi==2.0.22
     # via -r requirements.in
