@@ -260,6 +260,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         wca_client.session = Mock()
         response = Mock
         response.text = '{"playbook": "Oh!", "outline": "Ahh!", "explanation": "!Óh¡"}'
+        response.status_code = 200
         response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
@@ -573,7 +574,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 )
         self.assertEqual(e.exception.model_id, model_id)
         self.assertInLog(
-            "WCA request failed with unrecognized 404. Content-Type:application/json, "
+            "WCA request failed with 404. Content-Type:application/json, "
             'Content:b\'{"some": "mystery 404 response"}\'',
             log,
         )

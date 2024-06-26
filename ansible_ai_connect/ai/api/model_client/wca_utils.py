@@ -45,7 +45,15 @@ class Checks(Generic[T]):
 
     def run_checks(self, context: T):
         for check in self.checks:
-            check.check(context)
+            try:
+                check.check(context)
+            except Exception:
+                logger.error(
+                    f"WCA request failed with {context.result.status_code}. "
+                    f"Content-Type:{context.result.headers.get('Content-Type')}, "
+                    f"Content:{context.result.content}"
+                )
+                raise
 
 
 class TokenContext:
@@ -157,11 +165,6 @@ class ResponseStatusCode404WCABadRequestModelId(Check[Context]):
 class ResponseStatusCode404(Check[Context]):
     def check(self, context: Context):
         if context.result.status_code == 404:
-            logger.error(
-                f"WCA request failed with unrecognized 404. "
-                f"Content-Type:{context.result.headers.get('Content-Type')}, "
-                f"Content:{context.result.content}"
-            )
             raise WcaInferenceFailure(model_id=context.model_id)
 
 
