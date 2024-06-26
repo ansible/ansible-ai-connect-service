@@ -14,25 +14,10 @@
 
 from django.urls import path
 
-<<<<<<< HEAD:ansible_ai_connect/ai/api/urls.py
-<<<<<<< HEAD:ansible_ai_connect/ai/api/urls.py
-<<<<<<< HEAD:ansible_ai_connect/ai/api/urls.py
-from .views import Completions, ContentMatches, Explanation, Feedback, Generation
-=======
-from .views import Attributions, Completions, Explanation, Feedback, Generation
-from .views2 import ContentMatches
->>>>>>> 4a5b54df (ContentMatch refactor):ansible_wisdom/ai/api/urls.py
-=======
-from .views import Attributions, Completions, Explanation, Feedback
-from .views2 import ContentMatches
-from .views3 import Generation
->>>>>>> 75363e32 (Generations refactor):ansible_wisdom/ai/api/urls.py
-=======
-from .views import Attributions, Completions, Feedback
+from .views import Completions, Feedback
 from .views2 import ContentMatches
 from .views3 import Generation
 from .views4 import Explanation
->>>>>>> 38ad467f (Explanation refactor):ansible_wisdom/ai/api/urls.py
 
 urlpatterns = [
     path("completions/", Completions.as_view(), name="completions"),

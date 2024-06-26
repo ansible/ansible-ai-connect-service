@@ -14,7 +14,6 @@
 
 import logging
 import time
-from http import HTTPStatus
 
 from django.apps import apps
 from django.conf import settings
@@ -35,12 +34,7 @@ from ansible_ai_connect.ai.api.exceptions import (
 )
 from ansible_ai_connect.users.models import User
 
-from .. import search as ai_search
-from .data.data_model import (
-    AttributionsResponseDto,
-    ContentMatchPayloadData,
-    ContentMatchResponseDto,
-)
+from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .permissions import AcceptedTermsPermission, BlockUserWithoutSeat, IsAAPLicensed
 from .serializers import ContentMatchRequestSerializer, ContentMatchResponseSerializer
 from .utils.segment import send_segment_event
@@ -95,12 +89,9 @@ class ContentMatches(GenericAPIView):
         model_id = str(request_data.get("model", ""))
 
         try:
-            if request.user.rh_user_has_seat:
-                response_serializer = self.perform_content_matching(
-                    model_id, suggestion_id, request.user, request_data
-                )
-            else:
-                response_serializer = self.perform_search(request_data, request.user)
+            response_serializer = self.perform_content_matching(
+                model_id, suggestion_id, request.user, request_data
+            )
             return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
         except Exception:
             logger.exception("Error requesting content matches")
@@ -203,53 +194,6 @@ class ContentMatches(GenericAPIView):
             return response_serializer
 
         return get_content_matches()
-
-    def perform_search(self, request_data, user: User):
-        suggestion_id = str(request_data.get("suggestionId", ""))
-        response_serializer = None
-
-        exception = None
-        start_time = time.time()
-        metadata = []
-        model_name = ""
-
-        try:
-            suggestion = request_data["suggestions"][0]
-            response_item = ai_search.search(suggestion)
-
-            attributions_dto = AttributionsResponseDto(**response_item)
-            response_data = {"contentmatches": []}
-            response_data["contentmatches"].append(attributions_dto.content_matches)
-            metadata.append(attributions_dto.meta)
-
-            try:
-                response_serializer = ContentMatchResponseSerializer(data=response_data)
-                response_serializer.is_valid(raise_exception=True)
-            except Exception:
-                process_error_count.labels(stage="attr-response_serialization_validation").inc()
-                logger.exception(f"Error serializing final response for suggestion {suggestion_id}")
-                raise InternalServerError
-
-        except Exception as e:
-            exception = e
-            logger.exception("Failed to search for attributions for content matching")
-            return Response(
-                {"message": "Unable to complete the request"}, status=HTTPStatus.SERVICE_UNAVAILABLE
-            )
-        finally:
-            duration = round((time.time() - start_time) * 1000, 2)
-            self.write_to_segment(
-                request_data,
-                duration,
-                exception,
-                metadata,
-                model_name,
-                response_serializer.data if response_serializer else {},
-                suggestion_id,
-                user,
-            )
-
-        return response_serializer
 
     def write_to_segment(
         self,
