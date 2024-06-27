@@ -22,7 +22,7 @@ const publicUrlOrPath = getPublicUrlOrPath(
 );
 
 const buildPath =
-  process.env.BUILD_PATH || "../ansible_wisdom/main/static/console";
+  process.env.BUILD_PATH || "../ansible_ai_connect/main/static/console";
 
 const moduleFileExtensions = [
   "web.mjs",

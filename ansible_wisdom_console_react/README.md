@@ -37,7 +37,7 @@ Open [http://localhost:8888/static/console/denied.html](http://localhost:8888/st
 
 ### `npm run build`
 
-Builds the app for production to the `ansible_wisdom/main/static/console` folder.\
+Builds the app for production to the `ansible_ai_connect/main/static/console` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
 ## Running the "Admin Portal" with Django locally
