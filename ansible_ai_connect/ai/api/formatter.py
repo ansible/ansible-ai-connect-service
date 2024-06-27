@@ -131,8 +131,13 @@ def expand_vars_playbook(data, additional_context):
             # for proper placement of the prompt
             last_key = list(d.keys())[-1]
             last_key_value = d.pop(last_key)
-            d["vars"] = merged_vars if "vars" not in d else (merged_vars | d["vars"])
+            d["vars"] = merged_vars if "vars" not in d else (d["vars"] | merged_vars)
             d[last_key] = last_key_value
+            if "vars_files" in d:
+                for vars_file in playbook_context.get("varInfiles", {}).keys():
+                    d["vars_files"] = [file for file in d["vars_files"] if file != vars_file]
+                if len(d["vars_files"]) == 0:
+                    del d["vars_files"]
 
 
 def expand_vars_tasks_in_role(data, additional_context):
