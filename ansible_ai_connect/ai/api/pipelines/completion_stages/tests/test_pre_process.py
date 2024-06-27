@@ -36,15 +36,15 @@ def add_indents(vars, n):
 
 VARS_1 = """\
 mattermost_app:
-  env: ""
-  MM_TEAMSETTINGS_SITENAME: ""
-  name: ""
-  image: ""
-  state: ""
-  generate_systemd: ""
-  path: ""
-  container_prefix: ""
-  restart_policy: ""
+  env: enhanced_context_value_env
+  MM_TEAMSETTINGS_SITENAME: enhanced_context_value_MM_TEAMSETTINGS_SITENAME
+  name: enhanced_context_value_name
+  image: enhanced_context_value_image
+  state: enhanced_context_value_state
+  generate_systemd: enhanced_context_value_generate_systemd
+  path: enhanced_context_value_path
+  container_prefix: enhanced_context_value_container_prefix
+  restart_policy: enhanced_context_value_restart_policy
   ports:
     - 8065:8065"""
 
@@ -106,10 +106,25 @@ PLAYBOOK_CONTEXT_WITH_VARS = f"""\
 - hosts: all
   remote_user: root
   vars:
+    favcolor: blue
 {add_indents(VARS_1, 4)}
 {add_indents(VARS_2, 4)}
 {add_indents(VARS_3, 4)}
-    favcolor: blue
+  tasks:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+"""
+
+PLAYBOOK_PAYLOAD_PROMPT_WITH_OVERLAPPING_EXISTING_VARS = """\
+---
+- hosts: all
+  remote_user: root
+  vars:
+    # This whole var will be overwritten, both the overlapping key and unique key
+    mattermost_app:
+      image: playbook_value_image
+      unique: playbook_value_unique
   vars_files:
     - ./vars/external_vars_1.yml
     - ./vars/external_vars_2.yml
@@ -117,7 +132,66 @@ PLAYBOOK_CONTEXT_WITH_VARS = f"""\
     - name: Include variable
       ansible.builtin.include_vars:
         file: ./vars/external_vars_3.yml
+    - name: Run container with podman using mattermost_app var
 """
+
+#
+# If the prompt is processed with the formatter with overlapping existing and
+# enhanced context variables, following context will be generated with enhanced context vars
+# taking precedence over existing vars:
+#
+PLAYBOOK_CONTEXT_WITH_OVERLAPPING_EXISTING_VARS = f"""\
+- hosts: all
+  remote_user: root
+  vars:
+{add_indents(VARS_1, 4)}
+{add_indents(VARS_2, 4)}
+{add_indents(VARS_3, 4)}
+  tasks:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+"""
+
+PLAYBOOK_PAYLOAD_PROMPT_WITH_VARS_FILES_NOT_IN_ADDITIONAL_CONTEXT = """\
+---
+- hosts: all
+  remote_user: root
+  vars:
+    # This whole var will be overwritten, both the overlapping key and unique key
+    mattermost_app:
+      image: playbook_value_image
+      unique: playbook_value_unique
+  vars_files:
+    - ./vars/external_vars_1.yml
+    - ./vars/external_vars_2.yml
+    - ./vars/external_vars_not_included_in_additional_context.yml
+  tasks:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+    - name: Run container with podman using mattermost_app var
+"""
+
+#
+# If the prompt is processed with the formatter with vars_files not included in the additional
+# context, only those files will remain in the vars_files section:
+#
+PLAYBOOK_CONTEXT_WITH_VARS_FILES_NOT_IN_ADDITIONAL_CONTEXT = f"""\
+- hosts: all
+  remote_user: root
+  vars:
+{add_indents(VARS_1, 4)}
+{add_indents(VARS_2, 4)}
+{add_indents(VARS_3, 4)}
+  vars_files:
+    - ./vars/external_vars_not_included_in_additional_context.yml
+  tasks:
+    - name: Include variable
+      ansible.builtin.include_vars:
+        file: ./vars/external_vars_3.yml
+"""
+
 
 PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS = """\
 ---
@@ -141,9 +215,6 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS = """\
 PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS = f"""\
 - hosts: all
   remote_user: root
-  vars_files:
-    - ./vars/external_vars_1.yml
-    - ./vars/external_vars_2.yml
   vars:
 {add_indents(VARS_1, 4)}
 {add_indents(VARS_2, 4)}
@@ -173,9 +244,6 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_NO_PREEXISTING_VARS_AND_ONE_MULTITASK_PROMPT = """\
 PLAYBOOK_CONTEXT_WITH_ONLY_ADDITIONAL_CONTEXT_VARS_AND_EMPTY_TASKS = f"""\
 - hosts: all
   remote_user: root
-  vars_files:
-    - ./vars/external_vars_1.yml
-    - ./vars/external_vars_2.yml
   vars:
 {add_indents(VARS_1, 4)}
 {add_indents(VARS_2, 4)}
@@ -205,9 +273,6 @@ PLAYBOOK_PAYLOAD_PROMPT_WITH_HANDLERS_NO_PREEXISTING_VARS = """\
 PLAYBOOK_CONTEXT_WITH_HANDLERS_ONLY_ADDITIONAL_CONTEXT_VARS = f"""\
 - hosts: all
   remote_user: root
-  vars_files:
-    - ./vars/external_vars_1.yml
-    - ./vars/external_vars_2.yml
   vars:
 {add_indents(VARS_1, 4)}
 {add_indents(VARS_2, 4)}
@@ -276,8 +341,6 @@ PLAYBOOK_TWO_PLAYS_PAYLOAD = {
 PLAYBOOK_TWO_PLAYS_CONTEXT_WITH_VARS = f"""\
 - hosts: all
   remote_user: root
-  vars_files:
-    - ./vars/external_vars_1.yml
   vars:
 {add_indents(VARS_1, 4)}
   tasks:
@@ -287,8 +350,6 @@ PLAYBOOK_TWO_PLAYS_CONTEXT_WITH_VARS = f"""\
 
 - hosts: all
   remote_user: root
-  vars_files:
-    - ./vars/external_vars_1.yml
   vars:
 {add_indents(VARS_1, 4)}
   tasks:
@@ -482,6 +543,28 @@ class CompletionPreProcessTest(TestCase):
             PLAYBOOK_PAYLOAD,
             True,
             PLAYBOOK_CONTEXT_WITH_VARS,
+        )
+
+    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
+    def test_additional_context_with_feature_enabled_with_overlapping_vars(self):
+        payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
+        payload["prompt"] = PLAYBOOK_PAYLOAD_PROMPT_WITH_OVERLAPPING_EXISTING_VARS
+
+        self.call_completion_pre_process(
+            payload,
+            True,
+            PLAYBOOK_CONTEXT_WITH_OVERLAPPING_EXISTING_VARS,
+        )
+
+    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
+    def test_additional_context_with_vars_files_not_in_additional_context(self):
+        payload = copy.deepcopy(PLAYBOOK_PAYLOAD)
+        payload["prompt"] = PLAYBOOK_PAYLOAD_PROMPT_WITH_VARS_FILES_NOT_IN_ADDITIONAL_CONTEXT
+
+        self.call_completion_pre_process(
+            payload,
+            True,
+            PLAYBOOK_CONTEXT_WITH_VARS_FILES_NOT_IN_ADDITIONAL_CONTEXT,
         )
 
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
