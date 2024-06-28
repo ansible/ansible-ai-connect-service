@@ -2492,23 +2492,6 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_bad_request_with_wca_client(self):
-        explanation_id = str(uuid.uuid4())
-        # No content specified
-        payload = {
-            "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        with patch.object(
-            apps.get_app_config("ai"),
-            "model_mesh_client",
-            WCAClient(inference_url="https://wca_api_url"),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("explanations"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_anonymized_response(self):
         explanation_id = str(uuid.uuid4())
         payload = {
@@ -2561,6 +2544,158 @@ This playbook emails admin@redhat.com with a list of passwords.
         with self.assertRaises(Exception):
             r = self.client.post(reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+class TestExplanationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+
+    response_data = """# Information
+This playbook installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux 9.
+"""
+
+    explanation_id = str(uuid.uuid4())
+    payload = {
+        "content": """---
+- name: Setup nginx
+  hosts: all
+  become: true
+  tasks:
+    - name: Install nginx on RHEL9
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+""",
+        "explanationId": explanation_id,
+        "ansibleExtensionVersion": "24.4.0",
+    }
+
+    def stub_wca_client(
+        self,
+        status_code=None,
+        mock_api_key=Mock(return_value="org-api-key"),
+        mock_model_id=Mock(return_value="org-model-id"),
+        response_data: Union[str, dict] = response_data,
+        response_text=None,
+    ):
+        response = MockResponse(
+            json=response_data,
+            text=response_text,
+            status_code=status_code,
+        )
+        model_client = WCAClient(inference_url="https://wca_api_url")
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = mock_api_key
+        model_client.get_model_id = mock_model_id
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_client
+
+    def assert_test(
+        self, model_client, expected_status_code, expected_exception, expected_log_message
+    ):
+        self.user.rh_user_has_seat = True
+        self.client.force_authenticate(user=self.user)
+        self.mock_model_client_with(model_client)
+
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("explanations"), self.payload, format="json")
+            self.assertEqual(r.status_code, expected_status_code)
+            self.assert_error_detail(
+                r, expected_exception().default_code, expected_exception().default_detail
+            )
+            self.assertInLog(expected_log_message, log)
+
+    def test_bad_wca_request(self):
+        model_client = self.stub_wca_client(
+            400,
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.NO_CONTENT,
+            WcaBadRequestException,
+            "bad request for playbook explanation",
+        )
+
+    def test_missing_api_key(self):
+        model_client = self.stub_wca_client(
+            403,
+            mock_api_key=Mock(side_effect=WcaKeyNotFound),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaKeyNotFoundException,
+            "A WCA Api Key was expected but not found for playbook explanation",
+        )
+
+    def test_missing_model_id(self):
+        model_client = self.stub_wca_client(
+            403,
+            mock_model_id=Mock(side_effect=WcaModelIdNotFound),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaModelIdNotFoundException,
+            "A WCA Model ID was expected but not found for playbook explanation",
+        )
+
+    def test_missing_default_model_id(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(side_effect=WcaNoDefaultModelId),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaNoDefaultModelIdException,
+            "A default WCA Model ID was expected but not found for playbook explanation",
+        )
+
+    def test_invalid_model_id(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(return_value="garbage"),
+            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaInvalidModelIdException,
+            "WCA Model ID is invalid for playbook explanation",
+        )
+
+    def test_empty_response(self):
+        model_client = self.stub_wca_client(
+            204,
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.NO_CONTENT,
+            WcaEmptyResponseException,
+            "WCA returned an empty response for playbook explanation",
+        )
+
+    def test_cloudflare_rejection(self):
+        model_client = self.stub_wca_client(403, response_text="cloudflare rejection")
+        self.assert_test(
+            model_client,
+            HTTPStatus.BAD_REQUEST,
+            WcaCloudflareRejectionException,
+            "Cloudflare rejected the request for playbook explanation",
+        )
+
+    def test_user_trial_expired(self):
+        model_client = self.stub_wca_client(
+            403,
+            response_data={"message_id": "WCA-0001-E", "detail": "The CUH limit is reached."},
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaUserTrialExpiredException,
+            "User trial expired, when requesting playbook explanation",
+        )
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
@@ -2669,20 +2804,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_bad_request_with_wca_client(self):
-        generation_id = str(uuid.uuid4())
-        # No content specified
-        payload = {"generationId": generation_id, "ansibleExtensionVersion": "24.4.0"}
-        with patch.object(
-            apps.get_app_config("ai"),
-            "model_mesh_client",
-            WCAClient(inference_url="https://wca_api_url"),
-        ):
-            self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_anonymized_response(self):
         generation_id = str(uuid.uuid4())
         payload = {
@@ -2717,6 +2838,155 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         with self.assertRaises(Exception):
             r = self.client.post(reverse("generations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
+
+
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+
+    response_data = """yaml
+---
+- hosts: rhel9
+  become: yes
+  tasks:
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+"""
+
+    generation_id = str(uuid.uuid4())
+    payload = {
+        "text": "Install nginx on RHEL9",
+        "generationId": generation_id,
+        "ansibleExtensionVersion": "24.4.0",
+    }
+
+    def stub_wca_client(
+        self,
+        status_code=None,
+        mock_api_key=Mock(return_value="org-api-key"),
+        mock_model_id=Mock(return_value="org-model-id"),
+        response_data: Union[str, dict] = response_data,
+        response_text=None,
+    ):
+        response = MockResponse(
+            json=response_data,
+            text=response_text,
+            status_code=status_code,
+        )
+        model_client = WCAClient(inference_url="https://wca_api_url")
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = mock_api_key
+        model_client.get_model_id = mock_model_id
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_client
+
+    def assert_test(
+        self, model_client, expected_status_code, expected_exception, expected_log_message
+    ):
+        self.user.rh_user_has_seat = True
+        self.client.force_authenticate(user=self.user)
+        self.mock_model_client_with(model_client)
+
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("generations"), self.payload, format="json")
+            self.assertEqual(r.status_code, expected_status_code)
+            self.assert_error_detail(
+                r, expected_exception().default_code, expected_exception().default_detail
+            )
+            self.assertInLog(expected_log_message, log)
+
+    def test_bad_wca_request(self):
+        model_client = self.stub_wca_client(
+            400,
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.NO_CONTENT,
+            WcaBadRequestException,
+            "bad request for playbook generation",
+        )
+
+    def test_missing_api_key(self):
+        model_client = self.stub_wca_client(
+            403,
+            mock_api_key=Mock(side_effect=WcaKeyNotFound),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaKeyNotFoundException,
+            "A WCA Api Key was expected but not found for playbook generation",
+        )
+
+    def test_missing_model_id(self):
+        model_client = self.stub_wca_client(
+            403,
+            mock_model_id=Mock(side_effect=WcaModelIdNotFound),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaModelIdNotFoundException,
+            "A WCA Model ID was expected but not found for playbook generation",
+        )
+
+    def test_missing_default_model_id(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(side_effect=WcaNoDefaultModelId),
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaNoDefaultModelIdException,
+            "A default WCA Model ID was expected but not found for playbook generation",
+        )
+
+    def test_invalid_model_id(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(return_value="garbage"),
+            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaInvalidModelIdException,
+            "WCA Model ID is invalid for playbook generation",
+        )
+
+    def test_empty_response(self):
+        model_client = self.stub_wca_client(
+            204,
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.NO_CONTENT,
+            WcaEmptyResponseException,
+            "WCA returned an empty response for playbook generation",
+        )
+
+    def test_cloudflare_rejection(self):
+        model_client = self.stub_wca_client(403, response_text="cloudflare rejection")
+        self.assert_test(
+            model_client,
+            HTTPStatus.BAD_REQUEST,
+            WcaCloudflareRejectionException,
+            "Cloudflare rejected the request for playbook generation",
+        )
+
+    def test_user_trial_expired(self):
+        model_client = self.stub_wca_client(
+            403,
+            response_data={"message_id": "WCA-0001-E", "detail": "The CUH limit is reached."},
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.FORBIDDEN,
+            WcaUserTrialExpiredException,
+            "User trial expired, when requesting playbook generation",
+        )
 
 
 @modify_settings()

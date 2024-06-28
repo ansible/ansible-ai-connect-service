@@ -657,10 +657,67 @@ class Explanation(APIView):
                 "format": "markdown",
                 "explanationId": explanation_id,
             }
+
+        except WcaBadRequest as e:
+            exception = e
+            logger.exception(f"bad request for playbook explanation {explanation_id}")
+            raise WcaBadRequestException(cause=e)
+
+        except WcaInvalidModelId as e:
+            exception = e
+            logger.exception(f"WCA Model ID is invalid for playbook explanation {explanation_id}")
+            raise WcaInvalidModelIdException(cause=e)
+
+        except WcaKeyNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Api Key was expected but not found for "
+                f"playbook explanation {explanation_id}"
+            )
+            raise WcaKeyNotFoundException(cause=e)
+
+        except WcaModelIdNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Model ID was expected but not found for "
+                f"playbook explanation {explanation_id}"
+            )
+            raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaNoDefaultModelId as e:
+            exception = e
+            logger.exception(
+                "A default WCA Model ID was expected but not found for "
+                f"playbook explanation {explanation_id}"
+            )
+            raise WcaNoDefaultModelIdException(cause=e)
+
+        except WcaEmptyResponse as e:
+            exception = e
+            logger.exception(
+                f"WCA returned an empty response for playbook explanation {explanation_id}"
+            )
+            raise WcaEmptyResponseException(cause=e)
+
+        except WcaCloudflareRejection as e:
+            exception = e
+            logger.exception(
+                f"Cloudflare rejected the request for playbook explanation {explanation_id}"
+            )
+            raise WcaCloudflareRejectionException(cause=e)
+
+        except WcaUserTrialExpired as e:
+            exception = e
+            logger.exception(
+                f"User trial expired, when requesting playbook explanation {explanation_id}"
+            )
+            raise WcaUserTrialExpiredException(cause=e)
+
         except Exception as exc:
             exception = exc
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
+            logger.exception(f"An exception {exc.__class__} occurred during a playbook explanation")
             raise
+
         finally:
             self.write_to_segment(
                 request.user,
@@ -770,10 +827,67 @@ class Generation(APIView):
                 "format": "plaintext",
                 "generationId": generation_id,
             }
+
+        except WcaBadRequest as e:
+            exception = e
+            logger.exception(f"bad request for playbook generation {generation_id}")
+            raise WcaBadRequestException(cause=e)
+
+        except WcaInvalidModelId as e:
+            exception = e
+            logger.exception(f"WCA Model ID is invalid for playbook generation {generation_id}")
+            raise WcaInvalidModelIdException(cause=e)
+
+        except WcaKeyNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Api Key was expected but not found for "
+                f"playbook generation {generation_id}"
+            )
+            raise WcaKeyNotFoundException(cause=e)
+
+        except WcaModelIdNotFound as e:
+            exception = e
+            logger.exception(
+                f"A WCA Model ID was expected but not found for "
+                f"playbook generation {generation_id}"
+            )
+            raise WcaModelIdNotFoundException(cause=e)
+
+        except WcaNoDefaultModelId as e:
+            exception = e
+            logger.exception(
+                "A default WCA Model ID was expected but not found for "
+                f"playbook generation {generation_id}"
+            )
+            raise WcaNoDefaultModelIdException(cause=e)
+
+        except WcaEmptyResponse as e:
+            exception = e
+            logger.exception(
+                f"WCA returned an empty response for playbook generation {generation_id}"
+            )
+            raise WcaEmptyResponseException(cause=e)
+
+        except WcaCloudflareRejection as e:
+            exception = e
+            logger.exception(
+                f"Cloudflare rejected the request for playbook generation {generation_id}"
+            )
+            raise WcaCloudflareRejectionException(cause=e)
+
+        except WcaUserTrialExpired as e:
+            exception = e
+            logger.exception(
+                f"User trial expired, when requesting playbook generation {generation_id}"
+            )
+            raise WcaUserTrialExpiredException(cause=e)
+
         except Exception as exc:
             exception = exc
             logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
             raise
+
         finally:
             self.write_to_segment(
                 request.user,
