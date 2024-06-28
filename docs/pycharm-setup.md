@@ -1,48 +1,45 @@
-# PyCharm Debug Setup for Wisdom Service
+# PyCharm Debug Setup for Ansible AI Connect Service
 
-By Tami Takamiya (last update: 2024.3.21)
+By Tami Takamiya (last update: 2024.6.28)
 
 ## Summary
 
-This is a memo on how to debug Wisdom service using PyCharm. Even though
+This is a memo on how to debug Ansible AI Connect service using PyCharm. Even though
 descriptions here are very specific to PyCharm, they should be able to
 be applied to other environments, e.g. VSCode + MacOS with minor modifications.
 
 The instructions presented here were tested using
-- PyCharm 2023.3.4 (Community Edition),
-- Fedora Linux 39 (Workstation Edition), and
-- Lenovo ThinkPad X1 Carbon Gen 9
+- PyCharm 2024.1.4 (Community Edition),
+- Python 3.11.9,
+- Fedora Linux 40 (Workstation Edition), and
+- HP Victus Gaming Laptop 16
+
+> [!NOTE]
+> If you install Python on Fedora (or probably on other Linix distributions),
+> you need to install the development package as well.  For Fedora, run
+> 
+>   `sudo dnf install python3.11 python3.11-devel`
+
+> [!NOTE] Content Matching and Playbook Generation/Explanation features are not available with
+> this setup.
+
+
+> [!NOTE]
+> If you install Python on Fedora (or probably on other Linix distributions),
+> you need to install the development package as well.  For Fedora, run
+> 
+>   `sudo dnf install python3.11 python3.11-devel`
 
 ## Setup for Development
-
-The [README.md](../README.md) file describes the required steps
-for running Wisdom Service using docker (or podman)-compose. This document assumes that you have completed
-them and can run Wisdom Service using docker (or podman)-compose.
 
 > [!NOTE]
 > This document contains some duplicated information that is found in the README.md file.
 
-Among the steps found in the README.md file, the
-[Authenticating with the completion API](../README.md#authenticating-with-the-completion-api)
-section is important, i.e. you need to create your own OAuth App
-at [https://github.com/settings/developers](https://github.com/settings/developers).
-
-> [!IMPORTANT]
-> Initially we were using GitHub Team authentication. Now we support GitHub (without "Team") authentication and
-> it is recommended to create your own OAuth App for GitHub authentication. Differences in setups for GitHub
-> Team and GitHub authentications are in:
->
-> | Item | GitHub team | GitHub |
-> |------|-------------|--------|
-> | Authorization callback URL | http://localhost:8000/complete/github-team/ | http://localhost:8000/complete/github/ |
-> | Environment variables |- SOCIAL_AUTH_GITHUB_TEAM_KEY<br>- SOCIAL_AUTH_GITHUB_TEAM_SECRET |- SOCIAL_AUTH_GITHUB_KEY<br>- SOCIAL_AUTH_GITHUB_SECRET |
-
-
 ### Model Server
 
-This document assumes that you are using a local llama.cpp model server, whose setup procedure is described in
+This document assumes that you are using a local Ollama model server, whose setup procedure is described in
 the
- [Connect to a local model server](../README.md#connect-to-a-local-model-server) section
+ [Start the model server](../README.md#start-the-model-server) section
 of the README.md file.
 
 ### Install PyCharm
@@ -61,15 +58,15 @@ a debug feature cannot be installed if PyCharm is installed with Snap. I install
 
 ### podman-compose (or docker-compose) for running backend servers
 
-Our docker-compose setup ([compose.yaml](../tools/docker-compose/compose.yaml)) runs Wisdom Django service with several backend services
-(Postgres, Prometheus and Grafana) in containers. For debugging Wisdom service, we want to run Wisdom
+Our docker-compose setup ([compose.yaml](../tools/docker-compose/compose.yaml)) runs Ansible AI Connect Django service with several backend services
+(Postgres, Prometheus and Grafana) in containers. For debugging Ansible AI Connect service, we want to run Ansible AI Connect
 service directly from code with running backend services in containers.
 
 > [!NOTE]
-> While docker-compose setup runs Wisdom Django service with uwsgi, the setup presented here
+> While docker-compose setup runs Ansible AI Connect Django service with uwsgi, the setup presented here
 > does not use uwsgi and some behaviors at runtime are different.
 
-With [PR #89](https://github.com/ansible/ansible-wisdom-service/pull/89), we added a separate compose YAML file
+With [PR #89](https://github.com/ansible/ansible-ai-connect-service/pull/89), we added a separate compose YAML file
 ([compose-backends.yaml](../tools/docker-compose/compose-backends.yaml)) and added two new
 Makefile targets for the new YAML file, i.e., for running backend services, type:
 ```bash
@@ -96,7 +93,7 @@ local       bccb83160e96d816c6fc37ae212b008aa0cfffb69cc3fffc43528ef7d8626999
 ```
 
 
-If you want to start your local wisdom-service from a clean state, remove them before running backends
+If you want to start your local ai-connect-service from a clean state, remove them before running backends
 with the podman volume rm command:
 
 ```bash
@@ -117,18 +114,14 @@ chcon -t container_file_t -R prometheus/
 
 ## PyCharm Python Setup
 
-As of writing this (2024.4.10), the project is using Python version 3.11 because torch and torchvision
-libraries are dependent on the specific version of Python.
-
-It is recommended to use a separate virtual environment for your development. It can be configured with
+As of writing this (2024.6.28), the project is using Python version 3.11. It is recommended to use a separate virtual environment for your development. It can be configured with
 
 1. Go to Settings page (on Linux it is File > Settings)
-2. Open Project: ansible-wisdom-service > Python Interpreter and click Add Interpreter
-![](images/pycharm-image10.png)
+2. Open Project: ansible-ai-connect-service > Python Interpreter and click Add Interpreter
+2. Open Project: ansible-ai-connect-service > Python Interpreter and click Add Interpreter
 3. Select Virtual Environment and and set Base interpreter, then click OK
-![](images/pycharm-image13.png)
 
-It is also important to run
+**It is also important to run**
 ```bash
 pip3 install -e '.[test]'
 ```
@@ -148,18 +141,21 @@ This will execute following four targets as dependencies defined in `Makefile` f
 - `migrate`
 - `create-cachetable` (depends on `migrate`)
 - `create-superuser` (depends on `create-cachetable`)
-- `create-application` (depends on `create-superuser`)
+- `create-testuser` (depends on `create-superuser`)
+- `create-application` (depends on `create-testuser`)
 
 These are needed for the following reasons:
 
-- `migrate`: When Wisdom Service is running with docker (or podman) compose,
+- `migrate`: When Ansible AI Connect Service is running with docker (or podman) compose,
 Django’s DB migration (manage.py migrate) is automatically executed,
-but for running Wisdom Service from source, we need to manually
+but for running Ansible AI Connect Service from source, we need to manually
 execute DB migration before running.
 - `create-cachetable`: Since we use DB for caching
 instead of a dedicated service such as Redis, a table for caching is need
 to be created.
 - `create-superuser`: This target creates a superuser for using Django’s admin UI.
+- `create-testuser`: This target creates a test user (username/password = `testuser`/`testuser`),
+which is used for your debugging.
 - `create-application`: For using the local development environment with Ansible VSCode extension, the
 setup of an authentication application is needed.
 
@@ -171,6 +167,8 @@ setup of an authentication application is needed.
 >
 > You can override the default password by defining the `DJANGO_SUPERUSER_PASSWORD`
 > environment variable before running the command.
+> 
+> For changing username and/or password for the test user, please edit `Makefile`.
 
 
 ## PyCharm Run Configurations
@@ -180,7 +178,7 @@ We are going to create following run configurations:
 1. runserver
 1. test
 
-`runserver` is for running Wisdom Service and `test` is for running unit tests.
+`runserver` is for running Ansible AI Connect Service and `test` is for running unit tests.
 
 ### .env
 
@@ -196,21 +194,21 @@ ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
 ANSIBLE_AI_DATABASE_USER=wisdom
-ARI_KB_PATH=../ari/kb/
 DJANGO_SETTINGS_MODULE=main.settings.development
-ENABLE_ARI_POSTPROCESS=False
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
-SOCIAL_AUTH_GITHUB_KEY=(your key here)
-SOCIAL_AUTH_GITHUB_SECRET=(your secret here)
-ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
-ANSIBLE_AI_MODEL_MESH_MODEL_ID=mistral-7b-instruct-v0.2.Q5_K_M.gguf
-ANSIBLE_AI_MODEL_MESH_API_URL=http://localhost:8080
+ANSIBLE_AI_MODEL_MESH_API_TYPE=ollama
+ANSIBLE_AI_MODEL_MESH_MODEL_ID="mistral:instruct"
+ANSIBLE_AI_MODEL_MESH_API_URL=http://127.0.0.1:11434
 ENABLE_ARI_POSTPROCESS=False
+DEPLOYMENT_MODE=upstream
 ```
 
 > [!TIP]
-> The example shown above uses local llama.cpp server with Mistral 7B Instruct model. For using a other type of model server that provides prediction results, you need to set extra environment variables for a client type that is used to connect to the model server. Please take a look at the [README](../README.md) for more details.
+> The example shown above uses local Ollama server with Mistral 7B Instruct model. 
+> For using a other type of model server that provides prediction results, 
+> you need to set extra environment variables for a client type that is used 
+> to connect to the model server. 
 
 ### runserver configuration
 
@@ -264,39 +262,38 @@ Once both the runserver and test configurations are created, make sure the backe
 Then run `runserver` in Debug mode with PyCharms Run > Debug… menu. Console output would be like:
 
 ```bash
-/home/ttakamiy/git/ansible/ansible-wisdom-service/venv/bin/python /home/ttakamiy/git/ansible/ansible-wisdom-service/ansible_ai_connect/manage.py runserver --noreload
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+/home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/bin/python -X pycache_prefix=/home/ttakamiy/.cache/JetBrains/PyCharmCE2024.1/cpython-cache /home/ttakamiy/.local/share/JetBrains/Toolbox/apps/pycharm-community/plugins/python-ce/helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client 127.0.0.1 --port 35229 --file /home/ttakamiy/git/ansible/ansible-ai-connect-service/ansible_ai_connect/manage.py runserver --noreload 
+Connected to pydev debugger (build 241.18034.82)
+/home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/lib/python3.11/site-packages/langchain/llms/__init__.py:548: LangChainDeprecationWarning: Importing LLMs from langchain is deprecated. Importing from langchain will no longer be supported as of langchain==0.2.0. Please import from langchain-community instead:
+`from langchain_community.llms import Ollama`.
+To install langchain-community run `pip install -U langchain-community`.
+  warnings.warn(
 Performing system checks...
-
 System check identified no issues (0 silenced).
-March 21, 2024 - 16:35:46
+June 28, 2024 - 16:56:26
 Django version 4.2.11, using settings 'main.settings.development'
 Starting development server at http://127.0.0.1:8000/
 Quit the server with CONTROL-C.
 ```
 
 
-If you open your web browser and point to [http://localhost:8000/](http://localhost:8000/), you see:
+If you open your web browser and point to [http://127.0.0.1:8000/](http://localhost:8000/), you see:
 
 ![](images/pycharm-image5.png)
 
-DON'T CLICK Log in HERE! If you do so, you'll see
-![](images/pycharm-image1.png)
-
-then you'll see
-
-![](images/pycharm-image15.png)
-
-What you need is to open VSCode, install Ansible Plugin, and configure Lightspeed URL
-to [http://localhost:8000/](http://localhost:8000/) (note it's http, not https)
+Instead clicking on the Login button here, open VSCode, 
+install Ansible Plugin, and configure Lightspeed URL
+to [http://127.0.0.1:8000/](http://localhost:8000/) (note it's http, not https)
 
 
 ![](images/pycharm-image16.png)
 
-Click the Ansible icon and click Connect:
+Click the Ansible icon and click **Connect**:
 
 ![](images/pycharm-image4.png)
 
-Click Allow to sign in:
+Click **Allow** to sign in:
 
 ![](images/pycharm-image7.png)
 
@@ -305,8 +302,28 @@ Click the button and it will guide you to the Terms of Use page, etc.
 
 ![](images/pycharm-image3.png)
 
-If everything went well, you'll see your GitHub ID on the web browser screen:
+Click **Authorize** on the Authorize Aunsible AI Connect for VS Code popup.
 
 ![](images/pycharm-image11.png)
 
-From that point, you can start debugging, i.e. set breakpoint, view variables etc. Have fun!
+Click **Open Visual Studio Code - URL Handler** to complete the authenticaiton.
+
+![](images/pycharm-image17.png)
+
+On VS Code, click **Open** to open the URI.
+
+![](images/pycharm-image18.png)
+
+If the connection is established successfully, you will see username (`testuser`) on the sidebar
+of VS Code. 
+
+
+![](images/pycharm-image19.png)
+
+> [!NOTE] User Type is shown as `Unlicensed`. You can ignore it for your debugging.
+> Browser Screen also shows the error message **Your organization doen's have access to Ansible AI Connect.**,
+> which also can be ignored.
+
+![](images/pycharm-image20.png)
+
+Now you can use Lightspeed's task completion feature and you can debug it with PyCharm Debugger!
