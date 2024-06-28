@@ -149,14 +149,14 @@ code-coverage:
 # Compile and bundle Admin Portal into Django application
 .PHONY: admin-portal-bundle
 admin-portal-bundle:
-	npm --prefix ./ansible_wisdom_console_react run build
+	npm --prefix ./ansible_ai_connect_admin_portal run build
 
 # Run tests for Admin Portal
 .PHONY: admin-portal-test
 admin-portal-test:
-	npm --prefix ./ansible_wisdom_console_react run test
+	npm --prefix ./ansible_ai_connect_admin_portal run test
 
 # Run lint checks for Admin Portal
 .PHONY: admin-portal-lint
 admin-portal-lint:
-	npm --prefix ./ansible_wisdom_console_react run lint
+	npm --prefix ./ansible_ai_connect_admin_portal run lint

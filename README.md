@@ -50,10 +50,10 @@ podman compose -f tools/docker-compose/compose.yaml down
 ## Development
 
 ### Project structure
-| Path | Description |
-|------|-------------|
-| ansible_ai_connect | Service backend application |
-| ansible_wisdom_console_react | Admin portal application |
+| Path                                                | Description |
+|-----------------------------------------------------|-------------|
+| ansible_ai_connect                                  | Service backend application |
+| ansible_ai_connect_admin_portal | Admin portal application |
 
 ### Service configuration
 
@@ -86,7 +86,7 @@ WCA_SECRET_MANAGER_SECRET_ACCESS_KEY=<secret-access-key>
 See [here](#aws-config) for details.
 
 ### Admin Portal
-This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located in the `ansible_wisdom_console_react` directory. Further details can be found in `ansible_wisdom_console_react/README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
+This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located in the `ansible_ai_connect_admin_portal` directory. Further details can be found in `ansible_ai_connect_admin_portal/README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
 
 ## Debugging
 
@@ -617,13 +617,13 @@ chmod -R 777 ari/
 If your django container build fails with the following error, you've
 probably run out of memory running webpack.
 ```bash
-STEP 30/46: RUN npm --prefix /tmp/ansible_wisdom_console_react run build
+STEP 30/46: RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
 
 > admin-portal@0.1.0 build
 > node scripts/build.js
 
 Creating an optimized production build...
-npm ERR! path /tmp/ansible_wisdom_console_react
+npm ERR! path /tmp/ansible_ai_connect_admin_portal
 npm ERR! command failed
 npm ERR! signal SIGKILL
 npm ERR! command sh -c -- node scripts/build.js

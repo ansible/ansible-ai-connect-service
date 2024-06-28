@@ -90,15 +90,15 @@ jobs:
       with:
         node-version: '20.x'
         cache: 'npm'
-        cache-dependency-path: ./ansible_wisdom_console_react/package-lock.json
+        cache-dependency-path: ./ansible_ai_connect_admin_portal/package-lock.json
 
     - name: Install Dependencies (TypeScript)
       run: npm ci
-      working-directory: ./ansible_wisdom_console_react
+      working-directory: ./ansible_ai_connect_admin_portal
 
     - name: Running Unit Tests (TypeScript)
       run: npm run test
-      working-directory: ./ansible_wisdom_console_react
+      working-directory: ./ansible_ai_connect_admin_portal
 
     #####################
     # SonarCloud coverage
