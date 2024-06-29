@@ -59,7 +59,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -85,7 +85,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 for event in segment_events:
                     properties = event["properties"]
                     self.assertTrue("modelName" in properties)
-                    self.assertEqual(properties["modelName"], settings.ANSIBLE_AI_MODEL_NAME)
+                    self.assertEqual(
+                        properties["modelName"], settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
+                    )
                     self.assertTrue("imageTags" in properties)
                     self.assertTrue("groups" in properties)
                     self.assertTrue("Group 1" in properties["groups"])
@@ -169,7 +171,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -217,7 +219,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             "status_code": 204,
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
         }
         self.client.force_authenticate(user=self.user)
 
@@ -289,7 +291,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)

@@ -36,52 +36,50 @@ ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Co
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_HOST", "https://model.wisdom.testing.ansible.com"
-)
-ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv("ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT", 443)
-ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = (
-    f"{ANSIBLE_AI_MODEL_MESH_HOST}:{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
-)
-
+# ==========================================
+# Model Provider
+# ------------------------------------------
 t_model_mesh_api_type = Literal[
     "grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy", "ollama", "llamacpp", "bam"
 ]
 ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE", cast(t_model_mesh_api_type, "http")
 )
-t_model_mesh_healthcheck_protocol = Literal["http", "https"]
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL: t_model_mesh_healthcheck_protocol = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL",
-    cast(t_model_mesh_healthcheck_protocol, "https"),
-)
-ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
-    ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
-    if ANSIBLE_AI_MODEL_MESH_API_TYPE == "http"
-    else (
-        os.getenv("ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT", "8443")
-        if ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc"
-        else None
-    )
-)
 
-ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
+t_model_mesh_protocol = Literal["http", "https"]
+ANSIBLE_AI_MODEL_MESH_PROTOCOL: t_model_mesh_protocol = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_PROTOCOL",
+    cast(t_model_mesh_protocol, "https"),
+)
+ANSIBLE_AI_MODEL_MESH_HOST = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_HOST", "https://model.wisdom.testing.ansible.com"
+)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT = os.getenv("ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT", 443)
+ANSIBLE_AI_MODEL_MESH_INFERENCE_URL = os.getenv(
+    "ANSIBLE_AI_MODEL_MESH_INFERENCE_URL",
+    (
+        f"{ANSIBLE_AI_MODEL_MESH_PROTOCOL}://"
+        + f"{ANSIBLE_AI_MODEL_MESH_HOST}:"
+        + f"{ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT}"
+    ),
+)
 
 ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv("ANSIBLE_AI_MODEL_MESH_API_KEY")
-ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME")
+ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_ID", "wisdom")
 
-# WCA OnPrem
-ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
-# WCA
-ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
-ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
-ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
-ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
-
-# default: https://iam.cloud.ibm.com/identity
+# WCA - General
 ANSIBLE_WCA_IDP_URL = os.getenv("ANSIBLE_WCA_IDP_URL", "https://iam.cloud.ibm.com/identity")
 ANSIBLE_WCA_IDP_LOGIN = os.getenv("ANSIBLE_WCA_IDP_LOGIN")
 ANSIBLE_WCA_IDP_PASSWORD = os.getenv("ANSIBLE_WCA_IDP_PASSWORD")
+ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
+ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
+ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
+# WCA - "On prem"
+ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
+
+# GRPC
+ANSIBLE_GRPC_HEALTHCHECK_PORT = os.getenv("ANSIBLE_GRPC_HEALTHCHECK_PORT", "8443")
+# ==========================================
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
@@ -538,6 +536,9 @@ CSP_CONNECT_SRC = "'self'"
 # Region for where the service is deployed. Used by the Health Check endpoint.
 DEPLOYED_REGION = os.getenv("DEPLOYED_REGION", "unknown")
 
+# ==========================================
+# Health checks
+# ------------------------------------------
 # Support to disable health checks. The default is that they are enabled.
 # The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
 ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv("ENABLE_HEALTHCHECK_MODEL_MESH", "True").lower() == "true"
@@ -550,9 +551,14 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv("ENABLE_HEALTHCHECK_ATTRIBUTION", "True").lower() == "true"
 )
+# ==========================================
 
+# ==========================================
+# Metrics
+# ------------------------------------------
 # Follow AWX naming for this environment variable
 # It is used to protect Prometheus's /metrics endpoint
 ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
     os.getenv("ALLOW_METRICS_FOR_ANONYMOUS_USERS", "True").lower() == "true"
 )
+# ==========================================

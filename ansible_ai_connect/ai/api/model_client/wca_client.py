@@ -201,7 +201,6 @@ class BaseWCAClient(ModelMeshClient):
 
         headers = self.get_inference_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
-        # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
 
         @backoff.on_exception(
@@ -392,8 +391,8 @@ class WCAClient(BaseWCAClient):
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
-        elif settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
-            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+        elif settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
         elif organization_id is None:
             logger.error(
                 "User is not linked to an organization and no default WCA model ID is found"
@@ -537,7 +536,7 @@ class WCAOnPremClient(BaseWCAClient):
             raise WcaUsernameNotFound
         if not settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             raise WcaKeyNotFound
-        # ANSIBLE_AI_MODEL_MESH_MODEL_NAME cannot be validated until runtime. The
+        # ANSIBLE_AI_MODEL_MESH_MODEL_ID cannot be validated until runtime. The
         # User may provide an override value if the Environment Variable is not set.
 
     def get_api_key(self, organization_id: Optional[int]) -> str:
@@ -552,8 +551,8 @@ class WCAOnPremClient(BaseWCAClient):
             # requested_model_id defined: let them use what they ask for
             return requested_model_id
 
-        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
-            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
+        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID:
+            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
 
         raise WcaModelIdNotFound()
 
