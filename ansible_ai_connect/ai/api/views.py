@@ -48,6 +48,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
+# NOTHIG
 from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
