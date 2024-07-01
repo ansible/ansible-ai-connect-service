@@ -3,6 +3,10 @@ on:
   pull_request:
     types: [ labeled ]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   pr_testing:
     if: ${{ github.event.label.name == 'pr-deployment' }}
