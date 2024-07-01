@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+import logging
 import platform
 import random
 import string
@@ -95,6 +96,8 @@ from ansible_ai_connect.test_utils import (
 )
 from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
@@ -145,6 +148,7 @@ class MockedMeshClient(ModelMeshClient):
                     ]
                 }
             except Exception:  # ignore exception thrown here
+                logger.exception("MockedMeshClient: cannot set the .expects key")
                 pass
 
         self.response_data = response_data
