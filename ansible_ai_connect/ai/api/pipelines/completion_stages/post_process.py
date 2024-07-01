@@ -139,11 +139,10 @@ def completion_post_process(context: CompletionContext):
     model_id = context.model_id
     suggestion_id = context.payload.suggestionId
     prompt = context.payload.prompt
-    original_prompt = context.payload.original_prompt
     payload_context = context.payload.context
     original_indent = context.original_indent
     post_processed_predictions = context.anonymized_predictions.copy()
-    is_multi_task_prompt = fmtr.is_multi_task_prompt(original_prompt)
+    is_multi_task_prompt = fmtr.is_multi_task_prompt(prompt)
 
     ari_caller = apps.get_app_config("ai").get_ari_caller()
     if not ari_caller:
@@ -159,16 +158,11 @@ def completion_post_process(context: CompletionContext):
             f"unexpected predictions array length {len(post_processed_predictions['predictions'])}"
         )
 
-    anonymized_recommendation_yaml = post_processed_predictions["predictions"][0]
+    recommendation_yaml = post_processed_predictions["predictions"][0]
 
-    if not anonymized_recommendation_yaml:
-        raise PostprocessException(
-            f"unexpected prediction content {anonymized_recommendation_yaml}"
-        )
+    if not recommendation_yaml:
+        raise PostprocessException(f"unexpected prediction content {recommendation_yaml}")
 
-    recommendation_yaml = fmtr.restore_original_task_names(
-        anonymized_recommendation_yaml, original_prompt
-    )
     recommendation_problem = None
     truncated_yaml = None
     postprocessed_yaml = None
@@ -213,7 +207,7 @@ def completion_post_process(context: CompletionContext):
                 f"original recommendation: \n{recommendation_yaml}"
             )
             postprocessed_yaml, ari_results = ari_caller.postprocess(
-                recommendation_yaml, original_prompt, payload_context
+                recommendation_yaml, prompt, payload_context
             )
             logger.debug(
                 f"suggestion id: {suggestion_id}, "
@@ -259,7 +253,6 @@ def completion_post_process(context: CompletionContext):
                         f"rules_with_applied_changes: {tasks_with_applied_changes} "
                         f"recommendation_yaml: [{repr(recommendation_yaml)}] "
                         f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
-                        f"original_prompt: [{repr(original_prompt)}] "
                         f"payload_context: [{repr(payload_context)}] "
                         f"postprocess_details: [{json.dumps(postprocess_details)}] "
                     )
@@ -279,7 +272,7 @@ def completion_post_process(context: CompletionContext):
             write_to_segment(
                 user,
                 suggestion_id,
-                anonymized_recommendation_yaml,
+                recommendation_yaml,
                 truncated_yaml,
                 postprocessed_yaml,
                 postprocess_details,
@@ -298,9 +291,8 @@ def completion_post_process(context: CompletionContext):
             input_yaml = postprocessed_yaml if postprocessed_yaml else recommendation_yaml
             # Single task predictions are missing the `- name: ` line and fail linter schema check
             if not is_multi_task_prompt:
-                input_yaml = (
-                    f"{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}"
-                )
+                prompt += "\n"
+                input_yaml = f"{prompt.lstrip() if ari_caller else prompt}{input_yaml}"
             postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
@@ -318,7 +310,7 @@ def completion_post_process(context: CompletionContext):
             )
         finally:
             anonymized_input_yaml = (
-                postprocessed_yaml if postprocessed_yaml else anonymized_recommendation_yaml
+                postprocessed_yaml if postprocessed_yaml else recommendation_yaml
             )
             write_to_segment(
                 user,

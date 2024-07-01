@@ -128,10 +128,7 @@ class MockedMeshClient(ModelMeshClient):
                 request = Mock(user=user)
                 serializer = CompletionRequestSerializer(context={"request": request})
                 data = serializer.validate(payload.copy())
-
                 api_payload = APIPayload(prompt=data.get("prompt"), context=data.get("context"))
-                api_payload.original_prompt = payload["prompt"]
-
                 context = CompletionContext(
                     request=request,
                     payload=api_payload,
@@ -856,7 +853,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
-                self.assertIn(pii_task.capitalize(), r.data["predictions"][0])
+                self.assertNotIn(pii_task.capitalize(), r.data["predictions"][0])
                 self.assertSegmentTimestamp(log)
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
