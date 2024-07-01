@@ -62,6 +62,5 @@ class DeserializeStage(PipelineElement):
             )
 
         payload = APIPayload(**request_serializer.validated_data)
-        payload.original_prompt = request.data.get("prompt", "")
 
         context.payload = payload

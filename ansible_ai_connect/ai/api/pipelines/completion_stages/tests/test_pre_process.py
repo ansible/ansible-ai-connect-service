@@ -520,7 +520,6 @@ TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK = """\
 @modify_settings()
 class CompletionPreProcessTest(TestCase):
     def call_completion_pre_process(self, payload, is_commercial_user, expected_context):
-        original_prompt = payload.get("prompt")
         user = Mock(rh_user_has_seat=is_commercial_user)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={"request": request})
@@ -529,7 +528,6 @@ class CompletionPreProcessTest(TestCase):
             request=request,
             payload=APIPayload(
                 prompt=data.get("prompt"),
-                original_prompt=original_prompt,
                 context=data.get("context"),
             ),
             metadata=data.get("metadata"),
