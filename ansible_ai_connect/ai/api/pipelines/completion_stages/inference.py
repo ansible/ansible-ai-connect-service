@@ -97,6 +97,9 @@ class InferenceStage(PipelineElement):
         event = None
         event_name = None
         start_time = time.time()
+        print(f"model_mesh_client={model_mesh_client}")
+        print(f"model_id={model_id}")
+        print(f"model_mesh_payload={model_mesh_payload}")
         try:
             predictions = model_mesh_client.infer(
                 request, data, model_id=model_id, suggestion_id=suggestion_id

@@ -85,6 +85,8 @@ class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("completions"), self.payload)
         self.assertNotEqual(r.status_code, HTTPStatus.FORBIDDEN)
+        print(f"r.content={r.content}")
+        self.assertTrue(False)
 
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=False)
