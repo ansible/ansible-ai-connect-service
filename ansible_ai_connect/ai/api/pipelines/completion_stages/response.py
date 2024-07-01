@@ -43,9 +43,11 @@ class ResponseStage(PipelineElement):
         try:
             response_data = {
                 "predictions": post_processed_predictions["predictions"],
-                "model": predictions["model_id"],
                 "suggestionId": payload.suggestionId,
             }
+            if model_from_prediction := predictions.get("model_id"):
+                response_data["model"] = model_from_prediction
+
             response_serializer = CompletionResponseSerializer(data=response_data)
             response_serializer.is_valid(raise_exception=True)
         except Exception:
