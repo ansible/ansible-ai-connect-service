@@ -965,6 +965,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 )
                 self.assertSegmentTimestamp(log)
 
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_completions_preprocessing_error_without_name_prompt(self):
         payload = {
