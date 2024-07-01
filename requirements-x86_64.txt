@@ -134,7 +134,7 @@ gitdb==4.0.11
     # via ansible-risk-insight
 greenlet==3.0.3
     # via sqlalchemy
-grpcio==1.60.1
+grpcio==1.62.2
     # via -r requirements.in
 idna==3.7
     # via
