@@ -38,7 +38,6 @@ preprocess_hist = Histogram(
 
 def completion_pre_process(context: CompletionContext):
     prompt = context.payload.prompt
-    original_prompt, _ = fmtr.extract_prompt_and_context(context.payload.original_prompt)
     payload_context = context.payload.context
 
     # Additional context (variables) is supported when
@@ -70,17 +69,6 @@ def completion_pre_process(context: CompletionContext):
     context.payload.context, context.payload.prompt = fmtr.preprocess(
         payload_context, prompt, ansibleFileType, additionalContext
     )
-    if not multi_task:
-        # We are currently more forgiving on leading spacing of single task
-        # prompts than multi task prompts. In order to use the "original"
-        # single task prompt successfull in post-processing, we need to
-        # ensure its spacing aligns with the normalized context we got
-        # back from preprocess. We can calculate the proper spacing from the
-        # normalized prompt.
-        normalized_indent = len(context.payload.prompt) - len(context.payload.prompt.lstrip())
-        normalized_original_prompt = fmtr.normalize_yaml(original_prompt)
-        original_prompt = " " * normalized_indent + normalized_original_prompt
-    context.payload.original_prompt = original_prompt
 
 
 class PreProcessStage(PipelineElement):
