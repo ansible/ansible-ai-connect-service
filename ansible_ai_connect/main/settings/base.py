@@ -48,13 +48,12 @@ t_model_mesh_api_type = Literal[
     "grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy", "ollama", "llamacpp", "bam"
 ]
 ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_TYPE", cast(t_model_mesh_api_type, "http")
-)
+    "ANSIBLE_AI_MODEL_MESH_API_TYPE"
+) or cast(t_model_mesh_api_type, "http")
 t_model_mesh_healthcheck_protocol = Literal["http", "https"]
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL: t_model_mesh_healthcheck_protocol = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL",
-    cast(t_model_mesh_healthcheck_protocol, "https"),
-)
+    "ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PROTOCOL"
+) or cast(t_model_mesh_healthcheck_protocol, "https")
 ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     ANSIBLE_AI_MODEL_MESH_INFERENCE_PORT
     if ANSIBLE_AI_MODEL_MESH_API_TYPE == "http"
@@ -65,7 +64,7 @@ ANSIBLE_AI_MODEL_MESH_API_HEALTHCHECK_PORT = (
     )
 )
 
-ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME", "wisdom")
+ANSIBLE_AI_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_NAME") or "wisdom"
 
 ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv("ANSIBLE_AI_MODEL_MESH_API_KEY")
 ANSIBLE_AI_MODEL_MESH_MODEL_NAME = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME")
@@ -76,10 +75,10 @@ ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
 ANSIBLE_WCA_INFERENCE_URL = os.getenv("ANSIBLE_WCA_INFERENCE_URL")
 ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
 ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
-ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT", "4"))
+ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT") or "4")
 
 # default: https://iam.cloud.ibm.com/identity
-ANSIBLE_WCA_IDP_URL = os.getenv("ANSIBLE_WCA_IDP_URL", "https://iam.cloud.ibm.com/identity")
+ANSIBLE_WCA_IDP_URL = os.getenv("ANSIBLE_WCA_IDP_URL") or "https://iam.cloud.ibm.com/identity"
 ANSIBLE_WCA_IDP_LOGIN = os.getenv("ANSIBLE_WCA_IDP_LOGIN")
 ANSIBLE_WCA_IDP_PASSWORD = os.getenv("ANSIBLE_WCA_IDP_PASSWORD")
 
@@ -148,7 +147,7 @@ COMMERCIAL_DOCUMENTATION_URL = os.getenv(
     "https://access.redhat.com/documentation/en-us/"
     "red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest",
 )
-DOCUMENTATION_URL = os.getenv("DOCUMENTATION_URL", "https://docs.ai.ansible.redhat.com")
+DOCUMENTATION_URL = os.getenv("DOCUMENTATION_URL") or "https://docs.ai.ansible.redhat.com"
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
@@ -190,9 +189,9 @@ AUTHZ_SSO_CLIENT_ID = os.environ.get("AUTHZ_SSO_CLIENT_ID")
 AUTHZ_SSO_CLIENT_SECRET = os.environ.get("AUTHZ_SSO_CLIENT_SECRET")
 AUTHZ_SSO_SERVER = os.environ.get("AUTHZ_SSO_SERVER")
 AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
-AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT", "1.0"))
-AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT", "3"))
-AUTHZ_AMS_SERVICE_RETRY_COUNT = int(os.getenv("AMS_SERVICE_RETRY_COUNT", "3"))
+AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT") or "1.0")
+AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT") or "3")
+AUTHZ_AMS_SERVICE_RETRY_COUNT = int(os.getenv("AMS_SERVICE_RETRY_COUNT") or "3")
 
 t_deployment_mode = Literal["saas", "upstream", "onprem"]
 DEPLOYMENT_MODE: t_deployment_mode = cast(
@@ -391,7 +390,7 @@ DATABASES = {
         "USER": os.environ["ANSIBLE_AI_DATABASE_USER"],
         "PASSWORD": os.environ["ANSIBLE_AI_DATABASE_PASSWORD"],
         "HOST": os.environ["ANSIBLE_AI_DATABASE_HOST"],
-        "PORT": os.getenv("ANSIBLE_AI_DATABASE_PORT", 5432),
+        "PORT": os.getenv("ANSIBLE_AI_DATABASE_PORT") or 5432,
     }
 }
 
@@ -463,7 +462,7 @@ DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
 )
 
 ENABLE_ARI_POSTPROCESS = os.getenv("ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
-ARI_BASE_DIR = os.getenv("ARI_KB_PATH", "/etc/ari/kb/")
+ARI_BASE_DIR = os.getenv("ARI_KB_PATH") or "/etc/ari/kb/"
 ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, "rules")
 ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, "data")
 ARI_RULES = [
@@ -499,7 +498,7 @@ ARI_RULES = [
 ]
 if "ARI_RULES" in os.environ:
     ARI_RULES = os.environ["ARI_RULES"].split(",")
-ARI_RULE_FOR_OUTPUT_RESULT = os.getenv("ARI_RULE_FOR_OUTPUT_RESULT", "W007")
+ARI_RULE_FOR_OUTPUT_RESULT = os.getenv("ARI_RULE_FOR_OUTPUT_RESULT") or "W007"
 
 ENABLE_ANSIBLE_LINT_POSTPROCESS = (
     os.getenv("ENABLE_ANSIBLE_LINT_POSTPROCESS", "False").lower() == "true"
@@ -536,7 +535,7 @@ CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 CSP_CONNECT_SRC = "'self'"
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
-DEPLOYED_REGION = os.getenv("DEPLOYED_REGION", "unknown")
+DEPLOYED_REGION = os.getenv("DEPLOYED_REGION") or "unknown"
 
 # Support to disable health checks. The default is that they are enabled.
 # The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
