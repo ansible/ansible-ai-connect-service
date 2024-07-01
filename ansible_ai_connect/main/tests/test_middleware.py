@@ -15,6 +15,7 @@
 import platform
 import uuid
 from http import HTTPStatus
+from unittest import skip
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -22,7 +23,6 @@ from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
-from unittest import skip
 from segment import analytics
 
 from ansible_ai_connect.ai.api.tests.test_views import (
@@ -305,7 +305,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.client.post(reverse("completions"), payload, format="json")
                 analytics.flush()
                 import ansible_ai_connect.main.middleware
-                print(f"ansible_ai_connect.main.middleware.global_schema1_event: {ansible_ai_connect.main.middleware.global_schema1_event}")
+
+                print(
+                    f"ansible_ai_connect.main.middleware.global_schema1_event: {ansible_ai_connect.main.middleware.global_schema1_event}"
+                )
                 print(log)
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log)
                 self.assertInLog("sent segment event: segmentError", log)

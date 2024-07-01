@@ -157,14 +157,14 @@ class OurAPIView(APIView):
 
         # Mapping between the internal exceptions and the API exceptions (with a message and a code)
         mapping = [
-           (WcaInvalidModelId, WcaInvalidModelIdException),
-           (WcaBadRequest, WcaBadRequestException),
-           (WcaKeyNotFound, WcaKeyNotFoundException),
-           (WcaModelIdNotFound, WcaModelIdNotFoundException),
-           (WcaNoDefaultModelId, WcaNoDefaultModelIdException),
-           (WcaEmptyResponse, WcaEmptyResponseException),
-           (WcaCloudflareRejection, WcaCloudflareRejectionException),
-           (WcaUserTrialExpired, WcaUserTrialExpiredException),
+            (WcaInvalidModelId, WcaInvalidModelIdException),
+            (WcaBadRequest, WcaBadRequestException),
+            (WcaKeyNotFound, WcaKeyNotFoundException),
+            (WcaModelIdNotFound, WcaModelIdNotFoundException),
+            (WcaNoDefaultModelId, WcaNoDefaultModelIdException),
+            (WcaEmptyResponse, WcaEmptyResponseException),
+            (WcaCloudflareRejection, WcaCloudflareRejectionException),
+            (WcaUserTrialExpired, WcaUserTrialExpiredException),
         ]
 
         for original_class, new_class in mapping:
@@ -210,6 +210,7 @@ class OurAPIView(APIView):
             # we need to jump back and do it from within a final middleware that wrap
             # everything.
             import ansible_ai_connect.main.middleware
+
             ansible_ai_connect.main.middleware.global_schema1_event = self.schema1_event
 
         return response
