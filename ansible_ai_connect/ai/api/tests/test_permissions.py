@@ -31,14 +31,9 @@ from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
 from ansible_ai_connect.users.tests.test_users import create_user
 
 
-# Hack to workaround bug introduced by
-# https://github.com/ansible/ansible-wisdom-service/pull/882
-# If DEPLOYMENT_MODE != "onprem" we use a *REAL* WCAClient instance
-# that expects both Key and Model ID to be defined.
-@override_settings(DEPLOYMENT_MODE="onprem")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-dummy")
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-class AcceptedTermsPermissionTest(WisdomServiceAPITestCaseBase):
+class AcceptedTermsPermissionTest(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     payload = {
         "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
     }
