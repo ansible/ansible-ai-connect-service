@@ -139,7 +139,7 @@ def init_schema1_client() -> None:
 
 
 def send_schema1_event(event_obj) -> None:
-    print(f"SENDING SCHEMA1 EVENT (name={event_obj.event_name})\n{event_obj.as_dict()}")
+    print(f"SENDING SCHEMA1 EVENT (name={event_obj.event_name})\n{event_obj.as_dict()} ({type(event_obj)})")
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
         return

@@ -52,7 +52,6 @@ class ResponsePayload:
 
 @define
 class Schema1Event:
-    event_name: str = "noName"
     imageTags: str = field(
         validator=validators.instance_of(str), converter=str, default=version_info.image_tags
     )
@@ -117,7 +116,6 @@ class Schema1Event:
             self.modelName = model_mesh_client.get_model_id(
                 self.rh_user_org_id, str(validated_data.get("model", ""))
             )
-            print(f"self.modelName={self.rh_user_org_id}")
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
                 f"Failed to retrieve Model Name for Feedback.\n "
@@ -128,7 +126,6 @@ class Schema1Event:
 
     @classmethod
     def init(cls, user, validated_data):
-        print("init()")
         schema1_event = cls()
         schema1_event.set_user(user)
         schema1_event.set_validated_data(validated_data)
@@ -155,15 +152,17 @@ class CompletionEvent(Schema1Event):
         validator=validators.instance_of(str), converter=str, default=uuid.uuid4()
     )
     duration: int = field(validator=validators.instance_of(int), converter=int, default=0)
-    promptType: str = ""
-    taskCount: int = 0
+    promptType: str = field(validator=validators.instance_of(str), converter=str, default="")
+    taskCount: int = field(validator=validators.instance_of(int), converter=int, default=0)
     metadata: CompletionMetadata = field(default=Factory(dict))
     request: CompletionRequestPayload = CompletionRequestPayload()
+    tasks = field(default=Factory(list))
 
     def set_validated_data(self, validated_data):
         super().set_validated_data(validated_data)
         self.request.context = validated_data.get("context")
         self.request.prompt = validated_data.get("prompt")
+        self.metadata = validated_data.get("metadata")
 
     def set_request(self, request):
         super().set_request(request)
@@ -175,7 +174,8 @@ class CompletionEvent(Schema1Event):
         # certainly be improved
         tasks = getattr(response, "tasks", [])
         self.taskCount = len(tasks)
-        self.modelName = getattr(response, "_model", "")
+        self.tasks = tasks
+        self.modelName = response.data and response.data.get('model')
 
 
 @define

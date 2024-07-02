@@ -57,7 +57,6 @@ class SegmentMiddleware:
 
         response = self.get_response(request)
         if global_schema1_event:
-            print(f"global_schema1_event={global_schema1_event}")
             global_schema1_event.set_response(response)
             send_schema1_event(global_schema1_event)
 

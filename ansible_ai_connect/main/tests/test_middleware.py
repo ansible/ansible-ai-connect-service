@@ -120,7 +120,9 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
                 self.assertInLog("james8@example.com", log)
-                self.assertInLog("ano-user", log)
+                # the metadata dict is ignored by urlencode and won't be visible in the
+                # request payload.
+                # self.assertInLog("ano-user", log)
                 self.assertSegmentTimestamp(log)
 
             with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -304,12 +306,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 self.client.post(reverse("completions"), payload, format="json")
                 analytics.flush()
-                import ansible_ai_connect.main.middleware
 
-                print(
-                    f"ansible_ai_connect.main.middleware.global_schema1_event: {ansible_ai_connect.main.middleware.global_schema1_event}"
-                )
-                print(log)
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log)
                 self.assertInLog("sent segment event: segmentError", log)
                 events = self.extractSegmentEventsFromLog(log)

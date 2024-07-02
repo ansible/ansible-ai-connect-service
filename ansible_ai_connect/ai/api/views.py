@@ -133,11 +133,9 @@ class OurAPIView(APIView):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         self.request = request
-        print("initial()")
         request_serializer = self.serializer_class(data=request.data, context={"request": request})
         request_serializer.is_valid(raise_exception=True)
         self.validated_data = request_serializer.validated_data
-        print(f"initial self.schema1_event_class={self.schema1_event_class}")
         if self.schema1_event_class:
             self.schema1_event = self.schema1_event_class.init(request.user, self.validated_data)
 
@@ -153,7 +151,6 @@ class OurAPIView(APIView):
 
     def handle_exception(self, exc):
         self.exception = exc
-        print(f"EXCEPTION!: exc={exc}")
 
         # Mapping between the internal exceptions and the API exceptions (with a message and a code)
         mapping = [
@@ -193,7 +190,6 @@ class OurAPIView(APIView):
         self.schema1_event = None
         response = super().dispatch(request, *args, **kwargs)
 
-        print(f"api/views self.schema1_event={self.schema1_event}")
         if self.schema1_event:
             if hasattr(self.schema1_event, "duration"):
                 duration = round((time.time() - start_time) * 1000, 2)
