@@ -19,6 +19,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
@@ -45,6 +46,12 @@ class NonClashingForeignKey(models.ForeignKey):
 
     def get_attname(self):
         return "fk_%s_id" % self.name
+
+
+class Plan(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_after = models.DurationField(default=None, null=True)
 
 
 class User(ExportModelOperationsMixin("user"), AbstractUser):
@@ -142,3 +149,29 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     @cached_property
     def rh_aap_superuser(self) -> bool:
         return self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_superuser"]
+
+    plans = models.ManyToManyField(
+        Plan,
+        through="UserPlan",
+        through_fields=("user", "plan"),
+    )
+
+
+class UserPlan(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expired_at = models.DateTimeField(default=None, null=True)
+
+    def __init__(self, *args, **kwargs):
+        if "plan_id" in kwargs:
+            p = Plan.objects.get(id=kwargs["plan_id"])
+            if p.expires_after:
+                kwargs["expired_at"] = timezone.now() + p.expires_after
+        super().__init__(*args, **kwargs)
+
+    @property
+    def is_active(self):
+        if not self.expired_at:
+            return True
+        return self.expired_at > timezone.now()
