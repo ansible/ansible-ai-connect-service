@@ -268,7 +268,8 @@ class FeedbackRequestSerializerTest(TestCase):
             serializer.is_valid(raise_exception=True)
 
     def test_commercial_user_not_opted_out_passes_on_inlineSuggestion(self):
-        org = Mock(telemetry_opt_out=False)
+        org = Mock(has_telemetry_opt_out=False)
+
         user = Mock(rh_user_has_seat=True, organization=org)
         request = Mock(user=user)
         serializer = FeedbackRequestSerializer(

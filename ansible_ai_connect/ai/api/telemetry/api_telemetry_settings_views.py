@@ -72,7 +72,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
             if not organization:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            return Response(status=HTTP_200_OK, data={"optOut": organization.telemetry_opt_out})
+            return Response(status=HTTP_200_OK, data={"optOut": organization.has_telemetry_opt_out})
 
         except ServiceUnavailable:
             raise
@@ -88,7 +88,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
                 "duration": duration,
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
-                "opt_out": None if organization is None else organization.telemetry_opt_out,
+                "opt_out": None if organization is None else organization.has_telemetry_opt_out,
             }
             send_segment_event(event, "telemetrySettingsGet", request.user)
 
@@ -155,7 +155,7 @@ class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
                 "duration": duration,
                 "exception": exception is not None,
                 "problem": None if exception is None else exception.__class__.__name__,
-                "opt_out": None if organization is None else organization.telemetry_opt_out,
+                "opt_out": None if organization is None else organization.has_telemetry_opt_out,
             }
             send_segment_event(event, "telemetrySettingsSet", request.user)
 

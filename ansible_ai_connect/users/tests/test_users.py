@@ -64,7 +64,7 @@ def create_user(
     rh_org_id: int = 1234567,
     org_opt_out: bool = False,
 ):
-    (org, _) = Organization.objects.get_or_create(id=rh_org_id, _telemetry_opt_out=org_opt_out)
+    (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
     username = username or "u" + "".join(random.choices(string.digits, k=5))
     password = password or "secret"
     email = username + "@example.com"
