@@ -54,15 +54,15 @@ from ansible_ai_connect.users.views import TermsOfService
 
 
 def create_user(
-    username: str = None,
-    password: str = None,
-    provider: str = None,
-    social_auth_extra_data: any = {},
-    external_username: str = "",
-    rh_user_is_org_admin: Optional[bool] = None,
-    rh_user_id: str = None,
-    rh_org_id: int = 1234567,
-    org_opt_out: bool = False,
+        username: str = None,
+        password: str = None,
+        provider: str = None,
+        social_auth_extra_data: any = {},
+        external_username: str = "",
+        rh_user_is_org_admin: Optional[bool] = None,
+        rh_user_id: str = None,
+        rh_org_id: int = 1234567,
+        org_opt_out: bool = False,
 ):
     (org, _) = Organization.objects.get_or_create(id=rh_org_id, _telemetry_opt_out=org_opt_out)
     username = username or "u" + "".join(random.choices(string.digits, k=5))
@@ -365,24 +365,6 @@ class TestUserSeat(WisdomAppsBackendMocking):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_user_has_seat)
 
-    def test_rh_user_has_seat_with_rhsso_user_no_seat(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, username="not-seated")
-        self.assertFalse(user.rh_user_has_seat)
-
-    def test_rh_user_has_seat_with_rhsso_user_with_seat(self):
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            rh_user_id="seated-user-id",
-            rh_org_id=1981,
-            external_username="seated",
-        )
-        self.assertTrue(user.rh_user_has_seat)
-
-    def test_rh_user_has_seat_with_no_seat_checker(self):
-        with patch.object(apps.get_app_config("ai"), "get_seat_checker", lambda: None):
-            user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-            self.assertFalse(user.rh_user_has_seat)
-
     def test_rh_user_in_unlimited_org(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         org = Organization(None, None)
@@ -424,37 +406,6 @@ class TestUserSeat(WisdomAppsBackendMocking):
         self.assertTrue(user.rh_user_has_seat)
         self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
 
-    def test_rh_user_org_with_sub_but_no_seat_in_ams(self):
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            rh_user_id="seated-user-id",
-            rh_org_id=1981,
-            external_username="no-seated",
-        )
-        self.assertTrue(user.rh_user_has_seat)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
-    def test_rh_user_org_with_sub_but_no_sec_and_tech_preview(self):
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            rh_user_id="seated-user-id",
-            rh_org_id=1981,
-            external_username="no-seated",
-        )
-        self.assertFalse(user.rh_user_has_seat)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
-    def test_rh_user_org_with_sub_but_no_sec_after_tech_preview(self):
-        user = create_user(
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            rh_user_id="seated-user-id",
-            rh_org_id=1981,
-            external_username="no-seated",
-        )
-        self.assertTrue(user.rh_user_has_seat)
-
 
 class TestUsername(WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
@@ -480,26 +431,6 @@ class TestUsername(WisdomServiceLogAwareTestCase):
     def test_username_from_sso(self) -> None:
         self.assertEqual(self.sso_user.external_username, "babar")
         self.assertEqual(self.local_user.external_username, "")
-
-
-@override_settings(AUTHZ_BACKEND_TYPE="dummy")
-@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
-class TestIsOrgLightspeedSubscriber(WisdomAppsBackendMocking):
-    def setUp(self) -> None:
-        super().setUp()
-        cache.clear()
-
-    def test_rh_org_has_subscription_with_no_rhsso_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
-        self.assertFalse(user.rh_org_has_subscription)
-
-    def test_rh_org_has_subscription_with_subscribed_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, rh_org_id=1981)
-        self.assertTrue(user.rh_org_has_subscription)
-
-    def test_rh_org_has_subscription_with_non_subscribed_user(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.assertFalse(user.rh_org_has_subscription)
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")

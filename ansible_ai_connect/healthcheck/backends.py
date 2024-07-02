@@ -112,20 +112,3 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
 
     def identifier(self):
         return self.__class__.__name__
-
-
-class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
-    critical_service = True
-
-    def check_status(self):
-        self.enabled = settings.ENABLE_HEALTHCHECK_AUTHORIZATION
-        if not self.enabled:
-            return
-
-        try:
-            apps.get_app_config("ai").get_seat_checker().self_test()
-        except Exception as e:
-            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
-
-    def identifier(self):
-        return self.__class__.__name__

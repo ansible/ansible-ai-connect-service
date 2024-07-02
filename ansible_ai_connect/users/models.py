@@ -105,8 +105,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     def rh_org_has_subscription(self) -> bool:
         """True if the user
         1. is in unlimited group or
-        2. is of an on-prem AAP with valid license or
-        3. comes from RHSSO and the associated org has access to Wisdom
+        2. is of an on-prem AAP with valid license
         """
 
         if self.organization and self.organization.is_subscription_check_should_be_bypassed:
@@ -117,17 +116,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
             logger.info(message)
             return True
 
-        if self.is_aap_user():
-            return self.rh_aap_licensed
-
-        if not self.is_oidc_user():
-            return False
-
-        seat_checker = apps.get_app_config("ai").get_seat_checker()
-        if not seat_checker:
-            return False
-        rh_org_id = self.organization.id if self.organization else None
-        return seat_checker.rh_org_has_subscription(rh_org_id)
+        return self.rh_aap_licensed
 
     @cached_property
     def rh_aap_licensed(self) -> bool:
@@ -136,7 +125,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     @cached_property
     def rh_aap_system_auditor(self) -> bool:
         return (
-            self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_system_auditor"]
+                self.is_aap_user() and self.social_auth.values()[0]["extra_data"]["aap_system_auditor"]
         )
 
     @cached_property

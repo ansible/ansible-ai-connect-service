@@ -60,7 +60,6 @@ class HealthCheckCustomView(MainView):
         "AWSSecretManagerHealthCheck": "secret-manager",
         "WCAHealthCheck": "wca",
         "WCAOnPremHealthCheck": "wca-onprem",
-        "AuthorizationHealthCheck": "authorization",
     }
 
     @method_decorator(cache_page(CACHE_TIMEOUT))

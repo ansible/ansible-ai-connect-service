@@ -25,7 +25,6 @@ from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from requests import Response
-from requests.exceptions import HTTPError
 from rest_framework.test import APITestCase
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
@@ -54,7 +53,6 @@ logger = logging.getLogger(__name__)
 class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
-        self.mock_seat_checker_with(Mock())
 
     def is_status_ok(self, status):
         if isinstance(status, str):
@@ -122,7 +120,7 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
         timestamp = data["timestamp"]
         self.assertIsNotNone(data["model_name"])
         dependencies = data.get("dependencies", [])
-        self.assertEqual(4, len(dependencies))
+        self.assertEqual(3, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency["name"],
@@ -237,40 +235,6 @@ class TestHealthCheck(BaseTestHealthCheck):
         _, dependencies = self.assert_basic_data(r, "ok")
         for dependency in dependencies:
             if dependency["name"] == "secret-manager":
-                self.assertEqual(dependency["status"], "disabled")
-            else:
-                self.assertTrue(self.is_status_ok(dependency["status"]))
-
-    def test_health_check_authorization_error(self, *args):
-        cache.clear()
-        apps.get_app_config("ai")._seat_checker.self_test = Mock(side_effect=HTTPError)
-
-        with self.assertLogs(logger="root", level="ERROR") as log:
-            r = self.client.get(reverse("health_check"))
-
-            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-            _, dependencies = self.assert_basic_data(r, "error")
-            for dependency in dependencies:
-                if dependency["name"] == "authorization":
-                    self.assertTrue(dependency["status"].startswith("unavailable:"))
-                else:
-                    self.assertTrue(self.is_status_ok(dependency["status"]))
-
-            self.assertHealthCheckErrorInLog(
-                log,
-                "requests.exceptions.HTTPError",
-                "authorization",
-                "unavailable: An error occurred",
-            )
-
-    @override_settings(ENABLE_HEALTHCHECK_AUTHORIZATION=False)
-    def test_health_check_authorization_disabled(self):
-        cache.clear()
-        r = self.client.get(reverse("health_check"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        _, dependencies = self.assert_basic_data(r, "ok")
-        for dependency in dependencies:
-            if dependency["name"] == "authorization":
                 self.assertEqual(dependency["status"], "disabled")
             else:
                 self.assertTrue(self.is_status_ok(dependency["status"]))
