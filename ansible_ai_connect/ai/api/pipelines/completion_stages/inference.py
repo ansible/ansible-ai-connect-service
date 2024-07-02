@@ -97,6 +97,9 @@ class InferenceStage(PipelineElement):
         event = None
         event_name = None
         start_time = time.time()
+        print(f"model_mesh_client={model_mesh_client}")
+        print(f"model_id={model_id}")
+        print(f"model_mesh_payload={model_mesh_payload}")
         try:
             predictions = model_mesh_client.infer(
                 request, data, model_id=model_id, suggestion_id=suggestion_id
@@ -168,11 +171,6 @@ class InferenceStage(PipelineElement):
             }
             event_name = "trialExpired"
             raise WcaUserTrialExpiredException(cause=e)
-
-        except Exception as e:
-            exception = e
-            logger.exception(f"error requesting completion for suggestion {suggestion_id}")
-            raise ServiceUnavailable(cause=e)
 
         finally:
             duration = round((time.time() - start_time) * 1000, 2)

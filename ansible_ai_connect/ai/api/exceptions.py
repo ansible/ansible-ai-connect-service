@@ -155,13 +155,6 @@ class InternalServerError(BaseWisdomAPIException):
     default_detail = "An error occurred attempting to complete the request."
 
 
-class FeedbackValidationException(WisdomBadRequest):
-    default_code = "error__feedback_validation"
-
-    def __init__(self, detail, *args, **kwargs):
-        super().__init__(detail, *args, **kwargs)
-
-
 class FeedbackInternalServerException(BaseWisdomAPIException):
     status_code = 500
     default_code = "error__feedback_internal_server"

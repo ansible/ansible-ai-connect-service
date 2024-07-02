@@ -260,6 +260,7 @@ class TestWCAModelIdView(
             )
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog("ansible_ai_connect.ai.api.aws.exceptions.WcaSecretManagerError", log)
+            print(log)
             self.assert_segment_log(log, "modelIdSet", "WcaSecretManagerError")
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")

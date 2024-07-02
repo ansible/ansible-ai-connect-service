@@ -232,8 +232,9 @@ SOCIAL_AUTH_PIPELINE = (
 # Wisdom Eng Team:
 # gh api -H "Accept: application/vnd.github+json" /orgs/ansible/teams/wisdom-contrib
 
-# Write key for sending analytics data to Segment. Note that each of Prod/Dev have a different key.
+# Write key for sending Schema1 analytics data to Segment. Note that each of Prod/Dev have a different key.
 SEGMENT_WRITE_KEY = os.environ.get("SEGMENT_WRITE_KEY")
+# Schema2 telemetry
 SEGMENT_ANALYTICS_WRITE_KEY = os.environ.get("SEGMENT_ANALYTICS_WRITE_KEY")
 ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION = os.environ.get(
     "ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION", "v2.12.143"

@@ -117,17 +117,6 @@ class ARICaller:
     def postprocess(self, inference_output, prompt, context):
         input_yaml, is_playbook = self.make_input_yaml(context, prompt, inference_output)
 
-        # print("---context---")
-        # print(context)
-        # print("---prompt---")
-        # print(prompt)
-        # print("---inference_output---")
-        # print(inference_output)
-        # print("---playbook_yaml---")
-        # print(playbook_yaml)
-        # print("---task_name---")
-        # print(task_name)
-
         target_type = "playbook"
         if not is_playbook:
             target_type = "taskfile"

@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Schema2
+
 from enum import Enum
 
 from attr import Factory, field, frozen

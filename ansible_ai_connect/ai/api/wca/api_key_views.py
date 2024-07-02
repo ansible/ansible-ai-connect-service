@@ -31,6 +31,7 @@ from rest_framework.status import (
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.exceptions import ServiceUnavailable
 from ansible_ai_connect.ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
 from ansible_ai_connect.ai.api.permissions import (
     AcceptedTermsPermission,
@@ -39,7 +40,6 @@ from ansible_ai_connect.ai.api.permissions import (
 )
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
-from ansible_ai_connect.ai.api.views import ServiceUnavailable
 from ansible_ai_connect.users.signals import user_set_wca_api_key
 
 logger = logging.getLogger(__name__)
