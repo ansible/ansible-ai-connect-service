@@ -23,19 +23,15 @@ logger = logging.getLogger(__name__)
 
 class Organization(models.Model):
     id = models.IntegerField(primary_key=True)
-    _telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
+    telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
 
     @property
-    def telemetry_opt_out(self):
+    def has_telemetry_opt_out(self):
         # For saas deployment mode, telemetry is opted-in by default (telemetry_opt_out=False)
         # For others, telemetry is not supported, considered opted-out (telemetry_opt_out=True)
         if settings.DEPLOYMENT_MODE == "saas":
-            return self._telemetry_opt_out
+            return self.telemetry_opt_out
         return True
-
-    @telemetry_opt_out.setter
-    def telemetry_opt_out(self, value):
-        self._telemetry_opt_out = value
 
     @cached_property
     def is_subscription_check_should_be_bypassed(self) -> bool:
