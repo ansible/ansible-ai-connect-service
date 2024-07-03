@@ -151,7 +151,6 @@ class OurAPIView(APIView):
             return ""
 
     def handle_exception(self, exc):
-        logger.error(f"{str(exc)}: {traceback.format_exception(exc)}")
         self.exception = exc
 
         # Mapping between the internal exceptions and the API exceptions (with a message and a code)
@@ -170,6 +169,7 @@ class OurAPIView(APIView):
             if isinstance(exc, original_class):
                 exc = new_class(cause=exc)
                 break
+        logger.error(f"{type(exc)}: {traceback.format_exception(exc)}")
         response = super().handle_exception(exc)
         return response
 
@@ -428,111 +428,25 @@ class ContentMatches(OurAPIView):
         response_serializer = None
         metadata = []
 
-        try:
-            model_id, client_response = model_mesh_client.codematch(content_match_data, model_id)
+        model_id, client_response = model_mesh_client.codematch(content_match_data, model_id)
 
-            response_data = {"contentmatches": []}
+        response_data = {"contentmatches": []}
 
-            for response_item in client_response:
-                content_match_dto = ContentMatchResponseDto(**response_item)
-                response_data["contentmatches"].append(content_match_dto.content_matches)
-                metadata.append(content_match_dto.meta)
+        for response_item in client_response:
+            content_match_dto = ContentMatchResponseDto(**response_item)
+            response_data["contentmatches"].append(content_match_dto.content_matches)
+            metadata.append(content_match_dto.meta)
 
-                contentmatch_encoding_hist.observe(content_match_dto.encode_duration / 1000)
-                contentmatch_search_hist.observe(content_match_dto.search_duration / 1000)
+            contentmatch_encoding_hist.observe(content_match_dto.encode_duration / 1000)
+            contentmatch_search_hist.observe(content_match_dto.search_duration / 1000)
 
-            # TODO: See if we can isolate the lines
-            self.schema1_event.request = self.validated_data
-            # NOTE: in the original payload response was a copy of the answer
-            # however, for the other events, it's a structure that hold things
-            # like the status_code
-            # self.schema1_event.response = response_data
-            self.schema1_event.metadata = metadata
-
-            try:
-                response_serializer = ContentMatchResponseSerializer(data=response_data)
-                response_serializer.is_valid(raise_exception=True)
-            except Exception:
-                process_error_count.labels(
-                    stage="contentmatch-response_serialization_validation"
-                ).inc()
-                logger.exception(f"error serializing final response for suggestion {suggestion_id}")
-                raise InternalServerError
-
-        except ModelTimeoutError as exc:
-            self.exception = exc
-            logger.warn(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
-                f" for suggestion {suggestion_id}"
-            )
-            raise ModelTimeoutException(cause=exc)
-
-        except WcaBadRequest as exc:
-            self.exception = exc
-            logger.exception(f"bad request for content matching suggestion {suggestion_id}")
-            raise WcaBadRequestException(cause=exc)
-
-        except WcaInvalidModelId as exc:
-            self.exception = exc
-            logger.exception(
-                f"WCA Model ID is invalid for content matching suggestion {suggestion_id}"
-            )
-            raise WcaInvalidModelIdException(cause=exc)
-
-        except WcaKeyNotFound as exc:
-            self.exception = exc
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"content matching suggestion {suggestion_id}"
-            )
-            raise WcaKeyNotFoundException(cause=exc)
-
-        except WcaModelIdNotFound as exc:
-            self.exception = exc
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"content matching suggestion {suggestion_id}"
-            )
-            raise WcaModelIdNotFoundException(cause=exc)
-
-        except WcaNoDefaultModelId as exc:
-            self.exception = exc
-            logger.exception(
-                "A default WCA Model ID was expected but not found for "
-                f"content matching suggestion {suggestion_id}"
-            )
-            raise WcaNoDefaultModelIdException(cause=exc)
-
-        except WcaSuggestionIdCorrelationFailure as exc:
-            self.exception = exc
-            logger.exception(
-                f"WCA Request/Response SuggestionId correlation failed "
-                f"for suggestion {suggestion_id}"
-            )
-            raise WcaSuggestionIdCorrelationFailureException(cause=exc)
-
-        except WcaEmptyResponse as exc:
-            self.exception = exc
-            logger.exception(
-                f"WCA returned an empty response for content matching suggestion {suggestion_id}"
-            )
-            raise WcaEmptyResponseException(cause=exc)
-
-        except WcaCloudflareRejection as exc:
-            self.exception = exc
-            logger.exception(f"Cloudflare rejected the request for {suggestion_id}")
-            raise WcaCloudflareRejectionException(cause=exc)
-
-        except WcaUserTrialExpired as exc:
-            # NOTE: exception should be removed
-            self.exception = exc
-            logger.exception(f"User trial expired, when requesting suggestion {suggestion_id}")
-            raise WcaUserTrialExpiredException(cause=exc)
-
-        except Exception as exc:
-            self.exception = exc
-            logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
-            raise
+        # TODO: See if we can isolate the lines
+        self.schema1_event.request = self.validated_data
+        # NOTE: in the original payload response was a copy of the answer
+        # however, for the other events, it's a structure that hold things
+        # like the status_code
+        # self.schema1_event.response = response_data
+        self.schema1_event.metadata = metadata
 
         return response_serializer
 
