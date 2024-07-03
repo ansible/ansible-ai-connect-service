@@ -17,7 +17,8 @@ import logging
 from django.apps import apps
 from django.conf import settings
 from django.forms import Form
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -32,6 +33,7 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
 )
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
+from ansible_ai_connect.users.models import Plan
 
 from .serializers import UserResponseSerializer
 
@@ -42,26 +44,43 @@ logger = logging.getLogger(__name__)
 class HomeView(TemplateView):
     template_name = "users/home.html"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.secret_manager = None
+        try:
+            self.secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        except WcaSecretManagerMissingCredentialsError:
+            pass
+
+    def dispatch(self, request, *args, **kwargs):
+        self.org_has_api_key = None
+        if (
+            self.secret_manager
+            and self.request.user.is_authenticated
+            and self.request.user.rh_org_has_subscription
+            and not self.request.user.is_aap_user()
+        ):
+            self.org_has_api_key = self.secret_manager.secret_exists(
+                self.request.user.organization.id, Suffixes.API_KEY
+            )
+
+        if (
+            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
+            and self.request.user.is_authenticated
+            and self.request.user.is_oidc_user
+            and self.request.user.rh_org_has_subscription
+            and not self.org_has_api_key
+        ):
+            return HttpResponseRedirect(reverse("trial"))
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
-
-        try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        except WcaSecretManagerMissingCredentialsError:
-            return context
-
-        if (
-            self.request.user.is_authenticated
-            and self.request.user.rh_org_has_subscription
-            and not self.request.user.is_aap_user()
-        ):
-            org_has_api_key = secret_manager.secret_exists(
-                self.request.user.organization.id, Suffixes.API_KEY
-            )
-            context["org_has_api_key"] = org_has_api_key
+        context["org_has_api_key"] = self.org_has_api_key
 
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
@@ -115,3 +134,63 @@ class TermsOfService(TemplateView):
             request.session.save()
 
         return HttpResponseRedirect(reverse("home"))
+
+
+class TrialView(TemplateView):
+    template_name = "users/trial.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+            return super().dispatch(request, *args, **kwargs)
+        return HttpResponseForbidden()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        has_active_plan = None
+        has_expired_plan = None
+
+        if hasattr(user, "userplan_set"):
+            for up in user.userplan_set.all():
+                if up.is_active:
+                    has_active_plan = up
+                else:
+                    has_expired_plan = up
+
+        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["deployment_mode"] = settings.DEPLOYMENT_MODE
+        context["has_active_plan"] = has_active_plan
+        context["has_expired_plan"] = has_expired_plan
+        context["accept_trial_terms"] = self.request.POST.get("accept_trial_terms") in [
+            "True",
+            "on",
+        ]
+        context["start_trial_button"] = self.request.POST.get("start_trial_button") == "True"
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = Form(request.POST)
+        form.is_valid()
+
+        accept_trial_terms = request.POST.get("accept_trial_terms") == "on"
+        start_trial_button = request.POST.get("start_trial_button") == "True"
+
+        if start_trial_button and accept_trial_terms:
+            trial_plan, _ = Plan.objects.get_or_create(
+                name="trial of 90 days", expires_after="90 days"
+            )
+            request.user.plans.add(trial_plan)
+
+        context = self.get_context_data(**kwargs)
+        return render(request, self.template_name, context=context)
+
+
+class TrialTermsOfService(TemplateView):
+    template_name = "users/trial/terms.html"
+
+    def post(self, request, *args, **kwargs):
+        form = Form(request.POST)
+        form.is_valid()
+
+        return HttpResponseRedirect(reverse("trial"))

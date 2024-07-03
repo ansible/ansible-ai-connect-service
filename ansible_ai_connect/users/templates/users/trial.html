@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+{% if start_trial_button and accept_trial_terms is False %}
+<div class="pf-c-alert pf-m-info" aria-label="Information alert">
+  <div class="pf-c-alert__icon">
+    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+  </div>
+  <p class="pf-c-alert__title">
+    Please accept the Term and Condition.
+  </p>
+</div>
+{% endif %}
+
+<section class="pf-c-page__main-section pf-m-light">
+  <div class="pf-l-bullseye">
+    <div class="pf-l-bullseye__item">
+      <div class="pf-c-empty-state">
+        <div class="pf-c-empty-state__content">
+
+          <div class="pf-l-bullseye pf-u-p-xl ls_logo_home">
+            <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="{{ project_name }} logo"/>
+          </div>
+
+
+          <h1 class="pf-c-title pf-m-lg">{{ project_name }}</h1>
+
+          {% if user.is_authenticated %}
+          <div class="ls_message_body">
+            <p>{% firstof user.external_username user.username %}</p>
+          </div>
+
+
+          {% if deployment_mode != "saas" %}
+          <!-- Not supported -->
+          {% elif has_active_plan %}
+          <div class="ls_message_body">
+            You have an active <i>{{ has_active_plan.plan.name }}</i> that will end the {{ has_active_plan.expired_at }}
+          </div>
+
+
+          <!--
+              <div class="pf-v5-c-form__group pf-m-action">
+                <div class="pf-v5-c-form__actions">
+                  <a href="vscode://">
+                    <button class="pf-c-button pf-m-primary" type="submit">
+                      Open VS Code
+                    </button>
+                  </a>
+                </div>
+              </div>
+              -->
+
+              {% elif has_expired_plan %}
+              You have an expired ({{ has_active_plan.plan.name }}).
+              {% else  %}
+              <form action={% url 'trial' %} method="post">{% csrf_token %}
+
+
+                <div class="ls_message_body">
+                  <p>Start a [90] days free trial with our recommanded model, <a href="https://www.ibm.com/products/watsonx-code-assistant">IBM watsonx Code Assistant</a>.
+                  <p>This will only apply to you and will not affect your organization.
+                </div>
+
+
+                <div class="ls_message_body">
+                  <input type="checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
+                  <a href="{% url 'trial_terms' %}">Accept the Terms and Condition</a>.
+                </div>
+
+                <div class="pf-c-empty-state__content">
+                  <button class="pf-c-button pf-m-primary" type="submit" name="start_trial_button" value="True">
+                    Start Ansible Lightspeed trial
+                  </button>
+                </div>
+              </form>
+              {% endif %}
+
+
+              <div class="ls_message_body">
+                <form id="logout-form" method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
+                </form>
+              </div>
+
+
+              {% else %}
+              <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
+              <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
+              {% endif %}
+
+              <div class="pf-l-level pf-m-gutter ls_bottom_menu">
+                <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank"><span class="fas fa-solid fa-comments"></span> Chat</a>
+                <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+                <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+
+                {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
+                <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+                {% endif %}
+              </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}

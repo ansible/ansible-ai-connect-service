@@ -563,3 +563,7 @@ ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
     os.getenv("ALLOW_METRICS_FOR_ANONYMOUS_USERS", "True").lower() == "true"
 )
 # ==========================================
+
+ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL = (
+    os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL", "False").lower() == "true"
+)

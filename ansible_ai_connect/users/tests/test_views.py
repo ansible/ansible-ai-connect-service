@@ -24,6 +24,7 @@ from django.urls import reverse
 
 import ansible_ai_connect.users.models
 from ansible_ai_connect.ai.api.tests.test_views import APITransactionTestCase
+from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
 from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
@@ -272,3 +273,62 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn(settings.COMMERCIAL_DOCUMENTATION_URL, str(r.content))
+
+
+@override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=True)
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
+class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
+    def test_redirect(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.url, "/trial/")
+
+    def test_accept_trial_terms(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        self.client.get(reverse("trial"))
+        r = self.client.post(
+            reverse("trial"),
+            data={"accept_trial_terms": "True"},
+        )
+        self.assertNotIn("Information alert", str(r.content))
+        self.assertIn('accept_trial_terms" checked', str(r.content))
+
+    def test_accept_trial_without_terms(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        self.client.get(reverse("trial"))
+        r = self.client.post(
+            reverse("trial"),
+            data={"start_trial_button": "True"},
+        )
+        self.assertNotIn('accept_trial_terms" checked', str(r.content))
+        self.assertIn("Information alert", str(r.content))
+
+    def test_accept_trial(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        self.client.get(reverse("trial"))
+        r = self.client.post(
+            reverse("trial"),
+            data={
+                "accept_trial_terms": "on",
+                "start_trial_button": "True",
+            },
+        )
+        self.assertIn("You have an active", str(r.content))
+
+        self.assertEqual(user.plans.first().name, "trial of 90 days")
+        self.assertTrue(user.userplan_set.first().expired_at)
+
+    @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
+    def test__no_trial_for_you(self):
+        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, 200)  # No redirect
+        r = self.client.get(reverse("trial"))
+        self.assertEqual(r.status_code, 403)
