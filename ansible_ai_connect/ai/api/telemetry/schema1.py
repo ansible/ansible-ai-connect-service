@@ -264,7 +264,7 @@ class BaseFeedbackEvent(Schema1Event):
                 schema1_event.set_user(user)
                 schema1_event.set_validated_data(validated_data)
                 return schema1_event
-        print("Failed to init BaseFeedbackEvent")
+        logger.error("Failed to init a schema1 base event")
 
 
 @define

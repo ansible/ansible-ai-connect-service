@@ -89,7 +89,6 @@ def write_to_segment(
 
         schema1_event = schema1.PostprocessLint()
         schema1_event.postprocessed = postprocessed_yaml
-        schema1_event.problem = problem
 
     schema1_event.set_user(user)
     schema1_event.set_exception(exception)
