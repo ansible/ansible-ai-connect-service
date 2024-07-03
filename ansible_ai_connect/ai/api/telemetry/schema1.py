@@ -175,7 +175,7 @@ class CompletionEvent(Schema1Event):
         tasks = getattr(response, "tasks", [])
         self.taskCount = len(tasks)
         self.tasks = tasks
-        self.modelName = response.data and response.data.get("model")
+        self.modelName = hasattr(response, "data") and response.data.get("model")
 
 
 @define
