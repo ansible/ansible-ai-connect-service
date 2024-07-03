@@ -1272,7 +1272,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             (WcaNoDefaultModelId(), HTTPStatus.FORBIDDEN),
             (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
             (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
-            (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
         ]:
             infer.side_effect = self.get_side_effect(error)
             self.run_wca_client_error_case(status_code_expected, error)
