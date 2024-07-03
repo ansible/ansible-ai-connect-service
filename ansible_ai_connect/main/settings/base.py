@@ -92,7 +92,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.sessions",  # Used by the admin dashboard
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
@@ -209,9 +209,6 @@ AUTHENTICATION_BACKENDS = [
     "oauth2_provider.backends.OAuth2Backend",
 ]
 
-SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = [
-    "terms_accepted",
-]
 SOCIAL_AUTH_PIPELINE = (
     "ansible_ai_connect.users.pipeline.block_auth_users",
     "social_core.pipeline.social_auth.social_details",
@@ -226,7 +223,6 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.user.user_details",
     "ansible_ai_connect.users.pipeline.load_extra_data",
-    "ansible_ai_connect.users.pipeline.terms_of_service",
 )
 
 # Wisdom Eng Team:
