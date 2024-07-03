@@ -2034,6 +2034,7 @@ class TestContentMatchesWCAViewErrors(
         self._assert_exception_in_log(WcaInvalidModelIdException)
         self._assert_model_id_in_exception(self.payload["model"])
 
+    @skip("No more trial")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_contentmatch_user_trial_expired_rejection(self):
         self.model_client.get_model_id = Mock(side_effect=WcaUserTrialExpired)
