@@ -196,7 +196,7 @@ class OurAPIView(APIView):
             if hasattr(self.schema1_event, "duration"):
                 duration = round((time.time() - start_time) * 1000, 2)
                 self.schema1_event.duration = duration
-            self.schema1_event.modelName = self._get_model_name(request.user.org_id)
+            self.schema1_event.modelName = self._get_model_name(request.user.org_id) or ""
             self.schema1_event.set_exception(self.exception)
             # NOTE: We need to wait to store the request because keys like
             # request._request._prompt_type are stored in the request object

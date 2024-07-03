@@ -115,7 +115,7 @@ class Schema1Event:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
             self.modelName = model_mesh_client.get_model_id(
                 self.rh_user_org_id, str(validated_data.get("model", ""))
-            )
+            ) or ""
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
                 f"Failed to retrieve Model Name for Feedback.\n "
@@ -175,7 +175,8 @@ class CompletionEvent(Schema1Event):
         tasks = getattr(response, "tasks", [])
         self.taskCount = len(tasks)
         self.tasks = tasks
-        self.modelName = hasattr(response, "data") and response.data.get("model")
+        if model_name := hasattr(response, "data") and response.data.get("model"):
+            self.modelName = model_name
 
 
 @define
