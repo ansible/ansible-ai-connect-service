@@ -73,7 +73,7 @@ jobs:
 
     - name: Running Unit Tests (Python)
       run: |
-        coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect --fail-fast
+        coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect --failfast
         coverage xml
         coverage report --rcfile=setup.cfg --format=markdown > code-coverage-results.md
 
