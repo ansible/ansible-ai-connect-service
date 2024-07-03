@@ -55,6 +55,8 @@ from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
     TermsOfService,
+    TrialTermsOfService,
+    TrialView,
     UnauthorizedView,
 )
 
@@ -81,6 +83,8 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("trial/", TrialView.as_view(), name="trial"),
+    path("trial/terms/", TrialTermsOfService.as_view(), name="trial_terms"),
 ]
 
 if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
