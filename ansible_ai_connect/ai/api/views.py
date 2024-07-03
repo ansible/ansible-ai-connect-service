@@ -14,6 +14,7 @@
 
 import logging
 import time
+import traceback
 from string import Template
 
 from ansible_anonymizer import anonymizer
@@ -150,6 +151,7 @@ class OurAPIView(APIView):
             return ""
 
     def handle_exception(self, exc):
+        logger.error(traceback.format_exception(exc))
         self.exception = exc
 
         # Mapping between the internal exceptions and the API exceptions (with a message and a code)

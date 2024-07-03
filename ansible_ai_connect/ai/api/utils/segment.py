@@ -21,6 +21,7 @@ from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
+import ansible_ai_connect.ai.api.telemetry.schema1 as schema1
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 from ansible_ai_connect.users.models import User
 
@@ -114,15 +115,12 @@ def base_send_segment_event(
             msg_len = len(args[2])
             logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
 
-            event = {
-                "error_type": "event_exceeds_limit",
-                "details": {
-                    "event_name": event_name,
-                    "msg_len": msg_len,
-                },
-                "timestamp": event.timestamp,
-            }
-            send_segment_event(event, "segmentError", user)
+            err_event = schema1.SegmentErrorEvent()
+            err_event.error_type = "event_exceeds_limit"
+            err_event.details = schema1.SegmentErrorDetailsPayload(
+                event_name=event_name, msg_len=msg_len
+            )
+            send_schema1_event(err_event)
 
 
 def init_schema1_client() -> None:

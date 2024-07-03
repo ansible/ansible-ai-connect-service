@@ -23,12 +23,12 @@ from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
-from segment import analytics
 
 from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomServiceAPITestCaseBase,
 )
+from ansible_ai_connect.ai.api.utils.segment import init_schema1_client
 
 
 class TestMiddleware(WisdomServiceAPITestCaseBase):
@@ -178,6 +178,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
 
+        analytics = init_schema1_client()
         # Override properties of Segment client to cause an error
         if analytics.default_client:
             analytics.shutdown()
@@ -225,6 +226,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
 
+        analytics = init_schema1_client()
         # Override properties of Segment client to cause an error
         if analytics.default_client:
             analytics.shutdown()
@@ -297,6 +299,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
+        analytics = init_schema1_client()
 
         with patch.object(
             apps.get_app_config("ai"),
@@ -312,7 +315,12 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 events = self.extractSegmentEventsFromLog(log)
                 n = len(events)
                 self.assertTrue(n > 0)
-                self.assertEqual(events[n - 1]["properties"]["error_type"], "event_exceeds_limit")
-                self.assertIsNotNone(events[n - 1]["properties"]["details"]["event_name"])
-                self.assertIsNotNone(events[n - 1]["properties"]["details"]["msg_len"] > 32 * 1024)
+                any((segment_error_event := i)["event"] == "segmentError" for i in events)
+                self.assertEqual(
+                    segment_error_event["properties"]["error_type"], "event_exceeds_limit"
+                )
+                self.assertIsNotNone(segment_error_event["properties"]["details"]["event_name"])
+                self.assertIsNotNone(
+                    segment_error_event["properties"]["details"]["msg_len"] > 32 * 1024
+                )
                 self.assertSegmentTimestamp(log)

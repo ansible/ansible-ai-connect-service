@@ -134,7 +134,7 @@ class Schema1Event:
     def as_dict(self):
         # NOTE: The allowed fields should be moved in the event class itslef
         def my_filter(a, v):
-            return a.name not in ["event_name", "user"]
+            return a.name not in ["user"]
 
         return asdict(self, filter=my_filter, recurse=True)
 
@@ -175,7 +175,7 @@ class CompletionEvent(Schema1Event):
         tasks = getattr(response, "tasks", [])
         self.taskCount = len(tasks)
         self.tasks = tasks
-        self.modelName = response.data and response.data.get('model')
+        self.modelName = response.data and response.data.get("model")
 
 
 @define
@@ -324,3 +324,16 @@ class PlaybookGenerationActionEvent(BaseFeedbackEvent):
     from_page: int = field(validator=validators.instance_of(int), converter=int, default=0)
     to_page: int = field(validator=validators.instance_of(int), converter=int, default=0)
     wizard_id: str = field(validator=validators.instance_of(str), converter=str, default="")
+
+
+@define
+class SegmentErrorDetailsPayload:
+    event_name: str = field(validator=validators.instance_of(str), converter=str, default="")
+    msg_len: int = field(validator=validators.instance_of(int), converter=int, default=0)
+
+
+@define
+class SegmentErrorEvent(Schema1Event):
+    event_name: str = "segmentError"
+    error_type: str = field(validator=validators.instance_of(str), converter=str, default="")
+    details: SegmentErrorDetailsPayload = SegmentErrorDetailsPayload()

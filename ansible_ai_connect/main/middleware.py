@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import logging
+from threading import BoundedSemaphore
 
 from django.conf import settings
 from django.urls import reverse
@@ -39,6 +40,7 @@ def on_segment_schema2_error(error, _):
 
 
 global_schema1_event = None
+sema = BoundedSemaphore(value=1)
 
 
 class SegmentMiddleware:
@@ -55,10 +57,13 @@ class SegmentMiddleware:
                 # segment_analytics_telemetry.send = False # for code development only
                 segment_analytics_telemetry.on_error = on_segment_schema2_error
 
-        response = self.get_response(request)
-        if global_schema1_event:
-            global_schema1_event.set_response(response)
-            send_schema1_event(global_schema1_event)
+        with sema:
+            global global_schema1_event
+            global_schema1_event = None
+            response = self.get_response(request)
+            if global_schema1_event:
+                global_schema1_event.set_response(response)
+                send_schema1_event(global_schema1_event)
 
         if settings.SEGMENT_ANALYTICS_WRITE_KEY:
             if request.path == reverse("completions") and request.method == "POST":
