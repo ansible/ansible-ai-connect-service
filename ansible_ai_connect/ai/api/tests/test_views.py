@@ -324,7 +324,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertTrue(len(segment_events) > 0)
             for event in segment_events:
                 properties = event["properties"]
-                self.assertEqual(properties["modelName"], "")
+                self.assertIsNone(properties["modelName"])
                 if event["event"] == "completion":
                     self.assertEqual(properties["response"]["status_code"], 403)
                 elif event["event"] == "prediction":
