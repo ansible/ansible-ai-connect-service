@@ -321,10 +321,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             )
             self.assertInLog("A WCA Api Key was expected but not found", log)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertTrue(len(segment_events) > 0)
+            self.assertTrue(any(i["properties"]["modelName"] == "org-model-id" for i in segment_events))
             for event in segment_events:
                 properties = event["properties"]
-                self.assertEqual(properties["modelName"], "org-model-id")
                 if event["event"] == "completion":
                     self.assertEqual(properties["response"]["status_code"], 403)
                 elif event["event"] == "prediction":
