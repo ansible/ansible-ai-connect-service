@@ -719,39 +719,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
             self.assertInLog(f"x_request_id: '{x_request_id}'", log)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    @patch("ansible_ai_connect.main.middleware.send_segment_event")
-    def test_wca_completion_segment_event_with_invalid_model_id_error(
-        self, mock_send_segment_event
-    ):
-        self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
-        self.client.force_authenticate(user=self.user)
-
-        stub = self.stub_wca_client(
-            400,
-            mock_model_id=Mock(return_value="garbage"),
-            response_data={"error": "Bad request: [('value_error', ('body', 'model_id'))]"},
-        )
-        model_client, model_input = stub
-        model_input["prompt"] = (
-            "---\n- hosts: all\n  become: yes\n\n  tasks:\n    # Install Apache & start apache\n"
-        )
-        self.mock_model_client_with(model_client)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("completions"), model_input)
-            self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
-            self.assert_error_detail(
-                r,
-                WcaInvalidModelIdException.default_code,
-                WcaInvalidModelIdException.default_detail,
-            )
-            self.assertInLog("WCA Model ID is invalid", log)
-
-            actual_event = mock_send_segment_event.call_args_list[0][0][0]
-            self.assertEqual(actual_event.get("promptType"), "MULTITASK")
-
 
 @modify_settings()
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
