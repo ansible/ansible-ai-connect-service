@@ -39,8 +39,8 @@ def on_segment_schema2_error(error, _):
     logger.error(f"An error occurred in sending schema2 data to Segment: {error}")
 
 
-global_schema1_event = None
 sema = BoundedSemaphore(value=1)
+global_schema1_event = None
 
 
 class SegmentMiddleware:
@@ -58,8 +58,7 @@ class SegmentMiddleware:
                 segment_analytics_telemetry.on_error = on_segment_schema2_error
 
         with sema:
-            global global_schema1_event
-            global_schema1_event = None
+            global_schema1_event
             response = self.get_response(request)
             if global_schema1_event:
                 global_schema1_event.set_response(response)

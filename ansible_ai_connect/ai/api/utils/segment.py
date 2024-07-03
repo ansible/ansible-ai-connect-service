@@ -116,6 +116,7 @@ def base_send_segment_event(
             logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
 
             err_event = schema1.SegmentErrorEvent()
+            err_event.set_user(user)
             err_event.error_type = "event_exceeds_limit"
             err_event.details = schema1.SegmentErrorDetailsPayload(
                 event_name=event_name, msg_len=msg_len
