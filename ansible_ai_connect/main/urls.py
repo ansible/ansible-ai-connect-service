@@ -54,6 +54,7 @@ from ansible_ai_connect.main.views import (
 from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
+    MarkdownCurrentUserView,
     TermsOfService,
     TrialTermsOfService,
     TrialView,
@@ -72,6 +73,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path(f"api/{WISDOM_API_VERSION}/ai/", include("ansible_ai_connect.ai.api.urls")),
     path(f"api/{WISDOM_API_VERSION}/me/", CurrentUserView.as_view(), name="me"),
+    path(
+        f"api/{WISDOM_API_VERSION}/me/summary/",
+        MarkdownCurrentUserView.as_view(),
+        name="me_summary",
+    ),
     path("unauthorized/", UnauthorizedView.as_view(), name="unauthorized"),
     path("check/status/", WisdomServiceHealthView.as_view(), name="health_check"),
     path("check/", WisdomServiceLivenessProbeView.as_view(), name="liveness_probe"),
