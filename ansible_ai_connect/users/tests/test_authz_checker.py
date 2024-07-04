@@ -141,40 +141,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
         b = fatal_exception(exc)
         self.assertTrue(b)
 
-    def test_ciam_check(self):
-        m_r = Mock()
-        m_r.json.return_value = {"result": True}
-        m_r.status_code = 200
-
-        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.post.return_value = m_r
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-        checker._session.post.assert_called_with(
-            "https://some-api.server.host/v1alpha/check",
-            json={
-                "subject": "my_id",
-                "operation": "access",
-                "resourcetype": "license",
-                "resourceid": "123/smarts",
-            },
-            timeout=0.8,
-        )
-
-    def test_ciam_check_with_500_status_code(self):
-        m_r = Mock()
-        m_r.status_code = 500
-
-        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.post.return_value = m_r
-
-        with self.assertLogs(logger="root", level="ERROR") as log:
-            self.assertFalse(checker.check("my_id", "my_name", 123))
-            self.assertInLog("Unexpected error code (500) returned by CIAM backend", log)
-
     def test_ciam_self_test_success(self):
         m_r = Mock()
         m_r.status_code = 200
@@ -269,62 +235,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
             self.assertInLog(
                 "An AMS Organization could not be found. " "rh_org_id: 123.",
                 log,
-            )
-
-    def test_ams_check(self):
-        m_r = Mock()
-        m_r.json.side_effect = [{"items": [{"id": "qwe"}]}, {"items": [{"id": "asd"}]}]
-        m_r.status_code = 200
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.return_value = m_r
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-        checker._session.get.assert_called_with(
-            "https://some-api.server.host/api/accounts_mgmt/v1/subscriptions",
-            params={
-                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' "
-                "AND creator.username = 'my_name' AND organization_id='qwe'"
-            },
-            timeout=2.0,
-        )
-
-    def test_ams_check_multiple_seats(self):
-        m_r = Mock()
-        m_r.json.side_effect = [
-            {"items": [{"id": "qwe"}, {"id": "rty"}]},
-            {"items": [{"id": "asd"}, {"id": "fgh"}]},
-        ]
-        m_r.status_code = 200
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.return_value = m_r
-        self.assertTrue(checker.check("my_id", "my_name", 123))
-        checker._session.get.assert_called_with(
-            "https://some-api.server.host/api/accounts_mgmt/v1/subscriptions",
-            params={
-                "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' "
-                "AND creator.username = 'my_name' AND organization_id='qwe'"
-            },
-            timeout=2.0,
-        )
-
-    def test_ams_check_with_500_status_code(self):
-        m_r = Mock()
-        m_r.status_code = 500
-
-        checker = self.get_default_ams_checker()
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.get.return_value = m_r
-
-        with self.assertLogs(logger="root", level="ERROR") as log:
-            self.assertFalse(checker.check("my_id", "my_name", 123))
-            self.assertInLog(
-                "Unexpected error code (500) returned by AMS backend (organizations)", log
             )
 
     def test_ams_self_test_success(self):
@@ -651,24 +561,6 @@ class TestDummy(TestCase):
 
     def test_self_test(self):
         self.assertIsNone(self.checker.self_test())
-
-    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="yves")
-    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
-    def test_check_with_seat(self):
-        self.assertTrue(self.checker.check(None, "yves", 123))
-
-    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
-    def test_check_with_no_seat(self):
-        self.assertFalse(self.checker.check(None, "noseat", 123))
-
-    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="*")
-    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
-    def test_check_with_wildcard(self):
-        self.assertTrue(self.checker.check(None, "rose", 123))
-
-    @override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="yves")
-    def test_check_with_no_sub(self):
-        self.assertFalse(self.checker.check(None, "noseat", 123))
 
     @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="123")
     def test_rh_org_has_subscription_with_sub(self):

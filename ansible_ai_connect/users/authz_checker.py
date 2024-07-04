@@ -63,10 +63,6 @@ class BaseCheck:
         """
         pass
 
-    @abstractmethod
-    def check(self, _user_id: str, username: str, organization_id: int) -> bool:
-        pass
-
 
 def fatal_exception(exc) -> bool:
     """Determine if an exception is fatal or not"""
@@ -152,33 +148,6 @@ class CIAMCheck(BaseCheck):
             timeout=0.8,
         )
         r.raise_for_status()
-
-    def check(self, user_id, username, organization_id) -> bool:
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
-        try:
-            r = self._session.post(
-                self._api_server + "/v1alpha/check",
-                json={
-                    "subject": str(user_id),
-                    "operation": "access",
-                    "resourcetype": "license",
-                    "resourceid": f"{organization_id}/smarts",
-                },
-                # Note: A ping from France against the preprod env, is slightly below 300ms
-                timeout=0.8,
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error("Cannot reach the CIAM backend in time")
-            return False
-        if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by CIAM backend" % r.status_code)
-            return False
-        data = r.json()
-        try:
-            return data["result"]
-        except (KeyError, TypeError):
-            logger.error("Unexpected Answer from CIAM")
-            return False
 
 
 class AMSCheck(BaseCheck):
@@ -277,48 +246,6 @@ class AMSCheck(BaseCheck):
         )
         r.raise_for_status()
 
-    def check(self, user_id: str, username: str, organization_id: int) -> bool:
-        try:
-            ams_org_id = self.get_ams_org(organization_id)
-        except AMSCheck.AMSError:
-            # See https://issues.redhat.com/browse/AAP-22758
-            # If the AMS Organisation lookup fails assume the check failed.
-            # The 'check()' function is obsolete and not called. This code
-            # only exists as a matter of 'completeness'.
-            return False
-
-        if ams_org_id == AMSCheck.ERROR_AMS_ORG_UNDEFINED:
-            # Organization has not yet been created in AMS, either the organization
-            # is too recent (sync is done every 1h), or the organization has no AMS related
-            # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
-            return False
-
-        params = {
-            "search": "plan.id = 'AnsibleWisdom' AND status = 'Active' AND "
-            f"creator.username = '{username}' AND organization_id='{ams_org_id}'"
-        }
-        self.update_bearer_token()
-
-        try:
-            r = self._session.get(
-                self._api_server + "/api/accounts_mgmt/v1/subscriptions",
-                params=params,
-                timeout=self.timeout,
-            )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
-            return False
-        if r.status_code != HTTPStatus.OK:
-            logger.error("Unexpected error code (%s) returned by AMS backend (sub)" % r.status_code)
-            return False
-        data = r.json()
-        try:
-            return len(data["items"]) > 0
-        except (KeyError, ValueError):
-            logger.error("Unexpected subscription answer from AMS")
-            return False
-
     def rh_user_is_org_admin(self, username: str, organization_id: int):
         try:
             ams_org_id = self.get_ams_org(organization_id)
@@ -331,7 +258,7 @@ class AMSCheck(BaseCheck):
             # Organization has not yet been created in AMS, either the organization
             # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
+            logger.warning(f"Organization unavailable in AMS, organization_id={organization_id}")
             return False
 
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
@@ -376,7 +303,7 @@ class AMSCheck(BaseCheck):
             # Organization has not yet been created in AMS, either the organization
             # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
+            logger.warning(f"Organization unavailable in AMS, organization_id={organization_id}")
             return False
 
         # Check cache
@@ -442,14 +369,6 @@ class DummyCheck(BaseCheck):
     def self_test(self):
         # Always passes. No exception raised.
         pass
-
-    def check(self, _user_id: str, username: str, organization_id: int) -> bool:
-        if not self.rh_org_has_subscription(organization_id):
-            return False
-        if settings.AUTHZ_DUMMY_USERS_WITH_SEAT == "*":
-            return True
-        seated_user = settings.AUTHZ_DUMMY_USERS_WITH_SEAT.split(",")
-        return username in seated_user
 
     def rh_org_has_subscription(self, organization_id: int) -> bool:
         if settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION == "*":
