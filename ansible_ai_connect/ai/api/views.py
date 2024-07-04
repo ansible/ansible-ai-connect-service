@@ -440,6 +440,9 @@ class ContentMatches(OurAPIView):
             contentmatch_encoding_hist.observe(content_match_dto.encode_duration / 1000)
             contentmatch_search_hist.observe(content_match_dto.search_duration / 1000)
 
+        response_serializer = ContentMatchResponseSerializer(data=response_data)
+        response_serializer.is_valid(raise_exception=True)
+
         # TODO: See if we can isolate the lines
         self.schema1_event.request = self.validated_data
         # NOTE: in the original payload response was a copy of the answer
