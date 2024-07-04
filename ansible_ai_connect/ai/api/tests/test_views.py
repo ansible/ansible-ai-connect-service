@@ -55,7 +55,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
     WcaNoDefaultModelIdException,
-    WcaSuggestionIdCorrelationFailureException,
+    WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
 )
 from ansible_ai_connect.ai.api.model_client.base import ModelMeshClient
@@ -171,11 +171,16 @@ class MockedMeshClient(ModelMeshClient):
         return MockedLLM(self.response_data)
 
     def generate_playbook(
-        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+        self,
+        request,
+        text: str = "",
+        create_outline: bool = False,
+        outline: str = "",
+        generation_id: str = "",
     ) -> tuple[str, str]:
         return self.response_data, self.response_data
 
-    def explain_playbook(self, request, content) -> str:
+    def explain_playbook(self, request, content, explanation_id: str = "") -> str:
         return self.response_data
 
 
@@ -710,8 +715,8 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assert_error_detail(
                 r,
-                WcaSuggestionIdCorrelationFailureException.default_code,
-                WcaSuggestionIdCorrelationFailureException.default_detail,
+                WcaRequestIdCorrelationFailureException.default_code,
+                WcaRequestIdCorrelationFailureException.default_detail,
             )
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) > 0)
@@ -719,7 +724,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                 if event["event"] == "prediction":
                     properties = event["properties"]
                     self.assertTrue(properties["exception"])
-                    self.assertEqual(properties["problem"], "WcaSuggestionIdCorrelationFailure")
+                    self.assertEqual(properties["problem"], "WcaRequestIdCorrelationFailure")
             self.assertInLog(f"suggestion_id: '{DEFAULT_SUGGESTION_ID}'", log)
             self.assertInLog(f"x_request_id: '{x_request_id}'", log)
 
@@ -2451,7 +2456,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
-        mocked_client.explain_playbook.assert_called_with(ANY, "william10@example.com")
+        mocked_client.explain_playbook.assert_called_with(ANY, "william10@example.com", ANY)
 
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
@@ -2656,6 +2661,22 @@ that are running Red Hat Enterprise Linux 9.
             "A default WCA Model ID was expected but not found for playbook explanation",
         )
 
+    def test_request_id_correlation_failure(self):
+        model_client = self.stub_wca_client(200)
+        model_client.session.post = Mock(
+            return_value=MockResponse(
+                json={},
+                status_code=200,
+                headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
+            )
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            WcaRequestIdCorrelationFailureException,
+            "WCA Request/Response ExplanationId correlation failed",
+        )
+
     def test_invalid_model_id(self):
         model_client = self.stub_wca_client(
             400,
@@ -2774,7 +2795,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
         mocked_client.generate_playbook.assert_called_with(
-            ANY, "Install nginx on RHEL9 isabella13@example.com", False, ""
+            ANY, "Install nginx on RHEL9 isabella13@example.com", False, "", ANY
         )
 
     def test_unauthorized(self):
@@ -2945,6 +2966,22 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             HTTPStatus.FORBIDDEN,
             WcaNoDefaultModelIdException,
             "A default WCA Model ID was expected but not found for playbook generation",
+        )
+
+    def test_request_id_correlation_failure(self):
+        model_client = self.stub_wca_client(200)
+        model_client.session.post = Mock(
+            return_value=MockResponse(
+                json={},
+                status_code=200,
+                headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
+            )
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            WcaRequestIdCorrelationFailureException,
+            "WCA Request/Response GenerationId correlation failed",
         )
 
     def test_invalid_model_id(self):

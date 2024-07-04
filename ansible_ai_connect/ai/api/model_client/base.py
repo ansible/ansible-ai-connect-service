@@ -54,11 +54,16 @@ class ModelMeshClient:
         raise NotImplementedError
 
     def generate_playbook(
-        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+        self,
+        request,
+        text: str = "",
+        create_outline: bool = False,
+        outline: str = "",
+        generation_id: str = "",
     ) -> tuple[str, str]:
         raise NotImplementedError
 
-    def explain_playbook(self, request, content) -> str:
+    def explain_playbook(self, request, content, explanation_id: str = "") -> str:
         raise NotImplementedError
 
     def self_test(self) -> HealthCheckSummary:

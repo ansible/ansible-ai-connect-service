@@ -98,8 +98,8 @@ class WcaCodeMatchFailure(WcaException):
 
 
 @dataclass
-class WcaSuggestionIdCorrelationFailure(WcaException):
-    """WCA Request/Response Suggestion Id correlation failed."""
+class WcaRequestIdCorrelationFailure(WcaException):
+    """WCA Request/Response X-Request-ID correlation failed."""
 
     def __init__(self, model_id, x_request_id: uuid.uuid4):
         super().__init__(model_id)
