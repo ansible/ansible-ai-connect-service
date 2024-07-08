@@ -51,8 +51,9 @@ botocore==1.29.165
     #   s3transfer
 bracex==2.4
     # via wcmatch
-certifi==2024.2.2
+certifi==2024.7.4
     # via
+    #   -r requirements.in
     #   launchdarkly-server-sdk
     #   requests
 cffi==1.16.0
