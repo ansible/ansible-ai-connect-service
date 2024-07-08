@@ -54,9 +54,13 @@ from ansible_ai_connect.ai.api.model_client.wca_client import (
     ibm_cloud_identity_token_hist,
     ibm_cloud_identity_token_retry_counter,
     wca_codegen_hist,
+    wca_codegen_playbook_hist,
+    wca_codegen_playbook_retry_counter,
     wca_codegen_retry_counter,
     wca_codematch_hist,
     wca_codematch_retry_counter,
+    wca_explain_playbook_hist,
+    wca_explain_playbook_retry_counter,
 )
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
@@ -265,6 +269,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
 
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen(self):
         request = Mock()
         playbook, outline = self.wca_client.generate_playbook(
@@ -273,23 +278,53 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.assertEqual(playbook, "Oh!")
         self.assertEqual(outline, "Ahh!")
 
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
+    @assert_call_count_metrics(metric=wca_codegen_playbook_retry_counter)
+    def test_playbook_gen_error(self):
+        request = Mock()
+        model_client = WCAClient(inference_url="http://example.com/")
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with self.assertRaises(HTTPError):
+            model_client.generate_playbook(request, text="Install Wordpress", create_outline=True)
+
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp(self):
         request = Mock()
         explanation = self.wca_client.explain_playbook(request, content="Some playbook")
         self.assertEqual(explanation, "!Óh¡")
 
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
+    @assert_call_count_metrics(metric=wca_explain_playbook_retry_counter)
+    def test_playbook_exp_error(self):
+        request = Mock()
+        model_client = WCAClient(inference_url="http://example.com/")
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with self.assertRaises(HTTPError):
+            model_client.explain_playbook(request, content="Some playbook")
+
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen_no_org(self):
         request = Mock()
         request.user.organization = None
         self.wca_client.generate_playbook(request, text="Install Wordpress")
         self.wca_client.get_api_key.assert_called_with(None)
 
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp_no_org(self):
         request = Mock()
         request.user.organization = None
         self.wca_client.explain_playbook(request, content="Some playbook")
         self.wca_client.get_api_key.assert_called_with(None)
 
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     def test_playbook_gen_with_lint(self):
         fake_linter = Mock()
@@ -301,6 +336,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.assertEqual(playbook, "I'm super fake!")
         self.assertEqual(outline, "Ahh!")
 
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     def test_playbook_gen_when_is_not_initialized(self):
         self.mock_ansible_lint_caller_with(None)
