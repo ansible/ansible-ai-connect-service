@@ -79,6 +79,16 @@ wca_codematch_hist = Histogram(
     "Histogram of WCA codematch API processing time",
     namespace=NAMESPACE,
 )
+wca_codegen_playbook_hist = Histogram(
+    "wca_codegen_playbook_latency_seconds",
+    "Histogram of WCA codegen-playbook API processing time",
+    namespace=NAMESPACE,
+)
+wca_explain_playbook_hist = Histogram(
+    "wca_explain_playbook_latency_seconds",
+    "Histogram of WCA explain-playbook API processing time",
+    namespace=NAMESPACE,
+)
 ibm_cloud_identity_token_hist = Histogram(
     "wca_ibm_identity_token_latency_seconds",
     "Histogram of IBM Cloud identity token API processing time",
@@ -92,6 +102,16 @@ wca_codegen_retry_counter = Counter(
 wca_codematch_retry_counter = Counter(
     "wca_codematch_retries",
     "Counter of WCA codematch API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_codegen_playbook_retry_counter = Counter(
+    "wca_codegen_playbook_retries",
+    "Counter of WCA codegen-playbook API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_explain_playbook_retry_counter = Counter(
+    "wca_explain_playbook_retries",
+    "Counter of WCA explain-playbook API invocation retries",
     namespace=NAMESPACE,
 )
 ibm_cloud_identity_token_retry_counter = Counter(
@@ -161,6 +181,14 @@ class BaseWCAClient(ModelMeshClient):
     @staticmethod
     def on_backoff_codematch(details):
         wca_codematch_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_codegen_playbook(details):
+        wca_codegen_playbook_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_explain_playbook(details):
+        wca_explain_playbook_retry_counter.inc()
 
     @staticmethod
     def on_backoff_ibm_cloud_identity_token(details):
@@ -486,11 +514,22 @@ class WCAClient(BaseWCAClient):
         if outline:
             data["outline"] = outline
 
-        result = self.session.post(
-            f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
-            headers=headers,
-            json=data,
+        @backoff.on_exception(
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_codegen_playbook,
         )
+        @wca_codegen_playbook_hist.time()
+        def post_request():
+            return self.session.post(
+                f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
+                headers=headers,
+                json=data,
+            )
+
+        result = post_request()
 
         context = Context(model_id, result, False)
         InferenceResponseChecks().run_checks(context)
@@ -516,11 +555,23 @@ class WCAClient(BaseWCAClient):
             "model_id": model_id,
             "playbook": content,
         }
-        result = self.session.post(
-            f"{self._inference_url}/v1/wca/explain/ansible/playbook",
-            headers=headers,
-            json=data,
+
+        @backoff.on_exception(
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_explain_playbook,
         )
+        @wca_explain_playbook_hist.time()
+        def post_request():
+            return self.session.post(
+                f"{self._inference_url}/v1/wca/explain/ansible/playbook",
+                headers=headers,
+                json=data,
+            )
+
+        result = post_request()
 
         context = Context(model_id, result, False)
         InferenceResponseChecks().run_checks(context)
