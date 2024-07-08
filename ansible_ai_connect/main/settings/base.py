@@ -192,6 +192,8 @@ AUTHZ_API_SERVER = os.environ.get("AUTHZ_API_SERVER")
 AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT") or "1.0")
 AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT") or "3")
 AUTHZ_AMS_SERVICE_RETRY_COUNT = int(os.getenv("AMS_SERVICE_RETRY_COUNT") or "3")
+AUTHZ_AMS_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_AMS_SERVICE_TIMEOUT") or "2.0")
+
 
 t_deployment_mode = Literal["saas", "upstream", "onprem"]
 DEPLOYMENT_MODE: t_deployment_mode = cast(
