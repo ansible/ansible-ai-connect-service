@@ -4,6 +4,8 @@ ansible-lint==24.2.2
 boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
+# pin certifi on 2024.7.4 to address CVE-2024-39689
+certifi==2024.7.4
 # UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==42.0.6
 # pin Django on 4.2.11 to address PYSEC-2024-47.

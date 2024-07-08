@@ -1,5 +1,7 @@
 black==24.3.0
 coverage==7.2.1
+# pin certifi on 2024.7.4 to address CVE-2024-39689
+certifi==2024.7.4
 flake8==6.0.0
 grpcio-tools==1.62.2
 # pin idna until responses -> requests is updated
