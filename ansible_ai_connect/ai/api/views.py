@@ -68,6 +68,7 @@ from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     BlockUserWithoutSeat,
     BlockWCANotReady,
+    BlockWCANotReadyButTrialAvailable,
     IsAAPLicensed,
 )
 from .serializers import (
@@ -125,6 +126,7 @@ PERMISSIONS_MAP = {
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockWCANotReady,
     ],
 }
@@ -603,6 +605,7 @@ class Explanation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockWCANotReady,
     ]
     required_scopes = ["read", "write"]
@@ -769,6 +772,7 @@ class Generation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockWCANotReady,
     ]
     required_scopes = ["read", "write"]

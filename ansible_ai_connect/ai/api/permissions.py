@@ -13,9 +13,13 @@
 #  limitations under the License.
 
 from django.apps import apps
+from django.conf import settings
 from rest_framework import permissions
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+
+CONTINUE = True
+BLOCK = False
 
 
 class IsOrganisationAdministrator(permissions.BasePermission):
@@ -44,6 +48,32 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
         return user.rh_org_has_subscription
 
 
+class BlockWCANotReadyButTrialAvailable(permissions.BasePermission):
+    """
+    WCA is not ready but the user can apply for the Trial period
+    """
+
+    code = "permission_denied__can_apply_for_trial"
+    message = "Access denied but user can apply for a trial period."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+            return CONTINUE
+
+        if not request.user.rh_org_has_subscription:
+            return CONTINUE
+
+        if any(up.is_active for up in request.user.userplan_set.all()):
+            return CONTINUE
+
+        # TODO check if user has already a trial period
+
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        return CONTINUE if org_has_api_key else BLOCK
+
+
 # See: https://issues.redhat.com/browse/AAP-18386
 class BlockWCANotReady(permissions.BasePermission):
     """
@@ -57,13 +87,19 @@ class BlockWCANotReady(permissions.BasePermission):
         user = request.user
         if user.organization is None:
             # We accept the Community users, the won't have access to WCA
-            return True
+            return CONTINUE
         if user.rh_user_has_seat is not True:
-            return True
+            return CONTINUE
+
+        # If the user has an active Trial, we continue
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
+            up.is_active for up in request.user.userplan_set.all()
+        ):
+            return CONTINUE
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
-        return org_has_api_key
+        return CONTINUE if org_has_api_key else BLOCK
 
 
 # See: https://issues.redhat.com/browse/AAP-19427
@@ -78,7 +114,7 @@ class BlockUserWithoutSeat(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
 
-        return user.rh_user_has_seat
+        return CONTINUE if user.rh_user_has_seat else BLOCK
 
 
 class IsAAPLicensed(permissions.BasePermission):
@@ -90,4 +126,4 @@ class IsAAPLicensed(permissions.BasePermission):
     message = "Ansible Automation Platform License has expired."
 
     def has_permission(self, request, view):
-        return request.user.rh_aap_licensed
+        return CONTINUE if request.user.rh_aap_licensed else BLOCK
