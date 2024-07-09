@@ -20,7 +20,7 @@ from django.urls import reverse
 
 from ansible_ai_connect.ai.api.permissions import (
     BlockUserWithoutSeat,
-    BlockUserWithSeatButWCANotReady,
+    BlockWCANotReady,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -55,13 +55,13 @@ class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="")
-class TestBlockUserWithSeatButWCANotReady(WisdomAppsBackendMocking):
+class TestBlockWCANotReady(WisdomAppsBackendMocking):
     def setUp(self):
         super().setUp()
         self.user = create_user(provider="oidc")
         self.request = Mock()
         self.request.user = self.user
-        self.p = BlockUserWithSeatButWCANotReady()
+        self.p = BlockWCANotReady()
 
     def tearDown(self):
         self.user.delete()

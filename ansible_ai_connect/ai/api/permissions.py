@@ -45,7 +45,7 @@ class IsOrganisationLightspeedSubscriber(permissions.BasePermission):
 
 
 # See: https://issues.redhat.com/browse/AAP-18386
-class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
+class BlockWCANotReady(permissions.BasePermission):
     """
     Block access to seated users if the WCA key was not set yet.
     """
