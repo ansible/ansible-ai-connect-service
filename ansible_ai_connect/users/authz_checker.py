@@ -195,6 +195,7 @@ class AMSCheck(BaseCheck):
         self._api_server = api_server
         self._ams_org_cache = {}
         self.retries = settings.AUTHZ_AMS_SERVICE_RETRY_COUNT
+        self.timeout = settings.AUTHZ_AMS_SERVICE_TIMEOUT
 
         if self._api_server.startswith("https://api.stage.openshift.com"):
             proxy = {"https": "http://squid.corp.redhat.com:3128"}
@@ -235,7 +236,7 @@ class AMSCheck(BaseCheck):
                 return self._session.get(
                     self._api_server + "/api/accounts_mgmt/v1/organizations",
                     params=params,
-                    timeout=0.8,
+                    timeout=self.timeout,
                 )
 
             r = get_request()
@@ -272,7 +273,7 @@ class AMSCheck(BaseCheck):
         r = self._session.get(
             # A _basic_ call that needs no parameters.
             self._api_server + "/api/accounts_mgmt/v1/metrics",
-            timeout=0.8,
+            timeout=self.timeout,
         )
         r.raise_for_status()
 
@@ -290,7 +291,7 @@ class AMSCheck(BaseCheck):
             # Organization has not yet been created in AMS, either the organization
             # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
+            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
             return False
 
         params = {
@@ -303,7 +304,7 @@ class AMSCheck(BaseCheck):
             r = self._session.get(
                 self._api_server + "/api/accounts_mgmt/v1/subscriptions",
                 params=params,
-                timeout=0.8,
+                timeout=self.timeout,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
@@ -330,7 +331,7 @@ class AMSCheck(BaseCheck):
             # Organization has not yet been created in AMS, either the organization
             # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
+            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
             return False
 
         params = {"search": f"account.username = '{username}' AND organization.id='{ams_org_id}'"}
@@ -340,7 +341,7 @@ class AMSCheck(BaseCheck):
             r = self._session.get(
                 self._api_server + "/api/accounts_mgmt/v1/role_bindings",
                 params=params,
-                timeout=0.8,
+                timeout=self.timeout,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
@@ -375,7 +376,7 @@ class AMSCheck(BaseCheck):
             # Organization has not yet been created in AMS, either the organization
             # is too recent (sync is done every 1h), or the organization has no AMS related
             # services (e.g Ansible, OpenShift, cloud.r.c) and so is not synchronized.
-            logger.warning(f"Organization not found in AMS, organization_id={organization_id}")
+            logger.warning(f"Organization can't be found in AMS, organization_id={organization_id}")
             return False
 
         # Check cache
@@ -406,7 +407,7 @@ class AMSCheck(BaseCheck):
                         f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
                     ),
                     params=params,
-                    timeout=0.8,
+                    timeout=2.0,
                 )
 
             r = get_request()
