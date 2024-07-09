@@ -169,11 +169,6 @@ class InferenceStage(PipelineElement):
             event_name = "trialExpired"
             raise WcaUserTrialExpiredException(cause=e)
 
-        except Exception as e:
-            exception = e
-            logger.exception(f"error requesting completion for suggestion {suggestion_id}")
-            raise ServiceUnavailable(cause=e)
-
         finally:
             duration = round((time.time() - start_time) * 1000, 2)
             completions_hist.observe(duration / 1000)  # millisec back to seconds

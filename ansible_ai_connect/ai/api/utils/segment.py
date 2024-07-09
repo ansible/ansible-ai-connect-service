@@ -21,6 +21,7 @@ from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
+import ansible_ai_connect.ai.api.telemetry.schema1 as schema1
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 from ansible_ai_connect.users.models import User
 
@@ -34,6 +35,7 @@ def send_segment_group(group_id: str, group_type: str, group_value: str, user: U
     if not settings.SEGMENT_WRITE_KEY:
         logger.debug("segment write key not set, skipping group")
         return
+    init_schema1_client()
     try:
         analytics.group(
             str(user.uuid), group_id, {"group_type": group_type, "group_value": group_value}
@@ -90,6 +92,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
 def base_send_segment_event(
     event: Dict[str, Any], event_name: str, user: User, client: Client
 ) -> None:
+    init_schema1_client()
     try:
         client.track(
             str(user.uuid) if getattr(user, "uuid", None) else "unknown",
@@ -112,15 +115,34 @@ def base_send_segment_event(
             msg_len = len(args[2])
             logger.error(f"Message exceeds {args[1]}kb limit. msg_len={msg_len}")
 
-            event = {
-                "error_type": "event_exceeds_limit",
-                "details": {
-                    "event_name": event_name,
-                    "msg_len": msg_len,
-                },
-                "timestamp": event["timestamp"],
-            }
-            send_segment_event(event, "segmentError", user)
+            err_event = schema1.SegmentErrorEvent()
+            err_event.set_user(user)
+            err_event.error_type = "event_exceeds_limit"
+            err_event.details = schema1.SegmentErrorDetailsPayload(
+                event_name=event_name, msg_len=msg_len
+            )
+            send_schema1_event(err_event)
+
+
+def init_schema1_client() -> None:
+    def on_segment_error(error, _):
+        logger.error(f"An error occurred in sending schema1 data to Segment: {error}")
+
+    if settings.SEGMENT_WRITE_KEY:
+        if not analytics.write_key:
+            analytics.write_key = settings.SEGMENT_WRITE_KEY
+            analytics.debug = settings.DEBUG
+            analytics.gzip = True  # Enable gzip compression
+            # analytics.send = False # for code development only
+            analytics.on_error = on_segment_error
+
+
+def send_schema1_event(event_obj) -> None:
+    print(f"SENDING SCHEMA1 EVENT (name={event_obj.event_name})\n{event_obj.as_dict()} ({type(event_obj)})")
+    if not settings.SEGMENT_WRITE_KEY:
+        logger.info("segment write key not set, skipping event")
+        return
+    base_send_segment_event(event_obj.as_dict(), event_obj.event_name, event_obj.user, analytics)
 
 
 def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) -> Dict[str, Any]:
