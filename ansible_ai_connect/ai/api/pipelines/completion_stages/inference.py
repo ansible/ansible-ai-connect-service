@@ -35,7 +35,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
     WcaNoDefaultModelIdException,
-    WcaSuggestionIdCorrelationFailureException,
+    WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
 )
@@ -48,7 +48,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaNoDefaultModelId,
-    WcaSuggestionIdCorrelationFailure,
+    WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
@@ -138,13 +138,13 @@ class InferenceStage(PipelineElement):
             logger.info(f"A WCA Model ID was expected but not found for suggestion {suggestion_id}")
             raise WcaModelIdNotFoundException(cause=e)
 
-        except WcaSuggestionIdCorrelationFailure as e:
+        except WcaRequestIdCorrelationFailure as e:
             exception = e
             logger.info(
                 f"WCA Request/Response SuggestionId correlation failed for "
                 f"suggestion_id: '{suggestion_id}' and x_request_id: '{e.x_request_id}'."
             )
-            raise WcaSuggestionIdCorrelationFailureException(cause=e)
+            raise WcaRequestIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e

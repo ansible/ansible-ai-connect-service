@@ -116,10 +116,13 @@ class WcaNoDefaultModelIdException(WisdomAccessDenied):
     default_detail = "No default WCA Model ID was found."
 
 
-class WcaSuggestionIdCorrelationFailureException(BaseWisdomAPIException):
+class WcaRequestIdCorrelationFailureException(BaseWisdomAPIException):
     status_code = 500
-    default_code = "error__wca_suggestion_correlation_failed"
-    default_detail = "WCA Request/Response Suggestion ID correlation failed."
+    # This is the old code for when this was used solely for Completions correlation.
+    # VSCode will handle both codes identically to maintain compatibility with older services.
+    # default_code = "error__wca_suggestion_correlation_failed"
+    default_code = "error__wca_request_id_correlation_failed"
+    default_detail = "WCA Request/Response Request Id correlation failed."
 
 
 class WcaEmptyResponseException(WisdomEmptyResponse):

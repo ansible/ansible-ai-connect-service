@@ -44,7 +44,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaNoDefaultModelId,
-    WcaSuggestionIdCorrelationFailure,
+    WcaRequestIdCorrelationFailure,
     WcaTokenFailure,
 )
 from ansible_ai_connect.ai.api.model_client.wca_client import (
@@ -69,7 +69,7 @@ from ansible_ai_connect.test_utils import (
 from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 from ansible_ai_connect.users.tests.test_users import create_user
 
-DEFAULT_SUGGESTION_ID = uuid.uuid4()
+DEFAULT_REQUEST_ID = uuid.uuid4()
 
 
 class MockResponse:
@@ -107,7 +107,7 @@ def stub_wca_client(
     response = MockResponse(
         json=response_data,
         status_code=status_code,
-        headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
+        headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
     )
     model_client = WCAClient(inference_url="https://wca_api_url")
     model_client.session.post = Mock(return_value=response)
@@ -265,6 +265,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         response = Mock
         response.text = '{"playbook": "Oh!", "outline": "Ahh!", "explanation": "!Óh¡"}'
         response.status_code = 200
+        response.headers = {WCA_REQUEST_ID_HEADER: WCA_REQUEST_ID_HEADER}
         response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
@@ -346,6 +347,37 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         # Ensure nothing was done
         self.assertEqual(playbook, "Oh!")
 
+    def test_playbook_gen_request_id_correlation_failure(self):
+        request = Mock()
+        request.user.organization = None
+
+        self.wca_client.session.post.return_value = MockResponse(
+            json={},
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
+        )
+        with self.assertRaises(WcaRequestIdCorrelationFailure):
+            self.wca_client.generate_playbook(
+                request=Mock(),
+                text="Install Wordpress",
+                create_outline=True,
+                generation_id=str(DEFAULT_REQUEST_ID),
+            )
+
+    def test_playbook_exp_request_id_correlation_failure(self):
+        request = Mock()
+        request.user.organization = None
+
+        self.wca_client.session.post.return_value = MockResponse(
+            json={},
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
+        )
+        with self.assertRaises(WcaRequestIdCorrelationFailure):
+            self.wca_client.explain_playbook(
+                request, content="Some playbook", explanation_id=str(DEFAULT_REQUEST_ID)
+            )
+
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
@@ -413,24 +445,24 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer(self):
         self._do_inference(
-            suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=str(DEFAULT_SUGGESTION_ID)
+            suggestion_id=str(DEFAULT_REQUEST_ID), request_id=str(DEFAULT_REQUEST_ID)
         )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_organization_id_is_none(self):
         self._do_inference(
-            suggestion_id=str(DEFAULT_SUGGESTION_ID),
+            suggestion_id=str(DEFAULT_REQUEST_ID),
             organization_id=None,
-            request_id=str(DEFAULT_SUGGESTION_ID),
+            request_id=str(DEFAULT_REQUEST_ID),
         )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_without_suggestion_id(self):
-        self._do_inference(suggestion_id=None, request_id=str(DEFAULT_SUGGESTION_ID))
+        self._do_inference(suggestion_id=None, request_id=str(DEFAULT_REQUEST_ID))
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_without_request_id_header(self):
-        self._do_inference(suggestion_id=str(DEFAULT_SUGGESTION_ID), request_id=None)
+        self._do_inference(suggestion_id=str(DEFAULT_REQUEST_ID), request_id=None)
 
     def _do_inference(
         self,
@@ -531,7 +563,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -566,7 +598,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -606,7 +638,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                     request=Mock(),
                     model_input=model_input,
                     model_id=model_id,
-                    suggestion_id=DEFAULT_SUGGESTION_ID,
+                    suggestion_id=DEFAULT_REQUEST_ID,
                 )
         self.assertEqual(e.exception.model_id, model_id)
         self.assertInLog(
@@ -647,12 +679,12 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
 
-        with self.assertRaises(WcaSuggestionIdCorrelationFailure) as e:
+        with self.assertRaises(WcaRequestIdCorrelationFailure) as e:
             model_client.infer(
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -669,7 +701,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -682,7 +714,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -695,7 +727,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -717,7 +749,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
-                suggestion_id=DEFAULT_SUGGESTION_ID,
+                suggestion_id=DEFAULT_REQUEST_ID,
             )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
@@ -752,7 +784,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             request=Mock(user=user),
             model_input=model_input,
             model_id=None,
-            suggestion_id=DEFAULT_SUGGESTION_ID,
+            suggestion_id=DEFAULT_REQUEST_ID,
         )
 
         model_client.get_model_id.assert_called_once_with(FAUX_COMMERCIAL_USER_ORG_ID, None)
@@ -761,8 +793,8 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_multitask_with_task_preamble(self):
         self._do_inference(
-            suggestion_id=str(DEFAULT_SUGGESTION_ID),
-            request_id=str(DEFAULT_SUGGESTION_ID),
+            suggestion_id=str(DEFAULT_REQUEST_ID),
+            request_id=str(DEFAULT_REQUEST_ID),
             prompt="# - name: install ffmpeg on Red Hat Enterprise Linux",
             codegen_prompt="# install ffmpeg on red hat enterprise linux\n",
         )

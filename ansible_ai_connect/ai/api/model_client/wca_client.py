@@ -58,7 +58,7 @@ from .exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaNoDefaultModelId,
-    WcaSuggestionIdCorrelationFailure,
+    WcaRequestIdCorrelationFailure,
     WcaTokenFailure,
     WcaUsernameNotFound,
 )
@@ -227,7 +227,7 @@ class BaseWCAClient(ModelMeshClient):
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
-        headers = self.get_inference_headers(api_key, suggestion_id)
+        headers = self.get_request_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
         # path matches ANSIBLE_WCA_INFERENCE_URL="https://api.dataplatform.test.cloud.ibm.com"
         prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
@@ -256,7 +256,7 @@ class BaseWCAClient(ModelMeshClient):
                 # request/payload suggestion_id is a UUID not a string whereas
                 # HTTP headers are strings.
                 if x_request_id != str(suggestion_id):
-                    raise WcaSuggestionIdCorrelationFailure(
+                    raise WcaRequestIdCorrelationFailure(
                         model_id=model_id, x_request_id=x_request_id
                     )
 
@@ -328,8 +328,8 @@ class BaseWCAClient(ModelMeshClient):
             raise ModelTimeoutError(model_id=model_id)
 
     @abstractmethod
-    def get_inference_headers(
-        self, api_key: str, suggestion_id: Optional[str]
+    def get_request_headers(
+        self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
         raise NotImplementedError
 
@@ -442,13 +442,13 @@ class WCAClient(BaseWCAClient):
         logger.error("Seated user's organization doesn't have default model ID set")
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
-    def get_inference_headers(
-        self, api_key: str, suggestion_id: Optional[str]
+    def get_request_headers(
+        self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
         base_headers = self._get_base_headers(api_key)
         return {
             **base_headers,
-            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
+            WCA_REQUEST_ID_HEADER: str(identifier) if identifier else None,
         }
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
@@ -499,13 +499,18 @@ class WCAClient(BaseWCAClient):
         return summary
 
     def generate_playbook(
-        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+        self,
+        request,
+        text: str = "",
+        create_outline: bool = False,
+        outline: str = "",
+        generation_id: str = "",
     ) -> tuple[str, str]:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(organization_id)
         model_id = self.get_model_id(organization_id)
 
-        headers = self._get_base_headers(api_key)
+        headers = self.get_request_headers(api_key, generation_id)
         data = {
             "model_id": model_id,
             "text": text,
@@ -531,6 +536,13 @@ class WCAClient(BaseWCAClient):
 
         result = post_request()
 
+        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+        if generation_id and x_request_id:
+            # request/payload suggestion_id is a UUID not a string whereas
+            # HTTP headers are strings.
+            if x_request_id != str(generation_id):
+                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+
         context = Context(model_id, result, False)
         InferenceResponseChecks().run_checks(context)
         result.raise_for_status()
@@ -545,12 +557,12 @@ class WCAClient(BaseWCAClient):
 
         return playbook, outline
 
-    def explain_playbook(self, request, content: str) -> str:
+    def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(organization_id)
         model_id = self.get_model_id(organization_id)
 
-        headers = self._get_base_headers(api_key)
+        headers = self.get_request_headers(api_key, explanation_id)
         data = {
             "model_id": model_id,
             "playbook": content,
@@ -572,6 +584,13 @@ class WCAClient(BaseWCAClient):
             )
 
         result = post_request()
+
+        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+        if explanation_id and x_request_id:
+            # request/payload suggestion_id is a UUID not a string whereas
+            # HTTP headers are strings.
+            if x_request_id != str(explanation_id):
+                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
 
         context = Context(model_id, result, False)
         InferenceResponseChecks().run_checks(context)
@@ -608,13 +627,13 @@ class WCAOnPremClient(BaseWCAClient):
 
         raise WcaModelIdNotFound()
 
-    def get_inference_headers(
-        self, api_key: str, suggestion_id: Optional[str]
+    def get_request_headers(
+        self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
         base_headers = self._get_base_headers(api_key)
         return {
             **base_headers,
-            WCA_REQUEST_ID_HEADER: str(suggestion_id) if suggestion_id else None,
+            WCA_REQUEST_ID_HEADER: str(identifier) if identifier else None,
         }
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
@@ -654,9 +673,14 @@ class WCAOnPremClient(BaseWCAClient):
         return summary
 
     def generate_playbook(
-        self, request, text: str = "", create_outline: bool = False, outline: str = ""
+        self,
+        request,
+        text: str = "",
+        create_outline: bool = False,
+        outline: str = "",
+        generation_id: str = "",
     ) -> tuple[str, str]:
         raise FeatureNotAvailable
 
-    def explain_playbook(self, request, content: str) -> str:
+    def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
         raise FeatureNotAvailable

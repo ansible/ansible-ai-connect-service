@@ -44,7 +44,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
     WcaNoDefaultModelIdException,
-    WcaSuggestionIdCorrelationFailureException,
+    WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
     process_error_count,
 )
@@ -56,7 +56,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaKeyNotFound,
     WcaModelIdNotFound,
     WcaNoDefaultModelId,
-    WcaSuggestionIdCorrelationFailure,
+    WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
@@ -513,13 +513,13 @@ class ContentMatches(GenericAPIView):
             )
             raise WcaNoDefaultModelIdException(cause=e)
 
-        except WcaSuggestionIdCorrelationFailure as e:
+        except WcaRequestIdCorrelationFailure as e:
             exception = e
             logger.exception(
                 f"WCA Request/Response SuggestionId correlation failed "
                 f"for suggestion {suggestion_id}"
             )
-            raise WcaSuggestionIdCorrelationFailureException(cause=e)
+            raise WcaRequestIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e
@@ -643,7 +643,7 @@ class Explanation(APIView):
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
-            explanation = llm.explain_playbook(request, playbook)
+            explanation = llm.explain_playbook(request, playbook, explanation_id)
             duration = round((time.time() - start_time) * 1000, 2)
 
             # Anonymize response
@@ -691,6 +691,14 @@ class Explanation(APIView):
                 f"playbook explanation {explanation_id}"
             )
             raise WcaNoDefaultModelIdException(cause=e)
+
+        except WcaRequestIdCorrelationFailure as e:
+            exception = e
+            logger.exception(
+                f"WCA Request/Response ExplanationId correlation failed "
+                f"for suggestion {explanation_id}"
+            )
+            raise WcaRequestIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e
@@ -809,7 +817,9 @@ class Generation(APIView):
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
-            playbook, outline = llm.generate_playbook(request, text, create_outline, outline)
+            playbook, outline = llm.generate_playbook(
+                request, text, create_outline, outline, generation_id
+            )
             duration = round((time.time() - start_time) * 1000, 2)
 
             # Anonymize responses
@@ -861,6 +871,14 @@ class Generation(APIView):
                 f"playbook generation {generation_id}"
             )
             raise WcaNoDefaultModelIdException(cause=e)
+
+        except WcaRequestIdCorrelationFailure as e:
+            exception = e
+            logger.exception(
+                f"WCA Request/Response GenerationId correlation failed "
+                f"for suggestion {generation_id}"
+            )
+            raise WcaRequestIdCorrelationFailureException(cause=e)
 
         except WcaEmptyResponse as e:
             exception = e
