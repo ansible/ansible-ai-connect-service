@@ -34,7 +34,6 @@ from social_django.models import UserSocialAuth
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -663,7 +662,6 @@ class TestTelemetryOptInOut(APITransactionTestCase):
     @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
     @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
     @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
-    @patch.object(AcceptedTermsPermission, "has_permission", return_value=True)
     @patch.object(feature_flags, "LDClient")
     def test_rhsso_user_caching(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True

@@ -31,7 +31,6 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
 )
 from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -86,7 +85,6 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             IsAuthenticatedOrTokenHasScope,
             IsOrganisationAdministrator,
             IsOrganisationLightspeedSubscriber,
-            AcceptedTermsPermission,
         ]
         self.assertEqual(len(view.permission_classes), len(required_permissions))
         for permission in required_permissions:

@@ -44,7 +44,6 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -61,7 +60,6 @@ PERMISSION_CLASSES = [
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
-    AcceptedTermsPermission,
 ]
 
 

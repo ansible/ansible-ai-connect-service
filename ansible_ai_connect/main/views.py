@@ -28,7 +28,6 @@ from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -86,7 +85,6 @@ class ConsoleView(ProtectedTemplateView):
     permission_classes = [
         IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
     ]
 
     def get_template_names(self):

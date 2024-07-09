@@ -22,7 +22,6 @@ from rest_framework.permissions import IsAuthenticated
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -74,7 +73,6 @@ class TestConsoleView(WisdomServiceAPITestCaseBase):
         required_permissions = [
             IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
-            AcceptedTermsPermission,
         ]
         self.assertEqual(len(view.permission_classes), len(required_permissions))
         for permission in required_permissions:
