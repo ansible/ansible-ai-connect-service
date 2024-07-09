@@ -67,32 +67,58 @@ MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
+# from django_prometheus.middleware.DEFAULT_LATENCY_BUCKETS
+DEFAULT_LATENCY_BUCKETS = (
+    0.01,
+    0.025,
+    0.05,
+    0.075,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    25.0,
+    50.0,
+    75.0,
+    float("inf"),
+)
+
 logger = logging.getLogger(__name__)
 
 wca_codegen_hist = Histogram(
     "wca_codegen_latency_seconds",
     "Histogram of WCA codegen API processing time",
     namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
 )
 wca_codematch_hist = Histogram(
     "wca_codematch_latency_seconds",
     "Histogram of WCA codematch API processing time",
     namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
 )
 wca_codegen_playbook_hist = Histogram(
     "wca_codegen_playbook_latency_seconds",
     "Histogram of WCA codegen-playbook API processing time",
     namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
 )
 wca_explain_playbook_hist = Histogram(
     "wca_explain_playbook_latency_seconds",
     "Histogram of WCA explain-playbook API processing time",
     namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
 )
 ibm_cloud_identity_token_hist = Histogram(
     "wca_ibm_identity_token_latency_seconds",
     "Histogram of IBM Cloud identity token API processing time",
     namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
 )
 wca_codegen_retry_counter = Counter(
     "wca_codegen_retries",
