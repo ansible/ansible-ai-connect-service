@@ -20,7 +20,6 @@ from django.urls import reverse
 
 from ansible_ai_connect.ai.api.permissions import (
     BlockUserWithoutSeat,
-    BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
@@ -52,33 +51,6 @@ class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
         self.assert_error_detail(
             r, IsOrganisationLightspeedSubscriber.code, IsOrganisationLightspeedSubscriber.message
         )
-
-
-@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-@override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
-class TestBlockUserWithoutSeatAndWCAReadyOrg(WisdomAppsBackendMocking):
-    def setUp(self):
-        super().setUp()
-        self.user = create_user(provider="oidc")
-        self.request = Mock()
-        self.request.user = self.user
-        self.p = BlockUserWithoutSeatAndWCAReadyOrg()
-
-    def tearDown(self):
-        self.user.delete()
-        super().tearDown()
-
-    def test_ensure_user_with_no_org_are_allowed(self):
-        self.user.organization = None
-        self.assertTrue(self.p.has_permission(self.request, None))
-
-    def test_ensure_seated_user_are_allowed(self):
-        self.user.rh_user_has_seat = True
-        self.assertTrue(self.p.has_permission(self.request, None))
-
-    def test_ensure_unseated_user_are_blocked(self):
-        self.user.rh_user_has_seat = False
-        self.assertFalse(self.p.has_permission(self.request, None))
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")

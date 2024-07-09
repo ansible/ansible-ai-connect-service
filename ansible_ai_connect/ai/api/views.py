@@ -67,7 +67,6 @@ from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
     BlockUserWithoutSeat,
-    BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
     IsAAPLicensed,
 )
@@ -126,7 +125,6 @@ PERMISSIONS_MAP = {
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ],
 }
@@ -605,7 +603,6 @@ class Explanation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
     required_scopes = ["read", "write"]
@@ -772,7 +769,6 @@ class Generation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
-        BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
     required_scopes = ["read", "write"]
