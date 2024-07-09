@@ -69,6 +69,7 @@ from .permissions import (
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
+    BlockWCANotReadyButTrialAvailable,
     IsAAPLicensed,
 )
 from .serializers import (
@@ -126,6 +127,7 @@ PERMISSIONS_MAP = {
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ],
@@ -380,6 +382,7 @@ class ContentMatches(GenericAPIView):
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
             BlockUserWithoutSeat,
+            BlockWCANotReadyButTrialAvailable,
         ]
     )
 
@@ -605,6 +608,7 @@ class Explanation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
@@ -772,6 +776,7 @@ class Generation(APIView):
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
         BlockUserWithoutSeat,
+        BlockWCANotReadyButTrialAvailable,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
     ]
