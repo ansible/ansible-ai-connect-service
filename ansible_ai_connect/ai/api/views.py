@@ -66,7 +66,6 @@ from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_client.exceptions import ModelTimeoutError
 from .permissions import (
-    AcceptedTermsPermission,
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
@@ -126,7 +125,6 @@ PERMISSIONS_MAP = {
     "saas": [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
         BlockUserWithoutSeat,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
@@ -170,7 +168,6 @@ class Feedback(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
     ]
     required_scopes = ["read", "write"]
 
@@ -382,7 +379,6 @@ class ContentMatches(GenericAPIView):
         else [
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
-            AcceptedTermsPermission,
             BlockUserWithoutSeat,
         ]
     )
@@ -608,7 +604,6 @@ class Explanation(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
         BlockUserWithoutSeat,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,
@@ -776,7 +771,6 @@ class Generation(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        AcceptedTermsPermission,
         BlockUserWithoutSeat,
         BlockUserWithoutSeatAndWCAReadyOrg,
         BlockUserWithSeatButWCANotReady,

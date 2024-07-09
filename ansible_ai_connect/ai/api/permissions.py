@@ -19,27 +19,6 @@ from rest_framework import permissions
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
 
-class AcceptedTermsPermission(permissions.BasePermission):
-    """
-    Allow access only to users who have accepted terms and conditions or paid users.
-    """
-
-    code = "permission_denied__terms_of_use_not_accepted"
-    message = "Terms of use have not been accepted."
-
-    def has_permission(self, request, view):
-        user = request.user
-        if user.is_authenticated:
-            if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and user.community_terms_accepted:
-                return True
-            if user.rh_user_has_seat:
-                return True
-            if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-                # The permission is deprecated and should be removed
-                return True
-        return False
-
-
 class IsOrganisationAdministrator(permissions.BasePermission):
     """
     Allow access only to users who are an administrator.

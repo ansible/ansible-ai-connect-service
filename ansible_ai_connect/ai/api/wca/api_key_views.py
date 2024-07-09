@@ -33,7 +33,6 @@ from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
 from ansible_ai_connect.ai.api.permissions import (
-    AcceptedTermsPermission,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
@@ -49,7 +48,6 @@ PERMISSION_CLASSES = [
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
-    AcceptedTermsPermission,
 ]
 
 
