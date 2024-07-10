@@ -54,7 +54,7 @@ ANSIBLE_AI_MODEL_MESH_API_URL = (
 )
 
 ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv("ANSIBLE_AI_MODEL_MESH_API_KEY")
-ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_ID") or "wisdom"
+ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_ID")
 if "ANSIBLE_AI_MODEL_MESH_MODEL_NAME" in os.environ:
     logger.warning(
         "Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated and "
@@ -69,7 +69,7 @@ if "ANSIBLE_AI_MODEL_MESH_MODEL_NAME" in os.environ:
             "Setting the value of ANSIBLE_AI_MODEL_MESH_MODEL_ID to "
             "the value of ANSIBLE_AI_MODEL_MESH_MODEL_NAME."
         )
-        ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME") or "wisdom"
+        ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME")
 
 # Model API Timeout (in seconds). Default is None.
 ANSIBLE_AI_MODEL_MESH_API_TIMEOUT = os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT")
