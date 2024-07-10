@@ -42,7 +42,7 @@ class TestBam(TestCase):
         }
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="my_key")
-    @override_settings(ANSIBLE_AI_MODEL_NAME="test")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer(self):
         model = "test"

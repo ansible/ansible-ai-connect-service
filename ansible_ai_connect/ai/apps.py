@@ -48,43 +48,43 @@ class AiConfig(AppConfig):
     def ready(self) -> None:
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
             self.model_mesh_client = GrpcClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
             self.model_mesh_client = WCAClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
             self.model_mesh_client = WCAOnPremClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
             self.model_mesh_client = DummyWCAClient(
-                inference_url=settings.ANSIBLE_WCA_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
             self.model_mesh_client = HttpClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "llamacpp":
             self.model_mesh_client = LlamaCPPClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
             self.model_mesh_client = DummyClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "bam":
             from .api.model_client.bam_client import BAMClient
 
             self.model_mesh_client = BAMClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
             from .api.model_client.ollama_client import OllamaClient
 
             self.model_mesh_client = OllamaClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
         else:
             raise ValueError(

@@ -69,7 +69,7 @@ class HealthCheckCustomView(MainView):
         return self.render_to_response_json(self.plugins, status_code, request.user)
 
     def render_to_response_json(self, plugins, status, user):  # customize JSON output
-        model_name = settings.ANSIBLE_AI_MODEL_NAME
+        model_name = settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
         if settings.LAUNCHDARKLY_SDK_KEY:
             # Lazy instantiation of FeatureFlags to ensure it honours settings.LAUNCHDARKLY_SDK_KEY
             model_tuple = FeatureFlags().get("model_name", user, f".:.:{model_name}:.")

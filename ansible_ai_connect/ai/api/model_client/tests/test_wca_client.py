@@ -142,7 +142,7 @@ def assert_call_count_metrics(metric):
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
 class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(WCA_SECRET_DUMMY_SECRETS="11009103:my-key<sep>my-optimized-model")
     def test_mock_wca_get_api_key(self):
@@ -210,13 +210,13 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         with self.assertRaises(WcaModelIdNotFound):
             wca_client.get_model_id(123, None)
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="gemini")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="gemini")
     def test_model_id_with_environment_override(self):
         wca_client = WCAClient(inference_url="http://example.com/")
         model_id = wca_client.get_model_id(123, None)
         self.assertEqual(model_id, "gemini")
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="gemini")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="gemini")
     def test_model_id_with_environment_and_user_override(self):
         wca_client = WCAClient(inference_url="http://example.com/")
         model_id = wca_client.get_model_id(123, "bard")
@@ -252,7 +252,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
 @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
 class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
@@ -966,7 +966,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
 class TestDummySecretManager(TestCase):
     def setUp(self):
         super().setUp()
@@ -998,7 +998,7 @@ class TestDummySecretManager(TestCase):
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
 @override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_WCA_USERNAME="username")
@@ -1017,7 +1017,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 
     @override_settings(ANSIBLE_WCA_USERNAME="username")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="model-name")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
     def test_get_model_id(self):
         model_client = WCAOnPremClient(inference_url="http://example.com/")
         model_id = model_client.get_model_id(11009103)
@@ -1025,7 +1025,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 
     @override_settings(ANSIBLE_WCA_USERNAME="username")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="model-name")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
     def test_get_model_id_with_override(self):
         model_client = WCAOnPremClient(inference_url="http://example.com/")
         model_id = model_client.get_model_id(11009103, "override-model-name")
@@ -1033,7 +1033,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 
     @override_settings(ANSIBLE_WCA_USERNAME="username")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME=None)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
     def test_get_model_id_without_setting(self):
         model_client = WCAOnPremClient(inference_url="http://example.com/")
         with self.assertRaises(WcaModelIdNotFound):
@@ -1043,7 +1043,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
 @override_settings(ANSIBLE_WCA_USERNAME="username")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="model-name")
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
     def test_headers(self):
@@ -1089,7 +1089,7 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)
 @override_settings(ANSIBLE_WCA_USERNAME="username")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_NAME="model-name")
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
     def test_headers(self):

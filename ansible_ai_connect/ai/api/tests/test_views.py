@@ -776,7 +776,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -798,7 +798,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": [
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
             ],
@@ -842,7 +842,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": [
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello test@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
@@ -879,7 +879,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -903,7 +903,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -924,7 +924,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         # self.client.force_authenticate(user=self.user)
@@ -953,7 +953,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -979,7 +979,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1003,7 +1003,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1028,7 +1028,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # quotation in the last line is not closed, but the truncate function can handle this.
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": [
                 '      ansible.builtin.apt:\n        name: apache2\n      register: "test'
             ],
@@ -1055,7 +1055,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # this prediction has indentation problem with the prompt above
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1126,7 +1126,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1149,7 +1149,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1178,7 +1178,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1343,7 +1343,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": [""],
         }
         self.client.force_authenticate(user=self.user)
@@ -1364,7 +1364,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)

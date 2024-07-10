@@ -44,7 +44,7 @@ class TestLlamaCPPClient(TestCase):
             "model_id": "test",
         }
 
-    @override_settings(ANSIBLE_AI_MODEL_NAME="test")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer(self):
         model_client = LlamaCPPClient(inference_url=self.inference_url)
@@ -96,7 +96,7 @@ class TestLlamaCPPClient(TestCase):
         response = model_client.infer(None, self.model_input, model_id=model)
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
-    @override_settings(ANSIBLE_AI_MODEL_NAME="test")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer_timeout(self):
         model_client = LlamaCPPClient(inference_url=self.inference_url)
