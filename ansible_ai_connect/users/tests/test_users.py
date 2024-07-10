@@ -51,6 +51,7 @@ def create_user(
     username: str = None,
     password: str = None,
     provider: str = None,
+    email: str = None,
     social_auth_extra_data: any = {},
     external_username: str = "",
     rh_user_is_org_admin: Optional[bool] = None,
@@ -61,7 +62,7 @@ def create_user(
     (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
     username = username or "u" + "".join(random.choices(string.digits, k=5))
     password = password or "secret"
-    email = username + "@example.com"
+    email = email or username + "@example.com"
     user = get_user_model().objects.create_user(
         username=username,
         email=email,

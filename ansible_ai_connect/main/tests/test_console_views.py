@@ -25,11 +25,11 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
 from ansible_ai_connect.organizations.models import Organization
 
 
-class TestConsoleView(WisdomServiceAPITestCaseBase):
+class TestConsoleView(WisdomServiceAPITestCaseBaseOIDC):
     def setUp(self):
         super().setUp()
         feature_flags.FeatureFlags.instance = None

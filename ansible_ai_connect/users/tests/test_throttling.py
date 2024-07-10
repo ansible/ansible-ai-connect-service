@@ -14,13 +14,13 @@
 
 from django.conf import settings
 
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
 from ansible_ai_connect.ai.api.views import Completions, Feedback
 
 from ..throttling import GroupSpecificThrottle
 
 
-class TestThrottling(WisdomServiceAPITestCaseBase):
+class TestThrottling(WisdomServiceAPITestCaseBaseOIDC):
     def test_get_cache_key(self):
         class DummyRequest:
             def __init__(self, user):

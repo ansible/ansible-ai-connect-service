@@ -94,7 +94,10 @@ from ansible_ai_connect.test_utils import (
     WisdomLogAwareMixin,
     WisdomServiceLogAwareTestCase,
 )
-from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
+from ansible_ai_connect.users.constants import (
+    USER_SOCIAL_AUTH_PROVIDER_AAP,
+    USER_SOCIAL_AUTH_PROVIDER_OIDC,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -191,16 +194,22 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         analytics.send = False  # do not send data to segment from unit tests
         segment_analytics_telemetry.send = False  # do not send data to segment from unit tests
 
+    def create_user(self):
+        logger.warn("Please move this test to WisdomServiceAPITestCaseBaseOIDC")
+
+        self.user = get_user_model().objects.create_user(
+            username=self.username,
+            email=self.email,
+            password=self.password,
+        )
+
     def setUp(self):
         super().setUp()
         self.username = "u" + "".join(random.choices(string.digits, k=5))
         self.password = "secret"
-        email = "user@example.com"
-        self.user = get_user_model().objects.create_user(
-            username=self.username,
-            email=email,
-            password=self.password,
-        )
+        self.email = "user@example.com"
+        self.create_user()
+
         self.user.user_id = str(uuid.uuid4())
         self.user.community_terms_accepted = timezone.now()
         self.user.save()
@@ -218,6 +227,20 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 
     def login(self):
         self.client.login(username=self.username, password=self.password)
+
+
+class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
+    """This class should ultimately replace WisdomServiceAPITestCaseBase"""
+
+    def create_user(self):
+        self.user = create_user_with_provider(
+            username=self.username,
+            email=self.email,
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_org_id=1981,
+            social_auth_extra_data={},
+        )
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
@@ -3041,7 +3064,7 @@ class TestFeatureEnableForWcaOnprem(WisdomAppsBackendMocking):
         super().setUp()
         self.username = "u" + "".join(random.choices(string.digits, k=5))
         self.user = create_user_with_provider(
-            USER_SOCIAL_AUTH_PROVIDER_AAP,
+            provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
             rh_org_id=1981,
             social_auth_extra_data={"aap_licensed": True},
         )
