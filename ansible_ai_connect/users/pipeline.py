@@ -17,10 +17,7 @@ import logging
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.urls import reverse
-from django.utils import timezone
-from social_core.exceptions import AuthCanceled, AuthException
-from social_core.pipeline.partial import partial
+from social_core.exceptions import AuthException
 from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
 
@@ -124,41 +121,6 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         "rh_user_is_org_admin": user.rh_user_is_org_admin,
         "external_username": user.external_username,
     }
-
-
-def _terms_of_service(strategy, user, backend, **kwargs):
-    accepted = "terms_accepted"
-    is_commercial = user.rh_user_has_seat
-    if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-        return {accepted: True}
-    # Commercial & local users are not presented with T&C page in login flow (new & existing users)
-    if settings.TERMS_NOT_APPLICABLE or is_commercial:
-        return {accepted: True}
-
-    field_name = "community_terms_accepted"
-    view_name = "community_terms"
-    terms_accepted = strategy.session_get(accepted, None)
-    if getattr(user, field_name, None) is not None:
-        # User had previously accepted, so short-circuit the T&C page.
-        return {accepted: True}
-
-    if terms_accepted is None:
-        # We haven't gone through the flow yet -- go to the T&C page
-        current_partial = kwargs.get("current_partial")
-        return strategy.redirect(f"{reverse(view_name)}?partial_token={current_partial.token}")
-
-    if not terms_accepted:
-        raise AuthCanceled("Terms and conditions were not accepted.")
-
-    # We've accepted the T&C, set the field on the user.
-    setattr(user, field_name, timezone.now())
-    user.save()
-    return {accepted: terms_accepted}
-
-
-@partial
-def terms_of_service(strategy, details, backend, user=None, is_new=False, *args, **kwargs):
-    return _terms_of_service(strategy, user, backend, **kwargs)
 
 
 class AuthAlreadyLoggedIn(AuthException):
