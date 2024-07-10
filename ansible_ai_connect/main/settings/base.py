@@ -147,7 +147,6 @@ COMMERCIAL_DOCUMENTATION_URL = os.getenv(
     "https://access.redhat.com/documentation/en-us/"
     "red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest",
 )
-DOCUMENTATION_URL = os.getenv("DOCUMENTATION_URL") or "https://docs.ai.ansible.redhat.com"
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True

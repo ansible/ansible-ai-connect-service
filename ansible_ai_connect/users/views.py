@@ -63,12 +63,7 @@ class HomeView(TemplateView):
             )
             context["org_has_api_key"] = org_has_api_key
 
-        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW and not (
-            self.request.user.is_authenticated and self.request.user.rh_user_has_seat
-        ):
-            context["documentation_url"] = settings.DOCUMENTATION_URL
-        else:
-            context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
+        context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         return context
 
