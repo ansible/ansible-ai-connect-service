@@ -254,20 +254,6 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIn("https://official_docs", str(r.content))
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(DOCUMENTATION_URL="https://community_docs")
-    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
-    def test_docs_url_for_unseated_user_with_tech_preview(self):
-        self.user = create_user(
-            password=self.password,
-            provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB,
-        )
-        self.client.login(username=self.user.username, password=self.password)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, "pf-c-alert__title", count=1)
-        self.assertIn("https://community_docs", str(r.content))
-
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
@@ -280,13 +266,6 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
         r = self.client.get(reverse("home"))
         self.assertContains(r, "Your organization doesn't have access to Project Name.")
         self.assertIn(settings.COMMERCIAL_DOCUMENTATION_URL, str(r.content))
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(DOCUMENTATION_URL="https://community_docs")
-    def test_docs_url_for_not_logged_in_user_with_tech_preview(self):
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertIn("https://community_docs", str(r.content))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     def test_docs_url_for_not_logged_in_user_without_tech_preview(self):
