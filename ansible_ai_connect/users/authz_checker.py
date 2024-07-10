@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import logging
+import sys
 from abc import abstractmethod
 from datetime import datetime, timedelta
 from http import HTTPStatus
@@ -24,10 +25,52 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django_prometheus.conf import NAMESPACE
-from prometheus_client import Counter
+from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
+
+# from django_prometheus.middleware.DEFAULT_LATENCY_BUCKETS
+DEFAULT_LATENCY_BUCKETS = (
+    0.01,
+    0.025,
+    0.05,
+    0.075,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    1.0,
+    2.5,
+    5.0,
+    7.5,
+    10.0,
+    25.0,
+    50.0,
+    75.0,
+    float("inf"),
+)
+
+authz_token_service_hist = Histogram(
+    "authz_token_latency_seconds",
+    "Histogram of Authz Token API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
+
+authz_ams_get_organization_hist = Histogram(
+    "authz_ams_get_organization_latency_seconds",
+    "Histogram of Authz AMS get organization API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
+
+authz_ams_get_organization_quota_cost_hist = Histogram(
+    "authz_ams_get_organization_quota_cost_latency_seconds",
+    "Histogram of Authz AMS get organization quota_cost API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
 
 authz_token_service_retry_counter = Counter(
     "authz_sso_token_service_retries",
@@ -77,6 +120,15 @@ def fatal_exception(exc) -> bool:
         return False
 
 
+def log_backoff_exception(details):
+    _, exc, _ = sys.exc_info()
+    logger.info(str(exc))
+    logger.info(
+        f"Caught retryable error after {details['tries']} tries. "
+        f"Waiting {details['wait']} more seconds then retrying..."
+    )
+
+
 class Token:
     def __init__(self, client_id, client_secret, server="sso.redhat.com") -> None:
         self._client_id = client_id
@@ -88,7 +140,8 @@ class Token:
         self.timeout = settings.AUTHZ_SSO_TOKEN_SERVICE_TIMEOUT
 
     @staticmethod
-    def on_backoff(_):
+    def on_backoff(details):
+        log_backoff_exception(details)
         authz_token_service_retry_counter.inc()
 
     def refresh(self) -> None:
@@ -107,6 +160,7 @@ class Token:
                 giveup=fatal_exception,
                 on_backoff=self.on_backoff,
             )
+            @authz_token_service_hist.time()
             def post_request():
                 return requests.post(
                     f"{self._server}/auth/realms/redhat-external/protocol/openid-connect/token",
@@ -171,7 +225,8 @@ class AMSCheck(BaseCheck):
             self._session.proxies.update(proxy)
 
     @staticmethod
-    def on_backoff(_):
+    def on_backoff(details):
+        log_backoff_exception(details)
         authz_ams_service_retry_counter.inc()
 
     def update_bearer_token(self):
@@ -201,6 +256,7 @@ class AMSCheck(BaseCheck):
                 giveup=fatal_exception,
                 on_backoff=self.on_backoff,
             )
+            @authz_ams_get_organization_hist.time()
             def get_request():
                 return self._session.get(
                     self._api_server + "/api/accounts_mgmt/v1/organizations",
@@ -210,7 +266,7 @@ class AMSCheck(BaseCheck):
 
             r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT + f" rh_org_id: {rh_org_id}.")
             raise AMSCheck.AMSError()
 
         if r.status_code != HTTPStatus.OK:
@@ -271,7 +327,7 @@ class AMSCheck(BaseCheck):
                 timeout=self.timeout,
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT + f" ams_org_id: {ams_org_id}.")
             return False
 
         if r.status_code != HTTPStatus.OK:
@@ -327,6 +383,7 @@ class AMSCheck(BaseCheck):
                 giveup=fatal_exception,
                 on_backoff=self.on_backoff,
             )
+            @authz_ams_get_organization_quota_cost_hist.time()
             def get_request():
                 return self._session.get(
                     (
@@ -339,7 +396,7 @@ class AMSCheck(BaseCheck):
 
             r = get_request()
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT)
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT + f" ams_org_id: {ams_org_id}.")
             return False
         if r.status_code != HTTPStatus.OK:
             logger.error(

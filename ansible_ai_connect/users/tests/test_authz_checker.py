@@ -30,9 +30,12 @@ from ansible_ai_connect.users.authz_checker import (
     CIAMCheck,
     DummyCheck,
     Token,
+    authz_ams_get_organization_hist,
+    authz_ams_get_organization_quota_cost_hist,
     authz_ams_org_cache_hit_counter,
     authz_ams_rh_org_has_subscription_cache_hit_counter,
     authz_ams_service_retry_counter,
+    authz_token_service_hist,
     authz_token_service_retry_counter,
     fatal_exception,
 )
@@ -85,6 +88,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     @patch("requests.post")
     @assert_call_count_metrics(metric=authz_token_service_retry_counter)
+    @assert_call_count_metrics(metric=authz_token_service_hist)
     @override_settings(AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT=1)
     def test_token_refresh_with_500_status_code(self, m_post):
         m_post.side_effect = HTTPError(
@@ -98,6 +102,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
     @patch("requests.post")
     @assert_call_count_metrics(metric=authz_token_service_retry_counter)
+    @assert_call_count_metrics(metric=authz_token_service_hist)
     @override_settings(AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT=1)
     def test_token_refresh_success_on_retry(self, m_post):
         fail_side_effect = HTTPError(
@@ -167,6 +172,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
             checker.self_test()
 
     @assert_call_count_metrics(metric=authz_ams_org_cache_hit_counter)
+    @assert_call_count_metrics(metric=authz_ams_get_organization_hist)
     def test_ams_get_ams_org(self):
         m_r = Mock()
         m_r.json.return_value = {"items": [{"id": "qwe"}]}
@@ -395,6 +401,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
             )
 
     @assert_call_count_metrics(metric=authz_ams_rh_org_has_subscription_cache_hit_counter)
+    @assert_call_count_metrics(metric=authz_ams_get_organization_quota_cost_hist)
     def test_rh_org_has_subscription(self):
         m_r = Mock()
         m_r.json.side_effect = [
@@ -424,6 +431,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         self.assertEqual(m_r.json.call_count, 0)
 
     @assert_call_count_metrics(metric=authz_ams_service_retry_counter)
+    @assert_call_count_metrics(metric=authz_ams_get_organization_quota_cost_hist)
     def test_rh_org_has_subscription_success_on_retry(self):
         fail_side_effect = HTTPError(
             "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
