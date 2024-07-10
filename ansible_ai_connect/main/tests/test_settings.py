@@ -139,3 +139,7 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
                     "ANSIBLE_AI_MODEL_MESH_MODEL_ID is set and will take precedence", log
                 )
             )
+
+    def test_ansible_ai_model_mesh_model_id_has_no_default(self):
+        settings = self.reload_settings()
+        self.assertIsNone(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID)

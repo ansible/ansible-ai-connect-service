@@ -120,7 +120,6 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
         data = json.loads(r.content)
         self.assert_common_data(data, expected_status, deployed_region)
         timestamp = data["timestamp"]
-        self.assertIsNotNone(data["model_name"])
         dependencies = data.get("dependencies", [])
         self.assertEqual(4, len(dependencies))
         for dependency in dependencies:

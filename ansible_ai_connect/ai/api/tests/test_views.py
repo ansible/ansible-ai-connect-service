@@ -1364,7 +1364,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "wisdom",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)

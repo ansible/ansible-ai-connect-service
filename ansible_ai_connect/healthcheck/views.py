@@ -30,7 +30,6 @@ from health_check.views import MainView
 from rest_framework import permissions
 from rest_framework.views import APIView
 
-from ansible_ai_connect.ai.feature_flags import FeatureFlags
 from ansible_ai_connect.healthcheck.backends import BaseLightspeedHealthCheck
 
 from .version_info import VersionInfo
@@ -69,16 +68,7 @@ class HealthCheckCustomView(MainView):
         return self.render_to_response_json(self.plugins, status_code, request.user)
 
     def render_to_response_json(self, plugins, status, user):  # customize JSON output
-        model_name = settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
-        if settings.LAUNCHDARKLY_SDK_KEY:
-            # Lazy instantiation of FeatureFlags to ensure it honours settings.LAUNCHDARKLY_SDK_KEY
-            model_tuple = FeatureFlags().get("model_name", user, f".:.:{model_name}:.")
-            model_parts = model_tuple.split(":")
-            if len(model_parts) == 4:
-                _, _, model_name, _ = model_parts
-
         data = common_data()
-        data["model_name"] = model_name
         data["status"] = "error" if self.errors else "ok"
 
         dependencies = []
