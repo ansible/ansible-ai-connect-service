@@ -353,7 +353,6 @@ class TestTermsAndConditions(WisdomServiceLogAwareTestCase):
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
-@override_settings(AUTHZ_DUMMY_USERS_WITH_SEAT="seated")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="1981")
 class TestUserSeat(WisdomAppsBackendMocking):
     def setUp(self) -> None:
