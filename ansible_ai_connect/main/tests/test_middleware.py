@@ -36,6 +36,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="DUMMY_KEY_ANALYTICS_VALUE")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="wisdom")
     def test_full_payload(self):
         suggestionId = str(uuid.uuid4())
         activityId = str(uuid.uuid4())
