@@ -50,10 +50,8 @@ CSP_REPORT_ONLY = True
 AUTHZ_BACKEND_TYPE = os.getenv("AUTHZ_BACKEND_TYPE") or "dummy"
 # e.g:
 # AUTHZ_BACKEND_TYPE="dummy"
-# AUTHZ_DUMMY_USERS_WITH_SEAT=gleboude1@redhat.com
 # AUTHZ_DUMMY_RH_ORG_ADMINS=gleboude1@redhat.com
 # note: "*" means that all the users from org with a subscription.
-AUTHZ_DUMMY_USERS_WITH_SEAT = os.getenv("AUTHZ_DUMMY_USERS_WITH_SEAT", "")
 AUTHZ_DUMMY_RH_ORG_ADMINS = os.getenv("AUTHZ_DUMMY_RH_ORG_ADMINS", "")
 # You can get your account number on this page
 # https://www.redhat.com/wapps/ugc/protected/account.html
