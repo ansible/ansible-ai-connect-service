@@ -25,8 +25,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
-AUTHZ_SSO_PATTERN = r"^sso.(.+\.)?redhat.com$"
-AUTHZ_API_PATTERN = r"^api.(.+\.)?openshift.com$"
+AUTHZ_SSO_PATTERN = r"^sso\.(.+\.)?redhat.com$"
+AUTHZ_API_PATTERN = r"^api\.(.+\.)?openshift.com$"
 
 
 class AuthzURLError(URLError):
