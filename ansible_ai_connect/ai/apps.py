@@ -86,6 +86,12 @@ class AiConfig(AppConfig):
             self.model_mesh_client = OllamaClient(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
             )
+        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "aws_sagemaker":
+            from .api.model_client.aws_sagemaker_client import AWSSageMakerClient
+
+            self.model_mesh_client = AWSSageMakerClient(
+                inference_url=settings.ANSIBLE_AI_MODEL_MESH_INFERENCE_URL,
+            )
         else:
             raise ValueError(
                 f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
