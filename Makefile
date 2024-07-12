@@ -125,8 +125,12 @@ create-cachetable: migrate
 create-superuser: create-cachetable
 	wisdom-manage createsuperuser --noinput --username admin --email admin@example.com
 
+.PHONY: create-testuser
+create-testuser: create-superuser
+	wisdom-manage createtoken --username testuser --password testuser --token-name testuser_token --create-user
+
 .PHONY: create-application
-create-application: create-superuser
+create-application: create-testuser
 	wisdom-manage createapplication --name "${ANSIBLE_AI_PROJECT_NAME} for VS Code" --client-id Vu2gClkeR5qUJTUGHoFAePmBznd6RZjDdy5FW2wy  --redirect-uris "vscode://redhat.ansible"   public authorization-code
 
 .PHONY: test
