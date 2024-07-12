@@ -27,7 +27,7 @@ from ansible_ai_connect.ai.api.model_client.grpc_client import GrpcClient
 from ansible_ai_connect.ai.api.model_client.http_client import HttpClient
 from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
 
-from .test_views import WisdomServiceAPITestCaseBase
+from .test_views import WisdomServiceAPITestCaseBaseOIDC
 
 
 def mock_timeout_error():
@@ -36,7 +36,9 @@ def mock_timeout_error():
     return e
 
 
-class TestApiTimeout(WisdomServiceAPITestCaseBase):
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestApiTimeout(WisdomServiceAPITestCaseBaseOIDC):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none(self):
         model_client = HttpClient(inference_url="http://example.com/")
@@ -82,7 +84,6 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         model_client = WCAClient(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("requests.Session.post", side_effect=ReadTimeout())
     def test_timeout_http_timeout(self, _):
         self.client.force_authenticate(user=self.user)
@@ -101,7 +102,6 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
             )
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("grpc._channel._UnaryUnaryMultiCallable.__call__", side_effect=mock_timeout_error())
     def test_timeout_grpc_timeout(self, _):
         self.client.force_authenticate(user=self.user)
