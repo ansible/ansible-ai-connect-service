@@ -33,19 +33,19 @@ from ansible_ai_connect.users.constants import (
 from ansible_ai_connect.users.tests.test_users import create_user
 
 
-def create_user_with_provider(user_provider, **kwargs):
+def create_user_with_provider(**kwargs):
+    kwargs.setdefault("username", "test_user_name")
+    kwargs.setdefault("password", "test_passwords")
+    kwargs.setdefault("provider", USER_SOCIAL_AUTH_PROVIDER_OIDC)
+    kwargs.setdefault("external_username", "anexternalusername")
     return create_user(
-        username="test_user_name",
-        password="test_passwords",
-        provider=user_provider,
-        external_username="anexternalusername",
         **kwargs,
     )
 
 
 class LogoutTest(TestCase):
     def test_rht_sso_redirect(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
 
         response = self.client.get(reverse("logout"))
@@ -57,7 +57,7 @@ class LogoutTest(TestCase):
         )
 
     def test_gh_sso_redirect(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_GITHUB)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.client.force_login(user)
 
         response = self.client.get(reverse("logout"))
@@ -65,7 +65,7 @@ class LogoutTest(TestCase):
 
     @override_settings(AAP_API_URL="http://aap/api")
     def test_aap_sso_redirect(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_AAP)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_AAP)
         self.client.force_login(user)
 
         response = self.client.get(reverse("logout"))

@@ -280,14 +280,14 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
 class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
     def test_redirect(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, "/trial/")
 
     def test_accept_trial_terms(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
@@ -298,7 +298,7 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn('accept_trial_terms" checked', str(r.content))
 
     def test_accept_trial_without_terms(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
@@ -309,7 +309,7 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn("Information alert", str(r.content))
 
     def test_accept_trial(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
@@ -325,8 +325,8 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertTrue(user.userplan_set.first().expired_at)
 
     @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
-    def test__no_trial_for_you(self):
-        user = create_user_with_provider(USER_SOCIAL_AUTH_PROVIDER_OIDC)
+    def test_no_trial_for_you(self):
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 200)  # No redirect

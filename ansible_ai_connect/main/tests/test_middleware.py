@@ -26,17 +26,30 @@ from segment import analytics
 
 from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
-    WisdomServiceAPITestCaseBase,
+    WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBaseOIDC,
 )
 
 
-class TestMiddleware(WisdomServiceAPITestCaseBase):
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+def dummy_redact_seated_users_data(event, allow_list):
+    return event
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
+@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="wisdom")
+class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC):
+
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="DUMMY_KEY_ANALYTICS_VALUE")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="wisdom")
+    @patch(
+        "ansible_ai_connect.ai.api.utils.segment.redact_seated_users_data",
+        dummy_redact_seated_users_data,
+    )
     def test_full_payload(self):
         suggestionId = str(uuid.uuid4())
         activityId = str(uuid.uuid4())
@@ -63,6 +76,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
+
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config("ai"),
@@ -138,7 +152,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
                 self.assertNotInLog("username", log)
                 self.assertSegmentTimestamp(log)
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @patch(
         "ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process.fmtr.preprocess",
@@ -160,7 +173,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             )
             self.assertSegmentTimestamp(log)
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_segment_error(self):
         payload = {
@@ -207,7 +219,6 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.max_retries = analytics.Client.DefaultConfig.max_retries
             analytics.send = False
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_204_empty_response(self):
         payload = {
@@ -256,6 +267,10 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             analytics.send = False
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @patch(
+        "ansible_ai_connect.ai.api.utils.segment.redact_seated_users_data",
+        dummy_redact_seated_users_data,
+    )
     def test_segment_error_with_data_exceeding_limit(self):
         prompt = """---
 - hosts: localhost
@@ -295,6 +310,7 @@ class TestMiddleware(WisdomServiceAPITestCaseBase):
             "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
+
         self.client.force_authenticate(user=self.user)
 
         with patch.object(

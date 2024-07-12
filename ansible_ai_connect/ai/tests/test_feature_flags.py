@@ -20,10 +20,10 @@ from django.test import override_settings
 from ldclient.config import Config
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
 
 
-class TestFeatureFlags(WisdomServiceAPITestCaseBase):
+class TestFeatureFlags(WisdomServiceAPITestCaseBaseOIDC):
     def setUp(self):
         super().setUp()
         feature_flags.FeatureFlags.instance = None
