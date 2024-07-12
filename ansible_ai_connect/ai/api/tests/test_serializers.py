@@ -236,10 +236,6 @@ class FeedbackRequestSerializerTest(TestCase):
             },
         )
 
-        # inlineSuggestion feedback raises exception when seat
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
-
         # inlineSuggestion feedback raises exception when seat and not telemetry enabled
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
