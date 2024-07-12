@@ -63,6 +63,17 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "timestamp": None,
     },
+    "inlineSuggestionFeedback": {
+        "action": None,
+        "suggestionId": None,
+        "modelName": None,
+        "imageTags": None,
+        "hostname": None,
+        "groups": None,
+        "rh_user_has_seat": None,
+        "rh_user_org_id": None,
+        "timestamp": None,
+    },
     "prediction": {
         "duration": None,
         "exception": None,

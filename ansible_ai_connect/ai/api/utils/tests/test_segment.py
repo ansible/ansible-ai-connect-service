@@ -166,11 +166,11 @@ class TestSegment(TestCase):
         }
 
         with self.assertLogs(logger="root") as log:
-            send_segment_event(event, "inlineSuggestionFeedback", user)
+            send_segment_event(event, "someUnallowedFeedback", user)
             self.assertEqual(
                 log.output[0],
                 "ERROR:ansible_ai_connect.ai.api.utils.segment:It is not allowed to track"
-                + " inlineSuggestionFeedback events for seated users",
+                + " someUnallowedFeedback events for seated users",
             )
 
     @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
