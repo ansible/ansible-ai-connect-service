@@ -75,37 +75,6 @@ class BlockWCANotReadyButTrialAvailable(permissions.BasePermission):
         return CONTINUE if org_has_api_key else BLOCK
 
 
-# See: https://issues.redhat.com/browse/AAP-18386
-class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
-    """
-    Block access to seat-less user from of WCA-ready Commercial Org.
-    """
-
-    code = "permission_denied__org_ready_user_has_no_seat"
-    message = (
-        f"Org's {settings.ANSIBLE_AI_PROJECT_NAME} subscription is active but user has no seat."
-    )
-
-    def has_permission(self, request, view):
-        user = request.user
-        if user.organization is None:
-            # We accept the Community users, the won't have access to WCA
-            return CONTINUE
-        if user.rh_user_has_seat is True:
-            return CONTINUE
-
-        # accept user with active Trial period
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in request.user.userplan_set.all()
-        ):
-            return CONTINUE
-
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
-        return BLOCK if org_has_api_key else CONTINUE
-
-
-# See: https://issues.redhat.com/browse/AAP-18386
 class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
     """
     Block access to seated users if the WCA key was not set yet.
@@ -144,8 +113,6 @@ class BlockUserWithoutSeat(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
-        if settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-            return CONTINUE
 
         # If the user has an active Trial, we continue
         if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
