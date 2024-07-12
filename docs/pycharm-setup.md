@@ -17,7 +17,7 @@ The instructions presented here were tested using
 > [!NOTE]
 > If you install Python on Fedora (or probably on other Linix distributions),
 > you need to install the development package as well.  For Fedora, run
-> 
+>
 >   `sudo dnf install python3.11 python3.11-devel`
 
 > [!NOTE] Content Matching and Playbook Generation/Explanation features are not available with
@@ -164,7 +164,7 @@ setup of an authentication application is needed.
 >
 > You can override the default password by defining the `DJANGO_SUPERUSER_PASSWORD`
 > environment variable before running the command.
-> 
+>
 > For changing username and/or password for the test user, please edit `Makefile`.
 
 
@@ -202,10 +202,10 @@ DEPLOYMENT_MODE=upstream
 ```
 
 > [!TIP]
-> The example shown above uses local Ollama server with Mistral 7B Instruct model. 
-> For using a other type of model server that provides prediction results, 
-> you need to set extra environment variables for a client type that is used 
-> to connect to the model server. 
+> The example shown above uses local Ollama server with Mistral 7B Instruct model.
+> For using a other type of model server that provides prediction results,
+> you need to set extra environment variables for a client type that is used
+> to connect to the model server.
 
 ### runserver configuration
 
@@ -260,7 +260,7 @@ Then run `runserver` in Debug mode with PyCharms Run > Debug… menu. Console ou
 
 ```bash
 import sys; print('Python %s on %s' % (sys.version, sys.platform))
-/home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/bin/python -X pycache_prefix=/home/ttakamiy/.cache/JetBrains/PyCharmCE2024.1/cpython-cache /home/ttakamiy/.local/share/JetBrains/Toolbox/apps/pycharm-community/plugins/python-ce/helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client 127.0.0.1 --port 35229 --file /home/ttakamiy/git/ansible/ansible-ai-connect-service/ansible_ai_connect/manage.py runserver --noreload 
+/home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/bin/python -X pycache_prefix=/home/ttakamiy/.cache/JetBrains/PyCharmCE2024.1/cpython-cache /home/ttakamiy/.local/share/JetBrains/Toolbox/apps/pycharm-community/plugins/python-ce/helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client 127.0.0.1 --port 35229 --file /home/ttakamiy/git/ansible/ansible-ai-connect-service/ansible_ai_connect/manage.py runserver --noreload
 Connected to pydev debugger (build 241.18034.82)
 /home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/lib/python3.11/site-packages/langchain/llms/__init__.py:548: LangChainDeprecationWarning: Importing LLMs from langchain is deprecated. Importing from langchain will no longer be supported as of langchain==0.2.0. Please import from langchain-community instead:
 `from langchain_community.llms import Ollama`.
@@ -279,7 +279,7 @@ If you open your web browser and point to [http://127.0.0.1:8000/](http://localh
 
 ![](images/pycharm-image5.png)
 
-Instead clicking on the Login button here, open VSCode, 
+Instead clicking on the Login button here, open VSCode,
 install Ansible Plugin, and configure Lightspeed URL
 to [http://127.0.0.1:8000/](http://localhost:8000/) (note it's http, not https)
 
@@ -316,7 +316,7 @@ On VS Code, click **Open** to open the URI.
 ![](images/pycharm-image18.png)
 
 If the connection is established successfully, you will see username (`testuser`) on the sidebar
-of VS Code. 
+of VS Code.
 
 
 ![](images/pycharm-image19.png)
