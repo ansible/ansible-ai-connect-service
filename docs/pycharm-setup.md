@@ -1,12 +1,12 @@
 # PyCharm Debug Setup for Ansible AI Connect Service
 
-By Tami Takamiya (last update: 2024.6.28)
+By Tami Takamiya (last update: 2024.7.12)
 
 ## Summary
 
 This is a memo on how to debug Ansible AI Connect service using PyCharm. Even though
-descriptions here are very specific to PyCharm, they should be able to
-be applied to other environments, e.g. VSCode + MacOS with minor modifications.
+descriptions here are very specific to PyCharm, you should be able to
+apply them to other environments, e.g. VSCode + MacOS with minor modifications.
 
 The instructions presented here were tested using
 - PyCharm 2024.1.4 (Community Edition),
@@ -22,13 +22,6 @@ The instructions presented here were tested using
 
 > [!NOTE] Content Matching and Playbook Generation/Explanation features are not available with
 > this setup.
-
-
-> [!NOTE]
-> If you install Python on Fedora (or probably on other Linix distributions),
-> you need to install the development package as well.  For Fedora, run
-> 
->   `sudo dnf install python3.11 python3.11-devel`
 
 ## Setup for Development
 
@@ -105,16 +98,20 @@ podman volume ls -q | xargs podman volume rm
 
 Although this instruction is for running Django service from source, you may want to run Django service
 from podman-compose (or docker-compose) using [tools/docker-compose/compose.yaml](../tools/docker-compose/compose.yaml) file.
-For running Django service from the compose file, you need to run following three chcon commands:
+For running Django service from the compose file, you need to run following chcon command:
 
 ```bash
 chcon -t container_file_t -R ansible_ai_connect/
+```
+
+Also for running Prometheus from the compose file, you need to run the followng:
+```bash
 chcon -t container_file_t -R prometheus/
 ```
 
 ## PyCharm Python Setup
 
-As of writing this (2024.6.28), the project is using Python version 3.11. It is recommended to use a separate virtual environment for your development. It can be configured with
+As of writing this (2024.7.12), the project is using Python version 3.11. It is recommended to use a separate virtual environment for your development. It can be configured with
 
 1. Go to Settings page (on Linux it is File > Settings)
 2. Open Project: ansible-ai-connect-service > Python Interpreter and click Add Interpreter
@@ -297,10 +294,14 @@ Click **Allow** to sign in:
 
 ![](images/pycharm-image7.png)
 
-then you will see the login screen with the "Log in with GitHub" button.
-Click the button and it will guide you to the Terms of Use page, etc.
+then you will see the login screen.
+Type Username/Password = testuser/testuser, then click the login button
+
+> [!NOTE] Your browser may complain that the password is too simple  😀
+
 
 ![](images/pycharm-image3.png)
+
 
 Click **Authorize** on the Authorize Aunsible AI Connect for VS Code popup.
 
