@@ -42,21 +42,10 @@ postprocess_hist = Histogram(
 )
 
 
-def get_ansible_lint_caller(user):
-    """check for commercial users for lint processing"""
-    is_commercial = user.rh_user_has_seat
-    if is_commercial:
-        ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
-        if not ansible_lint_caller:
-            logger.warn(
-                "skipped ansible lint post processing because ansible lint was not initialized"
-            )
-    else:
-        ansible_lint_caller = None
-        logger.debug(
-            "skipped ansible lint post processing as lint processing is allowed for"
-            " Commercial Users only!"
-        )
+def get_ansible_lint_caller():
+    ansible_lint_caller = apps.get_app_config("ai").get_ansible_lint_caller()
+    if not ansible_lint_caller:
+        logger.warn("skipped ansible lint post processing because ansible lint was not initialized")
     return ansible_lint_caller
 
 
@@ -149,7 +138,7 @@ def completion_post_process(context: CompletionContext):
     if not ari_caller:
         logger.warning("skipped ari post processing because ari was not initialized")
 
-    ansible_lint_caller = get_ansible_lint_caller(user)
+    ansible_lint_caller = get_ansible_lint_caller()
 
     exception = None
 

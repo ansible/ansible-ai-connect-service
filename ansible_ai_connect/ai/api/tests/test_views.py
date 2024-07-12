@@ -1140,58 +1140,6 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                         )
                     self.assertIsNotNone(event["timestamp"])
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_payload_with_ansible_lint_without_commercial(self):
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
-            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="WARN"):
-            with patch.object(
-                apps.get_app_config("ai"),
-                "model_mesh_client",
-                MockedMeshClient(self, payload, response_data),
-            ):
-                r = self.client.post(reverse("completions"), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data["predictions"])
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_full_payload_without_ansible_lint_without_commercial(self):
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
-            "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
-        }
-        self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config("ai"),
-            "model_mesh_client",
-            MockedMeshClient(self, payload, response_data),
-        ):
-            with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data["predictions"])
-                self.assertInLog(
-                    "skipped ansible lint post processing as lint processing is allowed"
-                    " for Commercial Users only!",
-                    log,
-                )
-                self.assertSegmentTimestamp(log)
-
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ansible_lint_with_commercial_user(self):
