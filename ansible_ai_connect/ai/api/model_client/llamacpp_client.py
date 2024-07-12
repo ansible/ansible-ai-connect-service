@@ -33,7 +33,7 @@ class LlamaCPPClient(ModelMeshClient):
         self.headers = {"Content-Type": "application/json"}
 
     def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
-        model_id = self.get_model_id(None, model_id)
+        model_id = self.get_model_id(request.user, None, model_id)
         self._prediction_url = f"{self._inference_url}/completion"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")

@@ -14,7 +14,7 @@
 
 import json
 from textwrap import indent
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
@@ -46,5 +46,5 @@ class TestOllama(TestCase):
 
         m_ollama.return_value = final
         model_client = OllamaClient("http://localhost")
-        response = model_client.infer(None, self.model_input, model_id="test")
+        response = model_client.infer(request=Mock(), model_input=self.model_input, model_id="test")
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
