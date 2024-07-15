@@ -1359,7 +1359,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
     def test_feedback_full_payload(self):
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/user/ansible.yaml",
                 "action": "0",
@@ -1369,7 +1368,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "content": "---\n- hosts: all\n  become: yes\n\n  "
                 "tasks:\n    - name: Install Apache\n",
                 "documentUri": "file:///home/user/ansible.yaml",
-                "activityId": str(uuid.uuid4()),
                 "trigger": "0",
             },
             "sentimentFeedback": {
@@ -1418,7 +1416,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
     def test_feedback_segment_events(self):
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/user/ansible.yaml",
                 "action": "0",
@@ -1456,7 +1453,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         model_name = str(uuid.uuid4())
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/user/ansible.yaml",
                 "action": "0",
@@ -1482,7 +1478,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
 
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/user/ansible.yaml",
                 "action": "0",
@@ -1515,7 +1510,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
 
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/user/ansible.yaml",
                 "action": "0",
@@ -1544,7 +1538,6 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
     def test_feedback_segment_inline_suggestion_feedback_error(self):
         payload = {
             "inlineSuggestion": {
-                "latency": 1000,
                 "userActionTime": 3500,
                 "documentUri": "file:///home/rbobbitt/ansible.yaml",
                 "action": "3",  # invalid choice for action

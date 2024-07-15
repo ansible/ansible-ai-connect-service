@@ -247,12 +247,10 @@ class Feedback(APIView):
 
         if inline_suggestion_data:
             event = {
-                "latency": inline_suggestion_data.get("latency"),
                 "userActionTime": inline_suggestion_data.get("userActionTime"),
                 "action": inline_suggestion_data.get("action"),
                 "suggestionId": str(inline_suggestion_data.get("suggestionId", "")),
                 "modelName": model_name,
-                "activityId": str(inline_suggestion_data.get("activityId", "")),
                 "exception": exception is not None,
             }
             send_segment_event(event, "inlineSuggestionFeedback", user)
