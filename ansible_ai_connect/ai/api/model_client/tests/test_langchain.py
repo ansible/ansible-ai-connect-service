@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from textwrap import dedent
+from unittest.mock import Mock
 
 from django.test import TestCase
 from langchain.llms.fake import FakeListLLM
@@ -117,17 +118,19 @@ class TestLangChainClient(TestCase):
 
     def test_generate_playbook(self):
         playbook, outline = self.my_client.generate_playbook(
-            None,
+            request=Mock(),
             text="foo",
         )
         self.assertEqual(playbook, "my_playbook")
         self.assertEqual(outline, "")
 
     def test_generate_playbook_with_outline(self):
-        playbook, outline = self.my_client.generate_playbook(None, text="foo", create_outline=True)
+        playbook, outline = self.my_client.generate_playbook(
+            request=Mock(), text="foo", create_outline=True
+        )
         self.assertEqual(playbook, "my_playbook")
         self.assertEqual(outline, "my outline")
 
     def test_explain_playbook(self):
-        explanation = self.my_client.explain_playbook(None, content="foo")
+        explanation = self.my_client.explain_playbook(request=Mock(), content="foo")
         self.assertTrue(explanation)

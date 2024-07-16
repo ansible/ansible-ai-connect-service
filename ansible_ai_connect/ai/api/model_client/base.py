@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from django.conf import settings
 
@@ -22,6 +22,11 @@ from ansible_ai_connect.healthcheck.backends import (
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
 )
+
+if TYPE_CHECKING:
+    from ansible_ai_connect.users.models import User
+else:
+    User = None
 
 
 class ModelMeshClient:
@@ -34,7 +39,7 @@ class ModelMeshClient:
     def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
         pass
 
-    def codematch(self, model_input, model_id):
+    def codematch(self, request, model_input, model_id):
         raise NotImplementedError
 
     def set_inference_url(self, inference_url):
@@ -42,6 +47,7 @@ class ModelMeshClient:
 
     def get_model_id(
         self,
+        user: User,
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:

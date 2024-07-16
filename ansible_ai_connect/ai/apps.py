@@ -169,7 +169,7 @@ class AiConfig(AppConfig):
 
         return self._wca_secret_manager
 
-    def get_ansible_lint_caller(self):
+    def get_ansible_lint_caller(self) -> lintpostprocessing.AnsibleLintCaller | None:
         if self._ansible_lint_caller:
             return self._ansible_lint_caller
         if not settings.ENABLE_ANSIBLE_LINT_POSTPROCESS:

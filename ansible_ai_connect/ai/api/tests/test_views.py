@@ -98,6 +98,7 @@ from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
+from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,7 @@ class MockedMeshClient(ModelMeshClient):
 
     def get_model_id(
         self,
+        user: User = None,
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:

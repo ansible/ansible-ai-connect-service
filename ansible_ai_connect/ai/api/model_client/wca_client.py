@@ -17,7 +17,7 @@ import json
 import logging
 import sys
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 import backoff
 import requests
@@ -63,6 +63,11 @@ from .exceptions import (
     WcaTokenFailure,
     WcaUsernameNotFound,
 )
+
+if TYPE_CHECKING:
+    from ansible_ai_connect.users.models import User
+else:
+    User = None
 
 MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
@@ -165,6 +170,7 @@ class DummyWCAClient(ModelMeshClient):
 
     def get_model_id(
         self,
+        user: User,
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
@@ -249,8 +255,8 @@ class BaseWCAClient(ModelMeshClient):
         prompt = unify_prompt_ending(prompt)
 
         try:
-            api_key = self.get_api_key(organization_id)
-            model_id = self.get_model_id(organization_id, model_id)
+            api_key = self.get_api_key(request.user, organization_id)
+            model_id = self.get_model_id(request.user, organization_id, model_id)
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
@@ -311,17 +317,17 @@ class BaseWCAClient(ModelMeshClient):
         return response
 
     @abstractmethod
-    def get_api_key(self, organization_id: Optional[int]) -> str:
+    def get_api_key(self, user, organization_id: Optional[int]) -> str:
         raise NotImplementedError
 
-    def codematch(self, model_input, model_id: str = ""):
+    def codematch(self, request, model_input, model_id: str = ""):
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
         suggestions = model_input.get("suggestions", "")
         organization_id = model_input.get("organization_id", None)
 
-        model_id = self.get_model_id(organization_id, model_id)
+        model_id = self.get_model_id(request.user, organization_id, model_id)
 
         data = {
             "model_id": model_id,
@@ -331,7 +337,7 @@ class BaseWCAClient(ModelMeshClient):
         logger.debug(f"Codematch API request payload: {data}")
 
         try:
-            api_key = self.get_api_key(organization_id)
+            api_key = self.get_api_key(request.user, organization_id)
             headers = self.get_codematch_headers(api_key)
             suggestion_count = len(suggestions)
 
@@ -426,7 +432,12 @@ class WCAClient(BaseWCAClient):
 
         return response.json()
 
-    def get_api_key(self, organization_id: Optional[int]) -> str:
+    def get_api_key(self, user, organization_id: Optional[int]) -> str:
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
+            up.is_active for up in user.userplan_set.all()
+        ):
+            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY
+
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -453,9 +464,18 @@ class WCAClient(BaseWCAClient):
 
     def get_model_id(
         self,
+        user,
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
+            # NOTE: I'm not sure why the same call in get_api_key() passes
+            # just fine.
+            up.is_active
+            for up in user.userplan_set.all()  # noqa: E501 # pyright: ignore[reportAttributeAccessIssue]
+        ):
+            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID
+
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
@@ -547,8 +567,8 @@ class WCAClient(BaseWCAClient):
         generation_id: str = "",
     ) -> tuple[str, str]:
         organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(organization_id)
-        model_id = self.get_model_id(organization_id)
+        api_key = self.get_api_key(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id)
 
         headers = self.get_request_headers(api_key, generation_id)
         data = {
@@ -592,15 +612,18 @@ class WCAClient(BaseWCAClient):
         playbook = response["playbook"]
         outline = response["outline"]
 
-        if ansible_lint_caller := apps.get_app_config("ai").get_ansible_lint_caller():
+        from ansible_ai_connect.ai.apps import AiConfig
+
+        ai_config = cast(AiConfig, apps.get_app_config("ai"))
+        if ansible_lint_caller := ai_config.get_ansible_lint_caller():
             playbook = ansible_lint_caller.run_linter(playbook)
 
         return playbook, outline
 
     def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
         organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(organization_id)
-        model_id = self.get_model_id(organization_id)
+        api_key = self.get_api_key(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
         data = {
@@ -650,11 +673,12 @@ class WCAOnPremClient(BaseWCAClient):
         # ANSIBLE_AI_MODEL_MESH_MODEL_ID cannot be validated until runtime. The
         # User may provide an override value if the Environment Variable is not set.
 
-    def get_api_key(self, organization_id: Optional[int]) -> str:
+    def get_api_key(self, user, organization_id: Optional[int]) -> str:
         return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
 
     def get_model_id(
         self,
+        user,
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:

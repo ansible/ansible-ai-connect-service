@@ -235,7 +235,7 @@ class Feedback(APIView):
             org_id = getattr(user, "org_id", None)
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
             model_name = model_mesh_client.get_model_id(
-                org_id, str(validated_data.get("model", ""))
+                user, org_id, str(validated_data.get("model", ""))
             )
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
@@ -409,7 +409,7 @@ class ContentMatches(GenericAPIView):
 
         try:
             response_serializer = self.perform_content_matching(
-                model_id, suggestion_id, request.user, request_data
+                request, model_id, suggestion_id, request_data
             )
             return Response(response_serializer.data, status=rest_framework_status.HTTP_200_OK)
         except Exception:
@@ -418,18 +418,18 @@ class ContentMatches(GenericAPIView):
 
     def perform_content_matching(
         self,
+        request,
         model_id: str,
         suggestion_id: str,
-        user: User,
         request_data,
     ):
         model_mesh_client = apps.get_app_config("ai").model_mesh_client
-        user_id = user.uuid
+        user_id = request.user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get("suggestions", []),
             "user_id": str(user_id) if user_id else None,
-            "rh_user_has_seat": user.rh_user_has_seat,
-            "organization_id": user.org_id,
+            "rh_user_has_seat": request.user.rh_user_has_seat,
+            "organization_id": request.user.org_id,
             "suggestionId": suggestion_id,
         }
         logger.debug(
@@ -444,7 +444,9 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            model_id, client_response = model_mesh_client.codematch(content_match_data, model_id)
+            model_id, client_response = model_mesh_client.codematch(
+                request, content_match_data, model_id
+            )
 
             response_data = {"contentmatches": []}
 
@@ -556,7 +558,7 @@ class ContentMatches(GenericAPIView):
                     model_id = model_id_in_exception
             if event:
                 event["modelName"] = model_id
-                send_segment_event(event, event_name, user)
+                send_segment_event(event, event_name, request.user)
             else:
                 self.write_to_segment(
                     request_data,
@@ -566,7 +568,7 @@ class ContentMatches(GenericAPIView):
                     model_id,
                     response_serializer.data if response_serializer else {},
                     suggestion_id,
-                    user,
+                    request.user,
                 )
 
         return response_serializer
@@ -741,7 +743,7 @@ class Explanation(APIView):
         model_name = ""
         try:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user.org_id, "")
+            model_name = model_mesh_client.get_model_id(user, user.org_id, "")
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
 
@@ -925,7 +927,7 @@ class Generation(APIView):
         model_name = ""
         try:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user.org_id, "")
+            model_name = model_mesh_client.get_model_id(user, user.org_id, "")
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
         event = {

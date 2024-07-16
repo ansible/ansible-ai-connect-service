@@ -91,7 +91,7 @@ class LangChainClient(ModelMeshClient):
         raise NotImplementedError
 
     def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
-        model_id = self.get_model_id(None, model_id)
+        model_id = self.get_model_id(request.user, None, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
@@ -159,7 +159,7 @@ class LangChainClient(ModelMeshClient):
             unwrap_playbook_answer,
         )
 
-        model_id = self.get_model_id(None, "")
+        model_id = self.get_model_id(request.user, None, "")
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
@@ -200,7 +200,7 @@ class LangChainClient(ModelMeshClient):
         {playbook}"
         """
 
-        model_id = self.get_model_id(None, "")
+        model_id = self.get_model_id(request.user, None, "")
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(

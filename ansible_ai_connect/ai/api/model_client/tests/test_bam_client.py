@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import json
+from unittest.mock import Mock
 
 import responses
 from django.test import TestCase, override_settings
@@ -87,5 +88,5 @@ class TestBam(TestCase):
             },
         )
 
-        response = model_client.infer(None, self.model_input, model_id=model)
+        response = model_client.infer(request=Mock(), model_input=self.model_input, model_id=model)
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
