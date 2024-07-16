@@ -289,8 +289,14 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         model_client.get_model_id = Mock(return_value="a-random-model")
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
-        with self.assertRaises(HTTPError):
+        with (
+            self.assertRaises(HTTPError),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.wca_client", level="INFO"
+            ) as log,
+        ):
             model_client.generate_playbook(request, text="Install Wordpress", create_outline=True)
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp(self):
@@ -308,8 +314,14 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         model_client.get_model_id = Mock(return_value="a-random-model")
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
-        with self.assertRaises(HTTPError):
+        with (
+            self.assertRaises(HTTPError),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.wca_client", level="INFO"
+            ) as log,
+        ):
             model_client.explain_playbook(request, content="Some playbook")
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen_no_org(self):
@@ -439,8 +451,14 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def test_get_token_http_error(self):
         model_client = WCAClient(inference_url="http://example.com/")
         model_client.session.post = Mock(side_effect=HTTPError(404))
-        with self.assertRaises(WcaTokenFailure):
+        with (
+            self.assertRaises(WcaTokenFailure),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.wca_client", level="INFO"
+            ) as log,
+        ):
             model_client.get_token("api-key")
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer(self):
@@ -593,13 +611,19 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
-        with self.assertRaises(WcaInferenceFailure) as e:
+        with (
+            self.assertRaises(WcaInferenceFailure) as e,
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.wca_client", level="INFO"
+            ) as log,
+        ):
             model_client.infer(
                 request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
                 suggestion_id=DEFAULT_REQUEST_ID,
             )
+            self.assertInLog("Caught retryable error after 1 tries.", log)
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
@@ -933,8 +957,14 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.session.post = Mock(side_effect=HTTPError(404))
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
-        with self.assertRaises(WcaCodeMatchFailure) as e:
+        with (
+            self.assertRaises(WcaCodeMatchFailure) as e,
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.wca_client", level="INFO"
+            ) as log,
+        ):
             model_client.codematch(model_input=model_input, model_id=model_id)
+            self.assertInLog("Caught retryable error after 1 tries.", log)
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
