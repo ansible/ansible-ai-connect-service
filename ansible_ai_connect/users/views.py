@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import logging
+from textwrap import dedent
 
 from django.apps import apps
 from django.conf import settings
@@ -143,6 +144,7 @@ class MarkdownCurrentUserView(RetrieveAPIView):
         serializer = self.get_serializer(instance)
         user_data = serializer.data
 
+        markdown_value = ""
         # Enrich with Organisational data, if necessary
         userTypeLabel = ""
         if "rh_org_has_subscription" in user_data:
@@ -150,16 +152,29 @@ class MarkdownCurrentUserView(RetrieveAPIView):
                 userTypeLabel = "Licensed"
             else:
                 userTypeLabel = "Unlicensed"
-        else:
-            userTypeLabel = "Not logged in"
-        # Construct a Markdown response
-        markdown_value = (
-            f"Logged in as: {user_data['username']} ({userTypeLabel.lower()})\n\n"
-            f"User Type: {userTypeLabel}\n"
-        )
-        markdown_response = {"content": markdown_value}
+            markdown_value = f"""
+            Logged in as: {user_data['username']}
 
-        return Response(markdown_response, content_type="application/json")
+            - User Type: {userTypeLabel}
+            """
+
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+            for up in request.user.userplan_set.all():
+                if up.is_active:
+                    expired_at = up.expired_at.strftime("%Y-%m-%d")
+                    markdown_value = f"""
+                    Logged in as: {user_data['username']}
+
+                    - User Type: Trial
+                    - Plan: {up.plan.name}
+                    - Expiration: {expired_at}
+                    """
+                    break
+
+        # Construct a Markdown response
+        response = {"content": dedent(markdown_value).strip()}
+
+        return Response(response, content_type="application/json")
 
 
 class TermsOfService(TemplateView):
