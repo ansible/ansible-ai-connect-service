@@ -193,7 +193,6 @@ class CompletionResponseSerializer(serializers.Serializer):
 class InlineSuggestionFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
 
-    latency = serializers.FloatField(required=False)
     userActionTime = serializers.FloatField(required=False)
     documentUri = AnonymizedCharField(required=False)
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES)
@@ -203,12 +202,6 @@ class InlineSuggestionFeedback(serializers.Serializer):
         required=True,
         label="Suggestion ID",
         help_text="A UUID that identifies a suggestion.",
-    )
-    activityId = serializers.UUIDField(
-        format="hex_verbose",
-        required=False,
-        label="Activity ID",
-        help_text="A UUID that identifies a user activity session to the document uploaded.",
     )
 
 
@@ -322,11 +315,10 @@ class PlaybookExplanationFeedback(serializers.Serializer):
             summary="Feedback Request sample for inline suggestion "
             "to identify if the suggestion is accepted or ignored.",
             description="A valid inline suggestion feedback sample "
-            "request to get details about the suggestion like latency time, "
+            "request to get details about the suggestion like "
             "user decision time, user action and suggestion id.",
             value={
                 "inlineSuggestion": {
-                    "latency": 1000,
                     "userActionTime": 5155,
                     "action": "0",
                     "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
