@@ -95,10 +95,11 @@ class TestToken(WisdomServiceLogAwareTestCase):
             "Internal Server Error", response=Mock(status_code=500, text="Internal Server Error")
         )
 
-        with self.assertLogs(logger="root", level="ERROR") as log:
+        with self.assertLogs(logger="ansible_ai_connect.users.authz_checker", level="INFO") as log:
             my_token = Token("foo", "bar")
             self.assertIsNone(my_token.refresh())
             self.assertInLog("SSO token service failed", log)
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     @patch("requests.post")
     @assert_call_count_metrics(metric=authz_token_service_retry_counter)
@@ -114,10 +115,12 @@ class TestToken(WisdomServiceLogAwareTestCase):
 
         m_post.side_effect = [fail_side_effect, success_mock]
 
-        my_token = Token("foo", "bar")
-        my_token.refresh()
-        self.assertGreater(my_token.expiration_date, datetime.utcnow())
-        self.assertEqual(my_token.access_token, "foo_bar")
+        with self.assertLogs(logger="ansible_ai_connect.users.authz_checker", level="INFO") as log:
+            my_token = Token("foo", "bar")
+            my_token.refresh()
+            self.assertGreater(my_token.expiration_date, datetime.utcnow())
+            self.assertEqual(my_token.access_token, "foo_bar")
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     def test_fatal_exception(self):
         """Test the logic to determine if an exception is fatal or not"""
@@ -224,7 +227,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session = Mock()
         checker._session.get.side_effect = [fail_side_effect, success_mock]
 
-        self.assertEqual(checker.get_ams_org(123), "qwe")
+        with self.assertLogs(logger="ansible_ai_connect.users.authz_checker", level="INFO") as log:
+            self.assertEqual(checker.get_ams_org(123), "qwe")
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     def test_ams_get_ams_org_with_empty_data(self):
         m_r = Mock()
@@ -446,7 +451,9 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.side_effect = [fail_side_effect, success_mock]
         checker.get_ams_org = Mock(return_value="abc")
 
-        self.assertTrue(checker.rh_org_has_subscription(123))
+        with self.assertLogs(logger="ansible_ai_connect.users.authz_checker", level="INFO") as log:
+            self.assertTrue(checker.rh_org_has_subscription(123))
+            self.assertInLog("Caught retryable error after 1 tries.", log)
 
     def test_rh_org_has_subscription_when_ams_fails(self):
         m_r = Mock()

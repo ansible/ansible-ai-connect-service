@@ -15,6 +15,7 @@
 import base64
 import json
 import logging
+import sys
 from abc import abstractmethod
 from typing import Any, Dict, Optional
 
@@ -201,23 +202,37 @@ class BaseWCAClient(ModelMeshClient):
             return False
 
     @staticmethod
+    def log_backoff_exception(details):
+        _, exc, _ = sys.exc_info()
+        logger.info(str(exc))
+        logger.info(
+            f"Caught retryable error after {details['tries']} tries. "
+            f"Waiting {details['wait']} more seconds then retrying..."
+        )
+
+    @staticmethod
     def on_backoff_inference(details):
+        BaseWCAClient.log_backoff_exception(details)
         wca_codegen_retry_counter.inc()
 
     @staticmethod
     def on_backoff_codematch(details):
+        BaseWCAClient.log_backoff_exception(details)
         wca_codematch_retry_counter.inc()
 
     @staticmethod
     def on_backoff_codegen_playbook(details):
+        BaseWCAClient.log_backoff_exception(details)
         wca_codegen_playbook_retry_counter.inc()
 
     @staticmethod
     def on_backoff_explain_playbook(details):
+        BaseWCAClient.log_backoff_exception(details)
         wca_explain_playbook_retry_counter.inc()
 
     @staticmethod
     def on_backoff_ibm_cloud_identity_token(details):
+        BaseWCAClient.log_backoff_exception(details)
         ibm_cloud_identity_token_retry_counter.inc()
 
     def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:

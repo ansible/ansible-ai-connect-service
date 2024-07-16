@@ -339,6 +339,14 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "ansible_ai_connect.ai.api.model_client.wca_client": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "ansible_ai_connect.users.authz_checker": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "ansible_ai_connect.users.signals": {
             "handlers": ["console"],
             "level": "INFO",
