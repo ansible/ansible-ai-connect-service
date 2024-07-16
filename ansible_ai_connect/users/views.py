@@ -122,6 +122,46 @@ class CurrentUserView(RetrieveAPIView):
         return Response(user_data)
 
 
+class MarkdownCurrentUserView(RetrieveAPIView):
+    class MeRateThrottle(UserRateThrottle):
+        scope = "me"
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserResponseSerializer
+    throttle_classes = [MeRateThrottle]
+
+    @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def get_object(self):
+        return self.request.user
+
+    def retrieve(self, request, *args, **kwargs):
+        # User data and use Django to serialise it into a dict
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        user_data = serializer.data
+
+        # Enrich with Organisational data, if necessary
+        userTypeLabel = ""
+        if "rh_org_has_subscription" in user_data:
+            if user_data["rh_org_has_subscription"] and user_data["rh_user_has_seat"]:
+                userTypeLabel = "Licensed"
+            else:
+                userTypeLabel = "Unlicensed"
+        else:
+            userTypeLabel = "Not logged in"
+        # Construct a Markdown response
+        markdown_value = (
+            f"Logged in as: {user_data['username']} ({userTypeLabel.lower()})\n\n"
+            f"User Type: {userTypeLabel}\n"
+        )
+        markdown_response = {"content": markdown_value}
+
+        return Response(markdown_response, content_type="application/json")
+
+
 class TermsOfService(TemplateView):
     template_name = "users/community-terms.html"
 

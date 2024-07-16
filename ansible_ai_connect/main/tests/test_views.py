@@ -19,7 +19,7 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, TestCase, modify_settings, override_settings
 from django.urls import reverse
 from rest_framework.test import APITransactionTestCase
 
@@ -173,3 +173,15 @@ class TestMetricsView(APITransactionTestCase):
         self.client.force_authenticate(user=self.user)
         r = self.client.get(reverse("prometheus-metrics"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
+
+
+@modify_settings()
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+class TestMarkdownMe(TestCase):
+    def test_get_view(self):
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user=user)
+
+        r = self.client.get(reverse("me_summary"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Logged in as: test_user_name")
