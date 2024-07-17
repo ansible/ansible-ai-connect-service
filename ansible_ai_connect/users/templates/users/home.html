@@ -118,16 +118,6 @@
               {% if user.rh_user_is_org_admin or user.rh_user_has_seat %}
                 <p>Role: {% if user.rh_user_is_org_admin %}administrator{% endif %}{% if user.rh_user_is_org_admin and user.rh_user_has_seat %}, {% endif %}{% if user.rh_user_has_seat %}licensed user{% endif %}</p>
               {% endif %}
-
-                <!--
-                {% if not user.commercial_terms_accepted %}
-                <a href="{% url 'community_terms' %}">Please accept the Terms and Condition</a>.
-                {% else %}
-                <p>Term and condition: {{ user.commercial_terms_accepted }}
-                {% endif %}
-                #}
-                -->
-
             </div>
 
             <form id="logout-form" method="post" action="{% url 'logout' %}">
