@@ -14,7 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from datetime import datetime, timezone
 from http import HTTPStatus
+from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -30,6 +32,7 @@ from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
+from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.tests.test_users import create_user
 
 
@@ -185,3 +188,30 @@ class TestMarkdownMe(TestCase):
         r = self.client.get(reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Logged in as: test_user_name")
+
+    @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=True)
+    def test_get_view_trial(self):
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user=user)
+
+        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        user.plans.add(trial_plan)
+        up = user.userplan_set.first()
+        up.expired_at = datetime(2024, 10, 14, tzinfo=timezone.utc)
+        up.save()
+        user.userplan_set.first().expired_at = ""
+
+        r = self.client.get(reverse("me_summary"))
+        self.assertEqual(r.status_code, 200)
+        content = r.json()["content"]
+        expectation = """
+        Logged in as: test_user_name
+
+        - User Type: Trial
+        - Plan: trial of 90 days
+        - Expiration: 2024-10-14
+        """
+        self.assertEqual(dedent(expectation).strip(), content)
+
+        user.delete()
+        trial_plan.delete()
