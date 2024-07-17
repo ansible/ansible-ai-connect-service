@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import boto3
 from django.conf import settings
@@ -279,25 +279,31 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
 class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patcher = patch("ansible_ai_connect.ai.api.utils.segment.base_send_segment_event")
+        self.m_base_send_segment_event = self.patcher.start()
+        self.user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(self.user)
+
+    def tearDown(self):
+        super().tearDown()
+        self.patcher.stop()
+        self.user.delete()
+
     def test_redirect(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, "/trial/")
 
     def test_redirect_when_admin(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
-        user.rh_user_is_org_admin = True
-        user.save()
+        self.user.rh_user_is_org_admin = True
+        self.user.save()
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 200)
         self.assertNotIn("Start a [90] days free trial", str(r.content))
 
     def test_accept_trial_terms(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -307,8 +313,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn('accept_trial_terms" checked', str(r.content))
 
     def test_allow_information_share(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -318,8 +322,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn('allow_information_share" checked', str(r.content))
 
     def test_accept_marketing_emails(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -335,8 +337,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn('accept_marketing_emails" checked', str(r.content))
 
     def test_set_db_marketing_value(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         self.client.post(
             reverse("trial"),
@@ -348,11 +348,9 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
             },
         )
 
-        self.assertTrue(user.userplan_set.first().accept_marketing)
+        self.assertTrue(self.user.userplan_set.first().accept_marketing)
 
     def test_accept_trial_without_terms(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -365,8 +363,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn("Terms and Conditions Information alert", str(r.content))
 
     def test_accept_trial_without_information_share(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -379,8 +375,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn("Allow Information Share Information alert", str(r.content))
 
     def test_accept_trial_without_either(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -394,8 +388,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertIn("Allow Information Share Information alert", str(r.content))
 
     def test_accept_trial(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
@@ -407,13 +399,52 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         )
         self.assertIn("You have an active", str(r.content))
 
-        self.assertEqual(user.plans.first().name, "trial of 90 days")
-        self.assertTrue(user.userplan_set.first().expired_at)
+        self.assertEqual(self.user.plans.first().name, "trial of 90 days")
+        self.assertTrue(self.user.userplan_set.first().expired_at)
+
+    @override_settings(SEGMENT_WRITE_KEY="blablabla")
+    def test_accept_trial_schema1(self):
+        self.client.get(reverse("trial"))
+        self.client.post(
+            reverse("trial"),
+            data={
+                "accept_marketing_emails": "on",
+                "accept_trial_terms": "on",
+                "allow_information_share": "on",
+                "start_trial_button": "True",
+            },
+        )
+
+        schema1_payload = self.m_base_send_segment_event.call_args_list[0].args[0]
+        del schema1_payload["plans"][0]["created_at"]
+        del schema1_payload["plans"][0]["expired_at"]
+        expected = {
+            "imageTags": "image-tags-not-defined",
+            "groups": [],
+            "rh_user_has_seat": True,
+            "rh_user_org_id": 1234567,
+            "modelName": "",
+            "problem": "",
+            "exception": False,
+            "request": {"method": "POST", "path": "/trial/"},
+            "plans": [
+                {
+                    "accept_marketing": True,
+                    "is_active": True,
+                    "name": "trial of 90 days",
+                    "plan_id": self.user.plans.first().id,
+                }
+            ],
+        }
+        for k, v in expected.items():
+            self.assertEqual(v, schema1_payload[k])
+
+        self.m_base_send_segment_event.assert_called_with(
+            ANY, "oneClickTrialStarted", self.user, ANY
+        )
 
     @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
     def test_no_trial_for_you(self):
-        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        self.client.force_login(user)
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 200)  # No redirect
         r = self.client.get(reverse("trial"))
