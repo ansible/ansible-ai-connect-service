@@ -12,9 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from textwrap import dedent
+
 from django.conf import settings
 from rest_framework import serializers
-from textwrap import dedent
 
 
 class UserResponseSerializer(serializers.Serializer):
@@ -60,4 +61,4 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
                     """
                     break
 
-        return  dedent(markdown_value).strip();
+        return dedent(markdown_value).strip()
