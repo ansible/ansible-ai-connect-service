@@ -258,7 +258,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: '#/components/schemas/MarkdownUserResponse'
           description: ''
   /api/v0/telemetry/:
     get:
@@ -840,6 +840,14 @@ components:
       - description
       - title
       - type
+    MarkdownUserResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 200
+      required:
+      - content
     Metadata:
       type: object
       properties:
