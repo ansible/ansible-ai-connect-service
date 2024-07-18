@@ -845,7 +845,7 @@ components:
       properties:
         content:
           type: string
-          maxLength: 200
+          readOnly: true
       required:
       - content
     Metadata:
