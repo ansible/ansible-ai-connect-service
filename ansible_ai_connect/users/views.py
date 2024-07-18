@@ -35,7 +35,7 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.models import Plan
 
-from .serializers import UserResponseSerializer, MarkdownUserResponseSerializer
+from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
