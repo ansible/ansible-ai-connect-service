@@ -11,7 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from textwrap import dedent
 
+from django.conf import settings
 from rest_framework import serializers
 
 
@@ -25,3 +27,35 @@ class UserResponseSerializer(serializers.Serializer):
     external_username = serializers.CharField(required=False)
     username = serializers.CharField(required=True, max_length=150)
     org_telemetry_opt_out = serializers.BooleanField(required=False)
+
+
+class MarkdownUserResponseSerializer(serializers.Serializer):
+    content = serializers.SerializerMethodField()
+
+    def get_content(self, user):
+        markdown_value = ""
+        # Enrich with Organisational data, if necessary
+        userTypeLabel = ""
+        if hasattr(user, "rh_org_has_subscription"):
+            if user.rh_org_has_subscription and user.rh_user_has_seat:
+                userTypeLabel = "Licensed"
+            else:
+                userTypeLabel = "Unlicensed"
+            markdown_value = f"""
+            Logged in as: {user.username}
+            - User Type: {userTypeLabel}
+            """
+
+        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+            for up in user.userplan_set.all():
+                if up.is_active:
+                    expired_at = up.expired_at.strftime("%Y-%m-%d")
+                    markdown_value = f"""
+                    Logged in as: {user.username}
+                    - User Type: Trial
+                    - Plan: {up.plan.name}
+                    - Expiration: {expired_at}
+                    """
+                    break
+
+        return dedent(markdown_value).strip()
