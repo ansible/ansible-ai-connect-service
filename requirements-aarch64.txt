@@ -22,7 +22,7 @@ ansible-core==2.15.11
     #   ansible-lint
 ansible-lint==24.2.2
     # via -r requirements.in
-ansible-risk-insight==0.2.6
+ansible-risk-insight==0.2.7
     # via -r requirements.in
 argparse==1.4.0
     # via uwsgi-readiness-check
