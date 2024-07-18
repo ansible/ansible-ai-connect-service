@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-from textwrap import dedent
 
 from django.apps import apps
 from django.conf import settings
