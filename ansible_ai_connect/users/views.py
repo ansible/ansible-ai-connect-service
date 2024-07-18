@@ -35,7 +35,7 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.models import Plan
 
-from .serializers import UserResponseSerializer
+from .serializers import UserResponseSerializer, MarkdownUserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class MarkdownCurrentUserView(RetrieveAPIView):
         scope = "me"
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserResponseSerializer
+    serializer_class = MarkdownUserResponseSerializer
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))

@@ -25,3 +25,7 @@ class UserResponseSerializer(serializers.Serializer):
     external_username = serializers.CharField(required=False)
     username = serializers.CharField(required=True, max_length=150)
     org_telemetry_opt_out = serializers.BooleanField(required=False)
+
+
+class MarkdownUserResponseSerializer(serializers.Serializer):
+    content = serializers.CharField(required=True, max_length=200)
