@@ -135,6 +135,11 @@ class WcaCloudflareRejectionException(WisdomBadRequest):
     default_detail = "Cloudflare rejected the request. Please contact your administrator."
 
 
+class WcaHAPFilterRejectionException(WisdomBadRequest):
+    default_code = "error__wca_hap_filter_rejection"
+    default_detail = "WCA Hate, Abuse, and Profanity filter rejected the request."
+
+
 class WcaUserTrialExpiredException(WisdomAccessDenied):
     default_code = "permission_denied__user_trial_expired"
     default_detail = "User trial expired. Please contact your administrator."

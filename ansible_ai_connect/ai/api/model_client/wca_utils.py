@@ -20,6 +20,7 @@ from .exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
+    WcaHAPFilterRejection,
     WcaInferenceFailure,
     WcaInvalidModelId,
     WcaTokenFailureApiKeyError,
@@ -119,6 +120,22 @@ class ResponseStatusCode400WCABadRequestModelId(Check[Context]):
                     raise WcaInvalidModelId(model_id=context.model_id)
 
 
+class ResponseStatusCode400WCAHAPFilter(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 400:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_detail = payload_json.get("detail")
+                if (
+                    payload_detail
+                    and "our filters detected a potential problem with entities in your input"
+                    in payload_detail.lower()
+                ):
+                    raise WcaHAPFilterRejection(
+                        model_id=context.model_id, json_response=context.result.json()
+                    )
+
+
 class ResponseStatusCode400(Check[Context]):
     def check(self, context: Context):
         if context.result.status_code == 400:
@@ -176,6 +193,7 @@ class InferenceResponseChecks(Checks[Context]):
                 # The ordering of these checks is important!
                 ResponseStatusCode204(),
                 ResponseStatusCode400WCABadRequestModelId(),
+                ResponseStatusCode400WCAHAPFilter(),
                 ResponseStatusCode400(),
                 ResponseStatusCode403Cloudflare(),
                 ResponseStatusCode403UserTrialExpired(),

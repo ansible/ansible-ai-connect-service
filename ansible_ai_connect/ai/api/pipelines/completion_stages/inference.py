@@ -31,6 +31,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaBadRequestException,
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
+    WcaHAPFilterRejectionException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -44,6 +45,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
+    WcaHAPFilterRejection,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -155,6 +157,14 @@ class InferenceStage(PipelineElement):
             exception = e
             logger.exception(f"Cloudflare rejected the request for {payload.suggestionId}")
             raise WcaCloudflareRejectionException(cause=e)
+
+        except WcaHAPFilterRejection as e:
+            exception = e
+            logger.exception(
+                f"WCA Hate, Abuse, and Profanity filter rejected "
+                f"the request for suggestion {suggestion_id}"
+            )
+            raise WcaHAPFilterRejectionException(cause=e)
 
         except WcaUserTrialExpired as e:
             exception = e

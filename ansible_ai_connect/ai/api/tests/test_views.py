@@ -51,6 +51,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaBadRequestException,
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
+    WcaHAPFilterRejectionException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -532,6 +533,30 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                 WcaCloudflareRejectionException.default_detail,
             )
             self.assertInLog("Cloudflare rejected the request", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_seated_user_hap_filter_rejection(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={"detail": "our filters detected a potential problem with entities in your input"},
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_model_client_with(model_client)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("completions"), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_error_detail(
+                r,
+                WcaHAPFilterRejectionException.default_code,
+                WcaHAPFilterRejectionException.default_detail,
+            )
+            self.assertInLog("WCA Hate, Abuse, and Profanity filter rejected the request", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -2676,6 +2701,21 @@ that are running Red Hat Enterprise Linux 9.
             "Cloudflare rejected the request for playbook explanation",
         )
 
+    def test_hap_filter(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(return_value="garbage"),
+            response_data={
+                "detail": "our filters detected a potential problem with entities in your input"
+            },
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.BAD_REQUEST,
+            WcaHAPFilterRejectionException,
+            "WCA Hate, Abuse, and Profanity filter rejected the request for playbook explanation",
+        )
+
     def test_user_trial_expired(self):
         model_client = self.stub_wca_client(
             403,
@@ -2981,6 +3021,21 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             HTTPStatus.BAD_REQUEST,
             WcaCloudflareRejectionException,
             "Cloudflare rejected the request for playbook generation",
+        )
+
+    def test_hap_filter(self):
+        model_client = self.stub_wca_client(
+            400,
+            mock_model_id=Mock(return_value="garbage"),
+            response_data={
+                "detail": "our filters detected a potential problem with entities in your input"
+            },
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.BAD_REQUEST,
+            WcaHAPFilterRejectionException,
+            "WCA Hate, Abuse, and Profanity filter rejected the request for playbook generation",
         )
 
     def test_user_trial_expired(self):
