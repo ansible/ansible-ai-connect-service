@@ -55,7 +55,6 @@ from ansible_ai_connect.users.views import (
     CurrentUserView,
     HomeView,
     MarkdownCurrentUserView,
-    TermsOfService,
     TrialTermsOfService,
     TrialView,
     UnauthorizedView,
@@ -81,7 +80,6 @@ urlpatterns = [
     path("unauthorized/", UnauthorizedView.as_view(), name="unauthorized"),
     path("check/status/", WisdomServiceHealthView.as_view(), name="health_check"),
     path("check/", WisdomServiceLivenessProbeView.as_view(), name="liveness_probe"),
-    path("community-terms/", TermsOfService.as_view(), name="community_terms"),
     path("o/", include((base_urlpatterns, app_name), namespace="oauth2_provider")),
     path(
         "login/",

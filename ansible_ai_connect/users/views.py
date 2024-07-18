@@ -22,7 +22,6 @@ from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.timezone import now
 from django.views.generic import TemplateView
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -175,20 +174,6 @@ class MarkdownCurrentUserView(RetrieveAPIView):
         response = {"content": dedent(markdown_value).strip()}
 
         return Response(response, content_type="application/json")
-
-
-class TermsOfService(TemplateView):
-    template_name = "users/community-terms.html"
-
-    def post(self, request, *args, **kwargs):
-        form = Form(request.POST)
-        form.is_valid()
-
-        if request.POST.get("accepted") == "True":
-            request.user.commercial_terms_accepted = now()
-            request.session.save()
-
-        return HttpResponseRedirect(reverse("home"))
 
 
 class TrialView(TemplateView):
