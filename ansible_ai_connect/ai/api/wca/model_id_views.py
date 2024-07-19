@@ -37,6 +37,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaUserTrialExpiredException,
 )
 from ansible_ai_connect.ai.api.model_client.exceptions import (
+    WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -220,10 +221,12 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
     event = None
     start_time = time.time()
     model_id = UNKNOWN_MODEL_ID
+
+    # An OrgId must be present
+    # See https://issues.redhat.com/browse/AAP-16009
+    organization = request._request.user.organization
+
     try:
-        # An OrgId must be present
-        # See https://issues.redhat.com/browse/AAP-16009
-        organization = request._request.user.organization
         if not organization:
             return Response(status=HTTP_400_BAD_REQUEST)
 
@@ -232,6 +235,11 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
 
         validate(api_key, model_id)
 
+        return on_success(organization.id, model_id)
+
+    except WcaEmptyResponse:
+        # An empty response does not mean the model_id is invalid.
+        # More specific exceptions represent an invalid or missing model_id.
         return on_success(organization.id, model_id)
 
     except (WcaInvalidModelId, WcaModelIdNotFound, WcaTokenFailure) as e:
