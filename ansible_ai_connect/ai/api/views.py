@@ -40,6 +40,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaBadRequestException,
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
+    WcaHAPFilterRejectionException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -52,6 +53,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
+    WcaHAPFilterRejection,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -713,6 +715,14 @@ class Explanation(APIView):
             )
             raise WcaCloudflareRejectionException(cause=e)
 
+        except WcaHAPFilterRejection as e:
+            exception = e
+            logger.exception(
+                f"WCA Hate, Abuse, and Profanity filter rejected "
+                f"the request for playbook explanation {explanation_id}"
+            )
+            raise WcaHAPFilterRejectionException(cause=e)
+
         except WcaUserTrialExpired as e:
             exception = e
             logger.exception(
@@ -892,6 +902,14 @@ class Generation(APIView):
                 f"Cloudflare rejected the request for playbook generation {generation_id}"
             )
             raise WcaCloudflareRejectionException(cause=e)
+
+        except WcaHAPFilterRejection as e:
+            exception = e
+            logger.exception(
+                f"WCA Hate, Abuse, and Profanity filter rejected "
+                f"the request for playbook generation {generation_id}"
+            )
+            raise WcaHAPFilterRejectionException(cause=e)
 
         except WcaUserTrialExpired as e:
             exception = e

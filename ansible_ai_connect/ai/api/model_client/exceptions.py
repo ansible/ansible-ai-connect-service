@@ -83,6 +83,11 @@ class WcaCloudflareRejection(WcaException):
 
 
 @dataclass
+class WcaHAPFilterRejection(WcaException):
+    """WCA Hate, Abuse, and Profanity filter rejection."""
+
+
+@dataclass
 class WcaUserTrialExpired(WcaException):
     """WCA notifies that user's trial has expired."""
 
