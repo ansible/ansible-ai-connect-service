@@ -36,6 +36,7 @@ dependencies = [
   'pyOpenSSL~=24.0.0',
   'PyYAML~=6.0',
   'requests~=2.32.0',
+  # TODO: Declare as optional?.
   'sagemaker~=2.225.0',
   'segment-analytics-python~=2.2.2',
   'social-auth-app-django~=5.4.1',
