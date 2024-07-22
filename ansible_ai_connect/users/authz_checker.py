@@ -403,7 +403,7 @@ class AMSCheck(BaseCheck):
                         f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
                     ),
                     params=params,
-                    timeout=2.0,
+                    timeout=self.timeout,
                 )
 
             r = get_request()
