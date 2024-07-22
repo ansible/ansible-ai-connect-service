@@ -168,5 +168,8 @@
     "presets": [
       "react-app"
     ]
+  },
+  "overrides": {
+    "micromatch": "^4.0.8"
   }
 }
