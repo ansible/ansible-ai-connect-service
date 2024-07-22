@@ -84,6 +84,7 @@ class DummyAAPBackend:
         }
 
 
+@override_settings(SEGMENT_WRITE_KEY=None)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestExtraData(WisdomServiceLogAwareTestCase):
     def setUp(self):
@@ -173,6 +174,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
+            "rh_employee": False,
             "rh_user_is_org_admin": True,
             "external_username": "jean-michel",
         }
@@ -199,6 +201,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
+            "rh_employee": False,
             "rh_user_is_org_admin": False,
             "external_username": "yves",
         }
@@ -236,6 +239,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
+            "rh_employee": False,
             "rh_user_is_org_admin": True,
             "external_username": "yves",
         }
@@ -263,6 +267,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
+            "rh_employee": False,
             "rh_user_is_org_admin": True,
             "external_username": "yves",
         }
@@ -292,9 +297,29 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
 
         assert answer == {
             "organization_id": 345,
+            "rh_employee": False,
             "rh_user_is_org_admin": False,
             "external_username": "yves",
         }
         assert self.rh_user.organization.id == 345
         assert self.rh_user.rh_user_is_org_admin is False
         assert self.rh_user.external_username == "yves"
+
+    def test_rh_employee_field(self):
+        response = {
+            "access_token": build_access_token(
+                self.rsa_private_key,
+                {
+                    "realm_access": {"roles": ["redhat:employees"]},
+                    "preferred_username": "jean-michel",
+                    "organization": {"id": "345"},
+                },
+            )
+        }
+
+        answer = redhat_organization(
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
+            user=self.rh_user,
+            response=response,
+        )
+        self.assertEqual(answer["rh_employee"], True)

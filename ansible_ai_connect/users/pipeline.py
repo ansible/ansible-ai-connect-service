@@ -101,6 +101,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     roles = realm_access.get("roles", [])
     user.external_username = payload.get("preferred_username")
     user.rh_user_is_org_admin = "admin:org:all" in roles
+    user.rh_employee = "redhat:employees" in roles
 
     if settings.AUTHZ_BACKEND_TYPE == "dummy":
         if settings.AUTHZ_DUMMY_RH_ORG_ADMINS == "*":
@@ -117,9 +118,10 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         f"rhsso-{user.organization.id}", "Red Hat Organization", user.organization.id, user
     )
     return {
-        "organization_id": user.organization.id,
-        "rh_user_is_org_admin": user.rh_user_is_org_admin,
         "external_username": user.external_username,
+        "organization_id": user.organization.id,
+        "rh_employee": user.rh_employee,
+        "rh_user_is_org_admin": user.rh_user_is_org_admin,
     }
 
 
