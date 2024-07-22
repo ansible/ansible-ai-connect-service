@@ -30,6 +30,7 @@ from ansible_ai_connect.users.authz_checker import (
     CIAMCheck,
     DummyCheck,
     Token,
+    authz_ams_get_metrics_hist,
     authz_ams_get_organization_hist,
     authz_ams_get_organization_quota_cost_hist,
     authz_ams_org_cache_hit_counter,
@@ -189,7 +190,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             "https://some-api.server.host/api/accounts_mgmt/v1/organizations",
             params={"search": "external_id='123'"},
-            timeout=2.0,
+            timeout=3.0,
         )
 
         # Ensure the second call is cached
@@ -248,6 +249,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
                 log,
             )
 
+    @assert_call_count_metrics(metric=authz_ams_get_metrics_hist)
     def test_ams_self_test_success(self):
         m_r = Mock()
         m_r.status_code = 200
@@ -261,6 +263,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         except HTTPError:
             self.fail("self_test() should not have raised an exception.")
 
+    @assert_call_count_metrics(metric=authz_ams_get_metrics_hist)
     def test_ams_self_test_failure(self):
         r = requests.models.Response()
         r.status_code = 500
@@ -290,7 +293,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             "https://some-api.server.host/api/accounts_mgmt/v1/role_bindings",
             params={"search": "account.username = 'user' AND organization.id='123'"},
-            timeout=2.0,
+            timeout=3.0,
         )
 
     def test_rh_user_is_org_admin_when_ams_fails(self):
@@ -346,7 +349,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
         checker._session.get.assert_called_with(
             "https://some-api.server.host/api/accounts_mgmt/v1/role_bindings",
             params={"search": "account.username = 'user' AND organization.id='123'"},
-            timeout=2.0,
+            timeout=3.0,
         )
 
     def test_user_has_no_role(self):
@@ -427,7 +430,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
                 "/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost"
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
-            timeout=2.0,
+            timeout=3.0,
         )
 
         # Ensure the second call is cached
@@ -511,7 +514,7 @@ class TestToken(WisdomServiceLogAwareTestCase):
                 "/api/accounts_mgmt/v1/organizations/rdgdfhbrdb/quota_cost"
             ),
             params={"search": "quota_id LIKE 'seat|ansible.wisdom%'"},
-            timeout=2.0,
+            timeout=3.0,
         )
 
     def test_rh_org_has_subscription_timeout(self):
