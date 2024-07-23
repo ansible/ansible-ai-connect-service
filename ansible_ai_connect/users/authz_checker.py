@@ -72,6 +72,13 @@ authz_ams_get_organization_quota_cost_hist = Histogram(
     buckets=DEFAULT_LATENCY_BUCKETS,
 )
 
+authz_ams_get_metrics_hist = Histogram(
+    "authz_ams_get_metrics_latency_seconds",
+    "Histogram of Authz AMS get metrics API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
+
 authz_token_service_retry_counter = Counter(
     "authz_sso_token_service_retries",
     "Counter of Red Hat SSO token service retries",
@@ -295,11 +302,16 @@ class AMSCheck(BaseCheck):
 
     def self_test(self):
         self.update_bearer_token()
-        r = self._session.get(
-            # A _basic_ call that needs no parameters.
-            self._api_server + "/api/accounts_mgmt/v1/metrics",
-            timeout=self.timeout,
-        )
+
+        @authz_ams_get_metrics_hist.time()
+        def get_request():
+            return self._session.get(
+                # A _basic_ call that needs no parameters.
+                self._api_server + "/api/accounts_mgmt/v1/metrics",
+                timeout=self.timeout,
+            )
+
+        r = get_request()
         r.raise_for_status()
 
     def rh_user_is_org_admin(self, username: str, organization_id: int):
@@ -391,7 +403,7 @@ class AMSCheck(BaseCheck):
                         f"/api/accounts_mgmt/v1/organizations/{ams_org_id}/quota_cost"
                     ),
                     params=params,
-                    timeout=2.0,
+                    timeout=self.timeout,
                 )
 
             r = get_request()
