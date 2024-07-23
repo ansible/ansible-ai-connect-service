@@ -205,10 +205,9 @@ class TestMarkdownMe(TestCase):
         self.assertEqual(r.status_code, 200)
         content = r.json()["content"]
         expectation = """
-        Logged in as: test_user_name
-        - User Type: Trial
-        - Plan: trial of 90 days
-        - Expiration: 2024-10-14
+        Logged in as: test_user_name<br>
+        Plan: trial of 90 days<br>
+        Expiration: 2024-10-14
         """
         self.assertEqual(dedent(expectation).strip(), content)
 

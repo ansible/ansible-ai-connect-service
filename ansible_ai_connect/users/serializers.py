@@ -51,10 +51,9 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
                 if up.is_active:
                     expired_at = up.expired_at.strftime("%Y-%m-%d")
                     markdown_value = f"""
-                    Logged in as: {user.username}
-                    - User Type: Trial
-                    - Plan: {up.plan.name}
-                    - Expiration: {expired_at}
+                    Logged in as: {user.username}<br>
+                    Plan: {up.plan.name}<br>
+                    Expiration: {expired_at}
                     """
                     break
 
