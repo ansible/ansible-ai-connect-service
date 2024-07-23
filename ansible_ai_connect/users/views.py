@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-from textwrap import dedent
 
 from django.apps import apps
 from django.conf import settings
@@ -35,7 +34,7 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.models import Plan
 
-from .serializers import UserResponseSerializer
+from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
@@ -127,7 +126,7 @@ class MarkdownCurrentUserView(RetrieveAPIView):
         scope = "me"
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserResponseSerializer
+    serializer_class = MarkdownUserResponseSerializer
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
@@ -141,37 +140,8 @@ class MarkdownCurrentUserView(RetrieveAPIView):
         # User data and use Django to serialise it into a dict
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        user_data = serializer.data
 
-        markdown_value = ""
-        # Enrich with Organisational data, if necessary
-        userTypeLabel = ""
-        if "rh_org_has_subscription" in user_data:
-            if user_data["rh_org_has_subscription"] and user_data["rh_user_has_seat"]:
-                userTypeLabel = "Licensed"
-            else:
-                userTypeLabel = "Unlicensed"
-            markdown_value = f"""
-            Logged in as: {user_data['username']}
-
-            - User Type: {userTypeLabel}
-            """
-
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
-            for up in request.user.userplan_set.all():
-                if up.is_active:
-                    expired_at = up.expired_at.strftime("%Y-%m-%d")
-                    markdown_value = f"""
-                    Logged in as: {user_data['username']}
-
-                    - User Type: Trial
-                    - Plan: {up.plan.name}
-                    - Expiration: {expired_at}
-                    """
-                    break
-
-        # Construct a Markdown response
-        response = {"content": dedent(markdown_value).strip()}
+        response = serializer.data
 
         return Response(response, content_type="application/json")
 
