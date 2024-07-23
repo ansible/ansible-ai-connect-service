@@ -163,6 +163,7 @@ class UserPlan(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     expired_at = models.DateTimeField(default=None, null=True)
+    accept_marketing = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         if "plan_id" in kwargs:
