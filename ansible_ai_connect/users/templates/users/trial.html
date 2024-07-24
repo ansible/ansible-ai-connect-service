@@ -4,12 +4,23 @@
 {% block content %}
 
 {% if start_trial_button and accept_trial_terms is False %}
-<div class="pf-c-alert pf-m-info" aria-label="Information alert">
+<div class="pf-c-alert pf-m-info" aria-label="Terms and Conditions Information alert">
   <div class="pf-c-alert__icon">
     <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
   </div>
   <p class="pf-c-alert__title">
     Please accept the Term and Condition.
+  </p>
+</div>
+{% endif %}
+
+{% if start_trial_button and allow_information_share is False %}
+<div class="pf-c-alert pf-m-info" aria-label="Allow Information Share Information alert">
+  <div class="pf-c-alert__icon">
+    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+  </div>
+  <p class="pf-c-alert__title">
+    To start a Trial, you must allow information to be shared with IBM.
   </p>
 </div>
 {% endif %}
@@ -70,7 +81,14 @@
                   <input type="checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
                   <a href="{% url 'trial_terms' %}">Accept the Terms and Conditions</a>.
                   <p/>
-
+                  <p>
+                  <input type="checkbox" name="allow_information_share" {% if allow_information_share %}checked{% endif %}/>
+                  Allow Information to be Shared with IBM.
+                  <p/>
+                  <p>
+                  <input type="checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
+                  Receive Marketing Emails.
+                  <p/>
                   <p>
                   <button class="pf-c-button pf-m-primary" type="submit" name="start_trial_button" value="True">
                     Start Ansible Lightspeed trial

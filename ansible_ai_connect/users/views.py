@@ -175,6 +175,14 @@ class TrialView(TemplateView):
             "True",
             "on",
         ]
+        context["allow_information_share"] = self.request.POST.get("allow_information_share") in [
+            "True",
+            "on",
+        ]
+        context["accept_marketing_emails"] = self.request.POST.get("accept_marketing_emails") in [
+            "True",
+            "on",
+        ]
         context["start_trial_button"] = self.request.POST.get("start_trial_button") == "True"
 
         return context
@@ -184,13 +192,20 @@ class TrialView(TemplateView):
         form.is_valid()
 
         accept_trial_terms = request.POST.get("accept_trial_terms") == "on"
+        allow_information_share = request.POST.get("allow_information_share") == "on"
         start_trial_button = request.POST.get("start_trial_button") == "True"
+        accept_marketing_emails = request.POST.get("accept_marketing_emails") == "on"
 
-        if start_trial_button and accept_trial_terms:
+        if start_trial_button and accept_trial_terms and allow_information_share:
             trial_plan, _ = Plan.objects.get_or_create(
                 name="trial of 90 days", expires_after="90 days"
             )
             request.user.plans.add(trial_plan)
+
+            if accept_marketing_emails:
+                up = request.user.userplan_set.filter(plan__name="trial of 90 days").first()
+                up.accept_marketing = True
+                up.save()
 
         context = self.get_context_data(**kwargs)
         return render(request, self.template_name, context=context)
