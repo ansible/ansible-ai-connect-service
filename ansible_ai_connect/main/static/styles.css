@@ -14,6 +14,23 @@
     padding: 15px;
 }
 
+.ls_button_checkbox_body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ls_checkbox_body {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+
+.marketing_checkbox {
+    padding: 10px 0 15px 0;
+}
+
 .ls_logo_padding {
     padding: 20px;
 }
