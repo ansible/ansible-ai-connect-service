@@ -337,4 +337,16 @@ ALLOW_LIST = {
         "timestamp": None,
         "value": None,
     },
+    "oneClickTrialStarted": {
+        "exception": None,
+        "groups": None,
+        "hostname": None,
+        "imageTags": None,
+        "modelName": None,
+        "plans": None,
+        "problem": None,
+        "request": None,
+        "rh_user_has_seat": None,
+        "rh_user_org_id": None,
+    },
 }

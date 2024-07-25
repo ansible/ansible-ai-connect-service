@@ -31,6 +31,8 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerMissingCredentialsError,
 )
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.telemetry import schema1
+from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.models import Plan
 
@@ -197,16 +199,22 @@ class TrialView(TemplateView):
         start_trial_button = request.POST.get("start_trial_button") == "True"
         accept_marketing_emails = request.POST.get("accept_marketing_emails") == "on"
 
+        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+
+        if any(up.plan == trial_plan for up in request.user.userplan_set.all()):
+            return
+
         if start_trial_button and accept_trial_terms and allow_information_share:
-            trial_plan, _ = Plan.objects.get_or_create(
-                name="trial of 90 days", expires_after="90 days"
-            )
             request.user.plans.add(trial_plan)
 
             if accept_marketing_emails:
-                up = request.user.userplan_set.filter(plan__name="trial of 90 days").first()
+                up = request.user.userplan_set.filter(plan=trial_plan).first()
                 up.accept_marketing = True
                 up.save()
+            event = schema1.OneClickTrialStartedEvent()
+            event.set_request(request)
+            print("Sending event")
+            send_schema1_event(event)
 
         context = self.get_context_data(**kwargs)
         return render(request, self.template_name, context=context)

@@ -123,6 +123,26 @@ def base_send_segment_event(
             send_segment_event(event, "segmentError", user)
 
 
+def send_schema1_event(event_obj) -> None:
+    if not settings.SEGMENT_WRITE_KEY:
+        logger.info("segment write key not set, skipping event")
+        return
+
+    event_dict = event_obj.as_dict()
+    if event_obj.rh_user_has_seat:
+        allow_list = ALLOW_LIST.get(event_obj.event_name)
+        if allow_list:
+            event_dict = redact_seated_users_data(event_dict, allow_list)
+        else:
+            # If event should be tracked, please update ALLOW_LIST appropriately
+            logger.error(
+                f"It is not allowed to track {event_obj.event_name} events for seated users"
+            )
+            return
+
+    base_send_segment_event(event_dict, event_obj.event_name, event_obj._user, analytics)
+
+
 def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) -> Dict[str, Any]:
     """
     Copy a dictionary to another dictionary using a nested list of allowed keys.
