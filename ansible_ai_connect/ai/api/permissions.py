@@ -65,9 +65,7 @@ class BlockWCANotReadyButTrialAvailable(permissions.BasePermission):
             return CONTINUE
 
         # accept user with active Trial period
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in request.user.userplan_set.all()
-        ):
+        if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -95,9 +93,7 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
             return CONTINUE
 
         # accept user with active Trial period
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in request.user.userplan_set.all()
-        ):
+        if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -123,9 +119,7 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
             return CONTINUE
 
         # If the user has an active Trial, we continue
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in request.user.userplan_set.all()
-        ):
+        if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -148,9 +142,7 @@ class BlockUserWithoutSeat(permissions.BasePermission):
             return CONTINUE
 
         # If the user has an active Trial, we continue
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in request.user.userplan_set.all()
-        ):
+        if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
         return CONTINUE if user.rh_user_has_seat else BLOCK
