@@ -4,20 +4,20 @@
 {% block content %}
 
 {% if start_trial_button and accept_trial_terms is False %}
-<div class="pf-c-alert pf-m-info" aria-label="Terms and Conditions Information alert">
+<div class="pf-c-alert pf-m-warning" aria-label="Terms and Conditions Information alert">
   <div class="pf-c-alert__icon">
-    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+    <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
   </div>
   <p class="pf-c-alert__title">
-    Please accept the Term and Condition.
+    Please accept the Terms and Conditions
   </p>
 </div>
 {% endif %}
 
 {% if start_trial_button and allow_information_share is False %}
-<div class="pf-c-alert pf-m-info" aria-label="Allow Information Share Information alert">
+<div class="pf-c-alert pf-m-warning" aria-label="Allow Information Share Information alert">
   <div class="pf-c-alert__icon">
-    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
+    <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
   </div>
   <p class="pf-c-alert__title">
     To start a Trial, you must allow information to be shared with IBM.
@@ -71,29 +71,31 @@
 
 
                 <div class="ls_message_body">
-                  <p>Start a [90] days free trial with our recommanded model, <a href="https://www.ibm.com/products/watsonx-code-assistant">IBM watsonx Code Assistant</a>.
+                  <p>Start a [90] days free trial with our recommended model, <br><a href="https://www.ibm.com/products/watsonx-code-assistant">IBM watsonx Code Assistant</a>.
                   <p>This will only apply to you and will not affect your organization.
                 </div>
 
 
-                <div class="pf-c-empty-state__content">
+                <div class="ls_button_checkbox_body pf-c-empty-state__content">
+                  <div class="ls_checkbox_body">
+                    <p>
+                    <input type="checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
+                    Accept the <a href="{% url 'trial_terms' %}">Terms and Conditions</a>.
+                    </p>
+                    <p>
+                    <input type="checkbox" name="allow_information_share" {% if allow_information_share %}checked{% endif %}/>
+                    Allow Information to be Shared with IBM.
+                    </p>
+                    <p class = "marketing_checkbox">
+                    <input type="checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
+                    Receive Marketing Emails.
+                    </p>
+                  </div>
                   <p>
-                  <input type="checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
-                  <a href="{% url 'trial_terms' %}">Accept the Terms and Conditions</a>.
-                  <p/>
-                  <p>
-                  <input type="checkbox" name="allow_information_share" {% if allow_information_share %}checked{% endif %}/>
-                  Allow Information to be Shared with IBM.
-                  <p/>
-                  <p>
-                  <input type="checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
-                  Receive Marketing Emails.
-                  <p/>
-                  <p>
-                  <button class="pf-c-button pf-m-primary" type="submit" name="start_trial_button" value="True">
-                    Start Ansible Lightspeed trial
-                  </button>
-                  <p/>
+                    <button class="pf-c-button pf-m-primary" type="submit" name="start_trial_button" value="True">
+                      Start Ansible Lightspeed trial
+                    </button>
+                  </p>
                 </div>
               </form>
               {% endif %}
@@ -112,7 +114,7 @@
               <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
               {% endif %}
 
-              <div class="pf-l-level pf-m-gutter ls_bottom_menu">
+              <div class="pf-l-level ls_bottom_menu">
                 <a class="pf-l-level__item" href="https://matrix.to/#/%23ansible-lightspeed:ansible.im" target="_blank" rel="noopener"><span class="fas fa-solid fa-comments"></span> Chat</a>
                 <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
                 <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
