@@ -35,15 +35,9 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
     def get_content(self, user):
         markdown_value = ""
         # Enrich with Organisational data, if necessary
-        userTypeLabel = ""
         if hasattr(user, "rh_org_has_subscription"):
-            if user.rh_org_has_subscription and user.rh_user_has_seat:
-                userTypeLabel = "Licensed"
-            else:
-                userTypeLabel = "Unlicensed"
             markdown_value = f"""
             Logged in as: {user.username}
-            - User Type: {userTypeLabel}
             """
 
         if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:

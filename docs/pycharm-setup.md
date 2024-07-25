@@ -318,12 +318,8 @@ On VS Code, click **Open** to open the URI.
 If the connection is established successfully, you will see username (`testuser`) on the sidebar
 of VS Code.
 
-
-![](images/pycharm-image19.png)
-
-> [!NOTE] User Type is shown as `Unlicensed`. You can ignore it for your debugging.
-> Browser Screen also shows the error message **Your organization doen's have access to Ansible AI Connect.**,
-> which also can be ignored.
+> [!NOTE] Browser Screen shows the error message **Your organization doen's have access to Ansible AI Connect.**.
+> You can ignore the message.
 
 ![](images/pycharm-image20.png)
 
