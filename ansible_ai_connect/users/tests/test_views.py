@@ -286,6 +286,15 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, "/trial/")
 
+    def test_redirect_when_admin(self):
+        user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
+        self.client.force_login(user)
+        user.rh_user_is_org_admin = True
+        user.save()
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn("Start a [90] days free trial", str(r.content))
+
     def test_accept_trial_terms(self):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)

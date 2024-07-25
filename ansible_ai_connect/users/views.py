@@ -69,6 +69,7 @@ class HomeView(TemplateView):
             and self.request.user.is_oidc_user
             and self.request.user.rh_org_has_subscription
             and not self.org_has_api_key
+            and not self.request.user.rh_user_is_org_admin
         ):
             return HttpResponseRedirect(reverse("trial"))
 
