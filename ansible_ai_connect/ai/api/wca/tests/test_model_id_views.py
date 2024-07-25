@@ -28,6 +28,7 @@ import ansible_ai_connect.ai.apps
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
 from ansible_ai_connect.ai.api.model_client.exceptions import (
+    WcaEmptyResponse,
     WcaInvalidModelId,
     WcaUserTrialExpired,
 )
@@ -276,6 +277,31 @@ class TestWCAModelIdView(
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelIdSet", "ValidationError")
 
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_set_model_id_empty_response(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        self.client.force_authenticate(user=self.user)
+
+        # Set ModelId
+        mock_secret_manager.get_secret.return_value = {"SecretString": "someAPIKey"}
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaEmptyResponse)
+        with self.assertLogs(logger="root", level="INFO") as log:
+            r = self.client.post(
+                reverse("wca_model_id"),
+                data='{ "model_id": "secret_model_id" }',
+                content_type="application/json",
+            )
+
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            self.assertInLog(
+                "WCA returned an empty response validating model_id 'secret_model_id'", log
+            )
+            mock_secret_manager.save_secret.assert_called_with(
+                123, Suffixes.MODEL_ID, "secret_model_id"
+            )
+
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
@@ -475,3 +501,19 @@ class TestWCAModelIdValidatorView(
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog("Exception", log)
             self.assert_segment_log(log, "modelIdValidate", "Exception")
+
+    @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-model-id")
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_validate_error_model_id_empty_response(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        self.client.force_authenticate(user=self.user)
+        mock_wca_client.infer_from_parameters = Mock(side_effect=WcaEmptyResponse)
+
+        with self.assertLogs(logger="root", level="INFO") as log:
+            r = self.client.get(reverse("wca_model_id_validator"))
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertInLog(
+                "WCA returned an empty response validating model_id 'my-model-id'", log
+            )
