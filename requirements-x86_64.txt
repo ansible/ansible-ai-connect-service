@@ -175,13 +175,13 @@ jwcrypto==1.5.6
     # via
     #   -r requirements.in
     #   django-oauth-toolkit
-langchain==0.2.5
+langchain==0.2.11
     # via
     #   -r requirements.in
     #   langchain-community
-langchain-community==0.2.5
+langchain-community==0.2.10
     # via -r requirements.in
-langchain-core==0.2.7
+langchain-core==0.2.23
     # via
     #   langchain
     #   langchain-community
