@@ -39,7 +39,12 @@ podman compose -f tools/docker-compose/compose.yaml --env-file ./.env up
 
 ### Configure VS Code to connect to your local machine
 
-TODO
+1. Navigate to `File (or Code on macOS) > Preferences (or Settings on macOS) > Settings`
+1. Search for `Lightspeed`
+1. For both **User** and **Workspace**, set the following setting values:
+    1. `Ansible > Lightspeed`: `Enabled` :ballot_box_with_check:
+    1. `Ansible > Lightspeed: URL`: `http://localhost:8000`
+    1. `Ansible > Lightspeed: Suggestions`: `Enabled` :ballot_box_with_check:
 
 ### Stop service and dependencies
 ```bash
