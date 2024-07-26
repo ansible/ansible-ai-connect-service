@@ -48,7 +48,7 @@
           <!-- Not supported -->
           {% elif has_active_plan %}
           <div class="ls_message_body">
-            You have an active <i>{{ has_active_plan.plan.name }}</i> that will end the {{ has_active_plan.expired_at }}
+            You have {{ days_left }} days left on your trial period
           </div>
 
 
@@ -65,7 +65,7 @@
               -->
 
               {% elif has_expired_plan %}
-              You have an expired ({{ has_active_plan.plan.name }}).
+              Your trial period has expired
               {% else  %}
               <form action={% url 'trial' %} method="post">{% csrf_token %}
 
