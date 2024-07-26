@@ -161,6 +161,7 @@ class TestSegment(TestCase):
         g = Mock()
         g.values_list = MagicMock(return_value=[])
         user = Mock(rh_user_has_seat=True, groups=g)
+        user.userplan_set.all.return_value = []
         event = {
             "rh_user_has_seat": True,
         }
@@ -180,6 +181,7 @@ class TestSegment(TestCase):
         g = Mock()
         g.values_list = MagicMock(return_value=[])
         user = Mock(rh_user_has_seat=False, groups=g)
+        user.userplan_set.all.return_value = []
         event = {
             "rh_user_has_seat": False,
             "exception": "SomeException",
@@ -198,6 +200,7 @@ class TestSegment(TestCase):
         g = Mock()
         g.values_list = MagicMock(return_value=[])
         user = Mock(rh_user_has_seat=True, groups=g)
+        user.userplan_set.all.return_value = []
         event = {
             "rh_user_has_seat": True,
             "exception": "SomeException",
@@ -294,3 +297,30 @@ class TestSegment(TestCase):
         client = Mock(wraps=get_segment_analytics_client())
         base_send_segment_event(event, "postprocess", user, client)
         client.track.assert_called()
+
+    @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_send_segment_plans(self, track_method):
+        user = Mock()
+        user.groups.values_list.return_value = []
+        userplan = Mock()
+        userplan.accept_marketing = True
+        userplan.created_at = "Some date"
+        userplan.expired_at = "Some other date"
+        userplan.is_active = True
+        userplan.plan.name = "Trial plan"
+        userplan.plan.id = 1
+        user.userplan_set.all.return_value = [userplan]
+        send_segment_event({}, "postprocess", user)
+        user, event_name, event = track_method.call_args[0]
+        self.assertEqual(
+            event["plans"][0],
+            {
+                "accept_marketing": True,
+                "created_at": "Some date",
+                "expired_at": "Some other date",
+                "is_active": True,
+                "name": "Trial plan",
+                "plan_id": 1,
+            },
+        )

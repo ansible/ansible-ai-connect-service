@@ -16,11 +16,13 @@ import logging
 import platform
 from typing import Any, Dict
 
+from attr import asdict
 from django.conf import settings
 from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
 
+from ansible_ai_connect.ai.api.telemetry.schema1 import PlanEntry
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 from ansible_ai_connect.users.models import User
 
@@ -76,6 +78,9 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
     if "timestamp" not in event:
         event["timestamp"] = timestamp
 
+    if "plans" not in event and hasattr(user, "userplan_set"):
+        event["plans"] = [asdict(PlanEntry.init(up)) for up in user.userplan_set.all()]
+
     if event["rh_user_has_seat"]:
         allow_list = ALLOW_LIST.get(event_name)
         if allow_list:
@@ -84,6 +89,7 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
             # If event should be tracked, please update ALLOW_LIST appropriately
             logger.error(f"It is not allowed to track {event_name} events for seated users")
             return
+
     base_send_segment_event(event, event_name, user, analytics)
 
 
