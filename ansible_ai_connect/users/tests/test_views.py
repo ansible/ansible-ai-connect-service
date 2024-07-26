@@ -30,6 +30,7 @@ from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
+from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.tests.test_users import create_user
 
 
@@ -397,10 +398,18 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
                 "start_trial_button": "True",
             },
         )
-        self.assertIn("You have an active", str(r.content))
+        self.assertContains(r, "You have 89 days left")
 
         self.assertEqual(self.user.plans.first().name, "trial of 90 days")
         self.assertTrue(self.user.userplan_set.first().expired_at)
+
+    def test_trial_period_is_done(self):
+        trial_plan, _ = Plan.objects.get_or_create(
+            name="trial of -10 days", expires_after="-10 days"
+        )
+        self.user.plans.add(trial_plan)
+        r = self.client.get(reverse("trial"))
+        self.assertContains(r, "Your trial period has expired")
 
     @override_settings(SEGMENT_WRITE_KEY="blablabla")
     def test_accept_trial_schema1(self):
