@@ -32,6 +32,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "completion": {
         "duration": None,
@@ -62,6 +63,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "inlineSuggestionFeedback": {
         "action": None,
@@ -73,6 +75,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "prediction": {
         "duration": None,
@@ -102,6 +105,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "postprocessLint": {
         "exception": None,
@@ -115,6 +119,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "postprocess": {
         "exception": None,
@@ -130,6 +135,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "segmentError": {
         "error_type": None,
@@ -141,6 +147,7 @@ ALLOW_LIST = {
         "groups": None,
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
+        "plans": None,
     },
     "sentimentFeedback": {
         "value": None,
@@ -153,6 +160,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "suggestionQualityFeedback": {
         "prompt": None,
@@ -167,6 +175,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "issueFeedback": {
         "title": None,
@@ -180,6 +189,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelApiKeyGet": {
         "duration": None,
@@ -191,6 +201,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelApiKeySet": {
         "duration": None,
@@ -202,6 +213,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelApiKeyValidate": {
         "duration": None,
@@ -213,6 +225,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelIdGet": {
         "duration": None,
@@ -225,6 +238,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelIdSet": {
         "duration": None,
@@ -237,6 +251,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "modelIdValidate": {
         "duration": None,
@@ -249,6 +264,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "telemetrySettingsGet": {
         "duration": None,
@@ -261,6 +277,7 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "opt_out": None,
         "timestamp": None,
+        "plans": None,
     },
     "telemetrySettingsSet": {
         "duration": None,
@@ -273,6 +290,7 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "opt_out": None,
         "timestamp": None,
+        "plans": None,
     },
     "trialExpired": {
         "type": None,
@@ -284,6 +302,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "explainPlaybook": {
         "duration": None,
@@ -297,6 +316,7 @@ ALLOW_LIST = {
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
         "timestamp": None,
+        "plans": None,
     },
     "codegenPlaybook": {
         "duration": None,
@@ -311,6 +331,7 @@ ALLOW_LIST = {
         "response": None,
         "timestamp": None,
         "wizardId": None,
+        "plans": None,
     },
     "playbookGenerationAction": {
         "action": None,
@@ -324,6 +345,7 @@ ALLOW_LIST = {
         "timestamp": None,
         "toPage": None,
         "wizardId": None,
+        "plans": None,
     },
     "playbookExplanationFeedback": {
         "exception": None,
@@ -336,6 +358,7 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "timestamp": None,
         "value": None,
+        "plans": None,
     },
     "oneClickTrialStarted": {
         "exception": None,
@@ -343,10 +366,10 @@ ALLOW_LIST = {
         "hostname": None,
         "imageTags": None,
         "modelName": None,
-        "plans": None,
         "problem": None,
         "request": None,
         "rh_user_has_seat": None,
         "rh_user_org_id": None,
+        "plans": None,
     },
 }

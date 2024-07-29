@@ -35,12 +35,25 @@ class RequestPayload:
 
 @define
 class PlanEntry:
+    """Describe one plan associate with the user"""
+
     accept_marketing: bool = False
     created_at: str = field(validator=validators.instance_of(str), converter=str, default="")
     expired_at: str = field(validator=validators.instance_of(str), converter=str, default="")
     is_active: bool = False
     name: str = field(validator=validators.instance_of(str), converter=str, default="")
     plan_id: int = 0
+
+    @classmethod
+    def init(cls, userplan):
+        return cls(
+            accept_marketing=userplan.accept_marketing,
+            created_at=userplan.created_at,
+            expired_at=userplan.expired_at,
+            is_active=userplan.is_active,
+            name=userplan.plan.name,
+            plan_id=userplan.plan.id,
+        )
 
 
 @define
@@ -87,14 +100,4 @@ class OneClickTrialStartedEvent(Schema1Event):
 
     def set_user(self, user):
         super().set_user(user)
-        for up in user.userplan_set.all():
-            self.plans.append(
-                PlanEntry(
-                    accept_marketing=up.accept_marketing,
-                    created_at=up.created_at,
-                    expired_at=up.expired_at,
-                    is_active=up.is_active,
-                    name=up.plan.name,
-                    plan_id=up.plan.id,
-                )
-            )
+        self.plans = [PlanEntry.init(up) for up in user.userplan_set.all()]
