@@ -154,6 +154,12 @@ class TestBlockUserWithoutSeat(WisdomAppsBackendMocking):
         self.user.plans.add(demo_plan)
         self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
 
+    @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
+    def test_ensure_trial_user_can_pass_through_despite_trial_disabled(self):
+        demo_plan, _ = Plan.objects.get_or_create(name="demo_90_days", expires_after="90 days")
+        self.user.plans.add(demo_plan)
+        self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
+
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="")
@@ -189,6 +195,12 @@ class TestBlockWCANotReadyButTrialAvailable(WisdomAppsBackendMocking):
         self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
 
     def test_ensure_trial_user_can_pass_through(self):
+        demo_plan, _ = Plan.objects.get_or_create(name="demo_90_days", expires_after="90 days")
+        self.user.plans.add(demo_plan)
+        self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
+
+    @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
+    def test_ensure_trial_user_can_pass_through_despite_trial_disabled(self):
         demo_plan, _ = Plan.objects.get_or_create(name="demo_90_days", expires_after="90 days")
         self.user.plans.add(demo_plan)
         self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
