@@ -38,6 +38,7 @@ def bypass_init(*args, **kwargs):
     return None
 
 
+@override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @patch.object(boto3, "client", Mock())
 class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
@@ -63,6 +64,7 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Log in to Tech Preview")
 
 
+@override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
@@ -128,6 +130,7 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "Admin Portal")
 
 
+@override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="")
 @patch.object(boto3, "client", Mock())
@@ -238,6 +241,7 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "fa-exclamation-circle")
 
 
+@override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase):
     def setUp(self) -> None:
@@ -279,6 +283,7 @@ class TestHomeDocumentationUrl(WisdomAppsBackendMocking, APITransactionTestCase)
 @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=True)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="")
 class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
     def setUp(self):
         super().setUp()
@@ -296,6 +301,17 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(r.url, "/trial/")
+
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="")
+    def test_no_aap_subscription__no_trial_for_you(self):
+        r = self.client.get(reverse("trial"))
+        self.assertEqual(r.status_code, 403)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
+    def test_wca_ready_org__no_trial_for_you(self):
+        self.assertEqual(self.user.organization.id, 1234567)
+        r = self.client.get(reverse("trial"))
+        self.assertEqual(r.status_code, 403)
 
     def test_redirect_when_admin(self):
         self.user.rh_user_is_org_admin = True
@@ -350,6 +366,20 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         )
 
         self.assertTrue(self.user.userplan_set.first().accept_marketing)
+
+    def test_try_to_create_two_trial_records(self):
+        self.client.get(reverse("trial"))
+        for _ in range(2):
+            self.client.post(
+                reverse("trial"),
+                data={
+                    "accept_trial_terms": "on",
+                    "allow_information_share": "on",
+                    "start_trial_button": "True",
+                },
+            )
+
+        self.assertEqual(self.user.userplan_set.all().count(), 1)
 
     def test_accept_trial_without_terms(self):
         self.client.get(reverse("trial"))

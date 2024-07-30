@@ -152,11 +152,27 @@ class MarkdownCurrentUserView(RetrieveAPIView):
 
 class TrialView(TemplateView):
     template_name = "users/trial.html"
+    permission_classes = [IsAuthenticated]
+
+    def get_trial_plan(self):
+        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        return trial_plan
 
     def dispatch(self, request, *args, **kwargs):
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+        if any(up.plan == self.get_trial_plan() for up in request.user.userplan_set.all()):
             return super().dispatch(request, *args, **kwargs)
-        return HttpResponseForbidden()
+
+        if not settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
+            return HttpResponseForbidden()
+
+        if not self.request.user.rh_org_has_subscription:
+            return HttpResponseForbidden()
+
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        if secret_manager.secret_exists(request.user.organization.id, Suffixes.API_KEY):
+            return HttpResponseForbidden()
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -203,21 +219,25 @@ class TrialView(TemplateView):
         start_trial_button = request.POST.get("start_trial_button") == "True"
         accept_marketing_emails = request.POST.get("accept_marketing_emails") == "on"
 
-        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        # The user already have a trial plan, we do nothing
+        user_has_trial_already = any(
+            up.plan == self.get_trial_plan() for up in request.user.userplan_set.all()
+        )
 
-        if any(up.plan == trial_plan for up in request.user.userplan_set.all()):
-            return
-
-        if start_trial_button and accept_trial_terms and allow_information_share:
-            request.user.plans.add(trial_plan)
+        if (
+            not user_has_trial_already
+            and start_trial_button
+            and accept_trial_terms
+            and allow_information_share
+        ):
+            request.user.plans.add(self.get_trial_plan())
 
             if accept_marketing_emails:
-                up = request.user.userplan_set.filter(plan=trial_plan).first()
+                up = request.user.userplan_set.filter(plan=self.get_trial_plan()).first()
                 up.accept_marketing = True
                 up.save()
             event = schema1.OneClickTrialStartedEvent()
             event.set_request(request)
-            print("Sending event")
             send_schema1_event(event)
 
         context = self.get_context_data(**kwargs)
