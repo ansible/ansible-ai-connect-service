@@ -476,7 +476,7 @@ spec:
         value: slack-webhook-urls
       - name: key-name
         value: wisdom-eng
-      runAfter: init
+      runAfter: [init]
       taskRef:
         params:
         - name: bundle
