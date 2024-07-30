@@ -65,7 +65,9 @@
               -->
 
               {% elif has_expired_plan %}
-              Your trial period has expired
+              <div class="ls_message_body">
+              <p>Your trial period has expired</p>
+              </div>
               {% else  %}
               <form action={% url 'trial' %} method="post">{% csrf_token %}
 
