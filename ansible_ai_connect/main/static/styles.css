@@ -14,10 +14,26 @@
     padding: 15px;
 }
 
+.ls_username {
+    margin-top: 30px;
+}
+
+.ls_logout_button {
+    color: var(--pf-global--palette--black-400);
+    text-decoration: underline;
+}
+
+.ls_trial_text {
+    display: flex;
+    align-items: start;
+    flex-direction: column;
+    margin: 30px 0 50px 0;
+}
+
 .ls_button_checkbox_body {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: start;
 }
 
 .ls_checkbox_body {
@@ -27,8 +43,32 @@
     align-items: start;
 }
 
-.marketing_checkbox {
-    padding: 10px 0 15px 0;
+.ls_checkbox_wrapper {
+    display: flex;
+    flex-direction: row;
+}
+
+#ls_checkbox_terms {
+    margin-bottom: 30px;
+}
+
+.ls_checkbox_required {
+    color: var(--pf-global--palette--black-400);
+    margin-left: 15px;
+}
+.ls_checkbox_required_asterix {
+    color: red;
+}
+
+.ls_start_trial_button {
+    margin-top: 20px;
+}
+
+.ls_checkbox_text {
+    color: var(--pf-global--palette--black-400);
+    padding-left: 15px;
+    text-align: left;
+    margin-bottom: 30px;
 }
 
 .ls_logo_padding {
