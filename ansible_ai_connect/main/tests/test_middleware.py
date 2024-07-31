@@ -27,8 +27,8 @@ from segment import analytics
 from ansible_ai_connect.ai.api.tests.test_views import (
     MockedMeshClient,
     WisdomAppsBackendMocking,
-    WisdomServiceAPITestCaseBaseOIDC,
 )
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
 def dummy_redact_seated_users_data(event, allow_list):
