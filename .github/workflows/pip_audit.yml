@@ -38,6 +38,10 @@ jobs:
           python -m pip install . -rrequirements.txt
           # See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
           pip install --upgrade setuptools
+      - name: Create CA symlink to use RH's certifi on ubuntu-latest
+        run: |
+          sudo mkdir -p /etc/pki/tls/certs
+          sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
       - uses: pypa/gh-action-pip-audit@v1.0.8
         with:
           virtual-environment: env/

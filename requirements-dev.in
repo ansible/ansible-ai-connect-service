@@ -1,7 +1,6 @@
 black==24.3.0
 coverage==7.2.1
-# pin certifi on 2024.7.4 to address CVE-2024-39689
-certifi==2024.7.4
+certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
 flake8==6.0.0
 grpcio-tools==1.62.2
 # pin idna until responses -> requests is updated

@@ -8,7 +8,7 @@ black==24.3.0
     # via -r requirements-dev.in
 build==1.2.1
     # via pip-tools
-certifi==2024.7.4
+certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
     # via
     #   -r requirements-dev.in
     #   requests
