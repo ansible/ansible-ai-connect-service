@@ -21,17 +21,16 @@ import boto3
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from rest_framework.test import APITransactionTestCase
 
 import ansible_ai_connect.users.models
-from ansible_ai_connect.ai.api.tests.test_views import APITransactionTestCase
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
-from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
+from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, create_user
 from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
 from ansible_ai_connect.users.models import Plan
-from ansible_ai_connect.users.tests.test_users import create_user
 
 
 def bypass_init(*args, **kwargs):

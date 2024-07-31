@@ -27,23 +27,13 @@ from rest_framework.test import APITransactionTestCase
 
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
+from ansible_ai_connect.test_utils import create_user_with_provider
 from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
 from ansible_ai_connect.users.models import Plan
-from ansible_ai_connect.users.tests.test_users import create_user
-
-
-def create_user_with_provider(**kwargs):
-    kwargs.setdefault("username", "test_user_name")
-    kwargs.setdefault("password", "test_passwords")
-    kwargs.setdefault("provider", USER_SOCIAL_AUTH_PROVIDER_OIDC)
-    kwargs.setdefault("external_username", "anexternalusername")
-    return create_user(
-        **kwargs,
-    )
 
 
 class LogoutTest(TestCase):

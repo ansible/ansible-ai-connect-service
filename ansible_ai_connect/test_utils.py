@@ -12,13 +12,73 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
+import random
+import string
 from ast import literal_eval
 from http import HTTPStatus
-from typing import Union
+from typing import Optional, Union
 from unittest.mock import patch
+from uuid import uuid4
 
 from django.apps import apps
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.core.cache import cache
 from django.test import TestCase
+from django.utils import timezone
+from rest_framework.test import APITransactionTestCase
+from segment import analytics
+from social_django.models import UserSocialAuth
+
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
+
+logger = logging.getLogger(__name__)
+
+
+def create_user(
+    username: str = None,
+    password: str = None,
+    provider: str = None,
+    email: str = None,
+    social_auth_extra_data: any = {},
+    external_username: str = "",
+    rh_user_is_org_admin: Optional[bool] = None,
+    rh_user_id: str = None,
+    rh_org_id: int = 1234567,
+    org_opt_out: bool = False,
+):
+    (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
+    username = username or "u" + "".join(random.choices(string.digits, k=5))
+    password = password or "secret"
+    email = email or username + "@example.com"
+    user = get_user_model().objects.create_user(
+        username=username,
+        email=email,
+        password=password,
+        organization=org if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
+    )
+    if provider:
+        rh_user_id = rh_user_id or str(uuid4())
+        user.external_username = external_username or username
+        social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=rh_user_id)
+        social_auth.set_extra_data(social_auth_extra_data)
+        if rh_user_is_org_admin:
+            user.rh_user_is_org_admin = rh_user_is_org_admin
+    user.save()
+    return user
+
+
+def create_user_with_provider(**kwargs):
+    kwargs.setdefault("username", "test_user_name")
+    kwargs.setdefault("password", "test_passwords")
+    kwargs.setdefault("provider", USER_SOCIAL_AUTH_PROVIDER_OIDC)
+    kwargs.setdefault("external_username", "anexternalusername")
+    return create_user(
+        **kwargs,
+    )
 
 
 class WisdomLogAwareMixin:
@@ -129,3 +189,59 @@ class WisdomAppsBackendMocking(WisdomTestCase):
     @staticmethod
     def mock_wca_secret_manager_with(mocked):
         apps.get_app_config("ai")._wca_secret_manager = mocked
+
+
+class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        analytics.send = False  # do not send data to segment from unit tests
+        segment_analytics_telemetry.send = False  # do not send data to segment from unit tests
+
+    def create_user(self):
+        logger.warn("Please move this test to WisdomServiceAPITestCaseBaseOIDC")
+
+        self.user = get_user_model().objects.create_user(
+            username=self.username,
+            email=self.email,
+            password=self.password,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.username = "u" + "".join(random.choices(string.digits, k=5))
+        self.password = "secret"
+        self.email = "user@example.com"
+        self.create_user()
+
+        self.user.user_id = str(uuid4())
+        self.user.community_terms_accepted = timezone.now()
+        self.user.save()
+
+        group_1, _ = Group.objects.get_or_create(name="Group 1")
+        group_2, _ = Group.objects.get_or_create(name="Group 2")
+        group_1.user_set.add(self.user)
+        group_2.user_set.add(self.user)
+        cache.clear()
+
+    def tearDown(self):
+        Organization.objects.filter(id=1).delete()
+        self.user.delete()
+        super().tearDown()
+
+    def login(self):
+        self.client.login(username=self.username, password=self.password)
+
+
+class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
+    """This class should ultimately replace WisdomServiceAPITestCaseBase"""
+
+    def create_user(self):
+        self.user = create_user_with_provider(
+            username=self.username,
+            email=self.email,
+            password=self.password,
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_org_id=1981,
+            social_auth_extra_data={},
+        )

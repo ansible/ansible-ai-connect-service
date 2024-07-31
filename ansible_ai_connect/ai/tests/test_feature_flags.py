@@ -20,7 +20,7 @@ from django.test import override_settings
 from ldclient.config import Config
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
 class TestFeatureFlags(WisdomServiceAPITestCaseBaseOIDC):

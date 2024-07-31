@@ -28,18 +28,12 @@ from unittest.mock import ANY, Mock, patch
 import requests
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.core.cache import cache
 from django.test import modify_settings, override_settings
 from django.urls import reverse
-from django.utils import timezone
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.utils import Input, Output
 from requests.exceptions import ReadTimeout
 from rest_framework.exceptions import APIException
-from rest_framework.test import APITransactionTestCase
-from segment import analytics
 
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
@@ -87,18 +81,14 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
-from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomLogAwareMixin,
-    WisdomServiceLogAwareTestCase,
+    WisdomServiceAPITestCaseBase,
 )
-from ansible_ai_connect.users.constants import (
-    USER_SOCIAL_AUTH_PROVIDER_AAP,
-    USER_SOCIAL_AUTH_PROVIDER_OIDC,
-)
+from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
 from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -188,62 +178,6 @@ class MockedMeshClient(ModelMeshClient):
 
     def explain_playbook(self, request, content, explanation_id: str = "") -> str:
         return self.response_data
-
-
-class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        analytics.send = False  # do not send data to segment from unit tests
-        segment_analytics_telemetry.send = False  # do not send data to segment from unit tests
-
-    def create_user(self):
-        logger.warn("Please move this test to WisdomServiceAPITestCaseBaseOIDC")
-
-        self.user = get_user_model().objects.create_user(
-            username=self.username,
-            email=self.email,
-            password=self.password,
-        )
-
-    def setUp(self):
-        super().setUp()
-        self.username = "u" + "".join(random.choices(string.digits, k=5))
-        self.password = "secret"
-        self.email = "user@example.com"
-        self.create_user()
-
-        self.user.user_id = str(uuid.uuid4())
-        self.user.community_terms_accepted = timezone.now()
-        self.user.save()
-
-        group_1, _ = Group.objects.get_or_create(name="Group 1")
-        group_2, _ = Group.objects.get_or_create(name="Group 2")
-        group_1.user_set.add(self.user)
-        group_2.user_set.add(self.user)
-        cache.clear()
-
-    def tearDown(self):
-        Organization.objects.filter(id=1).delete()
-        self.user.delete()
-        super().tearDown()
-
-    def login(self):
-        self.client.login(username=self.username, password=self.password)
-
-
-class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
-    """This class should ultimately replace WisdomServiceAPITestCaseBase"""
-
-    def create_user(self):
-        self.user = create_user_with_provider(
-            username=self.username,
-            email=self.email,
-            password=self.password,
-            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
-            rh_org_id=1981,
-            social_auth_extra_data={},
-        )
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")

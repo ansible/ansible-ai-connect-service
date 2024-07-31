@@ -15,9 +15,7 @@
 import random
 import string
 from http import HTTPStatus
-from typing import Optional
 from unittest.mock import patch
-from uuid import uuid4
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
@@ -27,7 +25,6 @@ from django.test import override_settings
 from django.urls import reverse
 from prometheus_client.parser import text_string_to_metric_families
 from rest_framework.test import APITransactionTestCase
-from social_django.models import UserSocialAuth
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
 from ansible_ai_connect.ai.api.permissions import (
@@ -38,6 +35,7 @@ from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
+    create_user,
 )
 from ansible_ai_connect.users.constants import (
     FAUX_COMMERCIAL_USER_ORG_ID,
@@ -45,39 +43,6 @@ from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
-
-
-def create_user(
-    username: str = None,
-    password: str = None,
-    provider: str = None,
-    email: str = None,
-    social_auth_extra_data: any = {},
-    external_username: str = "",
-    rh_user_is_org_admin: Optional[bool] = None,
-    rh_user_id: str = None,
-    rh_org_id: int = 1234567,
-    org_opt_out: bool = False,
-):
-    (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
-    username = username or "u" + "".join(random.choices(string.digits, k=5))
-    password = password or "secret"
-    email = email or username + "@example.com"
-    user = get_user_model().objects.create_user(
-        username=username,
-        email=email,
-        password=password,
-        organization=org if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
-    )
-    if provider:
-        rh_user_id = rh_user_id or str(uuid4())
-        user.external_username = external_username or username
-        social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=rh_user_id)
-        social_auth.set_extra_data(social_auth_extra_data)
-        if rh_user_is_org_admin:
-            user.rh_user_is_org_admin = rh_user_is_org_admin
-    user.save()
-    return user
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")

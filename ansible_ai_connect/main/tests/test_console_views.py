@@ -25,8 +25,8 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
 from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
 class TestConsoleView(WisdomServiceAPITestCaseBaseOIDC):

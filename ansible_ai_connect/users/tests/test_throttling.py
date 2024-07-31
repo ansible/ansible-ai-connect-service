@@ -14,8 +14,8 @@
 
 from django.conf import settings
 
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBaseOIDC
 from ansible_ai_connect.ai.api.views import Completions, Feedback
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 from ..throttling import GroupSpecificThrottle
 
