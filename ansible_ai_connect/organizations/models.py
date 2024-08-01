@@ -14,9 +14,12 @@
 
 import logging
 
+from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
+
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,12 @@ class Organization(models.Model):
         except Exception:
             # User should not be blocked if LaunchDarkly fails.
             return True
+
+    @cached_property
+    def has_api_key(self) -> bool:
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        org_has_api_key = secret_manager.secret_exists(self.id, Suffixes.API_KEY)
+        return org_has_api_key
 
     def __make_organization_request_to_launchdarkly(self, flag: str) -> bool:
         if not settings.LAUNCHDARKLY_SDK_KEY:
