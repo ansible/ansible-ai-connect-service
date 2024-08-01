@@ -433,11 +433,9 @@ class WCAClient(BaseWCAClient):
         return response.json()
 
     def get_api_key(self, user, organization_id: Optional[int]) -> str:
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            up.is_active for up in user.userplan_set.all()
-        ):
-            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY
-
+        if not organization_id and user.organization:
+            # TODO: the organization_id parameter should be removed
+            organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
         # use the environment API key override if it's set
         if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
             return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -448,8 +446,16 @@ class WCAClient(BaseWCAClient):
             )
             raise WcaKeyNotFound
 
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
+        if (
+            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
+            and any(up.is_active for up in user.userplan_set.all())
+            and user.organization
+            and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
+        ):
+            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY
+
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
             if api_key is not None:
                 return api_key["SecretString"]
@@ -468,11 +474,18 @@ class WCAClient(BaseWCAClient):
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL and any(
-            # NOTE: I'm not sure why the same call in get_api_key() passes
-            # just fine.
-            up.is_active
-            for up in user.userplan_set.all()  # noqa: E501 # pyright: ignore[reportAttributeAccessIssue]
+        if not organization_id and user.organization:
+            # TODO: the organization_id parameter should be removed
+            organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
+        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
+        if (
+            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
+            and any(
+                up.is_active
+                for up in user.userplan_set.all()  # noqa: E501 # pyright: ignore[reportAttributeAccessIssue]
+            )
+            and user.organization
+            and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
         ):
             return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID
 
@@ -489,7 +502,6 @@ class WCAClient(BaseWCAClient):
             raise WcaNoDefaultModelId
 
         try:
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
             model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
             if model_id is not None:
                 return model_id["SecretString"]

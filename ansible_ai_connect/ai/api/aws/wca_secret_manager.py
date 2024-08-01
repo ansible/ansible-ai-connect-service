@@ -57,9 +57,7 @@ class DummySecretEntry(dict):
 
 class DummySecretManager(BaseSecretManager):
     def __init__(self, *args, **kwargs):
-        self._secrets: dict[int, DummySecretEntry] = DummySecretManager.load_secrets(
-            settings.WCA_SECRET_DUMMY_SECRETS
-        )
+        pass
 
     @staticmethod
     def load_secrets(from_settings: str):
@@ -94,8 +92,11 @@ class DummySecretManager(BaseSecretManager):
         logger.debug("I'm fake: Secret won't be deleted")
 
     def get_secret(self, org_id: int, suffix: Suffixes) -> Optional[dict[str, Any]]:
+        secrets: dict[int, DummySecretEntry] = DummySecretManager.load_secrets(
+            settings.WCA_SECRET_DUMMY_SECRETS
+        )
         try:
-            return self._secrets[org_id][suffix]
+            return secrets[org_id][suffix]
         except KeyError:
             return None
 
