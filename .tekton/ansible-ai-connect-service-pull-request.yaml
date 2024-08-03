@@ -7,8 +7,7 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: ansible-ai-connect-service
@@ -83,13 +82,11 @@ spec:
       name: output-image
       type: string
     - default: .
-      description: Path to the source code of an application's component from where
-        to build image.
+      description: Path to the source code of an application's component from where to build image.
       name: path-context
       type: string
     - default: Dockerfile
-      description: Path to the Dockerfile inside the context specified by parameter
-        path-context
+      description: Path to the Dockerfile inside the context specified by parameter path-context
       name: dockerfile
       type: string
     - default: "false"
@@ -117,16 +114,14 @@ spec:
       name: java
       type: string
     - default: ""
-      description: Image tag expiration time, time values could be something like
-        1h, 2d, 3w for hours, days, and weeks, respectively.
+      description: Image tag expiration time, time values could be something like 1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
     - default: "false"
       description: Build a source image.
       name: build-source-image
       type: string
     - default: ""
-      description: Path to a file with build arguments which will be passed to podman
-        during build
+      description: Path to a file with build arguments which will be passed to podman during build
       name: build-args-file
       type: string
     results:
@@ -277,21 +272,21 @@ spec:
       runAfter:
       - clone-repository
       workspaces:
-        - name: source
-          workspace: workspace
+      - name: source
+        workspace: workspace
       taskSpec:
         workspaces:
-          - name: source
+        - name: source
         steps:
-          - name: get-commit-timestamp
-            image: alpine/git
-            script: |
-              #!/bin/sh
-              set -euo pipefail
-              cd "$(workspaces.source.path)/source"
-              echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
+        - name: get-commit-timestamp
+          image: alpine/git
+          script: |
+            #!/bin/sh
+            set -euo pipefail
+            cd "$(workspaces.source.path)/source"
+            echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
         results:
-          - name: commit-timestamp
+        - name: commit-timestamp
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -385,7 +380,7 @@ spec:
         - "false"
     - name: sast-snyk-check
       runAfter:
-      - clone-repository
+      - build-container
       taskRef:
         params:
         - name: name
@@ -403,6 +398,11 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
+      params:
+      - name: image-digest
+        value: $(tasks.build-container.results.IMAGE_DIGEST)
+      - name: image-url
+        value: $(tasks.build-container.results.IMAGE_URL)
     - name: clamav-scan
       params:
       - name: image-digest
