@@ -156,7 +156,7 @@ def completion_post_process(context: CompletionContext):
         )
 
     recommendation_yaml = fmtr.restore_original_task_names(
-        anonymized_recommendation_yaml, original_prompt
+        anonymized_recommendation_yaml, original_prompt, payload_context
     )
     recommendation_problem = None
     truncated_yaml = None

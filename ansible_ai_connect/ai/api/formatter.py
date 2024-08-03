@@ -368,15 +368,36 @@ def get_task_names_from_tasks(tasks):
     return names
 
 
-def restore_original_task_names(output_yaml, prompt):
+def restore_original_task_names(output_yaml, prompt, payload_context=""):
     if output_yaml and is_multi_task_prompt(prompt):
+        full_yaml = payload_context + output_yaml
+        try:
+            data = yaml.safe_load(full_yaml)
+        except Exception as exc:
+            logger.exception(
+                f"Error while loading the result role/playbook YAML:{exc} "
+                f"for restoring the original task names"
+            )
+            return output_yaml
         prompt_tasks = get_task_names_from_prompt(prompt)
-        matches = re.finditer(r"^- name:\s+(.*)", output_yaml, re.M)
-        for i, match in enumerate(matches):
+        task_list = []
+        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+            # Tries to get the tasks from the dict if it's a playbook (payload_context!='')
+            task_list = data[0].get("tasks", [])
+            # If it is not a playbook, then it is a role,
+            # so the list is a task list (payload_context='')
+            if not task_list:
+                task_list = data
+
+        for i, task in enumerate(task_list):
             try:
-                task_line = match.group(0)
-                task = match.group(1)
-                restored_task_line = task_line.replace(task, prompt_tasks[i])
+                task_name = task.get("name", "")
+                # We have a list, but not all lists can be task lists
+                # This is for handling the non-task lists case
+                if not task_name:
+                    continue
+                task_line = "- name:  " + task_name
+                restored_task_line = task_line.replace(task_name, prompt_tasks[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
             except IndexError:
                 logger.error(
