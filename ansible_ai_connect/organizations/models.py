@@ -21,6 +21,13 @@ from django.utils.functional import cached_property
 logger = logging.getLogger(__name__)
 
 
+def get_feature_flags():
+    # Avoid circular dependency issue with lazy import
+    from ansible_ai_connect.ai.feature_flags import FeatureFlags
+
+    return FeatureFlags()
+
+
 class Organization(models.Model):
     id = models.IntegerField(primary_key=True)
     telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
@@ -50,10 +57,7 @@ class Organization(models.Model):
         if not settings.LAUNCHDARKLY_SDK_KEY:
             return False
 
-        # Avoid circular dependency issue with lazy import
-        from ansible_ai_connect.ai.feature_flags import FeatureFlags
-
-        feature_flags = FeatureFlags()
+        feature_flags = get_feature_flags()
         return feature_flags.check_flag(
             flag,
             {"kind": "organization", "key": str(self.id)},
