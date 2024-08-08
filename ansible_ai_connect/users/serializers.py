@@ -51,4 +51,21 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
                     """
                     break
 
+        host = self.context["request"].get_host()
+
+        if (
+            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
+            and user.is_authenticated
+            and user.is_oidc_user
+            and user.rh_org_has_subscription
+            and not user.organization.has_api_key
+        ):
+            markdown_value = f"""
+                Logged in as: {user.username}<br><br>
+                Your account is not configured to use Ansible Lightspeed.
+                Start a trial to Ansible Lightspeed with IBM watsonx Code Assistant
+                by following the link below.<br><br>
+                <a href = "https://{host}/trial/">Start trial</a>
+            """
+
         return dedent(markdown_value).strip()

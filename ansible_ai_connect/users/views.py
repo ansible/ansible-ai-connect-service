@@ -143,7 +143,7 @@ class MarkdownCurrentUserView(RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         # User data and use Django to serialise it into a dict
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        serializer = self.get_serializer(instance, context={"request": request})
 
         response = serializer.data
 
