@@ -16,6 +16,23 @@ from textwrap import dedent
 from django.conf import settings
 from rest_framework import serializers
 
+from ansible_ai_connect.organizations.serializers import OrganizationSerializer
+from ansible_ai_connect.users.models import Plan, UserPlan
+
+
+class PlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plan
+        fields = ["id", "name"]
+
+
+class UserPlanSerializer(serializers.ModelSerializer):
+    plan = PlanSerializer()
+
+    class Meta:
+        model = UserPlan
+        fields = ["created_at", "expired_at", "accept_marketing", "plan"]
+
 
 class UserResponseSerializer(serializers.Serializer):
     # Implemented as a vanilla Serializer as ModelSerializer is driven by the Model definition.
@@ -26,7 +43,10 @@ class UserResponseSerializer(serializers.Serializer):
     rh_user_is_org_admin = serializers.BooleanField(required=False)
     external_username = serializers.CharField(required=False)
     username = serializers.CharField(required=True, max_length=150)
+    ams = serializers.DictField(required=False)
     org_telemetry_opt_out = serializers.BooleanField(required=False)
+    userplan_set = UserPlanSerializer(many=True)
+    organization = OrganizationSerializer(required=False)
 
 
 class MarkdownUserResponseSerializer(serializers.Serializer):

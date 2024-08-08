@@ -35,7 +35,7 @@ from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
-from ansible_ai_connect.users.models import Plan
+from ansible_ai_connect.users.models import Plan, User
 
 from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
@@ -123,6 +123,11 @@ class CurrentUserView(RetrieveAPIView):
         )
 
         return Response(user_data)
+
+
+class UserDetails(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserResponseSerializer
 
 
 class MarkdownCurrentUserView(RetrieveAPIView):
