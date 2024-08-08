@@ -35,6 +35,12 @@ class Organization(models.Model):
     id = models.IntegerField(primary_key=True)
     telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
 
+    @property  # NOTE: The info dict is already cache in the seat_checker
+    def name(self):
+        seat_checker = apps.get_app_config("ai").get_seat_checker()
+        organization_info = seat_checker.get_organization(self.id)
+        return organization_info.get("name")
+
     @property
     def has_telemetry_opt_out(self):
         # For saas deployment mode, telemetry is opted-in by default (telemetry_opt_out=False)

@@ -103,6 +103,12 @@ authz_ams_rh_org_has_subscription_cache_hit_counter = Counter(
     namespace=NAMESPACE,
 )
 
+authz_ams_account_cache_hit_counter = Counter(
+    "authz_ams_account_cache_hit_counter",
+    "Counter of the number of times the AMS 'account' cache is hit.",
+    namespace=NAMESPACE,
+)
+
 
 class BaseCheck:
     @abstractmethod
@@ -196,7 +202,7 @@ class Token:
         return self.access_token
 
 
-class CIAMCheck(BaseCheck):
+class CIAMCheck(BaseCheck):  # TODO: To be removed
     def __init__(self, client_id, client_secret, sso_server, api_server):
         self._session = requests.Session()
         self._token = Token(client_id, client_secret, sso_server)
@@ -211,6 +217,7 @@ class CIAMCheck(BaseCheck):
         r.raise_for_status()
 
 
+# NOTE: we should probably rename the class to reflect it's current purpose
 class AMSCheck(BaseCheck):
     # An AMS Organization ID that should never match anything
     ERROR_AMS_ORG_UNDEFINED = "__undefined__"
@@ -239,13 +246,13 @@ class AMSCheck(BaseCheck):
     def update_bearer_token(self):
         self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
 
-    def get_ams_org(self, rh_org_id: int) -> str:
+    def get_organization(self, rh_org_id: int) -> dict[str, str]:
         if not rh_org_id:
             logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
-            return AMSCheck.ERROR_AMS_ORG_UNDEFINED
+            return {}
 
         # Check cache
-        cache_key = f"rh_org_{rh_org_id}"
+        cache_key = f"rh_organization_info_{rh_org_id}"
         cached_result = cache.get(cache_key)
         if cached_result is not None:
             authz_ams_org_cache_hit_counter.inc(exemplar={"organization_id": str(rh_org_id)})
@@ -288,9 +295,9 @@ class AMSCheck(BaseCheck):
         try:
             if len(data["items"]) == 0:
                 logger.info(f"An AMS Organization could not be found. " f"rh_org_id: {rh_org_id}.")
-                return AMSCheck.ERROR_AMS_ORG_UNDEFINED
+                return {}
 
-            result = data["items"][0]["id"]
+            result = data["items"][0]
             cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
             return result
         except (IndexError, KeyError, ValueError):
@@ -299,6 +306,81 @@ class AMSCheck(BaseCheck):
                 f"rh_org_id: {rh_org_id}, data={data}."
             )
             raise AMSCheck.AMSError
+
+    def get_account(self, rh_org_id: int, username: str) -> dict[str, str]:
+        if not rh_org_id:
+            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
+            return {}
+
+        # Check cache
+        cache_key = f"rh_account_info_{rh_org_id}_{username}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            authz_ams_account_cache_hit_counter.inc(
+                exemplar={"organization_id": str(rh_org_id), "username": str(username)}
+            )
+            return cached_result
+
+        params = {"search": f"organization.external_id = '{rh_org_id}' and username = '{username}'"}
+        self.update_bearer_token()
+
+        try:
+
+            @backoff.on_exception(
+                backoff.expo,
+                Exception,
+                max_tries=self.retries + 1,
+                giveup=fatal_exception,
+                on_backoff=self.on_backoff,
+            )
+            @authz_ams_get_organization_hist.time()
+            def get_request():
+                return self._session.get(
+                    self._api_server + "/api/accounts_mgmt/v1/accounts",
+                    params=params,
+                    timeout=self.timeout,
+                )
+
+            r = get_request()
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT + f" rh_org_id: {rh_org_id}.")
+            raise AMSCheck.AMSError()
+
+        if r.status_code != HTTPStatus.OK:
+            logger.error(
+                f"Unexpected error code ({r.status_code}) returned by AMS backend (account). "
+                f"rh_org_id: {rh_org_id}."
+            )
+            raise AMSCheck.AMSError()
+
+        data = r.json()
+
+        try:
+            if len(data["items"]) == 0:
+                logger.info(
+                    f"An AMS Account could not be found. "
+                    f"rh_org_id: {rh_org_id}."
+                    f"username: {username}."
+                )
+                return {}
+
+            result = data["items"][0]
+            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
+            return result
+        except (IndexError, KeyError, ValueError):
+            logger.exception(
+                f"Unexpected answer from AMS backend (account). "
+                f"rh_org_id: {rh_org_id}, data={data}."
+            )
+            raise AMSCheck.AMSError
+
+    def get_ams_org(self, rh_org_id: int) -> str:
+        """Return the AMS ID for a Red Hat org id"""
+        org_info = self.get_organization(rh_org_id)
+        if "id" in org_info:
+            return self.get_organization(rh_org_id)["id"]
+        else:
+            return AMSCheck.ERROR_AMS_ORG_UNDEFINED
 
     def self_test(self):
         self.update_bearer_token()
@@ -446,3 +528,23 @@ class DummyCheck(BaseCheck):
             int(i) for i in settings.AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION.split(",") if i
         ]
         return organization_id in orgs_with_subscription
+
+    def get_organization(self, organization_id: int) -> dict[str, str]:
+        return {
+            "created_at": "2019-02-11T06:30:13.094967Z",
+            "ebs_account_id": str(organization_id * 2),
+            "external_id": str(organization_id),
+            "href": "/api/accounts_mgmt/v1/organizations/Somethinghere",
+            "id": "Somethinghere",
+            "kind": "Organization",
+            "name": f"My great organization {organization_id}",
+            "updated_at": "2024-08-08T19:54:15.145316Z",
+        }
+
+    def get_account(self, organization_id: int, username: str) -> dict[str, str]:
+        return {
+            "email": f"{username}@my-great-domain.us",
+            "first_name": "Robert",
+            "last_name": "Surcouf",
+            "username": username,
+        }
