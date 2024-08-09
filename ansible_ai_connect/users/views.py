@@ -61,7 +61,7 @@ class HomeView(TemplateView):
             and self.request.user.rh_org_has_subscription
             and not self.request.user.is_aap_user()
         ):
-            self.org_has_api_key = self.request.user.organization.has_api_key()
+            self.org_has_api_key = self.user.organization.has_api_key()
 
         if (
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
