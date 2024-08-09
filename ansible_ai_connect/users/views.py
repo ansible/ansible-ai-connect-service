@@ -194,10 +194,8 @@ class TrialView(TemplateView):
             "True",
             "on",
         ]
-        context["allow_information_share"] = self.request.POST.get("allow_information_share") in [
-            "True",
-            "on",
-        ]
+        # "accept_trial_terms" and "allow_information_share" are merged into one checkbox
+        context["allow_information_share"] = context["accept_trial_terms"]
         context["accept_marketing_emails"] = self.request.POST.get("accept_marketing_emails") in [
             "True",
             "on",
@@ -211,7 +209,8 @@ class TrialView(TemplateView):
         form.is_valid()
 
         accept_trial_terms = request.POST.get("accept_trial_terms") == "on"
-        allow_information_share = request.POST.get("allow_information_share") == "on"
+        # "accept_trial_terms" and "allow_information_share" are merged into one checkbox
+        allow_information_share = accept_trial_terms
         start_trial_button = request.POST.get("start_trial_button") == "True"
         accept_marketing_emails = request.POST.get("accept_marketing_emails") == "on"
 
