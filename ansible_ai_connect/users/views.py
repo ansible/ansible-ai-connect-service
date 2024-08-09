@@ -62,9 +62,7 @@ class HomeView(TemplateView):
             and self.request.user.rh_org_has_subscription
             and not self.request.user.is_aap_user()
         ):
-            self.org_has_api_key = self.secret_manager.secret_exists(
-                self.request.user.organization.id, Suffixes.API_KEY
-            )
+            self.org_has_api_key = self.request.user.organization.has_api_key()
 
         if (
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
@@ -168,8 +166,7 @@ class TrialView(TemplateView):
         if not self.request.user.rh_org_has_subscription:
             return HttpResponseForbidden()
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        if secret_manager.secret_exists(request.user.organization.id, Suffixes.API_KEY):
+        if request.user.organization.has_api_key():
             return HttpResponseForbidden()
 
         return super().dispatch(request, *args, **kwargs)

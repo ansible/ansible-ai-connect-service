@@ -103,9 +103,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
             if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
                 return True
 
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            org_has_api_key = secret_manager.secret_exists(self.organization.id, Suffixes.API_KEY)
-            return org_has_api_key
+            return self.organization.has_api_key()
 
         return False
 

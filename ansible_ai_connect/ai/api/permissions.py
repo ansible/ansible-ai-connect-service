@@ -68,8 +68,7 @@ class BlockWCANotReadyButTrialAvailable(permissions.BasePermission):
         if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        org_has_api_key = user.organization.has_api_key()
         return CONTINUE if org_has_api_key else BLOCK
 
 
@@ -96,8 +95,8 @@ class BlockUserWithoutSeatAndWCAReadyOrg(permissions.BasePermission):
         if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        org_has_api_key = user.organization.has_api_key()
+
         return BLOCK if org_has_api_key else CONTINUE
 
 
@@ -122,8 +121,7 @@ class BlockUserWithSeatButWCANotReady(permissions.BasePermission):
         if any(up.is_active for up in request.user.userplan_set.all()):
             return CONTINUE
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        org_has_api_key = secret_manager.secret_exists(user.organization.id, Suffixes.API_KEY)
+        org_has_api_key = user.organization.has_api_key()
         return CONTINUE if org_has_api_key else BLOCK
 
 
