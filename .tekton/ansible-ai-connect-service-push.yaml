@@ -68,14 +68,14 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
-    - name: slack-webhook-notification-final
+    - name: slack-notification-when-failed
       params:
       - name: message
-        value: PipelineRun $(context.pipelineRun.name) commit={{revision}} status=$(tasks.status)
+        value: Konflux $(context.pipelineRun.name) status=$(tasks.status)
       - name: secret-name
         value: slack-webhook-urls
       - name: key-name
-        value: wisdom-cicd-events
+        value: team-wisdom-eng
       taskRef:
         params:
         - name: bundle
@@ -89,6 +89,23 @@ spec:
         - input: $(tasks.status)
           operator: in
           values: ["Failed"]
+    - name: slack-notification
+      params:
+      - name: message
+        value: Konflux $(context.pipelineRun.name) status=$(tasks.status)
+      - name: secret-name
+        value: slack-webhook-urls
+      - name: key-name
+        value: wisdom-cicd-events
+      taskRef:
+        params:
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-slack-webhook-notification:0.1
+        - name: name
+          value: slack-webhook-notification
+        - name: kind
+          value: Task
+        resolver: bundles
     params:
     - description: Source Repository URL
       name: git-url
