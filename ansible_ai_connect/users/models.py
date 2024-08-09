@@ -24,7 +24,6 @@ from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
 
-from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.organizations.models import Organization
 
 from .constants import (
@@ -103,9 +102,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
             if not settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW:
                 return True
 
-            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-            org_has_api_key = secret_manager.secret_exists(self.organization.id, Suffixes.API_KEY)
-            return org_has_api_key
+            return self.organization.has_api_key
 
         return False
 

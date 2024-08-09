@@ -451,7 +451,7 @@ class WCAClient(BaseWCAClient):
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
             and any(up.is_active for up in user.userplan_set.all())
             and user.organization
-            and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
+            and not user.organization.has_api_key
         ):
             return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY
 

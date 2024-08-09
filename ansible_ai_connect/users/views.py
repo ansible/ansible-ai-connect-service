@@ -31,7 +31,6 @@ from rest_framework.throttling import UserRateThrottle
 from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerMissingCredentialsError,
 )
-from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
@@ -62,9 +61,7 @@ class HomeView(TemplateView):
             and self.request.user.rh_org_has_subscription
             and not self.request.user.is_aap_user()
         ):
-            self.org_has_api_key = self.secret_manager.secret_exists(
-                self.request.user.organization.id, Suffixes.API_KEY
-            )
+            self.org_has_api_key = request.user.organization.has_api_key
 
         if (
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
@@ -168,8 +165,7 @@ class TrialView(TemplateView):
         if not self.request.user.rh_org_has_subscription:
             return HttpResponseForbidden()
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        if secret_manager.secret_exists(request.user.organization.id, Suffixes.API_KEY):
+        if request.user.organization.has_api_key:
             return HttpResponseForbidden()
 
         return super().dispatch(request, *args, **kwargs)
