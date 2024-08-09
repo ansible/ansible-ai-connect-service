@@ -71,7 +71,28 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
-    - name: slack-webhook-notification-final
+    - name: slack-notification-when-failed
+      params:
+      - name: message
+        value: PipelineRun $(context.pipelineRun.name) status=$(tasks.status)
+      - name: secret-name
+        value: slack-webhook-urls
+      - name: key-name
+        value: team-wisdom-eng
+      taskRef:
+        params:
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-slack-webhook-notification:0.1
+        - name: name
+          value: slack-webhook-notification
+        - name: kind
+          value: Task
+        resolver: bundles
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
+    - name: slack-notification
       params:
       - name: message
         value: PipelineRun $(context.pipelineRun.name) status=$(tasks.status)
@@ -88,10 +109,6 @@ spec:
         - name: kind
           value: Task
         resolver: bundles
-      when:
-        - input: $(tasks.status)
-          operator: in
-          values: ["Failed"]
     params:
     - description: Source Repository URL
       name: git-url
@@ -305,7 +322,7 @@ spec:
           - name: source
         steps:
           - name: get-commit-timestamp
-            image: alpine/git0
+            image: alpine/git
             script: |
               #!/bin/sh
               set -euo pipefail
