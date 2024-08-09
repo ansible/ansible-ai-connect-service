@@ -12,11 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from django.apps import apps
 from django.conf import settings
 from rest_framework import permissions
-
-from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
 CONTINUE = True
 BLOCK = False

@@ -485,7 +485,7 @@ class WCAClient(BaseWCAClient):
                 for up in user.userplan_set.all()  # noqa: E501 # pyright: ignore[reportAttributeAccessIssue]
             )
             and user.organization
-            and not user.organization.has_api_key()
+            and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
         ):
             return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID
 
