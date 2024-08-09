@@ -88,10 +88,10 @@ spec:
         - name: kind
           value: Task
         resolver: bundles
-      # when:
-      #   - input: $(tasks.status)
-      #     operator: in
-      #     values: ["Failed"]
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
     params:
     - description: Source Repository URL
       name: git-url
@@ -305,7 +305,7 @@ spec:
           - name: source
         steps:
           - name: get-commit-timestamp
-            image: alpine/git
+            image: alpine/git0
             script: |
               #!/bin/sh
               set -euo pipefail

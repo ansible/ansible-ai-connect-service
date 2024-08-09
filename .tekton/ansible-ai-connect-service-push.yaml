@@ -85,10 +85,10 @@ spec:
         - name: kind
           value: Task
         resolver: bundles
-      # when:
-      #   - input: $(tasks.status)
-      #     operator: in
-      #     values: ["Failed"]
+      when:
+        - input: $(tasks.status)
+          operator: in
+          values: ["Failed"]
     params:
     - description: Source Repository URL
       name: git-url
