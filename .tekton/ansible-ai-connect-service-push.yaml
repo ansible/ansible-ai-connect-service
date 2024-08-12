@@ -71,7 +71,7 @@ spec:
     - name: slack-notification-when-failed
       params:
       - name: message
-        value: Konflux $(context.pipelineRun.name) status=$(tasks.status)
+        value: Konflux https://console.redhat.com/application-pipeline/workspaces/ansible-lightspeed/applications/ansible-ai-connect-service/pipelineruns/$(context.pipelineRun.name) status=$(tasks.status)
       - name: secret-name
         value: slack-webhook-urls
       - name: key-name
@@ -92,7 +92,7 @@ spec:
     - name: slack-notification
       params:
       - name: message
-        value: Konflux $(context.pipelineRun.name) status=$(tasks.status)
+        value: Konflux https://console.redhat.com/application-pipeline/workspaces/ansible-lightspeed/applications/ansible-ai-connect-service/pipelineruns/$(context.pipelineRun.name) status=$(tasks.status)
       - name: secret-name
         value: slack-webhook-urls
       - name: key-name
