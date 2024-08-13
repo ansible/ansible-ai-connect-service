@@ -23,6 +23,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
+from rest_framework import viewsets
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -34,8 +35,9 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
 from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
-from ansible_ai_connect.users.models import Plan
+from ansible_ai_connect.users.models import Plan, User
 
+from .permissions import DjangoModelPermissionsWithGET
 from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
@@ -120,6 +122,12 @@ class CurrentUserView(RetrieveAPIView):
         )
 
         return Response(user_data)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = [DjangoModelPermissionsWithGET]
+    queryset = User.objects.all()
+    serializer_class = UserResponseSerializer
 
 
 class MarkdownCurrentUserView(RetrieveAPIView):

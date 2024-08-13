@@ -325,6 +325,48 @@ paths:
           description: Request was throttled
         '500':
           description: Internal service error
+  /api/v0/users:
+    get:
+      operationId: users_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserResponseList'
+          description: ''
+  /api/v0/users/{id}:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this user.
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
   /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
@@ -856,6 +898,62 @@ components:
           title: Ansible vscode/vscodium extension version
           description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
           pattern: v?\d+\.\d+\.\d+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        name:
+          type: string
+          readOnly: true
+        has_api_key:
+          type: boolean
+          readOnly: true
+        has_telemetry_opt_out:
+          type: string
+          readOnly: true
+      required:
+      - has_api_key
+      - has_telemetry_opt_out
+      - id
+      - name
+    PaginatedUserResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+    Plan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+      required:
+      - id
+      - name
     PlaybookExplanationFeedback:
       type: object
       properties:
@@ -972,6 +1070,24 @@ components:
       description: |-
         * `bug-report` - Bug Report
         * `feature-request` - Feature Request
+    UserPlan:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expired_at:
+          type: string
+          format: date-time
+          nullable: true
+        accept_marketing:
+          type: boolean
+        plan:
+          $ref: '#/components/schemas/Plan'
+      required:
+      - created_at
+      - plan
     UserResponse:
       type: object
       properties:
@@ -988,12 +1104,22 @@ components:
         username:
           type: string
           maxLength: 150
+        ams:
+          type: object
+          additionalProperties: {}
         org_telemetry_opt_out:
           type: boolean
+        userplan_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPlan'
+        organization:
+          $ref: '#/components/schemas/Organization'
       required:
       - rh_org_has_subscription
       - rh_user_has_seat
       - username
+      - userplan_set
     WcaKeyRequest:
       type: object
       properties:

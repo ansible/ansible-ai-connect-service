@@ -19,13 +19,18 @@ from unittest.mock import ANY, Mock, patch
 
 import boto3
 from django.conf import settings
+from django.contrib.auth.models import Group, Permission
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from rest_framework.test import APITransactionTestCase
 
 import ansible_ai_connect.users.models
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
-from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, create_user
+from ansible_ai_connect.test_utils import (
+    WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBaseOIDC,
+    create_user,
+)
 from ansible_ai_connect.users.constants import (
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -487,3 +492,26 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertEqual(r.status_code, 200)  # No redirect
         r = self.client.get(reverse("trial"))
         self.assertEqual(r.status_code, 403)
+
+
+class TestUserViewSet(WisdomServiceAPITestCaseBaseOIDC):
+
+    def setUp(self):
+        super().setUp()
+        self.client = Client()
+        self.client.force_login(self.user)
+        self.group, _ = Group.objects.get_or_create(name="wisdom_view_users")
+        for i in ["view_user", "view_userplan", "view_organization"]:
+            self.group.permissions.add(Permission.objects.get(codename=i))
+
+    def test_get_list_with_no_permission(self):
+        r = self.client.get(reverse("user_list"))
+        self.assertEqual(r.status_code, 403)
+        print(r.content)
+
+    def test_get_list_with_permissions(self):
+        self.user.groups.add(self.group)
+        r = self.client.get(reverse("user_list"))
+        self.assertEqual(r.status_code, 200)
+        result = r.json()
+        self.assertGreater(len(result["results"]), 0)

@@ -68,8 +68,19 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     rh_employee = models.BooleanField(default=False)
     external_username = models.CharField(default="", null=False)
 
+    def ams(self) -> dict[str, str]:
+        if not self.organization:
+            return {}
+        seat_checker = apps.get_app_config("ai").get_seat_checker()
+        account_info = seat_checker.get_account(self.organization.id, self.external_username)
+        return {
+            k: v
+            for k, v in account_info.items()
+            if k in ["created_at", "email", "first_name", "last_name", "updated_at"]
+        }
+
     @property
-    def org_id(self):
+    def org_id(self) -> int | None:
         if self.groups.filter(name="Commercial").exists():
             return FAUX_COMMERCIAL_USER_ORG_ID
         if self.organization and self.organization.id:

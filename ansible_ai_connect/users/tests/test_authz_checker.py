@@ -571,6 +571,44 @@ class TestToken(WisdomServiceLogAwareTestCase):
             self.assertFalse(checker.rh_org_has_subscription(123))
             self.assertInLog("Unexpected answer from AMS backend (quota_cost).", log)
 
+    def test_get_organization(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"external_id": "123"}]},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertEqual(checker.get_organization(123)["external_id"], "123")
+        checker._session.get.assert_called_once_with(
+            "https://some-api.server.host/api/accounts_mgmt/v1/organizations",
+            params={"search": "external_id='123'"},
+            timeout=3.0,
+        )
+
+    def test_get_account(self):
+        m_r = Mock()
+        m_r.json.side_effect = [
+            {"items": [{"first_name": "Vincent"}]},
+        ]
+        m_r.status_code = 200
+
+        checker = self.get_default_ams_checker()
+        checker._token = Mock()
+        checker._session = Mock()
+        checker._session.get.return_value = m_r
+
+        self.assertEqual(checker.get_account(123, "vincent")["first_name"], "Vincent")
+        checker._session.get.assert_called_once_with(
+            "https://some-api.server.host/api/accounts_mgmt/v1/accounts",
+            params={"search": "organization.external_id = '123' and username = 'vincent'"},
+            timeout=3.0,
+        )
+
 
 class TestDummy(TestCase):
     def setUp(self):
@@ -588,9 +626,13 @@ class TestDummy(TestCase):
     def test_rh_org_has_subscription_with_param_as_string(self):
         self.assertFalse(self.checker.rh_org_has_subscription("123"))
 
+    @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="")
     def test_rh_org_has_subscription_no_sub(self):
         self.assertFalse(self.checker.rh_org_has_subscription(13))
 
     @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
     def test_rh_org_has_subscription_all(self):
         self.assertTrue(self.checker.rh_org_has_subscription(56))
+
+    def test_get_organization(self):
+        self.assertEqual(self.checker.get_organization(56)["external_id"], "56")
