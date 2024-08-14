@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -19,6 +20,10 @@ from rest_framework.views import exception_handler
 def exception_handler_with_error_type(exc, context):
     # Call the default exception handler first
     response = exception_handler(exc, context)
+
+    # All exceptions are returned as JSON
+    context["request"].accepted_media_type = "application/json"
+    context["request"].accepted_renderer = JSONRenderer()
 
     if isinstance(response, Response):
         # Add error type if specified.
