@@ -113,7 +113,7 @@ class UserTrialsReportView(BaseReportView):
                     },
                 },
             },
-            403: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
         },
         summary="Users trials report",
     )
@@ -177,7 +177,7 @@ class UserMarketingReportView(BaseReportView):
                     },
                 },
             },
-            403: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
         },
         summary="Users marketing preferences report",
     )

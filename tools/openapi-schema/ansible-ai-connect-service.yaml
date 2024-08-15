@@ -325,49 +325,7 @@ paths:
           description: Request was throttled
         '500':
           description: Internal service error
-  /api/v0/users:
-    get:
-      operationId: users_list
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - users
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedUserResponseList'
-          description: ''
-  /api/v0/users/{id}:
-    get:
-      operationId: users_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this user.
-        required: true
-      tags:
-      - users
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-          description: ''
-  /api/v0/users/marketing/:
+  /api/v0/users/marketing:
     get:
       operationId: users_marketing_retrieve
       description: Returns a CSV report of user marketing preferences.
@@ -410,8 +368,8 @@ paths:
                     type: string
           description: ''
         '403':
-          description: Unauthorized
-  /api/v0/users/trials/:
+          description: Forbidden
+  /api/v0/users/trials:
     get:
       operationId: users_trials_retrieve
       description: Returns a CSV report of user trials.
@@ -454,7 +412,7 @@ paths:
                     type: string
           description: ''
         '403':
-          description: Unauthorized
+          description: Forbidden
   /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
@@ -1007,29 +965,6 @@ components:
       - has_telemetry_opt_out
       - id
       - name
-    PaginatedUserResponseList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponse'
     Plan:
       type: object
       properties:
