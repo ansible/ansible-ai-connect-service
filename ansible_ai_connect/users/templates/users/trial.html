@@ -9,18 +9,7 @@
     <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
   </div>
   <p class="pf-c-alert__title">
-    Please accept the Terms and Conditions
-  </p>
-</div>
-{% endif %}
-
-{% if start_trial_button and allow_information_share is False %}
-<div class="pf-c-alert pf-m-warning" aria-label="Allow Information Share Information alert">
-  <div class="pf-c-alert__icon">
-    <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
-  </div>
-  <p class="pf-c-alert__title">
-    To start a Trial, you must allow information to be shared with IBM.
+    Please accept the Terms and Conditions and allow information to be shared with IBM.
   </p>
 </div>
 {% endif %}
@@ -42,18 +31,6 @@
           <div class = "ls_username">
             <p>{% firstof user.external_username user.username %}</p>
           </div>
-
-
-
-          <div class="ls_message_body">
-            <form id="logout-form" method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
-            </form>
-          </div>
-
-          <!-- <a class = "ls_logout_button" href = "{% url 'logout' %}">Log out</a> -->
-
 
           {% if deployment_mode != "saas" %}
           <!-- Not supported -->
@@ -82,53 +59,54 @@
               {% else  %}
               <form action={% url 'trial' %} method="post">{% csrf_token %}
 
-
-
-
-
                 <div class="ls_button_checkbox_body pf-c-empty-state__content">
                   <div class="ls_trial_text">
-                    <p>Looks like there is no model set for your organization</p>
-                    <p>Start a [90] days free trial with our recommended model, <a href="https://www.ibm.com/products/watsonx-code-assistant">IBM watsonx Code Assistant</a>.
+                    <p>
+                      Start a trial to Ansible Lightspeed with IBM watsonx Code Assistant by accepting the terms below,
+                      and clicking the Start button.
+                    </p>
                   </div>
 
                   <div class="ls_checkbox_body">
                     <div id = "ls_checkbox_terms" class = "ls_checkbox_wrapper">
                       <p>
-                        <input type="checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
-                        Accept IBM's <a href="{% url 'trial_terms' %}">terms and conditions</a>.
+                        <input type="checkbox" class="ls_checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
+                        By checking the box and activating this trial, you accept
+                        IBM <a href="{% url 'trial_terms' %}">terms and conditions</a>
+                        and acknowledge that Red Hat will share your information with IBM.
+                        <i class = "ls_checkbox_required">Required <em class = "ls_checkbox_required_asterix">*</em></i>
                       </p>
-                      <i class = "ls_checkbox_required">Required <em class = "ls_checkbox_required_asterix">*</em></i>
                     </div>
+                  </div>
 
+                  <div class="hr-line"></div>
+
+                  <div class="ls_trial_text">
+                    <p>
+                      Red Hat may use your personal data to inform you about its products, services, and events.
+                    </p>
+                  </div>
+
+                  <div class="ls_checkbox_body">
                     <div class = "ls_checkbox_wrapper">
                       <p>
-                        <input type="checkbox" name="allow_information_share" {% if allow_information_share %}checked{% endif %}/>
-                        Allow my information to be shared with IBM.
-                      </p>
-                      <i class = "ls_checkbox_required">Required <em class = "ls_checkbox_required_asterix">*</em></i>
-                    </div>
-
-                    <p class = "ls_checkbox_text">Red hat may use your personal data to inform you about its products, services, and events.</p>
-
-                    <div class = "ls_checkbox_wrapper">
-                      <p>
-                        <input type="checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
+                        <input type="checkbox"  class="ls_checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
                         Notify me about products, services, and events.
                       </p>
                     </div>
-
-                    <p class = "ls_checkbox_text">
-                      You can stop receiving marketing emails by clicking the unsubscribe link in each email or
-                      <br>
-                      withdraw your consent at any time in the <a href = "https://www.redhat.com/en/email-preferences">preference center</a>. See <a href = "https://www.redhat.com/en/about/privacy-policy">Privacy Statement</a> for details.
-                    </p>
-
                   </div>
+
+                  <p>
+                    You can stop receiving marketing emails by clicking the unsubscribe link in each email or
+                    withdraw your consent at any time in the
+                    <a href = "https://www.redhat.com/en/email-preferences">preference center</a>.
+                    See <a href = "https://www.redhat.com/en/about/privacy-policy">Privacy Statement</a> for details.
+                  </p>
+
                 </div>
                 <p>
                   <button class="pf-c-button pf-m-primary ls_start_trial_button" type="submit" name="start_trial_button" value="True">
-                    Start Ansible Lightspeed trial
+                    Start trial
                   </button>
                 </p>
               </form>

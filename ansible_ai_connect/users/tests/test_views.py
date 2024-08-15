@@ -328,22 +328,12 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertNotIn("Information alert", str(r.content))
         self.assertIn('accept_trial_terms" checked', str(r.content))
 
-    def test_allow_information_share(self):
-        self.client.get(reverse("trial"))
-        r = self.client.post(
-            reverse("trial"),
-            data={"allow_information_share": "True"},
-        )
-        self.assertNotIn("Information alert", str(r.content))
-        self.assertIn('allow_information_share" checked', str(r.content))
-
     def test_accept_marketing_emails(self):
         self.client.get(reverse("trial"))
         r = self.client.post(
             reverse("trial"),
             data={
                 "accept_marketing_emails": "True",
-                "allow_information_share": "True",
                 "accept_trial_terms": "True",
                 "start_trial_button": "True",
             },
@@ -358,7 +348,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
             reverse("trial"),
             data={
                 "accept_trial_terms": "on",
-                "allow_information_share": "on",
                 "accept_marketing_emails": "on",
                 "start_trial_button": "True",
             },
@@ -373,7 +362,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
                 reverse("trial"),
                 data={
                     "accept_trial_terms": "on",
-                    "allow_information_share": "on",
                     "start_trial_button": "True",
                 },
             )
@@ -385,24 +373,11 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         r = self.client.post(
             reverse("trial"),
             data={
-                "allow_information_share": "on",
                 "start_trial_button": "True",
             },
         )
         self.assertNotIn('accept_trial_terms" checked', str(r.content))
         self.assertIn("Terms and Conditions Information alert", str(r.content))
-
-    def test_accept_trial_without_information_share(self):
-        self.client.get(reverse("trial"))
-        r = self.client.post(
-            reverse("trial"),
-            data={
-                "accept_trial_terms": "on",
-                "start_trial_button": "True",
-            },
-        )
-        self.assertNotIn('allow_information_share" checked', str(r.content))
-        self.assertIn("Allow Information Share Information alert", str(r.content))
 
     def test_accept_trial_without_either(self):
         self.client.get(reverse("trial"))
@@ -415,7 +390,6 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         self.assertNotIn('accept_trial_terms" checked', str(r.content))
         self.assertNotIn('allow_information_share" checked', str(r.content))
         self.assertIn("Terms and Conditions Information alert", str(r.content))
-        self.assertIn("Allow Information Share Information alert", str(r.content))
 
     def test_accept_trial(self):
         self.client.get(reverse("trial"))
