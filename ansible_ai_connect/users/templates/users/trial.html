@@ -32,18 +32,6 @@
             <p>{% firstof user.external_username user.username %}</p>
           </div>
 
-<!-- TODO
-
-          <div class="ls_message_body">
-            <form id="logout-form" method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
-            </form>
-          </div>
--->
-          <!-- <a class = "ls_logout_button" href = "{% url 'logout' %}">Log out</a> -->
-
-
           {% if deployment_mode != "saas" %}
           <!-- Not supported -->
           {% elif has_active_plan %}
