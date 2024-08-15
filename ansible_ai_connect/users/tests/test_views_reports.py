@@ -19,7 +19,11 @@ from django.contrib.auth.models import Group, Permission
 from django.test import Client, override_settings
 from django.urls import reverse
 
-from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
+from ansible_ai_connect.test_utils import (
+    WisdomServiceAPITestCaseBaseOIDC,
+    create_user_with_provider,
+)
+from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
 from ansible_ai_connect.users.models import Plan
 
 
@@ -28,14 +32,31 @@ class BaseReportViewTest:
     def initialise(self, test: WisdomServiceAPITestCaseBaseOIDC):
         self.test = test
         self.client = Client()
+
+        # User that will generate reports
         self.client.force_login(test.user)
+
+        # Permissions needed by the User to generate reports
         self.group, _ = Group.objects.get_or_create(name="wisdom_view_users")
         for i in ["view_user", "view_userplan", "view_organization"]:
             self.group.permissions.add(Permission.objects.get(codename=i))
 
+        # A different User that has a trial plan
+        # DummyCheck/AUTHZ_BACKEND_TYPE=dummy sets the User's name to "Robert Surcouf"
+        self.trial_user = create_user_with_provider(
+            username="trial_user",
+            email="trial_user@somewhere.com",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_org_id=1981,
+        )
         self.trial_plan, _ = Plan.objects.get_or_create(
             name="Trial of 10 days", expires_after="10 days"
         )
+
+    def cleanup(self):
+        self.group.delete()
+        self.trial_user.delete()
+        self.trial_plan.delete()
 
     def get_report_header(self) -> str:
         pass
@@ -44,7 +65,7 @@ class BaseReportViewTest:
         pass
 
     def add_plan_to_user(self):
-        self.test.user.plans.add(self.trial_plan)
+        self.trial_user.plans.add(self.trial_plan)
 
     def test_get_report_with_no_permission(self):
         r = self.client.get(reverse(self.get_report_url_alias()))
@@ -62,6 +83,7 @@ class BaseReportViewTest:
         self.test.user.groups.add(self.group)
         r = self.client.get(reverse(self.get_report_url_alias()))
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertFalse("Robert,Surcouf" in str(r.content))
         self.test.assertFalse("Trial of 10 days" in str(r.content))
 
     def test_get_report_with_plans(self):
@@ -69,6 +91,7 @@ class BaseReportViewTest:
         self.add_plan_to_user()
         r = self.client.get(reverse(self.get_report_url_alias()))
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertTrue("Robert,Surcouf" in str(r.content))
         self.test.assertTrue("Trial of 10 days" in str(r.content))
 
     def test_get_report_filter_by_existing_plan_id(self):
@@ -78,6 +101,7 @@ class BaseReportViewTest:
             reverse(self.get_report_url_alias()) + "?plan_id=" + str(self.trial_plan.id)
         )
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertTrue("Robert,Surcouf" in str(r.content))
         self.test.assertTrue("Trial of 10 days" in str(r.content))
 
     def test_get_report_filter_by_non_existing_plan_id(self):
@@ -85,6 +109,7 @@ class BaseReportViewTest:
         self.add_plan_to_user()
         r = self.client.get(reverse(self.get_report_url_alias()) + "?plan_id=999")
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertFalse("Robert,Surcouf" in str(r.content))
         self.test.assertFalse("Trial of 10 days" in str(r.content))
 
     def test_get_report_filter_by_created_after(self):
@@ -96,7 +121,20 @@ class BaseReportViewTest:
             + (self.trial_plan.created_at + relativedelta(days=-1)).strftime("%Y-%m-%d")
         )
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertTrue("Robert,Surcouf" in str(r.content))
         self.test.assertTrue("Trial of 10 days" in str(r.content))
+
+    def test_get_report_filter_by_created_after_trail_date(self):
+        self.test.user.groups.add(self.group)
+        self.add_plan_to_user()
+        r = self.client.get(
+            reverse(self.get_report_url_alias())
+            + "?created_after="
+            + (self.trial_plan.created_at + relativedelta(days=1)).strftime("%Y-%m-%d")
+        )
+        self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertFalse("Robert,Surcouf" in str(r.content))
+        self.test.assertFalse("Trial of 10 days" in str(r.content))
 
     def test_get_report_filter_by_created_before(self):
         self.test.user.groups.add(self.group)
@@ -107,7 +145,20 @@ class BaseReportViewTest:
             + (self.trial_plan.created_at + relativedelta(days=1)).strftime("%Y-%m-%d")
         )
         self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertTrue("Robert,Surcouf" in str(r.content))
         self.test.assertTrue("Trial of 10 days" in str(r.content))
+
+    def test_get_report_filter_by_created_before_trial_date(self):
+        self.test.user.groups.add(self.group)
+        self.add_plan_to_user()
+        r = self.client.get(
+            reverse(self.get_report_url_alias())
+            + "?created_before="
+            + (self.trial_plan.created_at + relativedelta(days=-1)).strftime("%Y-%m-%d")
+        )
+        self.test.assertTrue(self.get_report_header() in str(r.content))
+        self.test.assertFalse("Robert,Surcouf" in str(r.content))
+        self.test.assertFalse("Trial of 10 days" in str(r.content))
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
@@ -116,6 +167,10 @@ class TestUserTrialsReportView(WisdomServiceAPITestCaseBaseOIDC, BaseReportViewT
     def setUp(self):
         super().setUp()
         super().initialise(self)
+
+    def tearDown(self):
+        super().tearDown()
+        super().cleanup()
 
     def get_report_header(self) -> str:
         return "First name,Last name,Organization name,Plan name,Trial started"
@@ -131,6 +186,10 @@ class TestUserMarketingReportView(WisdomServiceAPITestCaseBaseOIDC, BaseReportVi
         super().setUp()
         super().initialise(self)
 
+    def tearDown(self):
+        super().tearDown()
+        super().cleanup()
+
     def get_report_header(self) -> str:
         return "First name,Last name,Email,Plan name,Trial started"
 
@@ -139,6 +198,6 @@ class TestUserMarketingReportView(WisdomServiceAPITestCaseBaseOIDC, BaseReportVi
 
     def add_plan_to_user(self):
         super().add_plan_to_user()
-        up = self.user.userplan_set.first()
+        up = self.trial_user.userplan_set.first()
         up.accept_marketing = True
         up.save()
