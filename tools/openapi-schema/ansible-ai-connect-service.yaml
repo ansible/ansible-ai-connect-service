@@ -325,14 +325,24 @@ paths:
           description: Request was throttled
         '500':
           description: Internal service error
-  /api/v0/users:
+  /api/v0/users/marketing:
     get:
-      operationId: users_list
+      operationId: users_marketing_retrieve
+      description: Returns a CSV report of user marketing preferences.
+      summary: Users marketing preferences report
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: plan_id
         schema:
           type: integer
       tags:
@@ -342,20 +352,43 @@ paths:
       responses:
         '200':
           content:
-            application/json:
+            text/csv:
               schema:
-                $ref: '#/components/schemas/PaginatedUserResponseList'
+                description: OK
+                properties:
+                  First name:
+                    type: string
+                  Last name:
+                    type: string
+                  Email:
+                    type: string
+                  Plan name:
+                    type: string
+                  Trial started:
+                    type: string
           description: ''
-  /api/v0/users/{id}:
+        '403':
+          description: Forbidden
+  /api/v0/users/trials:
     get:
-      operationId: users_retrieve
+      operationId: users_trials_retrieve
+      description: Returns a CSV report of user trials.
+      summary: Users trials report
       parameters:
-      - in: path
-        name: id
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: plan_id
         schema:
           type: integer
-        description: A unique integer value identifying this user.
-        required: true
       tags:
       - users
       security:
@@ -363,10 +396,23 @@ paths:
       responses:
         '200':
           content:
-            application/json:
+            text/csv:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                description: OK
+                properties:
+                  First name:
+                    type: string
+                  Last name:
+                    type: string
+                  Organization name:
+                    type: string
+                  Plan name:
+                    type: string
+                  Trial started:
+                    type: string
           description: ''
+        '403':
+          description: Forbidden
   /api/v0/wca/apikey/:
     get:
       operationId: wca_api_key_get
@@ -919,29 +965,6 @@ components:
       - has_telemetry_opt_out
       - id
       - name
-    PaginatedUserResponseList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponse'
     Plan:
       type: object
       properties:
