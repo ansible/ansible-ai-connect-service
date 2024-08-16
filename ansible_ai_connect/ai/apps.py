@@ -22,6 +22,14 @@ from django.conf import settings
 from ansible_ai_connect.ansible_lint import lintpostprocessing
 from ansible_ai_connect.ari import postprocessing
 from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
+from ansible_ai_connect.users.reports.postman import (
+    BasePostman,
+    GoogleDrivePostman,
+    NoopPostman,
+    SlackWebApiPostman,
+    SlackWebhookPostman,
+    StdoutPostman,
+)
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
 from .api.model_client.dummy_client import DummyClient
@@ -44,6 +52,7 @@ class AiConfig(AppConfig):
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
+    _reports_postman = UNINITIALIZED
 
     def ready(self) -> None:
         if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
@@ -151,6 +160,7 @@ class AiConfig(AppConfig):
             "dummy": DummySecretManager,
         }
 
+        expected_backend = None
         try:
             expected_backend = backends[settings.WCA_SECRET_BACKEND_TYPE]
         except KeyError:
@@ -184,3 +194,26 @@ class AiConfig(AppConfig):
             logger.exception(f"Failed to initialize Ansible Lint with exception: {ex}")
             self._ansible_lint_caller = FAILED
         return self._ansible_lint_caller
+
+    def get_reports_postman(self) -> BasePostman:
+        if self._reports_postman is UNINITIALIZED:
+            postmen = {
+                "none": NoopPostman,
+                "stdout": StdoutPostman,
+                "slack-webhook": SlackWebhookPostman,
+                "slack-webapi": SlackWebApiPostman,
+                "google-drive": GoogleDrivePostman,
+            }
+
+            try:
+                expected_postman = postmen[settings.ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN]
+            except KeyError:
+                logger.exception(
+                    "Unexpected ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN "
+                    f"value: {settings.ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN}"
+                )
+                raise
+
+            self._reports_postman = expected_postman()
+
+        return self._reports_postman
