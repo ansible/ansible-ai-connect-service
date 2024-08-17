@@ -20,7 +20,6 @@ from django.forms import Form
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from rest_framework.generics import RetrieveAPIView
@@ -35,6 +34,7 @@ from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.models import Plan
+from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
 from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
@@ -173,18 +173,10 @@ class TrialView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        has_active_plan = None
-        has_expired_plan = None
-        days_left: int = 0
+        one_click_trial = OneClickTrial(user)
+        has_active_plan, has_expired_plan, days_left = one_click_trial.get_plans()
 
-        if hasattr(user, "userplan_set"):
-            for up in user.userplan_set.all():
-                if up.is_active:
-                    days_left = (up.expired_at - timezone.now()).days
-                    has_active_plan = up
-                else:
-                    has_expired_plan = up
-
+        context["one_click_trial_available"] = one_click_trial.is_available()
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["has_active_plan"] = has_active_plan
