@@ -109,15 +109,14 @@
                     Start trial
                   </button>
                 </p>
-                <br/>
-                <p>
-                  <button class="pf-c-button pf-m-secondary" formaction="{% url 'logout' %}" type="submit">
-                    Log out
-                  </button>
-                </p>
               </form>
               {% endif %}
-
+              <div class="ls_message_body">
+                <form id="logout-form" method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
+                </form>
+              </div>
               {% else %}
               <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
               <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
