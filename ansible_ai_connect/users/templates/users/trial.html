@@ -32,7 +32,7 @@
             <p>{% firstof user.external_username user.username %}</p>
           </div>
 
-          {% if deployment_mode != "saas" %}
+          {% if deployment_mode != "saas" or not one_click_trial_available %}
           <!-- Not supported -->
           {% elif has_active_plan %}
           <div class="ls_message_body">

@@ -13,11 +13,11 @@
 #  limitations under the License.
 from textwrap import dedent
 
-from django.conf import settings
 from rest_framework import serializers
 
 from ansible_ai_connect.organizations.serializers import OrganizationSerializer
 from ansible_ai_connect.users.models import Plan, UserPlan
+from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
 
 class PlanSerializer(serializers.ModelSerializer):
@@ -60,32 +60,10 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
             Logged in as: {user.username}
             """
 
-        if settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL:
-            for up in user.userplan_set.all():
-                if up.is_active:
-                    expired_at = up.expired_at.strftime("%Y-%m-%d")
-                    markdown_value = f"""
-                    Logged in as: {user.username}<br>
-                    Plan: {up.plan.name}<br>
-                    Expiration: {expired_at}
-                    """
-                    break
-
         host = self.context["request"].get_host()
+        one_click_trial_markdown = OneClickTrial(user).get_markdown(host)
 
-        if (
-            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
-            and user.is_authenticated
-            and user.is_oidc_user
-            and user.rh_org_has_subscription
-            and not user.organization.has_api_key
-        ):
-            markdown_value = f"""
-                Logged in as: {user.username}<br><br>
-                Your account is not configured to use Ansible Lightspeed.
-                Start a trial to Ansible Lightspeed with IBM watsonx Code Assistant
-                by following the link below.<br><br>
-                <a href = "https://{host}/trial/">Start trial</a>
-            """
+        if one_click_trial_markdown:
+            return one_click_trial_markdown
 
         return dedent(markdown_value).strip()
