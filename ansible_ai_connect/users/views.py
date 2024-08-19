@@ -237,13 +237,3 @@ class TrialView(TemplateView):
 
         context = self.get_context_data(**kwargs)
         return render(request, self.template_name, context=context)
-
-
-class TrialTermsOfService(TemplateView):
-    template_name = "users/trial/terms.html"
-
-    def post(self, request, *args, **kwargs):
-        form = Form(request.POST)
-        form.is_valid()
-
-        return HttpResponseRedirect(reverse("trial"))
