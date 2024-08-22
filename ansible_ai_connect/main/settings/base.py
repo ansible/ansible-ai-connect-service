@@ -24,6 +24,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import json
 import logging
 import os
 import sys
@@ -572,6 +573,9 @@ ALLOW_METRICS_FOR_ANONYMOUS_USERS = (
 )
 # ==========================================
 
+# ==========================================
+# One-click/trial
+# ------------------------------------------
 ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL = (
     os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL", "False").lower() == "true"
 )
@@ -582,3 +586,16 @@ ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY: str = (
 ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID: str = (
     os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID") or ""
 )
+
+t_one_click_reports_postman_type = Literal[
+    "none", "stdout", "slack-webhook", "slack-webapi", "google-drive"
+]
+ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN: t_one_click_reports_postman_type = os.getenv(
+    "ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN"
+) or cast(t_one_click_reports_postman_type, "none")
+ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
+    json.loads(os.getenv("ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG"), strict=False)
+    if os.getenv("ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG")
+    else {}
+)
+# ==========================================

@@ -190,6 +190,10 @@ class WisdomAppsBackendMocking(WisdomTestCase):
     def mock_wca_secret_manager_with(mocked):
         apps.get_app_config("ai")._wca_secret_manager = mocked
 
+    @staticmethod
+    def mock_reports_postman_with(mocked):
+        apps.get_app_config("ai")._reports_postman = mocked
+
 
 class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAwareTestCase):
     @classmethod

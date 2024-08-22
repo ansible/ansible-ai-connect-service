@@ -14,7 +14,6 @@
 
 from django.apps.config import AppConfig
 from django.test import override_settings
-from rest_framework.test import APITestCase
 
 from ansible_ai_connect.ai.api.model_client.dummy_client import DummyClient
 from ansible_ai_connect.ai.api.model_client.exceptions import (
@@ -28,9 +27,18 @@ from ansible_ai_connect.ai.api.model_client.wca_client import (
     WCAClient,
     WCAOnPremClient,
 )
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+from ansible_ai_connect.users.reports.exceptions import ReportConfigurationException
+from ansible_ai_connect.users.reports.postman import (
+    GoogleDrivePostman,
+    NoopPostman,
+    SlackWebApiPostman,
+    SlackWebhookPostman,
+    StdoutPostman,
+)
 
 
-class TestAiApp(APITestCase):
+class TestAiApp(WisdomServiceLogAwareTestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
     def test_grpc_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
@@ -181,3 +189,151 @@ class TestAiApp(APITestCase):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNone(app_config.get_ansible_lint_caller())
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="none")
+    def test_reports_postman_none(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+        self.assertIsInstance(app_config.get_reports_postman(), NoopPostman)
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="stdout")
+    def test_reports_postman_stdout(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+        self.assertIsInstance(app_config.get_reports_postman(), StdoutPostman)
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="slack-webhook")
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={"slack-webhook-url": "webhook-url"})
+    def test_reports_postman_slack_webhook(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+        self.assertIsInstance(app_config.get_reports_postman(), SlackWebhookPostman)
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="slack-webhook")
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={})
+    def test_reports_postman_slack_webhook_missing_webhook_url(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="slack-webapi")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "slack-token": "webapi-token",
+            "slack-channel-id": "webapi-channel",
+        }
+    )
+    def test_reports_postman_slack_webapi(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+        self.assertIsInstance(app_config.get_reports_postman(), SlackWebApiPostman)
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="slack-webapi")
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={"slack-channel-id": "webapi-channel"})
+    def test_reports_postman_slack_webapi_missing_token(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="slack-webapi")
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={"slack-token": "webapi-token"})
+    def test_reports_postman_slack_webapi_missing_channel_id(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+            "gdrive-project-id": "test-project-id",
+            "gdrive-private-key-id": "test-private-key-id",
+            "gdrive-private-key": "test-private-key",
+            "gdrive-client-email": "test-client-email",
+            "gdrive-client-id": "test-client-id",
+        }
+    )
+    def test_reports_postman_google_drive(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+        self.assertIsInstance(app_config.get_reports_postman(), GoogleDrivePostman)
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={})
+    def test_reports_postman_google_drive_missing_folder_name(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+        }
+    )
+    def test_reports_postman_google_drive_missing_project_id(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+            "gdrive-project-id": "test-project-id",
+        }
+    )
+    def test_reports_postman_google_drive_missing_private_key_id(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+            "gdrive-project-id": "test-project-id",
+            "gdrive-private-key-id": "test-private-key-id",
+        }
+    )
+    def test_reports_postman_google_drive_missing_private_key(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+            "gdrive-project-id": "test-project-id",
+            "gdrive-private-key-id": "test-private-key-id",
+            "gdrive-private-key": "test-private-key",
+        }
+    )
+    def test_reports_postman_google_drive_missing_client_email(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="google-drive")
+    @override_settings(
+        ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG={
+            "gdrive-folder-name": "test-folder",
+            "gdrive-project-id": "test-project-id",
+            "gdrive-private-key-id": "test-private-key-id",
+            "gdrive-private-key": "test-private-key",
+            "gdrive-client-email": "test-client-email",
+        }
+    )
+    def test_reports_postman_google_drive_missing_client_id(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertRaises(ReportConfigurationException):
+            app_config.get_reports_postman()
+
+    @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="banana")
+    def test_reports_postman_rogue_setting(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            with self.assertRaises(KeyError):
+                app_config.get_reports_postman()
+            self.assertInLog("Unexpected ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN value: banana", log)

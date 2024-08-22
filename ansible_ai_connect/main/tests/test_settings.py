@@ -143,3 +143,14 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     def test_ansible_ai_model_mesh_model_id_has_no_default(self):
         settings = self.reload_settings()
         self.assertIsNone(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID)
+
+    @patch.dict(
+        os.environ,
+        {
+            "ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG": '{"config": "value"}',
+        },
+    )
+    def test_one_click_reports_config(self):
+        settings = self.reload_settings()
+        self.assertTrue(settings.ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG.get("config"))
+        self.assertEqual("value", settings.ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG.get("config"))

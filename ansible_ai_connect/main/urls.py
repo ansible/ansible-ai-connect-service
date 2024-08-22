@@ -58,10 +58,6 @@ from ansible_ai_connect.users.views import (
     TrialView,
     UnauthorizedView,
 )
-from ansible_ai_connect.users.views_reports import (
-    UserMarketingReportView,
-    UserTrialsReportView,
-)
 
 WISDOM_API_VERSION = "v0"
 
@@ -73,16 +69,6 @@ urlpatterns = [
     # Adding a trailing slash breaks our metric collection in all sorts of ways.
     path("metrics", MetricsView.as_view(), name="prometheus-metrics"),
     path("admin/", admin.site.urls),
-    path(
-        f"api/{WISDOM_API_VERSION}/users/trials",
-        UserTrialsReportView.as_view(),
-        name="user_trials",
-    ),
-    path(
-        f"api/{WISDOM_API_VERSION}/users/marketing",
-        UserMarketingReportView.as_view(),
-        name="user_marketing",
-    ),
     path(f"api/{WISDOM_API_VERSION}/ai/", include("ansible_ai_connect.ai.api.urls")),
     path(f"api/{WISDOM_API_VERSION}/me/", CurrentUserView.as_view(), name="me"),
     path(
