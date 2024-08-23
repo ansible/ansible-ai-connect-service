@@ -46,6 +46,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaHAPFilterRejectionException,
+    WcaInstanceDeletedException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -744,6 +745,35 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
             actual_event = mock_send_segment_event.call_args_list[0][0][0]
             self.assertEqual(actual_event.get("promptType"), "MULTITASK")
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_completion_wca_instance_deleted(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={
+                "detail": (
+                    "Failed to get remaining capacity from Metering API: "
+                    "The WCA instance 'banana' has been deleted."
+                )
+            },
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        model_client.session.post = Mock(return_value=response)
+        self.mock_model_client_with(model_client)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("completions"), model_input)
+            self.assertEqual(r.status_code, HTTPStatus.IM_A_TEAPOT)
+            self.assert_error_detail(
+                r,
+                WcaInstanceDeletedException.default_code,
+                WcaInstanceDeletedException.default_detail,
+            )
+            self.assertInLog("WCA Instance has been deleted", log)
 
 
 @modify_settings()
@@ -2076,6 +2106,21 @@ class TestContentMatchesWCAViewErrors(
         self._assert_model_id_in_exception(self.payload["model"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_wca_contentmatch_instance_deleted(self):
+        response = MockResponse(
+            json={
+                "detail": (
+                    "Failed to get remaining capacity from Metering API: "
+                    "The WCA instance 'banana' has been deleted."
+                )
+            },
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+        self.model_client.session.post = Mock(return_value=response)
+        self._assert_exception_in_log(WcaInstanceDeletedException)
+        self._assert_model_id_in_exception(self.payload["model"])
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_contentmatch_model_id_error(self):
         response = MockResponse(
             json={"error": "Bad request: [('string_too_short', ('body', 'model_id'))]"},
@@ -2663,6 +2708,23 @@ that are running Red Hat Enterprise Linux 9.
             "User trial expired, when requesting playbook explanation",
         )
 
+    def test_wca_instance_deleted(self):
+        model_client = self.stub_wca_client(
+            404,
+            response_data={
+                "detail": (
+                    "Failed to get remaining capacity from Metering API: "
+                    "The WCA instance 'banana' has been deleted."
+                )
+            },
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.IM_A_TEAPOT,
+            WcaInstanceDeletedException,
+            "WCA Instance has been deleted when requesting playbook explanation",
+        )
+
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
@@ -2983,6 +3045,23 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             HTTPStatus.FORBIDDEN,
             WcaUserTrialExpiredException,
             "User trial expired, when requesting playbook generation",
+        )
+
+    def test_wca_instance_deleted(self):
+        model_client = self.stub_wca_client(
+            404,
+            response_data={
+                "detail": (
+                    "Failed to get remaining capacity from Metering API: "
+                    "The WCA instance 'banana' has been deleted."
+                )
+            },
+        )
+        self.assert_test(
+            model_client,
+            HTTPStatus.IM_A_TEAPOT,
+            WcaInstanceDeletedException,
+            "WCA Instance has been deleted when requesting playbook generation",
         )
 
 

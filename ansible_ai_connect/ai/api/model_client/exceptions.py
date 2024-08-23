@@ -109,3 +109,8 @@ class WcaRequestIdCorrelationFailure(WcaException):
     def __init__(self, model_id, x_request_id: uuid.uuid4):
         super().__init__(model_id)
         self.x_request_id: uuid.uuid4 = x_request_id
+
+
+@dataclass
+class WcaInstanceDeleted(WcaException):
+    """WCA Instance associated with the Model ID has been deleted."""
