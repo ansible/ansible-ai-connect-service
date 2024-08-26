@@ -29,6 +29,7 @@ from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
 from ansible_ai_connect.test_utils import create_user_with_provider
 from ansible_ai_connect.users.constants import (
+    TRIAL_PLAN_NAME,
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -185,7 +186,7 @@ class TestMarkdownMe(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user=user)
 
-        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        trial_plan, _ = Plan.objects.get_or_create(name=TRIAL_PLAN_NAME, expires_after="90 days")
         user.plans.add(trial_plan)
         up = user.userplan_set.first()
         up.expired_at = datetime.now(timezone.utc) + timedelta(days=90)
@@ -212,7 +213,7 @@ class TestMarkdownMe(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user=user)
 
-        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        trial_plan, _ = Plan.objects.get_or_create(name=TRIAL_PLAN_NAME, expires_after="90 days")
         user.plans.add(trial_plan)
         up = user.userplan_set.first()
         up.expired_at = datetime.now(timezone.utc) + timedelta(days=-1)

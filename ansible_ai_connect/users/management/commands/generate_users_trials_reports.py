@@ -19,6 +19,8 @@ from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
+from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.reports.generators import (
     UserMarketingReportGenerator,
     UserTrialsReportGenerator,
@@ -30,7 +32,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def generate_user_trials_report(
-        plan_id: Optional[int] = None,
+        plan_id: int,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
     ) -> str:
@@ -39,7 +41,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def generate_user_marketing_report(
-        plan_id: Optional[int] = None,
+        plan_id: int,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
     ) -> str:
@@ -71,9 +73,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, dry_run, plan_id, created_after, created_before, auto_range, *args, **options):
-        plan_id = int(plan_id) if plan_id else None
         created_after = created_after if created_after else None
         created_before = created_before if created_before else None
+        plan = Plan.objects.get(id=plan_id) if plan_id else Plan.objects.get(name=TRIAL_PLAN_NAME)
 
         if auto_range:
             created_before = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -84,10 +86,10 @@ class Command(BaseCommand):
 
         # Generate and send reports
         user_trials_report = Command.generate_user_trials_report(
-            plan_id, created_after, created_before
+            plan.id, created_after, created_before
         )
         user_marketing_report = Command.generate_user_marketing_report(
-            plan_id, created_after, created_before
+            plan.id, created_after, created_before
         )
 
         # Lookup postman
@@ -100,7 +102,7 @@ class Command(BaseCommand):
         try:
             postman.send_reports(
                 Reports(
-                    plan_id,
+                    plan.id,
                     created_after,
                     created_before,
                     [

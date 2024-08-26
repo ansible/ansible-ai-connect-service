@@ -27,6 +27,7 @@ import ansible_ai_connect.users.models
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, create_user
 from ansible_ai_connect.users.constants import (
+    TRIAL_PLAN_NAME,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
 )
@@ -403,7 +404,7 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         )
         self.assertContains(r, "You have 89 days left")
 
-        self.assertEqual(self.user.plans.first().name, "trial of 90 days")
+        self.assertEqual(self.user.plans.first().name, TRIAL_PLAN_NAME)
         self.assertTrue(self.user.userplan_set.first().expired_at)
 
     def test_trial_period_is_done(self):
