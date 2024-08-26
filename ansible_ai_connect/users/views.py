@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
 from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
+from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
@@ -152,7 +153,7 @@ class TrialView(TemplateView):
     permission_classes = [IsAuthenticated]
 
     def get_trial_plan(self):
-        trial_plan, _ = Plan.objects.get_or_create(name="trial of 90 days", expires_after="90 days")
+        trial_plan, _ = Plan.objects.get_or_create(name=TRIAL_PLAN_NAME, expires_after="90 days")
         return trial_plan
 
     def dispatch(self, request, *args, **kwargs):

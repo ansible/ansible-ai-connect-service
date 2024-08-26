@@ -27,6 +27,8 @@ from ansible_ai_connect.test_utils import (
     WisdomServiceLogAwareTestCase,
     WisdomTestCase,
 )
+from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
+from ansible_ai_connect.users.models import Plan
 
 
 @override_settings(ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN="none")
@@ -37,6 +39,9 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         self.postman = Mock()
         self.postman.send_reports = Mock()
         self.mock_reports_postman_with(self.postman)
+        self.trial_plan, _ = Plan.objects.get_or_create(
+            name=TRIAL_PLAN_NAME, expires_after="90 days"
+        )
 
     @staticmethod
     def call_command(*args, **kwargs):
@@ -63,7 +68,7 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         TestGenerateUsersTrialsReports.call_command("--auto-range")
 
         reports = self.postman.send_reports.call_args.args[0]
-        self.assertIsNone(reports.plan_id)
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertEqual(reports.created_before, before)
         self.assertEqual(reports.created_after, after)
 
@@ -71,24 +76,28 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         TestGenerateUsersTrialsReports.call_command()
 
         reports = self.postman.send_reports.call_args.args[0]
-        self.assertIsNone(reports.plan_id)
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertIsNone(reports.created_after)
         self.assertIsNone(reports.created_before)
 
     def test_plan_id(self):
-        TestGenerateUsersTrialsReports.call_command(plan_id=1)
+        TestGenerateUsersTrialsReports.call_command(plan_id=self.trial_plan.id)
 
         reports = self.postman.send_reports.call_args.args[0]
-        self.assertEqual(reports.plan_id, 1)
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertIsNone(reports.created_after)
         self.assertIsNone(reports.created_before)
+
+    def test_invalid_plan_id(self):
+        with self.assertRaises(Plan.DoesNotExist):
+            TestGenerateUsersTrialsReports.call_command(plan_id=999999)
 
     def test_created_before(self):
         now = timezone.now()
         TestGenerateUsersTrialsReports.call_command(created_before=now)
 
         reports = self.postman.send_reports.call_args.args[0]
-        self.assertIsNone(reports.plan_id)
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertIsNone(reports.created_after)
         self.assertEqual(reports.created_before, now)
 
@@ -97,7 +106,7 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         TestGenerateUsersTrialsReports.call_command(created_after=now)
 
         reports = self.postman.send_reports.call_args.args[0]
-        self.assertIsNone(reports.plan_id)
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertEqual(reports.created_after, now)
         self.assertIsNone(reports.created_before)
 
