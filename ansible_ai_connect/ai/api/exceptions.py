@@ -140,6 +140,15 @@ class WcaHAPFilterRejectionException(WisdomBadRequest):
     default_detail = "WCA Hate, Abuse, and Profanity filter rejected the request."
 
 
+class WcaInstanceDeletedException(BaseWisdomAPIException):
+    status_code = 418
+    default_code = "error__wca_instance_deleted"
+    default_detail = (
+        "The WCA instance associated with the Model ID has been deleted."
+        "Please contact your administrator."
+    )
+
+
 class WcaUserTrialExpiredException(WisdomAccessDenied):
     default_code = "permission_denied__user_trial_expired"
     default_detail = "User trial expired. Please contact your administrator."

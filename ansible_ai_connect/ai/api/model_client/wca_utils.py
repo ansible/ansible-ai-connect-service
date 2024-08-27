@@ -22,6 +22,7 @@ from .exceptions import (
     WcaEmptyResponse,
     WcaHAPFilterRejection,
     WcaInferenceFailure,
+    WcaInstanceDeleted,
     WcaInvalidModelId,
     WcaTokenFailureApiKeyError,
     WcaUserTrialExpired,
@@ -179,6 +180,20 @@ class ResponseStatusCode404WCABadRequestModelId(Check[Context]):
                         raise WcaInvalidModelId(model_id=context.model_id)
 
 
+class ResponseStatusCode404WCAInstanceDeleted(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 404:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_detail = payload_json.get("detail")
+                if (
+                    payload_detail
+                    and "failed to get remaining capacity from metering api"
+                    in payload_detail.lower()
+                ):
+                    raise WcaInstanceDeleted(model_id=context.model_id)
+
+
 class ResponseStatusCode404(Check[Context]):
     def check(self, context: Context):
         if context.result.status_code == 404:
@@ -199,6 +214,7 @@ class InferenceResponseChecks(Checks[Context]):
                 ResponseStatusCode403UserTrialExpired(),
                 ResponseStatusCode403(),
                 ResponseStatusCode404WCABadRequestModelId(),
+                ResponseStatusCode404WCAInstanceDeleted(),
                 ResponseStatusCode404(),
             ]
         )
@@ -217,5 +233,6 @@ class ContentMatchResponseChecks(Checks[Context]):
                 ResponseStatusCode403UserTrialExpired(),
                 ResponseStatusCode403(),
                 ResponseStatusCode404WCABadRequestModelId(),
+                ResponseStatusCode404WCAInstanceDeleted(),
             ]
         )

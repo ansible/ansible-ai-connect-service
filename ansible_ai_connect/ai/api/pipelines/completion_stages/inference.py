@@ -32,6 +32,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaHAPFilterRejectionException,
+    WcaInstanceDeletedException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -46,6 +47,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaHAPFilterRejection,
+    WcaInstanceDeleted,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -178,6 +180,14 @@ class InferenceStage(PipelineElement):
             }
             event_name = "trialExpired"
             raise WcaUserTrialExpiredException(cause=e)
+
+        except WcaInstanceDeleted as e:
+            exception = e
+            logger.exception(
+                "WCA Instance has been deleted when requesting suggestion "
+                f"{payload.suggestionId} for model {e.model_id}"
+            )
+            raise WcaInstanceDeletedException(cause=e)
 
         except Exception as e:
             exception = e

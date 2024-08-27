@@ -41,6 +41,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaHAPFilterRejectionException,
+    WcaInstanceDeletedException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
     WcaModelIdNotFoundException,
@@ -54,6 +55,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaHAPFilterRejection,
+    WcaInstanceDeleted,
     WcaInvalidModelId,
     WcaKeyNotFound,
     WcaModelIdNotFound,
@@ -545,6 +547,14 @@ class ContentMatches(GenericAPIView):
             }
             raise WcaUserTrialExpiredException(cause=e)
 
+        except WcaInstanceDeleted as e:
+            exception = e
+            logger.exception(
+                f"WCA Instance has been deleted when requesting suggestion {suggestion_id} "
+                f"for model {e.model_id}"
+            )
+            raise WcaInstanceDeletedException(cause=e)
+
         except Exception as e:
             exception = e
             logger.exception(f"Error requesting content matches for suggestion {suggestion_id}")
@@ -729,6 +739,14 @@ class Explanation(APIView):
                 f"User trial expired, when requesting playbook explanation {explanation_id}"
             )
             raise WcaUserTrialExpiredException(cause=e)
+
+        except WcaInstanceDeleted as e:
+            exception = e
+            logger.exception(
+                "WCA Instance has been deleted when requesting playbook explanation "
+                f"{explanation_id} for model {e.model_id}"
+            )
+            raise WcaInstanceDeletedException(cause=e)
 
         except Exception as exc:
             exception = exc
@@ -917,6 +935,14 @@ class Generation(APIView):
                 f"User trial expired, when requesting playbook generation {generation_id}"
             )
             raise WcaUserTrialExpiredException(cause=e)
+
+        except WcaInstanceDeleted as e:
+            exception = e
+            logger.exception(
+                "WCA Instance has been deleted when requesting playbook generation "
+                f"{generation_id} for model {e.model_id}"
+            )
+            raise WcaInstanceDeletedException(cause=e)
 
         except Exception as exc:
             exception = exc
