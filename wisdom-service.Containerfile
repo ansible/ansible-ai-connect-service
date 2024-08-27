@@ -62,7 +62,7 @@ COPY ansible_ai_connect_admin_portal/package.json /tmp/ansible_ai_connect_admin_
 COPY ansible_ai_connect_admin_portal/package-lock.json /tmp/ansible_ai_connect_admin_portal/package-lock.json
 COPY ansible_ai_connect_admin_portal/tsconfig.json /tmp/ansible_ai_connect_admin_portal/tsconfig.json
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci
-RUN npx update-browserslist-db@latest && npm --prefix /tmp/ansible_ai_connect_admin_portal run build
+RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
 
 # Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
