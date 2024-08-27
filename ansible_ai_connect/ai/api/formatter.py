@@ -372,32 +372,29 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
     if output_yaml and is_multi_task_prompt(prompt):
         full_yaml = payload_context + output_yaml
         try:
-            data = yaml.safe_load(full_yaml)
+            payload_context_data = yaml.safe_load(payload_context)
+            full_data = yaml.safe_load(full_yaml)
         except Exception as exc:
             logger.exception(
                 f"Error while loading the result role/playbook YAML:{exc} "
                 f"for restoring the original task names"
             )
             return output_yaml
-        prompt_tasks = get_task_names_from_prompt(prompt)
+        prompt_task_names = get_task_names_from_prompt(prompt)
+
+        full_task_list = get_task_list_from_yaml_data_obj(full_data)
+        payload_context_task_list = get_task_list_from_yaml_data_obj(payload_context_data)
         task_list = []
-        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
-            # Tries to get the tasks from the dict if it's a playbook (payload_context!='')
-            task_list = data[0].get("tasks", [])
-            # If it is not a playbook, then it is a role,
-            # so the list is a task list (payload_context='')
-            if not task_list:
-                task_list = data
+
+        for task in full_task_list:
+            if task not in payload_context_task_list:
+                task_list.append(task)
 
         for i, task in enumerate(task_list):
             try:
                 task_name = task.get("name", "")
-                # We have a list, but not all lists can be task lists
-                # This is for handling the non-task lists case
-                if not task_name:
-                    continue
                 task_line = "- name:  " + task_name
-                restored_task_line = task_line.replace(task_name, prompt_tasks[i])
+                restored_task_line = task_line.replace(task_name, prompt_task_names[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
             except IndexError:
                 logger.error(
@@ -406,6 +403,21 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
                 break
 
     return output_yaml
+
+
+def get_task_list_from_yaml_data_obj(data):
+    task_list = []
+
+    if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+        # Tries to get the tasks from the dict in case there is data
+        # in the file already (payload_context!='')
+        task_list = data[0].get("tasks", [])
+        # If there is no initial data rather than the prompt
+        # the list is a task list (payload_context='')
+        if not task_list:
+            task_list = data
+
+    return task_list
 
 
 # List of Task keywords to filter out during prediction results parsing.
