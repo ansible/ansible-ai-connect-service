@@ -595,6 +595,24 @@ var3: value3
             fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
         )
 
+    def test_restore_original_task_names_for_playbook_with_task_preset(self):
+        payload_context = (
+            "- name: Playbook\n  hosts: all\n  tasks:\n"
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n"
+        )
+        multi_task_prompt = "# say hello test@example.com\n"
+
+        multi_task_yaml = (
+            "    - name:  say hello test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+
+        self.assertEqual(
+            multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
+        )
+
     def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"
         self.assertEqual(prompt, fmtr.strip_task_preamble_from_multi_task_prompt(prompt))
