@@ -28,6 +28,9 @@ from ansible_ai_connect.test_utils import (
     WisdomTestCase,
 )
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
+from ansible_ai_connect.users.management.commands.generate_users_trials_reports import (
+    Command,
+)
 from ansible_ai_connect.users.models import Plan
 
 
@@ -45,6 +48,17 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
 
     @staticmethod
     def call_command(*args, **kwargs):
+        """
+        Call command without parsing/converting/mapping kwargs passes a dict of arguments.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        """
+        :param argv:
+        :return:
+        """
         out = StringIO()
         call_command(
             "generate_users_trials_reports",
@@ -54,6 +68,19 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
             **kwargs,
         )
         return out.getvalue()
+
+    @staticmethod
+    def call_command_with_argv(argv):
+        """
+        Call command with parsing/converting/mapping of argv identically to invocation from the CLI.
+        :param argv:
+        :return:
+        """
+        command = Command()
+        parser = command.create_parser("manage", "generate_users_trials_reports")
+        options = parser.parse_args(argv)
+        cmd_options = vars(options)
+        command.execute(*(), **cmd_options)
 
     def test_dry_run(self):
         with self.assertLogs(logger="root", level="INFO") as log:
@@ -88,7 +115,11 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         self.assertIsNone(reports.created_after)
         self.assertIsNone(reports.created_before)
 
-    def test_invalid_plan_id(self):
+    def test_plan_id_invalid_value(self):
+        with self.assertRaises(ValueError):
+            TestGenerateUsersTrialsReports.call_command(plan_id="banana")
+
+    def test_plan_id_does_not_exist(self):
         with self.assertRaises(Plan.DoesNotExist):
             TestGenerateUsersTrialsReports.call_command(plan_id=999999)
 
@@ -101,6 +132,28 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         self.assertIsNone(reports.created_after)
         self.assertEqual(reports.created_before, now)
 
+    def test_created_before_invalid_value(self):
+        with self.assertRaises(ValidationError):
+            TestGenerateUsersTrialsReports.call_command(created_before="banana")
+
+    def test_created_before_iso_string(self):
+        now = timezone.now()
+
+        TestGenerateUsersTrialsReports.call_command_with_argv(
+            argv=[f"--created-before={now.isoformat()}"],
+        )
+
+        reports = self.postman.send_reports.call_args.args[0]
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
+        self.assertIsNone(reports.created_after)
+        self.assertEqual(reports.created_before, now)
+
+    def test_created_before_invalid_iso_string(self):
+        with self.assertRaises(CommandError):
+            TestGenerateUsersTrialsReports.call_command_with_argv(
+                argv=["--created-before=banana"],
+            )
+
     def test_created_after(self):
         now = timezone.now()
         TestGenerateUsersTrialsReports.call_command(created_after=now)
@@ -110,17 +163,27 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         self.assertEqual(reports.created_after, now)
         self.assertIsNone(reports.created_before)
 
-    def test_plan_id_invalid_value(self):
-        with self.assertRaises(ValueError):
-            TestGenerateUsersTrialsReports.call_command(plan_id="banana")
-
-    def test_created_before_invalid_value(self):
-        with self.assertRaises(ValidationError):
-            TestGenerateUsersTrialsReports.call_command(created_before="banana")
-
     def test_created_after_invalid_value(self):
         with self.assertRaises(ValidationError):
             TestGenerateUsersTrialsReports.call_command(created_after="banana")
+
+    def test_created_after_iso_string(self):
+        now = timezone.now()
+
+        TestGenerateUsersTrialsReports.call_command_with_argv(
+            argv=[f"--created-after={now.isoformat()}"],
+        )
+
+        reports = self.postman.send_reports.call_args.args[0]
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
+        self.assertEqual(reports.created_after, now)
+        self.assertIsNone(reports.created_before)
+
+    def test_created_after_invalid_iso_string(self):
+        with self.assertRaises(CommandError):
+            TestGenerateUsersTrialsReports.call_command_with_argv(
+                argv=["--created-after=banana"],
+            )
 
     def test_error_handling(self):
         self.postman.send_reports = Mock(side_effect=Exception("Something horrible happened"))
