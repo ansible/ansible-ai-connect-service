@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from argparse import ArgumentTypeError
 from datetime import datetime
 from typing import Optional, cast
 
@@ -48,18 +49,26 @@ class Command(BaseCommand):
         generator = UserMarketingReportGenerator()
         return generator.generate(plan_id, created_after, created_before)
 
+    @staticmethod
+    def iso_datetime_type(arg_datetime: str):
+        try:
+            return datetime.fromisoformat(arg_datetime)
+        except ValueError:
+            msg = f"Given datetime '{arg_datetime}' is invalid. Expected ISO-8601 format."
+            raise ArgumentTypeError(msg)
+
     def add_arguments(self, parser):
         parser.add_argument("--dry-run", action="store_true", help="Do nothing", default=False)
         parser.add_argument("--plan-id", help="Trail plan_id", type=int)
         parser.add_argument(
             "--created-after",
-            help="UTC formatted datetime after which trials were accepted.",
-            type=datetime,
+            help="ISO-8601 formatted datetime after which trials were accepted.",
+            type=Command.iso_datetime_type,
         )
         parser.add_argument(
             "--created-before",
-            help="UTC formatted datetime before which trials were accepted.",
-            type=datetime,
+            help="ISO-8601 formatted datetime before which trials were accepted.",
+            type=Command.iso_datetime_type,
         )
         parser.add_argument(
             "--auto-range",
