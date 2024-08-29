@@ -100,6 +100,9 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     realm_access = payload.get("realm_access", {})
     roles = realm_access.get("roles", [])
     user.external_username = payload.get("preferred_username")
+    user.name = payload.get("name")
+    user.email = payload.get("email")
+    user.email_verified = payload.get("email_verified")
     user.rh_user_is_org_admin = "admin:org:all" in roles
     user.rh_employee = "redhat:employees" in roles
 
