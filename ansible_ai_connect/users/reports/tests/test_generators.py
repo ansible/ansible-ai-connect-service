@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from datetime import datetime, timezone
 
 from dateutil.relativedelta import relativedelta
 from django.test import override_settings
@@ -44,6 +45,7 @@ class BaseReportGeneratorTest:
         self.trial_plan, _ = Plan.objects.get_or_create(
             name="Trial of 10 days", expires_after="10 days"
         )
+        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
     def cleanup(self):
         self.trial_user.delete()
@@ -101,7 +103,7 @@ class BaseReportGeneratorTest:
     def test_get_report_filter_by_created_after_trail_date(self):
         self.add_plan_to_user()
         r = self.get_report_generator().generate(
-            created_after=self.trial_plan.created_at + relativedelta(days=1)
+            created_after=self.trial_user.userplan_set.first().created_at + relativedelta(days=1)
         )
         self.test.assertIn(self.get_report_header(), r)
         self.test.assertNotIn("Robert,Surcouf", r)
@@ -110,7 +112,7 @@ class BaseReportGeneratorTest:
     def test_get_report_filter_by_created_before(self):
         self.add_plan_to_user()
         r = self.get_report_generator().generate(
-            created_before=self.trial_plan.created_at + relativedelta(days=1)
+            created_before=self.trial_user.userplan_set.first().created_at + relativedelta(days=1)
         )
         self.test.assertIn(self.get_report_header(), r)
         self.test.assertIn("Robert,Surcouf", r)
