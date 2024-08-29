@@ -12,13 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from argparse import ArgumentTypeError
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, cast
 
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
+from django.utils import timezone as django_timezone
 
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
 from ansible_ai_connect.users.models import Plan
@@ -52,7 +52,8 @@ class Command(BaseCommand):
     @staticmethod
     def iso_datetime_type(arg_datetime: str):
         try:
-            return datetime.fromisoformat(arg_datetime)
+            dt = datetime.fromisoformat(arg_datetime)
+            return dt if django_timezone.is_aware(dt) else dt.astimezone(timezone.utc)
         except ValueError:
             msg = f"Given datetime '{arg_datetime}' is invalid. Expected ISO-8601 format."
             raise ArgumentTypeError(msg)
@@ -87,7 +88,9 @@ class Command(BaseCommand):
         plan = Plan.objects.get(id=plan_id) if plan_id else Plan.objects.get(name=TRIAL_PLAN_NAME)
 
         if auto_range:
-            created_before = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            created_before = datetime.now(timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             created_after = created_before - relativedelta(days=1)
 
         if dry_run:
