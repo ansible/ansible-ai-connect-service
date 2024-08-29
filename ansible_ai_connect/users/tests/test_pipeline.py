@@ -323,3 +323,28 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             response=response,
         )
         self.assertEqual(answer["rh_employee"], True)
+
+    def test_rhoss_user_and_email(self):
+        response = {
+            "access_token": build_access_token(
+                self.rsa_private_key,
+                {
+                    "family_name": "Drake",
+                    "email": "francis.drake@example.foo",
+                    "given_name": "Francis",
+                    "name": "Francis Drake",
+                    "organization": {"id": "345"},
+                    "preferred_username": "fdrake01",
+                },
+            )
+        }
+
+        redhat_organization(
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
+            user=self.rh_user,
+            response=response,
+        )
+        self.assertEqual(self.rh_user.family_name, "Drake")
+        self.assertEqual(self.rh_user.email, "francis.drake@example.foo")
+        self.assertEqual(self.rh_user.given_name, "Francis")
+        self.assertEqual(self.rh_user.name, "Francis Drake")

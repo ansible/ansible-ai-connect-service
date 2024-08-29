@@ -67,6 +67,11 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     rh_user_is_org_admin = models.BooleanField(default=False)
     rh_employee = models.BooleanField(default=False)
     external_username = models.CharField(default="", null=False)
+    name = models.CharField(default=None, null=True)
+    given_name = models.CharField(default=None, null=True)
+    family_name = models.CharField(default=None, null=True)
+    email = models.CharField(default=None, null=True)
+    email_verified = models.BooleanField(default=False, null=True)
 
     def ams(self) -> dict[str, str]:
         if not self.organization:
