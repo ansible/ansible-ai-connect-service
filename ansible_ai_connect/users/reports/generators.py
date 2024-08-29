@@ -31,13 +31,15 @@ class BaseGenerator(ABC):
         created_before: Optional[datetime] = None,
     ):
         queryset = User.objects.all().exclude(organization__isnull=True)
+        queryset_args = {}
         if plan_id is not None:
-            queryset = queryset.filter(userplan__plan_id=plan_id)
+            queryset_args["userplan__plan_id"] = plan_id
         if created_after is not None:
-            queryset = queryset.filter(plans__created_at__gte=created_after)
+            queryset_args["userplan__created_at__gte"] = created_after
         if created_before is not None:
-            queryset = queryset.filter(plans__created_at__lte=created_before)
+            queryset_args["userplan__created_at__lte"] = created_before
 
+        queryset = queryset.filter(**queryset_args)
         serializer = UserResponseSerializer(queryset, many=True)
         users = serializer.data
         return users

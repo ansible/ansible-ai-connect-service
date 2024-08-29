@@ -11,10 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import datetime
 import unittest
 from io import StringIO
 from unittest.mock import Mock
 
+import pytz
 from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -136,7 +138,7 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         with self.assertRaises(ValidationError):
             TestGenerateUsersTrialsReports.call_command(created_before="banana")
 
-    def test_created_before_iso_string(self):
+    def test_created_before_iso_string_with_timezone(self):
         now = timezone.now()
 
         TestGenerateUsersTrialsReports.call_command_with_argv(
@@ -147,6 +149,18 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertIsNone(reports.created_after)
         self.assertEqual(reports.created_before, now)
+
+    def test_created_before_iso_string_without_timezone(self):
+        TestGenerateUsersTrialsReports.call_command_with_argv(
+            argv=["--created-before=2999-12-31"],
+        )
+
+        reports = self.postman.send_reports.call_args.args[0]
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
+        self.assertIsNone(reports.created_after)
+        self.assertEqual(
+            reports.created_before, datetime.datetime(2999, 12, 31, 0, 0, tzinfo=pytz.UTC)
+        )
 
     def test_created_before_invalid_iso_string(self):
         with self.assertRaises(CommandError):
@@ -167,7 +181,7 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         with self.assertRaises(ValidationError):
             TestGenerateUsersTrialsReports.call_command(created_after="banana")
 
-    def test_created_after_iso_string(self):
+    def test_created_after_iso_string_with_timezone(self):
         now = timezone.now()
 
         TestGenerateUsersTrialsReports.call_command_with_argv(
@@ -177,6 +191,18 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
         reports = self.postman.send_reports.call_args.args[0]
         self.assertEqual(reports.plan_id, self.trial_plan.id)
         self.assertEqual(reports.created_after, now)
+        self.assertIsNone(reports.created_before)
+
+    def test_created_after_iso_string_without_timezone(self):
+        TestGenerateUsersTrialsReports.call_command_with_argv(
+            argv=["--created-after=1999-12-31"],
+        )
+
+        reports = self.postman.send_reports.call_args.args[0]
+        self.assertEqual(reports.plan_id, self.trial_plan.id)
+        self.assertEqual(
+            reports.created_after, datetime.datetime(1999, 12, 31, 0, 0, tzinfo=pytz.UTC)
+        )
         self.assertIsNone(reports.created_before)
 
     def test_created_after_invalid_iso_string(self):
