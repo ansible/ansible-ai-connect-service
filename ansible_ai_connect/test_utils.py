@@ -39,30 +39,25 @@ logger = logging.getLogger(__name__)
 
 
 def create_user(
-    username: str = None,
-    password: str = None,
     provider: str = None,
-    email: str = None,
     social_auth_extra_data: any = {},
-    external_username: str = "",
     rh_user_is_org_admin: Optional[bool] = None,
     rh_user_id: str = None,
     rh_org_id: int = 1234567,
     org_opt_out: bool = False,
+    **kwargs,
 ):
     (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
-    username = username or "u" + "".join(random.choices(string.digits, k=5))
-    password = password or "secret"
-    email = email or username + "@example.com"
+    kwargs.setdefault("username", "u" + "".join(random.choices(string.digits, k=5)))
+    kwargs.setdefault("password", "secret")
+    kwargs.setdefault("email", kwargs["username"] + "@example.com")
     user = get_user_model().objects.create_user(
-        username=username,
-        email=email,
-        password=password,
         organization=org if provider == USER_SOCIAL_AUTH_PROVIDER_OIDC else None,
+        **kwargs,
     )
     if provider:
         rh_user_id = rh_user_id or str(uuid4())
-        user.external_username = external_username or username
+        user.external_username = kwargs.get("external_username") or kwargs.get("username")
         social_auth = UserSocialAuth.objects.create(user=user, provider=provider, uid=rh_user_id)
         social_auth.set_extra_data(social_auth_extra_data)
         if rh_user_is_org_admin:
