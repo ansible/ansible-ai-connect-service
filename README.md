@@ -239,6 +239,9 @@ our dependencies involved. Due to differences in architecture and
 version of Python between developers' machines, we do not recommend
 running the pip-compile commands directly.
 
+### Use of `pyproject.toml`
+
+`pyproject.toml` contains the dependencies used by downstream builds. Changes to any of the top level dependencies in `requirements.in` must there also be reflected in `pyproject.toml` too. See [PEP-518](https://peps.python.org/pep-0518/) for details.
 
 # Using the VS Code extension
 

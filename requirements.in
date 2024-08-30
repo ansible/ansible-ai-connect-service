@@ -1,3 +1,14 @@
+# ======================================================================
+# If any top level dependency is added, updated or deleted be
+# sure to check pyproject.toml too. pyproject.toml is the *only*
+# dependencies file used by downstream and hence *must* be synchronized.
+# It is also recommended that dependencies in pyproject.toml use the '~=' version qualifier.
+#
+# See the following for details:
+# - https://peps.python.org/pep-0518
+# - https://peps.python.org/pep-0631
+# - https://peps.python.org/pep-0508
+# ======================================================================
 ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.7
 ansible-lint==24.2.2
