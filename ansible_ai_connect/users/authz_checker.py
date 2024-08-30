@@ -307,73 +307,6 @@ class AMSCheck(BaseCheck):
             )
             raise AMSCheck.AMSError
 
-    def get_account(self, rh_org_id: int, username: str) -> dict[str, str]:
-        if not rh_org_id:
-            logger.error(f"Unexpected value for rh_org_id: {rh_org_id}.")
-            return {}
-
-        # Check cache
-        cache_key = f"rh_account_info_{rh_org_id}_{username}"
-        cached_result = cache.get(cache_key)
-        if cached_result is not None:
-            authz_ams_account_cache_hit_counter.inc(
-                exemplar={"organization_id": str(rh_org_id), "username": str(username)}
-            )
-            return cached_result
-
-        params = {"search": f"organization.external_id = '{rh_org_id}' and username = '{username}'"}
-        self.update_bearer_token()
-
-        try:
-
-            @backoff.on_exception(
-                backoff.expo,
-                Exception,
-                max_tries=self.retries + 1,
-                giveup=fatal_exception,
-                on_backoff=self.on_backoff,
-            )
-            @authz_ams_get_organization_hist.time()
-            def get_request():
-                return self._session.get(
-                    self._api_server + "/api/accounts_mgmt/v1/accounts",
-                    params=params,
-                    timeout=self.timeout,
-                )
-
-            r = get_request()
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            logger.error(self.ERROR_AMS_CONNECTION_TIMEOUT + f" rh_org_id: {rh_org_id}.")
-            raise AMSCheck.AMSError()
-
-        if r.status_code != HTTPStatus.OK:
-            logger.error(
-                f"Unexpected error code ({r.status_code}) returned by AMS backend (account). "
-                f"rh_org_id: {rh_org_id}."
-            )
-            raise AMSCheck.AMSError()
-
-        data = r.json()
-
-        try:
-            if len(data["items"]) == 0:
-                logger.info(
-                    f"An AMS Account could not be found. "
-                    f"rh_org_id: {rh_org_id}."
-                    f"username: {username}."
-                )
-                return {}
-
-            result = data["items"][0]
-            cache.set(cache_key, result, settings.AMS_ORG_CACHE_TIMEOUT_SEC)
-            return result
-        except (IndexError, KeyError, ValueError):
-            logger.exception(
-                f"Unexpected answer from AMS backend (account). "
-                f"rh_org_id: {rh_org_id}, data={data}."
-            )
-            raise AMSCheck.AMSError
-
     def get_ams_org(self, rh_org_id: int) -> str:
         """Return the AMS ID for a Red Hat org id"""
         org_info = self.get_organization(rh_org_id)
@@ -539,12 +472,4 @@ class DummyCheck(BaseCheck):
             "kind": "Organization",
             "name": f"My great organization {organization_id}",
             "updated_at": "2024-08-08T19:54:15.145316Z",
-        }
-
-    def get_account(self, organization_id: int, username: str) -> dict[str, str]:
-        return {
-            "email": f"{username}@my-great-domain.us",
-            "first_name": "Robert",
-            "last_name": "Surcouf",
-            "username": username,
         }
