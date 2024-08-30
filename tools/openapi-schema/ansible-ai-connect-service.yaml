@@ -1026,6 +1026,18 @@ components:
     UserResponse:
       type: object
       properties:
+        email:
+          type: string
+        external_username:
+          type: string
+        family_name:
+          type: string
+        given_name:
+          type: string
+        org_telemetry_opt_out:
+          type: boolean
+        organization:
+          $ref: '#/components/schemas/Organization'
         rh_org_has_subscription:
           type: boolean
           readOnly: true
@@ -1034,22 +1046,13 @@ components:
           readOnly: true
         rh_user_is_org_admin:
           type: boolean
-        external_username:
-          type: string
         username:
           type: string
           maxLength: 150
-        ams:
-          type: object
-          additionalProperties: {}
-        org_telemetry_opt_out:
-          type: boolean
         userplan_set:
           type: array
           items:
             $ref: '#/components/schemas/UserPlan'
-        organization:
-          $ref: '#/components/schemas/Organization'
       required:
       - rh_org_has_subscription
       - rh_user_has_seat

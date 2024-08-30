@@ -73,12 +73,11 @@ class UserTrialsReportGenerator(BaseGenerator):
             ["First name", "Last name", "Organization name", "Plan name", "Trial started"]
         )
         for user in users:
-            ams = user.get("ams")
             organization = user.get("organization")
             for plan in user.get("userplan_set"):
                 row_data = [
-                    ams.get("first_name"),
-                    ams.get("last_name"),
+                    user.get("given_name"),
+                    user.get("family_name"),
                     organization.get("name"),
                     plan.get("plan").get("name"),
                     plan.get("created_at"),
@@ -105,13 +104,12 @@ class UserMarketingReportGenerator(BaseGenerator):
         writer = csv.writer(output)
         writer.writerow(["First name", "Last name", "Email", "Plan name", "Trial started"])
         for user in users:
-            ams = user.get("ams")
             for plan in user.get("userplan_set"):
                 if plan.get("accept_marketing"):
                     row_data = [
-                        ams.get("first_name"),
-                        ams.get("last_name"),
-                        ams.get("email"),
+                        user.get("given_name"),
+                        user.get("family_name"),
+                        user.get("email"),
                         plan.get("plan").get("name"),
                         plan.get("created_at"),
                     ]

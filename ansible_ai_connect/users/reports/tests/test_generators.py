@@ -37,6 +37,8 @@ class BaseReportGeneratorTest:
         # A User that has a trial plan
         # DummyCheck/AUTHZ_BACKEND_TYPE=dummy sets the User's name to "Robert Surcouf"
         self.trial_user = create_user_with_provider(
+            given_name="Robert",
+            family_name="Surcouf",
             username="trial_user",
             email="trial_user@somewhere.com",
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
