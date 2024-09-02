@@ -858,7 +858,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         response_data = {
             "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
             "predictions": [
-                "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  say hello test@example.com\n  ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"  # noqa: E501
+                "    - name:  Install Apache\n      ansible.builtin.apt:\n        name: apache2\n        state: latest\n    - name:  say hello test@example.com\n      ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
         }
         self.user.rh_user_has_seat = True
