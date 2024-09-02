@@ -384,13 +384,14 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
 
         full_task_list = get_task_list_from_yaml_data_obj(full_data)
         payload_context_task_list = get_task_list_from_yaml_data_obj(payload_context_data)
-        task_list = []
+        context_task_list_length = len(payload_context_task_list)
 
-        for task in full_task_list:
-            if task not in payload_context_task_list:
-                task_list.append(task)
-
-        for i, task in enumerate(task_list):
+        # We enumarate starting with an index that equals to the lenght of the context task list.
+        # We are doign this to skip the first N tasks, then start with the Nth index
+        # to process only the suggested tasks
+        for i, task in enumerate(
+            full_task_list[context_task_list_length:], context_task_list_length
+        ):
             try:
                 task_name = task.get("name", "")
                 task_line = "- name:  " + task_name
@@ -407,16 +408,15 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
 
 def get_task_list_from_yaml_data_obj(data):
     task_list = []
-
     if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
         # Tries to get the tasks from the dict in case there is data
         # in the file already (payload_context!='')
-        task_list = data[0].get("tasks", [])
+        if data[0].get("tasks", []) is not None:
+            task_list = data[0].get("tasks", [])
         # If there is no initial data rather than the prompt
         # the list is a task list (payload_context='')
-        if not task_list:
+        if not task_list and "tasks" not in data[0].keys():
             task_list = data
-
     return task_list
 
 
