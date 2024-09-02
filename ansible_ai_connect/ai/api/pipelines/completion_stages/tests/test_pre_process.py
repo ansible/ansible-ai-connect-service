@@ -14,14 +14,19 @@
 
 import copy
 import uuid
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.test import TestCase, modify_settings, override_settings
+from yaml.error import Mark
+from yaml.scanner import ScannerError
 
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
+from ansible_ai_connect.ai.api.exceptions import PreprocessInvalidYamlException
 from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
 from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
+    PreProcessStage,
     completion_pre_process,
+    task_prefix,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
 
@@ -519,13 +524,15 @@ TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK = """\
 
 @modify_settings()
 class CompletionPreProcessTest(TestCase):
-    def call_completion_pre_process(self, payload, is_commercial_user, expected_context):
+
+    @staticmethod
+    def mock_context(payload, is_commercial_user) -> CompletionContext:
         original_prompt = payload.get("prompt")
         user = Mock(rh_user_has_seat=is_commercial_user)
         request = Mock(user=user)
         serializer = CompletionRequestSerializer(context={"request": request})
         data = serializer.validate(payload.copy())
-        context = CompletionContext(
+        return CompletionContext(
             request=request,
             payload=APIPayload(
                 prompt=data.get("prompt"),
@@ -534,6 +541,22 @@ class CompletionPreProcessTest(TestCase):
             ),
             metadata=data.get("metadata"),
         )
+
+    def call_completion_validate_multitask_yaml(self, payload) -> []:
+        context = CompletionPreProcessTest.mock_context(payload, True)
+
+        with self.assertRaises(PreprocessInvalidYamlException) as e:
+            PreProcessStage().process(context)
+
+        exception: PreprocessInvalidYamlException = e.exception
+        detail: dict = exception.detail
+        code = detail["code"]
+        messages = detail["message"]
+        self.assertEqual(PreprocessInvalidYamlException.default_code, code)
+        return messages
+
+    def call_completion_pre_process(self, payload, is_commercial_user, expected_context):
+        context = CompletionPreProcessTest.mock_context(payload, is_commercial_user)
         completion_pre_process(context)
         self.assertEqual(context.payload.context, expected_context)
 
@@ -697,4 +720,107 @@ class CompletionPreProcessTest(TestCase):
             payload,
             True,
             TASKS_PAYLOAD_PROMPT_WITH_NON_QUOTED_TASK,
+        )
+
+    def test_multitask_empty(self):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload[
+            "prompt"
+        ] = """
+        ---
+        - name: Test the vscode extension
+            hosts: all
+            tasks:
+                # install apache &
+            """
+
+        messages = self.call_completion_validate_multitask_yaml(payload)
+        self.assertEqual(1, len(messages))
+        self.assertIn("Empty task definition.", messages[0])
+
+    def test_multitask_with_hyphen(self):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload[
+            "prompt"
+        ] = """
+        ---
+        - name: Test the vscode extension
+            hosts: all
+            tasks:
+                # - install apache
+            """
+
+        messages = self.call_completion_validate_multitask_yaml(payload)
+        self.assertEqual(1, len(messages))
+        self.assertIn(
+            "Task '- install apache' invalid at column 1. Task starts with a hyphen.", messages[0]
+        )
+
+    def test_multitask_with_colon(self):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload[
+            "prompt"
+        ] = """
+        ---
+        - name: Test the vscode extension
+            hosts: all
+            tasks:
+                # install: apache
+            """
+
+        messages = self.call_completion_validate_multitask_yaml(payload)
+        self.assertEqual(1, len(messages))
+        self.assertIn(
+            "Task 'install: apache' invalid at column 8. Task contains a colon.", messages[0]
+        )
+
+    def test_multitask_with_multiple_errors(self):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload[
+            "prompt"
+        ] = """
+        ---
+        - name: Test the vscode extension
+            hosts: all
+            tasks:
+                # install: apache & - start it &
+            """
+
+        messages = self.call_completion_validate_multitask_yaml(payload)
+        self.assertEqual(3, len(messages))
+        self.assertIn(
+            "Task 'install: apache' invalid at column 8. Task contains a colon.", messages[0]
+        )
+        self.assertIn(
+            "Task '- start it' invalid at column 1. Task starts with a hyphen.", messages[1]
+        )
+        self.assertIn("Empty task definition.", messages[2])
+
+    @patch("yaml.safe_load")
+    def test_multitask_with_scanner_error(self, mock_safe_load):
+        payload = copy.deepcopy(TASKS_PAYLOAD)
+        payload[
+            "prompt"
+        ] = """
+        ---
+        - name: Test the vscode extension
+            hosts: all
+            tasks:
+                # Some crazy YAML
+            """
+
+        mock_safe_load.side_effect = Mock(
+            side_effect=ScannerError(
+                None,
+                None,
+                "Something went horribly wrong",
+                Mark("name", 0, 0, len(task_prefix), None, 0),
+            )
+        )
+
+        messages = self.call_completion_validate_multitask_yaml(payload)
+        self.assertEqual(1, len(messages))
+        self.assertIn(
+            "Task 'Some crazy YAML' invalid at column 1. Something went horribly wrong.",
+            messages[0],
         )
