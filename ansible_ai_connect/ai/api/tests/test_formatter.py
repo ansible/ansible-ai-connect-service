@@ -319,7 +319,14 @@ var3: value3
         self.assertTrue("ansible.builtin.set_fact" in data[0])
         self.assertEqual(data[0]["ansible.builtin.set_fact"], merged_vars)
 
-    def test_restore_original_task_names(self):
+    def test_restore_original_task_names_falsy_yaml(self):
+        multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
+        multi_task_yaml = "- name: \n\n - name:"
+        with self.assertLogs(logger="root", level="ERROR") as log:
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt),
+            self.assertInLog("Error while loading the result role/playbook YAML", log)
+
+    def test_restore_original_task_names_in_role(self):
         single_task_prompt = "- name: Install ssh\n"
         multi_task_prompt = "# Install Apache & say hello fred@redhat.com\n"
         multi_task_prompt_with_loop = (
@@ -433,20 +440,178 @@ var3: value3
             fmtr.restore_original_task_names("", multi_task_prompt),
         )
 
-    def test_restore_original_task_names_for_index_error(self):
-        # The following prompt simulates a mismatch between requested tasks and received tasks
-        multi_task_prompt = "# Install Apache\n"
+    def test_restore_original_task_names_in_playbook(self):
+        payload_context = "- name: Playbook\n  hosts: all\n  tasks:\n"
+        single_task_prompt = "    - name: Install ssh\n"
+        multi_task_prompt = "    # Install Apache & say hello fred@redhat.com\n"
+        multi_task_prompt_with_loop = (
+            "    # Delete all virtual machines in my Azure resource group called 'melisa' that "
+            "exists longer than 24 hours. Do not delete virtual machines that exists less "
+            "than 24 hours."
+        )
+        multi_task_prompt_with_loop_extra_task = (
+            "    # Delete all virtual machines in my Azure resource group "
+            "& say hello to ada@anemail.com"
+        )
+
         multi_task_yaml = (
-            "- name:  Install Apache\n  ansible.builtin.apt:\n    "
-            "name: apache2\n    state: latest\n- name:  say hello test@example.com\n  "
-            "ansible.builtin.debug:\n    msg: Hello there olivia1@example.com\n"
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n    - name:  say hello test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+        multi_task_yaml_extra_task = (
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n    - name:  say hello test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com"
+            "\n    - name:  say hi test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+        multi_task_yaml_with_loop = (
+            "    - name:  Delete all virtual machines in my "
+            "Azure resource group called 'test' that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "      azure.azcollection.azure_rm_virtualmachine:\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
+            "        resource_group: myResourceGroup\n"
+            "        vm_size: Standard_A0\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
+        )
+        multi_task_yaml_with_loop_extra_task = (
+            "    - name:  Delete all virtual machines in my Azure resource group\n"
+            "      azure.azcollection.azure_rm_virtualmachine:\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
+            "        resource_group: myResourceGroup\n"
+            "        vm_size: Standard_A0\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
+            "    - name:  say hello to ada@anemail.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+        single_task_yaml = (
+            "      ansible.builtin.package:\n        name: openssh-server\n"
+            "        state: present\n      when:\n"
+            "        - enable_ssh | bool\n        - ansible_distribution == 'Ubuntu'"
+        )
+        expected_multi_task_yaml = (
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n    - name:  say hello fred@redhat.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+        expected_multi_task_yaml_with_loop = (
+            "    - name:  Delete all virtual machines in my "
+            "Azure resource group called 'melisa' that exists longer than 24 hours. Do not "
+            "delete virtual machines that exists less than 24 hours.\n"
+            "      azure.azcollection.azure_rm_virtualmachine:\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
+            "        resource_group: myResourceGroup\n"
+            "        vm_size: Standard_A0\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
+        )
+        expected_multi_task_yaml_with_loop_extra_task = (
+            "    - name:  Delete all virtual machines in my Azure resource group\n"
+            "      azure.azcollection.azure_rm_virtualmachine:\n"
+            '        name: "{{ _name_ }}"\n        state: absent\n'
+            "        resource_group: myResourceGroup\n"
+            "        vm_size: Standard_A0\n"
+            '        image: "{{ _image_ }}"\n      loop:\n        - name: "{{ vm_name }}"\n'
+            '          password: "{{ _password_ }}"\n'
+            '          user: "{{ vm_user }}"\n          location: "{{ vm_location }}"\n'
+            "    - name:  say hello to ada@anemail.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
         )
 
         with self.assertLogs(logger="root", level="ERROR") as log:
-            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt)
+            fmtr.restore_original_task_names(
+                multi_task_yaml_extra_task, multi_task_prompt, payload_context
+            ),
             self.assertInLog(
                 "There is no match for the enumerated prompt task in the suggestion yaml", log
             )
+
+        self.assertEqual(
+            expected_multi_task_yaml_with_loop,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop, multi_task_prompt_with_loop, payload_context
+            ),
+        )
+
+        self.assertEqual(
+            expected_multi_task_yaml_with_loop_extra_task,
+            fmtr.restore_original_task_names(
+                multi_task_yaml_with_loop_extra_task,
+                multi_task_prompt_with_loop_extra_task,
+                payload_context,
+            ),
+        )
+
+        self.assertEqual(
+            single_task_yaml,
+            fmtr.restore_original_task_names(single_task_yaml, single_task_prompt, payload_context),
+        )
+
+        self.assertEqual(
+            "",
+            fmtr.restore_original_task_names("", multi_task_prompt, payload_context),
+        )
+
+    def test_restore_original_task_names_for_index_error(self):
+        # The following prompt simulates a mismatch between requested tasks and received tasks
+        payload_context = "- name: Playbook\n  hosts: all\n  tasks:\n"
+        multi_task_prompt = "# Install Apache\n"
+        multi_task_yaml = (
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n    - name:  say hello test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+
+        with self.assertLogs(logger="root", level="ERROR") as log:
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context)
+            self.assertInLog(
+                "There is no match for the enumerated prompt task in the suggestion yaml", log
+            )
+
+    def test_restore_original_task_names_for_task_inclusions(self):
+        payload_context = "- name: Playbook\n  hosts: all\n  tasks:\n"
+        multi_task_prompt = (
+            "# use include_tasks and task file install_pkg.yml, install git, tree and wget\n"
+        )
+        multi_task_yaml = (
+            "    - include_tasks: install_pkg.yml\n      loop:\n"
+            "        - git\n        - wget\n        - tree\n"
+        )
+
+        self.assertEqual(
+            multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
+        )
+
+    def test_restore_original_task_names_for_playbook_with_task_preset(self):
+        payload_context = (
+            "- name: Playbook\n  hosts: all\n  tasks:\n"
+            "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
+            "name: apache2\n        state: latest\n"
+        )
+        multi_task_prompt = "# say hello test@example.com\n"
+
+        multi_task_yaml = (
+            "    - name:  say hello test@example.com\n      "
+            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+        )
+
+        self.assertEqual(
+            multi_task_yaml,
+            fmtr.restore_original_task_names(multi_task_yaml, multi_task_prompt, payload_context),
+        )
 
     def test_strip_task_preamble_from_multi_task_prompt_no_preamble_unchanged_multi(self):
         prompt = "    # install ffmpeg"

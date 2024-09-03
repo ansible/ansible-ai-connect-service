@@ -368,15 +368,34 @@ def get_task_names_from_tasks(tasks):
     return names
 
 
-def restore_original_task_names(output_yaml, prompt):
+def restore_original_task_names(output_yaml, prompt, payload_context=""):
     if output_yaml and is_multi_task_prompt(prompt):
-        prompt_tasks = get_task_names_from_prompt(prompt)
-        matches = re.finditer(r"^- name:\s+(.*)", output_yaml, re.M)
-        for i, match in enumerate(matches):
+        full_yaml = payload_context + output_yaml
+        try:
+            payload_context_data = yaml.safe_load(payload_context)
+            full_data = yaml.safe_load(full_yaml)
+        except Exception as exc:
+            logger.exception(
+                f"Error while loading the result role/playbook YAML:{exc} "
+                f"for restoring the original task names"
+            )
+            return output_yaml
+        prompt_task_names = get_task_names_from_prompt(prompt)
+
+        full_task_list = get_task_list_from_yaml_data_obj(full_data)
+        payload_context_task_list = get_task_list_from_yaml_data_obj(payload_context_data)
+        context_task_list_length = len(payload_context_task_list)
+
+        # We enumarate starting with an index that equals to the lenght of the context task list.
+        # We are doign this to skip the first N tasks, then start with the Nth index
+        # to process only the suggested tasks
+        for i, task in enumerate(
+            full_task_list[context_task_list_length:], context_task_list_length
+        ):
             try:
-                task_line = match.group(0)
-                task = match.group(1)
-                restored_task_line = task_line.replace(task, prompt_tasks[i])
+                task_name = task.get("name", "")
+                task_line = "- name:  " + task_name
+                restored_task_line = task_line.replace(task_name, prompt_task_names[i])
                 output_yaml = output_yaml.replace(task_line, restored_task_line)
             except IndexError:
                 logger.error(
@@ -385,6 +404,20 @@ def restore_original_task_names(output_yaml, prompt):
                 break
 
     return output_yaml
+
+
+def get_task_list_from_yaml_data_obj(data):
+    task_list = []
+    if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+        # Tries to get the tasks from the dict in case there is data
+        # in the file already (payload_context!='')
+        if data[0].get("tasks", []) is not None:
+            task_list = data[0].get("tasks", [])
+        # If there is no initial data rather than the prompt
+        # the list is a task list (payload_context='')
+        if not task_list and "tasks" not in data[0].keys():
+            task_list = data
+    return task_list
 
 
 # List of Task keywords to filter out during prediction results parsing.
