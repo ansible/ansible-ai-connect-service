@@ -15,9 +15,12 @@
 import logging
 import time
 
+import yaml
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
+from yaml.error import Mark
+from yaml.scanner import ScannerError
 
 from ansible_ai_connect.ai.api import formatter as fmtr
 from ansible_ai_connect.ai.api.exceptions import (
@@ -34,6 +37,8 @@ preprocess_hist = Histogram(
     "Histogram of pre-processing time",
     namespace=NAMESPACE,
 )
+
+task_prefix = "- name: "
 
 
 def completion_pre_process(context: CompletionContext):
@@ -83,15 +88,75 @@ def completion_pre_process(context: CompletionContext):
     context.payload.original_prompt = original_prompt
 
 
+def simplify_scanner_error(task: str, e: ScannerError) -> str:
+    # "mapping values are not allowed here" <-- colon in task
+    # "sequence entries are not allowed here" <-- hyphen at start of task
+    mark: Mark = e.args[3]
+    column = mark.column + 1 - (len(task_prefix))
+    problem = str(e.problem)
+    if "mapping values are not allowed here" in problem.lower():
+        message_suffix = "Task contains a colon"
+    elif "sequence entries are not allowed here" in problem.lower():
+        message_suffix = "Task starts with a hyphen"
+    else:
+        message_suffix = problem
+    message = f"Task '{task}' invalid at column {column}. {message_suffix}."
+    return message
+
+
+def completion_validate_multitask_yaml(context: CompletionContext):
+    """
+    Validate the YAML for each task within a multi-Task definition
+    This follows IBMs advice that their processing splits on "&"
+    See https://github.com/rh-ibm-synergy/wca-feedback/issues/60
+    :param context:
+    :return:
+    """
+    prompt = context.payload.prompt
+    multi_task = fmtr.is_multi_task_prompt(prompt)
+
+    if not multi_task:
+        return
+
+    # Remove marker and whitespace surrounding prompt
+    task_prompt = prompt.strip().removeprefix("#").lstrip()
+    tasks = [task.strip() for task in task_prompt.split("&")]
+    task_errors = []
+    for task in tasks:
+        task_error = None
+        if not task:
+            task_error = "Empty task definition."
+        else:
+            try:
+                yaml.safe_load(f"{task_prefix}{task}")
+            except ScannerError as e:
+                task_error = simplify_scanner_error(task, e)
+
+        if task_error:
+            task_errors.append(task_error)
+
+    if len(task_errors) > 0:
+        raise PreprocessInvalidYamlException(
+            detail={
+                "code": PreprocessInvalidYamlException.default_code,
+                "message": task_errors,
+            }
+        )
+
+
 class PreProcessStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         start_time = time.time()
         payload = context.payload
         try:
+            completion_validate_multitask_yaml(context)
             completion_pre_process(context)
+        except PreprocessInvalidYamlException:
+            process_error_count.labels(stage="pre-processing").inc()
+            logger.error(f"failed to preprocess:\n{payload.context}{payload.prompt}")
+            raise
         except Exception as exc:
             process_error_count.labels(stage="pre-processing").inc()
-            # return the original prompt, context
             logger.error(
                 f"failed to preprocess:\n{payload.context}{payload.prompt}\nException:\n{exc}"
             )
