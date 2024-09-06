@@ -84,6 +84,7 @@ class BaseReportGeneratorTest:
         r = self.get_report_generator().generate(plan_id=self.trial_plan.id)
         self.test.assertIn(self.get_report_header(), r)
         self.test.assertIn("Robert,Surcouf", r)
+        self.test.assertIn(str(self.trial_user.uuid), r)
         self.test.assertIn("Trial of 10 days", r)
 
     def test_get_report_filter_by_non_existing_plan_id(self):
