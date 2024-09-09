@@ -20,10 +20,8 @@ boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
 certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
-# UPDATED MANUALLY: waiting for parent package to be updated
 cryptography==43.0.1
-# pin Django on 4.2.11 to address PYSEC-2024-47.
-Django==4.2.15
+Django==4.2.16
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
