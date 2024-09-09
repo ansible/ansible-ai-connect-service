@@ -17,3 +17,5 @@ services:
       - $PWD:/var/www/wisdom:Z
     command:
       - /var/www/wisdom/tools/scripts/pip-compile.sh
+    depends_on:
+      - pip-compile-x86_64
