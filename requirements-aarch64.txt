@@ -67,7 +67,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via black
-cryptography==42.0.8
+cryptography==43.0.1
     # via
     #   -r requirements.in
     #   ansible-core
@@ -326,7 +326,7 @@ pyjwt==2.8.0
     # via
     #   -r requirements.in
     #   social-auth-core
-pyopenssl==24.0.0
+pyopenssl==24.2.1
     # via
     #   -r requirements.in
     #   pydrive2

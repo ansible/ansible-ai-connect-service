@@ -21,7 +21,7 @@ boto3==1.26.84
 black==24.3.0
 certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
 # UPDATED MANUALLY: waiting for parent package to be updated
-cryptography==42.0.8
+cryptography==43.0.1
 # pin Django on 4.2.11 to address PYSEC-2024-47.
 Django==4.2.15
 django-deprecate-fields==0.1.1
@@ -55,7 +55,7 @@ pydantic==2.6.4
 PyDrive2==1.20.0
 pytz
 pyjwt==2.8.0
-pyOpenSSL==24.0.0
+pyOpenSSL==24.2.1
 PyYAML==6.0
 requests==2.32.0
 segment-analytics-python==2.2.2
