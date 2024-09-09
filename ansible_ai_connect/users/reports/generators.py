@@ -70,12 +70,13 @@ class UserTrialsReportGenerator(BaseGenerator):
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(
-            ["First name", "Last name", "Organization name", "Plan name", "Trial started"]
+            ["UUID", "First name", "Last name", "Organization name", "Plan name", "Trial started"]
         )
         for user in users:
             organization = user.get("organization")
             for plan in user.get("userplan_set"):
                 row_data = [
+                    user.get("uuid"),
                     user.get("given_name"),
                     user.get("family_name"),
                     organization.get("name"),
@@ -102,11 +103,12 @@ class UserMarketingReportGenerator(BaseGenerator):
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["First name", "Last name", "Email", "Plan name", "Trial started"])
+        writer.writerow(["UUID", "First name", "Last name", "Email", "Plan name", "Trial started"])
         for user in users:
             for plan in user.get("userplan_set"):
                 if plan.get("accept_marketing"):
                     row_data = [
+                        user.get("uuid"),
                         user.get("given_name"),
                         user.get("family_name"),
                         user.get("email"),

@@ -49,6 +49,7 @@ class UserResponseSerializer(serializers.Serializer):
     rh_user_is_org_admin = serializers.BooleanField(required=False)
     username = serializers.CharField(required=True, max_length=150)
     userplan_set = UserPlanSerializer(many=True)
+    uuid = serializers.UUIDField(required=True)
 
 
 class MarkdownUserResponseSerializer(serializers.Serializer):
