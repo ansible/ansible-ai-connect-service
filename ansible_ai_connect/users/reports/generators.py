@@ -30,7 +30,9 @@ class BaseGenerator(ABC):
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
     ):
-        queryset = User.objects.all().exclude(organization__isnull=True)
+        queryset = (
+            User.objects.all().order_by("fk_organization_id").exclude(organization__isnull=True)
+        )
         queryset_args = {}
         if plan_id is not None:
             queryset_args["userplan__plan_id"] = plan_id
@@ -70,18 +72,31 @@ class UserTrialsReportGenerator(BaseGenerator):
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(
-            ["UUID", "First name", "Last name", "Organization name", "Plan name", "Trial started"]
+            [
+                "OrgId",
+                "Org has_api_key",
+                "UUID",
+                "First name",
+                "Last name",
+                "Organization name",
+                "Plan name",
+                "Trial started",
+                "Trial expired_at",
+            ]
         )
         for user in users:
-            organization = user.get("organization")
-            for plan in user.get("userplan_set"):
+            organization = user["organization"]
+            for plan in user["userplan_set"]:
                 row_data = [
-                    user.get("uuid"),
-                    user.get("given_name"),
-                    user.get("family_name"),
-                    organization.get("name"),
-                    plan.get("plan").get("name"),
-                    plan.get("created_at"),
+                    organization["id"],
+                    organization["has_api_key"],
+                    user["uuid"],
+                    user["given_name"],
+                    user["family_name"],
+                    organization["name"],
+                    plan["plan"]["name"],
+                    plan["created_at"],
+                    plan["expired_at"],
                 ]
                 writer.writerow(row_data)
 
@@ -103,17 +118,31 @@ class UserMarketingReportGenerator(BaseGenerator):
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["UUID", "First name", "Last name", "Email", "Plan name", "Trial started"])
+        writer.writerow(
+            [
+                "OrgId",
+                "UUID",
+                "First name",
+                "Last name",
+                "Email",
+                "Plan name",
+                "Trial started",
+                "Trial expired_at",
+            ]
+        )
         for user in users:
+            organization = user["organization"]
             for plan in user.get("userplan_set"):
-                if plan.get("accept_marketing"):
+                if plan["accept_marketing"]:
                     row_data = [
-                        user.get("uuid"),
-                        user.get("given_name"),
-                        user.get("family_name"),
-                        user.get("email"),
-                        plan.get("plan").get("name"),
-                        plan.get("created_at"),
+                        organization["id"],
+                        user["uuid"],
+                        user["given_name"],
+                        user["family_name"],
+                        user["email"],
+                        plan["plan"]["name"],
+                        plan["created_at"],
+                        plan["expired_at"],
                     ]
                     writer.writerow(row_data)
 

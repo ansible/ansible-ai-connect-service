@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import re
 from datetime import datetime, timezone
 
 from dateutil.relativedelta import relativedelta
@@ -44,6 +45,14 @@ class BaseReportGeneratorTest:
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
             rh_org_id=1981,
         )
+        self.trial_user2 = create_user_with_provider(
+            given_name="Anne",
+            family_name="Bonny",
+            username="another_trial_user",
+            email="anne.bonny@somewhere.com",
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            rh_org_id=1720,
+        )
         self.trial_plan, _ = Plan.objects.get_or_create(
             name="Trial of 10 days", expires_after="10 days"
         )
@@ -51,6 +60,7 @@ class BaseReportGeneratorTest:
 
     def cleanup(self):
         self.trial_user.delete()
+        self.trial_user2.delete()
         self.trial_plan.delete()
 
     def get_report_header(self) -> str:
@@ -61,6 +71,7 @@ class BaseReportGeneratorTest:
 
     def add_plan_to_user(self):
         self.trial_user.plans.add(self.trial_plan)
+        self.trial_user2.plans.add(self.trial_plan)
 
     def test_get_report_headers(self):
         r = self.get_report_generator().generate()
@@ -143,10 +154,47 @@ class TestUserTrialsReportGenerator(WisdomServiceAPITestCaseBaseOIDC, BaseReport
         super().cleanup()
 
     def get_report_header(self) -> str:
-        return "First name,Last name,Organization name,Plan name,Trial started"
+        return (
+            "OrgId,Org has_api_key,UUID,First name,Last name,Organization name,"
+            "Plan name,Trial started,Trial expired_at"
+        )
 
     def get_report_generator(self) -> BaseGenerator:
         return UserTrialsReportGenerator()
+
+    def test_get_report_in_the_right_order(self):
+        self.add_plan_to_user()
+
+        def build_user(name, org_id):
+            u = create_user_with_provider(
+                given_name=name,
+                family_name="user",
+                username=f"{name}_user",
+                email=f"{name}@somewhere.com",
+                provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+                rh_org_id=org_id,
+            )
+            u.plans.add(self.trial_plan)
+            return u
+
+        users = [
+            build_user(*i)
+            for i in [
+                ("3rd--", 1980),
+                ("5th--", 1990),
+                ("1st--", 1970),
+                ("2nd--", 1975),
+                ("4th--", 1985),
+            ]
+        ]
+        r = self.get_report_generator().generate()
+
+        # Ensure we've got the lines properly ordered
+        self.test.assertTrue(
+            re.search("1st--.*2nd--.*3rd--.*4th--.*5th--", r, re.MULTILINE | re.DOTALL)
+        )
+        for u in users:
+            u.delete()
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
@@ -161,7 +209,7 @@ class TestUserMarketingReportGenerator(WisdomServiceAPITestCaseBaseOIDC, BaseRep
         super().cleanup()
 
     def get_report_header(self) -> str:
-        return "First name,Last name,Email,Plan name,Trial started"
+        return "OrgId,UUID,First name,Last name,Email,Plan name,Trial started,Trial expired_at"
 
     def get_report_generator(self) -> BaseGenerator:
         return UserMarketingReportGenerator()
@@ -171,3 +219,8 @@ class TestUserMarketingReportGenerator(WisdomServiceAPITestCaseBaseOIDC, BaseRep
         up = self.trial_user.userplan_set.first()
         up.accept_marketing = True
         up.save()
+
+    def test_non_marketing_user_no_in_answer(self):
+        self.add_plan_to_user()
+        r = self.get_report_generator().generate()
+        self.test.assertNotIn("Anne", r)
