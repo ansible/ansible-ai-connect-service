@@ -85,7 +85,7 @@ defusedxml==0.8.0rc2
     #   social-auth-core
 diff-match-patch==20230430
     # via django-import-export
-django==4.2.15
+django==4.2.16
     # via
     #   -r requirements.in
     #   django-allow-cidr
