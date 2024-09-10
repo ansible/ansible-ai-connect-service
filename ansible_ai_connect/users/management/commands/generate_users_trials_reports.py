@@ -100,6 +100,7 @@ class Command(BaseCommand):
         user_trials_report = Command.generate_user_trials_report(
             plan.id, created_after, created_before
         )
+        user_trials_full_report = Command.generate_user_trials_report(plan.id)
         user_marketing_report = Command.generate_user_marketing_report(
             plan.id, created_after, created_before
         )
@@ -120,6 +121,7 @@ class Command(BaseCommand):
                     [
                         Report("User marketing preferences", user_marketing_report),
                         Report("User trials acceptance", user_trials_report),
+                        Report("User trials full", user_trials_full_report),
                     ],
                 )
             )
