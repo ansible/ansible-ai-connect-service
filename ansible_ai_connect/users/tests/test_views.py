@@ -53,11 +53,6 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         self.assertNotContains(response, "Role:")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_unauthorized_with_tech_preview(self):
-        response = self.client.get(reverse("login"))
-        self.assertContains(response, "Log in to Tech Preview")
-
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     def test_unauthorized_without_tech_preview(self):
         response = self.client.get(reverse("login"))
@@ -87,22 +82,6 @@ class UserHomeTestAsAdmin(WisdomAppsBackendMocking, TestCase):
         self.assertContains(response, "pf-c-alert__title", count=1)
         self.assertContains(response, "model settings have not been configured", count=1)
         self.assertContains(response, "Admin Portal", count=1)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", False)
-    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
-    def test_rh_admin_without_seat_and_with_no_secret_with_tech_preview(self):
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "pf-c-alert__title", count=1)
-        self.assertNotContains(response, "Your organization doesn't have access to Project Name.")
-        self.assertNotContains(response, "You will be limited to features of the Project Name")
-        self.assertNotContains(
-            response, "The Project Name Technical Preview is no longer available"
-        )
-        self.assertContains(response, "Role: administrator")
-        self.assertContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
@@ -145,42 +124,6 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.user.delete()
         super().tearDown()
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="")
-    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
-    def test_rh_user_without_seat_and_no_secret_with_tech_preview(self):
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title", count=2)
-        self.assertContains(response, "You do not have a licensed seat for Project Name")
-        self.assertContains(response, "You will be limited to features of the Project Name")
-        self.assertNotContains(response, "fas fa-exclamation-circle")
-        self.assertNotContains(response, "Admin Portal")
-        self.assertNotContains(
-            response, "The Project Name Technical Preview is no longer available"
-        )
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="valid")
-    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
-    def test_rh_user_without_seat_with_secret_with_tech_preview(self):
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Role:")
-        self.assertContains(response, "pf-c-alert__title", count=2)
-        self.assertContains(response, "You do not have a licensed seat for Project Name")
-        self.assertContains(response, "You will be limited to features of the Project Name")
-        self.assertNotContains(response, "fas fa-exclamation-circle")
-        self.assertNotContains(response, "Admin Portal")
-        self.assertNotContains(
-            response, "The Project Name Technical Preview is no longer available"
-        )
-
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(ANSIBLE_AI_PROJECT_NAME="Project Name")
     @override_settings(WCA_SECRET_DUMMY_SECRETS="")
@@ -213,18 +156,6 @@ class UserHomeTestAsUser(WisdomAppsBackendMocking, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Role: licensed user")
         self.assertContains(response, "Project Name</h1>")
-        self.assertNotContains(response, "Admin Portal")
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
-    @patch.object(ansible_ai_connect.users.models.User, "rh_org_has_subscription", True)
-    @patch.object(ansible_ai_connect.users.models.User, "rh_user_has_seat", False)
-    def test_rh_user_with_no_seat_and_with_secret(self):
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Role: licensed user")
-        self.assertNotContains(response, "more information on how to get a licensed seat.")
-        self.assertContains(response, "pf-c-alert__title", count=2)
         self.assertNotContains(response, "Admin Portal")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)

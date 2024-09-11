@@ -27,16 +27,6 @@
     Contact your Red Hat account organization administrator for more information on how to assign a named seat.
   </p>
 </div>
-{% elif use_tech_preview and user.rh_org_has_subscription and not user.rh_user_has_seat %}
-<div class="pf-c-alert pf-m-info" aria-label="Information alert">
-  <div class="pf-c-alert__icon">
-    <i class="fas fa-fw fa-info-circle" aria-hidden="true"></i>
-  </div>
-  <p class="pf-c-alert__title">
-    You do not have a licensed seat for {{ project_name }}. You will be limited to features of the {{ project_name }} tech preview until you are assigned a named seat.
-    Contact your Red Hat account organization administrator for more information on how to assign a named seat.
-  </p>
-</div>
 {% endif %}
 
 <section class="pf-c-page__main-section pf-m-light">
@@ -47,7 +37,7 @@
         <div class="pf-c-empty-state__content">
 
 {# https://issues.redhat.com/browse/AAP-18386 #}
-{% if user.is_authenticated and not use_tech_preview and not user.rh_user_is_org_admin and not user.rh_org_has_subscription %}
+{% if user.is_authenticated and not user.rh_user_is_org_admin and not user.rh_org_has_subscription %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -62,7 +52,7 @@
           </div>
 
 {# https://issues.redhat.com/browse/AAP-22398 #}
-{% elif user.is_authenticated and not use_tech_preview and user.rh_user_is_org_admin and not user.rh_org_has_subscription %}
+{% elif user.is_authenticated and user.rh_user_is_org_admin and not user.rh_org_has_subscription %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
@@ -76,7 +66,7 @@
             <p>You do not have an Active subscription to Ansible Automation Platform which is required to use {{ project_name }}.
           </div>
 
-{% elif user.is_authenticated and not use_tech_preview and user.rh_org_has_subscription and not user.rh_user_has_seat %}
+{% elif user.is_authenticated and user.rh_org_has_subscription and not user.rh_user_has_seat %}
           <span class="pf-c-icon pf-m-xl pf-m-inline">
             <span class="pf-c-icon__content  pf-m-danger">
               <i class="fas fa-exclamation-circle" aria-hidden="true"></i>

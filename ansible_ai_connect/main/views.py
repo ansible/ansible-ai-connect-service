@@ -40,11 +40,6 @@ logger = logging.getLogger(__name__)
 class LoginView(auth_views.LoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        try:
-            context["use_github_team"] = bool(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY)
-        except AttributeError:
-            context["use_github_team"] = False
-        context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
