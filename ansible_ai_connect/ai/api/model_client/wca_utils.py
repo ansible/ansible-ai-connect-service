@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import logging
+import re
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
@@ -186,10 +187,8 @@ class ResponseStatusCode404WCAInstanceDeleted(Check[Context]):
             payload_json = context.result.json()
             if isinstance(payload_json, dict):
                 payload_detail = payload_json.get("detail")
-                if (
-                    payload_detail
-                    and "failed to get remaining capacity from metering api"
-                    in payload_detail.lower()
+                if payload_detail and re.search(
+                    r"The WCA instance \S+ has been deleted", payload_detail
                 ):
                     raise WcaInstanceDeleted(model_id=context.model_id)
 
