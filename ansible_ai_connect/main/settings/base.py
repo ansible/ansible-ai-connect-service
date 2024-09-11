@@ -157,18 +157,13 @@ COMMERCIAL_DOCUMENTATION_URL = os.getenv(
 TERMS_NOT_APPLICABLE = os.environ.get("TERMS_NOT_APPLICABLE", False)
 
 SOCIAL_AUTH_JSONFIELD_ENABLED = True
-if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-    # No GitHub login after the Tech Preview
-    USE_GITHUB_TEAM = False
-elif os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY"):
-    USE_GITHUB_TEAM = True
+if os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY"):
     SOCIAL_AUTH_GITHUB_TEAM_KEY = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY")
     SOCIAL_AUTH_GITHUB_TEAM_SECRET = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_SECRET")
     SOCIAL_AUTH_GITHUB_TEAM_ID = os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_ID") or 7188893
     SOCIAL_AUTH_GITHUB_TEAM_SCOPE = ["read:org"]
     SOCIAL_AUTH_GITHUB_TEAM_EXTRA_DATA = ["login"]
-else:
-    USE_GITHUB_TEAM = False
+elif os.environ.get("SOCIAL_AUTH_GITHUB_KEY"):
     SOCIAL_AUTH_GITHUB_KEY = os.environ.get("SOCIAL_AUTH_GITHUB_KEY")
     SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("SOCIAL_AUTH_GITHUB_SECRET")
     SOCIAL_AUTH_GITHUB_SCOPE = [""]
@@ -206,16 +201,15 @@ DEPLOYMENT_MODE: t_deployment_mode = cast(
     t_deployment_mode, os.environ.get("DEPLOYMENT_MODE") or "saas"
 )
 AUTHENTICATION_BACKENDS = [
-    (
-        "social_core.backends.github.GithubTeamOAuth2"
-        if USE_GITHUB_TEAM
-        else "social_core.backends.github.GithubOAuth2"
-    ),
     "social_core.backends.open_id_connect.OpenIdConnectAuth",
     "ansible_ai_connect.users.auth.AAPOAuth2",
     "django.contrib.auth.backends.ModelBackend",
     "oauth2_provider.backends.OAuth2Backend",
 ]
+if os.environ.get("SOCIAL_AUTH_GITHUB_TEAM_KEY"):
+    AUTHENTICATION_BACKENDS.append("social_core.backends.github.GithubTeamOAuth2")
+elif os.environ.get("SOCIAL_AUTH_GITHUB_KEY"):
+    AUTHENTICATION_BACKENDS.append("social_core.backends.github.GithubOAuth2")
 
 SOCIAL_AUTH_PIPELINE = (
     "ansible_ai_connect.users.pipeline.block_auth_users",
