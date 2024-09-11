@@ -155,8 +155,8 @@ class TestUserTrialsReportGenerator(WisdomServiceAPITestCaseBaseOIDC, BaseReport
 
     def get_report_header(self) -> str:
         return (
-            "OrgId,Org has_api_key,UUID,First name,Last name,Organization name,"
-            "Plan name,Trial started,Trial expired_at"
+            "OrgId,UUID,First name,Last name,Organization name,"
+            "Plan name,Trial started,Trial expired_at,Org has_api_key"
         )
 
     def get_report_generator(self) -> BaseGenerator:
