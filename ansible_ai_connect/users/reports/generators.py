@@ -74,7 +74,6 @@ class UserTrialsReportGenerator(BaseGenerator):
         writer.writerow(
             [
                 "OrgId",
-                "Org has_api_key",
                 "UUID",
                 "First name",
                 "Last name",
@@ -82,6 +81,7 @@ class UserTrialsReportGenerator(BaseGenerator):
                 "Plan name",
                 "Trial started",
                 "Trial expired_at",
+                "Org has_api_key",
             ]
         )
         for user in users:
@@ -89,7 +89,6 @@ class UserTrialsReportGenerator(BaseGenerator):
             for plan in user["userplan_set"]:
                 row_data = [
                     organization["id"],
-                    organization["has_api_key"],
                     user["uuid"],
                     user["given_name"],
                     user["family_name"],
@@ -97,6 +96,7 @@ class UserTrialsReportGenerator(BaseGenerator):
                     plan["plan"]["name"],
                     plan["created_at"],
                     plan["expired_at"],
+                    organization["has_api_key"],
                 ]
                 writer.writerow(row_data)
 
