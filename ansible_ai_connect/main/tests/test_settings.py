@@ -52,7 +52,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     @patch.dict(
         os.environ,
         {
-            "ANSIBLE_AI_ENABLE_TECH_PREVIEW": "true",
             "SOCIAL_AUTH_GITHUB_TEAM_KEY": "teamkey",
             "SOCIAL_AUTH_GITHUB_TEAM_SECRET": "teamsecret",
             "SOCIAL_AUTH_GITHUB_TEAM_ID": "5678",
@@ -61,7 +60,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     def test_github_auth_team_with_id(self):
         settings = self.reload_settings()
 
-        self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, "teamkey")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, "teamsecret")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_ID, "5678")
@@ -71,7 +69,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     @patch.dict(
         os.environ,
         {
-            "ANSIBLE_AI_ENABLE_TECH_PREVIEW": "true",
             "SOCIAL_AUTH_GITHUB_TEAM_KEY": "teamkey",
             "SOCIAL_AUTH_GITHUB_TEAM_SECRET": "teamsecret",
             "SOCIAL_AUTH_GITHUB_TEAM_ID": "",
@@ -79,7 +76,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     )
     def test_github_auth_team_without_id(self):
         settings = self.reload_settings()
-        self.assertEqual(settings.USE_GITHUB_TEAM, True)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_KEY, "teamkey")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_SECRET, "teamsecret")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_TEAM_ID, 7188893)
@@ -89,7 +85,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     @patch.dict(
         os.environ,
         {
-            "ANSIBLE_AI_ENABLE_TECH_PREVIEW": "true",
             "SOCIAL_AUTH_GITHUB_TEAM_KEY": "",
             "SOCIAL_AUTH_GITHUB_KEY": "key",
             "SOCIAL_AUTH_GITHUB_SECRET": "secret",
@@ -97,7 +92,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     )
     def test_github_auth_team_empty_key(self):
         settings = self.reload_settings()
-        self.assertEqual(settings.USE_GITHUB_TEAM, False)
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_KEY, "key")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SECRET, "secret")
         self.assertEqual(settings.SOCIAL_AUTH_GITHUB_SCOPE, [""])
