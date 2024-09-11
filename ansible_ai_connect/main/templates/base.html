@@ -11,15 +11,6 @@
 
     <body>
         {% block banner %}
-        {% if use_tech_preview %}
-        <div class="pf-c-alert pf-m-warning ls_tech_preview_banner">
-            <div class="pf-c-alert__icon">
-                <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
-            </div>
-            <p class="pf-c-alert__title ls_font_normal"><b>NOTE</b>: Due to overwhelming positive demand, we have extended the availability of the {{ project_name }} Technical Preview from December 31, 2023 to <b>March 11, 2024</b>.</p>
-        </div>
-        <br />
-        {% endif %}
         {% endblock banner %}
         {% if messages %}
             <ul class="messages">
