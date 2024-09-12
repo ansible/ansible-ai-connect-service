@@ -128,7 +128,7 @@ class SlackWebhookPostman(BasePostman):
             webhook = WebhookClient(self.webhook_url)
             response = webhook.send(text="fallback", blocks=BasePostman.make_message_body(reports))
             if response.status_code != 200:
-                logger.error(f"Failed to post reports. See response for details {response}.")
+                logger.error(f"Failed to post reports. See response for details: {response.body}")
                 raise ReportGenerationException("Failed to post reports.")
 
         except SlackApiError as e:
