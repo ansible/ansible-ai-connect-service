@@ -26,7 +26,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.cache import cache
 from django.test import TestCase
-from django.utils import timezone
 from rest_framework.test import APITransactionTestCase
 from segment import analytics
 from social_django.models import UserSocialAuth
@@ -214,8 +213,6 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         self.create_user()
 
         self.user.user_id = str(uuid4())
-        self.user.community_terms_accepted = timezone.now()
-        self.user.save()
 
         group_1, _ = Group.objects.get_or_create(name="Group 1")
         group_2, _ = Group.objects.get_or_create(name="Group 2")
