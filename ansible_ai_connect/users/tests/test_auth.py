@@ -68,7 +68,8 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
             }
         ),
     )
-    def test_date_expired_checked_and_is_true_during_auth(self):
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_date_expired_checked_and_is_true_during_auth(self, AAP_API_URL):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {"is_system_auditor": True, "is_superuser": True}
@@ -87,7 +88,8 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
             }
         ),
     )
-    def test_date_expired_checked_and_is_false_during_auth(self):
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_date_expired_checked_and_is_false_during_auth(self, AAP_API_URL):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {"is_system_auditor": False, "is_superuser": False}
@@ -102,7 +104,8 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         extra_data=MagicMock(return_value={"test": "data"}),
         get_json=MagicMock(return_value={}),
     )
-    def test_missing_values(self):
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_missing_values(self, AAP_API_URL):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {}
@@ -111,6 +114,50 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.assertFalse(data["aap_licensed"])
         self.assertFalse(data["aap_system_auditor"])
         self.assertFalse(data["aap_superuser"])
+
+    def test_get_me_endpoint_controller(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test/api"
+        self.assertEqual(
+            "http://controller.test/api/v2/me/", authentication.get_me_endpoint(api_url)
+        )
+
+    def test_get_me_endpoint_controller_ended(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test/api/"
+        self.assertEqual(
+            "http://controller.test/api/v2/me/", authentication.get_me_endpoint(api_url)
+        )
+
+    def test_get_me_endpoint_gateway(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test"
+        self.assertEqual(
+            "http://controller.test/api/gateway/v1/me/", authentication.get_me_endpoint(api_url)
+        )
+
+    def test_get_config_endpoint_controller(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test/api"
+        self.assertEqual(
+            "http://controller.test/api/v2/config/", authentication.get_config_endpoint(api_url)
+        )
+
+    def test_get_config_endpoint_gateway(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test"
+        self.assertEqual(
+            "http://controller.test/api/controller/v2/config/",
+            authentication.get_config_endpoint(api_url),
+        )
+
+    def test_get_config_endpoint_gateway_ended(self):
+        authentication = AAPOAuth2()
+        api_url = "http://controller.test/"
+        self.assertEqual(
+            "http://controller.test/api/controller/v2/config/",
+            authentication.get_config_endpoint(api_url),
+        )
 
 
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):

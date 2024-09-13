@@ -52,7 +52,7 @@ class AAPOAuth2(BaseOAuth2):
 
     def user_data(self, access_token, *args, **kwargs):
         """Loads user data from service"""
-        url = f"{settings.AAP_API_URL}/v2/me/"
+        url = self.get_me_endpoint(settings.AAP_API_URL)
         resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
         return resp_data.get("results")[0]
 
@@ -67,9 +67,23 @@ class AAPOAuth2(BaseOAuth2):
         return data
 
     def user_has_valid_license(self, access_token):
-        url = f"{settings.AAP_API_URL}/v2/config/"
+        url = self.get_config_endpoint(settings.AAP_API_URL)
         data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
         return not data["license_info"]["date_expired"] if "license_info" in data else False
+
+    def get_me_endpoint(self, api_url):
+        """Creates me link to the AAP API depending on the Auth platform"""
+
+        # AAP Controller has /api at the end for API link, AAP Gateway doesn't
+        url = api_url.rstrip("/")
+        return f"{url}/v2/me/" if url.endswith("/api") else f"{url}/api/gateway/v1/me/"
+
+    def get_config_endpoint(self, api_url):
+        """Creates config link to the AAP API depending on the Auth platform"""
+
+        # AAP Controller has /api at the end for API link, AAP Gateway doesn't
+        url = api_url.rstrip("/")
+        return f"{url}/v2/config/" if url.endswith("/api") else f"{url}/api/controller/v2/config/"
 
 
 class RHSSOAuthentication(authentication.BaseAuthentication):
