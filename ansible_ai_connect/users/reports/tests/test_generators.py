@@ -209,7 +209,10 @@ class TestUserMarketingReportGenerator(WisdomServiceAPITestCaseBaseOIDC, BaseRep
         super().cleanup()
 
     def get_report_header(self) -> str:
-        return "OrgId,UUID,First name,Last name,Email,Plan name,Trial started,Trial expired_at"
+        return (
+            "OrgId,UUID,First name,Last name,Email,Organization name,"
+            "Plan name,Trial started,Trial expired_at"
+        )
 
     def get_report_generator(self) -> BaseGenerator:
         return UserMarketingReportGenerator()
