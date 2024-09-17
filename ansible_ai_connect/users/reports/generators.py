@@ -124,11 +124,10 @@ class UserMarketingReportGenerator(BaseGenerator):
                 "UUID",
                 "First name",
                 "Last name",
-                "Email",
                 "Organization name",
+                "Email",
                 "Plan name",
                 "Trial started",
-                "Trial expired_at",
             ]
         )
         for user in users:
@@ -140,11 +139,10 @@ class UserMarketingReportGenerator(BaseGenerator):
                         user["uuid"],
                         user["given_name"],
                         user["family_name"],
-                        user["email"],
                         organization["name"],
+                        user["email"],
                         plan["plan"]["name"],
                         plan["created_at"],
-                        plan["expired_at"],
                     ]
                     writer.writerow(row_data)
 
