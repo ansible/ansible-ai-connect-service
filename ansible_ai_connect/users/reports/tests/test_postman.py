@@ -12,11 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
 from abc import abstractmethod
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 from django.test import override_settings
+from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
 from slack_sdk.errors import SlackApiError
 
@@ -243,7 +245,7 @@ class GoogleDrivePostmanTest(WisdomServiceAPITestCaseBaseOIDC):
         ServiceAccountCredentials, "from_json_keyfile_dict", return_value={"credentials": "secret"}
     )
     def test_send_reports_with_created_before(self, sa_credentials, g_drive, g_auth):
-        created_before = datetime.fromisoformat("20241231")
+        created_before = datetime.fromisoformat("2024-12-31T00:00:00Z")
         reports: Reports = Reports(data=[Report("title", "data")], created_before=created_before)
         self.assert_send_reports(sa_credentials, g_drive, g_auth, reports, created_before)
 
@@ -260,3 +262,11 @@ class GoogleDrivePostmanTest(WisdomServiceAPITestCaseBaseOIDC):
             with self.assertLogs(logger="root", level="INFO") as log:
                 postman.send_reports(reports)
                 self.assertInLog("Unable to locate folder", log)
+
+    def test_create_filename(self):
+        filename = GoogleDrivePostman.create_filename("my_report", timezone.now())
+        self.assertTrue(re.match(r"^20\d\d\d\d\d\d_my_report.csv$", filename))
+
+    def test_create_filename_with_invalid_dt(self):
+        with self.assertRaises(ValueError):
+            GoogleDrivePostman.create_filename("my_report", datetime.now())

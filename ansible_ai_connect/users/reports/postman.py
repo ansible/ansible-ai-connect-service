@@ -19,6 +19,7 @@ from typing import List, Optional
 from urllib import parse
 
 from django.conf import settings
+from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
@@ -213,15 +214,19 @@ class GoogleDrivePostman(BasePostman):
 
         return GoogleDrive(gauth)
 
+    @staticmethod
+    def create_filename(title: str, report_date: datetime):
+        if report_date.tzinfo is None:
+            raise ValueError
+        return f"{report_date.strftime('%Y%m%d')}_{title}.csv"
+
     def send_reports(self, reports: Reports):
         drive = self.get_drive()
         folder_id = self.get_folder_id(drive)
-        file_name_prefix = (
-            reports.created_before if reports.created_before else datetime.now()
-        ).strftime("%Y%m%d")
+        report_date = reports.created_before or timezone.now()
 
         for report in reports.data:
-            file_name = f"{file_name_prefix}_{report.title}.csv"
+            file_name = self.create_filename(report.title, report_date)
             file = drive.CreateFile({"parents": [{"id": folder_id}], "title": file_name})
             file.SetContentString(report.data)
             file.Upload()
