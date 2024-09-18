@@ -119,9 +119,9 @@ class Command(BaseCommand):
                     created_after,
                     created_before,
                     [
-                        Report("User marketing preferences", user_marketing_report),
-                        Report("User trials acceptance", user_trials_report),
-                        Report("User trials full", user_trials_full_report),
+                        Report("marketing", user_marketing_report),
+                        Report("activations", user_trials_report),
+                        Report("full", user_trials_full_report),
                     ],
                 )
             )
