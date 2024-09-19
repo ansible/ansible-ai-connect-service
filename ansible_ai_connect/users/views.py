@@ -85,6 +85,8 @@ class HomeView(TemplateView):
 
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
+        context["debug_mode"] = "true" if settings.DEBUG else "false"
+
         return context
 
 

@@ -14,4 +14,7 @@ export default defineConfig({
   define: {
     global: "globalThis",
   },
+  build: {
+    assetsDir: "static/chatbot/",
+  },
 });

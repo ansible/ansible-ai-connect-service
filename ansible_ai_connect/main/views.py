@@ -110,6 +110,25 @@ class ConsoleView(ProtectedTemplateView):
         return context
 
 
+class ChatbotView(ProtectedTemplateView):
+    template_name = "chatbot/index.html"
+
+    permission_classes = [
+        IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+    ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        user = self.request.user
+        if user:
+            context["user_name"] = user.username
+            context["rh_org_has_subscription"] = user.rh_org_has_subscription
+
+        return context
+
+
 class PlainTextRenderer(BaseRenderer):
     media_type = "text/plain"
     format = "txt"
