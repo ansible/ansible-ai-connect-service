@@ -163,3 +163,6 @@ grafana/*
 
 # Local LaunchDarkly data
 ./flagdata.json
+
+# node dependencies
+node_modules/
