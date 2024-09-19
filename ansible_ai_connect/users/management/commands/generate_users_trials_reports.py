@@ -63,12 +63,14 @@ class Command(BaseCommand):
         parser.add_argument("--plan-id", help="Trail plan_id", type=int)
         parser.add_argument(
             "--created-after",
-            help="ISO-8601 formatted datetime after which trials were accepted.",
+            help="ISO-8601 formatted datetime after which trials were accepted."
+            " Unless the date comes with a TZ, it will be considered UTC.",
             type=Command.iso_datetime_type,
         )
         parser.add_argument(
             "--created-before",
-            help="ISO-8601 formatted datetime before which trials were accepted.",
+            help="ISO-8601 formatted datetime before which trials were accepted."
+            " Unless the date comes with a TZ, it will be considered UTC.",
             type=Command.iso_datetime_type,
         )
         parser.add_argument(
