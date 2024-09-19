@@ -87,8 +87,17 @@ class TestGenerateUsersTrialsReports(WisdomAppsBackendMocking, WisdomServiceLogA
     def test_dry_run(self):
         with self.assertLogs(logger="root", level="INFO") as log:
             out = TestGenerateUsersTrialsReports.call_command("--dry-run")
-            self.assertInLog("First name,Last name,Organization name,Plan name", log)
-            self.assertInLog("First name,Last name,Organization name,Email,Plan name", log)
+            self.assertInLog(
+                "First name,Last name,Organization name,Email,Plan name",
+                log,
+                number_of_matches_expected=3,
+            )
+            self.assertInLog(
+                "First name,Last name,Organization name,Email,Plan name,"
+                "Trial started,Trial expired_at",
+                log,
+                number_of_matches_expected=2,
+            )
             self.assertIn("Reports not sent", out)
 
     def test_auto_date_range(self):

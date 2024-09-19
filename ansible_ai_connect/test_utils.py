@@ -78,11 +78,13 @@ def create_user_with_provider(**kwargs):
 
 class WisdomLogAwareMixin:
     @staticmethod
-    def searchInLogOutput(s, logs):
-        for log in logs.output:
-            if s in log:
-                return True
-        return False
+    def searchInLogOutput(s, logs, number_of_matches_expected=None):
+        found_cpt = sum(o.count(s) for o in logs.output)
+        return (
+            found_cpt == number_of_matches_expected
+            if number_of_matches_expected
+            else bool(found_cpt)
+        )
 
     @staticmethod
     def extractSegmentEventsFromLog(logs):
@@ -114,8 +116,8 @@ class WisdomTestCase(TestCase):
 
 
 class WisdomServiceLogAwareTestCase(WisdomTestCase, WisdomLogAwareMixin):
-    def assertInLog(self, s, logs):
-        self.assertTrue(self.searchInLogOutput(s, logs), logs)
+    def assertInLog(self, s, logs, number_of_matches_expected=None):
+        self.assertTrue(self.searchInLogOutput(s, logs, number_of_matches_expected), logs)
 
     def assertNotInLog(self, s, logs):
         self.assertFalse(self.searchInLogOutput(s, logs), logs)
