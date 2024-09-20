@@ -43,7 +43,7 @@ export const useChatbot = () => {
     let resp: any;
     try {
       const csrfToken = readCookie("csrftoken");
-      resp = await axios.post("/api/v0/ai/talk/", request, {
+      resp = await axios.post("http://10.22.9.112:8080/v1/query/", request, {
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
@@ -69,6 +69,8 @@ export const useChatbot = () => {
           role: "bot",
           content,
           name: "Ansible Lightspeed Bot",
+          avatar:
+            "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
         },
       ]);
     }
