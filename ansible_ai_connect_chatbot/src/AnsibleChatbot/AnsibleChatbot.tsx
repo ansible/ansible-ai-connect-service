@@ -117,19 +117,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             </Bullseye>
           </ChatbotHeaderTitle>
           <ChatbotHeaderActions>
-            <ChatbotHeaderSelectorDropdown
-              value={selectedModel}
-              onSelect={onSelectModel}
-            >
-              <DropdownList>
-                <DropdownItem value="Granite 8B" key="granite">
-                  Granite 8B
-                </DropdownItem>
-                <DropdownItem value="Llama 3.1" key="llama">
-                  Llama 3.1
-                </DropdownItem>
-              </DropdownList>
-            </ChatbotHeaderSelectorDropdown>
             <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
               <DropdownGroup label="Display mode">
                 <DropdownList>
