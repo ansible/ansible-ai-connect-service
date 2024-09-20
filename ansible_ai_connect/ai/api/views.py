@@ -11,11 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import json
 import logging
 import time
 from string import Template
 
+import requests
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -92,6 +93,8 @@ from .serializers import (
     PlaybookGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
+    TalkRequestSerializer,
+    TalkResponseSerializer,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsPlaybookGenerationWizard,
@@ -990,3 +993,52 @@ class Generation(APIView):
                 },
             )
         send_segment_event(event, "codegenPlaybook", user)
+
+
+class Talk(APIView):
+    """
+    Send a message to the backend chatbot service and get a reply.
+    """
+
+    # from rest_framework import permissions
+
+    permission_classes = []
+    required_scopes = []
+
+    @extend_schema(
+        request=TalkRequestSerializer,
+        responses={
+            200: TalkResponseSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
+        summary="Talk request",
+    )
+    def post(self, request) -> Response:
+        headers = {"Content-Type": "application/json"}
+        request_serializer = TalkRequestSerializer(data=request.data)
+        try:
+            if not request_serializer.is_valid():
+                raise Exception("An invalid request received")
+            data = {
+                "conversation_id": str(request_serializer.validated_data["conversation_id"]),
+                "query": request_serializer.validated_data["query"],
+                "model": request_serializer.validated_data["model"],
+                "provider": request_serializer.validated_data["provider"],
+            }
+            if request_serializer.validated_data.get("attachments"):
+                data["attachments"] = request_serializer.validated_data.get("attachments")
+            response = requests.post("http://localhost:8080/v1/query", headers=headers, json=data)
+            if response.status_code != 200:
+                raise Exception(f"{response.status_code} returned")
+            data = json.loads(response.text)
+            response_serializer = TalkResponseSerializer(data=data)
+            if not response_serializer.is_valid():
+                raise Exception("An invalid response received")
+            return Response(
+                data,
+                status=rest_framework_status.HTTP_200_OK,
+                headers=headers,
+            )
+        except Exception as exc:
+            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
+            raise

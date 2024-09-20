@@ -441,6 +441,56 @@ class GenerationResponseSerializer(serializers.Serializer):
     outline = serializers.CharField()
 
 
+class AttachmentSeriralizer(serializers.Serializer):
+    attachment_type = serializers.CharField()
+    content = serializers.CharField()
+    content_type = serializers.CharField()
+
+
+class TalkRequestSerializer(serializers.Serializer):
+    attachments = serializers.ListField(child=AttachmentSeriralizer(), required=False)
+    conversation_id = serializers.UUIDField(
+        format="hex_verbose",
+        required=True,
+        label="conversation ID",
+        help_text=("A UUID that identifies the particular conversation is being requested for."),
+    )
+    query = serializers.CharField(
+        required=True,
+        label="Query string",
+        help_text=("A query string to be sent to LLM."),
+    )
+    model = serializers.CharField(
+        required=False,
+        label="Model name",
+        help_text=("A model to be used on LLM."),
+    )
+    provider = serializers.CharField(
+        required=False,
+        label="Provider name",
+        help_text=("A name that identifies a LLM provider."),
+    )
+
+
+class ReferencedDocumentsSerializer(serializers.Serializer):
+    docs_url = serializers.CharField()
+    title = serializers.CharField()
+
+
+class TalkResponseSerializer(serializers.Serializer):
+    conversation_id = serializers.UUIDField(
+        format="hex_verbose",
+        required=True,
+        label="conversation ID",
+        help_text=("A UUID that identifies the particular conversation is being requested for."),
+    )
+    referenced_documents = serializers.ListField(
+        child=ReferencedDocumentsSerializer(), required=False
+    )
+    response = serializers.CharField()
+    truncated = serializers.BooleanField()
+
+
 class ContentMatchRequestSerializer(Metadata):
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
