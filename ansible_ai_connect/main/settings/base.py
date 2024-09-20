@@ -359,7 +359,7 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console"],
-        "level": os.getenv("DJANGO_LOG_LEVEL") or "WARNING",
+        "level": os.getenv("DJANGO_LOG_LEVEL") or "DEBUG",
     },
 }
 TEMPLATES = [

@@ -213,6 +213,9 @@ class BaseWCAClient(ModelMeshClient):
         )
         @wca_codegen_hist.time()
         def post_request():
+            logger.info(
+                f"request to wca. headers: {headers}\n  url: {prediction_url}\n  data: {data}"
+            )
             return self.session.post(
                 prediction_url,
                 headers=headers,
@@ -541,6 +544,10 @@ class WCAOnPremClient(BaseWCAClient):
         # User may provide an override value if the Environment Variable is not set.
 
     def get_api_key(self, organization_id: Optional[int]) -> str:
+        logger.info(
+            f"API_KEY using settings.ANSIBLE_AI_MODEL_MESH_API_KEY: \
+                {settings.ANSIBLE_AI_MODEL_MESH_API_KEY}"
+        )
         return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
 
     def get_model_id(
@@ -550,9 +557,11 @@ class WCAOnPremClient(BaseWCAClient):
     ) -> str:
         if requested_model_id:
             # requested_model_id defined: let them use what they ask for
+            logger.info(f"model-id requested: {requested_model_id}")
             return requested_model_id
 
         if settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME:
+            logger.info(f"model-id pre-set: {settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME}")
             return settings.ANSIBLE_AI_MODEL_MESH_MODEL_NAME
 
         raise WcaModelIdNotFound()
@@ -572,7 +581,9 @@ class WCAOnPremClient(BaseWCAClient):
     def _get_base_headers(self, api_key: str) -> dict[str, str]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
         username = settings.ANSIBLE_WCA_USERNAME
+        logger.info(f"generating token using {api_key}:{username}")
         token = base64.b64encode(bytes(f"{username}:{api_key}", "ascii")).decode("ascii")
+        logger.info(f"token generated: {token}")
         return {
             "Authorization": f"ZenApiKey {token}",
         }
