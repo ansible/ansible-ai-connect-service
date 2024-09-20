@@ -103,9 +103,9 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
       />
       <Chatbot isVisible={chatbotVisible} displayMode={displayMode}>
         <ChatbotHeader>
-          <ChatbotHeaderMenu
+          {/* <ChatbotHeaderMenu
             onMenuToggle={() => alert("Menu toggle clicked")}
-          />
+          /> */}
           <ChatbotHeaderTitle>
             <Bullseye>
               <div className="show-light">
