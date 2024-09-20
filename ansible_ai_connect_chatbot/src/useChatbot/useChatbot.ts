@@ -22,9 +22,12 @@ export const useChatbot = () => {
     setMessages((msgs) => [
       ...msgs,
       {
-        role: "user",
-        content: message,
-        name: "User",
+        message: {
+          role: "user",
+          content: message,
+          name: "User",
+        },
+        referenced_documents: [],
       },
     ]);
 
@@ -43,12 +46,16 @@ export const useChatbot = () => {
     let resp: any;
     try {
       const csrfToken = readCookie("csrftoken");
-      resp = await axios.post("/api/v0/ai/talk/", request, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
+      resp = await axios.post(
+        "http://localhost:8080/v1/query/" /* "/api/v0/ai/talk/" */,
+        request,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
         },
-      });
+      );
     } finally {
       setIsLoading(false);
     }
@@ -57,18 +64,18 @@ export const useChatbot = () => {
     console.log(JSON.stringify(resp.data, null, 2));
     if (resp.status === 200) {
       let content = resp.data.response;
-      if (resp.data.referenced_documents.length > 0) {
-        content += "\n\nRefer to the following for more information:\n";
-        for (const doc of resp.data.referenced_documents) {
-          content += `- [${doc.title}](${doc.docs_url})\n`;
-        }
-      }
+      const referenced_documents = resp.data.referenced_documents;
       setMessages((msgs) => [
         ...msgs,
         {
-          role: "bot",
-          content,
-          name: "Ansible Lightspeed Bot",
+          message: {
+            role: "bot",
+            content,
+            name: "Ansible Lightspeed Bot",
+            avatar:
+              "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+          },
+          referenced_documents,
         },
       ]);
     }

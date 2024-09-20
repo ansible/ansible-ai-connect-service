@@ -37,6 +37,7 @@ import AnsibleLogo from "./ansible-transparent.png";
 import "./AnsibleChatbot.scss";
 import { useChatbot } from "../useChatbot/useChatbot";
 import { LoadingMessage } from "@patternfly/virtual-assistant";
+import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 const footnoteProps = {
   label: "Lightspeed uses AI. Check for mistakes.",
@@ -124,6 +125,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     value={ChatbotDisplayMode.default}
                     key="switchDisplayOverlay"
                     icon={<OutlinedWindowRestoreIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.default}
                   >
                     <span>Overlay</span>
                   </DropdownItem>
@@ -131,6 +133,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     value={ChatbotDisplayMode.docked}
                     key="switchDisplayDock"
                     icon={<OpenDrawerRightIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.docked}
                   >
                     <span>Dock to window</span>
                   </DropdownItem>
@@ -138,6 +141,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     value={ChatbotDisplayMode.fullscreen}
                     key="switchDisplayFullscreen"
                     icon={<ExpandIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.fullscreen}
                   >
                     <span>Fullscreen</span>
                   </DropdownItem>
@@ -154,7 +158,13 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
               prompts={welcomePrompts}
             />
             {messages.map((message: any, index) => (
-              <Message key={index} {...message} />
+              <>
+                <Message key={index} {...message.message} />
+                <ReferencedDocuments
+                  caption="Refer to the following for more information:"
+                  referenced_documents={message.referenced_documents}
+                />
+              </>
             ))}
             {isLoading ? <LoadingMessage key="9999" /> : <></>}
           </MessageBox>
