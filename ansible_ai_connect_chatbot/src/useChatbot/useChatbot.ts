@@ -2,6 +2,18 @@ import axios from "axios";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
+export const readCookie = (name: string): string | null => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(";");
+  for (let c of ca) {
+    const cookie = c.trim();
+    if (cookie.startsWith(nameEQ)) {
+      return cookie.substring(nameEQ.length, cookie.length);
+    }
+  }
+  return null;
+};
+
 export const useChatbot = () => {
   const [messages, setMessages] = useState<object[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -24,13 +36,18 @@ export const useChatbot = () => {
       model: "llama3.1:latest",
       provider: "ollama",
       query: message,
+      attachments: [],
     };
 
     setIsLoading(true);
     let resp: any;
     try {
-      resp = await axios.post("http://localhost:8080/v1/query", request, {
-        headers: { "Content-Type": "application/json" },
+      const csrfToken = readCookie("csrftoken");
+      resp = await axios.post("/api/v0/ai/talk/", request, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
       });
     } finally {
       setIsLoading(false);
