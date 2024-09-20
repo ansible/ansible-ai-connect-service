@@ -4,9 +4,9 @@
   "private": true,
   "dependencies": {
     "@patternfly/patternfly": "^6.0.0-prerelease.13",
-    "@patternfly/react-core": "^6.0.0-alpha.100",
+    "@patternfly/react-core": "^6.0.0-prerelease.13",
     "@patternfly/react-styles": "^6.0.0-prerelease.3",
-    "@patternfly/virtual-assistant": "^2.0.0-alpha.30",
+    "@patternfly/virtual-assistant": "^2.0.0-alpha.34",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
