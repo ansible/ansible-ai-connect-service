@@ -11,7 +11,7 @@ export const ReferencedDocuments = (props: any) => {
       <div className="pf-chatbot__message-contents">
         <div className="pf-chatbot__message-response">
           <div className="pf-chatbot__message-text">
-            <p className="pf-v6-c-content--p">
+            <div className="pf-v6-c-content--p">
               {caption}
               <ul>
                 {referenced_documents.map((doc: any, index: number) => (
@@ -26,7 +26,7 @@ export const ReferencedDocuments = (props: any) => {
                   </li>
                 ))}
               </ul>
-            </p>
+            </div>
           </div>
         </div>
       </div>
