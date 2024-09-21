@@ -14,12 +14,22 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
+export const botMessage = (content: any) => {
+  return {
+    role: "bot",
+    content,
+    name: "Ansible Lightspeed Bot",
+    avatar:
+      "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+  };
+};
+
 export const useChatbot = () => {
   const [messages, setMessages] = useState<object[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   let conversation_id: string;
   const handleSend = async (message: any) => {
-    setMessages((msgs) => [
+    setMessages((msgs: any) => [
       ...msgs,
       {
         message: {
@@ -65,16 +75,10 @@ export const useChatbot = () => {
     if (resp.status === 200) {
       let content = resp.data.response;
       const referenced_documents = resp.data.referenced_documents;
-      setMessages((msgs) => [
+      setMessages((msgs: any) => [
         ...msgs,
         {
-          message: {
-            role: "bot",
-            content,
-            name: "Ansible Lightspeed Bot",
-            avatar:
-              "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
-          },
+          message: botMessage(content),
           referenced_documents,
         },
       ]);
