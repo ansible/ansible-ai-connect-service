@@ -21,10 +21,8 @@ import MessageBar from "@patternfly/virtual-assistant/dist/dynamic/MessageBar";
 import MessageBox from "@patternfly/virtual-assistant/dist/dynamic/MessageBox";
 import Message from "@patternfly/virtual-assistant/dist/dynamic/Message";
 import ChatbotHeader, {
-  ChatbotHeaderMenu,
   ChatbotHeaderTitle,
   ChatbotHeaderActions,
-  ChatbotHeaderSelectorDropdown,
   ChatbotHeaderOptionsDropdown,
 } from "@patternfly/virtual-assistant/dist/dynamic/ChatbotHeader";
 
@@ -35,8 +33,7 @@ import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/ou
 import AnsibleLogo from "./ansible-transparent.png";
 
 import "./AnsibleChatbot.scss";
-import { useChatbot } from "../useChatbot/useChatbot";
-import { LoadingMessage } from "@patternfly/virtual-assistant";
+import { botMessage, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 const footnoteProps = {
@@ -166,7 +163,15 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                 />
               </>
             ))}
-            {isLoading ? <LoadingMessage key="9999" /> : <></>}
+            {isLoading ? (
+              <Message
+                key="9999"
+                isLoading="true"
+                {...botMessage("Loading...")}
+              />
+            ) : (
+              <></>
+            )}
           </MessageBox>
         </ChatbotContent>
         <ChatbotFooter>
