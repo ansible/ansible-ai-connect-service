@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 
 import {
   Bullseye,
@@ -166,7 +166,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             {isLoading ? (
               <Message
                 key="9999"
-                isLoading="true"
+                isLoading={true}
                 {...botMessage("Loading...")}
               />
             ) : (
