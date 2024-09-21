@@ -1,6 +1,6 @@
 import React from "react";
 import "@patternfly/react-core/dist/styles/base.css";
-import "@patternfly/patternfly/patternfly-addons.css";
+// import "@patternfly/patternfly/patternfly-addons.css";
 
 // Add your extension CSS below
 import "@patternfly/virtual-assistant/dist/css/main.css";
