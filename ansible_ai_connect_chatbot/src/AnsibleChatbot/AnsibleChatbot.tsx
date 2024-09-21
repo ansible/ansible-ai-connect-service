@@ -72,18 +72,9 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
 
   const [chatbotVisible, setChatbotVisible] = React.useState<boolean>(false);
 
-  const [selectedModel, setSelectedModel] = React.useState("Granite 8B");
-
   const [displayMode, setDisplayMode] = React.useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
   );
-
-  const onSelectModel = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setSelectedModel(value as string);
-  };
 
   const onSelectDisplayMode = (
     _event: React.MouseEvent<Element, MouseEvent> | undefined,
