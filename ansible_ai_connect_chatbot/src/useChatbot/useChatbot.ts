@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -14,7 +15,7 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
-export const botMessage = (content: any) => {
+export const botMessage = (content: any): MessageProps => {
   return {
     role: "bot",
     content,
