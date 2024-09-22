@@ -46,6 +46,7 @@ const ChatIcon = () => (
     />
   </svg>
 );
+// From https://github.com/RedHat-UX/red-hat-icons/blob/main/src/ui/caret-down.svg
 const CarretDownIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
     <path
