@@ -12,7 +12,6 @@ import {
   TooltipProps,
   Icon,
 } from "@patternfly/react-core";
-import AngleDownIcon from "@patternfly/react-icons/dist/esm/icons/angle-down-icon";
 
 // Import Chatbot components
 
