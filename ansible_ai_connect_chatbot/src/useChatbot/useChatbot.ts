@@ -2,6 +2,11 @@ import axios from "axios";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
+import type {
+  ExtendedMessage,
+  LLMRequest,
+  LLMResponse,
+} from "../types/Message";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -15,7 +20,7 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
-export const botMessage = (content: any): MessageProps => {
+export const botMessage = (content: string): MessageProps => {
   return {
     role: "bot",
     content,
@@ -26,42 +31,34 @@ export const botMessage = (content: any): MessageProps => {
 };
 
 export const useChatbot = () => {
-  const [messages, setMessages] = useState<object[]>([]);
+  const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   let conversation_id: string;
-  const handleSend = async (message: any) => {
-    setMessages((msgs: any) => [
-      ...msgs,
-      {
-        message: {
-          role: "user",
-          content: message,
-          name: "User",
-          avatar:
-            "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
-        },
-        referenced_documents: [],
-      },
-    ]);
+  const handleSend = async (message: string) => {
+    const userMessage: ExtendedMessage = {
+      role: "user",
+      content: message,
+      name: "User",
+      avatar:
+        "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
+      referenced_documents: [],
+    };
+    setMessages((msgs: ExtendedMessage[]) => [...msgs, userMessage]);
 
     if (!conversation_id) {
       conversation_id = uuidv4().toString();
     }
-    const request = {
+    const llmRequest: LLMRequest = {
       conversation_id,
-      model: "llama3.1:latest",
-      provider: "ollama",
       query: message,
-      attachments: [],
     };
 
     setIsLoading(true);
-    let resp: any;
     try {
       const csrfToken = readCookie("csrftoken");
-      resp = await axios.post(
+      const resp = await axios.post(
         "http://localhost:8080/v1/query/" /* "/api/v0/ai/talk/" */,
-        request,
+        llmRequest,
         {
           headers: {
             "Content-Type": "application/json",
@@ -69,22 +66,27 @@ export const useChatbot = () => {
           },
         },
       );
+      if (resp.status === 200) {
+        const llmResponse: LLMResponse = resp.data;
+        const referenced_documents = llmResponse.referenced_documents;
+        setMessages((msgs: ExtendedMessage[]) => [
+          ...msgs,
+          {
+            referenced_documents,
+            ...botMessage(llmResponse.response),
+          },
+        ]);
+      } else {
+        setMessages((msgs: ExtendedMessage[]) => [
+          ...msgs,
+          {
+            referenced_documents: [],
+            ...botMessage(`Bot returned an error (status=${resp.status})`),
+          },
+        ]);
+      }
     } finally {
       setIsLoading(false);
-    }
-
-    console.log(`handleSend: status=${resp.status}`);
-    console.log(JSON.stringify(resp.data, null, 2));
-    if (resp.status === 200) {
-      let content = resp.data.response;
-      const referenced_documents = resp.data.referenced_documents;
-      setMessages((msgs: any) => [
-        ...msgs,
-        {
-          message: botMessage(content),
-          referenced_documents,
-        },
-      ]);
     }
   };
 
