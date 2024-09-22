@@ -37,6 +37,8 @@ export const useChatbot = () => {
           role: "user",
           content: message,
           name: "User",
+          avatar:
+            "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
         },
         referenced_documents: [],
       },
