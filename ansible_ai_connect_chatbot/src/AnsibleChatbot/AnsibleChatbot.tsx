@@ -8,7 +8,7 @@ import {
   DropdownGroup,
 } from "@patternfly/react-core";
 
-import ChatbotToggle from "@patternfly/virtual-assistant/dist/dynamic/ChatbotToggle";
+import AnsibleChatbotToggle from "../AnsibleChatbotToggle/AnsibleChatbotToggle";
 import Chatbot, {
   ChatbotDisplayMode,
 } from "@patternfly/virtual-assistant/dist/dynamic/Chatbot";
@@ -79,7 +79,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   );
 
   useEffect(() => {
-    console.log(`useEffect() - ${chatbot.current}`);
     if (chatbot.current) {
       const messageContainer = chatbot.current.querySelector(
         ".pf-chatbot__messagebox",
@@ -99,7 +98,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
 
   return (
     <>
-      <ChatbotToggle
+      <AnsibleChatbotToggle
         toolTipLabel="Chatbot"
         isChatbotVisible={chatbotVisible}
         onToggleChatbot={() => setChatbotVisible(!chatbotVisible)}
