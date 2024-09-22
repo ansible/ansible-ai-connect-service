@@ -14,13 +14,13 @@
 
 from django.urls import path
 
-from .views import Completions, ContentMatches, Explanation, Feedback, Generation, Talk
+from .views import Chat, Completions, ContentMatches, Explanation, Feedback, Generation
 
 urlpatterns = [
     path("completions/", Completions.as_view(), name="completions"),
     path("contentmatches/", ContentMatches.as_view(), name="contentmatches"),
     path("explanations/", Explanation.as_view(), name="explanations"),
     path("generations/", Generation.as_view(), name="generations"),
-    path("talk/", Talk.as_view(), name="talk"),
+    path("chat/", Chat.as_view(), name="chat"),
     path("feedback/", Feedback.as_view(), name="feedback"),
 ]

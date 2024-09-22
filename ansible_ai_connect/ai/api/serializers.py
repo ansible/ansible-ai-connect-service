@@ -447,7 +447,7 @@ class AttachmentSeriralizer(serializers.Serializer):
     content_type = serializers.CharField()
 
 
-class TalkRequestSerializer(serializers.Serializer):
+class ChatRequestSerializer(serializers.Serializer):
     attachments = serializers.ListField(child=AttachmentSeriralizer(), required=False)
     conversation_id = serializers.UUIDField(
         format="hex_verbose",
@@ -477,7 +477,7 @@ class ReferencedDocumentsSerializer(serializers.Serializer):
     title = serializers.CharField()
 
 
-class TalkResponseSerializer(serializers.Serializer):
+class ChatResponseSerializer(serializers.Serializer):
     conversation_id = serializers.UUIDField(
         format="hex_verbose",
         required=True,

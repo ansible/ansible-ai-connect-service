@@ -78,6 +78,8 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
+    ChatRequestSerializer,
+    ChatResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     ContentMatchRequestSerializer,
@@ -93,8 +95,6 @@ from .serializers import (
     PlaybookGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
-    TalkRequestSerializer,
-    TalkResponseSerializer,
 )
 from .utils.analytics_telemetry_model import (
     AnalyticsPlaybookGenerationWizard,
@@ -995,7 +995,7 @@ class Generation(APIView):
         send_segment_event(event, "codegenPlaybook", user)
 
 
-class Talk(APIView):
+class Chat(APIView):
     """
     Send a message to the backend chatbot service and get a reply.
     """
@@ -1006,16 +1006,16 @@ class Talk(APIView):
     required_scopes = []
 
     @extend_schema(
-        request=TalkRequestSerializer,
+        request=ChatRequestSerializer,
         responses={
-            200: TalkResponseSerializer,
+            200: ChatResponseSerializer,
             400: OpenApiResponse(description="Bad Request"),
         },
-        summary="Talk request",
+        summary="Chat request",
     )
     def post(self, request) -> Response:
         headers = {"Content-Type": "application/json"}
-        request_serializer = TalkRequestSerializer(data=request.data)
+        request_serializer = ChatRequestSerializer(data=request.data)
         try:
             if not request_serializer.is_valid():
                 raise Exception("An invalid request received")
@@ -1031,7 +1031,7 @@ class Talk(APIView):
             if response.status_code != 200:
                 raise Exception(f"{response.status_code} returned")
             data = json.loads(response.text)
-            response_serializer = TalkResponseSerializer(data=data)
+            response_serializer = ChatResponseSerializer(data=data)
             if not response_serializer.is_valid():
                 raise Exception("An invalid response received")
             return Response(

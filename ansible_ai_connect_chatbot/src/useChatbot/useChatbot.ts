@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
 import type {
   ExtendedMessage,
-  LLMRequest,
-  LLMResponse,
+  ChatRequest,
+  ChatResponse,
 } from "../types/Message";
 
 export const readCookie = (name: string): string | null => {
@@ -48,7 +48,7 @@ export const useChatbot = () => {
     if (!conversation_id) {
       conversation_id = uuidv4().toString();
     }
-    const llmRequest: LLMRequest = {
+    const chatRequest: ChatRequest = {
       conversation_id,
       query: message,
     };
@@ -57,8 +57,8 @@ export const useChatbot = () => {
     try {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
-        "http://localhost:8080/v1/query/" /* "/api/v0/ai/talk/" */,
-        llmRequest,
+        "http://localhost:8080/v1/query/" /* "/api/v0/ai/chat/" */,
+        chatRequest,
         {
           headers: {
             "Content-Type": "application/json",
@@ -67,13 +67,13 @@ export const useChatbot = () => {
         },
       );
       if (resp.status === 200) {
-        const llmResponse: LLMResponse = resp.data;
-        const referenced_documents = llmResponse.referenced_documents;
+        const chatResponse: ChatResponse = resp.data;
+        const referenced_documents = chatResponse.referenced_documents;
         setMessages((msgs: ExtendedMessage[]) => [
           ...msgs,
           {
             referenced_documents,
-            ...botMessage(llmResponse.response),
+            ...botMessage(chatResponse.response),
           },
         ]);
       } else {
