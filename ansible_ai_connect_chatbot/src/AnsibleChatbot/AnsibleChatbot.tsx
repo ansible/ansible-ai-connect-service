@@ -159,13 +159,14 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                 { referenced_documents, ...message }: ExtendedMessage,
                 index,
               ) => (
-                <>
-                  <Message key={index} {...message} />
+                <div key={`m_div_${index}`}>
+                  <Message key={`m_msg_${index}`} {...message} />
                   <ReferencedDocuments
+                    key={`m_docs_${index}`}
                     caption="Refer to the following for more information:"
                     referenced_documents={referenced_documents}
                   />
-                </>
+                </div>
               ),
             )}
             {isLoading ? (

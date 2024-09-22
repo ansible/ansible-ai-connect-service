@@ -122,6 +122,12 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
+from .utils.analytics_telemetry_model import (
+    AnalyticsPlaybookGenerationWizard,
+    AnalyticsProductFeedback,
+    AnalyticsRecommendationAction,
+    AnalyticsTelemetryEvents,
+)
 from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
