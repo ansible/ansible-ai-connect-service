@@ -68,26 +68,20 @@ intended to assist with general queries.`,
 ];
 
 export const AnsibleChatbot: React.FunctionComponent = () => {
-  const chatbot = useRef(null);
-
   const { messages, isLoading, handleSend } = useChatbot();
-
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(false);
-
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
   );
 
+  // https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
   useEffect(() => {
-    if (chatbot.current) {
-      const messageContainer = chatbot.current.querySelector(
-        ".pf-chatbot__messagebox",
-      );
-      if (messageContainer) {
-        messageContainer.scrollTo(0, messageContainer.scrollHeight);
-      }
-    }
-  }, [isLoading]);
+    scrollToBottom();
+  }, [messages]);
 
   const onSelectDisplayMode = (
     _event: React.MouseEvent<Element, MouseEvent> | undefined,
@@ -103,88 +97,87 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
         isChatbotVisible={chatbotVisible}
         onToggleChatbot={() => setChatbotVisible(!chatbotVisible)}
       />
-      <div ref={chatbot}>
-        <Chatbot isVisible={chatbotVisible} displayMode={displayMode}>
-          <ChatbotHeader>
-            {/* <ChatbotHeaderMenu
-            onMenuToggle={() => alert("Menu toggle clicked")}
-          /> */}
-            <ChatbotHeaderTitle>
-              <Bullseye>
-                <div className="show-light">
-                  <Brand src={AnsibleLogo} alt="Ansible" />
-                </div>
-                <div className="show-dark">
-                  <Brand src={AnsibleLogo} alt="Ansible" />
-                </div>
-              </Bullseye>
-            </ChatbotHeaderTitle>
-            <ChatbotHeaderActions>
-              <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
-                <DropdownGroup label="Display mode">
-                  <DropdownList>
-                    <DropdownItem
-                      value={ChatbotDisplayMode.default}
-                      key="switchDisplayOverlay"
-                      icon={<OutlinedWindowRestoreIcon aria-hidden />}
-                      isSelected={displayMode === ChatbotDisplayMode.default}
-                    >
-                      <span>Overlay</span>
-                    </DropdownItem>
-                    <DropdownItem
-                      value={ChatbotDisplayMode.docked}
-                      key="switchDisplayDock"
-                      icon={<OpenDrawerRightIcon aria-hidden />}
-                      isSelected={displayMode === ChatbotDisplayMode.docked}
-                    >
-                      <span>Dock to window</span>
-                    </DropdownItem>
-                    <DropdownItem
-                      value={ChatbotDisplayMode.fullscreen}
-                      key="switchDisplayFullscreen"
-                      icon={<ExpandIcon aria-hidden />}
-                      isSelected={displayMode === ChatbotDisplayMode.fullscreen}
-                    >
-                      <span>Fullscreen</span>
-                    </DropdownItem>
-                  </DropdownList>
-                </DropdownGroup>
-              </ChatbotHeaderOptionsDropdown>
-            </ChatbotHeaderActions>
-          </ChatbotHeader>
-          <ChatbotContent>
-            <MessageBox className="smooth-scroll">
-              <ChatbotWelcomePrompt
-                title="Hello, Ansible User"
-                description="How may I help you today?"
-                prompts={welcomePrompts}
-              />
-              {messages.map((message: any, index) => (
-                <>
-                  <Message key={index} {...message.message} />
-                  <ReferencedDocuments
-                    caption="Refer to the following for more information:"
-                    referenced_documents={message.referenced_documents}
-                  />
-                </>
-              ))}
-              {isLoading ? (
-                <Message
-                  key="9999"
-                  isLoading={true}
-                  {...botMessage("Loading...")}
+      <Chatbot isVisible={chatbotVisible} displayMode={displayMode}>
+        <ChatbotHeader>
+          {/* <ChatbotHeaderMenu
+          onMenuToggle={() => alert("Menu toggle clicked")}
+        /> */}
+          <ChatbotHeaderTitle>
+            <Bullseye>
+              <div className="show-light">
+                <Brand src={AnsibleLogo} alt="Ansible" />
+              </div>
+              <div className="show-dark">
+                <Brand src={AnsibleLogo} alt="Ansible" />
+              </div>
+            </Bullseye>
+          </ChatbotHeaderTitle>
+          <ChatbotHeaderActions>
+            <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
+              <DropdownGroup label="Display mode">
+                <DropdownList>
+                  <DropdownItem
+                    value={ChatbotDisplayMode.default}
+                    key="switchDisplayOverlay"
+                    icon={<OutlinedWindowRestoreIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.default}
+                  >
+                    <span>Overlay</span>
+                  </DropdownItem>
+                  <DropdownItem
+                    value={ChatbotDisplayMode.docked}
+                    key="switchDisplayDock"
+                    icon={<OpenDrawerRightIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.docked}
+                  >
+                    <span>Dock to window</span>
+                  </DropdownItem>
+                  <DropdownItem
+                    value={ChatbotDisplayMode.fullscreen}
+                    key="switchDisplayFullscreen"
+                    icon={<ExpandIcon aria-hidden />}
+                    isSelected={displayMode === ChatbotDisplayMode.fullscreen}
+                  >
+                    <span>Fullscreen</span>
+                  </DropdownItem>
+                </DropdownList>
+              </DropdownGroup>
+            </ChatbotHeaderOptionsDropdown>
+          </ChatbotHeaderActions>
+        </ChatbotHeader>
+        <ChatbotContent>
+          <MessageBox>
+            <ChatbotWelcomePrompt
+              title="Hello, Ansible User"
+              description="How may I help you today?"
+              prompts={welcomePrompts}
+            />
+            {messages.map((message: any, index) => (
+              <>
+                <Message key={index} {...message.message} />
+                <ReferencedDocuments
+                  caption="Refer to the following for more information:"
+                  referenced_documents={message.referenced_documents}
                 />
-              ) : (
-                <></>
-              )}
-            </MessageBox>
-          </ChatbotContent>
-          <ChatbotFooter>
-            <MessageBar onSendMessage={handleSend} />
-            <ChatbotFootnote {...footnoteProps} />
-          </ChatbotFooter>
-        </Chatbot>
-      </div>
+              </>
+            ))}
+            {isLoading ? (
+              <Message
+                key="9999"
+                isLoading={true}
+                {...botMessage("Loading...")}
+              />
+            ) : (
+              <></>
+            )}
+            <div ref={messagesEndRef} />
+          </MessageBox>
+        </ChatbotContent>
+        <ChatbotFooter>
+          <MessageBar onSendMessage={handleSend} />
+          <ChatbotFootnote {...footnoteProps} />
+        </ChatbotFooter>
+      </Chatbot>
     </>
   );
 };
