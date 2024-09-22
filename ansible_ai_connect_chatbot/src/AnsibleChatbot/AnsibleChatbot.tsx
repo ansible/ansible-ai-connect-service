@@ -36,6 +36,8 @@ import "./AnsibleChatbot.scss";
 import { botMessage, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
+import type { ExtendedMessage } from "../types/Message";
+
 const footnoteProps = {
   label: "Lightspeed uses AI. Check for mistakes.",
   popover: {
@@ -152,21 +154,22 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
               description="How may I help you today?"
               prompts={welcomePrompts}
             />
-            {messages.map((message: any, index) => (
-              <>
-                <Message key={index} {...message.message} />
-                <ReferencedDocuments
-                  caption="Refer to the following for more information:"
-                  referenced_documents={message.referenced_documents}
-                />
-              </>
-            ))}
+            {messages.map(
+              (
+                { referenced_documents, ...message }: ExtendedMessage,
+                index,
+              ) => (
+                <>
+                  <Message key={index} {...message} />
+                  <ReferencedDocuments
+                    caption="Refer to the following for more information:"
+                    referenced_documents={referenced_documents}
+                  />
+                </>
+              ),
+            )}
             {isLoading ? (
-              <Message
-                key="9999"
-                isLoading={true}
-                {...botMessage("Loading...")}
-              />
+              <Message key="9999" isLoading={true} {...botMessage("....")} />
             ) : (
               <></>
             )}
