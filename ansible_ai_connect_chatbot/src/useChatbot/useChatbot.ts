@@ -57,7 +57,9 @@ export const useChatbot = () => {
     try {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
-        "http://localhost:8080/v1/query/" /* "/api/v0/ai/chat/" */,
+        import.meta.env.PROD
+          ? "/api/v0/ai/chat/"
+          : "http://localhost:8080/v1/query/",
         chatRequest,
         {
           headers: {
