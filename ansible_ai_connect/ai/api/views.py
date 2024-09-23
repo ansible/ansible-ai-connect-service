@@ -1022,12 +1022,12 @@ class Chat(APIView):
             data = {
                 "conversation_id": str(request_serializer.validated_data["conversation_id"]),
                 "query": request_serializer.validated_data["query"],
-                "model": request_serializer.validated_data["model"],
-                "provider": request_serializer.validated_data["provider"],
+                "model": settings.CHATBOT_DEFAULT_MODEL,
+                "provider": settings.CHATBOT_DEFAULT_PROVIDER,
             }
             if request_serializer.validated_data.get("attachments"):
                 data["attachments"] = request_serializer.validated_data.get("attachments")
-            response = requests.post("http://localhost:8080/v1/query", headers=headers, json=data)
+            response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
             if response.status_code != 200:
                 raise Exception(f"{response.status_code} returned")
             data = json.loads(response.text)
