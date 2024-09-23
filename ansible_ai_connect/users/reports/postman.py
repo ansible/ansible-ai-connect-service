@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import List, Optional
 from urllib import parse
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
@@ -223,7 +224,9 @@ class GoogleDrivePostman(BasePostman):
     def send_reports(self, reports: Reports):
         drive = self.get_drive()
         folder_id = self.get_folder_id(drive)
-        report_date = reports.created_before or timezone.now()
+        # We want the name of our daily report to match the date of the last day of the period.
+        # NOT the day when the report was created.
+        report_date = (reports.created_before or timezone.now()) - relativedelta(days=1)
 
         for report in reports.data:
             file_name = self.create_filename(report.title, report_date)

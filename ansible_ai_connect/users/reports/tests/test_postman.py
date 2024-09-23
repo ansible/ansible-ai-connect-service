@@ -17,6 +17,7 @@ from abc import abstractmethod
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+from dateutil.relativedelta import relativedelta
 from django.test import override_settings
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
@@ -222,7 +223,7 @@ class GoogleDrivePostmanTest(WisdomServiceAPITestCaseBaseOIDC):
         self.assertEqual(g_auth.return_value.credentials, sa_credentials.return_value)
         g_drive.assert_called_once_with(g_auth.return_value)
 
-        file_name_prefix = created_before.strftime("%Y%m%d")
+        file_name_prefix = (created_before - relativedelta(days=1)).strftime("%Y%m%d")
         create_file = g_drive.return_value.CreateFile
         create_file.assert_called_once_with(
             {"parents": [{"id": "test-folder-id"}], "title": f"{file_name_prefix}_title.csv"}
