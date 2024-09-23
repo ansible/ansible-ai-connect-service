@@ -64,6 +64,15 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
+from ansible_ai_connect.ai.api.telemetry.schema2 import (
+    AnalyticsPlaybookGenerationWizard,
+    AnalyticsProductFeedback,
+    AnalyticsRecommendationAction,
+    AnalyticsTelemetryEvents,
+)
+from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
+    send_segment_analytics_event,
+)
 from ansible_ai_connect.users.models import User
 
 from ..feature_flags import FeatureFlags
@@ -93,14 +102,7 @@ from .serializers import (
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
-from .utils.analytics_telemetry_model import (
-    AnalyticsPlaybookGenerationWizard,
-    AnalyticsProductFeedback,
-    AnalyticsRecommendationAction,
-    AnalyticsTelemetryEvents,
-)
 from .utils.segment import send_segment_event
-from .utils.segment_analytics_telemetry import send_segment_analytics_event
 
 logger = logging.getLogger(__name__)
 

@@ -25,12 +25,12 @@ from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
-from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
-from ansible_ai_connect.ai.api.utils.analytics_telemetry_model import (
+from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsRecommendationGenerated,
     AnalyticsRecommendationTask,
     AnalyticsTelemetryEvents,
 )
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,

@@ -24,6 +24,7 @@ class AnalyticsTelemetryEvents(Enum):
     RECOMMENDATION_ACTION = "Recommendation Action"
     PRODUCT_FEEDBACK = "Product Feedback"
     PLAYBOOK_GENERATION_ACTION = "Playbook Generation Action"
+    ONECLICK_TRIAL_STARTED = "OneClickTrial Started"
 
 
 @frozen
@@ -79,6 +80,24 @@ class AnalyticsProductFeedback:
     )
     rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=0)
     model_name: str = field(default="")
+    timestamp: str = field(
+        default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
+    )
+
+
+@frozen
+class OneClickTrialPlan:
+    created_at: str = field(validator=validators.instance_of(str), converter=str)
+    expired_at: str = field(validator=validators.instance_of(str), converter=str)
+    is_active: bool
+    name: str = field(validator=validators.instance_of(str), converter=str)
+    id: int = field(validator=validators.instance_of(int))
+
+
+@frozen
+class OneClickTrialStarted:
+    plans: list[OneClickTrialPlan]
+    rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int)
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )

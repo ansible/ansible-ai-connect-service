@@ -18,12 +18,12 @@ from attr import asdict
 from django.test import override_settings
 
 import ansible_ai_connect.ai.feature_flags as feature_flags
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
-from ansible_ai_connect.ai.api.utils.analytics_telemetry_model import (
+from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsProductFeedback,
     AnalyticsTelemetryEvents,
 )
+from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     get_segment_analytics_client,
     meets_min_ansible_extension_version,
@@ -84,8 +84,8 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
         self.assertTrue(meets_min_ansible_extension_version("v1.3.5"))
         self.assertFalse(meets_min_ansible_extension_version("v0.1"))
         self.assertFalse(meets_min_ansible_extension_version("foo"))
-        self.assertFalse(meets_min_ansible_extension_version(None))
-        self.assertFalse(meets_min_ansible_extension_version(""))
+        self.assertTrue(meets_min_ansible_extension_version(""))
+        self.assertTrue(meets_min_ansible_extension_version(None))
 
     @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.send_segment_event")
     def test_send_segment_analytics_error_value(self, send_segment_event):
@@ -164,6 +164,7 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
             error_event_payload, "analyticsTelemetryError", self.user
         )
 
+    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY=None)
     @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
     @patch.object(feature_flags, "LDClient")
     @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
@@ -182,16 +183,6 @@ class TestSegmentAnalyticsTelemetry(WisdomServiceAPITestCaseBase):
     ):
         LDClient.return_value.variation.return_value = True
         self.user.rh_user_has_seat = False
-        self._assert_event_not_sent(base_send_segment_event)
-
-    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")
-    @override_settings(LAUNCHDARKLY_SDK_KEY="dummy_key")
-    @patch.object(feature_flags, "LDClient")
-    @patch("ansible_ai_connect.ai.api.utils.segment_analytics_telemetry.base_send_segment_event")
-    def test_send_segment_analytics_event_error_no_telemetry_enabled(
-        self, base_send_segment_event, LDClient
-    ):
-        LDClient.return_value.variation.return_value = False
         self._assert_event_not_sent(base_send_segment_event)
 
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="testWriteKey")

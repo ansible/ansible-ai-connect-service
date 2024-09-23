@@ -43,8 +43,12 @@ segment_analytics_client = None
 
 
 def meets_min_ansible_extension_version(version) -> bool:
+    """
+    Checks if the extension version, if exists, checks if it satisfies a defined min. version value.
+    Requests outside the extension context, such as one-click trial, assume no version parameter.
+    """
     if not version:
-        return False
+        return True
     minVersion = Version(settings.ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION)
     try:
         userVersion = Version(version)
