@@ -574,6 +574,7 @@ class WCAClient(BaseWCAClient):
         self,
         request,
         text: str = "",
+        custom_prompt: str = "",
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
@@ -590,6 +591,8 @@ class WCAClient(BaseWCAClient):
         }
         if outline:
             data["outline"] = outline
+        if custom_prompt:
+            data["custom_prompt"] = custom_prompt
 
         @backoff.on_exception(
             backoff.expo,
@@ -632,7 +635,9 @@ class WCAClient(BaseWCAClient):
 
         return playbook, outline
 
-    def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
+    def explain_playbook(
+        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+    ) -> str:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
         model_id = self.get_model_id(request.user, organization_id)
@@ -642,6 +647,8 @@ class WCAClient(BaseWCAClient):
             "model_id": model_id,
             "playbook": content,
         }
+        if custom_prompt:
+            data["custom_prompt"] = custom_prompt
 
         @backoff.on_exception(
             backoff.expo,
@@ -752,11 +759,14 @@ class WCAOnPremClient(BaseWCAClient):
         self,
         request,
         text: str = "",
+        custom_prompt: str = "",
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
     ) -> tuple[str, str]:
         raise FeatureNotAvailable
 
-    def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
+    def explain_playbook(
+        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+    ) -> str:
         raise FeatureNotAvailable

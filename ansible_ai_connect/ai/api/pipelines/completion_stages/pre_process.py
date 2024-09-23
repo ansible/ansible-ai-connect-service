@@ -136,12 +136,7 @@ def completion_validate_multitask_yaml(context: CompletionContext):
             task_errors.append(task_error)
 
     if len(task_errors) > 0:
-        raise PreprocessInvalidYamlException(
-            detail={
-                "code": PreprocessInvalidYamlException.default_code,
-                "message": task_errors,
-            }
-        )
+        raise PreprocessInvalidYamlException(detail=task_errors)
 
 
 class PreProcessStage(PipelineElement):

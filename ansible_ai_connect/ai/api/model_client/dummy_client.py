@@ -90,6 +90,7 @@ class DummyClient(ModelMeshClient):
         self,
         request,
         text: str = "",
+        custom_prompt: str = "",
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
@@ -98,5 +99,7 @@ class DummyClient(ModelMeshClient):
             return PLAYBOOK, OUTLINE
         return PLAYBOOK, ""
 
-    def explain_playbook(self, request, content, explanation_id: str = "") -> str:
+    def explain_playbook(
+        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+    ) -> str:
         return EXPLANATION
