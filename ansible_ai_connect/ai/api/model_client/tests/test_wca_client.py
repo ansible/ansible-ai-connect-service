@@ -331,6 +331,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
+        self.user = Mock()
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen(self):
@@ -348,7 +349,9 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         model_client = WCAClient(inference_url="http://example.com/")
         model_client.get_api_key = Mock(return_value="some-key")
         model_client.get_token = Mock(return_value={"access_token": "a-token"})
-        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.get_model_id = Mock(
+            return_value="00000000-0000-0000-0000-000000000000<|sepofid|>a-random-model"
+        )
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
@@ -451,6 +454,29 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
             self.wca_client.explain_playbook(
                 request, content="Some playbook", explanation_id=str(DEFAULT_REQUEST_ID)
             )
+
+    def test_get_default_model_id(self):
+        self.wca_client.get_model_id = Mock(
+            return_value="12345678-0000-0000-0000-000000000000<|sepofid|>granite-3b"
+        )
+        default_model_id = self.wca_client.get_default_model_id(self.user, 123)
+        self.assertEqual(default_model_id, "12345678-0000-0000-0000-000000000000<|sepofid|>")
+
+    def test_get_default_model_id_with_unknown_wca_model_id(self):
+        self.wca_client.get_model_id = Mock(
+            return_value="12345678-0000-0000-0000-000000000000<|sepofid|>granite-super"
+        )
+        default_model_id = self.wca_client.get_default_model_id(self.user, 123)
+        self.assertEqual(
+            default_model_id, "12345678-0000-0000-0000-000000000000<|sepofid|>granite-super"
+        )
+
+    def test_get_default_model_id_without_space_id(self):
+        self.wca_client.get_model_id = Mock(return_value="mymodel")
+        with self.assertLogs(logger="root", level="WARNING") as log:
+            default_model_id = self.wca_client.get_default_model_id(self.user, 123)
+            self.assertEqual(default_model_id, "mymodel")
+            self.assertInLog("Model ID is not in the expected format.", log)
 
 
 @override_settings(ANSIBLE_WCA_RETRY_COUNT=1)

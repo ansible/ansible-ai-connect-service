@@ -388,6 +388,9 @@ class BaseWCAClient(ModelMeshClient):
 
 
 class WCAClient(BaseWCAClient):
+    # List of models used for a specific API.
+    KNOWN_MODELS_FOR_SPECIFIC_API = ["granite-3b", "granite-20b", "granite-20b-instruct"]
+
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
@@ -514,6 +517,32 @@ class WCAClient(BaseWCAClient):
         logger.error("Seated user's organization doesn't have default model ID set")
         raise WcaModelIdNotFound(model_id=requested_model_id)
 
+    def get_default_model_id(
+        self,
+        user,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = "",
+    ):
+        model_id = self.get_model_id(user, organization_id, requested_model_id)
+
+        # If the model_id is found in the list of known models that is used for a specific API,
+        # send it to WCA playbook explanation/generation API may cause an issue. Especially it
+        # can occur the model_is is "granite-3b", which is used only for task generation.
+        #
+        # Following if block is for getting rid of such model_id before calling WCA playbook
+        # explanation/generation API.
+        separator = "<|sepofid|>"
+        index = model_id.find(separator)
+
+        if index > -1:
+            wca_model_id = model_id[(index + len(separator)) :]
+            if wca_model_id in self.KNOWN_MODELS_FOR_SPECIFIC_API:
+                model_id = model_id[: (index + len(separator))]
+        else:
+            logger.warning("Model ID is not in the expected format.")
+
+        return model_id
+
     def get_request_headers(
         self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
@@ -580,7 +609,7 @@ class WCAClient(BaseWCAClient):
     ) -> tuple[str, str]:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id)
+        model_id = self.get_default_model_id(request.user, organization_id)
 
         headers = self.get_request_headers(api_key, generation_id)
         data = {
@@ -635,7 +664,7 @@ class WCAClient(BaseWCAClient):
     def explain_playbook(self, request, content: str, explanation_id: str = "") -> str:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id)
+        model_id = self.get_default_model_id(request.user, organization_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
         data = {
