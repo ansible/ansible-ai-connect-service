@@ -537,7 +537,7 @@ class WCAClient(BaseWCAClient):
         if index > -1:
             wca_model_id = model_id[(index + len(separator)) :]
             if wca_model_id in self.KNOWN_MODELS_FOR_SPECIFIC_API:
-                model_id = model_id[: (index + len(separator))]
+                model_id = model_id[:index]
         else:
             logger.warning("Model ID is not in the expected format.")
 

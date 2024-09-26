@@ -460,7 +460,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
             return_value="12345678-0000-0000-0000-000000000000<|sepofid|>granite-3b"
         )
         default_model_id = self.wca_client.get_default_model_id(self.user, 123)
-        self.assertEqual(default_model_id, "12345678-0000-0000-0000-000000000000<|sepofid|>")
+        self.assertEqual(default_model_id, "12345678-0000-0000-0000-000000000000")
 
     def test_get_default_model_id_with_unknown_wca_model_id(self):
         self.wca_client.get_model_id = Mock(
