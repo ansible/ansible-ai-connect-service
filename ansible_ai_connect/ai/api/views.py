@@ -645,6 +645,7 @@ class Explanation(APIView):
         exception = None
         explanation_id = None
         playbook = ""
+        model_id = ""
         answer = {}
         request_serializer = ExplanationRequestSerializer(data=request.data)
         try:
@@ -841,6 +842,7 @@ class Generation(APIView):
         playbook = ""
         request_serializer = GenerationRequestSerializer(data=request.data)
         answer = {}
+        model_id = ""
         try:
             request_serializer.is_valid(raise_exception=True)
             generation_id = str(request_serializer.validated_data.get("generationId", ""))
