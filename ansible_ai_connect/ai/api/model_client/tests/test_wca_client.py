@@ -370,6 +370,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 
         def get_my_model_id(user, organization_id, model_id):
             self.assertEqual(model_id, "mymodel")
+            self.assertion_count += 1
             return model_id
 
         model_client.get_model_id = get_my_model_id

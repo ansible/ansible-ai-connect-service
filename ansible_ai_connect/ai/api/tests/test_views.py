@@ -2444,7 +2444,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(segment_events[0]["properties"]["playbook_length"], 165)
+            self.assertEqual(segment_events[0]["properties"]["playbook_length"], 197)
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["content"])
         self.assertEqual(r.data["format"], "markdown")
@@ -2464,7 +2464,9 @@ This playbook emails admin@redhat.com with a list of passwords.
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
-        mocked_client.explain_playbook.assert_called_with(ANY, "william10@example.com", ANY, ANY)
+        mocked_client.explain_playbook.assert_called_with(
+            ANY, "william10@example.com", ANY, ANY, ANY
+        )
 
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
@@ -2579,7 +2581,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
         mocked_client.explain_playbook.assert_called_with(
-            ANY, "william10@example.com", "Please explain this {playbook}", ANY
+            ANY, "william10@example.com", "Please explain this {playbook}", ANY, ANY
         )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -2908,6 +2910,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
 
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_ok_with_model_id(self):
         generation_id = str(uuid.uuid4())
         model = "mymodel"
@@ -2941,7 +2944,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
         mocked_client.generate_playbook.assert_called_with(
-            ANY, "Install nginx on RHEL9 isabella13@example.com", ANY, False, "", ANY
+            ANY, "Install nginx on RHEL9 isabella13@example.com", ANY, False, "", ANY, ANY
         )
 
     def test_unauthorized(self):
@@ -3034,6 +3037,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "You are an Ansible expert. Explain {goal} with {outline}.",
             False,
             "Install nginx. Start nginx.",
+            ANY,
             ANY,
         )
 
@@ -3137,6 +3141,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "You are an Ansible expert. Explain {goal}.",
             False,
             "",
+            ANY,
             ANY,
         )
 
