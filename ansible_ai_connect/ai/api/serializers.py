@@ -373,6 +373,7 @@ class ExplanationRequestSerializer(Metadata):
             "A UUID that identifies the particular explanation data is being requested for."
         ),
     )
+    model = serializers.CharField(required=False, allow_blank=True)
     metadata = Metadata(required=False)
 
     def validate(self, data):
@@ -449,6 +450,7 @@ class GenerationRequestSerializer(serializers.Serializer):
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
     )
+    model = serializers.CharField(required=False, allow_blank=True)
 
     metadata = Metadata(required=False)
 

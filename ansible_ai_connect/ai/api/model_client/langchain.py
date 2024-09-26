@@ -131,6 +131,7 @@ class LangChainClient(ModelMeshClient):
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
+        model_id: str = "",
     ) -> tuple[str, str]:
         SYSTEM_MESSAGE_TEMPLATE = """
         You are an Ansible expert.
@@ -166,7 +167,7 @@ class LangChainClient(ModelMeshClient):
             unwrap_playbook_answer,
         )
 
-        model_id = self.get_model_id(request.user, None, "")
+        model_id = self.get_model_id(request.user, None, model_id)
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
@@ -191,7 +192,12 @@ class LangChainClient(ModelMeshClient):
         return playbook, outline
 
     def explain_playbook(
-        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+        self,
+        request,
+        content: str,
+        custom_prompt: str = "",
+        explanation_id: str = "",
+        model_id: str = "",
     ) -> str:
         SYSTEM_MESSAGE_TEMPLATE = """
         You're an Ansible expert.
@@ -212,7 +218,7 @@ class LangChainClient(ModelMeshClient):
         if custom_prompt:
             logger.info("custom_prompt is not supported for explain_playbook and will be ignored.")
 
-        model_id = self.get_model_id(request.user, None, "")
+        model_id = self.get_model_id(request.user, None, model_id)
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
