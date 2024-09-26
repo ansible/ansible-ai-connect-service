@@ -2549,6 +2549,28 @@ This playbook emails admin@redhat.com with a list of passwords.
         )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_with_custom_prompt_blank(self):
+        payload = {
+            "content": "marc-anthony@bar.foo",
+            "customPrompt": "",
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        mocked_client = Mock()
+        mocked_client.explain_playbook.return_value = "foo"
+        with patch.object(
+            apps.get_app_config("ai"),
+            "model_mesh_client",
+            mocked_client,
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse("explanations"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertFalse(mocked_client.explain_playbook.called)
+            self.assertIn("detail", r.data)
+            self.assertIn("customPrompt", r.data["detail"])
+            self.assertIn("This field may not be blank.", str(r.data["detail"]["customPrompt"]))
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_custom_prompt_missing_playbook(self):
         payload = {
             "content": "marc-anthony@bar.foo",
@@ -2938,6 +2960,33 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "Install nginx. Start nginx.",
             ANY,
         )
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_with_custom_prompt_blank(self):
+        payload = {
+            "text": "Install nginx on RHEL9 jean-marc@redhat.com",
+            "customPrompt": "",
+            "outline": "Install nginx. Start nginx.",
+            "generationId": str(uuid.uuid4()),
+            "ansibleExtensionVersion": "24.4.0",
+        }
+        mocked_client = Mock()
+        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        with patch.object(
+            apps.get_app_config("ai"),
+            "model_mesh_client",
+            mocked_client,
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.client.post(reverse("generations"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertFalse(mocked_client.generate_playbook.called)
+            self.assertIn("detail", r.data)
+            self.assertIn("customPrompt", r.data["detail"])
+            self.assertIn(
+                "This field may not be blank.",
+                str(r.data["detail"]["customPrompt"]),
+            )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_custom_prompt_missing_goal(self):

@@ -362,7 +362,6 @@ class ExplanationRequestSerializer(Metadata):
     customPrompt = serializers.CharField(
         trim_whitespace=False,
         required=False,
-        allow_blank=True,
         label="Custom prompt",
         help_text="Custom prompt passed to the LLM when explaining a playbook.",
     )
@@ -421,7 +420,6 @@ class GenerationRequestSerializer(serializers.Serializer):
     customPrompt = serializers.CharField(
         trim_whitespace=False,
         required=False,
-        allow_blank=True,
         label="Custom prompt",
         help_text="Custom prompt passed to the LLM when generating the text of a playbook.",
     )
