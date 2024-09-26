@@ -12,6 +12,7 @@ from ansible_ai_connect.ai.api.model_client.langchain import (
     unwrap_playbook_answer,
     unwrap_task_answer,
 )
+from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
 
 class TestUnwrapTaskAnswer(TestCase):
@@ -107,7 +108,7 @@ class TestLangChainClientNotImplemented(TestCase):
             my_client.get_chat_model("a")
 
 
-class TestLangChainClient(TestCase):
+class TestLangChainClient(WisdomServiceLogAwareTestCase):
     def setUp(self):
         self.my_client = LangChainClient("a")
 
@@ -131,6 +132,38 @@ class TestLangChainClient(TestCase):
         self.assertEqual(playbook, "my_playbook")
         self.assertEqual(outline, "my outline")
 
+    def test_generate_playbook_with_custom_prompt(self):
+        with (
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.langchain", level="INFO"
+            ) as log,
+        ):
+            playbook, outline = self.my_client.generate_playbook(
+                request=Mock(),
+                text="foo",
+                create_outline=True,
+                custom_prompt="You are an Ansible expert.",
+            )
+            self.assertInLog(
+                "custom_prompt is not supported for generate_playbook and will be ignored.", log
+            )
+            self.assertEqual(playbook, "my_playbook")
+            self.assertEqual(outline, "my outline")
+
     def test_explain_playbook(self):
         explanation = self.my_client.explain_playbook(request=Mock(), content="foo")
         self.assertTrue(explanation)
+
+    def test_explain_playbook_with_custom_prompt(self):
+        with (
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_client.langchain", level="INFO"
+            ) as log,
+        ):
+            explanation = self.my_client.explain_playbook(
+                request=Mock(), content="foo", custom_prompt="You are an Ansible expert."
+            )
+            self.assertInLog(
+                "custom_prompt is not supported for explain_playbook and will be ignored.", log
+            )
+            self.assertTrue(explanation)

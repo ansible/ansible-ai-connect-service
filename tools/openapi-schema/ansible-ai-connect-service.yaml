@@ -701,6 +701,10 @@ components:
           type: string
           title: Playbook content
           description: The playbook that needs to be explained.
+        customPrompt:
+          type: string
+          title: Custom prompt
+          description: Custom prompt passed to the LLM when explaining a playbook.
         explanationId:
           type: string
           format: uuid
@@ -760,6 +764,11 @@ components:
           type: string
           title: Description content
           description: The description that needs to be converted to a playbook.
+        customPrompt:
+          type: string
+          title: Custom prompt
+          description: Custom prompt passed to the LLM when generating the text of
+            a playbook.
         generationId:
           type: string
           format: uuid

@@ -651,10 +651,11 @@ class Explanation(APIView):
             request_serializer.is_valid(raise_exception=True)
             explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
             playbook = request_serializer.validated_data.get("content")
+            custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
-            explanation = llm.explain_playbook(request, playbook, explanation_id)
+            explanation = llm.explain_playbook(request, playbook, custom_prompt, explanation_id)
             duration = round((time.time() - start_time) * 1000, 2)
 
             # Anonymize response
@@ -840,12 +841,13 @@ class Generation(APIView):
             create_outline = request_serializer.validated_data["createOutline"]
             outline = str(request_serializer.validated_data.get("outline", ""))
             text = request_serializer.validated_data["text"]
+            custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
             wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
             playbook, outline = llm.generate_playbook(
-                request, text, create_outline, outline, generation_id
+                request, text, custom_prompt, create_outline, outline, generation_id
             )
             duration = round((time.time() - start_time) * 1000, 2)
 

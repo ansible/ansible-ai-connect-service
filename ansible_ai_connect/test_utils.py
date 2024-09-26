@@ -108,7 +108,7 @@ class WisdomTestCase(TestCase):
             self.assertEqual(r["Content-Length"], "0")
             return
 
-        r_code = r.data.get("message").code
+        r_code = r.data.get("code")
         self.assertEqual(r_code, code)
         if message:
             r_message = r.data.get("message")

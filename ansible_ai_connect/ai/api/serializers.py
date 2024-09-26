@@ -359,6 +359,12 @@ class ExplanationRequestSerializer(Metadata):
         label="Playbook content",
         help_text=("The playbook that needs to be explained."),
     )
+    customPrompt = serializers.CharField(
+        trim_whitespace=False,
+        required=False,
+        label="Custom prompt",
+        help_text="Custom prompt passed to the LLM when explaining a playbook.",
+    )
     explanationId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
@@ -368,6 +374,17 @@ class ExplanationRequestSerializer(Metadata):
         ),
     )
     metadata = Metadata(required=False)
+
+    def validate(self, data):
+        data = super().validate(data)
+
+        custom_prompt = data.get("customPrompt")
+        if custom_prompt and "{playbook}" not in custom_prompt:
+            raise serializers.ValidationError(
+                {"customPrompt": "'{playbook}' placeholder expected."}
+            )
+
+        return data
 
 
 class ExplanationResponseSerializer(serializers.Serializer):
@@ -390,6 +407,7 @@ class GenerationRequestSerializer(serializers.Serializer):
             "generationId",
             "wizardId",
             "createOutline",
+            "customPrompt",
             "ansibleExtensionVersion",
             "outline",
         ]
@@ -398,6 +416,12 @@ class GenerationRequestSerializer(serializers.Serializer):
         required=True,
         label="Description content",
         help_text=("The description that needs to be converted to a playbook."),
+    )
+    customPrompt = serializers.CharField(
+        trim_whitespace=False,
+        required=False,
+        label="Custom prompt",
+        help_text="Custom prompt passed to the LLM when generating the text of a playbook.",
     )
     generationId = serializers.UUIDField(
         format="hex_verbose",
@@ -427,6 +451,23 @@ class GenerationRequestSerializer(serializers.Serializer):
     )
 
     metadata = Metadata(required=False)
+
+    def validate(self, data):
+        data = super().validate(data)
+
+        outline = data.get("outline")
+        custom_prompt = data.get("customPrompt")
+        if custom_prompt:
+            if "{goal}" not in custom_prompt:
+                raise serializers.ValidationError(
+                    {"customPrompt": "'{goal}' placeholder expected."}
+                )
+            if outline and "{outline}" not in custom_prompt:
+                raise serializers.ValidationError(
+                    {"customPrompt": "'{outline}' placeholder expected when 'outline' provided."}
+                )
+
+        return data
 
 
 class GenerationResponseSerializer(serializers.Serializer):

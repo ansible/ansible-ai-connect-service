@@ -549,11 +549,7 @@ class CompletionPreProcessTest(TestCase):
             PreProcessStage().process(context)
 
         exception: PreprocessInvalidYamlException = e.exception
-        detail: dict = exception.detail
-        code = detail["code"]
-        messages = detail["message"]
-        self.assertEqual(PreprocessInvalidYamlException.default_code, code)
-        return messages
+        return exception.detail
 
     def call_completion_pre_process(self, payload, is_commercial_user, expected_context):
         context = CompletionPreProcessTest.mock_context(payload, is_commercial_user)

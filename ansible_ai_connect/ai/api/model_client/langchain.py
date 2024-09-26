@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 import re
 from textwrap import dedent
 from typing import Any, Dict
@@ -35,6 +36,8 @@ SYSTEM_MESSAGE_TEMPLATE = (
     "Do not explain your response. Do not include the prompt in your response."
 )
 HUMAN_MESSAGE_TEMPLATE = "{prompt}"
+
+logger = logging.getLogger(__name__)
 
 
 def unwrap_playbook_answer(message: str | BaseMessage) -> tuple[str, str]:
@@ -124,6 +127,7 @@ class LangChainClient(ModelMeshClient):
         self,
         request,
         text: str = "",
+        custom_prompt: str = "",
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
@@ -150,6 +154,9 @@ class LangChainClient(ModelMeshClient):
         This is what the playbook should do: {text}
         This is a break down of the expected Playbook: {outline}
         """
+
+        if custom_prompt:
+            logger.info("custom_prompt is not supported for generate_playbook and will be ignored.")
 
         system_template = (
             SYSTEM_MESSAGE_TEMPLATE_WITH_OUTLINE if create_outline else SYSTEM_MESSAGE_TEMPLATE
@@ -183,7 +190,9 @@ class LangChainClient(ModelMeshClient):
 
         return playbook, outline
 
-    def explain_playbook(self, request, content, explanation_id: str = "") -> str:
+    def explain_playbook(
+        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+    ) -> str:
         SYSTEM_MESSAGE_TEMPLATE = """
         You're an Ansible expert.
         You format your output with Markdown.
@@ -199,6 +208,9 @@ class LangChainClient(ModelMeshClient):
 
         {playbook}"
         """
+
+        if custom_prompt:
+            logger.info("custom_prompt is not supported for explain_playbook and will be ignored.")
 
         model_id = self.get_model_id(request.user, None, "")
         llm = self.get_chat_model(model_id)

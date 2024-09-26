@@ -48,6 +48,13 @@ def exception_handler_with_error_type(exc, context):
 
         # Build complete response
         _data = response.data if response.data else {}
-        response.data = {**_full_details, **_model_id, **_data}
+        response.data = {
+            "code": _full_details["code"] if "code" in _full_details else exc.default_code,
+            "message": (
+                _full_details["message"] if "message" in _full_details else exc.default_detail
+            ),
+            "detail": _data,
+            **_model_id,
+        }
 
     return response
