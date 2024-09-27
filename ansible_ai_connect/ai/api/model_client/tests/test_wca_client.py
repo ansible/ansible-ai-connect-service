@@ -360,6 +360,26 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
             model_client.generate_playbook(request, text="Install Wordpress", create_outline=True)
             self.assertInLog("Caught retryable error after 1 tries.", log)
 
+    def test_playbook_gen_model_id(self):
+        self.assertion_count = 0
+        request = Mock()
+        model_client = WCAClient(inference_url="http://example.com/")
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.session = Mock()
+
+        def get_my_model_id(user, organization_id, model_id):
+            self.assertEqual(model_id, "mymodel")
+            self.assertion_count += 1
+            return model_id
+
+        model_client.get_model_id = get_my_model_id
+
+        model_client.generate_playbook(
+            request, text="Install Wordpress", create_outline=True, model_id="mymodel"
+        )
+        self.assertGreater(self.assertion_count, 0)
+
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp(self):
         request = Mock()
@@ -384,6 +404,26 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         ):
             model_client.explain_playbook(request, content="Some playbook")
             self.assertInLog("Caught retryable error after 1 tries.", log)
+
+    def test_playbook_exp_model_id(self):
+        request = Mock()
+        model_client = WCAClient(inference_url="http://example.com/")
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.session = Mock()
+
+        self.assertion_count = 0
+
+        def get_my_model_id(user, organization_id, model_id):
+            self.assertEqual(model_id, "mymodel")
+            self.assertion_count += 1
+            return model_id
+
+        model_client.get_model_id = get_my_model_id
+
+        model_client.explain_playbook(request, content="Some playbook", model_id="mymodel")
+        self.assertGreater(self.assertion_count, 0)
+        self.assertion_count = 0
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen_no_org(self):

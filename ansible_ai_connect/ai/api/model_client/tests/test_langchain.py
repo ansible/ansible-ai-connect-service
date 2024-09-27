@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 from textwrap import dedent
 from unittest.mock import Mock
 
@@ -13,6 +14,8 @@ from ansible_ai_connect.ai.api.model_client.langchain import (
     unwrap_task_answer,
 )
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
+
+logger = logging.getLogger(__name__)
 
 
 class TestUnwrapTaskAnswer(TestCase):
@@ -112,7 +115,8 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
     def setUp(self):
         self.my_client = LangChainClient("a")
 
-        def fake_get_chat_mode(self, model_id=None):
+        def fake_get_chat_mode(model_id=None):
+            logger.debug(f"get_chat_mode: model_id={model_id}")
             return FakeListLLM(responses=["\n```\nmy_playbook```\nmy outline\n\n", "b"])
 
         self.my_client.get_chat_model = fake_get_chat_mode
@@ -166,4 +170,12 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
             self.assertInLog(
                 "custom_prompt is not supported for explain_playbook and will be ignored.", log
             )
+            self.assertTrue(explanation)
+
+    def test_explain_playbook_with_model_id(self):
+        with (self.assertLogs(logger=logger, level="DEBUG") as log,):
+            explanation = self.my_client.explain_playbook(
+                request=Mock(), content="foo", model_id="mymodel"
+            )
+            self.assertInLog("get_chat_mode: model_id=mymodel", log)
             self.assertTrue(explanation)

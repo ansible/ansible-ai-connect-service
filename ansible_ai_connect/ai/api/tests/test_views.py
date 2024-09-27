@@ -175,11 +175,17 @@ class MockedMeshClient(ModelMeshClient):
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
+        model_id: str = "",
     ) -> tuple[str, str]:
         return self.response_data, self.response_data
 
     def explain_playbook(
-        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+        self,
+        request,
+        content: str,
+        custom_prompt: str = "",
+        explanation_id: str = "",
+        model_id: str = "",
     ) -> str:
         return self.response_data
 
@@ -2416,6 +2422,34 @@ This playbook emails admin@redhat.com with a list of passwords.
         self.assertEqual(r.data["format"], "markdown")
         self.assertEqual(r.data["explanationId"], explanation_id)
 
+    def test_ok_with_model_id(self):
+        explanation_id = str(uuid.uuid4())
+        model = "mymodel"
+        payload = {
+            "content": """---
+    - name: Setup nginx
+      hosts: all
+      become: true
+      tasks:
+        - name: Install nginx on RHEL9
+          ansible.builtin.dnf:
+            name: nginx
+            state: present
+    """,
+            "explanationId": explanation_id,
+            "ansibleExtensionVersion": "24.4.0",
+            "model": model,
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("explanations"), payload, format="json")
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(segment_events[0]["properties"]["playbook_length"], 197)
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNotNone(r.data["content"])
+        self.assertEqual(r.data["format"], "markdown")
+        self.assertEqual(r.data["explanationId"], explanation_id)
+
     def test_with_pii(self):
         payload = {
             "content": "marc-anthony@bar.foo",
@@ -2430,7 +2464,9 @@ This playbook emails admin@redhat.com with a list of passwords.
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
-        mocked_client.explain_playbook.assert_called_with(ANY, "william10@example.com", ANY, ANY)
+        mocked_client.explain_playbook.assert_called_with(
+            ANY, "william10@example.com", ANY, ANY, ANY
+        )
 
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
@@ -2545,7 +2581,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
         mocked_client.explain_playbook.assert_called_with(
-            ANY, "william10@example.com", "Please explain this {playbook}", ANY
+            ANY, "william10@example.com", "Please explain this {playbook}", ANY, ANY
         )
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -2647,10 +2683,11 @@ that are running Red Hat Enterprise Linux 9.
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("explanations"), self.payload, format="json")
             self.assertEqual(r.status_code, expected_status_code)
-            self.assert_error_detail(
-                r, expected_exception().default_code, expected_exception().default_detail
-            )
-            self.assertInLog(expected_log_message, log)
+            if expected_status_code != HTTPStatus.OK:
+                self.assert_error_detail(
+                    r, expected_exception().default_code, expected_exception().default_detail
+                )
+                self.assertInLog(expected_log_message, log)
 
     def test_bad_wca_request(self):
         model_client = self.stub_wca_client(
@@ -2792,6 +2829,31 @@ that are running Red Hat Enterprise Linux 9.
             "WCA Instance has been deleted when requesting playbook explanation",
         )
 
+    def test_wca_request_with_model_id_given(self):
+        self.assertion_count = 0
+        self.payload["model"] = "mymodel"
+
+        def get_model_id(user, organization_id, model_id):
+            self.assertEqual(model_id, "mymodel")
+            self.assertion_count += 1
+            return model_id
+
+        model_client = self.stub_wca_client(200)
+        model_client.get_model_id = get_model_id
+        model_client.explain_playbook = lambda *args: {
+            "content": "string",
+            "format": "string",
+            "explanationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        }
+
+        self.assert_test(
+            model_client,
+            HTTPStatus.OK,
+            None,
+            None,
+        )
+        self.assertGreater(self.assertion_count, 0)
+
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
@@ -2849,6 +2911,23 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         self.assertEqual(r.data["generationId"], generation_id)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
+    def test_ok_with_model_id(self):
+        generation_id = str(uuid.uuid4())
+        model = "mymodel"
+        payload = {
+            "text": "Install nginx on RHEL9",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0",
+            "model": model,
+        }
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse("generations"), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNotNone(r.data["playbook"])
+        self.assertEqual(r.data["format"], "plaintext")
+        self.assertEqual(r.data["generationId"], generation_id)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_pii(self):
         payload = {
             "text": "Install nginx on RHEL9 jean-marc@redhat.com",
@@ -2865,7 +2944,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
         mocked_client.generate_playbook.assert_called_with(
-            ANY, "Install nginx on RHEL9 isabella13@example.com", ANY, False, "", ANY
+            ANY, "Install nginx on RHEL9 isabella13@example.com", ANY, False, "", ANY, ANY
         )
 
     def test_unauthorized(self):
@@ -2958,6 +3037,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "You are an Ansible expert. Explain {goal} with {outline}.",
             False,
             "Install nginx. Start nginx.",
+            ANY,
             ANY,
         )
 
@@ -3062,6 +3142,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             False,
             "",
             ANY,
+            ANY,
         )
 
 
@@ -3116,10 +3197,11 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("generations"), self.payload, format="json")
             self.assertEqual(r.status_code, expected_status_code)
-            self.assert_error_detail(
-                r, expected_exception().default_code, expected_exception().default_detail
-            )
-            self.assertInLog(expected_log_message, log)
+            if expected_status_code != 200:
+                self.assert_error_detail(
+                    r, expected_exception().default_code, expected_exception().default_detail
+                )
+                self.assertInLog(expected_log_message, log)
 
     def test_bad_wca_request(self):
         model_client = self.stub_wca_client(
@@ -3260,6 +3342,28 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             WcaInstanceDeletedException,
             "WCA Instance has been deleted when requesting playbook generation",
         )
+
+    def test_wca_request_with_model_id_given(self):
+        self.assertion_count = 0
+        self.payload["model"] = "mymodel"
+        model_client = self.stub_wca_client(
+            200,
+        )
+
+        def get_model_id(user, organization_id, model_id):
+            self.assertEqual(model_id, "mymodel")
+            self.assertion_count += 1
+            return model_id
+
+        model_client.get_model_id = get_model_id
+        model_client.generate_playbook = lambda *args: ("playbook", "outline")
+        self.assert_test(
+            model_client,
+            HTTPStatus.OK,
+            None,
+            None,
+        )
+        self.assertGreater(self.assertion_count, 0)
 
 
 @modify_settings()

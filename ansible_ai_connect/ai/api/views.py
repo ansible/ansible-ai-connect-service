@@ -645,6 +645,7 @@ class Explanation(APIView):
         exception = None
         explanation_id = None
         playbook = ""
+        model_id = ""
         answer = {}
         request_serializer = ExplanationRequestSerializer(data=request.data)
         try:
@@ -652,10 +653,13 @@ class Explanation(APIView):
             explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
             playbook = request_serializer.validated_data.get("content")
             custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
+            model_id = str(request_serializer.validated_data.get("model", ""))
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
-            explanation = llm.explain_playbook(request, playbook, custom_prompt, explanation_id)
+            explanation = llm.explain_playbook(
+                request, playbook, custom_prompt, explanation_id, model_id
+            )
             duration = round((time.time() - start_time) * 1000, 2)
 
             # Anonymize response
@@ -761,6 +765,7 @@ class Explanation(APIView):
                 exception,
                 duration,
                 playbook_length=len(playbook),
+                model_id=model_id,
             )
 
         return Response(
@@ -768,11 +773,13 @@ class Explanation(APIView):
             status=rest_framework_status.HTTP_200_OK,
         )
 
-    def write_to_segment(self, user, explanation_id, exception, duration, playbook_length):
+    def write_to_segment(
+        self, user, explanation_id, exception, duration, playbook_length, model_id=""
+    ):
         model_name = ""
         try:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user, user.org_id, "")
+            model_name = model_mesh_client.get_model_id(user, user.org_id, model_id)
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
 
@@ -835,6 +842,7 @@ class Generation(APIView):
         playbook = ""
         request_serializer = GenerationRequestSerializer(data=request.data)
         answer = {}
+        model_id = ""
         try:
             request_serializer.is_valid(raise_exception=True)
             generation_id = str(request_serializer.validated_data.get("generationId", ""))
@@ -843,11 +851,12 @@ class Generation(APIView):
             text = request_serializer.validated_data["text"]
             custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
             wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
+            model_id = str(request_serializer.validated_data.get("model", ""))
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
             playbook, outline = llm.generate_playbook(
-                request, text, custom_prompt, create_outline, outline, generation_id
+                request, text, custom_prompt, create_outline, outline, generation_id, model_id
             )
             duration = round((time.time() - start_time) * 1000, 2)
 
@@ -960,6 +969,7 @@ class Generation(APIView):
                 duration,
                 create_outline,
                 playbook_length=len(anonymized_playbook),
+                model_id=model_id,
             )
 
         return Response(
@@ -968,12 +978,20 @@ class Generation(APIView):
         )
 
     def write_to_segment(
-        self, user, generation_id, wizard_id, exception, duration, create_outline, playbook_length
+        self,
+        user,
+        generation_id,
+        wizard_id,
+        exception,
+        duration,
+        create_outline,
+        playbook_length,
+        model_id,
     ):
         model_name = ""
         try:
             model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user, user.org_id, "")
+            model_name = model_mesh_client.get_model_id(user, user.org_id, model_id)
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
         event = {

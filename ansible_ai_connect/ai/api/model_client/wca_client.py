@@ -578,10 +578,11 @@ class WCAClient(BaseWCAClient):
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
+        model_id: str = "",
     ) -> tuple[str, str]:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id, model_id)
 
         headers = self.get_request_headers(api_key, generation_id)
         data = {
@@ -636,11 +637,16 @@ class WCAClient(BaseWCAClient):
         return playbook, outline
 
     def explain_playbook(
-        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+        self,
+        request,
+        content: str,
+        custom_prompt: str = "",
+        explanation_id: str = "",
+        model_id: str = "",
     ) -> str:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id, model_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
         data = {
@@ -763,10 +769,16 @@ class WCAOnPremClient(BaseWCAClient):
         create_outline: bool = False,
         outline: str = "",
         generation_id: str = "",
+        model_id: str = "",
     ) -> tuple[str, str]:
         raise FeatureNotAvailable
 
     def explain_playbook(
-        self, request, content: str, custom_prompt: str = "", explanation_id: str = ""
+        self,
+        request,
+        content: str,
+        custom_prompt: str = "",
+        explanation_id: str = "",
+        model_id: str = "",
     ) -> str:
         raise FeatureNotAvailable
