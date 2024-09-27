@@ -474,6 +474,7 @@ class WCAClient(BaseWCAClient):
         organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
+        logger.debug(f"requested_model_id={requested_model_id}")
         if not organization_id and user.organization:
             # TODO: the organization_id parameter should be removed
             organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
