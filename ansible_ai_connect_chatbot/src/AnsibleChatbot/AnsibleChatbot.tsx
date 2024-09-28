@@ -31,6 +31,7 @@ import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-dra
 import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
 
 import AnsibleLogo from "./ansible-transparent.png";
+import AnsibleLogoDark from "./ansible-transparent-dark.png";
 
 import "./AnsibleChatbot.scss";
 import { botMessage, useChatbot } from "../useChatbot/useChatbot";
@@ -110,7 +111,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                 <Brand src={AnsibleLogo} alt="Ansible" />
               </div>
               <div className="show-dark">
-                <Brand src={AnsibleLogo} alt="Ansible" />
+                <Brand src={AnsibleLogoDark} alt="Ansible" />
               </div>
             </Bullseye>
           </ChatbotHeaderTitle>
