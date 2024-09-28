@@ -8,7 +8,6 @@ import {
   DropdownGroup,
 } from "@patternfly/react-core";
 
-import AnsibleChatbotToggle from "../AnsibleChatbotToggle/AnsibleChatbotToggle";
 import Chatbot, {
   ChatbotDisplayMode,
 } from "@patternfly/virtual-assistant/dist/dynamic/Chatbot";
@@ -38,6 +37,7 @@ import { botMessage, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
+import { ChatbotToggle } from "@patternfly/virtual-assistant";
 
 const footnoteProps = {
   label: "Lightspeed uses AI. Check for mistakes.",
@@ -95,7 +95,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
 
   return (
     <>
-      <AnsibleChatbotToggle
+      <ChatbotToggle
         toolTipLabel="Chatbot"
         isChatbotVisible={chatbotVisible}
         onToggleChatbot={() => setChatbotVisible(!chatbotVisible)}
