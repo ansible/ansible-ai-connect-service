@@ -31,6 +31,7 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerMissingCredentialsError,
 )
 from ansible_ai_connect.ai.api.telemetry import schema1
+from ansible_ai_connect.ai.api.telemetry import schema2_utils as schema2
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
@@ -227,6 +228,8 @@ class TrialView(TemplateView):
             event = schema1.OneClickTrialStartedEvent()
             event.set_request(request)
             send_schema1_event(event)
+
+            schema2.oneclick_trial_event_send(request.user)
 
         context = self.get_context_data(**kwargs)
         return render(request, self.template_name, context=context)

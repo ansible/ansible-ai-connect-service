@@ -1,18 +1,18 @@
 repos:
 - repo: https://github.com/pycqa/isort
-  rev: 5.12.0
+  rev: 5.13.2
   hooks:
   - id: isort
     name: isort (python)
 - repo: https://github.com/ambv/black
-  rev: 24.3.0
+  rev: 24.8.0
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
     language_version: python3
     require_serial: true
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.6.0
   hooks:
   - id: trailing-whitespace
     language_version: python3
@@ -23,13 +23,13 @@ repos:
   - id: debug-statements
     language_version: python3
 - repo: https://github.com/PyCQA/flake8
-  rev: 6.0.0
+  rev: 7.1.1
   hooks:
   - id: flake8
     args: [--config=.flake8]
     language_version: python3
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.3.1
+  rev: v3.17.0
   hooks:
   - id: pyupgrade
     language_version: python3
