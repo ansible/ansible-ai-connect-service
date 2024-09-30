@@ -169,7 +169,6 @@ class SegmentMiddleware:
                             model_name=model_name,
                         ),
                         request.user,
-                        getattr(request, "_ansible_extension_version", None),
                     )
 
         # Clean up response.data for 204; should be empty to prevent

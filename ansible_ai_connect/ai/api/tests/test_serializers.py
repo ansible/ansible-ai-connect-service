@@ -239,28 +239,6 @@ class FeedbackRequestSerializerTest(TestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
 
-    def test_invalid_ansible_extension_version_on_inline_suggestion(self):
-        org = Mock(telemetry_opt_out=False)
-        user = Mock(rh_user_has_seat=True, organization=org)
-        request = Mock(user=user)
-        serializer = FeedbackRequestSerializer(
-            context={"request": request},
-            data={
-                "inlineSuggestion": {
-                    "userActionTime": 5155,
-                    "action": "0",
-                    "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
-                },
-                "metadata": {
-                    "ansibleExtensionVersion": "foo",
-                },
-            },
-        )
-
-        # feedback request raises exception when ansibleExtensionVersion is not valid version
-        with self.assertRaises(serializers.ValidationError):
-            serializer.is_valid(raise_exception=True)
-
     def test_commercial_user_not_opted_out_passes_on_inlineSuggestion(self):
         org = Mock(has_telemetry_opt_out=False)
 

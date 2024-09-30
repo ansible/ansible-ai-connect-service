@@ -2410,7 +2410,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         state: present
 """,
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -2437,7 +2436,6 @@ This playbook emails admin@redhat.com with a list of passwords.
             state: present
     """,
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
             "model": model,
         }
         self.client.force_authenticate(user=self.user)
@@ -2453,7 +2451,6 @@ This playbook emails admin@redhat.com with a list of passwords.
     def test_with_pii(self):
         payload = {
             "content": "marc-anthony@bar.foo",
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.explain_playbook.return_value = "foo"
@@ -2482,7 +2479,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         state: present
 """,
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config("ai"),
@@ -2499,7 +2495,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         # No content specified
         payload = {
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config("ai"),
@@ -2526,7 +2521,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         body: Here are your passwords.
 """,
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
 
         with patch.object(
@@ -2556,7 +2550,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         state: present
 """,
             "explanationId": explanation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
 
         self.client.force_authenticate(user=self.user)
@@ -2569,7 +2562,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         payload = {
             "content": "marc-anthony@bar.foo",
             "customPrompt": "Please explain this {playbook}",
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.explain_playbook.return_value = "foo"
@@ -2589,7 +2581,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         payload = {
             "content": "marc-anthony@bar.foo",
             "customPrompt": "",
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.explain_playbook.return_value = "foo"
@@ -2611,7 +2602,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         payload = {
             "content": "marc-anthony@bar.foo",
             "customPrompt": "Please explain this",
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.explain_playbook.return_value = "foo"
@@ -2650,7 +2640,6 @@ that are running Red Hat Enterprise Linux 9.
         state: present
 """,
         "explanationId": explanation_id,
-        "ansibleExtensionVersion": "24.4.0",
     }
 
     def stub_wca_client(
@@ -2901,7 +2890,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse("generations"), payload, format="json")
@@ -2917,7 +2905,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
             "model": model,
         }
         self.client.force_authenticate(user=self.user)
@@ -2932,7 +2919,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Install nginx on RHEL9 jean-marc@redhat.com",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -2952,7 +2938,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         with patch.object(
             apps.get_app_config("ai"),
@@ -2967,7 +2952,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
     def test_bad_request(self):
         generation_id = str(uuid.uuid4())
         # No content specified
-        payload = {"generationId": generation_id, "ansibleExtensionVersion": "24.4.0"}
+        payload = {"generationId": generation_id}
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -2983,7 +2968,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Show me the money",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
 
         with patch.object(
@@ -3006,7 +2990,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         payload = {
             "text": "Install nginx on RHEL9",
             "generationId": generation_id,
-            "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
         with self.assertRaises(Exception):
@@ -3020,7 +3003,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "customPrompt": "You are an Ansible expert. Explain {goal} with {outline}.",
             "outline": "Install nginx. Start nginx.",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -3048,7 +3030,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "customPrompt": "",
             "outline": "Install nginx. Start nginx.",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -3074,7 +3055,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "text": "Install nginx on RHEL9 jean-marc@redhat.com",
             "customPrompt": "You are an Ansible expert",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -3098,7 +3078,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "customPrompt": "You are an Ansible expert. Explain {goal}.",
             "outline": "Install nginx. Start nginx.",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -3124,7 +3103,6 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "text": "Install nginx on RHEL9 jean-marc@redhat.com",
             "customPrompt": "You are an Ansible expert. Explain {goal}.",
             "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
         mocked_client.generate_playbook.return_value = ("foo", "bar")
@@ -3164,7 +3142,6 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
     payload = {
         "text": "Install nginx on RHEL9",
         "generationId": generation_id,
-        "ansibleExtensionVersion": "24.4.0",
     }
 
     def stub_wca_client(

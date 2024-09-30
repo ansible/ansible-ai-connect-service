@@ -231,9 +231,6 @@ class Feedback(APIView):
             "playbookGenerationAction"
         )
 
-        ansible_extension_version = validated_data.get("metadata", {}).get(
-            "ansibleExtensionVersion", None
-        )
         model_name = ""
         try:
             org_id = getattr(user, "org_id", None)
@@ -266,7 +263,6 @@ class Feedback(APIView):
                     rh_user_org_id=org_id,
                 ),
                 user,
-                ansible_extension_version,
             )
         if suggestion_quality_data:
             event = {
@@ -294,7 +290,6 @@ class Feedback(APIView):
                     model_name=model_name,
                 ),
                 user,
-                ansible_extension_version,
             )
         if issue_feedback_data:
             event = {
@@ -335,7 +330,6 @@ class Feedback(APIView):
                         wizard_id=str(playbook_generation_action_data.get("wizardId", "")),
                     ),
                     user,
-                    ansible_extension_version,
                 )
 
         feedback_events = [

@@ -37,26 +37,13 @@ from .fields import (
 )
 
 
-class Metadata(serializers.Serializer):
-    class Meta:
-        fields = ["ansibleExtensionVersion"]
-
-    ansibleExtensionVersion = serializers.RegexField(
-        r"v?\d+\.\d+\.\d+",
-        required=False,
-        label="Ansible vscode/vscodium extension version",
-        help_text="User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
-    )
-
-
-class CompletionMetadata(Metadata):
+class CompletionMetadata(serializers.Serializer):
     class Meta:
         fields = [
             "documentUri",
             "activityId",
             "ansibleFileType",
             "additionalContext",
-            "ansibleExtensionVersion",
         ]
 
     documentUri = AnonymizedCharField(required=False)
@@ -92,7 +79,7 @@ class CompletionMetadata(Metadata):
         ),
     ]
 )
-class CompletionRequestSerializer(Metadata):
+class CompletionRequestSerializer(serializers.Serializer):
 
     prompt = AnonymizedPromptCharField(
         trim_whitespace=False,
@@ -329,11 +316,10 @@ class PlaybookExplanationFeedback(serializers.Serializer):
         ),
     ]
 )
-class FeedbackRequestSerializer(Metadata):
+class FeedbackRequestSerializer(serializers.Serializer):
 
     inlineSuggestion = InlineSuggestionFeedback(required=False)
     issueFeedback = IssueFeedback(required=False)
-    metadata = Metadata(required=False)
     model = serializers.CharField(required=False)
     playbookExplanationFeedback = PlaybookExplanationFeedback(required=False)
     playbookGenerationFeedback = PlaybookGenerationFeedback(required=False)
@@ -352,7 +338,7 @@ class FeedbackRequestSerializer(Metadata):
             raise serializers.ValidationError("invalid feedback type for user")
 
 
-class ExplanationRequestSerializer(Metadata):
+class ExplanationRequestSerializer(serializers.Serializer):
 
     content = AnonymizedCharField(
         required=True,
@@ -374,7 +360,6 @@ class ExplanationRequestSerializer(Metadata):
         ),
     )
     model = serializers.CharField(required=False, allow_blank=True)
-    metadata = Metadata(required=False)
 
     def validate(self, data):
         data = super().validate(data)
@@ -409,7 +394,6 @@ class GenerationRequestSerializer(serializers.Serializer):
             "wizardId",
             "createOutline",
             "customPrompt",
-            "ansibleExtensionVersion",
             "outline",
         ]
 
@@ -452,8 +436,6 @@ class GenerationRequestSerializer(serializers.Serializer):
     )
     model = serializers.CharField(required=False, allow_blank=True)
 
-    metadata = Metadata(required=False)
-
     def validate(self, data):
         data = super().validate(data)
 
@@ -484,7 +466,7 @@ class GenerationResponseSerializer(serializers.Serializer):
     outline = serializers.CharField()
 
 
-class ContentMatchRequestSerializer(Metadata):
+class ContentMatchRequestSerializer(serializers.Serializer):
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format="hex_verbose",
@@ -496,7 +478,6 @@ class ContentMatchRequestSerializer(Metadata):
         ),
     )
     model = serializers.CharField(required=False, allow_blank=True)
-    metadata = Metadata(required=False)
 
     def validate(self, data):
         data = super().validate(data)

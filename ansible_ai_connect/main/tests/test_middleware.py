@@ -45,7 +45,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="DUMMY_KEY_ANALYTICS_VALUE")
+    @override_settings(SEGMENT_ANALYTICS_WRITE_KEY=None)
     @patch(
         "ansible_ai_connect.ai.api.utils.segment.redact_seated_users_data",
         dummy_redact_seated_users_data,

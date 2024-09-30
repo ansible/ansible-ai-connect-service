@@ -565,11 +565,6 @@ components:
     CompletionMetadata:
       type: object
       properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
         documentUri:
           type: string
         activityId:
@@ -590,11 +585,6 @@ components:
     CompletionRequest:
       type: object
       properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
         prompt:
           type: string
           description: Editor prompt.
@@ -659,11 +649,6 @@ components:
     ContentMatchRequest:
       type: object
       properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
         suggestions:
           type: array
           items:
@@ -692,11 +677,6 @@ components:
     ExplanationRequest:
       type: object
       properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
         content:
           type: string
           title: Playbook content
@@ -736,11 +716,6 @@ components:
     FeedbackRequest:
       type: object
       properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
         inlineSuggestion:
           $ref: '#/components/schemas/InlineSuggestionFeedback'
         issueFeedback:
@@ -861,14 +836,6 @@ components:
           readOnly: true
       required:
       - content
-    Metadata:
-      type: object
-      properties:
-        ansibleExtensionVersion:
-          type: string
-          title: Ansible vscode/vscodium extension version
-          description: User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH
-          pattern: v?\d+\.\d+\.\d+
     Organization:
       type: object
       properties:
