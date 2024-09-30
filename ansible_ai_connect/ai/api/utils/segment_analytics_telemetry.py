@@ -16,7 +16,6 @@ import logging
 
 from attr import asdict
 from django.conf import settings
-from packaging.version import InvalidVersion, Version
 from segment.analytics import Client
 
 from ansible_ai_connect.ai.api.utils.segment import (
@@ -42,17 +41,6 @@ max_retries = Client.DefaultConfig.max_retries
 segment_analytics_client = None
 
 
-def meets_min_ansible_extension_version(version) -> bool:
-    if not version:
-        return False
-    minVersion = Version(settings.ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION)
-    try:
-        userVersion = Version(version)
-    except InvalidVersion:
-        return False
-    return userVersion >= minVersion
-
-
 def send_segment_analytics_event(
     event_enum, event_payload_supplier, user: User, ansibleExtensionVersion=None
 ):
@@ -61,12 +49,6 @@ def send_segment_analytics_event(
         return
     if not user.rh_user_has_seat:
         logger.info("Skipping analytics telemetry event for users that has no seat.")
-        return
-
-    if meets_min_ansible_extension_version(ansibleExtensionVersion) is False:
-        logger.info(
-            f"Skipping analytics telemetry event, extension version: {ansibleExtensionVersion}"
-        )
         return
 
     organization: Organization = user.organization
