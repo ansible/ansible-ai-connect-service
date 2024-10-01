@@ -75,6 +75,7 @@ class ChatBAM(SimpleChatModel):
             headers=headers,
             json=params,
             timeout=self.timeout(1),
+            verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
         )
         result.raise_for_status()
         body = json.loads(result.text)

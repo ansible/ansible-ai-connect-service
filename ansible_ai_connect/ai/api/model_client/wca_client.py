@@ -292,6 +292,7 @@ class BaseWCAClient(ModelMeshClient):
                 headers=headers,
                 json=data,
                 timeout=self.timeout(task_count),
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
 
         try:
@@ -355,6 +356,7 @@ class BaseWCAClient(ModelMeshClient):
                     headers=headers,
                     json=data,
                     timeout=self.timeout(suggestion_count),
+                    verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
                 )
 
             result = post_request()
@@ -418,6 +420,7 @@ class WCAClient(BaseWCAClient):
                 headers=headers,
                 data=data,
                 auth=basic,
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
 
         try:
@@ -608,6 +611,7 @@ class WCAClient(BaseWCAClient):
                 f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=headers,
                 json=data,
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
 
         result = post_request()
@@ -669,6 +673,7 @@ class WCAClient(BaseWCAClient):
                 f"{self._inference_url}/v1/wca/explain/ansible/playbook",
                 headers=headers,
                 json=data,
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
 
         result = post_request()

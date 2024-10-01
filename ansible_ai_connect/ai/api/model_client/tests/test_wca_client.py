@@ -528,6 +528,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=headers,
             data=data,
             auth=None,
+            verify=True,
         )
 
     @override_settings(ANSIBLE_WCA_IDP_URL="http://some-different-idp")
@@ -546,6 +547,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=ANY,
             data=ANY,
             auth=basic,
+            verify=True,
         )
 
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
@@ -650,6 +652,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=requestHeaders,
             json=codegen_data,
             timeout=None,
+            verify=True,
         )
         self.assertEqual(result, predictions)
 
@@ -1004,6 +1007,7 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             headers=headers,
             json=data,
             timeout=None,
+            verify=True,
         )
         self.assertEqual(result, client_response)
 
@@ -1183,43 +1187,58 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
+    prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
+    suggestion_id = "suggestion_id"
+    token = base64.b64encode(bytes("username:12345", "ascii")).decode("ascii")
+    codegen_data = {
+        "model_id": "model-name",
+        "prompt": f"{prompt}\n",
+    }
+    request_headers = {
+        "Authorization": f"ZenApiKey {token}",
+        WCA_REQUEST_ID_HEADER: suggestion_id,
+    }
+    model_input = {
+        "instances": [
+            {
+                "context": "",
+                "prompt": prompt,
+            }
+        ]
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.model_client = WCAOnPremClient(inference_url="https://example.com")
+        self.model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
+
     def test_headers(self):
-        suggestion_id = "suggestion_id"
-        prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
-        token = base64.b64encode(bytes("username:12345", "ascii")).decode("ascii")
-
-        model_input = {
-            "instances": [
-                {
-                    "context": "",
-                    "prompt": prompt,
-                }
-            ]
-        }
-        codegen_data = {
-            "model_id": "model-name",
-            "prompt": f"{prompt}\n",
-        }
-
-        request_headers = {
-            "Authorization": f"ZenApiKey {token}",
-            WCA_REQUEST_ID_HEADER: suggestion_id,
-        }
-
-        model_client = WCAOnPremClient(inference_url="https://example.com")
-        model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
-
-        model_client.infer(
+        self.model_client.infer(
             request=Mock(),
-            model_input=model_input,
-            suggestion_id=suggestion_id,
+            model_input=self.model_input,
+            suggestion_id=self.suggestion_id,
+        )
+        self.model_client.session.post.assert_called_once_with(
+            "https://example.com/v1/wca/codegen/ansible",
+            headers=self.request_headers,
+            json=self.codegen_data,
+            timeout=None,
+            verify=True,
         )
 
-        model_client.session.post.assert_called_once_with(
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=False)
+    def test_disabled_model_server_ssl(self):
+        self.model_client.infer(
+            request=Mock(),
+            model_input=self.model_input,
+            suggestion_id=self.suggestion_id,
+        )
+        self.model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codegen/ansible",
-            headers=request_headers,
-            json=codegen_data,
+            headers=self.request_headers,
+            json=self.codegen_data,
             timeout=None,
+            verify=False,
         )
 
 
@@ -1256,4 +1275,5 @@ class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
             headers=request_headers,
             json=data,
             timeout=None,
+            verify=True,
         )
