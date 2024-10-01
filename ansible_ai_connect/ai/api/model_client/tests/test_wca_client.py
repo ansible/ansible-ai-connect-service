@@ -499,6 +499,7 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 @override_settings(ANSIBLE_WCA_IDP_URL="https://iam.cloud.ibm.com/identity")
 @override_settings(ANSIBLE_WCA_IDP_LOGIN=None)
 @override_settings(ANSIBLE_WCA_IDP_PASSWORD=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=True)
 class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
     def test_get_token(self):
@@ -930,6 +931,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=True)
 class TestWCACodematch(WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -1186,6 +1188,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=True)
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
     prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
     suggestion_id = "suggestion_id"
@@ -1247,6 +1250,7 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
 @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="model-name")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=True)
 class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
     def test_headers(self):
         suggestions = [
