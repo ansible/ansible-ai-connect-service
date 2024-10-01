@@ -54,6 +54,7 @@ class HttpClient(ModelMeshClient):
                 headers=self.headers,
                 json=model_input,
                 timeout=self.timeout(task_count),
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
             result.raise_for_status()
             response = json.loads(result.text)

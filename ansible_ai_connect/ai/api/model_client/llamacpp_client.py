@@ -17,6 +17,7 @@ import logging
 from typing import Any, Dict
 
 import requests
+from django.conf import settings
 
 from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
 
@@ -80,6 +81,7 @@ class LlamaCPPClient(ModelMeshClient):
                 headers=self.headers,
                 json=params,
                 timeout=self.timeout(task_count),
+                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
             result.raise_for_status()
             body = json.loads(result.text)
