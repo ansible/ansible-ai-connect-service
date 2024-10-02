@@ -43,6 +43,11 @@ export function ModelSettings() {
             setReloadWcaModelId(false);
             setMode("SET_MODEL_ID");
           }}
+          reload={() => {
+            setReloadWcaKey(true);
+            setWcaKey({ status: "SUCCESS_NOT_FOUND" });
+            setMode("OVERVIEW");
+          }}
         />
       )}
       {mode === "SET_WCA_KEY" && (

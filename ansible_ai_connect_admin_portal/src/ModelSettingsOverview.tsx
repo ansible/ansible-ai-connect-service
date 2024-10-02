@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   CheckCircleIcon,
+  TrashIcon,
   OutlinedQuestionCircleIcon,
   PlusCircleIcon,
 } from "@patternfly/react-icons";
@@ -38,17 +39,19 @@ import { ErrorModal, HasError, NO_ERROR } from "./ErrorModal";
 import { Alerts, AlertsHandle } from "./Alerts";
 import { BusyButton } from "./BusyButton";
 import { AxiosError } from "axios";
+import { ModelSettingsKeyDeletionModal } from "./ModelSettingsKeyDeletionModal";
 
 interface ModelSettingsOverviewProps {
   readonly wcaKey: WcaKey;
   readonly wcaModelId: WcaModelId;
   readonly setModeToKey: () => void;
   readonly setModeToModelId: () => void;
+  readonly reload: () => void;
 }
 
 export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
   const { t } = useTranslation();
-  const { wcaKey, wcaModelId, setModeToKey, setModeToModelId } = props;
+  const { wcaKey, wcaModelId, setModeToKey, setModeToModelId, reload } = props;
 
   const isWcaKeyLoading: boolean = useMemo(
     () => wcaKey.status === "NOT_ASKED" || wcaKey.status === "LOADING",
@@ -79,6 +82,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
   const [isValidatingKey, setIsValidatingKey] = useState<boolean>(false);
   const [isKeyInvalid, setIsKeyInvalid] = useState<boolean>(false);
   const [keyError, setKeyError] = useState<HasError>(NO_ERROR);
+  const [isDeletionModalOpen, setIsDeletionModalOpen] = useState(false);
 
   const [isValidatingModelId, setIsValidatingModelId] =
     useState<boolean>(false);
@@ -142,8 +146,22 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
       });
   }, [t]);
 
+  const handleDeletionModalToggle = () => {
+    setIsDeletionModalOpen(!isDeletionModalOpen);
+  };
+
+  const handleDeletionModalCancel = () => {
+    setIsDeletionModalOpen(false);
+  };
+
   return (
     <>
+      <ModelSettingsKeyDeletionModal
+        isModalOpen={isDeletionModalOpen}
+        handleModalToggle={handleDeletionModalToggle}
+        handleCancel={handleDeletionModalCancel}
+        reloadParent={reload}
+      />
       <ErrorModal
         caption={t("KeyValidationError")}
         hasError={keyError}
@@ -250,15 +268,34 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                     </Button>
                   )}
                   {isWcaKeyFound && (
-                    <Button
-                      variant={"primary"}
-                      icon={<CheckCircleIcon />}
-                      isDisabled={isValidatingKey}
-                      onClick={setModeToKey}
-                      data-testid={"model-settings-overview__update-key-button"}
-                    >
-                      {t("UpdateAPIKey")}
-                    </Button>
+                    <Split hasGutter={true}>
+                      <SplitItem>
+                        <Button
+                          variant={"primary"}
+                          icon={<CheckCircleIcon />}
+                          isDisabled={isValidatingKey}
+                          onClick={setModeToKey}
+                          data-testid={
+                            "model-settings-overview__update-key-button"
+                          }
+                        >
+                          {t("UpdateAPIKey")}
+                        </Button>
+                      </SplitItem>
+                      <SplitItem>
+                        <Button
+                          variant={"danger"}
+                          icon={<TrashIcon />}
+                          isDisabled={isValidatingKey}
+                          onClick={handleDeletionModalToggle}
+                          data-testid={
+                            "model-settings-overview__delete-key-button"
+                          }
+                        >
+                          {t("DeleteAPIKey")}
+                        </Button>
+                      </SplitItem>
+                    </Split>
                   )}
                 </StackItem>
                 {isWcaKeyFound && (
