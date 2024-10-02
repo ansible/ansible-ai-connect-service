@@ -6,11 +6,13 @@ import { APIException } from "./api/types";
 import { deleteWcaKey } from "./api/api";
 import { AxiosError } from "axios";
 import { HasError, NO_ERROR } from "./ErrorModal";
+import { BusyButton } from "./BusyButton";
 
 interface ModelSettingsKeyDeletionModalProps {
   readonly isModalOpen: boolean;
   readonly setIsModalOpen: (isOpen: boolean) => void;
   readonly handleModalToggle: () => void;
+  readonly handleCancel: () => void;
   readonly reloadParent: () => void;
 }
 
