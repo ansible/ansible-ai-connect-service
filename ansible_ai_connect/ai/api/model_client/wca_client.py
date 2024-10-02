@@ -596,6 +596,8 @@ class WCAClient(BaseWCAClient):
         if outline:
             data["outline"] = outline
         if custom_prompt:
+            if not custom_prompt.endswith("\n"):
+                custom_prompt = f"{custom_prompt}\n"
             data["custom_prompt"] = custom_prompt
 
         @backoff.on_exception(
@@ -658,6 +660,8 @@ class WCAClient(BaseWCAClient):
             "playbook": content,
         }
         if custom_prompt:
+            if not custom_prompt.endswith("\n"):
+                custom_prompt = f"{custom_prompt}\n"
             data["custom_prompt"] = custom_prompt
 
         @backoff.on_exception(
