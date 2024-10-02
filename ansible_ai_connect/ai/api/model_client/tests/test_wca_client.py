@@ -342,6 +342,48 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.assertEqual(outline, "Ahh!")
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
+    def test_playbook_gen_custom_prompt(self):
+        request = Mock()
+        self.wca_client.generate_playbook(
+            request,
+            text="Install Wordpress",
+            custom_prompt="You are an Ansible expert",
+            create_outline=True,
+        )
+        self.wca_client.session.post.assert_called_once_with(
+            "http://example.com//v1/wca/codegen/ansible/playbook",
+            headers=ANY,
+            json={
+                "model_id": "a-random-model",
+                "text": "Install Wordpress",
+                "create_outline": True,
+                "custom_prompt": "You are an Ansible expert\n",
+            },
+            verify=ANY,
+        )
+
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
+    def test_playbook_gen_custom_prompt_with_trailing_newline(self):
+        request = Mock()
+        self.wca_client.generate_playbook(
+            request,
+            text="Install Wordpress",
+            custom_prompt="You are an Ansible expert\n",
+            create_outline=True,
+        )
+        self.wca_client.session.post.assert_called_once_with(
+            "http://example.com//v1/wca/codegen/ansible/playbook",
+            headers=ANY,
+            json={
+                "model_id": "a-random-model",
+                "text": "Install Wordpress",
+                "create_outline": True,
+                "custom_prompt": "You are an Ansible expert\n",
+            },
+            verify=ANY,
+        )
+
+    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     @assert_call_count_metrics(metric=wca_codegen_playbook_retry_counter)
     def test_playbook_gen_error(self):
         request = Mock()
@@ -385,6 +427,40 @@ class TestWCAClientExpGen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         request = Mock()
         explanation = self.wca_client.explain_playbook(request, content="Some playbook")
         self.assertEqual(explanation, "!Óh¡")
+
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
+    def test_playbook_exp_custom_prompt(self):
+        request = Mock()
+        self.wca_client.explain_playbook(
+            request, content="Some playbook", custom_prompt="Explain this"
+        )
+        self.wca_client.session.post.assert_called_once_with(
+            "http://example.com//v1/wca/explain/ansible/playbook",
+            headers=ANY,
+            json={
+                "model_id": "a-random-model",
+                "playbook": "Some playbook",
+                "custom_prompt": "Explain this\n",
+            },
+            verify=ANY,
+        )
+
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
+    def test_playbook_exp_custom_prompt_with_trailing_newline(self):
+        request = Mock()
+        self.wca_client.explain_playbook(
+            request, content="Some playbook", custom_prompt="Explain this\n"
+        )
+        self.wca_client.session.post.assert_called_once_with(
+            "http://example.com//v1/wca/explain/ansible/playbook",
+            headers=ANY,
+            json={
+                "model_id": "a-random-model",
+                "playbook": "Some playbook",
+                "custom_prompt": "Explain this\n",
+            },
+            verify=ANY,
+        )
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     @assert_call_count_metrics(metric=wca_explain_playbook_retry_counter)
