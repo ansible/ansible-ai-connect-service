@@ -12,7 +12,6 @@ interface ModelSettingsKeyDeletionModalProps {
   readonly isModalOpen: boolean;
   readonly setIsModalOpen: (isOpen: boolean) => void;
   readonly handleModalToggle: () => void;
-  readonly handleCancel: () => void;
   readonly reloadParent: () => void;
 }
 
