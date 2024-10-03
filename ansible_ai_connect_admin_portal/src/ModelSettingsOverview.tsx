@@ -278,7 +278,8 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                           {t("UpdateAPIKey")}
                         </Button>
                       </SplitItem>
-                      <SplitItem>
+                      {/* The following part will be opened when AAP-32688 is done.*/}
+                      {/*<SplitItem>
                         <Button
                           variant={"danger"}
                           icon={<TrashIcon />}
@@ -290,7 +291,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                         >
                           {t("DeleteAPIKey")}
                         </Button>
-                      </SplitItem>
+                      </SplitItem>*/}
                     </Split>
                   )}
                 </StackItem>
