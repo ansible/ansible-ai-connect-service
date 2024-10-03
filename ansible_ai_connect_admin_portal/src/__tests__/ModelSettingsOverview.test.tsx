@@ -12,6 +12,7 @@ jest.mock("axios", () => ({
 describe("ModelSettingsOverview", () => {
   const setModeToKey = jest.fn();
   const setModeToModelId = jest.fn();
+  const mockReload = jest.fn();
 
   beforeEach(() => jest.resetAllMocks());
 
@@ -25,6 +26,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
     expect(
@@ -45,6 +47,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
     expect(
@@ -78,6 +81,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
     expect(
@@ -107,6 +111,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -135,6 +140,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -160,6 +166,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -182,6 +189,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -212,6 +220,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -241,6 +250,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -271,6 +281,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -303,6 +314,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -333,6 +345,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -363,6 +376,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -404,6 +418,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
@@ -434,6 +449,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
+        reload={mockReload}
       />,
     );
 
