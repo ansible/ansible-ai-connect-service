@@ -12,10 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 import logging
 import time
 from string import Template
 
+import requests
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -86,6 +88,8 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
+    ChatRequestSerializer,
+    ChatResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     ContentMatchRequestSerializer,
@@ -1012,3 +1016,77 @@ class Generation(APIView):
                 },
             )
         send_segment_event(event, "codegenPlaybook", user)
+
+
+class Chat(APIView):
+    """
+    Send a message to the backend chatbot service and get a reply.
+    """
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+    ]
+    required_scopes = ["read", "write"]
+
+    CHAT_API_NOT_ENABLED = "Chat API is not enabled."
+    INVALID_CHAT_REQUEST = "An invalid chat request was received."
+    INVALID_CHAT_RESPONSE = "An invalid chat response was received."
+
+    def __init__(self):
+        self.chat_enabled = (
+            settings.CHATBOT_URL
+            and settings.CHATBOT_DEFAULT_MODEL
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+
+    @extend_schema(
+        request=ChatRequestSerializer,
+        responses={
+            200: ChatResponseSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
+        summary="Chat request",
+    )
+    def post(self, request) -> Response:
+        if not self.chat_enabled:
+            logger.warning(Chat.CHAT_API_NOT_ENABLED)
+            raise Exception(Chat.CHAT_API_NOT_ENABLED)
+
+        headers = {"Content-Type": "application/json"}
+        request_serializer = ChatRequestSerializer(data=request.data)
+
+        try:
+            if not request_serializer.is_valid():
+                logger.error(Chat.INVALID_CHAT_REQUEST)
+                raise Exception(Chat.INVALID_CHAT_REQUEST)
+
+            data = {
+                "conversation_id": str(request_serializer.validated_data["conversation_id"]),
+                "query": request_serializer.validated_data["query"],
+                "model": settings.CHATBOT_DEFAULT_MODEL,
+                "provider": settings.CHATBOT_DEFAULT_PROVIDER,
+            }
+            response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
+
+            if response.status_code != 200:
+                detail = getattr(response, "detail", {})
+                logger.error(
+                    f"Status code {response.status_code} returned from chatbot. Detail: {detail}"
+                )
+                raise Exception(f"Status code {response.status_code} returned from chatbot.")
+
+            data = json.loads(response.text)
+            response_serializer = ChatResponseSerializer(data=data)
+
+            if not response_serializer.is_valid():
+                logger.error(self.INVALID_CHAT_RESPONSE)
+                raise Exception(self.INVALID_CHAT_RESPONSE)
+            return Response(
+                data,
+                status=rest_framework_status.HTTP_200_OK,
+                headers=headers,
+            )
+        except Exception as exc:
+            logger.exception(f"An exception {exc.__class__} occurred during a chat API processing")
+            raise
