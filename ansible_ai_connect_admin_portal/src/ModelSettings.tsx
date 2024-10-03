@@ -45,7 +45,9 @@ export function ModelSettings() {
           }}
           reload={() => {
             setWcaKey({ status: "SUCCESS_NOT_FOUND" });
+            setWcaModelId({ status: "SUCCESS_NOT_FOUND" });
             setReloadWcaKey(false);
+            setReloadWcaModelId(false);
             setMode("OVERVIEW");
           }}
         />
