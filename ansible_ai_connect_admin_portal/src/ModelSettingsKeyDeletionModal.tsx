@@ -1,11 +1,5 @@
 import { useTranslation } from "react-i18next";
-import {
-  Button,
-  Modal,
-  ModalVariant,
-  TextContent,
-  Text,
-} from "@patternfly/react-core";
+import { Button, Modal, ModalVariant, Text } from "@patternfly/react-core";
 import { useState } from "react";
 import { DELAY } from "./api/globals";
 import { APIException } from "./api/types";

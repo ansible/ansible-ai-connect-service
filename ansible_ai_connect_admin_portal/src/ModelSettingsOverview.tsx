@@ -20,7 +20,6 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   CheckCircleIcon,
-  TrashIcon,
   OutlinedQuestionCircleIcon,
   PlusCircleIcon,
 } from "@patternfly/react-icons";
