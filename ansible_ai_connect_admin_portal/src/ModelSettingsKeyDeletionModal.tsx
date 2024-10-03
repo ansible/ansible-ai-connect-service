@@ -1,5 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Modal,
+  ModalVariant,
+  TextContent,
+  Text,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { DELAY } from "./api/globals";
 import { APIException } from "./api/types";
@@ -10,8 +16,8 @@ import { BusyButton } from "./BusyButton";
 
 interface ModelSettingsKeyDeletionModalProps {
   readonly isModalOpen: boolean;
+  readonly setIsModalOpen: (isOpen: boolean) => void;
   readonly handleModalToggle: () => void;
-  readonly handleCancel: () => void;
   readonly reloadParent: () => void;
 }
 
@@ -19,7 +25,8 @@ export const ModelSettingsKeyDeletionModal = (
   props: ModelSettingsKeyDeletionModalProps,
 ) => {
   const { t } = useTranslation();
-  const { isModalOpen, handleModalToggle, handleCancel, reloadParent } = props;
+  const { isModalOpen, setIsModalOpen, handleModalToggle, reloadParent } =
+    props;
   const [isDeleting, setDeleting] = useState<boolean>(false);
   const [keyError, setKeyError] = useState<HasError>(NO_ERROR);
 
@@ -43,6 +50,13 @@ export const ModelSettingsKeyDeletionModal = (
       });
   };
 
+  const handleCancel = () => {
+    setKeyError({
+      inError: false,
+    });
+    setIsModalOpen(false);
+  };
+
   return (
     <Modal
       variant={ModalVariant.small}
@@ -64,6 +78,11 @@ export const ModelSettingsKeyDeletionModal = (
       ]}
     >
       {t("APIKeyDeletionConfirmation")}
+      {keyError.inError && (
+        <Text component="p" style={{ color: "red" }}>
+          {t("KeyDeletionError")}: {keyError.message}
+        </Text>
+      )}
     </Modal>
   );
 };

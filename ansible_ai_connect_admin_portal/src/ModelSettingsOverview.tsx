@@ -150,16 +150,12 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
     setIsDeletionModalOpen(!isDeletionModalOpen);
   };
 
-  const handleDeletionModalCancel = () => {
-    setIsDeletionModalOpen(false);
-  };
-
   return (
     <>
       <ModelSettingsKeyDeletionModal
         isModalOpen={isDeletionModalOpen}
+        setIsModalOpen={setIsDeletionModalOpen}
         handleModalToggle={handleDeletionModalToggle}
-        handleCancel={handleDeletionModalCancel}
         reloadParent={reload}
       />
       <ErrorModal
