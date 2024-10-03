@@ -22,7 +22,7 @@ import time
 import uuid
 from http import HTTPStatus
 from typing import Any, Dict, Optional, Union
-from unittest import skip
+from unittest import mock, skip
 from unittest.mock import ANY, Mock, patch
 
 import requests
@@ -37,6 +37,14 @@ from rest_framework.exceptions import APIException
 
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
+    ChatbotForbiddenException,
+    ChatbotInternalServerException,
+    ChatbotInvalidRequestException,
+    ChatbotInvalidResponseException,
+    ChatbotNotEnabledException,
+    ChatbotPromptTooLongException,
+    ChatbotUnauthorizedException,
+    ChatbotValidationException,
     FeedbackValidationException,
     ModelTimeoutException,
     PostprocessException,
@@ -3397,3 +3405,215 @@ class TestFeatureEnableForWcaOnprem(WisdomAppsBackendMocking):
         self.client.force_login(user=self.user)
         r = self.client.post(reverse("explanations"), payload)
         self.assertEqual(r.status_code, 404)
+
+
+class TestChatView(WisdomServiceAPITestCaseBase):
+
+    VALID_PAYLOAD = {
+        "query": "Hello",
+    }
+
+    VALID_PAYLOAD_WITH_CONVERSATION_ID = {
+        "query": "Hello",
+        "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+    }
+
+    INVALID_PAYLOAD = {
+        "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+    }
+
+    PAYLOAD_INVALID_RESPONSE = {
+        "query": "Return an invalid response",
+    }
+
+    PAYLOAD_UNAUTHORIZERD = {
+        "query": "Return the unauthorized status code",
+    }
+
+    PAYLOAD_FORBIDDEN = {
+        "query": "Return the forbidden status code",
+    }
+
+    PAYLOAD_PROMPT_TOO_LONG = {
+        "query": "Return the prompt too long status code",
+    }
+
+    PAYLOAD_PROMPT_VALIDATION_FAILED = {
+        "query": "Return the validation failed status code",
+    }
+
+    PAYLOAD_INTERNAL_SERVER_ERROR = {
+        "query": "Return the internal server error status code",
+    }
+
+    JSON_RESPONSE = {
+        "response": "AAP 2.5 introduces an updated, unified UI.",
+        "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+        "truncated": False,
+        "referenced_documents": [],
+    }
+
+    @staticmethod
+    def mocked_requests_post(*args, **kwargs):
+        class MockResponse:
+            def __init__(self, json_data, status_code):
+                self.json_data = json_data
+                self.status_code = status_code
+                self.text = json.dumps(json_data)
+
+            def json(self):
+                return self.json_data
+
+        json_response = {
+            "response": "AAP 2.5 introduces an updated, unified UI.",
+            "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+        status_code = 200
+
+        if kwargs["json"]["query"] == TestChatView.PAYLOAD_INVALID_RESPONSE["query"]:
+            json_response = {
+                "response": "AAP 2.5 introduces an updated, unified UI.",
+                # "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+                "truncated": False,
+                "referenced_documents": [],
+            }
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_UNAUTHORIZERD["query"]:
+            status_code = 401
+            json_response = {
+                "detail": "Unauthorized",
+            }
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_FORBIDDEN["query"]:
+            status_code = 403
+            json_response = {
+                "detail": "Forbidden",
+            }
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_PROMPT_TOO_LONG["query"]:
+            status_code = 413
+            json_response = {
+                "detail": "Prompt too long",
+            }
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_PROMPT_VALIDATION_FAILED["query"]:
+            status_code = 422
+            json_response = {
+                "detail": "Validation failed",
+            }
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_INTERNAL_SERVER_ERROR["query"]:
+            status_code = 500
+            json_response = {
+                "detail": "Internal server error",
+            }
+
+        return MockResponse(json_response, status_code)
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
+    @mock.patch(
+        "requests.post",
+        side_effect=mocked_requests_post,
+    )
+    def query_with_no_error(self, payload, mock_post):
+        return self.client.post(reverse("chat"), payload, format="json")
+
+    @mock.patch(
+        "requests.post",
+        side_effect=mocked_requests_post,
+    )
+    def query_without_chat_config(self, payload, mock_post):
+        return self.client.post(reverse("chat"), payload, format="json")
+
+    def assert_test(
+        self, payload, expected_status_code=200, expected_exception=None, expected_log_message=None
+    ):
+        mocked_client = Mock()
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "model_mesh_client",
+                mocked_client,
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            self.client.force_authenticate(user=self.user)
+
+            if expected_exception == ChatbotNotEnabledException:
+                r = self.query_without_chat_config(payload)
+            else:
+                r = self.query_with_no_error(payload)
+
+            self.assertEqual(r.status_code, expected_status_code)
+            if expected_exception is not None:
+                self.assert_error_detail(
+                    r, expected_exception().default_code, expected_exception().default_detail
+                )
+                self.assertInLog(expected_log_message, log)
+
+    def test_chat(self):
+        self.assert_test(TestChatView.VALID_PAYLOAD)
+
+    def test_chat_with_conversation_id(self):
+        self.assert_test(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+
+    def test_chat_not_enabled_exception(self):
+        self.assert_test(
+            TestChatView.VALID_PAYLOAD, 503, ChatbotNotEnabledException, "Chatbot is not enabled"
+        )
+
+    def test_chat_invalid_request_exception(self):
+        self.assert_test(
+            TestChatView.INVALID_PAYLOAD,
+            400,
+            ChatbotInvalidRequestException,
+            "ChatbotInvalidRequestException",
+        )
+
+    def test_chat_invalid_response_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_INVALID_RESPONSE,
+            500,
+            ChatbotInvalidResponseException,
+            "ChatbotInvalidResponseException",
+        )
+
+    def test_chat_unauthorized_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_UNAUTHORIZERD,
+            503,
+            ChatbotUnauthorizedException,
+            "ChatbotUnauthorizedException",
+        )
+
+    def test_chat_forbidden_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_FORBIDDEN,
+            403,
+            ChatbotForbiddenException,
+            "ChatbotForbiddenException",
+        )
+
+    def test_chat_prompt_too_long_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_PROMPT_TOO_LONG,
+            413,
+            ChatbotPromptTooLongException,
+            "ChatbotPromptTooLongException",
+        )
+
+    def test_chat_validation_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_PROMPT_VALIDATION_FAILED,
+            422,
+            ChatbotValidationException,
+            "ChatbotValidationException",
+        )
+
+    def test_chat_internal_server_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_INTERNAL_SERVER_ERROR,
+            500,
+            ChatbotInternalServerException,
+            "ChatbotInternalServerException",
+        )

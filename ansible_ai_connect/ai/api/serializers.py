@@ -643,7 +643,7 @@ class TelemetrySettingsRequestSerializer(serializers.Serializer):
 class ChatRequestSerializer(serializers.Serializer):
     conversation_id = serializers.UUIDField(
         format="hex_verbose",
-        required=True,
+        required=False,
         label="conversation ID",
         help_text=("A UUID that identifies the particular conversation is being requested for."),
     )

@@ -34,6 +34,14 @@ from rest_framework.views import APIView
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
+    ChatbotForbiddenException,
+    ChatbotInternalServerException,
+    ChatbotInvalidRequestException,
+    ChatbotInvalidResponseException,
+    ChatbotNotEnabledException,
+    ChatbotPromptTooLongException,
+    ChatbotUnauthorizedException,
+    ChatbotValidationException,
     FeedbackInternalServerException,
     FeedbackValidationException,
     InternalServerError,
@@ -1029,64 +1037,78 @@ class Chat(APIView):
     ]
     required_scopes = ["read", "write"]
 
-    CHAT_API_NOT_ENABLED = "Chat API is not enabled."
-    INVALID_CHAT_REQUEST = "An invalid chat request was received."
-    INVALID_CHAT_RESPONSE = "An invalid chat response was received."
-
     def __init__(self):
-        self.chat_enabled = (
+        self.chatbot_enabled = (
             settings.CHATBOT_URL
             and settings.CHATBOT_DEFAULT_MODEL
             and settings.CHATBOT_DEFAULT_PROVIDER
         )
+        if self.chatbot_enabled:
+            logger.debug("Chatbot is enabled.")
+        else:
+            logger.debug("Chatbot is not enabled.")
 
     @extend_schema(
         request=ChatRequestSerializer,
         responses={
             200: ChatResponseSerializer,
-            400: OpenApiResponse(description="Bad Request"),
+            400: OpenApiResponse(description="Bad request"),
+            403: OpenApiResponse(description="Forbidden"),
+            413: OpenApiResponse(description="Prompt too long"),
+            422: OpenApiResponse(description="Validation failed"),
+            500: OpenApiResponse(description="Internal server error"),
+            503: OpenApiResponse(description="Service unavailable"),
         },
         summary="Chat request",
     )
     def post(self, request) -> Response:
-        if not self.chat_enabled:
-            logger.warning(Chat.CHAT_API_NOT_ENABLED)
-            raise Exception(Chat.CHAT_API_NOT_ENABLED)
-
         headers = {"Content-Type": "application/json"}
         request_serializer = ChatRequestSerializer(data=request.data)
 
         try:
+            if not self.chatbot_enabled:
+                raise ChatbotNotEnabledException()
+
             if not request_serializer.is_valid():
-                logger.error(Chat.INVALID_CHAT_REQUEST)
-                raise Exception(Chat.INVALID_CHAT_REQUEST)
+                raise ChatbotInvalidRequestException()
 
             data = {
-                "conversation_id": str(request_serializer.validated_data["conversation_id"]),
                 "query": request_serializer.validated_data["query"],
                 "model": settings.CHATBOT_DEFAULT_MODEL,
                 "provider": settings.CHATBOT_DEFAULT_PROVIDER,
             }
+            if "conversation_id" in request_serializer.validated_data:
+                data["conversation_id"] = request_serializer.validated_data["conversation_id"]
             response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
 
-            if response.status_code != 200:
-                detail = getattr(response, "detail", {})
-                logger.error(
-                    f"Status code {response.status_code} returned from chatbot. Detail: {detail}"
+            if response.status_code == 200:
+                data = json.loads(response.text)
+                response_serializer = ChatResponseSerializer(data=data)
+
+                if not response_serializer.is_valid():
+                    raise ChatbotInvalidResponseException()
+
+                return Response(
+                    data,
+                    status=rest_framework_status.HTTP_200_OK,
+                    headers=headers,
                 )
-                raise Exception(f"Status code {response.status_code} returned from chatbot.")
+            elif response.status_code == 401:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotUnauthorizedException(detail=detail)
+            elif response.status_code == 403:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotForbiddenException(detail=detail)
+            elif response.status_code == 413:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotPromptTooLongException(detail=detail)
+            elif response.status_code == 422:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotValidationException(detail=detail)
+            else:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotInternalServerException(detail=detail)
 
-            data = json.loads(response.text)
-            response_serializer = ChatResponseSerializer(data=data)
-
-            if not response_serializer.is_valid():
-                logger.error(self.INVALID_CHAT_RESPONSE)
-                raise Exception(self.INVALID_CHAT_RESPONSE)
-            return Response(
-                data,
-                status=rest_framework_status.HTTP_200_OK,
-                headers=headers,
-            )
         except Exception as exc:
-            logger.exception(f"An exception {exc.__class__} occurred during a chat API processing")
+            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
             raise
