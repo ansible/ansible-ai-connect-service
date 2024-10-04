@@ -132,7 +132,7 @@ class LangChainClient(ModelMeshClient):
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, list]:
         SYSTEM_MESSAGE_TEMPLATE = """
         You are an Ansible expert.
         Your role is to help Ansible developers write playbooks.
@@ -189,7 +189,7 @@ class LangChainClient(ModelMeshClient):
         if not create_outline:
             outline = ""
 
-        return playbook, outline
+        return playbook, outline, []
 
     def explain_playbook(
         self,

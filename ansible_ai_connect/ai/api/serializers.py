@@ -472,6 +472,12 @@ class GenerationRequestSerializer(serializers.Serializer):
         return data
 
 
+class GenerationWarningResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    message = serializers.CharField()
+    details = serializers.CharField(required=False)
+
+
 class GenerationResponseSerializer(serializers.Serializer):
     playbook = serializers.CharField()
     format = serializers.CharField()
@@ -482,6 +488,7 @@ class GenerationResponseSerializer(serializers.Serializer):
         help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
     outline = serializers.CharField()
+    warnings = serializers.ListField(child=GenerationWarningResponseSerializer(), required=False)
 
 
 class ContentMatchRequestSerializer(Metadata):

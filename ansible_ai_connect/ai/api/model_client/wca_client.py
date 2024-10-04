@@ -582,7 +582,7 @@ class WCAClient(BaseWCAClient):
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, list]:
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
         model_id = self.get_model_id(request.user, organization_id, model_id)
@@ -633,6 +633,7 @@ class WCAClient(BaseWCAClient):
 
         playbook = response["playbook"]
         outline = response["outline"]
+        warnings = response["warnings"] if "warnings" in response else []
 
         from ansible_ai_connect.ai.apps import AiConfig
 
@@ -640,7 +641,7 @@ class WCAClient(BaseWCAClient):
         if ansible_lint_caller := ai_config.get_ansible_lint_caller():
             playbook = ansible_lint_caller.run_linter(playbook)
 
-        return playbook, outline
+        return playbook, outline, warnings
 
     def explain_playbook(
         self,
@@ -779,7 +780,7 @@ class WCAOnPremClient(BaseWCAClient):
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, list]:
         raise FeatureNotAvailable
 
     def explain_playbook(

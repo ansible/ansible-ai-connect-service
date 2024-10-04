@@ -68,7 +68,7 @@ class ModelMeshClient:
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, list]:
         raise NotImplementedError
 
     def explain_playbook(

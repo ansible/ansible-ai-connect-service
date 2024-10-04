@@ -812,10 +812,26 @@ components:
             requested for.
         outline:
           type: string
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationWarningResponse'
       required:
       - format
       - outline
       - playbook
+    GenerationWarningResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+      required:
+      - id
+      - message
     InlineSuggestionFeedback:
       type: object
       properties:
