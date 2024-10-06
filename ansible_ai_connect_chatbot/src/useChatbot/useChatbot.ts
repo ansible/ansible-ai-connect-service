@@ -27,6 +27,12 @@ export const botMessage = (content: string): MessageProps => {
     name: "Ansible Lightspeed Bot",
     avatar:
       "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+    actions: {
+      // eslint-disable-next-line no-console
+      positive: { onClick: () => console.log("Good response") },
+      // eslint-disable-next-line no-console
+      negative: { onClick: () => console.log("Bad response") },
+    },
   };
 };
 
