@@ -1,3 +1,4 @@
+import { ExternalLinkAltIcon } from "@patternfly/react-icons/dist/esm/icons/external-link-alt-icon";
 import "./ReferencedDocuments.scss";
 
 export const ReferencedDocuments = (props: any) => {
@@ -22,6 +23,8 @@ export const ReferencedDocuments = (props: any) => {
                       rel="noopener noreferrer"
                     >
                       {doc.title}
+                      &nbsp;
+                      <ExternalLinkAltIcon />
                     </a>
                   </li>
                 ))}
