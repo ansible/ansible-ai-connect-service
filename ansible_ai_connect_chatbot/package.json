@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@patternfly/react-tokens": "6.0.0-prerelease.3",
-    "@patternfly/virtual-assistant": "^2.0.0-alpha.42",
+    "@patternfly/virtual-assistant": "^2.0.0-alpha.46",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
