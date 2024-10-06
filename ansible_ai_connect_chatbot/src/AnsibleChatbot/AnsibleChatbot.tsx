@@ -37,7 +37,7 @@ import { botMessage, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
-import { ChatbotToggle } from "@patternfly/virtual-assistant";
+import { ChatbotAlert, ChatbotToggle } from "@patternfly/virtual-assistant";
 
 const footnoteProps = {
   label: "Lightspeed uses AI. Check for mistakes.",
@@ -76,6 +76,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
   );
+  const [showAlert, setShowAlert] = React.useState<boolean>(true);
 
   // https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -153,8 +154,19 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             <ChatbotWelcomePrompt
               title="Hello, Ansible User"
               description="How may I help you today?"
-              prompts={welcomePrompts}
+              // prompts={welcomePrompts}
             />
+            {showAlert && (
+              <ChatbotAlert
+                variant="info"
+                onClose={() => {
+                  setShowAlert(false);
+                }}
+                title={welcomePrompts[0].title}
+              >
+                {welcomePrompts[0].message}
+              </ChatbotAlert>
+            )}
             {messages.map(
               (
                 { referenced_documents, ...message }: ExtendedMessage,
