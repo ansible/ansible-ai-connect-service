@@ -1020,11 +1020,14 @@ class Chat(APIView):
             if not request_serializer.is_valid():
                 raise Exception("An invalid request received")
             data = {
-                "conversation_id": str(request_serializer.validated_data["conversation_id"]),
                 "query": request_serializer.validated_data["query"],
                 "model": settings.CHATBOT_DEFAULT_MODEL,
                 "provider": settings.CHATBOT_DEFAULT_PROVIDER,
             }
+            if request_serializer.validated_data.get("conversation_id"):
+                data["conversation_id"] = str(
+                    request_serializer.validated_data.get("conversation_id")
+                )
             if request_serializer.validated_data.get("attachments"):
                 data["attachments"] = request_serializer.validated_data.get("attachments")
             response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
