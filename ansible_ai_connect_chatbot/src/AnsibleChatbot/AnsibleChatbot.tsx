@@ -37,7 +37,11 @@ import { botMessage, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
-import { ChatbotAlert, ChatbotToggle } from "@patternfly/virtual-assistant";
+import {
+  ChatbotAlert,
+  ChatbotToggle,
+  FileDropZone,
+} from "@patternfly/virtual-assistant";
 
 const footnoteProps = {
   label: "Lightspeed uses AI. Check for mistakes.",
@@ -84,6 +88,8 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   ) => {
     setDisplayMode(value as ChatbotDisplayMode);
   };
+
+  const handleFileDrop = () => {}; // no-op for now
 
   return (
     <>
@@ -140,50 +146,52 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             </ChatbotHeaderOptionsDropdown>
           </ChatbotHeaderActions>
         </ChatbotHeader>
-        <ChatbotContent>
-          <MessageBox>
-            <ChatbotWelcomePrompt
-              title="Hello, Ansible User"
-              description="How may I help you today?"
-            />
-            {alertMessage && (
-              <ChatbotAlert
-                variant={alertMessage.variant}
-                onClose={() => {
-                  setAlertMessage(undefined);
-                }}
-                title={alertMessage.title}
-              >
-                {alertMessage.message}
-              </ChatbotAlert>
-            )}
-            {messages.map(
-              (
-                { referenced_documents, ...message }: ExtendedMessage,
-                index,
-              ) => (
-                <div key={`m_div_${index}`}>
-                  <Message key={`m_msg_${index}`} {...message} />
-                  <ReferencedDocuments
-                    key={`m_docs_${index}`}
-                    caption="Refer to the following for more information:"
-                    referenced_documents={referenced_documents}
-                  />
-                </div>
-              ),
-            )}
-            {isLoading ? (
-              <Message key="9999" isLoading={true} {...botMessage("....")} />
-            ) : (
-              <></>
-            )}
-            <div ref={messagesEndRef} />
-          </MessageBox>
-        </ChatbotContent>
-        <ChatbotFooter>
-          <MessageBar onSendMessage={handleSend} />
-          <ChatbotFootnote {...footnoteProps} />
-        </ChatbotFooter>
+        <FileDropZone onFileDrop={handleFileDrop} displayMode={displayMode}>
+          <ChatbotContent>
+            <MessageBox>
+              <ChatbotWelcomePrompt
+                title="Hello, Ansible User"
+                description="How may I help you today?"
+              />
+              {alertMessage && (
+                <ChatbotAlert
+                  variant={alertMessage.variant}
+                  onClose={() => {
+                    setAlertMessage(undefined);
+                  }}
+                  title={alertMessage.title}
+                >
+                  {alertMessage.message}
+                </ChatbotAlert>
+              )}
+              {messages.map(
+                (
+                  { referenced_documents, ...message }: ExtendedMessage,
+                  index,
+                ) => (
+                  <div key={`m_div_${index}`}>
+                    <Message key={`m_msg_${index}`} {...message} />
+                    <ReferencedDocuments
+                      key={`m_docs_${index}`}
+                      caption="Refer to the following for more information:"
+                      referenced_documents={referenced_documents}
+                    />
+                  </div>
+                ),
+              )}
+              {isLoading ? (
+                <Message key="9999" isLoading={true} {...botMessage("....")} />
+              ) : (
+                <></>
+              )}
+              <div ref={messagesEndRef} />
+            </MessageBox>
+          </ChatbotContent>
+          <ChatbotFooter>
+            <MessageBar onSendMessage={handleSend} />
+            <ChatbotFootnote {...footnoteProps} />
+          </ChatbotFooter>
+        </FileDropZone>
       </Chatbot>
     </>
   );
