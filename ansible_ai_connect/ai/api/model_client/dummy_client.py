@@ -95,10 +95,10 @@ class DummyClient(ModelMeshClient):
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, list]:
         if create_outline:
-            return PLAYBOOK, OUTLINE
-        return PLAYBOOK, ""
+            return PLAYBOOK, OUTLINE, []
+        return PLAYBOOK, "", []
 
     def explain_playbook(
         self,

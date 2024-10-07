@@ -58,21 +58,25 @@ class TestDummyClient(SimpleTestCase):
 
     def test_generate_playbook(self):
         client = DummyClient(inference_url="https://ibm.com")
-        playbook, outline = client.generate_playbook(None, text="foo", create_outline=False)
+        playbook, outline, warnings = client.generate_playbook(
+            None, text="foo", create_outline=False
+        )
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
         self.assertEqual(outline, "")
 
     def test_generate_playbook_with_outline(self):
         client = DummyClient(inference_url="https://ibm.com")
-        playbook, outline = client.generate_playbook(None, text="foo", create_outline=True)
+        playbook, outline, warnings = client.generate_playbook(
+            None, text="foo", create_outline=True
+        )
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
         self.assertTrue(outline)
 
     def test_generate_playbook_with_model_id(self):
         client = DummyClient(inference_url="https://ibm.com")
-        playbook, outline = client.generate_playbook(
+        playbook, outline, warnings = client.generate_playbook(
             None, text="foo", create_outline=True, model_id="mymodel"
         )
         self.assertTrue(isinstance(playbook, str))

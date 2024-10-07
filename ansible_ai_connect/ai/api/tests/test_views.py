@@ -176,8 +176,8 @@ class MockedMeshClient(ModelMeshClient):
         outline: str = "",
         generation_id: str = "",
         model_id: str = "",
-    ) -> tuple[str, str]:
-        return self.response_data, self.response_data
+    ) -> tuple[str, str, list]:
+        return self.response_data, self.response_data, []
 
     def explain_playbook(
         self,
@@ -2935,7 +2935,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3023,7 +3023,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3051,7 +3051,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3077,7 +3077,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3101,7 +3101,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3127,7 +3127,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar")
+        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "model_mesh_client",
@@ -3202,6 +3202,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
                     r, expected_exception().default_code, expected_exception().default_detail
                 )
                 self.assertInLog(expected_log_message, log)
+            return r
 
     def test_bad_wca_request(self):
         model_client = self.stub_wca_client(
@@ -3356,7 +3357,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             return model_id
 
         model_client.get_model_id = get_model_id
-        model_client.generate_playbook = lambda *args: ("playbook", "outline")
+        model_client.generate_playbook = lambda *args: ("playbook", "outline", "warnings")
         self.assert_test(
             model_client,
             HTTPStatus.OK,
@@ -3364,6 +3365,22 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             None,
         )
         self.assertGreater(self.assertion_count, 0)
+
+    def test_warnings(self):
+        model_client = self.stub_wca_client(
+            200,
+            mock_model_id=Mock(return_value="garbage"),
+            response_text='{"playbook": "playbook", "outline": "outline", '
+            '"warnings": [{"id": "id-1", "message": '
+            '"Something went wrong", "details": "Some details"}]}',
+        )
+        r = self.assert_test(model_client, HTTPStatus.OK, None, None)
+        self.assertTrue("warnings" in r.data)
+        warnings = r.data["warnings"]
+        self.assertEqual(1, len(warnings))
+        self.assertEqual("id-1", warnings[0]["id"])
+        self.assertEqual("Something went wrong", warnings[0]["message"])
+        self.assertEqual("Some details", warnings[0]["details"])
 
 
 @modify_settings()

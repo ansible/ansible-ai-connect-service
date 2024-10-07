@@ -857,7 +857,7 @@ class Generation(APIView):
 
             llm = apps.get_app_config("ai").model_mesh_client
             start_time = time.time()
-            playbook, outline = llm.generate_playbook(
+            playbook, outline, warnings = llm.generate_playbook(
                 request, text, custom_prompt, create_outline, outline, generation_id, model_id
             )
             duration = round((time.time() - start_time) * 1000, 2)
@@ -874,6 +874,7 @@ class Generation(APIView):
             answer = {
                 "playbook": anonymized_playbook,
                 "outline": anonymized_outline,
+                "warnings": warnings,
                 "format": "plaintext",
                 "generationId": generation_id,
             }

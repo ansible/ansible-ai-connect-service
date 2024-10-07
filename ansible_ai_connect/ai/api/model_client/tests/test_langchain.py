@@ -122,7 +122,7 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
         self.my_client.get_chat_model = fake_get_chat_mode
 
     def test_generate_playbook(self):
-        playbook, outline = self.my_client.generate_playbook(
+        playbook, outline, warnings = self.my_client.generate_playbook(
             request=Mock(),
             text="foo",
         )
@@ -130,7 +130,7 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
         self.assertEqual(outline, "")
 
     def test_generate_playbook_with_outline(self):
-        playbook, outline = self.my_client.generate_playbook(
+        playbook, outline, warnings = self.my_client.generate_playbook(
             request=Mock(), text="foo", create_outline=True
         )
         self.assertEqual(playbook, "my_playbook")
@@ -142,7 +142,7 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
                 logger="ansible_ai_connect.ai.api.model_client.langchain", level="INFO"
             ) as log,
         ):
-            playbook, outline = self.my_client.generate_playbook(
+            playbook, outline, warnings = self.my_client.generate_playbook(
                 request=Mock(),
                 text="foo",
                 create_outline=True,
