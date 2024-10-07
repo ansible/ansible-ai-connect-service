@@ -501,7 +501,7 @@ class ChatRequestSerializer(serializers.Serializer):
     attachments = serializers.ListField(child=AttachmentSeriralizer(), required=False)
     conversation_id = serializers.UUIDField(
         format="hex_verbose",
-        required=True,
+        required=False,
         label="conversation ID",
         help_text=("A UUID that identifies the particular conversation is being requested for."),
     )

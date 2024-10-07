@@ -64,7 +64,7 @@ const footnoteProps = {
 export const AnsibleChatbot: React.FunctionComponent = () => {
   const { messages, isLoading, handleSend, alertMessage, setAlertMessage } =
     useChatbot();
-  const [chatbotVisible, setChatbotVisible] = useState<boolean>(false);
+  const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
   );

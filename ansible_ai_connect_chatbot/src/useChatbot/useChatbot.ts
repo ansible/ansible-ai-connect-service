@@ -56,7 +56,10 @@ export const useChatbot = () => {
   const [alertMessage, setAlertMessage] = useState<AlertMessage | undefined>(
     INITIAL_NOTICE,
   );
-  let conversation_id: string;
+  const [conversationId, setConversationId] = useState<
+    string | null | undefined
+  >(undefined);
+
   const handleSend = async (message: string) => {
     const userMessage: ExtendedMessage = {
       role: "user",
@@ -68,11 +71,8 @@ export const useChatbot = () => {
     };
     setMessages((msgs: ExtendedMessage[]) => [...msgs, userMessage]);
 
-    if (!conversation_id) {
-      conversation_id = uuidv4().toString();
-    }
     const chatRequest: ChatRequest = {
-      conversation_id,
+      conversation_id: conversationId,
       query: message,
     };
 
@@ -94,6 +94,9 @@ export const useChatbot = () => {
       if (resp.status === 200) {
         const chatResponse: ChatResponse = resp.data;
         const referenced_documents = chatResponse.referenced_documents;
+        if (!conversationId) {
+          setConversationId(chatResponse.conversation_id);
+        }
         setMessages((msgs: ExtendedMessage[]) => [
           ...msgs,
           {
