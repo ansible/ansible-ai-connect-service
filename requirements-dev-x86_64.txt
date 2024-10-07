@@ -30,9 +30,9 @@ filelock==3.13.4
     # via virtualenv
 flake8==6.0.0
     # via -r requirements-dev.in
-grpcio==1.62.2
+grpcio==1.66.2
     # via grpcio-tools
-grpcio-tools==1.62.2
+grpcio-tools==1.66.2
     # via -r requirements-dev.in
 identify==2.5.36
     # via pre-commit
@@ -64,7 +64,7 @@ platformdirs==4.2.1
     #   virtualenv
 pre-commit==3.7.0
     # via -r requirements-dev.in
-protobuf==4.25.3
+protobuf==5.28.2
     # via grpcio-tools
 pycodestyle==2.10.0
     # via flake8
