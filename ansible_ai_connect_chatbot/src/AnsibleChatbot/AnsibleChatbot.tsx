@@ -29,8 +29,8 @@ import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
 import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
 import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
 
-import AnsibleLogo from "./ansible-transparent.png";
-import AnsibleLogoDark from "./ansible-transparent-dark.png";
+import AnsibleLogo from "./AAP2LineLightMode.png";
+import AnsibleLogoDark from "./AAP2LineDarkMode.png";
 
 import "./AnsibleChatbot.scss";
 import { botMessage, useChatbot } from "../useChatbot/useChatbot";
