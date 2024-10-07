@@ -36,9 +36,26 @@ export const botMessage = (content: string): MessageProps => {
   };
 };
 
+type AlertMessage = {
+  title: String;
+  message: String;
+  variant: "success" | "danger" | "warning" | "info" | "custom";
+};
+
+const INITIAL_NOTICE: AlertMessage = {
+  title: "Notice",
+  message: `Please do not include any personal or confidential information
+in your interaction with the virtual assistant. The tool is
+intended to assist with general queries.`,
+  variant: "info",
+};
+
 export const useChatbot = () => {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [alertMessage, setAlertMessage] = useState<AlertMessage | undefined>(
+    INITIAL_NOTICE,
+  );
   let conversation_id: string;
   const handleSend = async (message: string) => {
     const userMessage: ExtendedMessage = {
@@ -85,18 +102,22 @@ export const useChatbot = () => {
           },
         ]);
       } else {
-        setMessages((msgs: ExtendedMessage[]) => [
-          ...msgs,
-          {
-            referenced_documents: [],
-            ...botMessage(`Bot returned an error (status=${resp.status})`),
-          },
-        ]);
+        setAlertMessage({
+          title: "Error",
+          message: `Bot returned status_code ${resp.status}`,
+          variant: "danger",
+        });
       }
+    } catch (e) {
+      setAlertMessage({
+        title: "Error",
+        message: `An unexpected error occured: ${e}`,
+        variant: "danger",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { messages, isLoading, handleSend };
+  return { messages, isLoading, handleSend, alertMessage, setAlertMessage };
 };

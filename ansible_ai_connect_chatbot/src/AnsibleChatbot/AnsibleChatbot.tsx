@@ -61,22 +61,13 @@ const footnoteProps = {
   },
 };
 
-const welcomePrompts = [
-  {
-    title: "Notice",
-    message: `Please do not include any personal or confidential information
-in your interaction with the virtual assistant. The tool is
-intended to assist with general queries.`,
-  },
-];
-
 export const AnsibleChatbot: React.FunctionComponent = () => {
-  const { messages, isLoading, handleSend } = useChatbot();
+  const { messages, isLoading, handleSend, alertMessage, setAlertMessage } =
+    useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(false);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
   );
-  const [showAlert, setShowAlert] = React.useState<boolean>(true);
 
   // https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -154,17 +145,16 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             <ChatbotWelcomePrompt
               title="Hello, Ansible User"
               description="How may I help you today?"
-              // prompts={welcomePrompts}
             />
-            {showAlert && (
+            {alertMessage && (
               <ChatbotAlert
-                variant="info"
+                variant={alertMessage.variant}
                 onClose={() => {
-                  setShowAlert(false);
+                  setAlertMessage(undefined);
                 }}
-                title={welcomePrompts[0].title}
+                title={alertMessage.title}
               >
-                {welcomePrompts[0].message}
+                {alertMessage.message}
               </ChatbotAlert>
             )}
             {messages.map(
