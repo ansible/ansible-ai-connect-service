@@ -26,7 +26,8 @@
     "start": "vite",
     "build": "tsc && vite build",
     "postbuild": "rsync -a --delete ./dist/static/chatbot/ ../ansible_ai_connect/main/static/chatbot && rsync -a ./dist/index.html ../ansible_ai_connect/main/templates/chatbot/",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "vitest run"
   },
   "eslintConfig": {
     "extends": [
@@ -49,7 +50,10 @@
   "devDependencies": {
     "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
+    "happy-dom": "^15.7.4",
     "process": "^0.11.10",
-    "sass-embedded": "^1.79.1"
+    "react-router-dom": "^6.26.2",
+    "sass-embedded": "^1.79.1",
+    "vitest": "^2.1.2"
   }
 }
