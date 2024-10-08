@@ -191,8 +191,7 @@ class ChatbotNotEnabledException(BaseWisdomAPIException):
     default_detail = "Chatbot is not enabled"
 
 
-class ChatbotInvalidRequestException(BaseWisdomAPIException):
-    status_code = 400
+class ChatbotInvalidRequestException(WisdomBadRequest):
     default_code = "error__chatbot_invalid_request"
     default_detail = "Invalid request"
 
@@ -216,8 +215,7 @@ class ChatbotUnauthorizedException(BaseWisdomAPIException):
     default_detail = "Unauthorized"
 
 
-class ChatbotForbiddenException(BaseWisdomAPIException):
-    status_code = 403
+class ChatbotForbiddenException(WisdomAccessDenied):
     default_code = "error__chatbot_forbidden"
     default_detail = "Forbidden"
 
