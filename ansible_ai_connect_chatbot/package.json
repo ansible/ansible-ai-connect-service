@@ -27,7 +27,8 @@
     "build": "tsc && vite build",
     "postbuild": "rsync -a --delete ./dist/static/chatbot/ ../ansible_ai_connect/main/static/chatbot && rsync -a ./dist/index.html ../ansible_ai_connect/main/templates/chatbot/",
     "serve": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "eslintConfig": {
     "extends": [
@@ -48,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.2",
     "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
     "happy-dom": "^15.7.4",
