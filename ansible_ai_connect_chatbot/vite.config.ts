@@ -10,7 +10,7 @@ export default defineConfig({
       crypto: "empty-module",
     },
     // https://stackoverflow.com/questions/73143071/vitest-unexpected-token-export
-    mainFields: ["module"],
+    mainFields: ["module", "browser"],
   },
   server: {
     port: 3000,
