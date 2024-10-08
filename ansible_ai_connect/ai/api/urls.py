@@ -14,7 +14,7 @@
 
 from django.urls import path
 
-from .views import Completions, ContentMatches, Explanation, Feedback, Generation
+from .views import Chat, Completions, ContentMatches, Explanation, Feedback, Generation
 
 urlpatterns = [
     path("completions/", Completions.as_view(), name="completions"),
@@ -22,4 +22,5 @@ urlpatterns = [
     path("explanations/", Explanation.as_view(), name="explanations"),
     path("generations/", Generation.as_view(), name="generations"),
     path("feedback/", Feedback.as_view(), name="feedback"),
+    path("chat/", Chat.as_view(), name="chat"),
 ]

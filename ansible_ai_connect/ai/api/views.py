@@ -12,10 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 import logging
 import time
 from string import Template
 
+import requests
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -32,6 +34,14 @@ from rest_framework.views import APIView
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
+    ChatbotForbiddenException,
+    ChatbotInternalServerException,
+    ChatbotInvalidRequestException,
+    ChatbotInvalidResponseException,
+    ChatbotNotEnabledException,
+    ChatbotPromptTooLongException,
+    ChatbotUnauthorizedException,
+    ChatbotValidationException,
     FeedbackInternalServerException,
     FeedbackValidationException,
     InternalServerError,
@@ -86,6 +96,8 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
+    ChatRequestSerializer,
+    ChatResponseSerializer,
     CompletionRequestSerializer,
     CompletionResponseSerializer,
     ContentMatchRequestSerializer,
@@ -1013,3 +1025,91 @@ class Generation(APIView):
                 },
             )
         send_segment_event(event, "codegenPlaybook", user)
+
+
+class Chat(APIView):
+    """
+    Send a message to the backend chatbot service and get a reply.
+    """
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+    ]
+    required_scopes = ["read", "write"]
+
+    def __init__(self):
+        self.chatbot_enabled = (
+            settings.CHATBOT_URL
+            and settings.CHATBOT_DEFAULT_MODEL
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        if self.chatbot_enabled:
+            logger.debug("Chatbot is enabled.")
+        else:
+            logger.debug("Chatbot is not enabled.")
+
+    @extend_schema(
+        request=ChatRequestSerializer,
+        responses={
+            200: ChatResponseSerializer,
+            400: OpenApiResponse(description="Bad request"),
+            403: OpenApiResponse(description="Forbidden"),
+            413: OpenApiResponse(description="Prompt too long"),
+            422: OpenApiResponse(description="Validation failed"),
+            500: OpenApiResponse(description="Internal server error"),
+            503: OpenApiResponse(description="Service unavailable"),
+        },
+        summary="Chat request",
+    )
+    def post(self, request) -> Response:
+        headers = {"Content-Type": "application/json"}
+        request_serializer = ChatRequestSerializer(data=request.data)
+
+        try:
+            if not self.chatbot_enabled:
+                raise ChatbotNotEnabledException()
+
+            if not request_serializer.is_valid():
+                raise ChatbotInvalidRequestException()
+
+            data = {
+                "query": request_serializer.validated_data["query"],
+                "model": settings.CHATBOT_DEFAULT_MODEL,
+                "provider": settings.CHATBOT_DEFAULT_PROVIDER,
+            }
+            if "conversation_id" in request_serializer.validated_data:
+                data["conversation_id"] = request_serializer.validated_data["conversation_id"]
+            response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
+
+            if response.status_code == 200:
+                data = json.loads(response.text)
+                response_serializer = ChatResponseSerializer(data=data)
+
+                if not response_serializer.is_valid():
+                    raise ChatbotInvalidResponseException()
+
+                return Response(
+                    data,
+                    status=rest_framework_status.HTTP_200_OK,
+                    headers=headers,
+                )
+            elif response.status_code == 401:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotUnauthorizedException(detail=detail)
+            elif response.status_code == 403:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotForbiddenException(detail=detail)
+            elif response.status_code == 413:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotPromptTooLongException(detail=detail)
+            elif response.status_code == 422:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotValidationException(detail=detail)
+            else:
+                detail = json.loads(response.text).get("detail", "")
+                raise ChatbotInternalServerException(detail=detail)
+
+        except Exception as exc:
+            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
+            raise

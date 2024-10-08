@@ -596,3 +596,11 @@ ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
     else {}
 )
 # ==========================================
+
+# ==========================================
+# Chatbot
+# ------------------------------------------
+CHATBOT_URL = os.getenv("CHATBOT_URL")
+CHATBOT_DEFAULT_PROVIDER = os.getenv("CHATBOT_DEFAULT_PROVIDER")
+CHATBOT_DEFAULT_MODEL = os.getenv("CHATBOT_DEFAULT_MODEL")
+# ==========================================

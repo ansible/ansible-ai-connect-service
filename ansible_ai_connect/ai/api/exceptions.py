@@ -183,3 +183,56 @@ class FeedbackInternalServerException(BaseWisdomAPIException):
     status_code = 500
     default_code = "error__feedback_internal_server"
     default_detail = "Failed to send feedback"
+
+
+class ChatbotNotEnabledException(BaseWisdomAPIException):
+    status_code = 503
+    default_code = "error__chatbot_not_enabled"
+    default_detail = "Chatbot is not enabled"
+
+
+class ChatbotInvalidRequestException(WisdomBadRequest):
+    default_code = "error__chatbot_invalid_request"
+    default_detail = "Invalid request"
+
+
+class ChatbotInvalidResponseException(BaseWisdomAPIException):
+    status_code = 500
+    default_code = "error__chatbot_invalid_response"
+    default_detail = "Invalid response"
+
+
+class ChatbotUnauthorizedException(BaseWisdomAPIException):
+    """
+    Since this exception is on the authentication between
+    AI Connect server and Chatbot, which is a backend service,
+    status_code 503 (Service Unavailable) is returned to
+    client instead of 401.
+    """
+
+    status_code = 503
+    default_code = "error__chatbot_unauthorized"
+    default_detail = "Unauthorized"
+
+
+class ChatbotForbiddenException(WisdomAccessDenied):
+    default_code = "error__chatbot_forbidden"
+    default_detail = "Forbidden"
+
+
+class ChatbotPromptTooLongException(BaseWisdomAPIException):
+    status_code = 413
+    default_code = "error__chatbot_prompt_too_long"
+    default_detail = "Prompt too long"
+
+
+class ChatbotValidationException(BaseWisdomAPIException):
+    status_code = 422
+    default_code = "error__chatbot_validation_failed"
+    default_detail = "Validation failed"
+
+
+class ChatbotInternalServerException(BaseWisdomAPIException):
+    status_code = 500
+    default_code = "error__chatbot_internal_server_error"
+    default_detail = "Internal server error"

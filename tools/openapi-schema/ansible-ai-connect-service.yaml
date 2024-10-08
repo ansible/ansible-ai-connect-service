@@ -4,6 +4,49 @@ info:
   version: 0.0.9
   description: Equip the automation developer at Lightspeed.
 paths:
+  /api/v0/ai/chat/:
+    post:
+      operationId: ai_chat_create
+      description: Send a message to the backend chatbot service and get a reply.
+      summary: Chat request
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+          description: ''
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden
+        '413':
+          description: Prompt too long
+        '422':
+          description: Validation failed
+        '500':
+          description: Internal server error
+        '503':
+          description: Service unavailable
   /api/v0/ai/completions/:
     post:
       operationId: ai_completions_create
@@ -562,6 +605,48 @@ components:
         * `0` - ACCEPTED
         * `1` - REJECTED
         * `2` - IGNORED
+    ChatRequest:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: A UUID that identifies the particular conversation is being
+            requested for.
+        query:
+          type: string
+          title: Query string
+          description: A query string to be sent to LLM.
+        model:
+          type: string
+          title: Model name
+          description: A model to be used on LLM.
+        provider:
+          type: string
+          title: Provider name
+          description: A name that identifies a LLM provider.
+      required:
+      - query
+    ChatResponse:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+          description: A UUID that identifies the particular conversation is being
+            requested for.
+        referenced_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferencedDocuments'
+        response:
+          type: string
+        truncated:
+          type: boolean
+      required:
+      - conversation_id
+      - response
+      - truncated
     CompletionMetadata:
       type: object
       properties:
@@ -977,6 +1062,16 @@ components:
       required:
       - action
       - wizardId
+    ReferencedDocuments:
+      type: object
+      properties:
+        docs_url:
+          type: string
+        title:
+          type: string
+      required:
+      - docs_url
+      - title
     SentimentFeedback:
       type: object
       properties:
