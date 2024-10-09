@@ -3481,6 +3481,9 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             def json(self):
                 return self.json_data
 
+        # Make sure that the given json data is serializable
+        json.dumps(kwargs["json"])
+
         json_response = {
             "response": "AAP 2.5 introduces an updated, unified UI.",
             "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
