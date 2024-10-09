@@ -283,9 +283,6 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                           variant={"danger"}
                           icon={<TrashIcon />}
                           isDisabled={isValidatingKey}
-                          className={
-                            "Hidden"
-                          } /* This line will be removed when AAP-32688 is done. */
                           onClick={handleDeletionModalToggle}
                           data-testid={
                             "model-settings-overview__delete-key-button"
