@@ -278,12 +278,14 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                           {t("UpdateAPIKey")}
                         </Button>
                       </SplitItem>
-                      {/* The following part will be opened when AAP-32688 is done.*/}
-                      {/*<SplitItem>
+                      <SplitItem>
                         <Button
                           variant={"danger"}
                           icon={<TrashIcon />}
                           isDisabled={isValidatingKey}
+                          className={
+                            "Hidden"
+                          } /* This line will be removed when AAP-32688 is done. */
                           onClick={handleDeletionModalToggle}
                           data-testid={
                             "model-settings-overview__delete-key-button"
@@ -291,7 +293,7 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                         >
                           {t("DeleteAPIKey")}
                         </Button>
-                      </SplitItem>*/}
+                      </SplitItem>
                     </Split>
                   )}
                 </StackItem>
