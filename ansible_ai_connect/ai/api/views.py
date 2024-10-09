@@ -1079,7 +1079,7 @@ class Chat(APIView):
                 "provider": settings.CHATBOT_DEFAULT_PROVIDER,
             }
             if "conversation_id" in request_serializer.validated_data:
-                data["conversation_id"] = request_serializer.validated_data["conversation_id"]
+                data["conversation_id"] = str(request_serializer.validated_data["conversation_id"])
             response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
 
             if response.status_code == 200:
