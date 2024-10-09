@@ -7,12 +7,13 @@ import axios from "axios";
 
 jest.mock("axios", () => ({
   get: jest.fn(),
+  delete: jest.fn(),
 }));
 
 describe("ModelSettingsOverview", () => {
   const setModeToKey = jest.fn();
   const setModeToModelId = jest.fn();
-  const mockReload = jest.fn();
+  const reload = jest.fn();
 
   beforeEach(() => jest.resetAllMocks());
 
@@ -26,7 +27,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
     expect(
@@ -47,7 +48,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
     expect(
@@ -81,7 +82,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
     expect(
@@ -89,6 +90,9 @@ describe("ModelSettingsOverview", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByTestId("model-settings-overview__update-key-button"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByTestId("model-settings-overview__delete-key-button"),
     ).toBeInTheDocument();
 
     expect(
@@ -111,7 +115,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -140,7 +144,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -151,6 +155,93 @@ describe("ModelSettingsOverview", () => {
     await userEvent.click(updateKeyButton);
 
     expect(setModeToKey).toBeCalled();
+  });
+
+  it("Delete::Key::Success", async () => {
+    const wcaKey: WcaKey = {
+      status: "SUCCESS",
+      data: { lastUpdate: new Date() },
+    };
+    const wcaModelId: WcaModelId = {
+      status: "SUCCESS",
+      data: { lastUpdate: new Date(), model_id: "model_id" },
+    };
+    (axios.delete as jest.Mock).mockResolvedValue({});
+
+    render(
+      <ModelSettingsOverview
+        wcaKey={wcaKey}
+        wcaModelId={wcaModelId}
+        setModeToKey={setModeToKey}
+        setModeToModelId={setModeToModelId}
+        reload={reload}
+      />,
+    );
+
+    const deleteKeyButton = await screen.findByTestId(
+      "model-settings-overview__delete-key-button",
+    );
+    await userEvent.click(deleteKeyButton);
+
+    const keyDeletionModal = await screen.findByTestId(
+      "model-settings-key-deletion-modal",
+    );
+
+    expect(keyDeletionModal).toBeVisible();
+
+    const deleteKeyModalButton = await screen.findByTestId(
+      "model-settings-key-deletion-modal__delete-button",
+    );
+    await userEvent.click(deleteKeyModalButton);
+
+    expect(keyDeletionModal).not.toBeVisible();
+    expect(reload).toBeCalled();
+  });
+
+  it("Delete::Key::Failure", async () => {
+    const wcaKey: WcaKey = {
+      status: "SUCCESS",
+      data: { lastUpdate: new Date() },
+    };
+    const wcaModelId: WcaModelId = {
+      status: "SUCCESS",
+      data: { lastUpdate: new Date(), model_id: "model_id" },
+    };
+    (axios.delete as jest.Mock).mockRejectedValue({
+      response: { status: 404 },
+    });
+
+    render(
+      <ModelSettingsOverview
+        wcaKey={wcaKey}
+        wcaModelId={wcaModelId}
+        setModeToKey={setModeToKey}
+        setModeToModelId={setModeToModelId}
+        reload={reload}
+      />,
+    );
+
+    const deleteKeyButton = await screen.findByTestId(
+      "model-settings-overview__delete-key-button",
+    );
+    await userEvent.click(deleteKeyButton);
+
+    const keyDeletionModal = await screen.findByTestId(
+      "model-settings-key-deletion-modal",
+    );
+
+    expect(keyDeletionModal).toBeVisible();
+
+    const deleteKeyModalButton = await screen.findByTestId(
+      "model-settings-key-deletion-modal__delete-button",
+    );
+    await userEvent.click(deleteKeyModalButton);
+    const errorText = await screen.findByTestId(
+      "model-settings-key-deletion-modal__error-text",
+    );
+
+    expect(keyDeletionModal).toBeVisible();
+    expect(errorText).toBeVisible();
   });
 
   it("Add::ModelId::APIKeyFound", async () => {
@@ -166,7 +257,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -189,7 +280,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -220,7 +311,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -250,7 +341,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -281,7 +372,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -314,7 +405,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -345,7 +436,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -376,7 +467,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -418,7 +509,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 
@@ -449,7 +540,7 @@ describe("ModelSettingsOverview", () => {
         wcaModelId={wcaModelId}
         setModeToKey={setModeToKey}
         setModeToModelId={setModeToModelId}
-        reload={mockReload}
+        reload={reload}
       />,
     );
 

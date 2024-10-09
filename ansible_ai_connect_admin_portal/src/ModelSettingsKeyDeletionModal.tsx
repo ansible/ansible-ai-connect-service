@@ -57,12 +57,14 @@ export const ModelSettingsKeyDeletionModal = (
       title="Delete Confirmation"
       isOpen={isModalOpen}
       onClose={handleModalToggle}
+      data-testid={"model-settings-key-deletion-modal"}
       actions={[
         <BusyButton
           key="delete"
           variant="danger"
           onClick={deleteKey}
           isBusy={isDeleting}
+          data-testid={"model-settings-key-deletion-modal__delete-button"}
         >
           {t("Delete")}
         </BusyButton>,
@@ -73,7 +75,11 @@ export const ModelSettingsKeyDeletionModal = (
     >
       {t("APIKeyDeletionConfirmation")}
       {keyError.inError && (
-        <Text component="p" style={{ color: "red" }}>
+        <Text
+          component="p"
+          style={{ color: "red" }}
+          data-testid={"model-settings-key-deletion-modal__error-text"}
+        >
           {t("KeyDeletionError")}: {keyError.message}
         </Text>
       )}

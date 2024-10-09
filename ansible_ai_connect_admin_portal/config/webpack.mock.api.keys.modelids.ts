@@ -69,9 +69,13 @@ export default webpackMockServer.add((app, helper) => {
 
   app.delete("/api/v0/wca/apikey/", async (_req, res) => {
     await delay(DELAY_MS);
-    if (keys.has(ORG_ID) && modelIds.has(ORG_ID)) {
+    if (keys.has(ORG_ID)) {
       keys.delete(ORG_ID);
-      modelIds.delete(ORG_ID);
+      if (modelIds.has(ORG_ID)) {
+        modelIds.delete(ORG_ID);
+      } else {
+        res.sendStatus(404);
+      }
       res.sendStatus(200);
     } else {
       res.sendStatus(404);
