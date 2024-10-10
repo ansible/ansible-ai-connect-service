@@ -73,17 +73,6 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     email = models.CharField(default=None, null=True)
     email_verified = models.BooleanField(default=False, null=True)
 
-    def ams(self) -> dict[str, str]:
-        if not self.organization:
-            return {}
-        seat_checker = apps.get_app_config("ai").get_seat_checker()
-        account_info = seat_checker.get_account(self.organization.id, self.external_username)
-        return {
-            k: v
-            for k, v in account_info.items()
-            if k in ["created_at", "email", "first_name", "last_name", "updated_at"]
-        }
-
     @property
     def org_id(self) -> int | None:
         if self.groups.filter(name="Commercial").exists():
