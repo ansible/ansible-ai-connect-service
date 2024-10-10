@@ -19,6 +19,7 @@ import platform
 from attr import Factory, asdict, field
 from attrs import define, validators
 from django.utils import timezone
+from yaml.error import MarkedYAMLError
 
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 from ansible_ai_connect.users.models import User
@@ -31,6 +32,15 @@ version_info = VersionInfo()
 class RequestPayload:
     method: str = field(validator=validators.instance_of(str), converter=str, default="")
     path: str = field(validator=validators.instance_of(str), converter=str, default="")
+
+
+@define
+class ResponsePayload:
+    exception: str = field(validator=validators.instance_of(str), converter=str, default="")
+    error_type: str = field(validator=validators.instance_of(str), converter=str, default="")
+    message: str = field(validator=validators.instance_of(str), converter=str, default="")
+    status_code: int = field(validator=validators.instance_of(int), converter=int, default=0)
+    status_text: str = field(validator=validators.instance_of(str), converter=str, default="")
 
 
 @define
@@ -73,7 +83,19 @@ class Schema1Event:
     problem: str = field(validator=validators.instance_of(str), converter=str, default="")
     exception: bool = False
     request: RequestPayload = RequestPayload()
+    response: ResponsePayload = ResponsePayload()
     _user: User | None = None
+
+    def set_exception(self, exception):
+        if not exception:
+            return
+        self.exception = True
+        self.response.exception = str(exception)
+        self.problem = (
+            exception.problem
+            if isinstance(exception, MarkedYAMLError)
+            else str(exception) if str(exception) else exception.__class__.__name__
+        )
 
     def set_user(self, user):
         self._user = user
@@ -101,3 +123,11 @@ class OneClickTrialStartedEvent(Schema1Event):
     def set_user(self, user):
         super().set_user(user)
         self.plans = [PlanEntry.init(up) for up in user.userplan_set.all()]
+
+
+@define
+class ExplainPlaybookEvent(Schema1Event):
+    event_name: str = "explainPlaybook"
+    duration: float = field(validator=validators.instance_of(float), converter=float, default=0.0)
+    playbook_length: int = field(validator=validators.instance_of(int), default=0)
+    explanationId: str = field(validator=validators.instance_of(str), converter=str, default="")
