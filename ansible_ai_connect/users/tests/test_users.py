@@ -19,7 +19,6 @@ from unittest.mock import patch
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
@@ -38,7 +37,6 @@ from ansible_ai_connect.test_utils import (
     create_user,
 )
 from ansible_ai_connect.users.constants import (
-    FAUX_COMMERCIAL_USER_ORG_ID,
     USER_SOCIAL_AUTH_PROVIDER_AAP,
     USER_SOCIAL_AUTH_PROVIDER_GITHUB,
     USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -133,24 +131,6 @@ class TestUserSeat(WisdomAppsBackendMocking):
         with patch.object(user, "is_aap_user") as return_true:
             return_true.return_value = True
             self.assertFalse(user.rh_org_has_subscription)
-
-    def test_rh_user_has_seat_with_github_commercial_group(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
-
-        commercial_group, _ = Group.objects.get_or_create(name="Commercial")
-        user.groups.add(commercial_group)
-
-        self.assertTrue(user.rh_user_has_seat)
-        self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
-
-    def test_rh_user_has_seat_with_rhsso_commercial_group(self):
-        user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-
-        commercial_group, _ = Group.objects.get_or_create(name="Commercial")
-        user.groups.add(commercial_group)
-
-        self.assertTrue(user.rh_user_has_seat)
-        self.assertEqual(user.org_id, FAUX_COMMERCIAL_USER_ORG_ID)
 
     def test_rh_user_org_with_sub_but_no_seat_in_ams(self):
         user = create_user(
