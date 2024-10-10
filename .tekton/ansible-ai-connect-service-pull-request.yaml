@@ -279,7 +279,7 @@ spec:
         - name: source
         steps:
         - name: get-commit-timestamp
-          image: alpine/git
+          image: quay.io/ansible/git
           script: |
             #!/bin/sh
             set -euo pipefail
