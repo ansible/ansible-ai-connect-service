@@ -26,11 +26,7 @@ from django_prometheus.models import ExportModelOperationsMixin
 
 from ansible_ai_connect.organizations.models import Organization
 
-from .constants import (
-    FAUX_COMMERCIAL_USER_ORG_ID,
-    USER_SOCIAL_AUTH_PROVIDER_AAP,
-    USER_SOCIAL_AUTH_PROVIDER_OIDC,
-)
+from .constants import USER_SOCIAL_AUTH_PROVIDER_AAP, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
 logger = logging.getLogger("organizations")
 
@@ -75,8 +71,6 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
 
     @property
     def org_id(self) -> int | None:
-        if self.groups.filter(name="Commercial").exists():
-            return FAUX_COMMERCIAL_USER_ORG_ID
         if self.organization and self.organization.id:
             return self.organization.id
         return None
@@ -94,9 +88,6 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     @cached_property
     def rh_user_has_seat(self) -> bool:
         """True if the user comes from RHSSO and has a Wisdom Seat."""
-        # For dev/test purposes only:
-        if self.groups.filter(name="Commercial").exists():
-            return True
 
         # user is of an on-prem AAP with valid license
         if self.is_aap_user():
