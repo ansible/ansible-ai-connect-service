@@ -18,7 +18,6 @@ from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import HealthCheckException, ServiceUnavailable
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_ai_connect.users.constants import FAUX_COMMERCIAL_USER_ORG_ID
 
 ERROR_MESSAGE = "An error occurred"
 MODEL_MESH_HEALTH_CHECK_MODELS = "models"
@@ -103,9 +102,10 @@ class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
         if not self.enabled:
             return
 
+        FAUX_ORG_ID = "9999999999"
         try:
             apps.get_app_config("ai").get_wca_secret_manager().get_secret(
-                FAUX_COMMERCIAL_USER_ORG_ID, Suffixes.API_KEY
+                FAUX_ORG_ID, Suffixes.API_KEY
             )
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
