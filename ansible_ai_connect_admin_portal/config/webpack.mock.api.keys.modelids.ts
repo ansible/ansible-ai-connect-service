@@ -73,12 +73,10 @@ export default webpackMockServer.add((app, helper) => {
       keys.delete(ORG_ID);
       if (modelIds.has(ORG_ID)) {
         modelIds.delete(ORG_ID);
-      } else {
-        res.sendStatus(404);
       }
       res.sendStatus(200);
     } else {
-      res.sendStatus(404);
+      res.sendStatus(400);
     }
   });
 

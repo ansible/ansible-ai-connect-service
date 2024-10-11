@@ -59,15 +59,15 @@ export const ModelSettingsKeyDeletionModal = (
       onClose={handleModalToggle}
       data-testid={"model-settings-key-deletion-modal"}
       actions={[
-        <BusyButton
+        <Button
           key="delete"
           variant="danger"
           onClick={deleteKey}
-          isBusy={isDeleting}
+          isDisabled={isDeleting}
           data-testid={"model-settings-key-deletion-modal__delete-button"}
         >
           {t("Delete")}
-        </BusyButton>,
+        </Button>,
         <Button key="cancel" variant="link" onClick={handleCancel}>
           {t("Cancel")}
         </Button>,
