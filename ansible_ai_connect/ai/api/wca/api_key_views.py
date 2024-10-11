@@ -180,6 +180,70 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
 
         return Response(status=HTTP_204_NO_CONTENT)
 
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="OK"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            404: OpenApiResponse(description="Not found"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
+        },
+        summary="DELETE WCA key for an Organization",
+        operation_id="wca_api_key_delete",
+    )
+    def delete(self, request, *args, **kwargs):
+        logger.debug("WCA API Key:: DELETE handler")
+
+        organization = None
+        exception = None
+        start_time = time.time()
+        try:
+            organization = request._request.user.organization
+            if not organization:
+                return Response(status=HTTP_400_BAD_REQUEST)
+
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+            wca_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
+            if wca_key is None:
+                return Response(status=HTTP_400_BAD_REQUEST)
+
+            secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+
+            # Audit trail/logging
+            user_set_wca_api_key.send(
+                WCAApiKeyView.__class__,
+                user=request._request.user,
+                org_id=organization.id,
+                api_key=wca_key,
+            )
+            logger.info(f"Deleted secret for org_id '{organization.id}'")
+
+        except WcaTokenFailureApiKeyError as e:
+            exception = e
+            logger.info(
+                f"An error occurred trying to retrieve a WCA Token for "
+                f"Organization '{organization.id}'.",
+                exc_info=True,
+            )
+            return Response(status=HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            exception = e
+            logger.exception(e)
+            raise ServiceUnavailable(cause=e)
+
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            event = {
+                "duration": duration,
+                "exception": exception is not None,
+                "problem": None if exception is None else exception.__class__.__name__,
+            }
+            send_segment_event(event, "modelApiKeyDelete", request.user)
+
+        return Response(status=HTTP_204_NO_CONTENT)
+
 
 class WCAApiKeyValidatorView(RetrieveAPIView):
     required_scopes = ["read"]
