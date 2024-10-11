@@ -15,3 +15,7 @@
 .Loading {
     height: 200px;
 }
+
+.Hidden {
+    visibility: hidden;
+}

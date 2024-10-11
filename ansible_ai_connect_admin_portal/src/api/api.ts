@@ -30,6 +30,13 @@ export const saveWcaKey = (wcaKey: WcaKeyRequest) => {
   });
 };
 
+export const deleteWcaKey = () => {
+  const csrfToken = readCookie("csrftoken");
+  return axios.delete(API_WCA_KEY_PATH, {
+    headers: { "X-CSRFToken": csrfToken },
+  });
+};
+
 export const testWcaKey = () => {
   return axios.get(API_WCA_KEY_TEST_PATH);
 };
