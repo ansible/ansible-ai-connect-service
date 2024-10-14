@@ -13,7 +13,8 @@
 #  limitations under the License.
 
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest import mock
+from unittest.mock import MagicMock, patch
 
 from django.apps import apps
 from django.test import override_settings
@@ -271,6 +272,111 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelApiKeySet", "ValidationError")
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_delete_key_without_org_id(self, *args):
+        self.client.force_authenticate(user=self.user)
+
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.delete(reverse("wca_api_key"))
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+            self.assert_segment_log(log, "modelApiKeyDelete", None)
+
+    def test_delete_key(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        self.client.force_authenticate(user=self.user)
+
+        # This both sets the key and model id
+        mock_secret_manager.get_secret.return_value = {"CreatedDate": timezone.now().isoformat()}
+        r = self.client.get(reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        mock_secret_manager.get_secret.assert_called_with(
+            self.user.organization.id, Suffixes.API_KEY
+        )
+
+        # Delete key and model id
+        mock_wca_client.get_token.return_value = "token"
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.delete(reverse("wca_api_key"))
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            mock_secret_manager.delete_secret.assert_has_calls(
+                [
+                    mock.call(self.user.organization.id, Suffixes.API_KEY),
+                    mock.call(self.user.organization.id, Suffixes.MODEL_ID),
+                ]
+            )
+            self.assert_segment_log(log, "modelApiKeyDelete", None)
+
+        # Check Key was deleted
+        mock_secret_manager.get_secret.return_value = None
+        r = self.client.get(reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        mock_secret_manager.get_secret.assert_called_with(
+            self.user.organization.id, Suffixes.API_KEY
+        )
+
+    def test_delete_key_with_no_model_id(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        self.client.force_authenticate(user=self.user)
+
+        def get_secret(*args, **kwargs):
+            if args == (self.user.organization.id, Suffixes.API_KEY):
+                return {"CreatedDate": timezone.now().isoformat()}
+            elif args == (self.user.organization.id, Suffixes.MODEL_ID):
+                return None
+            else:
+                return Exception("exception occurred")
+
+        mock_secret_manager.get_secret = MagicMock(side_effect=get_secret)
+        r = self.client.get(reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        mock_secret_manager.get_secret.assert_called_with(
+            self.user.organization.id, Suffixes.API_KEY
+        )
+
+        # Delete key and model id
+        mock_wca_client.get_token.return_value = "token"
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.delete(reverse("wca_api_key"))
+            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+            mock_secret_manager.delete_secret.assert_has_calls(
+                [mock.call(self.user.organization.id, Suffixes.API_KEY)]
+            )
+            self.assert_segment_log(log, "modelApiKeyDelete", None)
+
+        # Check Key was deleted
+        mock_secret_manager.get_secret.return_value = None
+        r = self.client.get(reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        mock_secret_manager.get_secret.assert_called_with(
+            self.user.organization.id, Suffixes.API_KEY
+        )
+
+    def test_delete_key_with_no_key_no_model_id(self, *args):
+        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        self.client.force_authenticate(user=self.user)
+
+        def get_secret(*args, **kwargs):
+            if args == (self.user.organization.id, Suffixes.API_KEY):
+                return None
+            elif args == (self.user.organization.id, Suffixes.MODEL_ID):
+                return None
+            else:
+                return Exception("exception occurred")
+
+        mock_secret_manager.get_secret = MagicMock(side_effect=get_secret)
+        r = self.client.delete(reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
+        mock_secret_manager.get_secret.assert_called_with(
+            self.user.organization.id, Suffixes.API_KEY
+        )
+        mock_secret_manager.delete_secret.assert_not_called()
 
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
