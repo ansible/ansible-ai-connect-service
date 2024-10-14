@@ -2693,7 +2693,7 @@ that are running Red Hat Enterprise Linux 9.
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("explanations"), self.payload, format="json")
             self.assertEqual(r.status_code, expected_status_code)
-            if expected_exception() is not None:
+            if expected_exception is not None:
                 self.assert_error_detail(
                     r, expected_exception().default_code, expected_exception().default_detail
                 )
@@ -3363,7 +3363,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             200,
             mock_model_id=None,
         )
-        model_client.generate_playbook = lambda *args: ("playbook", "outline")
+        model_client.generate_playbook = lambda *args: ("playbook", "outline", "warning")
 
         with self.assertLogs(
             logger="ansible_ai_connect.ai.api.model_client.wca_client", level="DEBUG"
