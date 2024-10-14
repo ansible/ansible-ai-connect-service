@@ -182,10 +182,10 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(description="OK"),
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad request"),
             401: OpenApiResponse(description="Unauthorized"),
             403: OpenApiResponse(description="Forbidden"),
-            404: OpenApiResponse(description="Not found"),
             429: OpenApiResponse(description="Request was throttled"),
             500: OpenApiResponse(description="Internal service error"),
         },
