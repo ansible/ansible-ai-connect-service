@@ -15,7 +15,7 @@
 import platform
 import uuid
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from urllib.parse import urlencode
 
 from django.apps import apps
@@ -80,8 +80,8 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
         self.client.force_authenticate(user=self.user)
         with patch.object(
             apps.get_app_config("ai"),
-            "model_mesh_client",
-            MockedMeshClient(self, expected, response_data),
+            "get_model_pipeline",
+            Mock(return_value=MockedMeshClient(self, expected, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload, format="json")
@@ -200,8 +200,8 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
         try:
             with patch.object(
                 apps.get_app_config("ai"),
-                "model_mesh_client",
-                MockedMeshClient(self, payload, response_data),
+                "get_model_pipeline",
+                Mock(return_value=MockedMeshClient(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
                     r = self.client.post(reverse("completions"), payload, format="json")
@@ -246,8 +246,8 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
         try:
             with patch.object(
                 apps.get_app_config("ai"),
-                "model_mesh_client",
-                MockedMeshClient(self, payload, response_data),
+                "get_model_pipeline",
+                Mock(return_value=MockedMeshClient(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
                     r = self.client.post(reverse("completions"), payload, format="json")
@@ -315,8 +315,8 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
 
         with patch.object(
             apps.get_app_config("ai"),
-            "model_mesh_client",
-            MockedMeshClient(self, payload, response_data),
+            "get_model_pipeline",
+            Mock(return_value=MockedMeshClient(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 self.client.post(reverse("completions"), payload, format="json")

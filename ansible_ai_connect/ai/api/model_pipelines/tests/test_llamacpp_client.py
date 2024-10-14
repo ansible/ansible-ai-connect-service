@@ -20,8 +20,10 @@ from django.test import TestCase, override_settings
 from requests.exceptions import ReadTimeout
 from responses import matchers
 
-from ansible_ai_connect.ai.api.model_client.exceptions import ModelTimeoutError
-from ansible_ai_connect.ai.api.model_client.llamacpp_client import LlamaCPPClient
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.model_pipelines.llamacpp.pipelines import (
+    LlamaCppCompletionsPipeline,
+)
 
 
 class TestLlamaCPPClient(TestCase):
@@ -47,7 +49,7 @@ class TestLlamaCPPClient(TestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer(self):
-        model_client = LlamaCPPClient(inference_url=self.inference_url)
+        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
         responses.post(
             self.prediction_url,
             match=[
@@ -74,7 +76,7 @@ class TestLlamaCPPClient(TestCase):
         model = "multivac"
         self.expected_response["model_id"] = model
 
-        model_client = LlamaCPPClient(inference_url=self.inference_url)
+        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
         responses.post(
             self.prediction_url,
             match=[
@@ -99,7 +101,7 @@ class TestLlamaCPPClient(TestCase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer_timeout(self):
-        model_client = LlamaCPPClient(inference_url=self.inference_url)
+        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         with self.assertRaises(ModelTimeoutError):
             model_client.infer(request=Mock(), model_input=self.model_input)

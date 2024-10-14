@@ -82,7 +82,13 @@ class ModelServerHealthCheck(BaseLightspeedHealthCheck):
         if not self.enabled:
             return
 
-        model_client = apps.get_app_config("ai").model_mesh_client
+        from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+            ModelPipelineCompletions,
+        )
+
+        model_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         summary: HealthCheckSummary = model_client.self_test()
         self.summary = summary
         for key in self.summary.items:

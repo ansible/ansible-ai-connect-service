@@ -153,3 +153,15 @@ class IsAAPLicensed(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return CONTINUE if request.user.rh_aap_licensed else BLOCK
+
+
+class IsWCASaaSModelPipeline(permissions.BasePermission):
+    """
+    Block access to configurations that do not use WCA SaaS
+    """
+
+    code = "permission_denied__needs_wca_saas"
+    message = "User doesn't have access to the IBM watsonx Code Assistant."
+
+    def has_permission(self, request, view):
+        return CONTINUE if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca" else BLOCK

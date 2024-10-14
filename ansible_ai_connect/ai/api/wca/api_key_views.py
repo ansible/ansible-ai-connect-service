@@ -14,6 +14,7 @@
 
 import logging
 import time
+from typing import cast
 
 from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -31,10 +32,15 @@ from rest_framework.status import (
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_ai_connect.ai.api.model_client.exceptions import WcaTokenFailureApiKeyError
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
+    WcaTokenFailureApiKeyError,
+)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaSMetaData
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
@@ -52,6 +58,7 @@ PERMISSION_CLASSES = [
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 ]
 
 
@@ -138,8 +145,9 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
             wca_key = key_serializer.validated_data["key"]
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_mesh_client.get_token(wca_key)
+            _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+            model_meta_data.get_token(wca_key)
 
             # Store the validated API Key
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -286,12 +294,13 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             # Validate API Key
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
+            _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if api_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
-            token = model_mesh_client.get_token(api_key["SecretString"])
+            token = model_meta_data.get_token(api_key["SecretString"])
             if token is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 

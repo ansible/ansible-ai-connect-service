@@ -13,12 +13,14 @@
 #  limitations under the License.
 
 import logging
-from typing import Union
+from typing import Type, Union
 
 from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
+from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE, MetaData
 from ansible_ai_connect.ansible_lint import lintpostprocessing
 from ansible_ai_connect.ari import postprocessing
 from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
@@ -32,11 +34,6 @@ from ansible_ai_connect.users.reports.postman import (
 )
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
-from .api.model_client.dummy_client import DummyClient
-from .api.model_client.grpc_client import GrpcClient
-from .api.model_client.http_client import HttpClient
-from .api.model_client.llamacpp_client import LlamaCPPClient
-from .api.model_client.wca_client import DummyWCAClient, WCAClient, WCAOnPremClient
 
 logger = logging.getLogger(__name__)
 
@@ -47,65 +44,23 @@ UNINITIALIZED = None
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ansible_ai_connect.ai"
-    model_mesh_client = None
     _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
     _reports_postman = UNINITIALIZED
+    _pipeline_factory = UNINITIALIZED
 
     def ready(self) -> None:
-        if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "grpc":
-            self.model_mesh_client = GrpcClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-            self.model_mesh_client = WCAClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
-            self.model_mesh_client = WCAOnPremClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-dummy":
-            self.model_mesh_client = DummyWCAClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "http":
-            self.model_mesh_client = HttpClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "llamacpp":
-            self.model_mesh_client = LlamaCPPClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
-            self.model_mesh_client = DummyClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "bam":
-            from .api.model_client.bam_client import BAMClient
+        self._pipeline_factory = ModelPipelineFactory()
 
-            self.model_mesh_client = BAMClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        elif settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
-            from .api.model_client.ollama_client import OllamaClient
-
-            self.model_mesh_client = OllamaClient(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL,
-            )
-        else:
-            raise ValueError(
-                f"Invalid model mesh client type: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
-            )
-
-        return super().ready()
+    def get_model_pipeline(self, feature: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
+        return self._pipeline_factory.get_pipeline(feature)
 
     def get_ari_caller(self):
         # Django calls apps.ready() when registering INSTALLED_APPS
         # We can therefore guarantee self.model_mesh_client is not None
-        if not self.model_mesh_client.supports_ari_postprocessing():
+        if not self.get_model_pipeline(MetaData).supports_ari_postprocessing():
             logger.info("Postprocessing is disabled.")
             self._ari_caller = UNINITIALIZED
             return None

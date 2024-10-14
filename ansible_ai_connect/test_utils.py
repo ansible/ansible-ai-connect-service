@@ -155,7 +155,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
                 "_ari_caller",
                 "_seat_checker",
                 "_wca_secret_manager",
-                "model_mesh_client",
             ]
         }
         for key, mocker in self.backend_patchers.items():
@@ -170,10 +169,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
     @staticmethod
     def mock_ansible_lint_caller_with(mocked):
         apps.get_app_config("ai")._ansible_lint_caller = mocked
-
-    @staticmethod
-    def mock_model_client_with(mocked):
-        apps.get_app_config("ai").model_mesh_client = mocked
 
     @staticmethod
     def mock_ari_caller_with(mocked):

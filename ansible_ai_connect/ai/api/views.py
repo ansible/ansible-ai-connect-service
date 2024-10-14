@@ -60,7 +60,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ansible_ai_connect.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,
@@ -72,6 +72,12 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaNoDefaultModelId,
     WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
+)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    MetaData,
+    ModelPipelineContentMatch,
+    ModelPipelinePlaybookExplanation,
+    ModelPipelinePlaybookGeneration,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.ai.api.telemetry import schema1
@@ -89,7 +95,7 @@ from ansible_ai_connect.users.models import User
 
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
-from .model_client.exceptions import ModelTimeoutError
+from .model_pipelines.exceptions import ModelTimeoutError
 from .permissions import (
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
@@ -253,8 +259,8 @@ class Feedback(APIView):
         model_name = ""
         try:
             org_id = getattr(user, "org_id", None)
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(
+            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            model_name = model_meta_data.get_model_id(
                 user, org_id, str(validated_data.get("model", ""))
             )
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
@@ -443,7 +449,9 @@ class ContentMatches(GenericAPIView):
         suggestion_id: str,
         request_data,
     ):
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        model_mesh_client: ModelPipelineContentMatch = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineContentMatch
+        )
         user_id = request.user.uuid
         content_match_data: ContentMatchPayloadData = {
             "suggestions": request_data.get("suggestions", []),
@@ -671,7 +679,9 @@ class Explanation(APIView):
             custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
             model_id = str(request_serializer.validated_data.get("model", ""))
 
-            llm = apps.get_app_config("ai").model_mesh_client
+            llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
+                ModelPipelinePlaybookExplanation
+            )
             explanation = llm.explain_playbook(
                 request, playbook, custom_prompt, explanation_id, model_id
             )
@@ -774,8 +784,8 @@ class Explanation(APIView):
 
         finally:
             try:
-                model_mesh_client = apps.get_app_config("ai").model_mesh_client
-                event.modelName = model_mesh_client.get_model_id(
+                model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+                event.modelName = model_meta_data.get_model_id(
                     request.user, request.user.org_id, model_id
                 )
             except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
@@ -845,7 +855,9 @@ class Generation(APIView):
             wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
             model_id = str(request_serializer.validated_data.get("model", ""))
 
-            llm = apps.get_app_config("ai").model_mesh_client
+            llm: ModelPipelinePlaybookGeneration = apps.get_app_config("ai").get_model_pipeline(
+                ModelPipelinePlaybookGeneration
+            )
             start_time = time.time()
             playbook, outline, warnings = llm.generate_playbook(
                 request, text, custom_prompt, create_outline, outline, generation_id, model_id
@@ -983,8 +995,8 @@ class Generation(APIView):
     ):
         model_name = ""
         try:
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user, user.org_id, model_id)
+            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            model_name = model_meta_data.get_model_id(user, user.org_id, model_id)
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
         event = {

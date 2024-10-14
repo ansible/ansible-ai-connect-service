@@ -36,7 +36,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaKeyNotFoundException,
     WcaUserTrialExpiredException,
 )
-from ansible_ai_connect.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaEmptyResponse,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -44,9 +44,11 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaTokenFailure,
     WcaUserTrialExpired,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.serializers import WcaModelIdRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
@@ -61,6 +63,7 @@ PERMISSION_CLASSES = [
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 ]
 
 
@@ -210,7 +213,9 @@ def validate(api_key, model_id):
 
     # If no validation issues, let's infer (given an api_key and model_id)
     # and expect some prediction (result), otherwise an exception will be raised.
-    model_mesh_client = apps.get_app_config("ai").model_mesh_client
+    model_mesh_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+        ModelPipelineCompletions
+    )
     model_mesh_client.infer_from_parameters(
         api_key, model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
     )

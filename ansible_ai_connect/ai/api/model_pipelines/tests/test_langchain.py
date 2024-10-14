@@ -8,8 +8,10 @@ from django.test import TestCase
 from langchain.llms.fake import FakeListLLM
 from langchain_core.messages.base import BaseMessage
 
-from ansible_ai_connect.ai.api.model_client.langchain import (
-    LangChainClient,
+from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
+    LangchainCompletionsPipeline,
+    LangchainPlaybookExplanationPipeline,
+    LangchainPlaybookGenerationPipeline,
     unwrap_playbook_answer,
     unwrap_task_answer,
 )
@@ -105,15 +107,16 @@ class TestUnwrapPlaybookAnswer(TestCase):
 
 class TestLangChainClientNotImplemented(TestCase):
     def test_not_implemented(self):
-        my_client = LangChainClient("a")
+        my_client = LangchainCompletionsPipeline("a")
 
         with self.assertRaises(NotImplementedError):
             my_client.get_chat_model("a")
 
 
-class TestLangChainClient(WisdomServiceLogAwareTestCase):
+class TestLangChainPlaybookGenerationPipeline(WisdomServiceLogAwareTestCase):
+
     def setUp(self):
-        self.my_client = LangChainClient("a")
+        self.my_client = LangchainPlaybookGenerationPipeline("a")
 
         def fake_get_chat_mode(model_id=None):
             logger.debug(f"get_chat_mode: model_id={model_id}")
@@ -139,7 +142,7 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
     def test_generate_playbook_with_custom_prompt(self):
         with (
             self.assertLogs(
-                logger="ansible_ai_connect.ai.api.model_client.langchain", level="INFO"
+                logger="ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines", level="INFO"
             ) as log,
         ):
             playbook, outline, warnings = self.my_client.generate_playbook(
@@ -154,6 +157,17 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
             self.assertEqual(playbook, "my_playbook")
             self.assertEqual(outline, "my outline")
 
+
+class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        self.my_client = LangchainPlaybookExplanationPipeline("a")
+
+        def fake_get_chat_mode(model_id=None):
+            logger.debug(f"get_chat_mode: model_id={model_id}")
+            return FakeListLLM(responses=["\n```\nmy_playbook```\nmy outline\n\n", "b"])
+
+        self.my_client.get_chat_model = fake_get_chat_mode
+
     def test_explain_playbook(self):
         explanation = self.my_client.explain_playbook(request=Mock(), content="foo")
         self.assertTrue(explanation)
@@ -161,7 +175,7 @@ class TestLangChainClient(WisdomServiceLogAwareTestCase):
     def test_explain_playbook_with_custom_prompt(self):
         with (
             self.assertLogs(
-                logger="ansible_ai_connect.ai.api.model_client.langchain", level="INFO"
+                logger="ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines", level="INFO"
             ) as log,
         ):
             explanation = self.my_client.explain_playbook(

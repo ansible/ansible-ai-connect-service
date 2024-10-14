@@ -18,7 +18,9 @@ from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
-from ansible_ai_connect.ai.api.model_client.ollama_client import OllamaClient
+from ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines import (
+    OllamaCompletionsPipeline,
+)
 
 
 class TestOllama(TestCase):
@@ -39,12 +41,12 @@ class TestOllama(TestCase):
             "model_id": "test",
         }
 
-    @patch("ansible_ai_connect.ai.api.model_client.ollama_client.Ollama")
+    @patch("ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines.Ollama")
     def test_infer(self, m_ollama):
         def final(_):
             return f"- name: Vache volante!\n{indent(self.expected_task_body, '  ')}"
 
         m_ollama.return_value = final
-        model_client = OllamaClient("http://localhost")
+        model_client = OllamaCompletionsPipeline("http://localhost")
         response = model_client.infer(request=Mock(), model_input=self.model_input, model_id="test")
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

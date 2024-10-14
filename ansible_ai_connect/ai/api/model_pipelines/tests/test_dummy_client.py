@@ -17,7 +17,12 @@ from unittest import mock
 import requests
 from django.test import SimpleTestCase, override_settings
 
-from ..dummy_client import DummyClient
+from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
+    DummyCompletionsPipeline,
+    DummyMetaData,
+    DummyPlaybookExplanationPipeline,
+    DummyPlaybookGenerationPipeline,
+)
 
 latency = 3000
 body = {"test": "true"}
@@ -31,7 +36,7 @@ class TestDummyClient(SimpleTestCase):
         url = "https://redhat.com"
         session = requests.Session()
         with mock.patch("requests.Session", return_value=session):
-            client = DummyClient(inference_url=url)
+            client = DummyMetaData(inference_url=url)
             self.assertEqual(client._inference_url, url)
             self.assertEqual(client.session, session)
             self.assertEqual(client.headers["Content-Type"], "application/json")
@@ -41,7 +46,7 @@ class TestDummyClient(SimpleTestCase):
     @mock.patch("secrets.randbelow")
     @mock.patch("json.loads")
     def test_infer_with_jitter(self, loads, randbelow, sleep):
-        client = DummyClient(inference_url="https://example.com")
+        client = DummyCompletionsPipeline(inference_url="https://example.com")
         randbelow.return_value = random_value
         client.infer(None, model_input="input")
         sleep.assert_called_once_with(latency / 1000)
@@ -51,13 +56,13 @@ class TestDummyClient(SimpleTestCase):
     @mock.patch("time.sleep")
     @mock.patch("json.loads")
     def test_infer_without_jitter(self, loads, sleep):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyCompletionsPipeline(inference_url="https://ibm.com")
         client.infer(None, model_input="input")
         sleep.assert_called_once_with(latency / 1000)
         loads.assert_called_once_with(body)
 
     def test_generate_playbook(self):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
         playbook, outline, warnings = client.generate_playbook(
             None, text="foo", create_outline=False
         )
@@ -66,7 +71,7 @@ class TestDummyClient(SimpleTestCase):
         self.assertEqual(outline, "")
 
     def test_generate_playbook_with_outline(self):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
         playbook, outline, warnings = client.generate_playbook(
             None, text="foo", create_outline=True
         )
@@ -75,7 +80,7 @@ class TestDummyClient(SimpleTestCase):
         self.assertTrue(outline)
 
     def test_generate_playbook_with_model_id(self):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
         playbook, outline, warnings = client.generate_playbook(
             None, text="foo", create_outline=True, model_id="mymodel"
         )
@@ -84,13 +89,13 @@ class TestDummyClient(SimpleTestCase):
         self.assertTrue(outline)
 
     def test_explain_playbook(self):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyPlaybookExplanationPipeline(inference_url="https://ibm.com")
         explanation = client.explain_playbook(None, "ëoo")
         self.assertTrue(isinstance(explanation, str))
         self.assertTrue(explanation)
 
     def test_explain_playbook_with_model_id(self):
-        client = DummyClient(inference_url="https://ibm.com")
+        client = DummyPlaybookExplanationPipeline(inference_url="https://ibm.com")
         explanation = client.explain_playbook(None, "ëoo", model_id="mymodel")
         self.assertTrue(isinstance(explanation, str))
         self.assertTrue(explanation)

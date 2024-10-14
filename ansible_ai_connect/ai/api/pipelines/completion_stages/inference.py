@@ -41,7 +41,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaUserTrialExpiredException,
     process_error_count,
 )
-from ansible_ai_connect.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -55,6 +55,7 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
 from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
 from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
@@ -75,7 +76,9 @@ class InferenceStage(PipelineElement):
     def process(self, context: CompletionContext) -> None:
         request = context.request
         payload = context.payload
-        model_mesh_client = apps.get_app_config("ai").model_mesh_client
+        model_mesh_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         # We have a little inconsistency of the "model" term throughout the application:
         # - FeatureFlags use 'model_name'
         # - ModelMeshClient uses 'model_id'

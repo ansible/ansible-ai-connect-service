@@ -15,17 +15,28 @@
 from django.apps.config import AppConfig
 from django.test import override_settings
 
-from ansible_ai_connect.ai.api.model_client.dummy_client import DummyClient
-from ansible_ai_connect.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
+    DummyCompletionsPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaKeyNotFound,
     WcaUsernameNotFound,
 )
-from ansible_ai_connect.ai.api.model_client.grpc_client import GrpcClient
-from ansible_ai_connect.ai.api.model_client.http_client import HttpClient
-from ansible_ai_connect.ai.api.model_client.wca_client import (
-    DummyWCAClient,
-    WCAClient,
-    WCAOnPremClient,
+from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
+    GrpcCompletionsPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+    HttpCompletionsPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_dummy import (
+    WCADummyCompletionsPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
+    WCAOnPremCompletionsPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
+    WCASaaSCompletionsPipeline,
 )
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 from ansible_ai_connect.users.reports.exceptions import ReportConfigurationException
@@ -43,13 +54,17 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
     def test_grpc_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, GrpcClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), GrpcCompletionsPipeline
+        )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
     def test_wca_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, WCAClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), WCASaaSCompletionsPipeline
+        )
 
     @override_settings(ANSIBLE_WCA_USERNAME="username")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
@@ -57,40 +72,50 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
     def test_wca_on_prem_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, WCAOnPremClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), WCAOnPremCompletionsPipeline
+        )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
     def test_wca_on_prem_client_missing_username(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
         with self.assertRaises(WcaUsernameNotFound):
-            app_config.ready()
+            app_config.get_model_pipeline(ModelPipelineCompletions)
 
     @override_settings(ANSIBLE_WCA_USERNAME="username")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
     def test_wca_on_prem_client_missing_api_key(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
         with self.assertRaises(WcaKeyNotFound):
-            app_config.ready()
+            app_config.get_model_pipeline(ModelPipelineCompletions)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
     def test_http_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, HttpClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), HttpCompletionsPipeline
+        )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-dummy")
     def test_wca_dummy_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, DummyWCAClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), WCADummyCompletionsPipeline
+        )
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
     def test_mock_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
-        self.assertIsInstance(app_config.model_mesh_client, DummyClient)
+        self.assertIsInstance(
+            app_config.get_model_pipeline(ModelPipelineCompletions), DummyCompletionsPipeline
+        )
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
