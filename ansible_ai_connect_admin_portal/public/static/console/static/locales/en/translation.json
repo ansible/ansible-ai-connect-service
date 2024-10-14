@@ -10,7 +10,7 @@
   "APIKey": "IBM Cloud API Key",
   "APIKeyTooltip": "Used to authenticate with IBM watsonx Code Assistant.",
   "APIKeyDescription": "The API Key for IBM watsonx Code Assistant.",
-  "APIKeyDeletionConfirmation": "Are you sure you want to delete your IBM Cloud API Key?",
+  "APIKeyDeletionConfirmation": "Please confirm deletion of your IBM watsonX Code Assistance API Key. This will also delete your Model Id.",
   "NoAPIKey": "No API Key has been submitted.",
   "AddAPIKey": "Add API Key",
   "UpdateAPIKey": "Update Key",

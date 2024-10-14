@@ -209,24 +209,13 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+            logger.info(f"Deleted API key secret for org_id '{organization.id}'")
 
-            # Audit trail/logging
-            user_set_wca_api_key.send(
-                WCAApiKeyView.__class__,
-                user=request._request.user,
-                org_id=organization.id,
-                api_key=wca_key,
-            )
-            logger.info(f"Deleted secret for org_id '{organization.id}'")
-
-        except WcaTokenFailureApiKeyError as e:
-            exception = e
-            logger.info(
-                f"An error occurred trying to retrieve a WCA Token for "
-                f"Organization '{organization.id}'.",
-                exc_info=True,
-            )
-            return Response(status=HTTP_400_BAD_REQUEST)
+            # If model ID exists, delete it as well.
+            model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
+            if model_id is not None:
+                secret_manager.delete_secret(organization.id, Suffixes.MODEL_ID)
+                logger.info(f"Deleted model ID secret for org_id '{organization.id}'")
 
         except Exception as e:
             exception = e
