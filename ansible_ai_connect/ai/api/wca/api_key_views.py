@@ -19,7 +19,7 @@ from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, DestroyAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -51,8 +51,8 @@ PERMISSION_CLASSES = [
 ]
 
 
-class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
-    required_scopes = ["read", "write"]
+class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
+    required_scopes = ["read", "write", "delete"]
     throttle_cache_key_suffix = "_wca_api_key"
     permission_classes = PERMISSION_CLASSES
 
