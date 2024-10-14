@@ -2693,7 +2693,7 @@ that are running Red Hat Enterprise Linux 9.
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("explanations"), self.payload, format="json")
             self.assertEqual(r.status_code, expected_status_code)
-            if expected_exception is not None:
+            if expected_exception() is not None:
                 self.assert_error_detail(
                     r, expected_exception().default_code, expected_exception().default_detail
                 )
@@ -3384,7 +3384,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             '"warnings": [{"id": "id-1", "message": '
             '"Something went wrong", "details": "Some details"}]}',
         )
-        r = self.assert_test(model_client, HTTPStatus.OK, None, None)
+        r = self.assert_test(model_client, HTTPStatus.OK, lambda: None, None)
         self.assertTrue("warnings" in r.data)
         warnings = r.data["warnings"]
         self.assertEqual(1, len(warnings))
