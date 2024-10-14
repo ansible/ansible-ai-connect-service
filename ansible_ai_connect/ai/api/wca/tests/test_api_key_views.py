@@ -282,6 +282,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelApiKeyDelete", None)
 
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").model_mesh_client
@@ -317,6 +318,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             self.user.organization.id, Suffixes.API_KEY
         )
 
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key_with_no_model_id(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_wca_client = apps.get_app_config("ai").model_mesh_client
