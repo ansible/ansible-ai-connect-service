@@ -246,7 +246,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
 
                     logger.info(f"Deleted API key secret for org_id '{organization.id}'")
                 except Exception as e:
-                    logger.exception(
+                    raise Exception(
                         "Deleted the WCA Model Id, but failed while deleting the WCA Key: " + e
                     )
 
