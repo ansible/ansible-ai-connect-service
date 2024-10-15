@@ -16,6 +16,7 @@ import logging
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.forms import Form
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
@@ -158,6 +159,9 @@ class TrialView(TemplateView):
         return trial_plan
 
     def dispatch(self, request, *args, **kwargs):
+        if isinstance(request.user, AnonymousUser):
+            return HttpResponseRedirect(reverse("login"))
+
         if any(up.plan == self.get_trial_plan() for up in request.user.userplan_set.all()):
             return super().dispatch(request, *args, **kwargs)
 
