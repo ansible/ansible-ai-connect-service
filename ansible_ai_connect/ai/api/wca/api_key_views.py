@@ -233,17 +233,22 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
             # and the API key deletion, we are relying on this mechanism
             model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
             if model_id is None:
-                secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+                try:
+                    secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
 
-                # Audit trail/logging
-                user_delete_wca_api_key.send(
-                    WCAApiKeyView.__class__,
-                    user=request._request.user,
-                    org_id=organization.id,
-                    api_key=wca_key,
-                )
+                    # Audit trail/logging
+                    user_delete_wca_api_key.send(
+                        WCAApiKeyView.__class__,
+                        user=request._request.user,
+                        org_id=organization.id,
+                        api_key=wca_key,
+                    )
 
-                logger.info(f"Deleted API key secret for org_id '{organization.id}'")
+                    logger.info(f"Deleted API key secret for org_id '{organization.id}'")
+                except Exception as e:
+                    logger.exception(
+                        "Deleted the WCA Model Id, but failed while deleting the WCA Key: " + e
+                    )
 
         except Exception as e:
             exception = e
