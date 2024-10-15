@@ -39,7 +39,11 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.views import ServiceUnavailable
-from ansible_ai_connect.users.signals import user_set_wca_api_key
+from ansible_ai_connect.users.signals import (
+    user_delete_wca_api_key,
+    user_delete_wca_model_id,
+    user_set_wca_api_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -204,18 +208,42 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
                 return Response(status=HTTP_400_BAD_REQUEST)
 
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+
             wca_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if wca_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
-            logger.info(f"Deleted API key secret for org_id '{organization.id}'")
-
-            # If model ID exists, delete it as well.
+            # If model ID exists already, delete it upfront
             model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
             if model_id is not None:
                 secret_manager.delete_secret(organization.id, Suffixes.MODEL_ID)
+
+                # Audit trail/logging
+                user_delete_wca_model_id.send(
+                    WCAApiKeyView.__class__,
+                    user=request._request.user,
+                    org_id=organization.id,
+                    api_key=wca_key,
+                )
+
                 logger.info(f"Deleted model ID secret for org_id '{organization.id}'")
+
+            # The model id should not exist so that we can delete the API key
+            # Since we cannot have a transactional relevance between model id deletion
+            # and the API key deletion, we are relying on this mechanism
+            model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
+            if model_id is None:
+                secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+
+                # Audit trail/logging
+                user_delete_wca_api_key.send(
+                    WCAApiKeyView.__class__,
+                    user=request._request.user,
+                    org_id=organization.id,
+                    api_key=wca_key,
+                )
+
+                logger.info(f"Deleted API key secret for org_id '{organization.id}'")
 
         except Exception as e:
             exception = e

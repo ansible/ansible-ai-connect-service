@@ -25,7 +25,9 @@ from django.dispatch import Signal, receiver
 logger = logging.getLogger(__name__)
 
 user_set_wca_api_key = Signal()
+user_delete_wca_api_key = Signal()
 user_set_wca_model_id = Signal()
+user_delete_wca_model_id = Signal()
 user_set_telemetry_settings = Signal()
 
 
