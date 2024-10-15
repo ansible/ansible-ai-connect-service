@@ -223,7 +223,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
                     WCAApiKeyView.__class__,
                     user=request._request.user,
                     org_id=organization.id,
-                    api_key=wca_key,
+                    model_id=model_id,
                 )
 
                 logger.info(f"Deleted model ID secret for org_id '{organization.id}'")

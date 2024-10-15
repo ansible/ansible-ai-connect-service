@@ -60,11 +60,28 @@ def user_set_wca_key_log(sender, user, org_id, api_key, **kwargs):
     )
 
 
+@receiver(user_delete_wca_api_key)
+def user_delete_wca_key_log(sender, user, org_id, api_key, **kwargs):
+    """User delete WCA API Key"""
+    logger.info(
+        f"User: '{user}' delete WCA Key for Organization '{org_id}' to '{_obfuscate(api_key)}'."
+    )
+
+
 @receiver(user_set_wca_model_id)
 def user_set_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
     """User set WCA Model Id"""
     logger.info(
         f"User: '{user}' set WCA Model Id for Organisation '{org_id}' to '{_obfuscate(model_id)}'."
+    )
+
+
+@receiver(user_delete_wca_model_id)
+def user_delete_wca_model_id_log(sender, user, org_id, model_id, **kwargs):
+    """User delete WCA Model Id"""
+    logger.info(
+        f"User: '{user}' delete WCA Model Id for Organization "
+        f"'{org_id}' to '{_obfuscate(model_id)}'."
     )
 
 

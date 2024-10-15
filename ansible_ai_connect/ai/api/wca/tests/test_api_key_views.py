@@ -321,16 +321,29 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
         # Delete key and model id
         mock_wca_client.get_token.return_value = "token"
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.delete(reverse("wca_api_key"))
-            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mock_secret_manager.delete_secret.assert_has_calls(
-                [
-                    mock.call(self.user.organization.id, Suffixes.MODEL_ID),
-                    mock.call(self.user.organization.id, Suffixes.API_KEY),
-                ]
+        with self.assertLogs(logger="ansible_ai_connect.users.signals", level="DEBUG") as signals:
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                r = self.client.delete(reverse("wca_api_key"))
+                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+                mock_secret_manager.delete_secret.assert_has_calls(
+                    [
+                        mock.call(self.user.organization.id, Suffixes.MODEL_ID),
+                        mock.call(self.user.organization.id, Suffixes.API_KEY),
+                    ]
+                )
+                self.assert_segment_log(log, "modelApiKeyDelete", None)
+
+            # Check audit entries
+            self.assertInLog(
+                f"User: '{self.user}' delete WCA Key for Organization "
+                f"'{self.user.organization.id}'",
+                signals,
             )
-            self.assert_segment_log(log, "modelApiKeyDelete", None)
+            self.assertInLog(
+                f"User: '{self.user}' delete WCA Model Id for Organization "
+                f"'{self.user.organization.id}'",
+                signals,
+            )
 
         # Check Key was deleted
         mock_secret_manager.get_secret.return_value = None
@@ -413,13 +426,21 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
         # Delete key and model id
         mock_wca_client.get_token.return_value = "token"
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.delete(reverse("wca_api_key"))
-            self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
-            mock_secret_manager.delete_secret.assert_has_calls(
-                [mock.call(self.user.organization.id, Suffixes.API_KEY)]
+        with self.assertLogs(logger="ansible_ai_connect.users.signals", level="DEBUG") as signals:
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                r = self.client.delete(reverse("wca_api_key"))
+                self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+                mock_secret_manager.delete_secret.assert_has_calls(
+                    [mock.call(self.user.organization.id, Suffixes.API_KEY)]
+                )
+                self.assert_segment_log(log, "modelApiKeyDelete", None)
+
+            # Check audit entries
+            self.assertInLog(
+                f"User: '{self.user}' delete WCA Key for Organization "
+                f"'{self.user.organization.id}'",
+                signals,
             )
-            self.assert_segment_log(log, "modelApiKeyDelete", None)
 
         # Check Key was deleted
         mock_secret_manager.get_secret.return_value = None
