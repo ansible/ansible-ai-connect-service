@@ -168,7 +168,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -211,7 +211,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_set_key_with_invalid_value(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -240,7 +240,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
         mock_model_meta_data.get_token = Mock(return_value="token")
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError("Test")
@@ -258,7 +258,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_set_key_throws_http_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
         mock_model_meta_data.get_token = Mock(side_effect=WcaTokenFailure())
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -297,7 +297,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_delete_key(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -369,7 +369,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_delete_key_with_model_id_deletion_error(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -419,7 +419,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_delete_key_with_api_key_deletion_error(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -469,7 +469,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_delete_key_with_no_model_id(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -596,7 +596,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
 
         mock_model_meta_data.get_token = Mock(return_value="token")
@@ -623,7 +623,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     def test_validate_key_with_invalid_value(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
         mock_model_meta_data.get_token = Mock(
             side_effect=WcaTokenFailureApiKeyError("Something went wrong")
@@ -638,7 +638,7 @@ class TestWCAApiKeyValidatorView(WisdomAppsBackendMocking, WisdomServiceAPITestC
     def test_validate_key_throws_http_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        mock_model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+        mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
         mock_model_meta_data.get_token = Mock(side_effect=WcaTokenFailure("Something went wrong"))
 

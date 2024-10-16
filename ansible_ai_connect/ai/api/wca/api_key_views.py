@@ -146,7 +146,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
 
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+            model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
             model_meta_data.get_token(wca_key)
 
             # Store the validated API Key
@@ -295,7 +295,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
 
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            model_meta_data: WCASaaSMetaData = cast(_md, WCASaaSMetaData)
+            model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
             secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
             api_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
             if api_key is None:
