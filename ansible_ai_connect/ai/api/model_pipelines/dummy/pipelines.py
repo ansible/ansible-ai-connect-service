@@ -1,17 +1,3 @@
-#  Copyright Red Hat
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
 import json
 import logging
 import secrets
@@ -21,7 +7,13 @@ from typing import Any, Dict
 import requests
 from django.conf import settings
 
-from .base import ModelMeshClient
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    MetaData,
+    ModelPipelineCompletions,
+    ModelPipelineContentMatch,
+    ModelPipelinePlaybookExplanation,
+    ModelPipelinePlaybookGeneration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +60,21 @@ that are running Red Hat Enterprise Linux (RHEL) 9.
 """
 
 
-class DummyClient(ModelMeshClient):
+class DummyMetaData(MetaData):
+
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
+
+
+class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
 
     def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
@@ -85,6 +87,30 @@ class DummyClient(ModelMeshClient):
         response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
         response_body["model_id"] = "_"
         return response_body
+
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+        raise NotImplementedError
+
+
+class DummyContentMatchPipeline(DummyMetaData, ModelPipelineContentMatch):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
+    def codematch(self, request, model_input, model_id):
+        raise NotImplementedError
+
+
+class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGeneration):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
 
     def generate_playbook(
         self,
@@ -99,6 +125,15 @@ class DummyClient(ModelMeshClient):
         if create_outline:
             return PLAYBOOK, OUTLINE, []
         return PLAYBOOK, "", []
+
+
+class DummyPlaybookExplanationPipeline(DummyMetaData, ModelPipelinePlaybookExplanation):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
 
     def explain_playbook(
         self,

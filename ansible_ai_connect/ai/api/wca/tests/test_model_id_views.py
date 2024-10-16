@@ -27,15 +27,17 @@ import ansible_ai_connect.ai.api.aws.wca_secret_manager
 import ansible_ai_connect.ai.apps
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import AWSSecretManager, Suffixes
-from ansible_ai_connect.ai.api.model_client.exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaEmptyResponse,
     WcaInvalidModelId,
+    WcaKeyNotFound,
     WcaUserTrialExpired,
 )
-from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient, WcaKeyNotFound
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from ansible_ai_connect.organizations.models import Organization
@@ -57,10 +59,9 @@ class TestWCAModelIdView(
         self.secret_manager_patcher.start()
 
         self.wca_client_patcher = patch.object(
-            ansible_ai_connect.ai.apps, "WCAClient", spec=WCAClient
+            apps.get_app_config("ai")._pipeline_factory, "get_pipeline", return_value=Mock()
         )
         self.wca_client_patcher.start()
-        apps.get_app_config("ai").ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -90,6 +91,7 @@ class TestWCAModelIdView(
             IsAuthenticatedOrTokenHasScope,
             IsOrganisationAdministrator,
             IsOrganisationLightspeedSubscriber,
+            IsWCASaaSModelPipeline,
         ]
         self.assertEqual(len(view.permission_classes), len(required_permissions))
         for permission in required_permissions:
@@ -219,7 +221,9 @@ class TestWCAModelIdView(
     def test_set_model_id_not_valid(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
 
         # ModelId should initially not exist
@@ -281,7 +285,9 @@ class TestWCAModelIdView(
     def test_set_model_id_empty_response(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
 
         # Set ModelId
@@ -328,10 +334,9 @@ class TestWCAModelIdValidatorView(
         self.secret_manager_patcher.start()
 
         self.wca_client_patcher = patch.object(
-            ansible_ai_connect.ai.apps, "WCAClient", spec=WCAClient
+            apps.get_app_config("ai")._pipeline_factory, "get_pipeline", return_value=Mock()
         )
         self.wca_client_patcher.start()
-        apps.get_app_config("ai").ready()
 
     def tearDown(self):
         self.secret_manager_patcher.stop()
@@ -341,7 +346,9 @@ class TestWCAModelIdValidatorView(
     def test_validate(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         mock_wca_client.infer = Mock(return_value={})
 
         r = self.client.get(reverse("wca_model_id_validator"))
@@ -377,7 +384,7 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog(
-                "ansible_ai_connect.ai.api.model_client.exceptions.WcaKeyNotFound", log
+                "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaKeyNotFound", log
             )
             self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
@@ -397,7 +404,7 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog(
-                "ansible_ai_connect.ai.api.model_client.exceptions.WcaModelIdNotFound", log
+                "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaModelIdNotFound", log
             )
             self.assert_segment_log(log, "modelIdValidate", "WcaModelIdNotFound")
 
@@ -430,7 +437,9 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_wrong_model_id(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=ValidationError)
 
@@ -443,7 +452,9 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_api_key_not_found(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
 
@@ -451,14 +462,16 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog(
-                "ansible_ai_connect.ai.api.model_client.exceptions.WcaKeyNotFound", log
+                "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaKeyNotFound", log
             )
             self.assert_segment_log(log, "modelIdValidate", "WcaKeyNotFound")
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_user_trial_expired(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaUserTrialExpired)
 
@@ -470,14 +483,16 @@ class TestWCAModelIdValidatorView(
                 r.data["message"], "User trial expired. Please contact your administrator."
             )
             self.assertInLog(
-                "ansible_ai_connect.ai.api.model_client.exceptions.WcaUserTrialExpired", log
+                "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaUserTrialExpired", log
             )
             self.assert_segment_log(log, "trialExpired", None, type="modelIdValidate")
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_bad_request(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInvalidModelId)
 
@@ -485,14 +500,16 @@ class TestWCAModelIdValidatorView(
             r = self.client.get(reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog(
-                "ansible_ai_connect.ai.api.model_client.exceptions.WcaInvalidModelId", log
+                "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaInvalidModelId", log
             )
             self.assert_segment_log(log, "modelIdValidate", "WcaInvalidModelId")
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_exception(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
 
@@ -507,7 +524,9 @@ class TestWCAModelIdValidatorView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_empty_response(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
-        mock_wca_client = apps.get_app_config("ai").model_mesh_client
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaEmptyResponse)
 

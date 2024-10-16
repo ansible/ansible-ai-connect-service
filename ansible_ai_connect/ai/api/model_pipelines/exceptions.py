@@ -14,6 +14,7 @@
 
 import uuid
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -28,7 +29,7 @@ class WcaException(Exception):
     """Base WCA Exception"""
 
     model_id: str = ""
-    json_response: dict = None
+    json_response: Optional[dict] = None
 
 
 @dataclass

@@ -19,7 +19,9 @@ import responses
 from django.test import TestCase, override_settings
 from responses import matchers
 
-from ansible_ai_connect.ai.api.model_client.bam_client import BAMClient
+from ansible_ai_connect.ai.api.model_pipelines.bam.pipelines import (
+    BAMCompletionsPipeline,
+)
 
 
 class TestBam(TestCase):
@@ -47,7 +49,7 @@ class TestBam(TestCase):
     @responses.activate
     def test_infer(self):
         model = "test"
-        model_client = BAMClient(self.inference_url)
+        model_client = BAMCompletionsPipeline(self.inference_url)
         responses.post(
             self.prediction_url,
             match=[

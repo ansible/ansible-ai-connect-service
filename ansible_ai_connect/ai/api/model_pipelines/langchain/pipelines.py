@@ -1,25 +1,10 @@
-#!/usr/bin/env python3
-
-#  Copyright Red Hat
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
 import logging
 import re
 from textwrap import dedent
 from typing import Any, Dict
 
 import requests
+from django.conf import settings
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
@@ -27,8 +12,17 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
-from .base import ModelMeshClient
-from .exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    MetaData,
+    ModelPipeline,
+    ModelPipelineCompletions,
+    ModelPipelineContentMatch,
+    ModelPipelinePlaybookExplanation,
+    ModelPipelinePlaybookGeneration,
+)
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_MESSAGE_TEMPLATE = (
     "You are an Ansible expert. Return a single task that best completes the "
@@ -36,8 +30,6 @@ SYSTEM_MESSAGE_TEMPLATE = (
     "Do not explain your response. Do not include the prompt in your response."
 )
 HUMAN_MESSAGE_TEMPLATE = "{prompt}"
-
-logger = logging.getLogger(__name__)
 
 
 def unwrap_playbook_answer(message: str | BaseMessage) -> tuple[str, str]:
@@ -89,7 +81,37 @@ def unwrap_task_answer(message: str | BaseMessage) -> str:
     return dedent(re.split(r"- name: .+\n", task)[-1]).rstrip()
 
 
-class LangChainClient(ModelMeshClient):
+class LangchainMetaData(MetaData):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+        i = settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+        self._timeout = int(i) if i is not None else None
+
+    def timeout(self, task_count=1):
+        return self._timeout * task_count if self._timeout else None
+
+
+class LangchainBase(LangchainMetaData, ModelPipeline):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
+
+
+class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
     def get_chat_model(self, model_id):
         raise NotImplementedError
 
@@ -122,6 +144,36 @@ class LangChainClient(ModelMeshClient):
 
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
+
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+        raise NotImplementedError
+
+
+class LangchainContentMatchPipeline(LangchainBase, ModelPipelineContentMatch):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
+
+    def codematch(self, request, model_input, model_id):
+        raise NotImplementedError
+
+
+class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGeneration):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
 
     def generate_playbook(
         self,
@@ -163,9 +215,6 @@ class LangChainClient(ModelMeshClient):
             SYSTEM_MESSAGE_TEMPLATE_WITH_OUTLINE if create_outline else SYSTEM_MESSAGE_TEMPLATE
         )
         human_template = HUMAN_MESSAGE_TEMPLATE_WITH_OUTLINE if outline else HUMAN_MESSAGE_TEMPLATE
-        from ansible_ai_connect.ai.api.model_client.langchain import (
-            unwrap_playbook_answer,
-        )
 
         model_id = self.get_model_id(request.user, None, model_id)
         llm = self.get_chat_model(model_id)
@@ -190,6 +239,18 @@ class LangChainClient(ModelMeshClient):
             outline = ""
 
         return playbook, outline, []
+
+
+class LangchainPlaybookExplanationPipeline(LangchainBase, ModelPipelinePlaybookExplanation):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self):
+        raise NotImplementedError
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
 
     def explain_playbook(
         self,

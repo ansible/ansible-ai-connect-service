@@ -14,7 +14,7 @@
 
 import uuid
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import grpc
 from django.apps import apps
@@ -23,9 +23,15 @@ from django.urls import reverse
 from requests.exceptions import ReadTimeout
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutException
-from ansible_ai_connect.ai.api.model_client.grpc_client import GrpcClient
-from ansible_ai_connect.ai.api.model_client.http_client import HttpClient
-from ansible_ai_connect.ai.api.model_client.wca_client import WCAClient
+from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
+    GrpcCompletionsPipeline,
+    GrpcMetaData,
+)
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+    HttpCompletionsPipeline,
+    HttpMetaData,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaSPipeline
 
 from .test_views import WisdomServiceAPITestCaseBase
 
@@ -39,47 +45,47 @@ def mock_timeout_error():
 class TestApiTimeout(WisdomServiceAPITestCaseBase):
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none(self):
-        model_client = HttpClient(inference_url="http://example.com/")
+        model_client = HttpMetaData(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none(self):
-        model_client = HttpClient(inference_url="http://example.com/")
+        model_client = HttpMetaData(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_multi_task(self):
-        model_client = HttpClient(inference_url="http://example.com/")
+        model_client = HttpMetaData(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_grpc(self):
-        model_client = GrpcClient(inference_url="http://example.com/")
+        model_client = GrpcMetaData(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc(self):
-        model_client = GrpcClient(inference_url="http://example.com/")
+        model_client = GrpcMetaData(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc_multi_task(self):
-        model_client = GrpcClient(inference_url="http://example.com/")
+        model_client = GrpcMetaData(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_wca(self):
-        model_client = WCAClient(inference_url="http://example.com/")
+        model_client = WCASaaSPipeline(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca(self):
-        model_client = WCAClient(inference_url="http://example.com/")
+        model_client = WCASaaSPipeline(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca_multitask(self):
-        model_client = WCAClient(inference_url="http://example.com/")
+        model_client = WCASaaSPipeline(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -92,8 +98,8 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         }
         with patch.object(
             apps.get_app_config("ai"),
-            "model_mesh_client",
-            HttpClient(inference_url="http://example.com/"),
+            "get_model_pipeline",
+            Mock(return_value=HttpCompletionsPipeline(inference_url="http://example.com/")),
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -111,8 +117,8 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         }
         with patch.object(
             apps.get_app_config("ai"),
-            "model_mesh_client",
-            GrpcClient(inference_url="http://example.com/"),
+            "get_model_pipeline",
+            Mock(return_value=GrpcCompletionsPipeline(inference_url="http://example.com/")),
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)

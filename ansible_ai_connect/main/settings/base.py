@@ -337,7 +337,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "ansible_ai_connect.ai.api.model_client.wca_client": {
+        "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base": {
             "handlers": ["console"],
             "level": "INFO",
         },

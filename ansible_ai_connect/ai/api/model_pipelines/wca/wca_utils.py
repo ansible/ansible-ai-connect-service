@@ -17,7 +17,7 @@ import re
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from .exceptions import (
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
     WcaEmptyResponse,

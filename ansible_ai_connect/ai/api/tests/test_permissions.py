@@ -25,6 +25,7 @@ from ansible_ai_connect.ai.api.permissions import (
     BlockWCANotReadyButTrialAvailable,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
@@ -204,3 +205,14 @@ class TestBlockWCANotReadyButTrialAvailable(WisdomAppsBackendMocking):
         demo_plan, _ = Plan.objects.get_or_create(name="demo_90_days", expires_after="90 days")
         self.user.plans.add(demo_plan)
         self.assertEqual(self.p.has_permission(self.request, None), CONTINUE)
+
+
+class TestBlockUserWithoutWCASaaSConfiguration(WisdomAppsBackendMocking):
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    def test_wca_saas_enabled(self):
+        self.assertEqual(IsWCASaaSModelPipeline().has_permission(Mock(), None), CONTINUE)
+
+    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+    def test_wca_saas_not_enabled(self):
+        self.assertEqual(IsWCASaaSModelPipeline().has_permission(Mock(), None), BLOCK)
