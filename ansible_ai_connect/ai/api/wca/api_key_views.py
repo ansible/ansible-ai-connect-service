@@ -213,7 +213,18 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
             if wca_key is None:
                 return Response(status=HTTP_400_BAD_REQUEST)
 
-            # If model ID exists already, delete it upfront
+            secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+
+            # Audit trail/logging
+            user_delete_wca_api_key.send(
+                WCAApiKeyView.__class__,
+                user=request._request.user,
+                org_id=organization.id,
+                api_key=wca_key,
+            )
+            logger.info(f"Deleted API key secret for org_id '{organization.id}'")
+
+            # If model ID exists, delete it as well.
             model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
             if model_id is not None:
                 secret_manager.delete_secret(organization.id, Suffixes.MODEL_ID)
@@ -225,30 +236,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
                     org_id=organization.id,
                     model_id=model_id,
                 )
-
                 logger.info(f"Deleted model ID secret for org_id '{organization.id}'")
-
-            # The model id should not exist so that we can delete the API key
-            # Since we cannot have a transactional relevance between model id deletion
-            # and the API key deletion, we are relying on this mechanism
-            model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
-            if model_id is None:
-                try:
-                    secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
-
-                    # Audit trail/logging
-                    user_delete_wca_api_key.send(
-                        WCAApiKeyView.__class__,
-                        user=request._request.user,
-                        org_id=organization.id,
-                        api_key=wca_key,
-                    )
-
-                    logger.info(f"Deleted API key secret for org_id '{organization.id}'")
-                except Exception as e:
-                    raise Exception(
-                        "Deleted the WCA Model Id, but failed while deleting the WCA Key: " + e
-                    )
 
         except Exception as e:
             exception = e

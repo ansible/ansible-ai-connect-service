@@ -327,8 +327,8 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 mock_secret_manager.delete_secret.assert_has_calls(
                     [
-                        mock.call(self.user.organization.id, Suffixes.MODEL_ID),
                         mock.call(self.user.organization.id, Suffixes.API_KEY),
+                        mock.call(self.user.organization.id, Suffixes.MODEL_ID),
                     ]
                 )
                 self.assert_segment_log(log, "modelApiKeyDelete", None)
@@ -446,7 +446,6 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             mock_secret_manager.delete_secret.assert_has_calls(
                 [
-                    mock.call(self.user.organization.id, Suffixes.MODEL_ID),
                     mock.call(self.user.organization.id, Suffixes.API_KEY),
                 ]
             )
