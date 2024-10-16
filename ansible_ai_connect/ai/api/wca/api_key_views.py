@@ -19,7 +19,7 @@ from django.apps import apps
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, DestroyAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -39,7 +39,11 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.views import ServiceUnavailable
-from ansible_ai_connect.users.signals import user_set_wca_api_key
+from ansible_ai_connect.users.signals import (
+    user_delete_wca_api_key,
+    user_delete_wca_model_id,
+    user_set_wca_api_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +55,8 @@ PERMISSION_CLASSES = [
 ]
 
 
-class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
-    required_scopes = ["read", "write"]
+class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
+    required_scopes = ["read", "write", "delete"]
     throttle_cache_key_suffix = "_wca_api_key"
     permission_classes = PERMISSION_CLASSES
 
@@ -177,6 +181,76 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView):
                 "problem": None if exception is None else exception.__class__.__name__,
             }
             send_segment_event(event, "modelApiKeySet", request.user)
+
+        return Response(status=HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        responses={
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            429: OpenApiResponse(description="Request was throttled"),
+            500: OpenApiResponse(description="Internal service error"),
+        },
+        summary="DELETE WCA key for an Organization",
+        operation_id="wca_api_key_delete",
+    )
+    def delete(self, request, *args, **kwargs):
+        logger.debug("WCA API Key:: DELETE handler")
+
+        organization = None
+        exception = None
+        start_time = time.time()
+        try:
+            organization = request._request.user.organization
+            if not organization:
+                return Response(status=HTTP_400_BAD_REQUEST)
+
+            secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+
+            wca_key = secret_manager.get_secret(organization.id, Suffixes.API_KEY)
+            if wca_key is None:
+                return Response(status=HTTP_400_BAD_REQUEST)
+
+            secret_manager.delete_secret(organization.id, Suffixes.API_KEY)
+
+            # Audit trail/logging
+            user_delete_wca_api_key.send(
+                WCAApiKeyView.__class__,
+                user=request._request.user,
+                org_id=organization.id,
+                api_key=wca_key,
+            )
+            logger.info(f"Deleted API key secret for org_id '{organization.id}'")
+
+            # If model ID exists, delete it as well.
+            model_id = secret_manager.get_secret(organization.id, Suffixes.MODEL_ID)
+            if model_id is not None:
+                secret_manager.delete_secret(organization.id, Suffixes.MODEL_ID)
+
+                # Audit trail/logging
+                user_delete_wca_model_id.send(
+                    WCAApiKeyView.__class__,
+                    user=request._request.user,
+                    org_id=organization.id,
+                    model_id=model_id,
+                )
+                logger.info(f"Deleted model ID secret for org_id '{organization.id}'")
+
+        except Exception as e:
+            exception = e
+            logger.exception(e)
+            raise ServiceUnavailable(cause=e)
+
+        finally:
+            duration = round((time.time() - start_time) * 1000, 2)
+            event = {
+                "duration": duration,
+                "exception": exception is not None,
+                "problem": None if exception is None else exception.__class__.__name__,
+            }
+            send_segment_event(event, "modelApiKeyDelete", request.user)
 
         return Response(status=HTTP_204_NO_CONTENT)
 

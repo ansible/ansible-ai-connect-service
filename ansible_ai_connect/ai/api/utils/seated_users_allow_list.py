@@ -215,6 +215,18 @@ ALLOW_LIST = {
         "timestamp": None,
         "plans": None,
     },
+    "modelApiKeyDelete": {
+        "duration": None,
+        "exception": None,
+        "problem": None,
+        "imageTags": None,
+        "hostname": None,
+        "groups": None,
+        "rh_user_has_seat": None,
+        "rh_user_org_id": None,
+        "timestamp": None,
+        "plans": None,
+    },
     "modelApiKeyValidate": {
         "duration": None,
         "exception": None,

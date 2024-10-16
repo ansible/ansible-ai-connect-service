@@ -378,6 +378,7 @@ paths:
       - oauth2:
         - read
         - write
+        - delete
       - cookieAuth: []
       responses:
         '200':
@@ -419,6 +420,31 @@ paths:
       - oauth2:
         - read
         - write
+        - delete
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Empty response
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '429':
+          description: Request was throttled
+        '500':
+          description: Internal service error
+    delete:
+      operationId: wca_api_key_delete
+      summary: DELETE WCA key for an Organization
+      tags:
+      - wca
+      security:
+      - oauth2:
+        - read
+        - write
+        - delete
       - cookieAuth: []
       responses:
         '204':
