@@ -46,6 +46,7 @@ from ansible_ai_connect.healthcheck.views import (
     WisdomServiceLivenessProbeView,
 )
 from ansible_ai_connect.main.views import (
+    ChatbotView,
     ConsoleView,
     LoginView,
     LogoutView,
@@ -100,6 +101,7 @@ if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
             TelemetrySettingsView.as_view(),
             name="telemetry_settings",
         ),
+        path("chatbot/", ChatbotView.as_view(), name="chatbot"),
     ]
 
 if settings.DEBUG:

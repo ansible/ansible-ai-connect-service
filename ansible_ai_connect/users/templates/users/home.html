@@ -129,6 +129,9 @@
                   {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
                   <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
                   {% endif %}
+                  {% if chatbot_enabled and deployment_mode == 'saas' and user.is_authenticated and user.rh_employee %}
+                  <a class="pf-l-level__item" href="/chatbot"><span class="fas fa-solid fa-comments"></span> Chatbot</a>
+                  {% endif %}
                 </div>
               </div>
             </div>
