@@ -74,12 +74,14 @@ from ansible_ai_connect.ai.api.model_client.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
+from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsPlaybookGenerationWizard,
     AnalyticsProductFeedback,
     AnalyticsRecommendationAction,
     AnalyticsTelemetryEvents,
 )
+from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
@@ -655,12 +657,12 @@ class Explanation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        duration = None
         exception = None
-        explanation_id = None
-        playbook = ""
-        model_id = ""
+        explanation_id: str = None
+        playbook: str = ""
+        model_id: str = ""
         answer = {}
+        event = schema1.ExplainPlaybookEvent()
         request_serializer = ExplanationRequestSerializer(data=request.data)
         try:
             request_serializer.is_valid(raise_exception=True)
@@ -670,11 +672,9 @@ class Explanation(APIView):
             model_id = str(request_serializer.validated_data.get("model", ""))
 
             llm = apps.get_app_config("ai").model_mesh_client
-            start_time = time.time()
             explanation = llm.explain_playbook(
                 request, playbook, custom_prompt, explanation_id, model_id
             )
-            duration = round((time.time() - start_time) * 1000, 2)
 
             # Anonymize response
             # Anonymized in the View to be consistent with where Completions are anonymized
@@ -773,45 +773,23 @@ class Explanation(APIView):
             raise
 
         finally:
-            self.write_to_segment(
-                request.user,
-                explanation_id,
-                exception,
-                duration,
-                playbook_length=len(playbook),
-                model_id=model_id,
-            )
+            try:
+                model_mesh_client = apps.get_app_config("ai").model_mesh_client
+                event.modelName = model_mesh_client.get_model_id(
+                    request.user, request.user.org_id, model_id
+                )
+            except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+                pass
+            event.playbook_length = len(playbook)
+            event.explanationId = explanation_id
+            event.set_request(request)
+            event.set_exception(exception)
+            send_schema1_event(event)
 
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
-
-    def write_to_segment(
-        self, user, explanation_id, exception, duration, playbook_length, model_id=""
-    ):
-        model_name = ""
-        try:
-            model_mesh_client = apps.get_app_config("ai").model_mesh_client
-            model_name = model_mesh_client.get_model_id(user, user.org_id, model_id)
-        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-            pass
-
-        event = {
-            "duration": duration,
-            "exception": exception is not None,
-            "explanationId": explanation_id,
-            "modelName": model_name,
-            "playbook_length": playbook_length,
-            "rh_user_org_id": user.org_id,
-        }
-        if exception:
-            event["response"] = (
-                {
-                    "exception": str(exception),
-                },
-            )
-        send_segment_event(event, "explainPlaybook", user)
 
 
 class Generation(APIView):

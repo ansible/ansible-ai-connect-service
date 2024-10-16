@@ -12,33 +12,47 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime, timedelta
-from unittest import TestCase, mock
+from datetime import datetime
+from unittest import mock
 
-from .schema1 import OneClickTrialStartedEvent, Schema1Event
+from django.test import override_settings
+from django.utils import timezone
+
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
+from ansible_ai_connect.users.models import Plan
+
+from .schema1 import ExplainPlaybookEvent, OneClickTrialStartedEvent, Schema1Event
 
 
-class TestSchema1Event(TestCase):
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestSchema1Event(WisdomServiceAPITestCaseBaseOIDC):
     def test_set_user(self):
-        m_user = mock.Mock()
-        m_user.rh_user_has_seat = True
-        m_user.org_id = 123
-        m_user.groups.values_list.return_value = ["mecano"]
         event1 = Schema1Event()
-        event1.set_user(m_user)
-        self.assertEqual(event1.rh_user_has_seat, True)
-        self.assertEqual(event1.rh_user_org_id, 123)
-        self.assertEqual(event1.groups, ["mecano"])
+        event1.set_user(self.user)
+        self.assertEqual(event1.rh_user_org_id, 1981)
+        self.assertEqual(event1.groups, ["Group 1", "Group 2"])
 
     def test_set_request(self):
         m_request = mock.Mock()
-        m_request.user.groups.values_list.return_value = []
+        m_request.user = self.user
         m_request.path = "/trial"
         m_request.method = "POST"
         event1 = Schema1Event()
         event1.set_request(m_request)
         self.assertEqual(event1.request.path, "/trial")
         self.assertEqual(event1.request.method, "POST")
+
+    def test_set_exception(self):
+        event1 = Schema1Event()
+        self.assertFalse(event1.exception)
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            event1.set_exception(e)
+        self.assertTrue(event1.exception)
+        self.assertEqual(event1.response.exception, "division by zero")
+        self.assertEqual(event1.problem, "division by zero")
 
     def test_as_dict(self):
         event1 = Schema1Event()
@@ -48,25 +62,45 @@ class TestSchema1Event(TestCase):
         self.assertFalse(as_dict.get("exception"), False)
 
 
-class TestOneClickTrialStartedEvent(TestCase):
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestOneClickTrialStartedEvent(WisdomServiceAPITestCaseBaseOIDC):
+
+    def setUp(self):
+        super().setUp()
+        self.trial_plan, _ = Plan.objects.get_or_create(name="Some plan", expires_after="10 days")
+        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        self.user.plans.add(self.trial_plan)
+
+    def tearDown(self):
+        super().tearDown()
+        self.trial_plan.delete()
+
     def test_new_trial(self):
         event1 = OneClickTrialStartedEvent()
         self.assertEqual(event1.event_name, "oneClickTrialStarted")
 
     def test_new_trial_record_plan(self):
-        m_plan = mock.Mock()
-        m_plan.plan.name = "Some plan"
-        m_plan.plan.id = 12
-        m_plan.created_at = str(datetime.now())
-        m_plan.expired_at = str(datetime.now() + timedelta(days=30))
-        m_plan.is_expired = False
-        m_user = mock.Mock()
-        m_user.groups.values_list.return_value = []
-        m_user.userplan_set.all.return_value = [m_plan]
+
         event1 = OneClickTrialStartedEvent()
-        event1.set_user(m_user)
+        event1.set_user(self.user)
         self.assertTrue(isinstance(event1.plans, list))
         self.assertEqual(len(event1.plans), 1)
         self.assertEqual(event1.plans[0].name, "Some plan")
         self.assertTrue(event1.plans[0].created_at.startswith("20"))
-        self.assertEqual(event1.plans[0].plan_id, 12)
+        self.assertEqual(event1.plans[0].plan_id, self.trial_plan.id)
+
+
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestExplainPlaybookEvent(WisdomServiceAPITestCaseBaseOIDC):
+    def test_base(self):
+        event1 = ExplainPlaybookEvent()
+        self.assertEqual(event1.event_name, "explainPlaybook")
+
+    def test_duration(self):
+        event1 = ExplainPlaybookEvent()
+        self.assertGreater(event1._created_at, 0)
+        self.assertIsNone(event1.duration)
+        event1.set_duration()
+        self.assertGreater(event1.duration, 0)
