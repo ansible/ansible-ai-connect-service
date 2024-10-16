@@ -35,7 +35,7 @@ from ansible_ai_connect.ai.api.telemetry import schema2_utils as schema2
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
-from ansible_ai_connect.users.models import Plan
+from ansible_ai_connect.users.models import Plan, User
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
 from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
@@ -85,6 +85,15 @@ class HomeView(TemplateView):
         context["org_has_api_key"] = self.org_has_api_key
 
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
+
+        user = self.request.user
+        context["rh_employee"] = user.rh_employee if isinstance(user, User) else False
+
+        context["chatbot_enabled"] = (
+            settings.CHATBOT_URL
+            and settings.CHATBOT_DEFAULT_MODEL
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
 
         return context
 

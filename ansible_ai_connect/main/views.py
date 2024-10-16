@@ -32,6 +32,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.main.base_views import ProtectedTemplateView
+from ansible_ai_connect.main.permissions import IsAuthenticatedRHEmployee
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,35 @@ class ConsoleView(ProtectedTemplateView):
                 context["telemetry_schema_2_admin_dashboard_url"] = (
                     settings.TELEMETRY_ADMIN_DASHBOARD_URL
                 )
+
+        return context
+
+
+class ChatbotView(ProtectedTemplateView):
+    template_name = "chatbot/index.html"
+
+    permission_classes = [
+        IsAuthenticatedRHEmployee,
+    ]
+
+    def get(self, request):
+        # Open the chatbot page when the chatbot service is configured.
+        if (
+            settings.CHATBOT_URL
+            and settings.CHATBOT_DEFAULT_MODEL
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        ):
+            return super().get(request)
+
+        # Otherwise, redirect to the home page.
+        return HttpResponseRedirect("/")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        user = self.request.user
+        if user:
+            context["user_name"] = user.username
 
         return context
 

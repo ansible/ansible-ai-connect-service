@@ -231,3 +231,89 @@ class TestMarkdownMe(TestCase):
 
         user.delete()
         trial_plan.delete()
+
+
+@override_settings(CHATBOT_URL="http://127.0.0.1:8080")
+@override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+@override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
+class TestChatbotView(TestCase):
+    CHATBOT_PAGE_TITLE = "<title>Ansible AI Connect Chatbot</title>"
+    DOCUMENT_URL = (
+        'href="https://access.redhat.com/documentation/en-us/'
+        'red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest"'
+    )
+
+    def setUp(self):
+        super().setUp()
+        self.non_rh_user = get_user_model().objects.create_user(
+            username="non-rh-user",
+            password="non-rh-password",
+            email="non-rh-user@email.com",
+            rh_employee=False,
+        )
+        self.rh_user = get_user_model().objects.create_user(
+            username="rh-user",
+            password="rh-password",
+            email="rh-user@redhat.com",
+            rh_employee=True,
+        )
+
+    def tearDown(self):
+        self.non_rh_user.delete()
+        self.rh_user.delete()
+
+    def test_chatbot_link_with_anonymous_user(self):
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertNotContains(r, "Chatbot")
+
+    def test_chatbot_link_with_non_rh_user(self):
+        self.client.force_login(user=self.non_rh_user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertNotContains(r, "Chatbot")
+
+    @override_settings(CHATBOT_URL="")
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
+    @override_settings(CHATBOT_DEFAULT_MODEL="")
+    def test_chatbot_link_with_rh_user_but_chatbot_disabled(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertNotContains(r, "Chatbot")
+
+    def test_chatbot_link_with_rh_user(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertContains(r, "Chatbot")
+
+    def test_chatbot_view_with_anonymous_user(self):
+        r = self.client.get(reverse("chatbot"))
+        self.assertEqual(r.status_code, HTTPStatus.FOUND)
+        self.assertEqual(r.url, "/login")
+
+    def test_chatbot_view_with_non_rh_user(self):
+        self.client.force_login(user=self.non_rh_user)
+        r = self.client.get(reverse("chatbot"))
+        self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+    @override_settings(CHATBOT_URL="")
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
+    @override_settings(CHATBOT_DEFAULT_MODEL="")
+    def test_chatbot_view_with_rh_user_but_chatbot_disabled(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("chatbot"))
+        self.assertEqual(r.status_code, HTTPStatus.FOUND)
+        self.assertEqual(r.url, "/")
+
+    def test_chatbot_view_with_rh_user(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("chatbot"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.CHATBOT_PAGE_TITLE)
+        self.assertContains(r, self.rh_user.username)
