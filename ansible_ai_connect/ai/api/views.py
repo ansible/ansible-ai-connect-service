@@ -74,10 +74,13 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ContentMatchParameters,
     MetaData,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    PlaybookExplanationParameters,
+    PlaybookGenerationParameters,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.ai.api.telemetry import schema1
@@ -472,8 +475,10 @@ class ContentMatches(GenericAPIView):
         metadata = []
 
         try:
-            model_id, client_response = model_mesh_client.codematch(
-                request, content_match_data, model_id
+            model_id, client_response = model_mesh_client.invoke(
+                ContentMatchParameters.init(
+                    request=request, model_input=content_match_data, model_id=model_id
+                )
             )
 
             response_data = {"contentmatches": []}
@@ -682,8 +687,14 @@ class Explanation(APIView):
             llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
                 ModelPipelinePlaybookExplanation
             )
-            explanation = llm.explain_playbook(
-                request, playbook, custom_prompt, explanation_id, model_id
+            explanation = llm.invoke(
+                PlaybookExplanationParameters.init(
+                    request=request,
+                    content=playbook,
+                    custom_prompt=custom_prompt,
+                    explanation_id=explanation_id,
+                    model_id=model_id,
+                )
             )
 
             # Anonymize response
@@ -859,8 +870,16 @@ class Generation(APIView):
                 ModelPipelinePlaybookGeneration
             )
             start_time = time.time()
-            playbook, outline, warnings = llm.generate_playbook(
-                request, text, custom_prompt, create_outline, outline, generation_id, model_id
+            playbook, outline, warnings = llm.invoke(
+                PlaybookGenerationParameters.init(
+                    request=request,
+                    text=text,
+                    custom_prompt=custom_prompt,
+                    create_outline=create_outline,
+                    outline=outline,
+                    generation_id=generation_id,
+                    model_id=model_id,
+                )
             )
             duration = round((time.time() - start_time) * 1000, 2)
 

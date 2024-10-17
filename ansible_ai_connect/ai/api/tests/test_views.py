@@ -21,9 +21,9 @@ import string
 import time
 import uuid
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
 from unittest import mock, skip
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import Mock, patch
 
 import requests
 from django.apps import apps
@@ -74,10 +74,18 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
@@ -123,12 +131,7 @@ class MockedLLM(Runnable):
         return self.response_data
 
 
-class MockedMeshClient(
-    ModelPipelineCompletions,
-    ModelPipelineContentMatch,
-    ModelPipelinePlaybookGeneration,
-    ModelPipelinePlaybookExplanation,
-):
+class MockedPipelineCompletions(ModelPipelineCompletions):
 
     def __init__(
         self,
@@ -181,7 +184,8 @@ class MockedMeshClient(
     ) -> str:
         return requested_model_id or ""
 
-    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
+        model_input = params.model_input
         if self.test_inference_match:
             self.test.assertEqual(model_input, self.expects)
         time.sleep(0.1)  # w/o this line test_rate_limit() fails...
@@ -191,35 +195,33 @@ class MockedMeshClient(
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def codematch(self, request, model_input, model_id):
+
+class MockedPipelineContentMatch(ModelPipelineContentMatch):
+
+    def __init__(self):
+        super().__init__(inference_url="dummy inference url")
+
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
-    def invoke(self):
-        raise NotImplementedError
 
-    def get_chat_model(self, model_id):
-        return MockedLLM(self.response_data)
+class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration):
 
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
+    def __init__(self, response_data):
+        super().__init__(inference_url="dummy inference url")
+        self.response_data = response_data
+
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         return self.response_data, self.response_data, []
 
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
+
+class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation):
+
+    def __init__(self, response_data):
+        super().__init__(inference_url="dummy inference url")
+        self.response_data = response_data
+
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         return self.response_data
 
 
@@ -922,7 +924,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -948,7 +950,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(
-                return_value=MockedMeshClient(self, payload, response_data, rh_user_has_seat=True)
+                return_value=MockedPipelineCompletions(
+                    self, payload, response_data, rh_user_has_seat=True
+                )
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -995,7 +999,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(
-                return_value=MockedMeshClient(
+                return_value=MockedPipelineCompletions(
                     self, payload, response_data, test_inference_match=False, rh_user_has_seat=True
                 )
             ),
@@ -1029,7 +1033,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1053,7 +1057,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1074,7 +1078,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1103,7 +1107,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1129,7 +1133,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1153,7 +1157,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1181,7 +1185,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 r = self.client.post(reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -1206,7 +1210,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 r = self.client.post(reverse("completions"), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -1238,7 +1242,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 r = self.client.post(reverse("completions"), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -1278,7 +1282,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(
-                return_value=MockedMeshClient(self, payload, response_data, rh_user_has_seat=True)
+                return_value=MockedPipelineCompletions(
+                    self, payload, response_data, rh_user_has_seat=True
+                )
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -1305,7 +1311,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(
-                return_value=MockedMeshClient(self, payload, response_data, rh_user_has_seat=True)
+                return_value=MockedPipelineCompletions(
+                    self, payload, response_data, rh_user_has_seat=True
+                )
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -1343,7 +1351,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(
-                return_value=MockedMeshClient(self, payload, response_data, rh_user_has_seat=True)
+                return_value=MockedPipelineCompletions(
+                    self, payload, response_data, rh_user_has_seat=True
+                )
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -1366,9 +1376,9 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @patch(
         "ansible_ai_connect.ai.api.model_pipelines.wca."
-        "pipelines_saas.WCASaaSCompletionsPipeline.infer"
+        "pipelines_saas.WCASaaSCompletionsPipeline.invoke"
     )
-    def test_wca_client_errors(self, infer):
+    def test_wca_client_errors(self, invoke):
         """Run WCA client error scenarios for various errors."""
         for error, status_code_expected in [
             (ModelTimeoutError(), HTTPStatus.NO_CONTENT),
@@ -1380,16 +1390,16 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
         ]:
-            infer.side_effect = self.get_side_effect(error)
+            invoke.side_effect = self.get_side_effect(error)
             self.run_wca_client_error_case(status_code_expected, error)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @patch(
         "ansible_ai_connect.ai.api.model_pipelines.wca."
-        "pipelines_saas.WCASaaSCompletionsPipeline.infer"
+        "pipelines_saas.WCASaaSCompletionsPipeline.invoke"
     )
-    def test_wca_client_postprocess_error(self, infer):
-        infer.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
+    def test_wca_client_postprocess_error(self, invoke):
+        invoke.return_value = {"predictions": [""], "model_id": self.DUMMY_MODEL_ID}
         self.run_wca_client_error_case(HTTPStatus.NO_CONTENT, PostprocessException())
 
     def run_wca_client_error_case(self, status_code_expected, error: Union[APIException, OSError]):
@@ -1455,7 +1465,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data, False)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data, False)),
             ):
                 self.client.post(reverse("completions"), payload)
                 self.assertInLog("Create an account for james8@example.com", log)
@@ -1475,7 +1485,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -2638,7 +2648,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.explain_playbook.return_value = "foo"
+        mocked_client.invoke.return_value = "foo"
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -2646,9 +2656,9 @@ This playbook emails admin@redhat.com with a list of passwords.
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
-        mocked_client.explain_playbook.assert_called_with(
-            ANY, "william10@example.com", ANY, ANY, ANY
-        )
+
+        args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
+        self.assertEqual(args.content, "william10@example.com")
 
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
@@ -2669,7 +2679,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_data)),
+            Mock(return_value=MockedPipelinePlaybookExplanation(self.response_data)),
         ):
             # Hit the API without authentication
             r = self.client.post(reverse("explanations"), payload, format="json")
@@ -2686,7 +2696,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_data)),
+            Mock(return_value=MockedPipelinePlaybookExplanation(self.response_data)),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("explanations"), payload, format="json")
@@ -2714,7 +2724,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_pii_data)),
+            Mock(return_value=MockedPipelinePlaybookExplanation(self.response_pii_data)),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("explanations"), payload, format="json")
@@ -2724,7 +2734,7 @@ This playbook emails admin@redhat.com with a list of passwords.
 
     @patch(
         "ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines."
-        "DummyPlaybookExplanationPipeline.explain_playbook"
+        "DummyPlaybookExplanationPipeline.invoke"
     )
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception("Dummy Exception")
@@ -2757,7 +2767,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.explain_playbook.return_value = "foo"
+        mocked_client.invoke.return_value = "foo"
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -2765,9 +2775,10 @@ This playbook emails admin@redhat.com with a list of passwords.
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("explanations"), payload, format="json")
-        mocked_client.explain_playbook.assert_called_with(
-            ANY, "william10@example.com", "Please explain this {playbook}", ANY, ANY
-        )
+
+        args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
+        self.assertEqual(args.content, "william10@example.com")
+        self.assertEqual(args.custom_prompt, "Please explain this {playbook}")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_custom_prompt_blank(self):
@@ -2786,7 +2797,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assertFalse(mocked_client.explain_playbook.called)
+            self.assertFalse(mocked_client.invoke.called)
             self.assertIn("detail", r.data)
             self.assertIn("customPrompt", r.data["detail"])
             self.assertIn("This field may not be blank.", str(r.data["detail"]["customPrompt"]))
@@ -3028,7 +3039,7 @@ that are running Red Hat Enterprise Linux 9.
 
         model_client = self.stub_wca_client(200)
         model_client.get_model_id = get_model_id
-        model_client.explain_playbook = lambda *args: {
+        model_client.invoke = lambda *args: {
             "content": "string",
             "format": "string",
             "explanationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -3123,7 +3134,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
+        mocked_client.invoke.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -3131,9 +3142,10 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
-        mocked_client.generate_playbook.assert_called_with(
-            ANY, "Install nginx on RHEL9 isabella13@example.com", ANY, False, "", ANY, ANY
-        )
+
+        args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
+        self.assertFalse(args.create_outline)
+        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
     def test_unauthorized(self):
         generation_id = str(uuid.uuid4())
@@ -3145,7 +3157,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_data)),
+            Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             # Hit the API without authentication
             r = self.client.post(reverse("generations"), payload, format="json")
@@ -3159,7 +3171,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_data)),
+            Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("generations"), payload, format="json")
@@ -3177,7 +3189,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, self.response_pii_data)),
+            Mock(return_value=MockedPipelinePlaybookGeneration(self.response_pii_data)),
         ):
             self.client.force_authenticate(user=self.user)
             r = self.client.post(reverse("generations"), payload, format="json")
@@ -3189,7 +3201,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 
     @patch(
         "ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines."
-        "DummyPlaybookGenerationPipeline.generate_playbook"
+        "DummyPlaybookGenerationPipeline.invoke"
     )
     def test_service_unavailable(self, invoke):
         invoke.side_effect = Exception("Dummy Exception")
@@ -3214,7 +3226,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
+        mocked_client.invoke.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -3222,15 +3234,14 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
-        mocked_client.generate_playbook.assert_called_with(
-            ANY,
-            "Install nginx on RHEL9 isabella13@example.com",
-            "You are an Ansible expert. Explain {goal} with {outline}.",
-            False,
-            "Install nginx. Start nginx.",
-            ANY,
-            ANY,
+
+        args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
+        self.assertFalse(args.create_outline)
+        self.assertEqual(args.outline, "Install nginx. Start nginx.")
+        self.assertEqual(
+            args.custom_prompt, "You are an Ansible expert. Explain {goal} with {outline}."
         )
+        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_custom_prompt_blank(self):
@@ -3318,7 +3329,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         mocked_client = Mock()
-        mocked_client.generate_playbook.return_value = ("foo", "bar", [])
+        mocked_client.invoke.return_value = ("foo", "bar", [])
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -3326,15 +3337,12 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         ):
             self.client.force_authenticate(user=self.user)
             self.client.post(reverse("generations"), payload, format="json")
-        mocked_client.generate_playbook.assert_called_with(
-            ANY,
-            "Install nginx on RHEL9 isabella13@example.com",
-            "You are an Ansible expert. Explain {goal}.",
-            False,
-            "",
-            ANY,
-            ANY,
-        )
+
+        args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
+        self.assertFalse(args.create_outline)
+        self.assertEqual(args.outline, "")
+        self.assertEqual(args.custom_prompt, "You are an Ansible expert. Explain {goal}.")
+        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
@@ -3551,7 +3559,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             return model_id
 
         model_client.get_model_id = get_model_id
-        model_client.generate_playbook = lambda *args: ("playbook", "outline", "warnings")
+        model_client.invoke = lambda *args: ("playbook", "outline", "warnings")
         self.assert_test(
             model_client,
             HTTPStatus.OK,

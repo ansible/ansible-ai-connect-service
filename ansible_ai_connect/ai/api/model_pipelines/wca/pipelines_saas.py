@@ -35,6 +35,12 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaRequestIdCorrelationFailure,
     WcaTokenFailure,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
+)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     MODEL_MESH_HEALTH_CHECK_TOKENS,
     WCA_REQUEST_ID_HEADER,
@@ -159,7 +165,7 @@ class WCASaaSMetaData(WCABaseMetaData):
         self,
         user,
         organization_id: Optional[int] = None,
-        requested_model_id: str = "",
+        requested_model_id: Optional[str] = None,
     ) -> str:
         if not organization_id and user.organization:
             # The organization_id parameter should be removed
@@ -199,7 +205,7 @@ class WCASaaSMetaData(WCABaseMetaData):
             raise
 
         logger.error("Seated user's organization doesn't have default model ID set")
-        raise WcaModelIdNotFound(model_id=requested_model_id)
+        raise WcaModelIdNotFound(model_id=requested_model_id if requested_model_id else "none")
 
 
 class WCASaaSPipeline(WCASaaSMetaData, WCABasePipeline, metaclass=ABCMeta):
@@ -223,17 +229,11 @@ class WCASaaSPipeline(WCASaaSMetaData, WCABasePipeline, metaclass=ABCMeta):
             "Authorization": f"Bearer {token['access_token']}",
         }
 
-    def invoke(self):
-        raise NotImplementedError
-
 
 class WCASaaSCompletionsPipeline(WCASaaSPipeline, WCABaseCompletionsPipeline):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    def invoke(self):
-        raise NotImplementedError
 
     def self_test(self) -> HealthCheckSummary:
         wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
@@ -281,9 +281,6 @@ class WCASaaSContentMatchPipeline(WCASaaSPipeline, WCABaseContentMatchPipeline):
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def self_test(self):
         raise NotImplementedError
 
@@ -293,22 +290,18 @@ class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerati
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def self_test(self):
         raise NotImplementedError
 
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
+        request = params.request
+        text = params.text
+        custom_prompt = params.custom_prompt
+        create_outline = params.create_outline
+        outline = params.outline
+        model_id = params.model_id
+        generation_id = params.generation_id
+
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
         model_id = self.get_model_id(request.user, organization_id, model_id)
@@ -375,20 +368,16 @@ class WCASaaSPlaybookExplanationPipeline(WCASaaSPipeline, WCABasePlaybookExplana
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def self_test(self):
         raise NotImplementedError
 
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        request = params.request
+        content = params.content
+        custom_prompt = params.custom_prompt
+        model_id = params.model_id
+        explanation_id = params.explanation_id
+
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
         model_id = self.get_model_id(request.user, organization_id, model_id)

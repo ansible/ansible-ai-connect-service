@@ -14,9 +14,12 @@
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
+from attrs import define
 from django.conf import settings
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from ansible_ai_connect.healthcheck.backends import (
     MODEL_MESH_HEALTH_CHECK_MODELS,
@@ -26,6 +29,123 @@ from ansible_ai_connect.healthcheck.backends import (
 
 logger = logging.getLogger(__name__)
 
+PIPELINE_PARAMETERS = TypeVar("PIPELINE_PARAMETERS")
+PIPELINE_RETURN = TypeVar("PIPELINE_RETURN")
+PIPELINE_TYPE = TypeVar("PIPELINE_TYPE")
+
+
+@define
+class CompletionsParameters:
+    request: Request
+    model_input: dict[str, Any]
+    model_id: str = ""
+    suggestion_id: Optional[str] = None
+
+    @classmethod
+    def init(
+        cls,
+        request: Request,
+        model_input: dict[str, Any],
+        model_id: Optional[str] = None,
+        suggestion_id: Optional[str] = None,
+    ):
+        return cls(
+            request=request,
+            model_input=model_input,
+            model_id=model_id,
+            suggestion_id=suggestion_id,
+        )
+
+
+CompletionsResponse = Dict[str, Any]
+
+
+@define
+class ContentMatchParameters:
+    request: Request
+    model_input: dict[str, Any]
+    model_id: str = ""
+
+    @classmethod
+    def init(
+        cls,
+        request: Request,
+        model_input: dict[str, Any],
+        model_id: Optional[str] = None,
+    ):
+        return cls(
+            request=request,
+            model_input=model_input,
+            model_id=model_id,
+        )
+
+
+ContentMatchResponse = tuple[str, Response]
+
+
+@define
+class PlaybookGenerationParameters:
+    request: Request
+    text: str
+    custom_prompt: str
+    create_outline: bool
+    outline: str
+    generation_id: str
+    model_id: str
+
+    @classmethod
+    def init(
+        cls,
+        request,
+        text: str = "",
+        custom_prompt: str = "",
+        create_outline: bool = False,
+        outline: str = "",
+        generation_id: str = "",
+        model_id: str = "",
+    ):
+        return cls(
+            request=request,
+            text=text,
+            custom_prompt=custom_prompt,
+            create_outline=create_outline,
+            outline=outline,
+            generation_id=generation_id,
+            model_id=model_id,
+        )
+
+
+PlaybookGenerationResponse = tuple[str, str, list]
+
+
+@define
+class PlaybookExplanationParameters:
+    request: Request
+    content: str
+    custom_prompt: str
+    explanation_id: str
+    model_id: str
+
+    @classmethod
+    def init(
+        cls,
+        request,
+        content: str,
+        custom_prompt: str = "",
+        explanation_id: str = "",
+        model_id: str = "",
+    ):
+        return cls(
+            request=request,
+            content=content,
+            custom_prompt=custom_prompt,
+            explanation_id=explanation_id,
+            model_id=model_id,
+        )
+
+
+PlaybookExplanationResponse = str
+
 
 class MetaData(metaclass=ABCMeta):
 
@@ -33,7 +153,7 @@ class MetaData(metaclass=ABCMeta):
         self._inference_url = inference_url
 
     def get_model_id(
-        self, user, organization_id: Optional[int] = None, requested_model_id: str = ""
+        self, user, organization_id: Optional[int] = None, requested_model_id: Optional[str] = None
     ) -> str:
         return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
 
@@ -41,13 +161,13 @@ class MetaData(metaclass=ABCMeta):
         return settings.ENABLE_ARI_POSTPROCESS
 
 
-class ModelPipeline(MetaData, metaclass=ABCMeta):
+class ModelPipeline(Generic[PIPELINE_PARAMETERS, PIPELINE_RETURN], MetaData, metaclass=ABCMeta):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
     @abstractmethod
-    def invoke(self):
+    def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
         raise NotImplementedError
 
     def self_test(self):
@@ -59,64 +179,40 @@ class ModelPipeline(MetaData, metaclass=ABCMeta):
         )
 
 
-class ModelPipelineCompletions(ModelPipeline, metaclass=ABCMeta):
+class ModelPipelineCompletions(
+    ModelPipeline[CompletionsParameters, CompletionsResponse], metaclass=ABCMeta
+):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    @abstractmethod
-    def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
-        raise NotImplementedError
 
     @abstractmethod
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
 
-class ModelPipelineContentMatch(ModelPipeline, metaclass=ABCMeta):
+class ModelPipelineContentMatch(
+    ModelPipeline[ContentMatchParameters, ContentMatchResponse],
+    metaclass=ABCMeta,
+):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    @abstractmethod
-    def codematch(self, request, model_input, model_id):
-        raise NotImplementedError
 
-
-class ModelPipelinePlaybookGeneration(ModelPipeline, metaclass=ABCMeta):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    @abstractmethod
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
-        raise NotImplementedError
-
-
-class ModelPipelinePlaybookExplanation(ModelPipeline, metaclass=ABCMeta):
+class ModelPipelinePlaybookGeneration(
+    ModelPipeline[PlaybookGenerationParameters, PlaybookGenerationResponse],
+    metaclass=ABCMeta,
+):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    @abstractmethod
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
-        raise NotImplementedError
 
+class ModelPipelinePlaybookExplanation(
+    ModelPipeline[PlaybookExplanationParameters, PlaybookExplanationResponse],
+    metaclass=ABCMeta,
+):
 
-PIPELINE_TYPE = TypeVar("PIPELINE_TYPE")
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)

@@ -55,7 +55,10 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
 )
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    ModelPipelineCompletions,
+)
 from ansible_ai_connect.ai.api.pipelines.common import PipelineElement
 from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
@@ -105,8 +108,13 @@ class InferenceStage(PipelineElement):
         event_name = None
         start_time = time.time()
         try:
-            predictions = model_mesh_client.infer(
-                request, data, model_id=model_id, suggestion_id=suggestion_id
+            predictions = model_mesh_client.invoke(
+                CompletionsParameters.init(
+                    request=request,
+                    model_input=data,
+                    model_id=model_id,
+                    suggestion_id=suggestion_id,
+                )
             )
             model_id = predictions.get("model_id", model_id)
         except ModelTimeoutError as e:

@@ -24,6 +24,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import ModelTimeoutErr
 from ansible_ai_connect.ai.api.model_pipelines.llamacpp.pipelines import (
     LlamaCppCompletionsPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
 
 
 class TestLlamaCPPClient(TestCase):
@@ -68,7 +69,9 @@ class TestLlamaCPPClient(TestCase):
             },
         )
 
-        response = model_client.infer(request=Mock(), model_input=self.model_input)
+        response = model_client.invoke(
+            CompletionsParameters.init(request=Mock(), model_input=self.model_input)
+        )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
     @responses.activate
@@ -95,7 +98,9 @@ class TestLlamaCPPClient(TestCase):
             },
         )
 
-        response = model_client.infer(request=Mock(), model_input=self.model_input, model_id=model)
+        response = model_client.invoke(
+            CompletionsParameters.init(request=Mock(), model_input=self.model_input, model_id=model)
+        )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
@@ -104,4 +109,6 @@ class TestLlamaCPPClient(TestCase):
         model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
         model_client.session.post = Mock(side_effect=ReadTimeout())
         with self.assertRaises(ModelTimeoutError):
-            model_client.infer(request=Mock(), model_input=self.model_input)
+            model_client.invoke(
+                CompletionsParameters.init(request=Mock(), model_input=self.model_input)
+            )

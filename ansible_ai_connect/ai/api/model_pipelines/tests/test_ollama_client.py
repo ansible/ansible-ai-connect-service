@@ -21,6 +21,7 @@ from django.test import TestCase
 from ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines import (
     OllamaCompletionsPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
 
 
 class TestOllama(TestCase):
@@ -48,5 +49,9 @@ class TestOllama(TestCase):
 
         m_ollama.return_value = final
         model_client = OllamaCompletionsPipeline("http://localhost")
-        response = model_client.infer(request=Mock(), model_input=self.model_input, model_id="test")
+        response = model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(), model_input=self.model_input, model_id="test"
+            )
+        )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

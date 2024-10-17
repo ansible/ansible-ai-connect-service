@@ -25,6 +25,12 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaModelIdNotFound,
     WcaUsernameNotFound,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
+)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
     WCABaseCompletionsPipeline,
@@ -63,7 +69,7 @@ class WCAOnPremMetaData(WCABaseMetaData):
         self,
         user,
         organization_id: Optional[int] = None,
-        requested_model_id: str = "",
+        requested_model_id: Optional[str] = None,
     ) -> str:
         if requested_model_id:
             # requested_model_id defined: let them use what they ask for
@@ -109,9 +115,6 @@ class WCAOnPremCompletionsPipeline(WCAOnPremPipeline, WCABaseCompletionsPipeline
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def self_test(self) -> HealthCheckSummary:
         wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
         wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
@@ -146,9 +149,6 @@ class WCAOnPremContentMatchPipeline(WCAOnPremPipeline, WCABaseContentMatchPipeli
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def self_test(self):
         raise NotImplementedError
 
@@ -158,23 +158,11 @@ class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGene
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
+        raise FeatureNotAvailable
 
     def self_test(self):
         raise NotImplementedError
-
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
-        raise FeatureNotAvailable
 
 
 class WCAOnPremPlaybookExplanationPipeline(WCAOnPremPipeline, WCABasePlaybookExplanationPipeline):
@@ -182,18 +170,8 @@ class WCAOnPremPlaybookExplanationPipeline(WCAOnPremPipeline, WCABasePlaybookExp
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        raise FeatureNotAvailable
 
     def self_test(self):
         raise NotImplementedError
-
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
-        raise FeatureNotAvailable
