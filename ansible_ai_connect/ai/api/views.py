@@ -119,6 +119,8 @@ from .serializers import (
     FeedbackRequestSerializer,
     GenerationRequestSerializer,
     GenerationResponseSerializer,
+    GenerationRoleRequestSerializer,
+    GenerationRoleResponseSerializer,
     InlineSuggestionFeedback,
     IssueFeedback,
     PlaybookExplanationFeedback,
@@ -994,6 +996,48 @@ class Generation(APIView):
                 },
             )
         send_segment_event(event, "codegenPlaybook", user)
+
+
+class GenerationRole(APIView):
+    """
+    Returns a role based on a text input.
+    """
+
+    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
+    from rest_framework import permissions
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+    ]
+    required_scopes = ["read", "write"]
+
+    throttle_cache_key_suffix = "_generation_role"
+
+    @extend_schema(
+        request=GenerationRoleRequestSerializer,
+        responses={
+            200: GenerationRoleResponseSerializer,
+            401: OpenApiResponse(description="Unauthorized"),
+        },
+        summary="Inline code suggestions",
+    )
+    def post(self, request) -> Response:
+        # Declaring but commenting out variables to define them but also comply pre-commit
+        # text = ""
+        # outine = ""
+        # create_outline = None
+        # additional_context = {}
+        # file_types = ["task", "default"]
+        # generation_id = None
+        # wizard_id = None
+        # request_serializer = GenerationRoleRequestSerializer(data=request.data)
+        answer = {}
+
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
 
 
 class Chat(APIView):
