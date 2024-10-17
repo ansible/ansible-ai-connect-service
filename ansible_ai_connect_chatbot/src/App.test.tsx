@@ -60,33 +60,60 @@ describe("App tests", () => {
     await act(async () => userEvent.type(textArea, "Hello"));
     const sendButton = await screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Create variables")).toBeInTheDocument();
   });
 
   it("Chat service returns 500", async () => {
     mockAxios(500);
-    renderApp();
+    const app = renderApp();
     const textArea = await screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
     const sendButton = await screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
+    const alert = app.container.querySelector(".pf-v6-c-alert__description");
+    const textContent = alert?.textContent;
+    expect(textContent).toEqual("Bot returned status_code 500");
   });
 
   it("Chat service returns an unexpected error", async () => {
     mockAxios(-1, true);
-    renderApp();
+    const app = renderApp();
     const textArea = await screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
     const sendButton = await screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
+    const alert = app.container.querySelector(".pf-v6-c-alert__description");
+    const textContent = alert?.textContent;
+    expect(textContent).toEqual(
+      "An unexpected error occured: Error: mocked error",
+    );
   });
 
   it("Color theme switch", async () => {
     mockAxios(200);
-    const result = renderApp();
-    const colorThemeSwitch: any = result.container.querySelector(
+    const app = renderApp();
+    const colorThemeSwitch: any = app.container.querySelector(
       "#color-theme-switch",
     );
+    expect(colorThemeSwitch).toBeTruthy();
+    expect(colorThemeSwitch.checked).toBeFalsy();
+
+    // "getComputedStyle" does not seem to work...
+    //
+    // const showLight = app.container.querySelector(".show-light");
+    // const showDark = app.container.querySelector(".show-dark");
+    // expect(getComputedStyle(showLight!).display).toEqual("block")
+    // expect(getComputedStyle(showDark!).display).toEqual("none")
+
     await act(async () => fireEvent.click(colorThemeSwitch));
+    expect(colorThemeSwitch.checked).toBeTruthy();
+
+    // expect(getComputedStyle(showLight!).display).toEqual("none")
+    // expect(getComputedStyle(showDark!).display).toEqual("block")
   });
 });

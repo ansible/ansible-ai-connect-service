@@ -2,6 +2,7 @@
 /// <reference types="vite/client" />
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { configDefaults } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -29,6 +30,13 @@ export default defineConfig({
     setupFiles: "./src/setupTests.ts",
     coverage: {
       provider: "v8",
+      exclude: [
+        ...configDefaults.exclude,
+        "**/*.d.ts",
+        "**/*.test.tsx",
+        "src/index.tsx",
+        "src/reportWebVitals.ts",
+      ],
     },
   },
 });
