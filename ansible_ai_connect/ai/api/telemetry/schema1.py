@@ -19,6 +19,7 @@ import time
 
 from attr import Factory, asdict, field
 from attrs import define, validators
+from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from yaml.error import MarkedYAMLError
 
@@ -102,14 +103,28 @@ class Schema1Event:
 
     def set_user(self, user):
         self._user = user
+        if isinstance(user, AnonymousUser):
+            return
         self.rh_user_has_seat = user.rh_user_has_seat
-        self.rh_user_org_id = user.org_id
+        if user.organization:
+            self.rh_user_org_id = user.organization.id
         self.groups = list(user.groups.values_list("name", flat=True))
         self.plans = [PlanEntry.init(up) for up in user.userplan_set.all()]
 
     def set_request(self, request):
-        self.set_user(request.user)
+        if hasattr(request, "user"):  # e.g WSGIRequest generated when we run update-openapi-schema
+            self.set_user(request.user)
         self.request = RequestPayload(path=request.path, method=request.method)
+
+    def set_response(self, response):
+        self.response = {
+            # See main.exception_handler.exception_handler_with_error_type
+            # That extracts 'default_code' from Exceptions and stores it
+            # in the Response.
+            "error_type": getattr(response, "error_type", None),
+            "status_code": response.status_code,
+            "status_text": getattr(response, "status_text", None),
+        }
 
     def set_duration(self):
         self.duration = round((time.time() - self._created_at) * 1000, 2)

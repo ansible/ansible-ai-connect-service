@@ -15,6 +15,7 @@
 import json
 import logging
 import time
+import traceback
 from string import Template
 
 import requests
@@ -161,6 +162,62 @@ PERMISSIONS_MAP = {
         BlockUserWithSeatButWCANotReady,
     ],
 }
+
+
+class AACSAPIView(APIView):
+    def initialize_request(self, request, *args, **kwargs):
+        self.event: schema1.Schema1Event = self.schema1_event()
+        self.event.set_request(request)
+
+        # TODO: when we will move the request_serializer handling in this
+        # class, we will change this line below. The model_id attribute
+        # should exposed as self.validated_data.model, or using a special
+        # method.
+        # See: https://github.com/ansible/ansible-ai-connect-service/pull/1147/files#diff-ecfb6919dfd8379aafba96af7457b253e4dce528897dfe6bfc207ca2b3b2ada9R143-R151  # noqa: E501
+        self.model_id: str = ""
+
+        return super().initialize_request(request, *args, **kwargs)
+
+    def handle_exception(self, exc):
+        self.exception = exc
+
+        # Mapping between the internal exceptions and the API exceptions (with a message and a code)
+        mapping = [
+            (WcaBadRequest, WcaBadRequestException),
+            (WcaCloudflareRejection, WcaCloudflareRejectionException),
+            (WcaEmptyResponse, WcaEmptyResponseException),
+            (WcaHAPFilterRejection, WcaHAPFilterRejectionException),
+            (WcaInstanceDeleted, WcaInstanceDeletedException),
+            (WcaInvalidModelId, WcaInvalidModelIdException),
+            (WcaKeyNotFound, WcaKeyNotFoundException),
+            (WcaModelIdNotFound, WcaModelIdNotFoundException),
+            (WcaNoDefaultModelId, WcaNoDefaultModelIdException),
+            (WcaRequestIdCorrelationFailure, WcaRequestIdCorrelationFailureException),
+            (WcaUserTrialExpired, WcaUserTrialExpiredException),
+        ]
+
+        for original_class, new_class in mapping:
+            if isinstance(exc, original_class):
+                exc = new_class(cause=exc)
+                break
+        logger.error(f"{type(exc)}: {traceback.format_exception(exc)}")
+        response = super().handle_exception(exc)
+        self.event.set_exception(exc)
+        return response
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+
+        try:
+            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            user = request.user
+            org_id = hasattr(user, "organization") and user.organization and user.organization.id
+            self.event.modelName = model_meta_data.get_model_id(request.user, org_id, self.model_id)
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+            pass
+        self.event.set_response(response)
+        send_schema1_event(self.event)
+        return response
 
 
 class Completions(APIView):
@@ -640,7 +697,7 @@ class ContentMatches(GenericAPIView):
         send_segment_event(event, "contentmatch", user)
 
 
-class Explanation(APIView):
+class Explanation(AACSAPIView):
     """
     Returns a text that explains a playbook.
     """
@@ -654,6 +711,7 @@ class Explanation(APIView):
         BlockUserWithSeatButWCANotReady,
     ]
     required_scopes = ["read", "write"]
+    schema1_event = schema1.ExplainPlaybookEvent
 
     throttle_cache_key_suffix = "_explanation"
 
@@ -670,142 +728,44 @@ class Explanation(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        exception = None
         explanation_id: str = None
         playbook: str = ""
-        model_id: str = ""
         answer = {}
-        event = schema1.ExplainPlaybookEvent()
+
+        # TODO: This request_serializer block will move in AACSAPIView later
         request_serializer = ExplanationRequestSerializer(data=request.data)
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
-            playbook = request_serializer.validated_data.get("content")
-            custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
-            model_id = str(request_serializer.validated_data.get("model", ""))
+        request_serializer.is_valid(raise_exception=True)
+        explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
+        playbook = request_serializer.validated_data.get("content")
+        custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
+        self.model_id = str(request_serializer.validated_data.get("model", ""))
 
-            llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
-                ModelPipelinePlaybookExplanation
+        llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelinePlaybookExplanation
+        )
+        explanation = llm.invoke(
+            PlaybookExplanationParameters.init(
+                request=request,
+                content=playbook,
+                custom_prompt=custom_prompt,
+                explanation_id=explanation_id,
+                model_id=self.model_id,
             )
-            explanation = llm.invoke(
-                PlaybookExplanationParameters.init(
-                    request=request,
-                    content=playbook,
-                    custom_prompt=custom_prompt,
-                    explanation_id=explanation_id,
-                    model_id=model_id,
-                )
-            )
+        )
+        self.event.playbook_length = len(playbook)
+        self.event.explanationId = explanation_id
 
-            # Anonymize response
-            # Anonymized in the View to be consistent with where Completions are anonymized
-            anonymized_explanation = anonymizer.anonymize_struct(
-                explanation, value_template=Template("{{ _${variable_name}_ }}")
-            )
+        # Anonymize response
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_explanation = anonymizer.anonymize_struct(
+            explanation, value_template=Template("{{ _${variable_name}_ }}")
+        )
 
-            answer = {
-                "content": anonymized_explanation,
-                "format": "markdown",
-                "explanationId": explanation_id,
-            }
-
-        except WcaBadRequest as e:
-            exception = e
-            logger.exception(f"bad request for playbook explanation {explanation_id}")
-            raise WcaBadRequestException(cause=e)
-
-        except WcaInvalidModelId as e:
-            exception = e
-            logger.exception(f"WCA Model ID is invalid for playbook explanation {explanation_id}")
-            raise WcaInvalidModelIdException(cause=e)
-
-        except WcaKeyNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaKeyNotFoundException(cause=e)
-
-        except WcaModelIdNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaModelIdNotFoundException(cause=e)
-
-        except WcaNoDefaultModelId as e:
-            exception = e
-            logger.exception(
-                "A default WCA Model ID was expected but not found for "
-                f"playbook explanation {explanation_id}"
-            )
-            raise WcaNoDefaultModelIdException(cause=e)
-
-        except WcaRequestIdCorrelationFailure as e:
-            exception = e
-            logger.exception(
-                f"WCA Request/Response ExplanationId correlation failed "
-                f"for suggestion {explanation_id}"
-            )
-            raise WcaRequestIdCorrelationFailureException(cause=e)
-
-        except WcaEmptyResponse as e:
-            exception = e
-            logger.exception(
-                f"WCA returned an empty response for playbook explanation {explanation_id}"
-            )
-            raise WcaEmptyResponseException(cause=e)
-
-        except WcaCloudflareRejection as e:
-            exception = e
-            logger.exception(
-                f"Cloudflare rejected the request for playbook explanation {explanation_id}"
-            )
-            raise WcaCloudflareRejectionException(cause=e)
-
-        except WcaHAPFilterRejection as e:
-            exception = e
-            logger.exception(
-                f"WCA Hate, Abuse, and Profanity filter rejected "
-                f"the request for playbook explanation {explanation_id}"
-            )
-            raise WcaHAPFilterRejectionException(cause=e)
-
-        except WcaUserTrialExpired as e:
-            exception = e
-            logger.exception(
-                f"User trial expired, when requesting playbook explanation {explanation_id}"
-            )
-            raise WcaUserTrialExpiredException(cause=e)
-
-        except WcaInstanceDeleted as e:
-            exception = e
-            logger.exception(
-                "WCA Instance has been deleted when requesting playbook explanation "
-                f"{explanation_id} for model {e.model_id}"
-            )
-            raise WcaInstanceDeletedException(cause=e)
-
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook explanation")
-            raise
-
-        finally:
-            try:
-                model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-                event.modelName = model_meta_data.get_model_id(
-                    request.user, request.user.org_id, model_id
-                )
-            except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-                pass
-            event.playbook_length = len(playbook)
-            event.explanationId = explanation_id
-            event.set_request(request)
-            event.set_exception(exception)
-            send_schema1_event(event)
+        answer = {
+            "content": anonymized_explanation,
+            "format": "markdown",
+            "explanationId": explanation_id,
+        }
 
         return Response(
             answer,
