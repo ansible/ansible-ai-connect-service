@@ -25,8 +25,11 @@ class OneClickTrial:
 
         if hasattr(self.user, "userplan_set"):
             for up in self.user.userplan_set.all():
-                if up.is_active:
+                if up.is_active and up.expired_at:
                     days_left = (up.expired_at - timezone.now()).days
+                    active_plan = up
+                if up.is_active and not up.expired_at:
+                    days_left = None
                     active_plan = up
                 else:
                     expired_plan = up
@@ -39,12 +42,18 @@ class OneClickTrial:
         if self.is_available():
             active_plan, expired_plan, _ = self.get_plans()
 
-            if active_plan:
+            if active_plan and active_plan.expired_at:
                 expired_at = active_plan.expired_at.strftime("%Y-%m-%d")
                 markdown_value = f"""
                     Logged in as: {self.user.username}<br>
                     Plan: {active_plan.plan.name}<br>
                     Expiration: {expired_at}
+                """
+            elif active_plan and not active_plan.expired_at:
+                markdown_value = f"""
+                    Logged in as: {self.user.username}<br>
+                    Plan: {active_plan.plan.name}<br>
+                    Expiration: Never
                 """
             elif expired_plan:
                 markdown_value = f"""
