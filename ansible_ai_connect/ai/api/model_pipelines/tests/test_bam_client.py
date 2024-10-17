@@ -22,6 +22,7 @@ from responses import matchers
 from ansible_ai_connect.ai.api.model_pipelines.bam.pipelines import (
     BAMCompletionsPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
 
 
 class TestBam(TestCase):
@@ -90,5 +91,7 @@ class TestBam(TestCase):
             },
         )
 
-        response = model_client.infer(request=Mock(), model_input=self.model_input, model_id=model)
+        response = model_client.invoke(
+            CompletionsParameters.init(request=Mock(), model_input=self.model_input, model_id=model)
+        )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

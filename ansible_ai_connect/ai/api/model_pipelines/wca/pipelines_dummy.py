@@ -14,16 +14,24 @@
 
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import WcaTokenFailure
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     MetaData,
     ModelPipeline,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
 )
 
 if TYPE_CHECKING:
@@ -43,7 +51,7 @@ class WCADummyMetaData(MetaData):
         self,
         user: User,
         organization_id: Optional[int] = None,
-        requested_model_id: str = "",
+        requested_model_id: Optional[str] = None,
     ) -> str:
         return requested_model_id or ""
 
@@ -64,10 +72,7 @@ class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         return {
             "model_id": "mocked_wca_client",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
@@ -82,10 +87,7 @@ class WCADummyContentMatchPipeline(WCADummyPipeline, ModelPipelineContentMatch):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def codematch(self, request, model_input, model_id):
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
 
@@ -94,19 +96,7 @@ class WCADummyPlaybookGenerationPipeline(WCADummyPipeline, ModelPipelinePlaybook
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         raise NotImplementedError
 
 
@@ -115,15 +105,5 @@ class WCADummyPlaybookExplanationPipeline(WCADummyPipeline, ModelPipelinePlayboo
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise NotImplementedError

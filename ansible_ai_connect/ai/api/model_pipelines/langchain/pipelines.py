@@ -14,8 +14,8 @@
 
 import logging
 import re
+from abc import ABCMeta
 from textwrap import dedent
-from typing import Any, Dict
 
 import requests
 from django.conf import settings
@@ -28,12 +28,20 @@ from langchain_core.prompts.chat import (
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     MetaData,
     ModelPipeline,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -106,16 +114,10 @@ class LangchainMetaData(MetaData):
         return self._timeout * task_count if self._timeout else None
 
 
-class LangchainBase(LangchainMetaData, ModelPipeline):
+class LangchainBase(LangchainMetaData, ModelPipeline, metaclass=ABCMeta):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    def invoke(self):
-        raise NotImplementedError
-
-    def get_chat_model(self, model_id):
-        raise NotImplementedError
 
 
 class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
@@ -123,13 +125,10 @@ class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def get_chat_model(self, model_id):
-        raise NotImplementedError
-
-    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
+        request = params.request
+        model_id = params.model_id
+        model_input = params.model_input
         model_id = self.get_model_id(request.user, None, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -159,6 +158,9 @@ class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
+
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
@@ -168,13 +170,10 @@ class LangchainContentMatchPipeline(LangchainBase, ModelPipelineContentMatch):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
-        raise NotImplementedError
-
-    def codematch(self, request, model_input, model_id):
         raise NotImplementedError
 
 
@@ -183,22 +182,14 @@ class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGe
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
+        request = params.request
+        text = params.text
+        custom_prompt = params.custom_prompt
+        create_outline = params.create_outline
+        outline = params.outline
+        model_id = params.model_id
 
-    def get_chat_model(self, model_id):
-        raise NotImplementedError
-
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
         SYSTEM_MESSAGE_TEMPLATE = """
         You are an Ansible expert.
         Your role is to help Ansible developers write playbooks.
@@ -254,26 +245,21 @@ class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGe
 
         return playbook, outline, []
 
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
+
 
 class LangchainPlaybookExplanationPipeline(LangchainBase, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        request = params.request
+        content = params.content
+        custom_prompt = params.custom_prompt
+        model_id = params.model_id
 
-    def get_chat_model(self, model_id):
-        raise NotImplementedError
-
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
         SYSTEM_MESSAGE_TEMPLATE = """
         You're an Ansible expert.
         You format your output with Markdown.
@@ -311,3 +297,6 @@ class LangchainPlaybookExplanationPipeline(LangchainBase, ModelPipelinePlaybookE
         chain = chat_template | llm
         explanation = chain.invoke({"playbook": content})
         return explanation
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError

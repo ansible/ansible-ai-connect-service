@@ -18,7 +18,7 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from http import HTTPStatus
-from typing import Type, Union
+from typing import Optional, Type, Union
 from unittest.mock import ANY, Mock, patch
 
 import django.utils.timezone
@@ -46,6 +46,12 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaNoDefaultModelId,
     WcaRequestIdCorrelationFailure,
     WcaTokenFailure,
+)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    ContentMatchParameters,
+    PlaybookExplanationParameters,
+    PlaybookGenerationParameters,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
@@ -77,7 +83,7 @@ from ansible_ai_connect.test_utils import (
 )
 from ansible_ai_connect.users.models import Plan
 
-DEFAULT_REQUEST_ID = uuid.uuid4()
+DEFAULT_REQUEST_ID = str(uuid.uuid4())
 
 
 class MockResponse:
@@ -184,7 +190,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         self.mock_wca_secret_manager_with(m)
         model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
         with self.assertRaises(WcaSecretManagerError):
-            model_client.get_api_key(self.user, "123")
+            model_client.get_api_key(self.user, 123)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="key")
     def test_get_api_key_with_environment_override(self):
@@ -344,8 +350,10 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen(self):
         request = Mock()
-        playbook, outline, warnings = self.wca_client.generate_playbook(
-            request, text="Install Wordpress", create_outline=True
+        playbook, outline, warnings = self.wca_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=request, text="Install Wordpress", create_outline=True
+            )
         )
         self.assertEqual(playbook, "Oh!")
         self.assertEqual(outline, "Ahh!")
@@ -353,11 +361,13 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen_custom_prompt(self):
         request = Mock()
-        self.wca_client.generate_playbook(
-            request,
-            text="Install Wordpress",
-            custom_prompt="You are an Ansible expert",
-            create_outline=True,
+        self.wca_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=request,
+                text="Install Wordpress",
+                custom_prompt="You are an Ansible expert",
+                create_outline=True,
+            )
         )
         self.wca_client.session.post.assert_called_once_with(
             "http://example.com//v1/wca/codegen/ansible/playbook",
@@ -374,11 +384,13 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     def test_playbook_gen_custom_prompt_with_trailing_newline(self):
         request = Mock()
-        self.wca_client.generate_playbook(
-            request,
-            text="Install Wordpress",
-            custom_prompt="You are an Ansible expert\n",
-            create_outline=True,
+        self.wca_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=request,
+                text="Install Wordpress",
+                custom_prompt="You are an Ansible expert\n",
+                create_outline=True,
+            )
         )
         self.wca_client.session.post.assert_called_once_with(
             "http://example.com//v1/wca/codegen/ansible/playbook",
@@ -408,7 +420,11 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
         ):
-            model_client.generate_playbook(request, text="Install Wordpress", create_outline=True)
+            model_client.invoke(
+                PlaybookGenerationParameters.init(
+                    request=request, text="Install Wordpress", create_outline=True
+                )
+            )
             self.assertInLog("Caught retryable error after 1 tries.", log)
 
     def test_playbook_gen_model_id(self):
@@ -426,8 +442,10 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
 
         model_client.get_model_id = get_my_model_id
 
-        model_client.generate_playbook(
-            request, text="Install Wordpress", create_outline=True, model_id="mymodel"
+        model_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=request, text="Install Wordpress", create_outline=True, model_id="mymodel"
+            )
         )
         self.assertGreater(self.assertion_count, 0)
 
@@ -435,7 +453,9 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
     def test_playbook_gen_no_org(self):
         request = Mock()
         request.user.organization = None
-        self.wca_client.generate_playbook(request, text="Install Wordpress")
+        self.wca_client.invoke(
+            PlaybookGenerationParameters.init(request=request, text="Install Wordpress")
+        )
         self.wca_client.get_api_key.assert_called_with(request.user, None)
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
@@ -444,8 +464,10 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
         fake_linter = Mock()
         fake_linter.run_linter.return_value = "I'm super fake!"
         self.mock_ansible_lint_caller_with(fake_linter)
-        playbook, outline, warnings = self.wca_client.generate_playbook(
-            request=Mock(), text="Install Wordpress", create_outline=True
+        playbook, outline, warnings = self.wca_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=Mock(), text="Install Wordpress", create_outline=True
+            )
         )
         self.assertEqual(playbook, "I'm super fake!")
         self.assertEqual(outline, "Ahh!")
@@ -454,8 +476,10 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     def test_playbook_gen_when_is_not_initialized(self):
         self.mock_ansible_lint_caller_with(None)
-        playbook, outline, warnings = self.wca_client.generate_playbook(
-            request=Mock(), text="Install Wordpress", create_outline=True
+        playbook, outline, warnings = self.wca_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=Mock(), text="Install Wordpress", create_outline=True
+            )
         )
         # Ensure nothing was done
         self.assertEqual(playbook, "Oh!")
@@ -470,11 +494,13 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
             headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
         )
         with self.assertRaises(WcaRequestIdCorrelationFailure):
-            self.wca_client.generate_playbook(
-                request=Mock(),
-                text="Install Wordpress",
-                create_outline=True,
-                generation_id=str(DEFAULT_REQUEST_ID),
+            self.wca_client.invoke(
+                PlaybookGenerationParameters.init(
+                    request=Mock(),
+                    text="Install Wordpress",
+                    create_outline=True,
+                    generation_id=str(DEFAULT_REQUEST_ID),
+                )
             )
 
 
@@ -501,14 +527,18 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp(self):
         request = Mock()
-        explanation = self.wca_client.explain_playbook(request, content="Some playbook")
+        explanation = self.wca_client.invoke(
+            PlaybookExplanationParameters.init(request=request, content="Some playbook")
+        )
         self.assertEqual(explanation, "!Óh¡")
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp_custom_prompt(self):
         request = Mock()
-        self.wca_client.explain_playbook(
-            request, content="Some playbook", custom_prompt="Explain this"
+        self.wca_client.invoke(
+            PlaybookExplanationParameters.init(
+                request=request, content="Some playbook", custom_prompt="Explain this"
+            )
         )
         self.wca_client.session.post.assert_called_once_with(
             "http://example.com//v1/wca/explain/ansible/playbook",
@@ -524,8 +554,10 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp_custom_prompt_with_trailing_newline(self):
         request = Mock()
-        self.wca_client.explain_playbook(
-            request, content="Some playbook", custom_prompt="Explain this\n"
+        self.wca_client.invoke(
+            PlaybookExplanationParameters.init(
+                request=request, content="Some playbook", custom_prompt="Explain this\n"
+            )
         )
         self.wca_client.session.post.assert_called_once_with(
             "http://example.com//v1/wca/explain/ansible/playbook",
@@ -554,7 +586,9 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
         ):
-            model_client.explain_playbook(request, content="Some playbook")
+            model_client.invoke(
+                PlaybookExplanationParameters.init(request=request, content="Some playbook")
+            )
             self.assertInLog("Caught retryable error after 1 tries.", log)
 
     def test_playbook_exp_model_id(self):
@@ -573,7 +607,11 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
 
         model_client.get_model_id = get_my_model_id
 
-        model_client.explain_playbook(request, content="Some playbook", model_id="mymodel")
+        model_client.invoke(
+            PlaybookExplanationParameters.init(
+                request=request, content="Some playbook", model_id="mymodel"
+            )
+        )
         self.assertGreater(self.assertion_count, 0)
         self.assertion_count = 0
 
@@ -581,7 +619,9 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
     def test_playbook_exp_no_org(self):
         request = Mock()
         request.user.organization = None
-        self.wca_client.explain_playbook(request, content="Some playbook")
+        self.wca_client.invoke(
+            PlaybookExplanationParameters.init(request=request, content="Some playbook")
+        )
         self.wca_client.get_api_key.assert_called_with(request.user, None)
 
     def test_playbook_exp_request_id_correlation_failure(self):
@@ -594,8 +634,10 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
             headers={WCA_REQUEST_ID_HEADER: "some-other-uuid"},
         )
         with self.assertRaises(WcaRequestIdCorrelationFailure):
-            self.wca_client.explain_playbook(
-                request, content="Some playbook", explanation_id=str(DEFAULT_REQUEST_ID)
+            self.wca_client.invoke(
+                PlaybookExplanationParameters.init(
+                    request=request, content="Some playbook", explanation_id=str(DEFAULT_REQUEST_ID)
+                )
             )
 
 
@@ -696,7 +738,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def _do_inference(
         self,
         suggestion_id=None,
-        organization_id=123,
+        organization_id: Optional[int] = 123,
         request_id=None,
         prompt=None,
         codegen_prompt=None,
@@ -746,11 +788,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
 
-        result = model_client.infer(
-            request=Mock(),
-            model_input=model_input,
-            model_id=model_id,
-            suggestion_id=suggestion_id,
+        result = model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=suggestion_id,
+            ),
         )
 
         model_client.get_token.assert_called_once()
@@ -789,11 +833,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(ModelTimeoutError) as e:
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -829,11 +875,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
         ):
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
             self.assertInLog("Caught retryable error after 1 tries.", log)
         self.assertEqual(e.exception.model_id, model_id)
@@ -870,11 +918,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(WcaInferenceFailure) as e:
             with self.assertLogs(logger="root", level="ERROR") as log:
-                model_client.infer(
-                    request=Mock(),
-                    model_input=model_input,
-                    model_id=model_id,
-                    suggestion_id=DEFAULT_REQUEST_ID,
+                model_client.invoke(
+                    CompletionsParameters.init(
+                        request=Mock(),
+                        model_input=model_input,
+                        model_id=model_id,
+                        suggestion_id=DEFAULT_REQUEST_ID,
+                    ),
                 )
         self.assertEqual(e.exception.model_id, model_id)
         self.assertInLog(
@@ -916,11 +966,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_api_key = Mock(return_value=api_key)
 
         with self.assertRaises(WcaRequestIdCorrelationFailure) as e:
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -933,11 +985,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -946,11 +1000,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(403, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -959,11 +1015,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(204, "zavala")
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse) as e:
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -981,11 +1039,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaBadRequest):
-            model_client.infer(
-                request=Mock(),
-                model_input=model_input,
-                model_id=model_id,
-                suggestion_id=DEFAULT_REQUEST_ID,
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
             )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
@@ -1069,7 +1129,9 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
 
-        result = model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+        result = model_client.invoke(
+            ContentMatchParameters.init(request=Mock(), model_input=model_input, model_id=model_id)
+        )
 
         model_client.get_token.assert_called_once()
         model_client.session.post.assert_called_once_with(
@@ -1105,7 +1167,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
         with self.assertRaises(ModelTimeoutError) as e:
-            model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+            model_client.invoke(
+                ContentMatchParameters.init(
+                    request=Mock(), model_input=model_input, model_id=model_id
+                )
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
@@ -1139,7 +1205,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
         ):
-            model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+            model_client.invoke(
+                ContentMatchParameters.init(
+                    request=Mock(), model_input=model_input, model_id=model_id
+                )
+            )
             self.assertInLog("Caught retryable error after 1 tries.", log)
         self.assertEqual(e.exception.model_id, model_id)
 
@@ -1153,7 +1223,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         )
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+            model_client.invoke(
+                ContentMatchParameters.init(
+                    request=Mock(), model_input=model_input, model_id=model_id
+                )
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
@@ -1161,7 +1235,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(403, "sample_model_name", pipeline=WCASaaSContentMatchPipeline)
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaInvalidModelId) as e:
-            model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+            model_client.invoke(
+                ContentMatchParameters.init(
+                    request=Mock(), model_input=model_input, model_id=model_id
+                )
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
     @assert_call_count_metrics(metric=wca_codematch_hist)
@@ -1169,7 +1247,11 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         stub = stub_wca_client(204, "sample_model_name", pipeline=WCASaaSContentMatchPipeline)
         model_id, model_client, model_input = stub
         with self.assertRaises(WcaEmptyResponse) as e:
-            model_client.codematch(request=Mock(), model_input=model_input, model_id=model_id)
+            model_client.invoke(
+                ContentMatchParameters.init(
+                    request=Mock(), model_input=model_input, model_id=model_id
+                )
+            )
         self.assertEqual(e.exception.model_id, model_id)
 
 
@@ -1284,10 +1366,10 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
         self.model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
     def test_headers(self):
-        self.model_client.infer(
-            request=Mock(),
-            model_input=self.model_input,
-            suggestion_id=self.suggestion_id,
+        self.model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(), model_input=self.model_input, suggestion_id=self.suggestion_id
+            ),
         )
         self.model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codegen/ansible",
@@ -1299,10 +1381,10 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL=False)
     def test_disabled_model_server_ssl(self):
-        self.model_client.infer(
-            request=Mock(),
-            model_input=self.model_input,
-            suggestion_id=self.suggestion_id,
+        self.model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(), model_input=self.model_input, suggestion_id=self.suggestion_id
+            ),
         )
         self.model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codegen/ansible",
@@ -1340,7 +1422,11 @@ class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
         model_client = WCAOnPremContentMatchPipeline(inference_url="https://example.com")
         model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
-        model_client.codematch(request=Mock(), model_input=model_input, model_id="model-name")
+        model_client.invoke(
+            ContentMatchParameters.init(
+                request=Mock(), model_input=model_input, model_id="model-name"
+            )
+        )
 
         model_client.session.post.assert_called_once_with(
             "https://example.com/v1/wca/codematch/ansible",

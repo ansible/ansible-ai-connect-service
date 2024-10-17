@@ -15,6 +15,10 @@ from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     unwrap_playbook_answer,
     unwrap_task_answer,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PlaybookExplanationParameters,
+    PlaybookGenerationParameters,
+)
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
 logger = logging.getLogger(__name__)
@@ -125,16 +129,18 @@ class TestLangChainPlaybookGenerationPipeline(WisdomServiceLogAwareTestCase):
         self.my_client.get_chat_model = fake_get_chat_mode
 
     def test_generate_playbook(self):
-        playbook, outline, warnings = self.my_client.generate_playbook(
-            request=Mock(),
-            text="foo",
+        playbook, outline, warnings = self.my_client.invoke(
+            PlaybookGenerationParameters.init(
+                request=Mock(),
+                text="foo",
+            )
         )
         self.assertEqual(playbook, "my_playbook")
         self.assertEqual(outline, "")
 
     def test_generate_playbook_with_outline(self):
-        playbook, outline, warnings = self.my_client.generate_playbook(
-            request=Mock(), text="foo", create_outline=True
+        playbook, outline, warnings = self.my_client.invoke(
+            PlaybookGenerationParameters.init(request=Mock(), text="foo", create_outline=True)
         )
         self.assertEqual(playbook, "my_playbook")
         self.assertEqual(outline, "my outline")
@@ -145,11 +151,13 @@ class TestLangChainPlaybookGenerationPipeline(WisdomServiceLogAwareTestCase):
                 logger="ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines", level="INFO"
             ) as log,
         ):
-            playbook, outline, warnings = self.my_client.generate_playbook(
-                request=Mock(),
-                text="foo",
-                create_outline=True,
-                custom_prompt="You are an Ansible expert.",
+            playbook, outline, warnings = self.my_client.invoke(
+                PlaybookGenerationParameters.init(
+                    request=Mock(),
+                    text="foo",
+                    create_outline=True,
+                    custom_prompt="You are an Ansible expert.",
+                )
             )
             self.assertInLog(
                 "custom_prompt is not supported for generate_playbook and will be ignored.", log
@@ -169,7 +177,9 @@ class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):
         self.my_client.get_chat_model = fake_get_chat_mode
 
     def test_explain_playbook(self):
-        explanation = self.my_client.explain_playbook(request=Mock(), content="foo")
+        explanation = self.my_client.invoke(
+            PlaybookExplanationParameters.init(request=Mock(), content="foo")
+        )
         self.assertTrue(explanation)
 
     def test_explain_playbook_with_custom_prompt(self):
@@ -178,8 +188,10 @@ class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):
                 logger="ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines", level="INFO"
             ) as log,
         ):
-            explanation = self.my_client.explain_playbook(
-                request=Mock(), content="foo", custom_prompt="You are an Ansible expert."
+            explanation = self.my_client.invoke(
+                PlaybookExplanationParameters.init(
+                    request=Mock(), content="foo", custom_prompt="You are an Ansible expert."
+                )
             )
             self.assertInLog(
                 "custom_prompt is not supported for explain_playbook and will be ignored.", log
@@ -188,8 +200,10 @@ class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):
 
     def test_explain_playbook_with_model_id(self):
         with (self.assertLogs(logger=logger, level="DEBUG") as log,):
-            explanation = self.my_client.explain_playbook(
-                request=Mock(), content="foo", model_id="mymodel"
+            explanation = self.my_client.invoke(
+                PlaybookExplanationParameters.init(
+                    request=Mock(), content="foo", model_id="mymodel"
+                )
             )
             self.assertInLog("get_chat_mode: model_id=mymodel", log)
             self.assertTrue(explanation)

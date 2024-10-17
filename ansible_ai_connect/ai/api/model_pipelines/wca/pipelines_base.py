@@ -16,7 +16,7 @@ import json
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import backoff
 import requests
@@ -38,6 +38,10 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaRequestIdCorrelationFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     MetaData,
     ModelPipeline,
     ModelPipelineCompletions,
@@ -232,7 +236,11 @@ class WCABaseCompletionsPipeline(WCABasePipeline, ModelPipelineCompletions, meta
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def infer(self, request, model_input, model_id: str = "", suggestion_id=None) -> Dict[str, Any]:
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
+        request = params.request
+        model_id = params.model_id
+        model_input = params.model_input
+        suggestion_id = params.suggestion_id
         logger.debug(f"Input prompt: {model_input}")
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
@@ -318,7 +326,10 @@ class WCABaseContentMatchPipeline(WCABasePipeline, ModelPipelineContentMatch, me
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         raise NotImplementedError
 
-    def codematch(self, request, model_input, model_id: str = ""):
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
+        request = params.request
+        model_input = params.model_input
+        model_id = params.model_id
         logger.debug(f"Input prompt: {model_input}")
         self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
 
@@ -378,18 +389,6 @@ class WCABasePlaybookGenerationPipeline(
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
-        raise NotImplementedError
-
 
 class WCABasePlaybookExplanationPipeline(
     WCABasePipeline, ModelPipelinePlaybookExplanation, metaclass=ABCMeta
@@ -397,13 +396,3 @@ class WCABasePlaybookExplanationPipeline(
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
-        raise NotImplementedError

@@ -23,6 +23,10 @@ from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainPlaybookExplanationPipeline,
     LangchainPlaybookGenerationPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ContentMatchParameters,
+    ContentMatchResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +41,6 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    def invoke(self):
-        raise NotImplementedError
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
@@ -56,10 +57,7 @@ class OllamaContentMatchPipeline(LangchainContentMatchPipeline):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def codematch(self, request, model_input, model_id):
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -74,9 +72,6 @@ class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
     def get_chat_model(self, model_id):
         return Ollama(
             base_url=self._inference_url,
@@ -88,9 +83,6 @@ class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
-
-    def invoke(self):
-        raise NotImplementedError
 
     def get_chat_model(self, model_id):
         return Ollama(

@@ -14,7 +14,6 @@
 
 import json
 import logging
-from typing import Any, Dict
 
 import requests
 from django.conf import settings
@@ -22,11 +21,19 @@ from django.conf import settings
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
 from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     MetaData,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    PlaybookExplanationParameters,
+    PlaybookExplanationResponse,
+    PlaybookGenerationParameters,
+    PlaybookGenerationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,10 +57,10 @@ class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def infer(self, request, model_input, model_id="", suggestion_id=None) -> Dict[str, Any]:
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
+        request = params.request
+        model_id = params.model_id
+        model_input = params.model_input
         model_id = self.get_model_id(request.user, None, model_id)
         self._prediction_url = f"{self._inference_url}/completion"
 
@@ -66,7 +73,7 @@ class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
         full_prompt = f"{context}{prompt}\n"
         logger.info(f"full prompt: {full_prompt}")
 
-        params = {
+        llm_params = {
             "prompt": full_prompt,
             "model": model_id,
             "n_predict": 400,
@@ -91,7 +98,7 @@ class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
             "seed": 0,
         }
 
-        logger.info(f"request: {params}")
+        logger.info(f"request: {llm_params}")
 
         try:
             # Implement multitask here with a loop
@@ -99,7 +106,7 @@ class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
             result = self.session.post(
                 self._prediction_url,
                 headers=self.headers,
-                json=params,
+                json=llm_params,
                 timeout=self.timeout(task_count),
                 verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
             )
@@ -125,10 +132,7 @@ class LlamaCppContentMatchPipeline(LlamaCppMetaData, ModelPipelineContentMatch):
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def codematch(self, request, model_input, model_id):
+    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
 
@@ -137,19 +141,7 @@ class LlamaCppPlaybookGenerationPipeline(LlamaCppMetaData, ModelPipelinePlaybook
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def generate_playbook(
-        self,
-        request,
-        text: str = "",
-        custom_prompt: str = "",
-        create_outline: bool = False,
-        outline: str = "",
-        generation_id: str = "",
-        model_id: str = "",
-    ) -> tuple[str, str, list]:
+    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         raise NotImplementedError
 
 
@@ -158,15 +150,5 @@ class LlamaCppPlaybookExplanationPipeline(LlamaCppMetaData, ModelPipelinePlayboo
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
-    def invoke(self):
-        raise NotImplementedError
-
-    def explain_playbook(
-        self,
-        request,
-        content: str,
-        custom_prompt: str = "",
-        explanation_id: str = "",
-        model_id: str = "",
-    ) -> str:
+    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise NotImplementedError

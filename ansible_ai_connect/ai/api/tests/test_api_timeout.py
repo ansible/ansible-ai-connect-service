@@ -31,7 +31,9 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpCompletionsPipeline,
     HttpMetaData,
 )
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaSPipeline
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
+    WCASaaSCompletionsPipeline,
+)
 
 from .test_views import WisdomServiceAPITestCaseBase
 
@@ -75,17 +77,17 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_wca(self):
-        model_client = WCASaaSPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
         self.assertIsNone(model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca(self):
-        model_client = WCASaaSPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
         self.assertEqual(123, model_client.timeout(1))
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca_multitask(self):
-        model_client = WCASaaSPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)

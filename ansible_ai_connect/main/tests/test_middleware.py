@@ -25,7 +25,7 @@ from django.urls import reverse
 from segment import analytics
 
 from ansible_ai_connect.ai.api.tests.test_views import (
-    MockedMeshClient,
+    MockedPipelineCompletions,
     WisdomAppsBackendMocking,
 )
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
@@ -81,7 +81,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, expected, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, expected, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload, format="json")
@@ -201,7 +201,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
                     r = self.client.post(reverse("completions"), payload, format="json")
@@ -247,7 +247,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             with patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=MockedMeshClient(self, payload, response_data)),
+                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
                     r = self.client.post(reverse("completions"), payload, format="json")
@@ -316,7 +316,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, response_data)),
+            Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 self.client.post(reverse("completions"), payload, format="json")

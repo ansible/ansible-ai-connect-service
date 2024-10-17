@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from unittest import mock
+from unittest.mock import Mock
 
 import requests
 from django.test import SimpleTestCase, override_settings
@@ -22,6 +23,11 @@ from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
     DummyMetaData,
     DummyPlaybookExplanationPipeline,
     DummyPlaybookGenerationPipeline,
+)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    PlaybookExplanationParameters,
+    PlaybookGenerationParameters,
 )
 
 latency = 3000
@@ -48,7 +54,7 @@ class TestDummyClient(SimpleTestCase):
     def test_infer_with_jitter(self, loads, randbelow, sleep):
         client = DummyCompletionsPipeline(inference_url="https://example.com")
         randbelow.return_value = random_value
-        client.infer(None, model_input="input")
+        client.invoke(CompletionsParameters.init(Mock(), model_input={"input": "input"}))
         sleep.assert_called_once_with(latency / 1000)
         loads.assert_called_once_with(body)
 
@@ -57,14 +63,14 @@ class TestDummyClient(SimpleTestCase):
     @mock.patch("json.loads")
     def test_infer_without_jitter(self, loads, sleep):
         client = DummyCompletionsPipeline(inference_url="https://ibm.com")
-        client.infer(None, model_input="input")
+        client.invoke(CompletionsParameters.init(Mock(), model_input={"input": "input"}))
         sleep.assert_called_once_with(latency / 1000)
         loads.assert_called_once_with(body)
 
     def test_generate_playbook(self):
         client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
-        playbook, outline, warnings = client.generate_playbook(
-            None, text="foo", create_outline=False
+        playbook, outline, warnings = client.invoke(
+            PlaybookGenerationParameters.init(request=Mock(), text="foo", create_outline=False)
         )
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
@@ -72,8 +78,8 @@ class TestDummyClient(SimpleTestCase):
 
     def test_generate_playbook_with_outline(self):
         client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
-        playbook, outline, warnings = client.generate_playbook(
-            None, text="foo", create_outline=True
+        playbook, outline, warnings = client.invoke(
+            PlaybookGenerationParameters.init(request=Mock(), text="foo", create_outline=True)
         )
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
@@ -81,8 +87,10 @@ class TestDummyClient(SimpleTestCase):
 
     def test_generate_playbook_with_model_id(self):
         client = DummyPlaybookGenerationPipeline(inference_url="https://ibm.com")
-        playbook, outline, warnings = client.generate_playbook(
-            None, text="foo", create_outline=True, model_id="mymodel"
+        playbook, outline, warnings = client.invoke(
+            PlaybookGenerationParameters.init(
+                request=Mock(), text="foo", create_outline=True, model_id="mymodel"
+            )
         )
         self.assertTrue(isinstance(playbook, str))
         self.assertTrue(isinstance(outline, str))
@@ -90,12 +98,14 @@ class TestDummyClient(SimpleTestCase):
 
     def test_explain_playbook(self):
         client = DummyPlaybookExplanationPipeline(inference_url="https://ibm.com")
-        explanation = client.explain_playbook(None, "ëoo")
+        explanation = client.invoke(PlaybookExplanationParameters.init(Mock(), "ëoo"))
         self.assertTrue(isinstance(explanation, str))
         self.assertTrue(explanation)
 
     def test_explain_playbook_with_model_id(self):
         client = DummyPlaybookExplanationPipeline(inference_url="https://ibm.com")
-        explanation = client.explain_playbook(None, "ëoo", model_id="mymodel")
+        explanation = client.invoke(
+            PlaybookExplanationParameters.init(Mock(), "ëoo", model_id="mymodel")
+        )
         self.assertTrue(isinstance(explanation, str))
         self.assertTrue(explanation)
