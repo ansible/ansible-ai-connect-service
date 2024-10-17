@@ -7,7 +7,14 @@ To start building the "Admin Portal" project, you're going to need:
 - node (`18.20.0` was used for development)
 - npm (`10.5.0` was used for development)
 
-For installing dependencies, run
+For installing dependencies, **make sure that the current directory
+is the `ansible_ai_connect_chatbot` sub-directory first**:
+```commandline
+ $ pwd
+(your_git_work_directory)/ansible-ai-connect-service/ansible_ai_connect_chatbot
+```
+
+and run
 
 ```commandline
 npm install
