@@ -2,7 +2,7 @@
 
 ## Build from source
 
-To start building the "Admin Portal" project, you're going to need:
+To start building the "Chatbot" project, you're going to need:
 
 - node (`18.20.0` was used for development)
 - npm (`10.5.0` was used for development)
@@ -10,8 +10,7 @@ To start building the "Admin Portal" project, you're going to need:
 For installing dependencies, **make sure that the current directory
 is the `ansible_ai_connect_chatbot` sub-directory first**:
 ```commandline
- $ pwd
-(your_git_work_directory)/ansible-ai-connect-service/ansible_ai_connect_chatbot
+ cd (your_git_work_directory)/ansible-ai-connect-service/ansible_ai_connect_chatbot
 ```
 
 and run
@@ -27,7 +26,7 @@ npm install
 Runs the app in the development mode. In the developing mode,
 the UI attempts to connect to the local chatbot service
 `http://localhost:8080/v1/query`.  If you need to connect
-to a differnt URL, edit `useChatbot.ts`.
+to a different URL, edit `useChatbot.ts`.
 
 ### npm run build
 
@@ -44,9 +43,10 @@ Executes unit tests.
 
 ### npm run coverage
 
-Executes unit tests with code coverage reports. A text report are
-displayed on console and an HTML report is saved in the `coverage`
-subdirectory.
+Executes unit tests with code coverage reports.
+The text version of the report is shown on the console,
+while the HTML version and the `lcov.info` file are saved
+in the `coverage` sub-directory.
 
 ## Test Chatbot in Local environment
 
