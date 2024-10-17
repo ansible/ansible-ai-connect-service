@@ -61,6 +61,15 @@ class TestSchema1Event(WisdomServiceAPITestCaseBaseOIDC):
         self.assertEqual(as_dict.get("event_name"), None)
         self.assertFalse(as_dict.get("exception"), False)
 
+    def test_duration(self):
+        event1 = Schema1Event()
+        self.assertGreater(event1._created_at, 0)
+        self.assertIsNone(event1.duration)
+        self.assertIsNone(event1.timestamp)
+        event1.finalize()
+        self.assertGreater(event1.duration, 0)
+        self.assertTrue(event1.timestamp)
+
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
@@ -97,10 +106,3 @@ class TestExplainPlaybookEvent(WisdomServiceAPITestCaseBaseOIDC):
     def test_base(self):
         event1 = ExplainPlaybookEvent()
         self.assertEqual(event1.event_name, "explainPlaybook")
-
-    def test_duration(self):
-        event1 = ExplainPlaybookEvent()
-        self.assertGreater(event1._created_at, 0)
-        self.assertIsNone(event1.duration)
-        event1.set_duration()
-        self.assertGreater(event1.duration, 0)

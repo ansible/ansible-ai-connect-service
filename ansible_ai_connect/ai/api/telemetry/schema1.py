@@ -89,6 +89,8 @@ class Schema1Event:
     _user: User | None = None
     _created_at: int = time.time()
     plans: list[PlanEntry] = Factory(list)
+    timestamp: str | None = None
+    duration: float | None = None
 
     def set_exception(self, exception):
         if not exception:
@@ -126,12 +128,12 @@ class Schema1Event:
             "status_text": getattr(response, "status_text", None),
         }
 
-    def set_duration(self):
+    def finalize(self):
         self.duration = round((time.time() - self._created_at) * 1000, 2)
+        self.timestamp = timezone.now().isoformat()
 
     def as_dict(self):
-        if hasattr(self, "duration") and not self.duration:
-            self.set_duration()
+        self.finalize()
 
         def my_filter(a, v):
             return a.name not in ["_user", "event_name", "_created_at"]
@@ -147,6 +149,5 @@ class OneClickTrialStartedEvent(Schema1Event):
 @define
 class ExplainPlaybookEvent(Schema1Event):
     event_name: str = "explainPlaybook"
-    duration: float | None = None
     playbook_length: int = field(validator=validators.instance_of(int), default=0)
     explanationId: str = field(validator=validators.instance_of(str), converter=str, default="")
