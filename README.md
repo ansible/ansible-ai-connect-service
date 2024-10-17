@@ -54,10 +54,11 @@ podman compose -f tools/docker-compose/compose.yaml down
 ## Development
 
 ### Project structure
-| Path                                                | Description |
-|-----------------------------------------------------|-------------|
-| ansible_ai_connect                                  | Service backend application |
-| ansible_ai_connect_admin_portal | Admin portal application |
+| Path                            | Description                 |
+|---------------------------------|-----------------------------|
+| ansible_ai_connect              | Service backend application |
+| ansible_ai_connect_admin_portal | Admin portal application    |
+| ansible_ai_connect_chatbot      | Chatbot application         |
 
 ### Service configuration
 
@@ -91,6 +92,14 @@ See [here](#aws-config) for details.
 
 ### Admin Portal
 This repository also contains a React/TypeScript webapp for the "Admin Portal". This is located in the `ansible_ai_connect_admin_portal` directory. Further details can be found in `ansible_ai_connect_admin_portal/README.md`. If you wish to run the "Admin Portal" locally it is important to read the instructions.
+
+### Chatbot
+The `ansible_ai_connect_chatbot` directory contains
+a React/TypeScript webapp
+for the "Chatbot" UI.
+
+Refer to
+`ansible_ai_connect_chatbot/README.md` for further details.
 
 ## Debugging
 

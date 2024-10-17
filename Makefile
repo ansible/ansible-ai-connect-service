@@ -164,3 +164,17 @@ admin-portal-test:
 .PHONY: admin-portal-lint
 admin-portal-lint:
 	npm --prefix ./ansible_ai_connect_admin_portal run lint
+
+# ============================
+# Chatbot UI related commands
+# ============================
+
+# Compile and bundle Chatbot UI into Django application
+.PHONY: chatbot-bundle
+chatbot-bundle:
+	npm --prefix ./ansible_ai_connect_chatbot run build
+
+# Run tests for Chatbot UI with code coverage
+.PHONY: chatbot-test
+chatbot-test:
+	npm --prefix ./ansible_ai_connect_chatbot run coverage
