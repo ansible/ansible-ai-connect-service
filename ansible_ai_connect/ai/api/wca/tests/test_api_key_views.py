@@ -36,6 +36,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaS
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from ansible_ai_connect.organizations.models import Organization
@@ -87,6 +88,7 @@ class TestWCAApiKeyView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
             IsAuthenticatedOrTokenHasScope,
             IsOrganisationAdministrator,
             IsOrganisationLightspeedSubscriber,
+            IsWCASaaSModelPipeline,
         ]
         self.assertEqual(len(view.permission_classes), len(required_permissions))
         for permission in required_permissions:
