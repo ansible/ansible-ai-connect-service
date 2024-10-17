@@ -40,6 +40,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaS
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
@@ -57,6 +58,7 @@ PERMISSION_CLASSES = [
     IsAuthenticatedOrTokenHasScope,
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
+    IsWCASaaSModelPipeline,
 ]
 
 
