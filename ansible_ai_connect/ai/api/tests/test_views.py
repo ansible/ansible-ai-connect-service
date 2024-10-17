@@ -3346,6 +3346,28 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
 
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+    def test_ok(self):
+        payload = {}
+        self.client.force_authenticate(user=self.user)
+        r = self.client.post(reverse("generations/role"), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertIsNotNone(r.data)
+        self.assertEqual(r.data, {})
+
+    def test_unauthorized(self):
+        payload = {}
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=MockedMeshClient(self, payload, {})),
+        ):
+            # Hit the API without authentication
+            r = self.client.post(reverse("generations/role"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+
+
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
