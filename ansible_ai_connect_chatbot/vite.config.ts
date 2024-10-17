@@ -37,6 +37,7 @@ export default defineConfig({
         "src/index.tsx",
         "src/reportWebVitals.ts",
       ],
+      reporter: ["text", "html", "lcov"],
     },
   },
 });
