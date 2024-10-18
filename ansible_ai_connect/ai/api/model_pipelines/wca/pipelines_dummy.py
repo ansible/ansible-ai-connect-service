@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -42,6 +43,7 @@ else:
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="wca-dummy")
 class WCADummyMetaData(MetaData):
 
     def __init__(self, inference_url):
@@ -61,12 +63,14 @@ class WCADummyMetaData(MetaData):
         return ""
 
 
+@Register(api_type="wca-dummy")
 class WCADummyPipeline(ModelPipeline, metaclass=ABCMeta):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
 
+@Register(api_type="wca-dummy")
 class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
 
     def __init__(self, inference_url):
@@ -82,6 +86,7 @@ class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
         return ""
 
 
+@Register(api_type="wca-dummy")
 class WCADummyContentMatchPipeline(WCADummyPipeline, ModelPipelineContentMatch):
 
     def __init__(self, inference_url):
@@ -91,6 +96,7 @@ class WCADummyContentMatchPipeline(WCADummyPipeline, ModelPipelineContentMatch):
         raise NotImplementedError
 
 
+@Register(api_type="wca-dummy")
 class WCADummyPlaybookGenerationPipeline(WCADummyPipeline, ModelPipelinePlaybookGeneration):
 
     def __init__(self, inference_url):
@@ -100,6 +106,7 @@ class WCADummyPlaybookGenerationPipeline(WCADummyPipeline, ModelPipelinePlaybook
         raise NotImplementedError
 
 
+@Register(api_type="wca-dummy")
 class WCADummyPlaybookExplanationPipeline(WCADummyPipeline, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):

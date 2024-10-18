@@ -41,6 +41,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     MODEL_MESH_HEALTH_CHECK_TOKENS,
     WCA_REQUEST_ID_HEADER,
@@ -78,6 +79,7 @@ else:
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="wca")
 class WCASaaSMetaData(WCABaseMetaData):
 
     def __init__(self, inference_url):
@@ -231,6 +233,7 @@ class WCASaaSPipeline(WCASaaSMetaData, WCABasePipeline, metaclass=ABCMeta):
         }
 
 
+@Register(api_type="wca")
 class WCASaaSCompletionsPipeline(WCASaaSPipeline, WCABaseCompletionsPipeline):
 
     def __init__(self, inference_url):
@@ -274,6 +277,7 @@ class WCASaaSCompletionsPipeline(WCASaaSPipeline, WCABaseCompletionsPipeline):
         return summary
 
 
+@Register(api_type="wca")
 class WCASaaSContentMatchPipeline(WCASaaSPipeline, WCABaseContentMatchPipeline):
 
     def __init__(self, inference_url):
@@ -286,6 +290,7 @@ class WCASaaSContentMatchPipeline(WCASaaSPipeline, WCABaseContentMatchPipeline):
         raise NotImplementedError
 
 
+@Register(api_type="wca")
 class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerationPipeline):
 
     def __init__(self, inference_url):
@@ -364,6 +369,7 @@ class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerati
         return playbook, outline, warnings
 
 
+@Register(api_type="wca")
 class WCASaaSPlaybookExplanationPipeline(WCASaaSPipeline, WCABasePlaybookExplanationPipeline):
 
     def __init__(self, inference_url):

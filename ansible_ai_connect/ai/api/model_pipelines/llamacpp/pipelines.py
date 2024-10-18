@@ -35,10 +35,12 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="llamacpp")
 class LlamaCppMetaData(MetaData):
 
     def __init__(self, inference_url):
@@ -50,6 +52,7 @@ class LlamaCppMetaData(MetaData):
         return self._timeout * task_count if self._timeout else None
 
 
+@Register(api_type="llamacpp")
 class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
 
     def __init__(self, inference_url):
@@ -127,6 +130,7 @@ class LlamaCppCompletionsPipeline(LlamaCppMetaData, ModelPipelineCompletions):
         raise NotImplementedError
 
 
+@Register(api_type="llamacpp")
 class LlamaCppContentMatchPipeline(LlamaCppMetaData, ModelPipelineContentMatch):
 
     def __init__(self, inference_url):
@@ -136,6 +140,7 @@ class LlamaCppContentMatchPipeline(LlamaCppMetaData, ModelPipelineContentMatch):
         raise NotImplementedError
 
 
+@Register(api_type="llamacpp")
 class LlamaCppPlaybookGenerationPipeline(LlamaCppMetaData, ModelPipelinePlaybookGeneration):
 
     def __init__(self, inference_url):
@@ -145,6 +150,7 @@ class LlamaCppPlaybookGenerationPipeline(LlamaCppMetaData, ModelPipelinePlaybook
         raise NotImplementedError
 
 
+@Register(api_type="llamacpp")
 class LlamaCppPlaybookExplanationPipeline(LlamaCppMetaData, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):

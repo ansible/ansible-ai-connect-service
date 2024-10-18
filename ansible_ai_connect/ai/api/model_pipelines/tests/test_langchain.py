@@ -5,7 +5,7 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 from django.test import TestCase
-from langchain.llms.fake import FakeListLLM
+from langchain_community.llms import FakeListLLM
 from langchain_core.messages.base import BaseMessage
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
