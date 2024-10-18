@@ -3358,14 +3358,9 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
 
     def test_unauthorized(self):
         payload = {}
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=MockedMeshClient(self, payload, {})),
-        ):
-            # Hit the API without authentication
-            r = self.client.post(reverse("generations/role"), payload, format="json")
-            self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
+        # Hit the API without authentication
+        r = self.client.post(reverse("generations/role"), payload, format="json")
+        self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
