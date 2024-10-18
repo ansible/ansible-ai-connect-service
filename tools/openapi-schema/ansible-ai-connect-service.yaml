@@ -971,11 +971,11 @@ components:
           type: string
         content:
           type: string
-        file_type:
+        fileType:
           type: string
       required:
       - content
-      - file_type
+      - fileType
       - path
     GenerationRoleRequest:
       type: object

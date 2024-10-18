@@ -537,9 +537,6 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
 
     metadata = Metadata(required=False)
 
-    def validate(self, data):
-        return data
-
 
 class GenerationWarningResponseSerializer(serializers.Serializer):
     id = serializers.CharField()
@@ -550,7 +547,7 @@ class GenerationWarningResponseSerializer(serializers.Serializer):
 class GenerationRoleFileEntrySerializer(serializers.Serializer):
     path = serializers.CharField()
     content = serializers.CharField()
-    file_type = serializers.CharField()
+    fileType = serializers.CharField()
 
 
 class GenerationResponseSerializer(serializers.Serializer):
