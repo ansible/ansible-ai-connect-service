@@ -171,12 +171,19 @@ elif os.environ.get("SOCIAL_AUTH_GITHUB_KEY"):
 
 SOCIAL_AUTH_LOGIN_ERROR_URL = "/unauthorized/"
 
+
+def is_ssl_enabled(value: str) -> bool:
+    """SSL should be enabled if value is not recognized"""
+    disabled = value.lower() in ("false", "f", "0", "-1")
+    return not disabled
+
+
 AAP_API_URL = os.environ.get("AAP_API_URL")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
-SOCIAL_AUTH_VERIFY_SSL = os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True").lower() in ("true", "1", "t")
-ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL", "True"
-).lower() in ("true", "1", "t")
+SOCIAL_AUTH_VERIFY_SSL = is_ssl_enabled(os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True"))
+ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL = is_ssl_enabled(
+    os.getenv("ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL", "True")
+)
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
 SOCIAL_AUTH_AAP_SCOPE = ["read"]
