@@ -1,4 +1,4 @@
-# Ansible AI Connect Chatbot
+# Ansible AI Connect Chatbot UI
 
 ## Build from source
 
@@ -50,8 +50,8 @@ in the `coverage` sub-directory.
 
 ## Test Chatbot in Local environment
 
-Chatbot is enabled when the following three environment variables
-are defined:
+**Chatbot is enabled when all of
+the following three environment variables are defined:**
 
 1. `CHATBOT_URL` URL of the chat service to be used.
 2. `CHATBOT_DEFAULT_PROVIDER` Default AI model provider. It should be

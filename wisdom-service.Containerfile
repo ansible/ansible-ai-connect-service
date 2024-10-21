@@ -26,7 +26,8 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     postgresql \
     less \
     npm \
-    nginx
+    nginx \
+    rsync
 
 # Copy the ansible_wisdom package files
 COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/
@@ -64,6 +65,19 @@ COPY ansible_ai_connect_admin_portal/tsconfig.json /tmp/ansible_ai_connect_admin
 RUN cd /tmp/ansible_ai_connect_admin_portal && npx update-browserslist-db@latest
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
+
+# Compile React/TypeScript Chatbot application
+# Copy each source folder individually to avoid copying 'node_modules'
+COPY ansible_ai_connect_chatbot/src /tmp/ansible_ai_connect_chatbot/src
+COPY ansible_ai_connect_chatbot/index.html /tmp/ansible_ai_connect_chatbot/index.html
+COPY ansible_ai_connect_chatbot/package.json /tmp/ansible_ai_connect_chatbot/package.json
+COPY ansible_ai_connect_chatbot/package-lock.json /tmp/ansible_ai_connect_chatbot/package-lock.json
+COPY ansible_ai_connect_chatbot/tsconfig.json /tmp/ansible_ai_connect_chatbot/tsconfig.json
+COPY ansible_ai_connect_chatbot/vite.config.ts /tmp/ansible_ai_connect_chatbot/vite.config.ts
+RUN npm --prefix /tmp/ansible_ai_connect_chatbot install
+RUN ln -s /var/www/ansible-ai-connect-service/ansible_ai_connect /tmp/ansible_ai_connect
+RUN npm --prefix /tmp/ansible_ai_connect_chatbot run build
+RUN unlink /tmp/ansible_ai_connect
 
 # Copy configuration files
 COPY tools/scripts/launch-wisdom.sh /usr/bin/launch-wisdom.sh
