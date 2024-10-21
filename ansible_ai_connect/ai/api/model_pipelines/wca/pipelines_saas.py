@@ -167,6 +167,7 @@ class WCASaaSMetaData(WCABaseMetaData):
         organization_id: Optional[int] = None,
         requested_model_id: Optional[str] = None,
     ) -> str:
+        logger.debug(f"requested_model_id={requested_model_id}")
         if not organization_id and user.organization:
             # The organization_id parameter should be removed
             organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]

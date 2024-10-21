@@ -616,6 +616,15 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         self.assertion_count = 0
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
+    def test_playbook_gen_no_org(self):
+        request = Mock()
+        request.user.organization = None
+        self.wca_client.invoke(
+            PlaybookExplanationParameters.init(request=request, content="Install Wordpress")
+        )
+        self.wca_client.get_api_key.assert_called_with(request.user, None)
+
+    @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp_no_org(self):
         request = Mock()
         request.user.organization = None

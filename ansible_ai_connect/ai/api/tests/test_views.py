@@ -2637,6 +2637,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             r = self.client.post(reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["playbook_length"], 197)
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["content"])
         self.assertEqual(r.data["format"], "markdown")
@@ -2865,7 +2866,8 @@ that are running Red Hat Enterprise Linux 9.
         model_client = WCASaaSPlaybookExplanationPipeline(inference_url="https://wca_api_url")
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = mock_api_key
-        model_client.get_model_id = mock_model_id
+        if mock_model_id:
+            model_client.get_model_id = mock_model_id
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         return model_client
 
@@ -2882,11 +2884,12 @@ that are running Red Hat Enterprise Linux 9.
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("explanations"), self.payload, format="json")
                 self.assertEqual(r.status_code, expected_status_code)
-                if expected_status_code != HTTPStatus.OK:
+                if expected_exception() is not None:
                     self.assert_error_detail(
                         r, expected_exception().default_code, expected_exception().default_detail
                     )
                     self.assertInLog(expected_log_message, log)
+                return r
 
     def test_bad_wca_request(self):
         model_client = self.stub_wca_client(
@@ -3030,32 +3033,29 @@ that are running Red Hat Enterprise Linux 9.
         )
 
     def test_wca_request_with_model_id_given(self):
-        self.assertion_count = 0
         self.payload["model"] = "mymodel"
-
-        def get_model_id(user, organization_id, model_id):
-            self.assertEqual(model_id, "mymodel")
-            self.assertion_count += 1
-            return model_id
-
-        model_client = self.stub_wca_client(200)
-        model_client.get_model_id = get_model_id
+        model_client = self.stub_wca_client(
+            200, mock_model_id=None, response_text=json.dumps({"explanation": "dummy explanation"})
+        )
         model_client.invoke = lambda *args: {
             "content": "string",
             "format": "string",
             "explanationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         }
-
-        self.assert_test(
-            model_client,
-            HTTPStatus.OK,
-            None,
-            None,
-        )
-        self.assertGreater(self.assertion_count, 0)
+        with self.assertLogs(
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas", level="DEBUG"
+        ) as log:
+            self.assert_test(
+                model_client,
+                HTTPStatus.OK,
+                lambda: None,
+                None,
+            )
+            self.assertInLog("requested_model_id=mymodel", log)
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
 class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
     response_data = """yaml
@@ -3121,7 +3121,10 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "model": model,
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("generations"), payload, format="json")
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("generations"), payload, format="json")
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["playbook"])
         self.assertEqual(r.data["format"], "plaintext")
@@ -3400,7 +3403,8 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client = WCASaaSPlaybookGenerationPipeline(inference_url="https://wca_api_url")
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = mock_api_key
-        model_client.get_model_id = mock_model_id
+        if mock_model_id:
+            model_client.get_model_id = mock_model_id
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         return model_client
 
@@ -3417,7 +3421,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("generations"), self.payload, format="json")
                 self.assertEqual(r.status_code, expected_status_code)
-                if expected_status_code != 200:
+                if expected_exception() is not None:
                     self.assert_error_detail(
                         r, expected_exception().default_code, expected_exception().default_detail
                     )
@@ -3565,26 +3569,30 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         )
 
     def test_wca_request_with_model_id_given(self):
-        self.assertion_count = 0
         self.payload["model"] = "mymodel"
         model_client = self.stub_wca_client(
             200,
+            mock_model_id=None,
+            response_text=json.dumps(
+                {
+                    "playbook": "- hosts: all",
+                    "outline": "- dummy",
+                    "warning": None,
+                }
+            ),
         )
+        model_client.invoke = lambda *args: ("playbook", "outline", "warning")
 
-        def get_model_id(user, organization_id, model_id):
-            self.assertEqual(model_id, "mymodel")
-            self.assertion_count += 1
-            return model_id
-
-        model_client.get_model_id = get_model_id
-        model_client.invoke = lambda *args: ("playbook", "outline", "warnings")
-        self.assert_test(
-            model_client,
-            HTTPStatus.OK,
-            None,
-            None,
-        )
-        self.assertGreater(self.assertion_count, 0)
+        with self.assertLogs(
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas", level="DEBUG"
+        ) as log:
+            self.assert_test(
+                model_client,
+                HTTPStatus.OK,
+                lambda: None,
+                None,
+            )
+            self.assertInLog("requested_model_id=mymodel", log)
 
     def test_warnings(self):
         model_client = self.stub_wca_client(
@@ -3594,7 +3602,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             '"warnings": [{"id": "id-1", "message": '
             '"Something went wrong", "details": "Some details"}]}',
         )
-        r = self.assert_test(model_client, HTTPStatus.OK, None, None)
+        r = self.assert_test(model_client, HTTPStatus.OK, lambda: None, None)
         self.assertTrue("warnings" in r.data)
         warnings = r.data["warnings"]
         self.assertEqual(1, len(warnings))
