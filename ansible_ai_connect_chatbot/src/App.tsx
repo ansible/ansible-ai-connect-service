@@ -1,5 +1,4 @@
+import React from "react";
 import { AnsibleChatbot } from "./AnsibleChatbot/AnsibleChatbot";
 
-export const App = () => {
-  return <AnsibleChatbot />;
-};
+export const App = () => <AnsibleChatbot />;

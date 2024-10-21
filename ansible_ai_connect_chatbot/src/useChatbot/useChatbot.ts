@@ -1,6 +1,5 @@
 import axios from "axios";
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
 import type {
   ExtendedMessage,
@@ -11,7 +10,7 @@ import type {
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
   const ca = document.cookie.split(";");
-  for (let c of ca) {
+  for (const c of ca) {
     const cookie = c.trim();
     if (cookie.startsWith(nameEQ)) {
       return cookie.substring(nameEQ.length, cookie.length);
@@ -20,25 +19,21 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
-export const botMessage = (content: string): MessageProps => {
-  return {
-    role: "bot",
-    content,
-    name: "Ansible Lightspeed Bot",
-    avatar:
-      "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
-    actions: {
-      // eslint-disable-next-line no-console
-      positive: { onClick: () => console.log("Good response") },
-      // eslint-disable-next-line no-console
-      negative: { onClick: () => console.log("Bad response") },
-    },
-  };
-};
+export const botMessage = (content: string): MessageProps => ({
+  role: "bot",
+  content,
+  name: "Ansible Lightspeed Bot",
+  avatar:
+    "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+  actions: {
+    positive: { onClick: () => console.log("Good response") },
+    negative: { onClick: () => console.log("Bad response") },
+  },
+});
 
 type AlertMessage = {
-  title: String;
-  message: String;
+  title: string;
+  message: string;
   variant: "success" | "danger" | "warning" | "info" | "custom";
 };
 

@@ -1,3 +1,4 @@
+import React from "react";
 import { vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -7,8 +8,8 @@ import userEvent from "@testing-library/user-event";
 import axios from "axios";
 
 describe("App tests", () => {
-  const renderApp = () => {
-    return render(
+  const renderApp = () =>
+    render(
       <MemoryRouter>
         <div className="pf-v6-l-flex pf-m-column pf-m-gap-lg ws-full-page-utils pf-v6-m-dir-ltr ">
           <ColorThemeSwitch />
@@ -16,13 +17,12 @@ describe("App tests", () => {
         <App />
       </MemoryRouter>,
     );
-  };
   const mockAxios = (status: number, reject = false) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
-      spy.mockImplementationOnce(() => {
-        return Promise.reject(new Error("mocked error"));
-      });
+      spy.mockImplementationOnce(() =>
+        Promise.reject(new Error("mocked error")),
+      );
     } else {
       spy.mockResolvedValue({
         data: {
@@ -56,9 +56,9 @@ describe("App tests", () => {
   it("Basic chatbot interaction", async () => {
     mockAxios(200);
     renderApp();
-    const textArea = await screen.getByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
     expect(
       screen.getByText(
@@ -70,24 +70,24 @@ describe("App tests", () => {
 
   it("Chat service returns 500", async () => {
     mockAxios(500);
-    const app = renderApp();
-    const textArea = await screen.getByLabelText("Send a message...");
+    const view = renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
-    const alert = app.container.querySelector(".pf-v6-c-alert__description");
+    const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual("Bot returned status_code 500");
   });
 
   it("Chat service returns an unexpected error", async () => {
     mockAxios(-1, true);
-    const app = renderApp();
-    const textArea = await screen.getByLabelText("Send a message...");
+    const view = renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send Button");
     await act(async () => fireEvent.click(sendButton));
-    const alert = app.container.querySelector(".pf-v6-c-alert__description");
+    const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
       "An unexpected error occured: Error: mocked error",
@@ -96,24 +96,25 @@ describe("App tests", () => {
 
   it("Color theme switch", async () => {
     mockAxios(200);
-    const app = renderApp();
-    const colorThemeSwitch: any = app.container.querySelector(
-      "#color-theme-switch",
-    );
-    expect(colorThemeSwitch).toBeTruthy();
-    expect(colorThemeSwitch.checked).toBeFalsy();
+    const view = renderApp();
+    const colorThemeSwitch: HTMLInputElement | null =
+      view.container.querySelector("#color-theme-switch");
+    expect(ColorThemeSwitch).not.toBeNull();
+    if (colorThemeSwitch) {
+      expect(colorThemeSwitch.checked).toBeFalsy();
 
-    // "getComputedStyle" does not seem to work...
-    //
-    // const showLight = app.container.querySelector(".show-light");
-    // const showDark = app.container.querySelector(".show-dark");
-    // expect(getComputedStyle(showLight!).display).toEqual("block")
-    // expect(getComputedStyle(showDark!).display).toEqual("none")
+      // "getComputedStyle" does not seem to work...
+      //
+      // const showLight = app.container.querySelector(".show-light");
+      // const showDark = app.container.querySelector(".show-dark");
+      // expect(getComputedStyle(showLight!).display).toEqual("block")
+      // expect(getComputedStyle(showDark!).display).toEqual("none")
 
-    await act(async () => fireEvent.click(colorThemeSwitch));
-    expect(colorThemeSwitch.checked).toBeTruthy();
+      await act(async () => fireEvent.click(colorThemeSwitch));
+      expect(colorThemeSwitch.checked).toBeTruthy();
 
-    // expect(getComputedStyle(showLight!).display).toEqual("none")
-    // expect(getComputedStyle(showDark!).display).toEqual("block")
+      // expect(getComputedStyle(showLight!).display).toEqual("none")
+      // expect(getComputedStyle(showDark!).display).toEqual("block")
+    }
   });
 });
