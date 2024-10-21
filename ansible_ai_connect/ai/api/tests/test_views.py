@@ -2884,7 +2884,7 @@ that are running Red Hat Enterprise Linux 9.
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("explanations"), self.payload, format="json")
                 self.assertEqual(r.status_code, expected_status_code)
-                if expected_status_code is not None:
+                if expected_exception() is not None:
                     self.assert_error_detail(
                         r, expected_exception().default_code, expected_exception().default_detail
                     )
@@ -3035,16 +3035,15 @@ that are running Red Hat Enterprise Linux 9.
     def test_wca_request_with_model_id_given(self):
         self.payload["model"] = "mymodel"
         model_client = self.stub_wca_client(
-            200,
-            mock_model_id=None,
+            200, mock_model_id=None, response_text=json.dumps({"explanation": "dummy explanation"})
         )
-        model_client.explain_playbook = lambda *args: {
+        model_client.invoke = lambda *args: {
             "content": "string",
             "format": "string",
             "explanationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         }
         with self.assertLogs(
-            logger="ansible_ai_connect.ai.api.model_client.wca_client", level="DEBUG"
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas", level="DEBUG"
         ) as log:
             self.assert_test(
                 model_client,
@@ -3422,7 +3421,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("generations"), self.payload, format="json")
                 self.assertEqual(r.status_code, expected_status_code)
-                if expected_status_code is not None:
+                if expected_exception() is not None:
                     self.assert_error_detail(
                         r, expected_exception().default_code, expected_exception().default_detail
                     )
@@ -3574,11 +3573,18 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client = self.stub_wca_client(
             200,
             mock_model_id=None,
+            response_text=json.dumps(
+                {
+                    "playbook": "- hosts: all",
+                    "outline": "- dummy",
+                    "warning": None,
+                }
+            ),
         )
-        model_client.generate_playbook = lambda *args: ("playbook", "outline", "warning")
+        model_client.invoke = lambda *args: ("playbook", "outline", "warning")
 
         with self.assertLogs(
-            logger="ansible_ai_connect.ai.api.model_client.wca_client", level="DEBUG"
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas", level="DEBUG"
         ) as log:
             self.assert_test(
                 model_client,
