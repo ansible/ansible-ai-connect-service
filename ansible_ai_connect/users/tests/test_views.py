@@ -344,7 +344,7 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
         )
         self.user.plans.add(trial_plan)
         r = self.client.get(reverse("trial"))
-        self.assertContains(r, "Your trial period has expired")
+        self.assertContains(r, "Your trial has expired. Contact your Red Hat")
 
     @override_settings(SEGMENT_WRITE_KEY="blablabla")
     def test_accept_trial_schema1(self):
