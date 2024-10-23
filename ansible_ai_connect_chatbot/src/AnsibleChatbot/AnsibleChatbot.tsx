@@ -196,3 +196,4 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     </>
   );
 };
+AnsibleChatbot.displayName = "AnsibleChatbot";

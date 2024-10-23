@@ -178,3 +178,8 @@ chatbot-bundle:
 .PHONY: chatbot-test
 chatbot-test:
 	npm --prefix ./ansible_ai_connect_chatbot run coverage
+
+# Run lint checks for Admin Portal
+.PHONY: chatbot-lint
+chatbot-lint:
+	npm --prefix ./ansible_ai_connect_chatbot run eslint
