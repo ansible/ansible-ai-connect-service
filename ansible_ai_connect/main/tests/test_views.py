@@ -223,11 +223,7 @@ class TestMarkdownMe(TestCase):
         r = self.client.get(reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         content = r.json()["content"]
-        expectation = """
-        Logged in as: test_user_name<br>
-        Your trial period has expired.
-        """
-        self.assertEqual(dedent(expectation).strip(), content)
+        self.assertTrue("Your trial has expired. Contact your Red Hat" in content)
 
         user.delete()
         trial_plan.delete()

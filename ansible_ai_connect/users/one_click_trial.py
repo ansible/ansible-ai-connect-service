@@ -58,7 +58,11 @@ class OneClickTrial:
             elif expired_plan:
                 markdown_value = f"""
                     Logged in as: {self.user.username}<br>
-                    Your trial period has expired.
+                    Your trial has expired. Contact your Red Hat Organization's
+                    administrator to request access to
+                    <a href =
+                    "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
+                    Ansible Lightspeed with IBM watsonx Code Assistant</a>.
                 """
             else:
                 markdown_value = f"""
