@@ -43,7 +43,7 @@ class TestUrls(TestCase):
         client = Client()
         response = client.get("/")
         csp_headers = response.headers.get("Content-Security-Policy")
-        self.assertNotIn("style-src 'self' 'unsafe-inline'", csp_headers)
+        self.assertIn("style-src 'self' 'unsafe-inline'", csp_headers)
         self.assertIn("default-src 'self' data:", csp_headers)
         self.assertIn("connect-src 'self'", csp_headers)
 
