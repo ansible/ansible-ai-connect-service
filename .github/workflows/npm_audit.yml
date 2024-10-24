@@ -15,6 +15,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     env:
       WORKING_DIRECTORY: ./ansible_ai_connect_admin_portal
 
