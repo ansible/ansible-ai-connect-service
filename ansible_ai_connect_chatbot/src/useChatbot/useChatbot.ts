@@ -116,6 +116,5 @@ export const useChatbot = () => {
       setIsLoading(false);
     }
   };
-
   return { messages, isLoading, handleSend, alertMessage, setAlertMessage };
 };

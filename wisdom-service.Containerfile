@@ -87,7 +87,6 @@ COPY tools/configs/uwsgi.ini /etc/wisdom/uwsgi.ini
 COPY tools/configs/supervisord.conf /etc/supervisor/supervisord.conf
 COPY tools/scripts/install-ari-rule-requirements.sh /usr/bin/install-ari-rule-requirements.sh
 COPY ari /etc/ari
-
 # Set permissions
 RUN for dir in \
       /var/log/supervisor \
