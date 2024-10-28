@@ -14,9 +14,10 @@
 from rest_framework.permissions import IsAuthenticated
 
 
-class IsAuthenticatedRHEmployee(IsAuthenticated):
+class IsAuthenticatedRHEmployeeOrTestUser(IsAuthenticated):
     """
-    Allow access only to users who are authenticated Red Hat employees.
+    Allow access only to users who are authenticated Red Hat employees or
+    test users.
     """
 
     code = "permission_denied__user_not_authenticated_rh_employee"
@@ -28,4 +29,4 @@ class IsAuthenticatedRHEmployee(IsAuthenticated):
             return permitted
 
         user = request.user
-        return user.rh_employee
+        return user.rh_employee or "test" in list(user.groups.values_list("name", flat=True))

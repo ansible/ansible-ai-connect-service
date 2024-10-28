@@ -32,7 +32,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.main.base_views import ProtectedTemplateView
-from ansible_ai_connect.main.permissions import IsAuthenticatedRHEmployee
+from ansible_ai_connect.main.permissions import IsAuthenticatedRHEmployeeOrTestUser
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ class ChatbotView(ProtectedTemplateView):
     template_name = "chatbot/index.html"
 
     permission_classes = [
-        IsAuthenticatedRHEmployee,
+        IsAuthenticatedRHEmployeeOrTestUser,
     ]
 
     def get(self, request):

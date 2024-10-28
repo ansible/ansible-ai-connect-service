@@ -88,7 +88,12 @@ class HomeView(TemplateView):
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         user = self.request.user
-        context["rh_employee"] = user.rh_employee if isinstance(user, User) else False
+        if isinstance(user, User):
+            context["rh_employee_or_test_user"] = user.rh_employee or "test" in list(
+                user.groups.values_list("name", flat=True)
+            )
+        else:
+            context["rh_employee_or_test_user"] = False
 
         context["chatbot_enabled"] = (
             settings.CHATBOT_URL
