@@ -14,7 +14,6 @@ ignore:
   SNYK-PYTHON-PYOPENSSL-6592766:
     - '*':
         reason: SSL_OP_NO_TICKET option isn't enabled
-        expires: 2024-10-24T15:02:32.468Z
         created: 2024-04-24T15:02:32.471Z
   SNYK-PYTHON-PYOPENSSL-6157250:
     - '*':
