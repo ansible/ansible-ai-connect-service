@@ -11,9 +11,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from rest_framework.permissions import BasePermission
 
 
-class IsRHEmployee:
+class IsRHEmployee(BasePermission):
     """
     Allow access only to users who are Red Hat employees
     """
@@ -26,7 +27,7 @@ class IsRHEmployee:
         return user.is_authenticated and user.rh_employee
 
 
-class IsTestUser:
+class IsTestUser(BasePermission):
     """
     Allow access only to test users, who are found in the "test" Django group
     """
