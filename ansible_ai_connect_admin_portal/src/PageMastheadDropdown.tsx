@@ -1,9 +1,9 @@
 import {
   Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
 } from "@patternfly/react-core";
+import { DropdownToggle } from '@patternfly/react-core/deprecated';
 import { ReactNode, useCallback, useState } from "react";
 import { useBreakpoint } from "@ansible/ansible-ui-framework";
 
