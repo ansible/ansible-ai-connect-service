@@ -11,22 +11,29 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from rest_framework.permissions import IsAuthenticated
 
 
-class IsAuthenticatedRHEmployeeOrTestUser(IsAuthenticated):
+class IsRHEmployee:
     """
-    Allow access only to users who are authenticated Red Hat employees or
-    test users.
+    Allow access only to users who are Red Hat employees
     """
 
-    code = "permission_denied__user_not_authenticated_rh_employee"
-    message = "The User is not an authenticated Red Hat employee."
+    code = "permission_denied__user_not_rh_employee"
+    message = "The User is not a Red Hat employee."
 
     def has_permission(self, request, view):
-        permitted = super().has_permission(request, view)
-        if not permitted:
-            return permitted
-
         user = request.user
-        return user.rh_employee or "test" in list(user.groups.values_list("name", flat=True))
+        return user.is_authenticated and user.rh_employee
+
+
+class IsTestUser:
+    """
+    Allow access only to test users, who are found in the "test" Django group
+    """
+
+    code = "permission_denied_user_not_test_user"
+    message = "The user is not a Test User"
+
+    def has_permission(self, request, view):
+        user = request.user
+        return user.is_authenticated and user.groups.filter(name="test").exists()

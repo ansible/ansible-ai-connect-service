@@ -17,14 +17,14 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory, TestCase
 from django.urls import resolve, reverse
 
-from ansible_ai_connect.main.permissions import IsAuthenticatedRHEmployeeOrTestUser
+from ansible_ai_connect.main.permissions import IsRHEmployee, IsTestUser
 
 
-class TestIsAuthenticatedRHEmployeeOrTestUser(TestCase):
+class TestIsRHEmployee(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.permission = IsAuthenticatedRHEmployeeOrTestUser()
+        self.permission = IsRHEmployee()
 
         payload = {
             "query": "Hello",
@@ -43,6 +43,47 @@ class TestIsAuthenticatedRHEmployeeOrTestUser(TestCase):
             email="rh-user@redhat.com",
             rh_employee=True,
         )
+
+    def tearDown(self):
+        self.non_rh_user.delete()
+        self.rh_user.delete()
+
+    def get_permission(self, user):
+        self.request.user = user
+        return self.permission.has_permission(self.request, resolve(reverse("chat")))
+
+    def test_permission_with_rh_user(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.get_permission(self.rh_user)
+        self.assertTrue(r)
+
+    def test_permission_with_non_rh_user(self):
+        self.client.force_login(user=self.non_rh_user)
+        r = self.get_permission(self.non_rh_user)
+        self.assertFalse(r)
+
+    def test_permission_with_anonymous_user(self):
+        r = self.get_permission(AnonymousUser())
+        self.assertFalse(r)
+
+
+class TestIsTestUser(TestCase):
+    def setUp(self):
+        super().setUp()
+
+        self.permission = IsTestUser()
+
+        payload = {
+            "query": "Hello",
+        }
+        self.request = RequestFactory().post(reverse("chat"), payload, format="json")
+
+        self.non_rh_user = get_user_model().objects.create_user(
+            username="non-rh-user",
+            password="non-rh-password",
+            email="non-rh-user@email.com",
+            rh_employee=False,
+        )
         self.test_group = Group(name="test")
         self.test_group.save()
         self.non_rh_test_user = get_user_model().objects.create_user(
@@ -55,18 +96,12 @@ class TestIsAuthenticatedRHEmployeeOrTestUser(TestCase):
 
     def tearDown(self):
         self.non_rh_user.delete()
-        self.rh_user.delete()
         self.non_rh_test_user.delete()
         self.test_group.delete()
 
     def get_permission(self, user):
         self.request.user = user
         return self.permission.has_permission(self.request, resolve(reverse("chat")))
-
-    def test_permission_with_rh_user(self):
-        self.client.force_login(user=self.rh_user)
-        r = self.get_permission(self.rh_user)
-        self.assertTrue(r)
 
     def test_permission_with_non_rh_user(self):
         self.client.force_login(user=self.non_rh_user)
