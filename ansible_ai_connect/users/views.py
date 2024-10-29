@@ -36,7 +36,7 @@ from ansible_ai_connect.ai.api.telemetry import schema2_utils as schema2
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
-from ansible_ai_connect.users.models import Plan, User
+from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
 from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
@@ -88,12 +88,9 @@ class HomeView(TemplateView):
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         user = self.request.user
-        if isinstance(user, User):
-            context["rh_employee_or_test_user"] = user.rh_employee or "test" in list(
-                user.groups.values_list("name", flat=True)
-            )
-        else:
-            context["rh_employee_or_test_user"] = False
+        context["rh_employee_or_test_user"] = user.is_authenticated and (
+            user.rh_employee or user.groups.filter(name="test").exists()
+        )
 
         context["chatbot_enabled"] = (
             settings.CHATBOT_URL
