@@ -19,7 +19,7 @@ from http import HTTPStatus
 from textwrap import dedent
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Group
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase, modify_settings, override_settings
 from django.urls import reverse
@@ -253,10 +253,21 @@ class TestChatbotView(TestCase):
             email="rh-user@redhat.com",
             rh_employee=True,
         )
+        self.test_group = Group(name="test")
+        self.test_group.save()
+        self.non_rh_test_user = get_user_model().objects.create_user(
+            username="non-rh-test-user",
+            password="non-rh-test-password",
+            email="non-rh-test-user@email.com",
+            rh_employee=False,
+        )
+        self.non_rh_test_user.groups.add(self.test_group)
 
     def tearDown(self):
         self.non_rh_user.delete()
         self.rh_user.delete()
+        self.non_rh_test_user.delete()
+        self.test_group.delete()
 
     def test_chatbot_link_with_anonymous_user(self):
         r = self.client.get(reverse("home"))
@@ -270,6 +281,13 @@ class TestChatbotView(TestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, TestChatbotView.DOCUMENT_URL)
         self.assertNotContains(r, "Chatbot")
+
+    def test_chatbot_link_with_non_rh_test_user(self):
+        self.client.force_login(user=self.non_rh_test_user)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertContains(r, "Chatbot")
 
     @override_settings(CHATBOT_URL="")
     @override_settings(CHATBOT_DEFAULT_PROVIDER="")
