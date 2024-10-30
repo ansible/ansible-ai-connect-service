@@ -2,7 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Ansible AI Connect Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="{{bot_name}}"
+    />
+    <title>{{bot_name}}</title>
   </head>
   <body>
     <p>THIS IS A PLACEHOLDER</p>
@@ -13,5 +19,6 @@
     <!-- It is safe to pass the value embedded in the host DOM -->
     <!-- as it is only used for display purposes and servers no other value -->
     <div id="user_name" hidden>{{user_name}}</div>
+    <div id="bot_name" hidden>{{bot_name}}</div>
 {% endblock content %}
 </html>

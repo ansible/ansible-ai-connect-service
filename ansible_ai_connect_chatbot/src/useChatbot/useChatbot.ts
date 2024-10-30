@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { botName, userName } from "../index";
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
 import type {
   ExtendedMessage,
@@ -22,7 +23,7 @@ export const readCookie = (name: string): string | null => {
 export const botMessage = (content: string): MessageProps => ({
   role: "bot",
   content,
-  name: "Ansible Lightspeed Bot",
+  name: botName,
   avatar:
     "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
   actions: {
@@ -59,7 +60,7 @@ export const useChatbot = () => {
     const userMessage: ExtendedMessage = {
       role: "user",
       content: message,
-      name: "User",
+      name: userName,
       avatar:
         "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
       referenced_documents: [],

@@ -232,8 +232,9 @@ class TestMarkdownMe(TestCase):
 @override_settings(CHATBOT_URL="http://127.0.0.1:8080")
 @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
 @override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
+@override_settings(ANSIBLE_AI_CHATBOT_NAME="Awesome Chatbot")
 class TestChatbotView(TestCase):
-    CHATBOT_PAGE_TITLE = "<title>Ansible AI Connect Chatbot</title>"
+    CHATBOT_PAGE_TITLE = "<title>Awesome Chatbot</title>"
     DOCUMENT_URL = (
         'href="https://access.redhat.com/documentation/en-us/'
         'red_hat_ansible_lightspeed_with_ibm_watsonx_code_assistant/2.x_latest"'

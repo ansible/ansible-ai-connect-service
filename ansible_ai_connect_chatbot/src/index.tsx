@@ -8,6 +8,12 @@ import reportWebVitals from "./reportWebVitals";
 import "@patternfly/react-core/dist/styles/base.css";
 // import '@patternfly/patternfly/patternfly-addons.css';
 
+export const userName =
+  document.getElementById("user_name")?.innerText ?? "User";
+export const botName =
+  document.getElementById("bot_name")?.innerText ??
+  "Ansible AI Virtual Assistant";
+
 // Add your extension CSS below
 import "@patternfly/virtual-assistant/dist/css/main.css";
 const root = ReactDOM.createRoot(

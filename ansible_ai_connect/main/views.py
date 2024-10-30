@@ -132,9 +132,9 @@ class ChatbotView(ProtectedTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["bot_name"] = settings.ANSIBLE_AI_CHATBOT_NAME
         user = self.request.user
-        if user:
+        if user and user.is_authenticated:
             context["user_name"] = user.username
 
         return context
