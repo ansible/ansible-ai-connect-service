@@ -1,12 +1,16 @@
 import axios from "axios";
 import { useState } from "react";
-import { botName, userName } from "../index";
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
 import type {
   ExtendedMessage,
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
+
+const userName = document.getElementById("user_name")?.innerText ?? "User";
+const botName =
+  document.getElementById("bot_name")?.innerText ??
+  "Ansible AI Virtual Assistant";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
