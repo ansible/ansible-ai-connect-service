@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ContentMatchParameters,
     ContentMatchResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 logger = logging.getLogger(__name__)
 
@@ -94,12 +95,14 @@ class ChatBAM(SimpleChatModel):
         return response
 
 
+@Register(api_type="bam")
 class BAMMetaData(LangchainMetaData):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
 
+@Register(api_type="bam")
 class BAMCompletionsPipeline(LangchainCompletionsPipeline):
 
     def __init__(self, inference_url):
@@ -117,6 +120,7 @@ class BAMCompletionsPipeline(LangchainCompletionsPipeline):
         )
 
 
+@Register(api_type="bam")
 class BAMContentMatchPipeline(LangchainContentMatchPipeline):
 
     def __init__(self, inference_url):
@@ -134,6 +138,7 @@ class BAMContentMatchPipeline(LangchainContentMatchPipeline):
         )
 
 
+@Register(api_type="bam")
 class BAMPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
 
     def __init__(self, inference_url):
@@ -148,6 +153,7 @@ class BAMPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
         )
 
 
+@Register(api_type="bam")
 class BAMPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline):
 
     def __init__(self, inference_url):

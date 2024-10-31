@@ -31,6 +31,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
     WCABaseCompletionsPipeline,
@@ -57,6 +58,7 @@ else:
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="wca-onprem")
 class WCAOnPremMetaData(WCABaseMetaData):
 
     def __init__(self, inference_url):
@@ -110,6 +112,7 @@ class WCAOnPremPipeline(WCAOnPremMetaData, WCABasePipeline, metaclass=ABCMeta):
         }
 
 
+@Register(api_type="wca-onprem")
 class WCAOnPremCompletionsPipeline(WCAOnPremPipeline, WCABaseCompletionsPipeline):
 
     def __init__(self, inference_url):
@@ -141,6 +144,7 @@ class WCAOnPremCompletionsPipeline(WCAOnPremPipeline, WCABaseCompletionsPipeline
         return summary
 
 
+@Register(api_type="wca-onprem")
 class WCAOnPremContentMatchPipeline(WCAOnPremPipeline, WCABaseContentMatchPipeline):
 
     def __init__(self, inference_url):
@@ -153,6 +157,7 @@ class WCAOnPremContentMatchPipeline(WCAOnPremPipeline, WCABaseContentMatchPipeli
         raise NotImplementedError
 
 
+@Register(api_type="wca-onprem")
 class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGenerationPipeline):
 
     def __init__(self, inference_url):
@@ -165,6 +170,7 @@ class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGene
         raise NotImplementedError
 
 
+@Register(api_type="wca-onprem")
 class WCAOnPremPlaybookExplanationPipeline(WCAOnPremPipeline, WCABasePlaybookExplanationPipeline):
 
     def __init__(self, inference_url):

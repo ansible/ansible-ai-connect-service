@@ -41,6 +41,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
     ERROR_MESSAGE,
     MODEL_MESH_HEALTH_CHECK_MODELS,
@@ -52,6 +53,7 @@ from ansible_ai_connect.healthcheck.backends import (
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="grpc")
 class GrpcMetaData(MetaData):
 
     def __init__(self, inference_url):
@@ -63,6 +65,7 @@ class GrpcMetaData(MetaData):
         return self._timeout * task_count if self._timeout else None
 
 
+@Register(api_type="grpc")
 class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions):
 
     def __init__(self, inference_url):
@@ -135,6 +138,7 @@ class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions):
         raise NotImplementedError
 
 
+@Register(api_type="grpc")
 class GrpcContentMatchPipeline(GrpcMetaData, ModelPipelineContentMatch):
 
     def __init__(self, inference_url):
@@ -144,6 +148,7 @@ class GrpcContentMatchPipeline(GrpcMetaData, ModelPipelineContentMatch):
         raise NotImplementedError
 
 
+@Register(api_type="grpc")
 class GrpcPlaybookGenerationPipeline(GrpcMetaData, ModelPipelinePlaybookGeneration):
 
     def __init__(self, inference_url):
@@ -153,6 +158,7 @@ class GrpcPlaybookGenerationPipeline(GrpcMetaData, ModelPipelinePlaybookGenerati
         raise NotImplementedError
 
 
+@Register(api_type="grpc")
 class GrpcPlaybookExplanationPipeline(GrpcMetaData, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):

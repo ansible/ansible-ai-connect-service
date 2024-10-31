@@ -102,6 +102,12 @@ class WisdomLogAwareMixin:
 
 
 class WisdomTestCase(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        # Ensure the Model Pipeline factory cache is clear
+        apps.get_app_config("ai").ready()
+
     def assert_error_detail(self, r, code: str, message: str = None):
         if r.status_code == HTTPStatus.NO_CONTENT:
             self.assertIsNone(r.data)
@@ -159,7 +165,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
         }
         for key, mocker in self.backend_patchers.items():
             mocker.start()
-        apps.get_app_config("ai").ready()
 
     def tearDown(self):
         for patcher in self.backend_patchers.values():

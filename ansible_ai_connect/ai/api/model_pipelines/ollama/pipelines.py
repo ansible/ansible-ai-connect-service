@@ -14,7 +14,7 @@
 
 import logging
 
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
@@ -27,16 +27,19 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ContentMatchParameters,
     ContentMatchResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="ollama")
 class OllamaMetaData(LangchainMetaData):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
 
 
+@Register(api_type="ollama")
 class OllamaCompletionsPipeline(LangchainCompletionsPipeline):
 
     def __init__(self, inference_url):
@@ -52,6 +55,7 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline):
         )
 
 
+@Register(api_type="ollama")
 class OllamaContentMatchPipeline(LangchainContentMatchPipeline):
 
     def __init__(self, inference_url):
@@ -67,6 +71,7 @@ class OllamaContentMatchPipeline(LangchainContentMatchPipeline):
         )
 
 
+@Register(api_type="ollama")
 class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
 
     def __init__(self, inference_url):
@@ -79,6 +84,7 @@ class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
         )
 
 
+@Register(api_type="ollama")
 class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline):
 
     def __init__(self, inference_url):

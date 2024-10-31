@@ -53,6 +53,7 @@ class AiConfig(AppConfig):
 
     def ready(self) -> None:
         self._pipeline_factory = ModelPipelineFactory()
+        return super().ready()
 
     def get_model_pipeline(self, feature: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         return self._pipeline_factory.get_pipeline(feature)

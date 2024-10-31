@@ -35,6 +35,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ that are running Red Hat Enterprise Linux (RHEL) 9.
 """
 
 
+@Register(api_type="dummy")
 class DummyMetaData(MetaData):
 
     def __init__(self, inference_url):
@@ -89,6 +91,7 @@ class DummyMetaData(MetaData):
         self.headers = {"Content-Type": "application/json"}
 
 
+@Register(api_type="dummy")
 class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions):
 
     def __init__(self, inference_url):
@@ -110,6 +113,7 @@ class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions):
         raise NotImplementedError
 
 
+@Register(api_type="dummy")
 class DummyContentMatchPipeline(DummyMetaData, ModelPipelineContentMatch):
 
     def __init__(self, inference_url):
@@ -119,6 +123,7 @@ class DummyContentMatchPipeline(DummyMetaData, ModelPipelineContentMatch):
         raise NotImplementedError
 
 
+@Register(api_type="dummy")
 class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGeneration):
 
     def __init__(self, inference_url):
@@ -131,6 +136,7 @@ class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGenera
         return PLAYBOOK, "", []
 
 
+@Register(api_type="dummy")
 class DummyPlaybookExplanationPipeline(DummyMetaData, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):

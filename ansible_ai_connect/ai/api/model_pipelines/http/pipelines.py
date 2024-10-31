@@ -36,6 +36,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
     ERROR_MESSAGE,
     MODEL_MESH_HEALTH_CHECK_MODELS,
@@ -47,6 +48,7 @@ from ansible_ai_connect.healthcheck.backends import (
 logger = logging.getLogger(__name__)
 
 
+@Register(api_type="http")
 class HttpMetaData(MetaData):
 
     def __init__(self, inference_url):
@@ -60,6 +62,7 @@ class HttpMetaData(MetaData):
         return self._timeout * task_count if self._timeout else None
 
 
+@Register(api_type="http")
 class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions):
 
     def __init__(self, inference_url):
@@ -113,6 +116,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions):
         raise NotImplementedError
 
 
+@Register(api_type="http")
 class HttpContentMatchPipeline(HttpMetaData, ModelPipelineContentMatch):
 
     def __init__(self, inference_url):
@@ -122,6 +126,7 @@ class HttpContentMatchPipeline(HttpMetaData, ModelPipelineContentMatch):
         raise NotImplementedError
 
 
+@Register(api_type="http")
 class HttpPlaybookGenerationPipeline(HttpMetaData, ModelPipelinePlaybookGeneration):
 
     def __init__(self, inference_url):
@@ -131,6 +136,7 @@ class HttpPlaybookGenerationPipeline(HttpMetaData, ModelPipelinePlaybookGenerati
         raise NotImplementedError
 
 
+@Register(api_type="http")
 class HttpPlaybookExplanationPipeline(HttpMetaData, ModelPipelinePlaybookExplanation):
 
     def __init__(self, inference_url):
