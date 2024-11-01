@@ -612,3 +612,14 @@ CHATBOT_URL = os.getenv("CHATBOT_URL")
 CHATBOT_DEFAULT_PROVIDER = os.getenv("CHATBOT_DEFAULT_PROVIDER")
 CHATBOT_DEFAULT_MODEL = os.getenv("CHATBOT_DEFAULT_MODEL")
 # ==========================================
+
+# ==========================================
+# Playbook Generation/Explanation endpoints
+# ------------------------------------------
+ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
+    os.getenv(
+        "ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT", "False" if DEPLOYMENT_MODE == "on-prem" else "True"
+    ).lower()
+    == "true"
+)
+# ==========================================

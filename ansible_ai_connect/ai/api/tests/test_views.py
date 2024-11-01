@@ -2827,6 +2827,7 @@ This playbook emails admin@redhat.com with a list of passwords.
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
 class TestExplanationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
     response_data = """# Information
@@ -3367,6 +3368,7 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
 class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
     response_data = """yaml
@@ -3613,35 +3615,146 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
 @modify_settings()
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(DEPLOYMENT_MODE="onprem")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
 @override_settings(ANSIBLE_WCA_USERNAME="bo")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="my-secret-key")
-class TestFeatureEnableForWcaOnprem(WisdomAppsBackendMocking):
+class TestExplanationFeatureEnableForWcaOnprem(
+    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
+
+    explanation_id = str(uuid.uuid4())
+    payload_json = {
+        "content": "Install Wordpress on a RHEL9",
+        "explanationId": explanation_id,
+    }
+
+    response_json = {"explanation": "dummy explanation"}
 
     def setUp(self):
         super().setUp()
         self.username = "u" + "".join(random.choices(string.digits, k=5))
-        self.user = create_user_with_provider(
+        self.aap_user = create_user_with_provider(
             provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
             rh_org_id=1981,
             social_auth_extra_data={"aap_licensed": True},
         )
-        self.user.save()
+        self.aap_user.save()
 
     def tearDown(self):
         Organization.objects.filter(id=1981).delete()
-        self.user.delete()
+        self.aap_user.delete()
         super().tearDown()
 
+    def stub_wca_client(self):
+        response = MockResponse(
+            json=self.response_json,
+            text=json.dumps(self.response_json),
+            status_code=HTTPStatus.OK,
+        )
+        model_client = WCASaaSPlaybookExplanationPipeline(inference_url="https://wca_api_url")
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = Mock(return_value="org-api-key")
+        model_client.get_model_id = Mock(return_value="model_id")
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_client
+
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=False)
     def test_feature_not_enabled_yet(self):
-        payload = {
-            "content": "Install Wordpress on a RHEL9",
-            "explanationId": str(uuid.uuid4()),
-        }
-        self.client.force_login(user=self.user)
-        r = self.client.post(reverse("explanations"), payload)
+        self.client.force_login(user=self.aap_user)
+        r = self.client.post(reverse("explanations"), self.payload_json)
         self.assertEqual(r.status_code, 404)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
+    def test_feature_enabled(self):
+        self.client.force_authenticate(user=self.aap_user)
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=self.stub_wca_client()),
+        ):
+            r = self.client.post(reverse("explanations"), self.payload_json, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertEqual(r.data["content"], "dummy explanation")
+            self.assertEqual(r.data["format"], "markdown")
+            self.assertEqual(r.data["explanationId"], self.explanation_id)
+
+
+@modify_settings()
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(DEPLOYMENT_MODE="onprem")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+@override_settings(ANSIBLE_WCA_USERNAME="bo")
+@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="my-secret-key")
+class TestGenerationFeatureEnableForWcaOnprem(
+    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
+    generation_id = str(uuid.uuid4())
+    payload_json = {
+        "text": "Install nginx on RHEL9",
+        "generationId": generation_id,
+        "ansibleExtensionVersion": "24.4.0",
+    }
+
+    response_json = {
+        "playbook": "- hosts: all",
+        "outline": "- dummy",
+        "warning": None,
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.username = "u" + "".join(random.choices(string.digits, k=5))
+        self.aap_user = create_user_with_provider(
+            provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
+            rh_org_id=1981,
+            social_auth_extra_data={"aap_licensed": True},
+        )
+        self.aap_user.save()
+
+    def tearDown(self):
+        Organization.objects.filter(id=1981).delete()
+        self.aap_user.delete()
+        super().tearDown()
+
+    def stub_wca_client(self):
+        response = MockResponse(
+            json=self.response_json,
+            text=json.dumps(self.response_json),
+            status_code=HTTPStatus.OK,
+        )
+        model_client = WCASaaSPlaybookGenerationPipeline(inference_url="https://wca_api_url")
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_api_key = Mock(return_value="org-api-key")
+        model_client.get_model_id = Mock(return_value="model_id")
+        model_client.get_token = Mock(return_value={"access_token": "abc"})
+        return model_client
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=False)
+    def test_feature_not_enabled_yet(self):
+        self.client.force_login(user=self.aap_user)
+        r = self.client.post(reverse("generations"), self.payload_json, format="json")
+        self.assertEqual(r.status_code, 404)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
+    # GitHub Action 'Code Coverage' enables Lint'ing; so do the same (as it affects the response)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_feature_enabled(self):
+        self.client.force_authenticate(user=self.aap_user)
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=self.stub_wca_client()),
+        ):
+            r = self.client.post(reverse("generations"), self.payload_json, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            self.assertEqual(r.data["playbook"], "---\n- hosts: all\n")
+            self.assertEqual(r.data["format"], "plaintext")
+            self.assertEqual(r.data["generationId"], self.generation_id)
 
 
 class TestChatView(WisdomServiceAPITestCaseBase):
