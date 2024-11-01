@@ -71,3 +71,5 @@ WCA_SECRET_DUMMY_SECRETS = os.getenv("WCA_SECRET_DUMMY_SECRETS", "")
 TELEMETRY_ADMIN_DASHBOARD_URL = (
     "https://console.stage.redhat.com/ansible/lightspeed-admin-dashboard"
 )
+
+ENABLE_PLAYBOOK_ENDPOINT = True

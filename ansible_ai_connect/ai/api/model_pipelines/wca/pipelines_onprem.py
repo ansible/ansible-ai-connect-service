@@ -164,7 +164,10 @@ class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGene
         super().__init__(inference_url=inference_url)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
-        raise FeatureNotAvailable
+        if settings.ENABLE_PLAYBOOK_ENDPOINT:
+            return super().invoke(params)
+        else:
+            raise FeatureNotAvailable
 
     def self_test(self):
         raise NotImplementedError
@@ -177,7 +180,10 @@ class WCAOnPremPlaybookExplanationPipeline(WCAOnPremPipeline, WCABasePlaybookExp
         super().__init__(inference_url=inference_url)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
-        raise FeatureNotAvailable
+        if settings.ENABLE_PLAYBOOK_ENDPOINT:
+            return super().invoke(params)
+        else:
+            raise FeatureNotAvailable
 
     def self_test(self):
         raise NotImplementedError
