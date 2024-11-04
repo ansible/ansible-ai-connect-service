@@ -704,14 +704,7 @@ class Explanation(AACSAPIView):
     Returns a text that explains a playbook.
     """
 
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        BlockUserWithoutSeat,
-        BlockWCANotReadyButTrialAvailable,
-        BlockUserWithoutSeatAndWCAReadyOrg,
-        BlockUserWithSeatButWCANotReady,
-    ]
+    permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
     schema1_event = schema1.ExplainPlaybookEvent
 
@@ -780,17 +773,7 @@ class Generation(APIView):
     Returns a playbook based on a text input.
     """
 
-    from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
-    from rest_framework import permissions
-
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        BlockUserWithoutSeat,
-        BlockWCANotReadyButTrialAvailable,
-        BlockUserWithoutSeatAndWCAReadyOrg,
-        BlockUserWithSeatButWCANotReady,
-    ]
+    permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
 
     throttle_cache_key_suffix = "_generation"
