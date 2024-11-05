@@ -117,7 +117,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
                         self.assertEqual("ansible.builtin", properties["tasks"][0]["collection"])
                         self.assertIsNotNone(properties["tasks"][0]["prediction"])
                         self.assertEqual(
-                            "install apache for james8@example.com", properties["tasks"][0]["name"]
+                            "Install Apache for james8@example.com", properties["tasks"][0]["name"]
                         )
                         self.assertEqual(1, properties["taskCount"])
                         self.assertEqual("SINGLETASK", properties["promptType"])
