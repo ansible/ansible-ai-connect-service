@@ -30,7 +30,14 @@ import os
 import sys
 from importlib.resources import files
 from pathlib import Path
-from typing import Literal, cast
+from typing import cast
+
+from ansible_ai_connect.main.settings.types import (
+    t_deployment_mode,
+    t_model_mesh_api_type,
+    t_one_click_reports_postman_type,
+    t_wca_secret_backend_type,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,18 +51,6 @@ ANSIBLE_AI_CHATBOT_NAME = os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible Light
 # ==========================================
 # Model Provider
 # ------------------------------------------
-t_model_mesh_api_type = Literal[
-    "grpc",
-    "http",
-    "dummy",
-    "wca",
-    "wca-onprem",
-    "wca-dummy",
-    "ollama",
-    "llamacpp",
-    "bam",
-    "nop",
-]
 ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE"
 ) or cast(t_model_mesh_api_type, "http")
@@ -215,8 +210,6 @@ AUTHZ_SSO_TOKEN_SERVICE_RETRY_COUNT = int(os.getenv("AUTHZ_SSO_TOKEN_SERVICE_RET
 AUTHZ_AMS_SERVICE_RETRY_COUNT = int(os.getenv("AMS_SERVICE_RETRY_COUNT") or "3")
 AUTHZ_AMS_SERVICE_TIMEOUT = float(os.getenv("AUTHZ_AMS_SERVICE_TIMEOUT") or "3.0")
 
-
-t_deployment_mode = Literal["saas", "upstream", "onprem"]
 DEPLOYMENT_MODE: t_deployment_mode = cast(
     t_deployment_mode, os.environ.get("DEPLOYMENT_MODE") or "saas"
 )
@@ -541,7 +534,6 @@ CACHES = {
     }
 }
 
-t_wca_secret_backend_type = Literal["dummy", "aws_sm"]
 WCA_SECRET_BACKEND_TYPE: t_wca_secret_backend_type = cast(t_wca_secret_backend_type, "aws_sm")
 
 WCA_SECRET_MANAGER_ACCESS_KEY = os.getenv("WCA_SECRET_MANAGER_ACCESS_KEY", "")
@@ -605,9 +597,6 @@ ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID: str = (
     os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID") or ""
 )
 
-t_one_click_reports_postman_type = Literal[
-    "none", "stdout", "slack-webhook", "slack-webapi", "google-drive"
-]
 ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN: t_one_click_reports_postman_type = os.getenv(
     "ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN"
 ) or cast(t_one_click_reports_postman_type, "none")
@@ -636,4 +625,68 @@ ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
     ).lower()
     == "true"
 )
+# ==========================================
+
+# ==========================================
+# Pipeline configuration
+# ------------------------------------------
+# [manstis] This will be enabled when we update AWS SM configuration
+# ANSIBLE_AI_MODEL_MESH_CONFIG = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG")
+#
+# [manstis] For now, populate the configuration from the environment variables
+
+if ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
+    ANSIBLE_AI_WCA_CONFIG = {
+        "provider": "wca",
+        "config": {
+            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
+            "api_key": ANSIBLE_AI_MODEL_MESH_API_KEY,
+            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
+            "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+            "retry_count": ANSIBLE_WCA_RETRY_COUNT,
+            "enable_ari_postprocessing": WCA_ENABLE_ARI_POSTPROCESS,
+            "health_check_api_key": ANSIBLE_WCA_HEALTHCHECK_API_KEY,
+            "health_check_model_id": ANSIBLE_WCA_HEALTHCHECK_MODEL_ID,
+            "idp_url": ANSIBLE_WCA_IDP_URL,
+            "idp_login": ANSIBLE_WCA_IDP_LOGIN,
+            "idp_password": ANSIBLE_WCA_IDP_PASSWORD,
+            "one_click_default_api_key": ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY,
+            "one_click_default_model_id": ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID,
+        },
+    }
+elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
+    ANSIBLE_AI_WCA_CONFIG = {
+        "provider": "wca-onprem",
+        "config": {
+            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
+            "api_key": ANSIBLE_AI_MODEL_MESH_API_KEY,
+            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
+            "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+            "retry_count": ANSIBLE_WCA_RETRY_COUNT,
+            "enable_ari_postprocessing": WCA_ENABLE_ARI_POSTPROCESS,
+            "health_check_api_key": ANSIBLE_WCA_HEALTHCHECK_API_KEY,
+            "health_check_model_id": ANSIBLE_WCA_HEALTHCHECK_MODEL_ID,
+            "username": ANSIBLE_WCA_USERNAME,
+        },
+    }
+else:
+    ANSIBLE_AI_WCA_CONFIG = {
+        "provider": "wca-dummy",
+        "config": {
+            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
+        },
+    }
+
+# Lazy import to avoid circular dependencies
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
+from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  # noqa
+
+pipelines = list(filter(lambda p: issubclass(p, MetaData), REGISTRY_ENTRY.keys()))
+pipeline_config: dict = {}
+for pipeline in pipelines:
+    pipeline_config[pipeline.__name__] = ANSIBLE_AI_WCA_CONFIG
+
+ANSIBLE_AI_MODEL_MESH_CONFIG = json.dumps(pipeline_config)
 # ==========================================

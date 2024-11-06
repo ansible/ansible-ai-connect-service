@@ -62,6 +62,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
 )
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import BaseConfig
 from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILE, ROLES
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     ModelTimeoutError,
@@ -91,9 +92,17 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
+from ansible_ai_connect.ai.api.model_pipelines.tests import (
+    mock_config,
+    mock_pipeline_config,
+)
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
     MockResponse,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
+    WCAOnPremPlaybookExplanationPipeline,
+    WCAOnPremPlaybookGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
@@ -135,7 +144,12 @@ class MockedLLM(Runnable):
         return self.response_data
 
 
-class MockedPipelineCompletions(ModelPipelineCompletions):
+class MockedConfig(BaseConfig):
+    def __init__(self):
+        super().__init__(inference_url="mock-url", model_id="mock-model", timeout=None)
+
+
+class MockedPipelineCompletions(ModelPipelineCompletions[MockedConfig]):
 
     def __init__(
         self,
@@ -145,7 +159,7 @@ class MockedPipelineCompletions(ModelPipelineCompletions):
         test_inference_match=True,
         rh_user_has_seat=False,
     ):
-        super().__init__(inference_url="dummy inference url")
+        super().__init__(MockedConfig())
         self.test = test
         self.test_inference_match = test_inference_match
 
@@ -199,47 +213,61 @@ class MockedPipelineCompletions(ModelPipelineCompletions):
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
+    def self_test(self):
+        raise NotImplementedError
 
-class MockedPipelineContentMatch(ModelPipelineContentMatch):
+
+class MockedPipelineContentMatch(ModelPipelineContentMatch[MockedConfig]):
 
     def __init__(self):
-        super().__init__(inference_url="dummy inference url")
+        super().__init__(MockedConfig())
 
     def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
+    def self_test(self):
+        raise NotImplementedError
 
-class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration):
+
+class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration[MockedConfig]):
 
     def __init__(self, response_data):
-        super().__init__(inference_url="dummy inference url")
+        super().__init__(MockedConfig())
         self.response_data = response_data
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         return self.response_data, self.response_data, []
 
+    def self_test(self):
+        raise NotImplementedError
 
-class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration):
+
+class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration[MockedConfig]):
 
     def __init__(self, response_data):
-        super().__init__(inference_url="dummy inference url")
+        super().__init__(MockedConfig())
         self.response_data = response_data
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         return self.response_data, [], self.response_data
 
+    def self_test(self):
+        raise NotImplementedError
 
-class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation):
+
+class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation[MockedConfig]):
 
     def __init__(self, response_data):
-        super().__init__(inference_url="dummy inference url")
+        super().__init__(MockedConfig())
         self.response_data = response_data
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         return self.response_data
 
+    def self_test(self):
+        raise NotImplementedError
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def stub_wca_client(
@@ -260,7 +288,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             status_code=status_code,
             headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_SUGGESTION_ID)},
         )
-        model_client = WCASaaSCompletionsPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = mock_api_key
         model_client.get_model_id = mock_model_id
@@ -288,7 +316,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             model_client.get_token.assert_called_once()
             self.assertEqual(
                 model_client.session.post.call_args.args[0],
-                "https://wca_api_url/v1/wca/codegen/ansible",
+                "http://localhost/v1/wca/codegen/ansible",
             )
             self.assertEqual(
                 model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
@@ -703,7 +731,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_single_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -724,11 +751,10 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(model_client.session.post.call_args[1]["timeout"], 20)
+            self.assertEqual(model_client.session.post.call_args[1]["timeout"], 1000)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=20)
     def test_wca_completion_timeout_multi_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -757,7 +783,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertEqual(model_client.session.post.call_args[1]["timeout"], 40)
+            self.assertEqual(model_client.session.post.call_args[1]["timeout"], 2000)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
@@ -918,8 +944,6 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
 
 
 @modify_settings()
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
-@override_settings(ANSIBLE_AI_MODEL_NAME="my-model")
 class TestCompletionView(WisdomServiceAPITestCaseBase):
     # An artificial model ID for model-ID related test cases.
     DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
@@ -1246,7 +1270,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # module name in the prediction is ""
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_NAME,
+            "model_id": "mock-model",
             "predictions": ['      "":\n        name: apache2'],
         }
         self.client.force_authenticate(user=self.user)
@@ -1427,7 +1451,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=WCASaaSCompletionsPipeline(inference_url="https://wca_api_url")),
+            Mock(return_value=WCASaaSCompletionsPipeline(mock_pipeline_config("wca"))),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(reverse("completions"), payload)
@@ -1924,7 +1948,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             ],
             status_code=200,
         )
-        model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value="org-api-key")
@@ -1940,7 +1964,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token.assert_called_once()
         self.assertEqual(
             model_client.session.post.call_args.args[0],
-            "https://wca_api_url/v1/wca/codematch/ansible",
+            "http://localhost/v1/wca/codematch/ansible",
         )
         self.assertEqual(
             model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
@@ -2019,7 +2043,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             ],
             status_code=200,
         )
-        model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value="org-api-key")
@@ -2035,7 +2059,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token.assert_called_once()
         self.assertEqual(
             model_client.session.post.call_args.args[0],
-            "https://wca_api_url/v1/wca/codematch/ansible",
+            "http://localhost/v1/wca/codematch/ansible",
         )
         self.assertEqual(
             model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
@@ -2092,7 +2116,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             ],
             status_code=200,
         )
-        model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value="org-api-key")
@@ -2107,7 +2131,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token.assert_called_once()
         self.assertEqual(
             model_client.session.post.call_args.args[0],
-            "https://wca_api_url/v1/wca/codematch/ansible",
+            "http://localhost/v1/wca/codematch/ansible",
         )
         self.assertEqual(
             model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
@@ -2148,7 +2172,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             ],
             status_code=200,
         )
-        model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_token = Mock(return_value={"access_token": "abc"})
         model_client.get_api_key = Mock(return_value="org-api-key")
@@ -2164,7 +2188,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
         model_client.get_token.assert_called_once()
         self.assertEqual(
             model_client.session.post.call_args.args[0],
-            "https://wca_api_url/v1/wca/codematch/ansible",
+            "http://localhost/v1/wca/codematch/ansible",
         )
         self.assertEqual(
             model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
@@ -2213,7 +2237,7 @@ class TestContentMatchesWCAViewErrors(
             ],
             status_code=200,
         )
-        self.model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        self.model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         self.model_client.session.post = Mock(return_value=response)
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value="org-api-key")
@@ -2394,7 +2418,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             status_code=200,
         )
 
-        self.model_client = WCASaaSContentMatchPipeline(inference_url="https://wca_api_url")
+        self.model_client = WCASaaSContentMatchPipeline(mock_pipeline_config("wca"))
         self.model_client.session.post = Mock(return_value=wca_response)
         self.model_client.get_token = Mock(return_value={"access_token": "abc"})
         self.model_client.get_api_key = Mock(return_value="org-api-key")
@@ -2591,7 +2615,7 @@ class TestContentMatchesWCAViewSegmentEvents(
 
 
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
 class TestExplanationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     response_data = """# Information
@@ -2840,7 +2864,6 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.assertIn("'{playbook}' placeholder expected.", r.data["detail"]["customPrompt"])
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
 @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
 class TestExplanationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
@@ -2878,7 +2901,7 @@ that are running Red Hat Enterprise Linux 9.
             text=response_text,
             status_code=status_code,
         )
-        model_client = WCASaaSPlaybookExplanationPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSPlaybookExplanationPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = mock_api_key
         if mock_model_id:
@@ -3069,7 +3092,7 @@ that are running Red Hat Enterprise Linux 9.
             self.assertInLog("requested_model_id=mymodel", log)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
 class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
@@ -3364,7 +3387,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_ok(self):
         generation_id = str(uuid.uuid4())
@@ -3390,7 +3413,7 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
 @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
 class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
 
@@ -3425,7 +3448,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             text=response_text,
             status_code=status_code,
         )
-        model_client = WCASaaSPlaybookGenerationPipeline(inference_url="https://wca_api_url")
+        model_client = WCASaaSPlaybookGenerationPipeline(mock_pipeline_config("wca"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = mock_api_key
         if mock_model_id:
@@ -3637,11 +3660,9 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
 
 @modify_settings()
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem"))
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(DEPLOYMENT_MODE="onprem")
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-@override_settings(ANSIBLE_WCA_USERNAME="bo")
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="my-secret-key")
 class TestExplanationFeatureEnableForWcaOnprem(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
@@ -3675,7 +3696,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
             text=json.dumps(self.response_json),
             status_code=HTTPStatus.OK,
         )
-        model_client = WCASaaSPlaybookExplanationPipeline(inference_url="https://wca_api_url")
+        model_client = WCAOnPremPlaybookExplanationPipeline(mock_pipeline_config("wca-onprem"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = Mock(return_value="org-api-key")
         model_client.get_model_id = Mock(return_value="model_id")
@@ -3706,11 +3727,9 @@ class TestExplanationFeatureEnableForWcaOnprem(
 
 
 @modify_settings()
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem"))
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(DEPLOYMENT_MODE="onprem")
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-@override_settings(ANSIBLE_WCA_USERNAME="bo")
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="my-secret-key")
 class TestGenerationFeatureEnableForWcaOnprem(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
@@ -3748,7 +3767,7 @@ class TestGenerationFeatureEnableForWcaOnprem(
             text=json.dumps(self.response_json),
             status_code=HTTPStatus.OK,
         )
-        model_client = WCASaaSPlaybookGenerationPipeline(inference_url="https://wca_api_url")
+        model_client = WCAOnPremPlaybookGenerationPipeline(mock_pipeline_config("wca-onprem"))
         model_client.session.post = Mock(return_value=response)
         model_client.get_api_key = Mock(return_value="org-api-key")
         model_client.get_model_id = Mock(return_value="model_id")

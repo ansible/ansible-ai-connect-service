@@ -23,68 +23,71 @@ from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainPlaybookGenerationPipeline,
     LangchainRoleGenerationPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.ollama.configuration import (
+    OllamaConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 logger = logging.getLogger(__name__)
 
 
 @Register(api_type="ollama")
-class OllamaMetaData(LangchainMetaData):
+class OllamaMetaData(LangchainMetaData[OllamaConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
 
 
 @Register(api_type="ollama")
-class OllamaCompletionsPipeline(LangchainCompletionsPipeline):
+class OllamaCompletionsPipeline(LangchainCompletionsPipeline[OllamaConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
         return Ollama(
-            base_url=self._inference_url,
+            base_url=self.config.inference_url,
             model=model_id,
         )
 
 
 @Register(api_type="ollama")
-class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
+class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline[OllamaConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
 
     def get_chat_model(self, model_id):
         return Ollama(
-            base_url=self._inference_url,
+            base_url=self.config.inference_url,
             model=model_id,
         )
 
 
 @Register(api_type="ollama")
-class OllamaRoleGenerationPipeline(LangchainRoleGenerationPipeline):
+class OllamaRoleGenerationPipeline(LangchainRoleGenerationPipeline[OllamaConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
 
     def get_chat_model(self, model_id):
         return Ollama(
-            base_url=self._inference_url,
+            base_url=self.config.inference_url,
             model=model_id,
         )
 
 
 @Register(api_type="ollama")
-class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline):
+class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline[OllamaConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
 
     def get_chat_model(self, model_id):
         return Ollama(
-            base_url=self._inference_url,
+            base_url=self.config.inference_url,
             model=model_id,
         )

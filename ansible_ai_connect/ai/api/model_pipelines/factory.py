@@ -16,10 +16,13 @@ import logging
 from copy import deepcopy
 from typing import Type
 
-from django.conf import settings
-
+from ansible_ai_connect.ai.api.model_pipelines.config_loader import load_config
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
+    PipelineConfiguration,
+)
+from ansible_ai_connect.ai.api.model_pipelines.config_providers import Configuration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE
-from ansible_ai_connect.ai.api.model_pipelines.registry import EMPTY_PIPE, PIPELINES
+from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY, REGISTRY_ENTRY
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +32,10 @@ class ModelPipelineFactory:
     cache = {}
 
     def __init__(self):
-        self.cache = deepcopy(EMPTY_PIPE)
+        self.cache = deepcopy(REGISTRY_ENTRY)
+        self.pipelines_config: Configuration = load_config()
 
     def get_pipeline(self, pipeline_type: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
-        if not settings.ANSIBLE_AI_MODEL_MESH_API_TYPE:
-            raise ValueError(
-                f"Invalid ANSIBLE_AI_MODEL_MESH_API_TYPE: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
-            )
-
         # We currently cache the pipeline implementation as we don't support
         # the use of different providers for different requests and each resides
         # in the same process space as ansible-ai-connect-service. This could
@@ -45,20 +44,19 @@ class ModelPipelineFactory:
             return self.cache[pipeline_type]
 
         try:
-            pipelines = PIPELINES[settings.ANSIBLE_AI_MODEL_MESH_API_TYPE]
+            # Get the configuration for the requested pipeline
+            pipeline_config: PipelineConfiguration = self.pipelines_config[pipeline_type.__name__]
+            # Get the pipeline class for the configured provider
+            pipelines = REGISTRY[pipeline_config.provider]
             pipeline = pipelines[pipeline_type]
+            config = pipeline_config.config
             # No explicit implementation defined; fallback to NOP
-            if pipeline is None:
-                pipelines = PIPELINES["nop"]
-                pipeline = pipelines[pipeline_type]
-                logger.info(
-                    f"Pipeline for '{settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}', "
-                    f"'{pipeline_type.__name__}' not found. Defaulting to NOP implementation."
-                )
+            if pipeline_config.provider == "nop":
+                logger.info(f"Using NOP implementation for '{pipeline_type.__name__}'.")
 
-            self.cache[pipeline_type] = pipeline(
-                inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL
-            )
+            # Construct an instance of the pipeline class with the applicable configuration
+            self.cache[pipeline_type] = pipeline(config)
+
         except KeyError:
             pass
 

@@ -22,6 +22,7 @@ from ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines import (
     OllamaCompletionsPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 
 
 class TestOllama(TestCase):
@@ -39,7 +40,7 @@ class TestOllama(TestCase):
         self.expected_task_body = "ansible.builtin.debug:\n  msg: something went wrong"
         self.expected_response = {
             "predictions": [self.expected_task_body],
-            "model_id": "test",
+            "model_id": "a-model-id",
         }
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines.Ollama")
@@ -48,10 +49,11 @@ class TestOllama(TestCase):
             return f"- name: Vache volante!\n{indent(self.expected_task_body, '  ')}"
 
         m_ollama.return_value = final
-        model_client = OllamaCompletionsPipeline("http://localhost")
+        config = mock_pipeline_config("ollama")
+        model_client = OllamaCompletionsPipeline(config)
         response = model_client.invoke(
             CompletionsParameters.init(
-                request=Mock(), model_input=self.model_input, model_id="test"
+                request=Mock(), model_input=self.model_input, model_id=config.model_id
             )
         )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))

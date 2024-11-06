@@ -23,6 +23,7 @@ from ansible_ai_connect.ai.api.model_pipelines.bam.pipelines import (
     BAMCompletionsPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 
 
 class TestBam(TestCase):
@@ -50,7 +51,7 @@ class TestBam(TestCase):
     @responses.activate
     def test_infer(self):
         model = "test"
-        model_client = BAMCompletionsPipeline(self.inference_url)
+        model_client = BAMCompletionsPipeline(mock_pipeline_config("bam"))
         responses.post(
             self.prediction_url,
             match=[

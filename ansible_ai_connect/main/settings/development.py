@@ -13,7 +13,8 @@
 #  limitations under the License.
 
 from .base import *  # NOQA
-from .base import MIDDLEWARE, cast, os, t_wca_secret_backend_type
+from .base import MIDDLEWARE, cast, os
+from .types import t_wca_secret_backend_type
 
 DEBUG = True
 

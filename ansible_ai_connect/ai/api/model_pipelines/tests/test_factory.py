@@ -14,7 +14,6 @@
 
 from typing import Type
 
-from django.conf import settings
 from django.test import override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
@@ -30,18 +29,18 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
 )
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
 class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE=None)
-    def test_model_mesh_type_undefined(self):
-        factory = ModelPipelineFactory()
-        with self.assertRaises(ValueError):
-            factory.get_pipeline(MetaData)
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=None)
+    def test_config_undefined(self):
+        with self.assertRaises(TypeError):
+            ModelPipelineFactory()
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
     def test_caching(self):
         factory = ModelPipelineFactory()
         pipeline = factory.get_pipeline(MetaData)
@@ -51,7 +50,7 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
         self.assertEqual(pipeline, cached)
 
     # 'grpc' does not have a Content Match pipeline
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
     def test_default_fallback_content_match(self):
         factory = ModelPipelineFactory()
 
@@ -60,13 +59,12 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
             self.assertIsNotNone(pipeline)
             self.assertIsInstance(pipeline, NopContentMatchPipeline)
             self.assertInLog(
-                "Pipeline for 'grpc', 'ModelPipelineContentMatch' not found. "
-                "Defaulting to NOP implementation.",
+                "Using NOP implementation for 'ModelPipelineContentMatch'.",
                 log,
             )
 
     # 'grpc' does not have a Playbook Generation pipeline
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
     def test_default_fallback_playbook_generation(self):
         factory = ModelPipelineFactory()
 
@@ -75,13 +73,12 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
             self.assertIsNotNone(pipeline)
             self.assertIsInstance(pipeline, NopPlaybookGenerationPipeline)
             self.assertInLog(
-                "Pipeline for 'grpc', 'ModelPipelinePlaybookGeneration' not found. "
-                "Defaulting to NOP implementation.",
+                "Using NOP implementation for 'ModelPipelinePlaybookGeneration'.",
                 log,
             )
 
     # 'grpc' does not have a Playbook Explanation pipeline
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
     def test_default_fallback_playbook_explanation(self):
         factory = ModelPipelineFactory()
 
@@ -90,8 +87,7 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
             self.assertIsNotNone(pipeline)
             self.assertIsInstance(pipeline, NopPlaybookExplanationPipeline)
             self.assertInLog(
-                "Pipeline for 'grpc', 'ModelPipelinePlaybookExplanation' not found. "
-                "Defaulting to NOP implementation.",
+                "Using NOP implementation for 'ModelPipelinePlaybookExplanation'.",
                 log,
             )
 
@@ -114,9 +110,7 @@ class TestModelPipelineFactoryImplementations(WisdomServiceAPITestCaseBaseOIDC):
             self.assertIsNotNone(pipeline)
             self.assertIsInstance(pipeline, expected_default_cls)
             self.assertInLog(
-                f"Pipeline for '{settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}', "
-                f"'{pipeline_type.__name__}' not found. "
-                "Defaulting to NOP implementation.",
+                f"Using NOP implementation for '{pipeline_type.__name__}'.",
                 log,
             )
             with self.assertRaises(NotImplementedError):

@@ -28,12 +28,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
 )
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
 )
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="ollama")
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("ollama"))
 class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
 
     def test_completions_pipeline(self):

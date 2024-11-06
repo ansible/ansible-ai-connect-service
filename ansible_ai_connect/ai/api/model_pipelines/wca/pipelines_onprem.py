@@ -15,7 +15,7 @@
 import base64
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generic, Optional
 
 from django.conf import settings
 
@@ -26,12 +26,23 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUsernameNotFound,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PIPELINE_PARAMETERS,
+    PIPELINE_RETURN,
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_onprem import (
+    WCAOnPremConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
     WCABaseCompletionsPipeline,
@@ -60,13 +71,13 @@ logger = logging.getLogger(__name__)
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremMetaData(WCABaseMetaData):
+class WCAOnPremMetaData(WCABaseMetaData[WCAOnPremConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def get_api_key(self, user, organization_id: Optional[int]) -> str:
-        return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
+        return self.config.api_key
 
     def get_model_id(
         self,
@@ -78,19 +89,24 @@ class WCAOnPremMetaData(WCABaseMetaData):
             # requested_model_id defined: let them use what they ask for
             return requested_model_id
 
-        if settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID:
-            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
+        if self.config.model_id:
+            return self.config.model_id
 
         raise WcaModelIdNotFound()
 
 
-class WCAOnPremPipeline(WCAOnPremMetaData, WCABasePipeline, metaclass=ABCMeta):
+class WCAOnPremPipeline(
+    WCAOnPremMetaData,
+    WCABasePipeline[WCAOnPremConfiguration, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    Generic[PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-        if not settings.ANSIBLE_WCA_USERNAME:
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
+        if not self.config.username:
             raise WcaUsernameNotFound
-        if not settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
+        if not self.config.api_key:
             raise WcaKeyNotFound
         # ANSIBLE_AI_MODEL_MESH_MODEL_ID cannot be validated until runtime. The
         # User may provide an override value if the Environment Variable is not set.
@@ -106,7 +122,7 @@ class WCAOnPremPipeline(WCAOnPremMetaData, WCABasePipeline, metaclass=ABCMeta):
 
     def _get_base_headers(self, api_key: str) -> dict[str, str]:
         # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=apis-generating-api-auth-token
-        username = settings.ANSIBLE_WCA_USERNAME
+        username = self.config.username
         token = base64.b64encode(bytes(f"{username}:{api_key}", "ascii")).decode("ascii")
         return {
             "Authorization": f"ZenApiKey {token}",
@@ -114,17 +130,20 @@ class WCAOnPremPipeline(WCAOnPremMetaData, WCABasePipeline, metaclass=ABCMeta):
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremCompletionsPipeline(WCAOnPremPipeline, WCABaseCompletionsPipeline):
+class WCAOnPremCompletionsPipeline(
+    WCAOnPremPipeline[CompletionsParameters, CompletionsResponse],
+    WCABaseCompletionsPipeline[WCAOnPremConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def self_test(self) -> HealthCheckSummary:
-        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
-        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        wca_api_key = self.config.health_check_api_key
+        wca_model_id = self.config.health_check_model_id
         summary: HealthCheckSummary = HealthCheckSummary(
             {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
         )
@@ -146,10 +165,13 @@ class WCAOnPremCompletionsPipeline(WCAOnPremPipeline, WCABaseCompletionsPipeline
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremContentMatchPipeline(WCAOnPremPipeline, WCABaseContentMatchPipeline):
+class WCAOnPremContentMatchPipeline(
+    WCAOnPremPipeline[ContentMatchParameters, ContentMatchResponse],
+    WCABaseContentMatchPipeline[WCAOnPremConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
@@ -159,10 +181,13 @@ class WCAOnPremContentMatchPipeline(WCAOnPremPipeline, WCABaseContentMatchPipeli
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGenerationPipeline):
+class WCAOnPremPlaybookGenerationPipeline(
+    WCAOnPremPipeline[PlaybookGenerationParameters, PlaybookGenerationResponse],
+    WCABasePlaybookGenerationPipeline[WCAOnPremConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         if settings.ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT:
@@ -175,20 +200,26 @@ class WCAOnPremPlaybookGenerationPipeline(WCAOnPremPipeline, WCABasePlaybookGene
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremRoleGenerationPipeline(WCAOnPremPipeline, WCABaseRoleGenerationPipeline):
+class WCAOnPremRoleGenerationPipeline(
+    WCAOnPremPipeline[RoleGenerationParameters, RoleGenerationResponse],
+    WCABaseRoleGenerationPipeline[WCAOnPremConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def self_test(self):
         raise NotImplementedError
 
 
 @Register(api_type="wca-onprem")
-class WCAOnPremPlaybookExplanationPipeline(WCAOnPremPipeline, WCABasePlaybookExplanationPipeline):
+class WCAOnPremPlaybookExplanationPipeline(
+    WCAOnPremPipeline[PlaybookExplanationParameters, PlaybookExplanationResponse],
+    WCABasePlaybookExplanationPipeline[WCAOnPremConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         if settings.ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT:

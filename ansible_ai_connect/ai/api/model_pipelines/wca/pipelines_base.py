@@ -16,7 +16,7 @@ import json
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
 
 import backoff
 import requests
@@ -39,6 +39,8 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaRequestIdCorrelationFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PIPELINE_PARAMETERS,
+    PIPELINE_RETURN,
     CompletionsParameters,
     CompletionsResponse,
     ContentMatchParameters,
@@ -56,6 +58,9 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookGenerationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_base import (
+    WCABaseConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     ContentMatchResponseChecks,
@@ -94,6 +99,8 @@ DEFAULT_LATENCY_BUCKETS = (
 )
 
 logger = logging.getLogger(__name__)
+
+WCA_PIPELINE_CONFIGURATION = TypeVar("WCA_PIPELINE_CONFIGURATION", bound=WCABaseConfiguration)
 
 wca_codegen_hist = Histogram(
     "wca_codegen_latency_seconds",
@@ -160,13 +167,15 @@ class WcaModelRequestException(ServiceUnavailable):
     """There was an error trying to invoke a WCA Model."""
 
 
-class WCABaseMetaData(MetaData, metaclass=ABCMeta):
+class WCABaseMetaData(
+    MetaData[WCA_PIPELINE_CONFIGURATION], Generic[WCA_PIPELINE_CONFIGURATION], metaclass=ABCMeta
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
         self.session = requests.Session()
-        self.retries = settings.ANSIBLE_WCA_RETRY_COUNT
-        i = settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+        self.retries = self.config.retry_count
+        i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
     def timeout(self, task_count=1):
@@ -195,13 +204,18 @@ class WCABaseMetaData(MetaData, metaclass=ABCMeta):
         raise NotImplementedError
 
     def supports_ari_postprocessing(self) -> bool:
-        return settings.ENABLE_ARI_POSTPROCESS and settings.WCA_ENABLE_ARI_POSTPROCESS
+        return settings.ENABLE_ARI_POSTPROCESS and self.config.enable_ari_postprocessing
 
 
-class WCABasePipeline(WCABaseMetaData, ModelPipeline, metaclass=ABCMeta):
+class WCABasePipeline(
+    WCABaseMetaData,
+    ModelPipeline[WCA_PIPELINE_CONFIGURATION, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    Generic[WCA_PIPELINE_CONFIGURATION, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     @staticmethod
     def log_backoff_exception(details):
@@ -239,10 +253,15 @@ class WCABasePipeline(WCABaseMetaData, ModelPipeline, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class WCABaseCompletionsPipeline(WCABasePipeline, ModelPipelineCompletions, metaclass=ABCMeta):
+class WCABaseCompletionsPipeline(
+    WCABasePipeline[WCA_PIPELINE_CONFIGURATION, CompletionsParameters, CompletionsResponse],
+    ModelPipelineCompletions[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         request = params.request
@@ -283,7 +302,7 @@ class WCABaseCompletionsPipeline(WCABasePipeline, ModelPipelineCompletions, meta
 
         headers = self.get_request_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
-        prediction_url = f"{self._inference_url}/v1/wca/codegen/ansible"
+        prediction_url = f"{self.config.inference_url}/v1/wca/codegen/ansible"
 
         @backoff.on_exception(
             backoff.expo,
@@ -299,7 +318,7 @@ class WCABaseCompletionsPipeline(WCABasePipeline, ModelPipelineCompletions, meta
                 headers=headers,
                 json=data,
                 timeout=self.timeout(task_count),
-                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+                verify=self.config.verify_ssl,
             )
 
         try:
@@ -325,10 +344,15 @@ class WCABaseCompletionsPipeline(WCABasePipeline, ModelPipelineCompletions, meta
         return response
 
 
-class WCABaseContentMatchPipeline(WCABasePipeline, ModelPipelineContentMatch, metaclass=ABCMeta):
+class WCABaseContentMatchPipeline(
+    WCABasePipeline[WCA_PIPELINE_CONFIGURATION, ContentMatchParameters, ContentMatchResponse],
+    ModelPipelineContentMatch[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     @abstractmethod
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
@@ -339,7 +363,7 @@ class WCABaseContentMatchPipeline(WCABasePipeline, ModelPipelineContentMatch, me
         model_input = params.model_input
         model_id = params.model_id
         logger.debug(f"Input prompt: {model_input}")
-        self._search_url = f"{self._inference_url}/v1/wca/codematch/ansible"
+        self._search_url = f"{self.config.inference_url}/v1/wca/codematch/ansible"
 
         suggestions = model_input.get("suggestions", "")
         organization_id = model_input.get("organization_id", None)
@@ -370,7 +394,7 @@ class WCABaseContentMatchPipeline(WCABasePipeline, ModelPipelineContentMatch, me
                     headers=headers,
                     json=data,
                     timeout=self.timeout(suggestion_count),
-                    verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+                    verify=self.config.verify_ssl,
                 )
 
             result = post_request()
@@ -391,11 +415,16 @@ class WCABaseContentMatchPipeline(WCABasePipeline, ModelPipelineContentMatch, me
 
 
 class WCABasePlaybookGenerationPipeline(
-    WCABasePipeline, ModelPipelinePlaybookGeneration, metaclass=ABCMeta
+    WCABasePipeline[
+        WCA_PIPELINE_CONFIGURATION, PlaybookGenerationParameters, PlaybookGenerationResponse
+    ],
+    ModelPipelinePlaybookGeneration[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         request = params.request
@@ -433,10 +462,10 @@ class WCABasePlaybookGenerationPipeline(
         @wca_codegen_playbook_hist.time()
         def post_request():
             return self.session.post(
-                f"{self._inference_url}/v1/wca/codegen/ansible/playbook",
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -468,22 +497,30 @@ class WCABasePlaybookGenerationPipeline(
 
 
 class WCABaseRoleGenerationPipeline(
-    WCABasePipeline, ModelPipelineRoleGeneration, metaclass=ABCMeta
+    WCABasePipeline[WCA_PIPELINE_CONFIGURATION, RoleGenerationParameters, RoleGenerationResponse],
+    ModelPipelineRoleGeneration[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         raise NotImplementedError
 
 
 class WCABasePlaybookExplanationPipeline(
-    WCABasePipeline, ModelPipelinePlaybookExplanation, metaclass=ABCMeta
+    WCABasePipeline[
+        WCA_PIPELINE_CONFIGURATION, PlaybookExplanationParameters, PlaybookExplanationResponse
+    ],
+    ModelPipelinePlaybookExplanation[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         request = params.request
@@ -516,10 +553,10 @@ class WCABasePlaybookExplanationPipeline(
         @wca_explain_playbook_hist.time()
         def post_request():
             return self.session.post(
-                f"{self._inference_url}/v1/wca/explain/ansible/playbook",
+                f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+                verify=self.config.verify_ssl,
             )
 
         result = post_request()

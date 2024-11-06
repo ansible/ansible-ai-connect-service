@@ -16,7 +16,7 @@ import json
 from unittest.mock import Mock
 
 import responses
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from requests.exceptions import ReadTimeout
 from responses import matchers
 
@@ -25,6 +25,7 @@ from ansible_ai_connect.ai.api.model_pipelines.llamacpp.pipelines import (
     LlamaCppCompletionsPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 
 
 class TestLlamaCPPClient(TestCase):
@@ -44,13 +45,13 @@ class TestLlamaCPPClient(TestCase):
         self.expected_task_body = "  ansible.builtin.debug:\n  msg: something went wrong"
         self.expected_response = {
             "predictions": [self.expected_task_body],
-            "model_id": "test",
+            "model_id": "a-model-id",
         }
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer(self):
-        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
+        config = mock_pipeline_config("llamacpp")
+        model_client = LlamaCppCompletionsPipeline(config)
         responses.post(
             self.prediction_url,
             match=[
@@ -58,14 +59,14 @@ class TestLlamaCPPClient(TestCase):
                 matchers.json_params_matcher(
                     {
                         "prompt": f'{self.model_input["instances"][0]["prompt"]}\n',
-                        "model": "test",
+                        "model": config.model_id,
                     },
                     strict_match=False,
                 ),
             ],
             json={
                 "content": self.expected_task_body,
-                "model": "test",
+                "model": config.model_id,
             },
         )
 
@@ -79,7 +80,7 @@ class TestLlamaCPPClient(TestCase):
         model = "multivac"
         self.expected_response["model_id"] = model
 
-        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
+        model_client = LlamaCppCompletionsPipeline(mock_pipeline_config("llamacpp"))
         responses.post(
             self.prediction_url,
             match=[
@@ -103,10 +104,9 @@ class TestLlamaCPPClient(TestCase):
         )
         self.assertEqual(json.dumps(self.expected_response), json.dumps(response))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="test")
     @responses.activate
     def test_infer_timeout(self):
-        model_client = LlamaCppCompletionsPipeline(inference_url=self.inference_url)
+        model_client = LlamaCppCompletionsPipeline(mock_pipeline_config("llamacpp"))
         model_client.session.post = Mock(side_effect=ReadTimeout())
         with self.assertRaises(ModelTimeoutError):
             model_client.invoke(
