@@ -24,12 +24,18 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
+const getTimestamp = () => {
+  const date = new Date();
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+};
+
 export const botMessage = (content: string): MessageProps => ({
   role: "bot",
   content,
   name: botName,
   avatar:
     "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+  timestamp: getTimestamp(),
   actions: {
     positive: { onClick: () => console.log("Good response") },
     negative: { onClick: () => console.log("Bad response") },
@@ -67,6 +73,7 @@ export const useChatbot = () => {
       name: userName,
       avatar:
         "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
+      timestamp: getTimestamp(),
       referenced_documents: [],
     };
     setMessages((msgs: ExtendedMessage[]) => [...msgs, userMessage]);
