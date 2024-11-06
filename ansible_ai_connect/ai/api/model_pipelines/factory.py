@@ -43,7 +43,7 @@ class ModelPipelineFactory:
             ModelPipelinePlaybookExplanation: None,
         }
 
-    def get_pipeline(self, pipeline: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
+    def get_pipeline(self, pipeline_type: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         if not settings.ANSIBLE_AI_MODEL_MESH_API_TYPE:
             raise ValueError(
                 f"Invalid ANSIBLE_AI_MODEL_MESH_API_TYPE: {settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}"
@@ -53,22 +53,25 @@ class ModelPipelineFactory:
         # the use of different providers for different requests and each resides
         # in the same process space as ansible-ai-connect-service. This could
         # change when (if) we move to a fully distributed deployment model.
-        if self.cache[pipeline]:
-            return self.cache[pipeline]
+        if self.cache[pipeline_type]:
+            return self.cache[pipeline_type]
 
         try:
             pipelines = PIPELINES[settings.ANSIBLE_AI_MODEL_MESH_API_TYPE]
-            self.cache[pipeline] = pipelines[pipeline](
+            pipeline = pipelines[pipeline_type]
+            # No explicit implementation defined; fallback to NOP
+            if pipeline is None:
+                pipelines = PIPELINES["nop"]
+                pipeline = pipelines[pipeline_type]
+                logger.info(
+                    f"Pipeline for '{settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}', "
+                    f"'{pipeline_type.__name__}' not found. Defaulting to NOP implementation."
+                )
+
+            self.cache[pipeline_type] = pipeline(
                 inference_url=settings.ANSIBLE_AI_MODEL_MESH_API_URL
             )
         except KeyError:
             pass
 
-        if self.cache[pipeline] is None:
-            logger.exception(
-                f"Pipeline for '{settings.ANSIBLE_AI_MODEL_MESH_API_TYPE}, "
-                f"'{pipeline.__name__}' not found."
-            )
-            raise ValueError(f"Invalid Pipeline type: {pipeline}")
-
-        return self.cache[pipeline]
+        return self.cache[pipeline_type]

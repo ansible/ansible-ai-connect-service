@@ -18,14 +18,9 @@ from langchain_community.llms import Ollama
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
-    LangchainContentMatchPipeline,
     LangchainMetaData,
     LangchainPlaybookExplanationPipeline,
     LangchainPlaybookGenerationPipeline,
-)
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    ContentMatchParameters,
-    ContentMatchResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -46,22 +41,6 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline):
         super().__init__(inference_url=inference_url)
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
-        raise NotImplementedError
-
-    def get_chat_model(self, model_id):
-        return Ollama(
-            base_url=self._inference_url,
-            model=model_id,
-        )
-
-
-@Register(api_type="ollama")
-class OllamaContentMatchPipeline(LangchainContentMatchPipeline):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):

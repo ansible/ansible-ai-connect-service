@@ -24,17 +24,8 @@ from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
-    ContentMatchParameters,
-    ContentMatchResponse,
     MetaData,
     ModelPipelineCompletions,
-    ModelPipelineContentMatch,
-    ModelPipelinePlaybookExplanation,
-    ModelPipelinePlaybookGeneration,
-    PlaybookExplanationParameters,
-    PlaybookExplanationResponse,
-    PlaybookGenerationParameters,
-    PlaybookGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
@@ -113,34 +104,4 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions):
         return summary
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
-        raise NotImplementedError
-
-
-@Register(api_type="http")
-class HttpContentMatchPipeline(HttpMetaData, ModelPipelineContentMatch):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="http")
-class HttpPlaybookGenerationPipeline(HttpMetaData, ModelPipelinePlaybookGeneration):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="http")
-class HttpPlaybookExplanationPipeline(HttpMetaData, ModelPipelinePlaybookExplanation):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise NotImplementedError

@@ -29,17 +29,8 @@ from ansible_ai_connect.ai.api.model_pipelines.grpc.grpc_pb import (
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
-    ContentMatchParameters,
-    ContentMatchResponse,
     MetaData,
     ModelPipelineCompletions,
-    ModelPipelineContentMatch,
-    ModelPipelinePlaybookExplanation,
-    ModelPipelinePlaybookGeneration,
-    PlaybookExplanationParameters,
-    PlaybookExplanationResponse,
-    PlaybookGenerationParameters,
-    PlaybookGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
@@ -135,34 +126,4 @@ class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions):
         return summary
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
-        raise NotImplementedError
-
-
-@Register(api_type="grpc")
-class GrpcContentMatchPipeline(GrpcMetaData, ModelPipelineContentMatch):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="grpc")
-class GrpcPlaybookGenerationPipeline(GrpcMetaData, ModelPipelinePlaybookGeneration):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="grpc")
-class GrpcPlaybookExplanationPipeline(GrpcMetaData, ModelPipelinePlaybookExplanation):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise NotImplementedError

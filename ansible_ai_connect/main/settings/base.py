@@ -45,7 +45,16 @@ ANSIBLE_AI_CHATBOT_NAME = os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible AI Vi
 # Model Provider
 # ------------------------------------------
 t_model_mesh_api_type = Literal[
-    "grpc", "http", "dummy", "wca", "wca-onprem", "wca-dummy", "ollama", "llamacpp", "bam"
+    "grpc",
+    "http",
+    "dummy",
+    "wca",
+    "wca-onprem",
+    "wca-dummy",
+    "ollama",
+    "llamacpp",
+    "bam",
+    "nop",
 ]
 ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
     "ANSIBLE_AI_MODEL_MESH_API_TYPE"
