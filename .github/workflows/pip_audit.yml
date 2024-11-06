@@ -50,3 +50,4 @@ jobs:
             # See https://issues.redhat.com/browse/AAP-35075
             PYSEC-2024-111
             PYSEC-2024-115
+            GHSA-hc5w-c9f8-9cc4
