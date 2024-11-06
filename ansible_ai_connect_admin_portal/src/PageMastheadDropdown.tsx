@@ -1,9 +1,13 @@
 import {
   Dropdown,
-  DropdownToggle,
+  MenuToggle,
+  MenuToggleElement,
   Flex,
   FlexItem,
+  DropdownList,
+  DropdownItem,
 } from "@patternfly/react-core";
+import React from 'react';
 import { ReactNode, useCallback, useState } from "react";
 import { useBreakpoint } from "@ansible/ansible-ui-framework";
 
@@ -21,17 +25,14 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
   const onSelect = useCallback(() => setOpen((open) => !open), []);
   const onToggle = useCallback(() => setOpen((open) => !open), []);
   const _children = Array.isArray(children) ? children : [children];
+  const [isOpen] = React.useState(false);
 
   return (
     <Dropdown
       id={id}
       onSelect={onSelect}
-      toggle={
-        <DropdownToggle
-          toggleIndicator={null}
-          onToggle={onToggle}
-          data-testid="page-masthead-dropdown__button"
-        >
+      toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle ref={toggleRef} onClick={onToggle} isExpanded={isOpen}>
           <Flex
             alignItems={{ default: "alignItemsCenter" }}
             flexWrap={{ default: "nowrap" }}
@@ -40,14 +41,16 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
             <FlexItem>{icon}</FlexItem>
             {isSmallOrLarger && <FlexItem wrap="nowrap">{userName}</FlexItem>}
           </Flex>
-        </DropdownToggle>
-      }
+        </MenuToggle>
+      )}
       isOpen={open}
       isPlain
-      dropdownItems={_children}
-      position="right"
       data-cy={id}
       data-testid="page-masthead-dropdown"
-    />
+    >
+      <DropdownList>
+        <DropdownItem>{_children}</DropdownItem>
+      </DropdownList>
+    </Dropdown>
   );
 }

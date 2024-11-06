@@ -24,19 +24,18 @@ export function AppHeader(props: AppHeaderProps) {
 
   return (
     <PageMasthead
-      icon={
+      brand={
         <Brand alt="" widths={{ default: "125px", md: "125px" }}>
           <source media="(min-width: 125px)" srcSet={RedHatLogo} />
         </Brand>
       }
-      title=""
     >
       <ToolbarItem style={{ flexGrow: 1 }} />
       <ToolbarGroup variant="icon-button-group">
         <ToolbarItem>
           <PageMastheadDropdown
             id="account-menu"
-            icon={<UserCircleIcon size="md" />}
+            icon={<UserCircleIcon/>}
             userName={userName}
           >
             <DropdownItem
