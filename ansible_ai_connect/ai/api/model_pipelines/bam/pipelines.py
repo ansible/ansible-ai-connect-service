@@ -24,14 +24,9 @@ from langchain_core.messages import BaseMessage
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
-    LangchainContentMatchPipeline,
     LangchainMetaData,
     LangchainPlaybookExplanationPipeline,
     LangchainPlaybookGenerationPipeline,
-)
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    ContentMatchParameters,
-    ContentMatchResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -109,24 +104,6 @@ class BAMCompletionsPipeline(LangchainCompletionsPipeline):
         super().__init__(inference_url=inference_url)
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
-        raise NotImplementedError
-
-    def get_chat_model(self, model_id):
-        return ChatBAM(
-            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
-            model_id=model_id,
-            prediction_url=f"{self._inference_url}/v2/text/chat?version=2024-01-10",
-            timeout=self.timeout,
-        )
-
-
-@Register(api_type="bam")
-class BAMContentMatchPipeline(LangchainContentMatchPipeline):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):

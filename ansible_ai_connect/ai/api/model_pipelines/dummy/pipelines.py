@@ -23,11 +23,8 @@ from django.conf import settings
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
-    ContentMatchParameters,
-    ContentMatchResponse,
     MetaData,
     ModelPipelineCompletions,
-    ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
     PlaybookExplanationParameters,
@@ -110,16 +107,6 @@ class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions):
         return response_body
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
-        raise NotImplementedError
-
-
-@Register(api_type="dummy")
-class DummyContentMatchPipeline(DummyMetaData, ModelPipelineContentMatch):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
 

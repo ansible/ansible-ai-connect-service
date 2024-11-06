@@ -13,6 +13,8 @@
 #  limitations under the License.
 
 import logging
+from copy import deepcopy
+from typing import get_args
 
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     MetaData,
@@ -25,71 +27,16 @@ from ansible_ai_connect.main.settings.base import t_model_mesh_api_type
 
 logger = logging.getLogger(__name__)
 
-PIPELINES = {
-    "grpc": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "http": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "dummy": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "wca": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "wca-onprem": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "wca-dummy": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "ollama": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "llamacpp": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
-    "bam": {
-        MetaData: None,
-        ModelPipelineCompletions: None,
-        ModelPipelineContentMatch: None,
-        ModelPipelinePlaybookGeneration: None,
-        ModelPipelinePlaybookExplanation: None,
-    },
+EMPTY_PIPE = {
+    MetaData: None,
+    ModelPipelineCompletions: None,
+    ModelPipelineContentMatch: None,
+    ModelPipelinePlaybookGeneration: None,
+    ModelPipelinePlaybookExplanation: None,
 }
+PIPELINES = {}
+for model_mesh_api_type in get_args(t_model_mesh_api_type):
+    PIPELINES[model_mesh_api_type] = deepcopy(EMPTY_PIPE)
 
 
 class Register:

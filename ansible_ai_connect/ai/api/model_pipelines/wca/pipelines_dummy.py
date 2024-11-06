@@ -20,18 +20,9 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import WcaTokenFailure
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
-    ContentMatchParameters,
-    ContentMatchResponse,
     MetaData,
     ModelPipeline,
     ModelPipelineCompletions,
-    ModelPipelineContentMatch,
-    ModelPipelinePlaybookExplanation,
-    ModelPipelinePlaybookGeneration,
-    PlaybookExplanationParameters,
-    PlaybookExplanationResponse,
-    PlaybookGenerationParameters,
-    PlaybookGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -84,33 +75,3 @@ class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
 
     def infer_from_parameters(self, *args, **kwargs):
         return ""
-
-
-@Register(api_type="wca-dummy")
-class WCADummyContentMatchPipeline(WCADummyPipeline, ModelPipelineContentMatch):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="wca-dummy")
-class WCADummyPlaybookGenerationPipeline(WCADummyPipeline, ModelPipelinePlaybookGeneration):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
-        raise NotImplementedError
-
-
-@Register(api_type="wca-dummy")
-class WCADummyPlaybookExplanationPipeline(WCADummyPipeline, ModelPipelinePlaybookExplanation):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
-        raise NotImplementedError
