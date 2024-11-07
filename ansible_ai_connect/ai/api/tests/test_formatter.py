@@ -159,16 +159,14 @@ class AnsibleDumperTestCase(WisdomServiceLogAwareTestCase):
         expected = "    ansible.builtin.dnf:\n      name: go\n      state: present\n    when: ansible_distribution == 'Fedora'"  # noqa: E501
         self.assertEqual(fmtr.restore_indentation(original_yaml, 4), expected)
 
-    def test_casing_and_spacing_prompt(self):
+    def test_spacing_prompt(self):
         # leading space should not be removed, only spaces in the text
         prompt = "    - name:      Install NGINX        on RHEL"
-        self.assertEqual("    - name: install nginx on rhel", fmtr.handle_spaces_and_casing(prompt))
+        self.assertEqual("    - name: Install NGINX on RHEL", fmtr.handle_spaces(prompt))
 
         # if there is a missing space between - name: , return as is and not try to fix it
         prompt = "    - name:Install NGINX        on RHEL"
-        self.assertEqual(
-            "    - name:install nginx        on rhel", fmtr.handle_spaces_and_casing(prompt)
-        )
+        self.assertEqual("    - name:Install NGINX        on RHEL", fmtr.handle_spaces(prompt))
 
     def test_adjust_indentation(self):
         """
