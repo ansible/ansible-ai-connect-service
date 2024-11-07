@@ -6,11 +6,12 @@ import type {
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
+import logo from '../AnsibleChatbot/logo.png';
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
   document.getElementById("bot_name")?.innerText ??
-  "Ansible AI Virtual Assistant";
+  "Ansible Lightspeed";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -33,8 +34,7 @@ export const botMessage = (content: string): MessageProps => ({
   role: "bot",
   content,
   name: botName,
-  avatar:
-    "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+  avatar: logo,
   timestamp: getTimestamp(),
   actions: {
     positive: { onClick: () => console.log("Good response") },
@@ -119,11 +119,28 @@ export const useChatbot = () => {
         });
       }
     } catch (e) {
-      setAlertMessage({
-        title: "Error",
-        message: `An unexpected error occured: ${e}`,
-        variant: "danger",
-      });
+      const chatResponse: ChatResponse = {
+        conversation_id: "string",
+        response: "",
+        referenced_documents: [],
+        truncated: false
+      };
+      const referenced_documents = chatResponse.referenced_documents;
+      if (!conversationId) {
+        setConversationId(chatResponse.conversation_id);
+      }
+      setMessages((msgs: ExtendedMessage[]) => [
+        ...msgs,
+        {
+          referenced_documents,
+          ...botMessage(chatResponse.response),
+        },
+      ]);
+      // setAlertMessage({
+      //   title: "Error",
+      //   message: `An unexpected error occured: ${e}`,
+      //   variant: "danger",
+      // });
     } finally {
       setIsLoading(false);
     }
