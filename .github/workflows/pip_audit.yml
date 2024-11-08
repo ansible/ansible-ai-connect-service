@@ -51,3 +51,7 @@ jobs:
             PYSEC-2024-111
             PYSEC-2024-115
             GHSA-hc5w-c9f8-9cc4
+            # to remove the two following entries once we move to ansible-core >= 2.15.13
+            # See: https://github.com/advisories/GHSA-32p4-gm2c-wmch
+            GHSA-32p4-gm2c-wmch
+            GHSA-jpxc-vmjf-9fcj
