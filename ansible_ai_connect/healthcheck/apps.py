@@ -23,9 +23,11 @@ class HealthCheckAppConfig(AppConfig):
         from .backends import (
             AuthorizationHealthCheck,
             AWSSecretManagerHealthCheck,
+            ChatbotServiceHealthCheck,
             ModelServerHealthCheck,
         )
 
         plugin_dir.register(ModelServerHealthCheck)
         plugin_dir.register(AWSSecretManagerHealthCheck)
         plugin_dir.register(AuthorizationHealthCheck)
+        plugin_dir.register(ChatbotServiceHealthCheck)

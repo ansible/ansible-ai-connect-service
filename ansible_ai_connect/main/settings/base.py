@@ -575,6 +575,10 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv("ENABLE_HEALTHCHECK_ATTRIBUTION", "True").lower() == "true"
 )
+ENABLE_HEALTHCHECK_CHATBOT_SERVICE = (
+    os.getenv("ENABLE_HEALTHCHECK_CHATBOT_SERVICE", "True").lower() == "true"
+)
+
 # ==========================================
 
 # ==========================================
