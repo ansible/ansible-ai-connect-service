@@ -17,6 +17,7 @@ import logging
 import time
 from http import HTTPStatus
 from typing import Optional
+from unittest import mock
 from unittest.mock import Mock, patch
 
 from django.apps import apps
@@ -62,6 +63,9 @@ logger = logging.getLogger(__name__)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+@override_settings(CHATBOT_URL="dummy")
+@override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+@override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
 class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -84,6 +88,12 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
     def mocked_requests_succeed(*args, **kwargs):
         r = Response()
         r.status_code = HTTPStatus.OK
+        return r
+
+    @staticmethod
+    def mocked_requests_failed(*args, **kwargs):
+        r = Response()
+        r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
         return r
 
     @staticmethod
@@ -132,7 +142,7 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
         self.assert_common_data(data, expected_status, deployed_region)
         timestamp = data["timestamp"]
         dependencies = data.get("dependencies", [])
-        self.assertEqual(4, len(dependencies))
+        self.assertEqual(5, len(dependencies))
         for dependency in dependencies:
             self.assertIn(
                 dependency["name"],
@@ -142,6 +152,7 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
                     "model-server",
                     "secret-manager",
                     "authorization",
+                    "chatbot-service",
                 ],
             )
             self.assertGreaterEqual(dependency["time_taken"], 0)
@@ -328,6 +339,102 @@ class TestHealthCheck(BaseTestHealthCheck):
             _, dependencies = self.assert_basic_data(r, "ok")
             for dependency in dependencies:
                 if dependency["name"] == "authorization":
+                    self.assertEqual(dependency["status"], "disabled")
+                else:
+                    self.assertTrue(self.is_status_ok(dependency["status"]))
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=BaseTestHealthCheck.mocked_requests_succeed,
+    )
+    def test_health_check_chatbot_service(self, mock_get):
+        cache.clear()
+        r = self.client.get(reverse("health_check"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, "ok")
+        for dependency in dependencies:
+            self.assertTrue(self.is_status_ok(dependency["status"]))
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=HTTPError,
+    )
+    def test_health_check_chatbot_service_error(self, mock_get):
+        cache.clear()
+        with self.assertLogs(logger="root", level="ERROR") as log:
+            r = self.client.get(reverse("health_check"))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, "error")
+            for dependency in dependencies:
+                if dependency["name"] == "chatbot-service":
+                    self.assertTrue(dependency["status"].startswith("unavailable:"))
+                else:
+                    self.assertTrue(self.is_status_ok(dependency["status"]))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                "requests.exceptions.HTTPError",
+                "chatbot-service",
+                "unavailable: An error occurred",
+            )
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=BaseTestHealthCheck.mocked_requests_failed,
+    )
+    def test_health_check_chatbot_service_non_200_response(self, mock_get):
+        cache.clear()
+        with self.assertLogs(logger="root", level="ERROR") as log:
+            r = self.client.get(reverse("health_check"))
+            self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+            _, dependencies = self.assert_basic_data(r, "error")
+            for dependency in dependencies:
+                if dependency["name"] == "chatbot-service":
+                    self.assertTrue(dependency["status"].startswith("unavailable:"))
+                else:
+                    self.assertTrue(self.is_status_ok(dependency["status"]))
+
+            self.assertHealthCheckErrorInLog(
+                log,
+                "Status code 503 returned",
+                "chatbot-service",
+                "unavailable: An error occurred",
+            )
+
+    @override_settings(ENABLE_HEALTHCHECK_CHATBOT_SERVICE=False)
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=BaseTestHealthCheck.mocked_requests_succeed,
+    )
+    def test_health_check_chatbot_service_disabled(self, mock_get):
+        cache.clear()
+        r = self.client.get(reverse("health_check"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, "ok")
+        for dependency in dependencies:
+            for dependency in dependencies:
+                if dependency["name"] == "chatbot-service":
+                    self.assertEqual(dependency["status"], "disabled")
+                else:
+                    self.assertTrue(self.is_status_ok(dependency["status"]))
+
+    @override_settings(CHATBOT_URL="")
+    @mock.patch(
+        "requests.get",
+        side_effect=BaseTestHealthCheck.mocked_requests_succeed,
+    )
+    def test_health_check_chatbot_service_url_not_specified(self, mock_get):
+        cache.clear()
+        r = self.client.get(reverse("health_check"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        _, dependencies = self.assert_basic_data(r, "ok")
+        for dependency in dependencies:
+            for dependency in dependencies:
+                if dependency["name"] == "chatbot-service":
                     self.assertEqual(dependency["status"], "disabled")
                 else:
                     self.assertTrue(self.is_status_ok(dependency["status"]))

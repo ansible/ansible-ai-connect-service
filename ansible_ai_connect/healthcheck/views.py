@@ -60,6 +60,7 @@ class HealthCheckCustomView(MainView):
         "WCAHealthCheck": "wca",
         "WCAOnPremHealthCheck": "wca-onprem",
         "AuthorizationHealthCheck": "authorization",
+        "ChatbotServiceHealthCheck": "chatbot-service",
     }
 
     @method_decorator(cache_page(CACHE_TIMEOUT))

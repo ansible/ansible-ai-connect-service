@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import requests
 from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
@@ -130,6 +130,31 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
 
         try:
             apps.get_app_config("ai").get_seat_checker().self_test()
+        except Exception as e:
+            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
+
+    def identifier(self):
+        return self.__class__.__name__
+
+
+class ChatbotServiceHealthCheck(BaseLightspeedHealthCheck):
+    critical_service = True
+
+    def check_status(self):
+        self.enabled = (
+            settings.ENABLE_HEALTHCHECK_CHATBOT_SERVICE
+            and settings.CHATBOT_URL
+            and settings.CHATBOT_DEFAULT_MODEL
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        if not self.enabled or settings.CHATBOT_URL == "dummy":
+            return
+
+        try:
+            headers = {"Content-Type": "application/json"}
+            r = requests.get(settings.CHATBOT_URL + "/liveness", headers=headers)
+            if r.status_code != 200:
+                raise Exception(f"Status code {r.status_code} returned")
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
 
