@@ -384,12 +384,10 @@ def restore_original_task_names(output_yaml, prompt, payload_context=""):
         payload_context_task_list = get_task_list_from_yaml_data_obj(payload_context_data)
         context_task_list_length = len(payload_context_task_list)
 
-        # We enumarate starting with an index that equals to the lenght of the context task list.
-        # We are doign this to skip the first N tasks, then start with the Nth index
+        # We enumerate starting with an index that equals to the length of the context task list.
+        # We are doing this to skip the first N tasks, then start with the Nth index
         # to process only the suggested tasks
-        for i, task in enumerate(
-            full_task_list[context_task_list_length:], context_task_list_length
-        ):
+        for i, task in enumerate(full_task_list[context_task_list_length:]):
             try:
                 task_name = task.get("name", "")
                 task_line = "- name:  " + task_name

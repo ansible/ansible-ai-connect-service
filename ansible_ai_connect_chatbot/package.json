@@ -61,7 +61,7 @@
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-testing-library": "^6.4.0",
-    "happy-dom": "^15.7.4",
+    "happy-dom": "^15.11.0",
     "process": "^0.11.10",
     "react-router-dom": "^6.26.2",
     "sass-embedded": "^1.79.1",
