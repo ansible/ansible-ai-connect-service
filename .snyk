@@ -77,4 +77,11 @@ ignore:
           We do not use Ansible Vault and are therefore unaffected.
           See: https://security.snyk.io/vuln/SNYK-PYTHON-ANSIBLECORE-7981515
         created: 2024-09-16T10:19:00Z
+  SNYK-PYTHON-ANSIBLECORE-8349549:
+    - '*':
+        reason: |
+          This is only exploitable if someone with root privileges uses
+          the user module with the generate_ssh_key option (disabled
+          by default) and targets an unprivileged user. We do not use
+          ansible-core in that way in ansible-ai-connect-service.
 patch: {}
