@@ -6,12 +6,11 @@ import type {
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
-import logo from '../assets/lightspeed.svg';
+import logo from "../assets/lightspeed.svg";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
-  document.getElementById("bot_name")?.innerText ??
-  "Ansible Lightspeed";
+  document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -121,28 +120,11 @@ export const useChatbot = () => {
         });
       }
     } catch (e) {
-      const chatResponse: ChatResponse = {
-        conversation_id: "string",
-        response: "",
-        referenced_documents: [],
-        truncated: false
-      };
-      const referenced_documents = chatResponse.referenced_documents;
-      if (!conversationId) {
-        setConversationId(chatResponse.conversation_id);
-      }
-      setMessages((msgs: ExtendedMessage[]) => [
-        ...msgs,
-        {
-          referenced_documents,
-          ...botMessage(chatResponse.response),
-        },
-      ]);
-      // setAlertMessage({
-      //   title: "Error",
-      //   message: `An unexpected error occured: ${e}`,
-      //   variant: "danger",
-      // });
+      setAlertMessage({
+        title: "Error",
+        message: `An unexpected error occured: ${e}`,
+        variant: "danger",
+      });
     } finally {
       setIsLoading(false);
     }
