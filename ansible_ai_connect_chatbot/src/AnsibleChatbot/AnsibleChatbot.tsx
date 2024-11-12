@@ -29,13 +29,8 @@ import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
 import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
 import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
 
-import AnsibleLogo from "./AAP2LineLightMode.png";
-import AnsibleLogoDark from "./AAP2LineDarkMode.png";
-// const lightspeedLogo = require("./logo.svg") as string;
-// import lightspeedLogo from "./logo.svg";
-import lightspeedLogo from "./logo.png";
-import lightspeedLogoDark from "./logo_dark.png";
-
+import lightspeedLogo from "../assets/lightspeed.svg";
+import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import { botMessage, useChatbot } from "../useChatbot/useChatbot";
@@ -111,7 +106,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
           <ChatbotHeaderTitle>
             <Bullseye>
               <div className="show-light">
-                <Brand src={lightspeedLogo} alt="Ansible" height={1000} width={1000}/>
+                <Brand src={lightspeedLogo} alt="Ansible" />
               </div>
               <div className="show-dark">
                 <Brand src={lightspeedLogoDark} alt="Ansible" />

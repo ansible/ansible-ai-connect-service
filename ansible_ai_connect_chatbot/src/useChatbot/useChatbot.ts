@@ -6,7 +6,7 @@ import type {
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
-import logo from '../AnsibleChatbot/logo.png';
+import logo from '../assets/lightspeed.svg';
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -50,7 +50,9 @@ type AlertMessage = {
 
 const INITIAL_NOTICE: AlertMessage = {
   title: "Notice",
-  message: `Please do not include any personal or confidential information
+  message: `<This is a placeholder to inform the user of our chatbot disclaimer,
+to be determined at some point before we release to external customers.>
+Please do not include any personal or confidential information
 in your interaction with the virtual assistant. The tool is
 intended to assist with general queries.`,
   variant: "info",
