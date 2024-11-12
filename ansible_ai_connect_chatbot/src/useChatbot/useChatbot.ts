@@ -6,11 +6,12 @@ import type {
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
+import logo from "../assets/lightspeed.svg";
+import userLogo from "../assets/user_logo.png";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
-  document.getElementById("bot_name")?.innerText ??
-  "Ansible AI Virtual Assistant";
+  document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -33,8 +34,7 @@ export const botMessage = (content: string): MessageProps => ({
   role: "bot",
   content,
   name: botName,
-  avatar:
-    "https://access.redhat.com/sites/default/files/images/product_icon-red_hat-ansible_automation_platform-rgb_0.png",
+  avatar: logo,
   timestamp: getTimestamp(),
   actions: {
     positive: { onClick: () => console.log("Good response") },
@@ -50,7 +50,9 @@ type AlertMessage = {
 
 const INITIAL_NOTICE: AlertMessage = {
   title: "Notice",
-  message: `Please do not include any personal or confidential information
+  message: `<This is a placeholder to inform the user of our chatbot disclaimer,
+to be determined at some point before we release to external customers.>
+Please do not include any personal or confidential information
 in your interaction with the virtual assistant. The tool is
 intended to assist with general queries.`,
   variant: "info",
@@ -71,8 +73,7 @@ export const useChatbot = () => {
       role: "user",
       content: message,
       name: userName,
-      avatar:
-        "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
+      avatar: userLogo,
       timestamp: getTimestamp(),
       referenced_documents: [],
     };
