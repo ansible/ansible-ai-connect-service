@@ -7,6 +7,7 @@ import type {
   ChatResponse,
 } from "../types/Message";
 import logo from "../assets/lightspeed.svg";
+import userLogo from "../assets/user_logo.png";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -72,8 +73,7 @@ export const useChatbot = () => {
       role: "user",
       content: message,
       name: userName,
-      avatar:
-        "https://developers.redhat.com/sites/default/files/inline-images/Skill%20development_0.png",
+      avatar: userLogo,
       timestamp: getTimestamp(),
       referenced_documents: [],
     };
