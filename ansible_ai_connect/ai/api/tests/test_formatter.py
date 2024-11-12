@@ -599,11 +599,17 @@ var3: value3
             "    - name:  Install Apache\n      ansible.builtin.apt:\n        "
             "name: apache2\n        state: latest\n"
         )
-        multi_task_prompt = "# say hello test@example.com\n"
+        multi_task_prompt = "# Say hello & install mail server & email TO aykut@anemail.com \n"
 
         multi_task_yaml = (
-            "    - name:  say hello test@example.com\n      "
-            "ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"
+            "    - name:  Say hello\n      "
+            "ansible.builtin.debug:\n        msg: Hello there\n"
+            "    - name: Install mail server\n      "
+            "ansible.builtin.package:\n        name: postfix\n        state: latest\n"
+            "    - name: Email TO aykut@anemail.com\n      "
+            "community.general.mail:\n        to: william10@example.com\n"
+            "        subject: Ansible playbook\n"
+            "        body: Ansible playbook\n"
         )
 
         self.assertEqual(
