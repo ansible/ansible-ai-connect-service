@@ -53,7 +53,7 @@ export function PageAppDenied(props: PageAppDeniedProps) {
 function PageRouterLayout(props: PageAppDeniedProps) {
   const { header, navigationItems, hasSubscription } = props;
   return (
-    <PageFramework defaultRefreshInterval={10}>
+    <PageFramework>
       <Page
         header={header}
         sidebar={<PageSidebar navigation={navigationItems} />}

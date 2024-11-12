@@ -63,7 +63,7 @@ interface PageRouterLayoutProps {
 function PageRouterLayout(props: PageRouterLayoutProps) {
   const { header, navigationItems } = props;
   return (
-    <PageFramework defaultRefreshInterval={10}>
+    <PageFramework>
       <Page
         header={header}
         sidebar={<PageSidebar navigation={navigationItems} />}

@@ -24,8 +24,7 @@ export const SingleInlineEdit = (props: InlineTextInputProps) => {
         <InputGroup>
           <TextInput
             type={isPassword && passwordHidden ? "password" : "text"}
-            onChange={(_event, value: string) => onChange(value)}
-            // onChange={(value, event) => props.onChange?.(value)}
+            onChange={(value, event) => props.onChange?.(value)}
             aria-label={props["aria-label"]}
             placeholder={placeholder}
             isDisabled={isDisabled}
@@ -58,7 +57,7 @@ export const SingleInlineEdit = (props: InlineTextInputProps) => {
           <TextInput
             value={value}
             type={"text"}
-            onChange={(_event, value: string) => onChange(value)}
+            onChange={(value, event) => props.onChange?.(value)}
             aria-label={props["aria-label"]}
             placeholder={placeholder}
             isDisabled={isDisabled}
