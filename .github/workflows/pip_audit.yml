@@ -55,3 +55,4 @@ jobs:
             # See: https://github.com/advisories/GHSA-32p4-gm2c-wmch
             GHSA-32p4-gm2c-wmch
             GHSA-jpxc-vmjf-9fcj
+            GHSA-99w6-3xph-cx78
