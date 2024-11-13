@@ -367,6 +367,7 @@ def get_task_names_from_tasks(tasks):
 
 
 def restore_original_task_names(output_yaml, prompt, payload_context=""):
+    logger.info(output_yaml)
     if output_yaml and is_multi_task_prompt(prompt):
         full_yaml = payload_context + output_yaml
         try:
