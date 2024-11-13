@@ -23,6 +23,9 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     MetaData,
     ModelPipeline,
     ModelPipelineCompletions,
+    ModelPipelineRoleGeneration,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -59,6 +62,17 @@ class WCADummyPipeline(ModelPipeline, metaclass=ABCMeta):
 
     def __init__(self, inference_url):
         super().__init__(inference_url=inference_url)
+
+
+class WCADummyRoleGenerationPipeline(
+    WCADummyPipeline, ModelPipelineRoleGeneration, metaclass=ABCMeta
+):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        return "wca_dummy_role", [], "wca_dummy_outline"
 
 
 @Register(api_type="wca-dummy")

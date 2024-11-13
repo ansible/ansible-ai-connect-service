@@ -35,10 +35,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -229,6 +232,18 @@ class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGe
             outline = ""
 
         return playbook, outline, []
+
+    def get_chat_model(self, model_id):
+        raise NotImplementedError
+
+
+class LangchainRoleGenerationPipeline(LangchainBase, ModelPipelineRoleGeneration):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        return "dummy_role", [], "dummy_outline"
 
     def get_chat_model(self, model_id):
         raise NotImplementedError

@@ -50,6 +50,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCABasePipeline,
     WCABasePlaybookExplanationPipeline,
     WCABasePlaybookGenerationPipeline,
+    WCABaseRoleGenerationPipeline,
     WcaModelRequestException,
     WcaTokenRequestException,
     ibm_cloud_identity_token_hist,
@@ -296,6 +297,16 @@ class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerati
             return super().invoke(params)
         else:
             raise FeatureNotAvailable
+
+    def self_test(self):
+        raise NotImplementedError
+
+
+@Register(api_type="wca")
+class WCASaaSRoleGenerationPipeline(WCASaaSPipeline, WCABaseRoleGenerationPipeline):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
 
     def self_test(self):
         raise NotImplementedError

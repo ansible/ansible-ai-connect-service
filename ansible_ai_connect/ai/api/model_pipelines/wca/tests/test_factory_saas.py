@@ -19,9 +19,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
+)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
+    WCABaseRoleGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
@@ -43,6 +47,11 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
     def test_playbook_generation_pipeline(self):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookGeneration, WCASaaSPlaybookGenerationPipeline
+        )
+
+    def test_role_generation_pipeline(self):
+        self.assert_concrete_implementation(
+            ModelPipelineRoleGeneration, WCABaseRoleGenerationPipeline
         )
 
     def test_playbook_explanation_pipeline(self):

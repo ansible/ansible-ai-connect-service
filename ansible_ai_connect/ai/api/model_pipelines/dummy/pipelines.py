@@ -27,10 +27,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -63,6 +66,16 @@ PLAYBOOK = """
         enabled: yes
 ```
 """
+
+ROLES = "TMP_DUMP_ROLES"
+
+ROLE_FILE = [
+    {
+        "path": "defaults/main.yml",
+        "file_type": "default",
+        "content": "install_nginx_packages:\n  - nginx",
+    }
+]
 
 OUTLINE = """
 1. First, ensure that your RHEL 9 system is up-to-date.
@@ -121,6 +134,19 @@ class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGenera
         if create_outline:
             return PLAYBOOK, OUTLINE, []
         return PLAYBOOK, "", []
+
+
+@Register(api_type="dummy")
+class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        create_outline = params.create_outline
+        if create_outline:
+            return ROLES, ROLE_FILE, OUTLINE
+        return ROLES, ROLE_FILE, ""
 
 
 @Register(api_type="dummy")

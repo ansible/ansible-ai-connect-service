@@ -1019,6 +1019,8 @@ components:
           format: uuid
           title: wizard ID
           description: A UUID to track the succession of interaction from the user.
+        model:
+          type: string
         metadata:
           $ref: '#/components/schemas/Metadata'
       required:

@@ -62,6 +62,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
 )
+from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILE, ROLES
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
@@ -82,10 +83,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
@@ -213,6 +217,16 @@ class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration):
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         return self.response_data, self.response_data, []
+
+
+class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration):
+
+    def __init__(self, response_data):
+        super().__init__(inference_url="dummy inference url")
+        self.response_data = response_data
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        return self.response_data, [], self.response_data
 
 
 class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation):
@@ -3353,12 +3367,21 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
 class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
     def test_ok(self):
-        payload = {}
+        generation_id = str(uuid.uuid4())
+        payload = {
+            "text": "Install nginx and enable the service",
+            "generationId": generation_id,
+            "ansibleExtensionVersion": "24.4.0",
+        }
         self.client.force_authenticate(user=self.user)
         r = self.client.post(reverse("generations/role"), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
-        self.assertEqual(r.data, {})
+        self.assertEqual(r.data["files"], ROLE_FILE)
+        self.assertEqual(r.data["format"], "plaintext")
+        self.assertEqual(r.data["generationId"], generation_id)
+        self.assertEqual(r.data["outline"], "")
+        self.assertEqual(r.data["role"], ROLES)
 
     def test_unauthorized(self):
         payload = {}

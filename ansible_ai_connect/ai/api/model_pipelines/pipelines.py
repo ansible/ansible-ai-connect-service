@@ -119,6 +119,44 @@ PlaybookGenerationResponse = tuple[str, str, list]
 
 
 @define
+class RoleGenerationParameters:
+    request: Request
+    text: str
+    additional_context: dict
+    create_outline: bool
+    outline: str
+    generation_id: str
+    model_id: str
+    file_types: list
+
+    @classmethod
+    def init(
+        cls,
+        request,
+        text: str = "",
+        create_outline: bool = False,
+        file_types: list = [],
+        additional_context: dict = {},
+        outline: str = "",
+        generation_id: str = "",
+        model_id: str = "",
+    ):
+        return cls(
+            request=request,
+            text=text,
+            file_types=file_types,
+            additional_context=additional_context,
+            create_outline=create_outline,
+            outline=outline,
+            generation_id=generation_id,
+            model_id=model_id,
+        )
+
+
+RoleGenerationResponse = tuple[str, list, str]
+
+
+@define
 class PlaybookExplanationParameters:
     request: Request
     content: str
@@ -202,6 +240,15 @@ class ModelPipelineContentMatch(
 
 class ModelPipelinePlaybookGeneration(
     ModelPipeline[PlaybookGenerationParameters, PlaybookGenerationResponse],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+
+class ModelPipelineRoleGeneration(
+    ModelPipeline[RoleGenerationParameters, RoleGenerationResponse],
     metaclass=ABCMeta,
 ):
 
