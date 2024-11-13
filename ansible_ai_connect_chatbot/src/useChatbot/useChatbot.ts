@@ -49,12 +49,11 @@ type AlertMessage = {
 };
 
 const INITIAL_NOTICE: AlertMessage = {
-  title: "Notice",
-  message: `<This is a placeholder to inform the user of our chatbot disclaimer,
-to be determined at some point before we release to external customers.>
-Please do not include any personal or confidential information
-in your interaction with the virtual assistant. The tool is
-intended to assist with general queries.`,
+  title: "Important",
+  message: `Red Hat Ansible Automation Platform Lightspeed can answer questions
+related to Ansible Automation Platform. Do not include personal or buisness
+sensitive information in your input. Interactions with Ansible Automation Platform
+Lightspeed may be reviewed and used to improve our products and services`,
   variant: "info",
 };
 
