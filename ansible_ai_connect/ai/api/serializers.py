@@ -482,6 +482,7 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
             "fileTypes",
             "generationId",
             "wizardId",
+            "ansibleExtensionVersion",
         ]
 
     text = AnonymizedCharField(
@@ -502,7 +503,7 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
         default=False,
         label="generate outline",
         help_text=(
-            "Indicates whether the answer should also include an outline " "of the Ansible Role."
+            "Indicates whether the answer should also include an outline of the Ansible Role."
         ),
     )
     additionalContext = serializers.DictField(
@@ -534,8 +535,13 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
     )
+    model = serializers.CharField(required=False, allow_blank=True)
 
     metadata = Metadata(required=False)
+
+    def validate(self, data):
+        data = super().validate(data)
+        return data
 
 
 class GenerationWarningResponseSerializer(serializers.Serializer):

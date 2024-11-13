@@ -22,6 +22,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.main.settings.base import t_model_mesh_api_type
 
@@ -32,6 +33,7 @@ EMPTY_PIPE = {
     ModelPipelineCompletions: None,
     ModelPipelineContentMatch: None,
     ModelPipelinePlaybookGeneration: None,
+    ModelPipelineRoleGeneration: None,
     ModelPipelinePlaybookExplanation: None,
 }
 PIPELINES = {}
@@ -44,14 +46,11 @@ class Register:
         self.api_type = api_type
 
     def __call__(self, cls):
-        if issubclass(cls, ModelPipelineCompletions):
-            PIPELINES[self.api_type][ModelPipelineCompletions] = cls
-        elif issubclass(cls, ModelPipelineContentMatch):
-            PIPELINES[self.api_type][ModelPipelineContentMatch] = cls
-        elif issubclass(cls, ModelPipelinePlaybookGeneration):
-            PIPELINES[self.api_type][ModelPipelinePlaybookGeneration] = cls
-        elif issubclass(cls, ModelPipelinePlaybookExplanation):
-            PIPELINES[self.api_type][ModelPipelinePlaybookExplanation] = cls
-        elif issubclass(cls, MetaData):
+        for pipe in EMPTY_PIPE.keys():
+            # All pipes are sub classes of MetaData, checking it at the end
+            if not (pipe == MetaData) and issubclass(cls, pipe):
+                PIPELINES[self.api_type][pipe] = cls
+                return cls
+        if issubclass(cls, MetaData):
             PIPELINES[self.api_type][MetaData] = cls
         return cls

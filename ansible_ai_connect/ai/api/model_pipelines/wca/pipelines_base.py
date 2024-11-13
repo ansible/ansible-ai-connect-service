@@ -49,10 +49,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     ContentMatchResponseChecks,
@@ -462,6 +465,17 @@ class WCABasePlaybookGenerationPipeline(
             playbook = ansible_lint_caller.run_linter(playbook)
 
         return playbook, outline, warnings
+
+
+class WCABaseRoleGenerationPipeline(
+    WCABasePipeline, ModelPipelineRoleGeneration, metaclass=ABCMeta
+):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        raise NotImplementedError
 
 
 class WCABasePlaybookExplanationPipeline(

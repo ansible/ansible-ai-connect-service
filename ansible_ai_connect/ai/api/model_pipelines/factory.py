@@ -13,19 +13,13 @@
 #  limitations under the License.
 
 import logging
+from copy import deepcopy
 from typing import Type
 
 from django.conf import settings
 
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    PIPELINE_TYPE,
-    MetaData,
-    ModelPipelineCompletions,
-    ModelPipelineContentMatch,
-    ModelPipelinePlaybookExplanation,
-    ModelPipelinePlaybookGeneration,
-)
-from ansible_ai_connect.ai.api.model_pipelines.registry import PIPELINES
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE
+from ansible_ai_connect.ai.api.model_pipelines.registry import EMPTY_PIPE, PIPELINES
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +29,7 @@ class ModelPipelineFactory:
     cache = {}
 
     def __init__(self):
-        self.cache = {
-            MetaData: None,
-            ModelPipelineCompletions: None,
-            ModelPipelineContentMatch: None,
-            ModelPipelinePlaybookGeneration: None,
-            ModelPipelinePlaybookExplanation: None,
-        }
+        self.cache = deepcopy(EMPTY_PIPE)
 
     def get_pipeline(self, pipeline_type: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         if not settings.ANSIBLE_AI_MODEL_MESH_API_TYPE:

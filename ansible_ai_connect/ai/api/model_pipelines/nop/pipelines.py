@@ -22,10 +22,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
@@ -67,6 +70,16 @@ class NopPlaybookGenerationPipeline(NopMetaData, ModelPipelinePlaybookGeneration
         super().__init__(inference_url=inference_url)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
+        raise NotImplementedError
+
+
+@Register(api_type="nop")
+class NopRoleGenerationPipeline(NopMetaData, ModelPipelineRoleGeneration):
+
+    def __init__(self, inference_url):
+        super().__init__(inference_url=inference_url)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         raise NotImplementedError
 
 

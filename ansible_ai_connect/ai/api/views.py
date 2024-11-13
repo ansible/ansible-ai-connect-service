@@ -80,8 +80,10 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookGenerationParameters,
+    RoleGenerationParameters,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.ai.api.telemetry import schema1
@@ -1007,15 +1009,72 @@ class GenerationRole(APIView):
     )
     def post(self, request) -> Response:
         # Declaring but commenting out variables to define them but also comply pre-commit
-        # text = ""
-        # outine = ""
-        # create_outline = None
-        # additional_context = {}
-        # file_types = ["task", "default"]
-        # generation_id = None
-        # wizard_id = None
-        # request_serializer = GenerationRoleRequestSerializer(data=request.data)
+        text = ""
+        outline = ""
+        create_outline = False
+        additional_context = {}
+        file_types = ["task", "default"]
+        generation_id = ""
+        wizard_id = ""
+        request_serializer = GenerationRoleRequestSerializer(data=request.data)
         answer = {}
+        model_id = ""
+        try:
+            request_serializer.is_valid(raise_exception=True)
+
+            text = request_serializer.validated_data["text"]
+            outline = str(request_serializer.validated_data.get("outline", outline))
+            create_outline = request_serializer.validated_data["createOutline"]
+            additional_context = request_serializer.validated_data.get(
+                "additionalContext", additional_context
+            )
+            file_types = request_serializer.validated_data.get("fileTypes", file_types)
+            generation_id = str(
+                request_serializer.validated_data.get("generationId", generation_id)
+            )
+            wizard_id = str(request_serializer.validated_data.get("wizardId", wizard_id))
+            model_id = str(request_serializer.validated_data.get("model", ""))
+
+            llm: ModelPipelineRoleGeneration = apps.get_app_config("ai").get_model_pipeline(
+                ModelPipelineRoleGeneration
+            )
+
+            roles, files, outline = llm.invoke(
+                RoleGenerationParameters.init(
+                    request=request,
+                    text=text,
+                    outline=outline,
+                    model_id=model_id,
+                    create_outline=create_outline,
+                    additional_context=additional_context,
+                    file_types=file_types,
+                    generation_id=generation_id,
+                )
+            )
+
+            # Anonymize responses
+            # Anonymized in the View to be consistent with where Completions are anonymized
+            anonymized_role = anonymizer.anonymize_struct(
+                roles, value_template=Template("{{ _${variable_name}_ }}")
+            )
+            anonymized_outline = anonymizer.anonymize_struct(
+                outline, value_template=Template("{{ _${variable_name}_ }}")
+            )
+
+            answer = {
+                "role": anonymized_role,
+                "outline": anonymized_outline,
+                "files": files,
+                "format": "plaintext",
+                "generationId": generation_id,
+            }
+            ##################################################
+        except Exception as e:
+            logger.exception(f"An exception {e.__class__} occurred during a role generation")
+            raise
+        finally:
+            # implement write to segment there.
+            pass
 
         return Response(
             answer,

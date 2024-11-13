@@ -21,12 +21,14 @@ from ansible_ai_connect.ai.api.model_pipelines.bam.pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopContentMatchPipeline,
+    NopRoleGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
@@ -46,6 +48,9 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookGeneration, BAMPlaybookGenerationPipeline
         )
+
+    def test_role_generation_pipeline(self):
+        self.assert_default_implementation(ModelPipelineRoleGeneration, NopRoleGenerationPipeline)
 
     def test_playbook_explanation_pipeline(self):
         self.assert_concrete_implementation(
