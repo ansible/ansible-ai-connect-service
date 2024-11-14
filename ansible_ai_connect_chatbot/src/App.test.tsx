@@ -58,7 +58,7 @@ describe("App tests", () => {
     renderApp();
     const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
       screen.getByText(
@@ -73,7 +73,7 @@ describe("App tests", () => {
     const view = renderApp();
     const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
@@ -85,7 +85,7 @@ describe("App tests", () => {
     const view = renderApp();
     const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = screen.getByLabelText("Send Button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
