@@ -8,15 +8,25 @@ import userEvent from "@testing-library/user-event";
 import axios from "axios";
 
 describe("App tests", () => {
-  const renderApp = () =>
-    render(
+  const renderApp = (debug = false) => {
+    const debugDiv = document.createElement("div");
+    debugDiv.setAttribute("id", "debug");
+    debugDiv.innerText = debug.toString();
+    document.body.appendChild(debugDiv);
+    const rootDiv = document.createElement("div");
+    rootDiv.setAttribute("id", "root");
+    return render(
       <MemoryRouter>
         <div className="pf-v6-l-flex pf-m-column pf-m-gap-lg ws-full-page-utils pf-v6-m-dir-ltr ">
           <ColorThemeSwitch />
         </div>
         <App />
       </MemoryRouter>,
+      {
+        container: document.body.appendChild(rootDiv),
+      },
     );
+  };
   const mockAxios = (status: number, reject = false) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
@@ -46,6 +56,10 @@ describe("App tests", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    const rootDiv = document.getElementById("root");
+    rootDiv?.remove();
+    const debugDiv = document.getElementById("debug");
+    debugDiv?.remove();
   });
 
   it("App renders", () => {
@@ -118,5 +132,29 @@ describe("App tests", () => {
       // expect(getComputedStyle(showLight!).display).toEqual("none")
       // expect(getComputedStyle(showDark!).display).toEqual("block")
     }
+  });
+
+  it("Debug mode test", async () => {
+    mockAxios(200);
+
+    renderApp(true);
+    const modelSelection = screen.getByText("granite-8b");
+    await act(async () => fireEvent.click(modelSelection));
+    expect(screen.getByRole("menuitem", { name: "granite-8b" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "granite3-8b" })).toBeTruthy();
+    await act(async () =>
+      screen.getByRole("menuitem", { name: "granite3-8b" }).click(),
+    );
+
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
   });
 });

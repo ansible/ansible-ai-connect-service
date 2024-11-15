@@ -125,6 +125,8 @@ class ChatbotView(ProtectedTemplateView):
             and settings.CHATBOT_DEFAULT_MODEL
             and settings.CHATBOT_DEFAULT_PROVIDER
         ):
+            debug = request.GET.get("debug", "false")
+            self.debug = debug.lower() == "true"
             return super().get(request)
 
         # Otherwise, redirect to the home page.
@@ -136,6 +138,7 @@ class ChatbotView(ProtectedTemplateView):
         user = self.request.user
         if user and user.is_authenticated:
             context["user_name"] = user.username
+        context["debug"] = "true" if self.debug else "false"
 
         return context
 

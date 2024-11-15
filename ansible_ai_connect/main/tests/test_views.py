@@ -332,3 +332,9 @@ class TestChatbotView(TestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, TestChatbotView.CHATBOT_PAGE_TITLE)
         self.assertContains(r, self.rh_user.username)
+
+    def test_chatbot_view_with_debug_option(self):
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("chatbot"), {"debug": "true"})
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, '<div id="debug" hidden>true</div>')

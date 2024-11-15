@@ -6,12 +6,18 @@ import type {
   ChatRequest,
   ChatResponse,
 } from "../types/Message";
+import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
+
+export const modelsSupported: LLMModel[] = [
+  { model: "granite-8b", provider: "my_rhoai" },
+  { model: "granite3-8b", provider: "my_rhoai_g3" },
+];
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -28,6 +34,11 @@ export const readCookie = (name: string): string | null => {
 const getTimestamp = () => {
   const date = new Date();
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+};
+
+export const inDebugMode = () => {
+  const debug = document.getElementById("debug")?.innerText ?? "false";
+  return debug === "true";
 };
 
 export const botMessage = (content: string): MessageProps => ({
@@ -66,6 +77,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
+  const [selectedModel, setSelectedModel] = useState("granite-8b");
 
   const handleSend = async (message: string) => {
     const userMessage: ExtendedMessage = {
@@ -82,6 +94,15 @@ export const useChatbot = () => {
       conversation_id: conversationId,
       query: message,
     };
+
+    if (inDebugMode()) {
+      for (const m of modelsSupported) {
+        if (selectedModel === m.model) {
+          chatRequest.model = m.model;
+          chatRequest.provider = m.provider;
+        }
+      }
+    }
 
     setIsLoading(true);
     try {
@@ -129,5 +150,13 @@ export const useChatbot = () => {
     }
   };
 
-  return { messages, isLoading, handleSend, alertMessage, setAlertMessage };
+  return {
+    messages,
+    isLoading,
+    handleSend,
+    alertMessage,
+    setAlertMessage,
+    selectedModel,
+    setSelectedModel,
+  };
 };
