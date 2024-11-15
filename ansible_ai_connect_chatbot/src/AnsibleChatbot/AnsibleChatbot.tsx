@@ -188,7 +188,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             </MessageBox>
           </ChatbotContent>
           <ChatbotFooter>
-            <MessageBar onSendMessage={handleSend} />
+            <MessageBar onSendMessage={handleSend} hasAttachButton={false} />
             <ChatbotFootnote {...footnoteProps} />
           </ChatbotFooter>
         </FileDropZone>
