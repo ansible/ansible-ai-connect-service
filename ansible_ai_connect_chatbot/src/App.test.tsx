@@ -51,6 +51,8 @@ describe("App tests", () => {
   it("App renders", () => {
     renderApp();
     expect(screen.getByText("Hello, Ansible User")).toBeInTheDocument();
+    const attachButton = screen.queryByLabelText("Attach button");
+    expect(attachButton).toBeNull();
   });
 
   it("Basic chatbot interaction", async () => {
