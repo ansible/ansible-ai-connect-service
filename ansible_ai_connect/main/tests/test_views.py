@@ -233,7 +233,7 @@ class TestMarkdownMe(TestCase):
 @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
 @override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
 @override_settings(ANSIBLE_AI_CHATBOT_NAME="Awesome Chatbot")
-@override_settings(CHATBOT_DEBUG_UI="false")
+@override_settings(CHATBOT_DEBUG_UI=False)
 class TestChatbotView(TestCase):
     CHATBOT_PAGE_TITLE = "<title>Awesome Chatbot</title>"
     DOCUMENT_URL = (
@@ -335,7 +335,7 @@ class TestChatbotView(TestCase):
         self.assertContains(r, self.rh_user.username)
         self.assertContains(r, '<div id="debug" hidden>false</div>')
 
-    @override_settings(CHATBOT_DEBUG_UI="true")
+    @override_settings(CHATBOT_DEBUG_UI=True)
     def test_chatbot_view_with_debug_ui(self):
         self.client.force_login(user=self.rh_user)
         r = self.client.get(reverse("chatbot"), {"debug": "true"})
