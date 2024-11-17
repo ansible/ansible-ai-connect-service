@@ -30,6 +30,15 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  taskRunSpecs:
+  - pipelineTaskName: ecosystem-cert-preflight-checks
+    stepSpecs:
+    - name: check-container
+      computeResources:
+        requests:
+          memory: 4Gi
+        limits:
+          memory: 4Gi
   pipelineSpec:
     finally:
     - name: show-sbom
