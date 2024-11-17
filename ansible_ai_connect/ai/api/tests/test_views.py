@@ -3819,6 +3819,12 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         "query": "Return the internal server error status code",
     }
 
+    PAYLOAD_WITH_MODEL_AND_PROVIDER = {
+        "query": "Payload with a non-default model and a non-default provider",
+        "model": "non_default_model",
+        "provider": "non_default_provider",
+    }
+
     JSON_RESPONSE = {
         "response": "AAP 2.5 introduces an updated, unified UI.",
         "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
@@ -3838,7 +3844,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
                 return self.json_data
 
         # Make sure that the given json data is serializable
-        json.dumps(kwargs["json"])
+        input = json.dumps(kwargs["json"])
 
         json_response = {
             "response": "AAP 2.5 introduces an updated, unified UI.",
@@ -3880,7 +3886,9 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             json_response = {
                 "detail": "Internal server error",
             }
-
+        elif kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_MODEL_AND_PROVIDER["query"]:
+            status_code = 200
+            json_response["response"] = input
         return MockResponse(json_response, status_code)
 
     @override_settings(CHATBOT_URL="http://localhost:8080")
@@ -3926,6 +3934,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
                     r, expected_exception().default_code, expected_exception().default_detail
                 )
                 self.assertInLog(expected_log_message, log)
+        return r
 
     def test_chat(self):
         self.assert_test(TestChatView.VALID_PAYLOAD)
@@ -3993,3 +4002,8 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             ChatbotInternalServerException,
             "ChatbotInternalServerException",
         )
+
+    def test_chat_with_model_and_provider(self):
+        r = self.assert_test(TestChatView.PAYLOAD_WITH_MODEL_AND_PROVIDER)
+        self.assertIn('"model": "non_default_model"', r.data["response"])
+        self.assertIn('"provider": "non_default_provider"', r.data["response"])

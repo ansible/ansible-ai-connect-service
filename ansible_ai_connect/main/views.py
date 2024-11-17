@@ -136,6 +136,7 @@ class ChatbotView(ProtectedTemplateView):
         user = self.request.user
         if user and user.is_authenticated:
             context["user_name"] = user.username
+        context["debug"] = "true" if settings.CHATBOT_DEBUG_UI else "false"
 
         return context
 

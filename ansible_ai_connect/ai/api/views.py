@@ -1130,8 +1130,12 @@ class Chat(APIView):
 
             data = {
                 "query": request_serializer.validated_data["query"],
-                "model": settings.CHATBOT_DEFAULT_MODEL,
-                "provider": settings.CHATBOT_DEFAULT_PROVIDER,
+                "model": request_serializer.validated_data.get(
+                    "model", settings.CHATBOT_DEFAULT_MODEL
+                ),
+                "provider": request_serializer.validated_data.get(
+                    "provider", settings.CHATBOT_DEFAULT_PROVIDER
+                ),
             }
             if "conversation_id" in request_serializer.validated_data:
                 data["conversation_id"] = str(request_serializer.validated_data["conversation_id"])

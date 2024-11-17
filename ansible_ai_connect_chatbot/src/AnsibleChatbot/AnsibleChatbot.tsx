@@ -33,12 +33,18 @@ import lightspeedLogo from "../assets/lightspeed.svg";
 import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
-import { botMessage, useChatbot } from "../useChatbot/useChatbot";
+import {
+  botMessage,
+  inDebugMode,
+  modelsSupported,
+  useChatbot,
+} from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
 import {
   ChatbotAlert,
+  ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   FileDropZone,
 } from "@patternfly/virtual-assistant";
@@ -66,8 +72,15 @@ const footnoteProps = {
 };
 
 export const AnsibleChatbot: React.FunctionComponent = () => {
-  const { messages, isLoading, handleSend, alertMessage, setAlertMessage } =
-    useChatbot();
+  const {
+    messages,
+    isLoading,
+    handleSend,
+    alertMessage,
+    setAlertMessage,
+    selectedModel,
+    setSelectedModel,
+  } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.default,
@@ -81,6 +94,13 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const onSelectModel = (
+    _event: React.MouseEvent<Element, MouseEvent> | undefined,
+    value: string | number | undefined,
+  ) => {
+    setSelectedModel(value as string);
+  };
 
   const onSelectDisplayMode = (
     _event: React.MouseEvent<Element, MouseEvent> | undefined,
@@ -114,6 +134,20 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             </Bullseye>
           </ChatbotHeaderTitle>
           <ChatbotHeaderActions>
+            {inDebugMode() && (
+              <ChatbotHeaderSelectorDropdown
+                value={selectedModel}
+                onSelect={onSelectModel}
+              >
+                <DropdownList>
+                  {modelsSupported.map((m) => (
+                    <DropdownItem value={m.model} key={m.model}>
+                      {m.model}
+                    </DropdownItem>
+                  ))}
+                </DropdownList>
+              </ChatbotHeaderSelectorDropdown>
+            )}
             <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
               <DropdownGroup label="Display mode">
                 <DropdownList>
