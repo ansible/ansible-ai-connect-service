@@ -6,6 +6,9 @@ import {
   DropdownList,
   DropdownItem,
   DropdownGroup,
+  Button,
+  TooltipProps,
+  Tooltip,
 } from "@patternfly/react-core";
 
 import Chatbot, {
@@ -44,6 +47,7 @@ import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments"
 import type { ExtendedMessage } from "../types/Message";
 import {
   ChatbotAlert,
+  ChatbotHeaderMain,
   ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   FileDropZone,
@@ -74,12 +78,14 @@ const footnoteProps = {
 export const AnsibleChatbot: React.FunctionComponent = () => {
   const {
     messages,
+    setMessages,
     isLoading,
     handleSend,
     alertMessage,
     setAlertMessage,
     selectedModel,
     setSelectedModel,
+    setConversationId,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
@@ -111,6 +117,75 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
 
   const handleFileDrop = () => {}; // no-op for now
 
+  interface ClearContextButtonProps {
+    /** Aria-label for the button. Defaults to the value of the tooltipContent if none provided */
+    ariaLabel?: string;
+    /** On-click handler for the button */
+    onClick?:
+      | ((
+          event:
+            | MouseEvent
+            | React.MouseEvent<Element, MouseEvent>
+            | KeyboardEvent,
+        ) => void)
+      | undefined;
+    /** Class name for the button */
+    className?: string;
+    /** Props to control if the button should be disabled */
+    isDisabled?: boolean;
+    /** Content shown in the tooltip */
+    tooltipContent?: string;
+    /** Props to control the PF Tooltip component */
+    tooltipProps?: TooltipProps;
+    /** Text to be displayed */
+    text?: string;
+    /** Button variant */
+    variant?:
+      | "primary"
+      | "secondary"
+      | "tertiary"
+      | "danger"
+      | "warning"
+      | "link"
+      | "plain"
+      | "control"
+      | "stateful";
+  }
+
+  const ClearContextButton: React.FunctionComponent<
+    ClearContextButtonProps
+  > = ({
+    ariaLabel,
+    className,
+    isDisabled,
+    onClick,
+    tooltipContent,
+    tooltipProps,
+    text,
+    variant = "secondary",
+  }) => (
+    <Tooltip
+      content={tooltipContent}
+      position="bottom"
+      entryDelay={tooltipProps?.entryDelay || 0}
+      exitDelay={tooltipProps?.exitDelay || 0}
+      distance={tooltipProps?.distance || 8}
+      animationDuration={tooltipProps?.animationDuration || 0}
+      {...tooltipProps}
+    >
+      <Button
+        variant={variant}
+        className={`pf-chatbot__button--response-action ${className ?? ""}`}
+        aria-label={ariaLabel ?? tooltipContent}
+        isDisabled={isDisabled}
+        onClick={onClick}
+        size="sm"
+      >
+        {text}
+      </Button>
+    </Tooltip>
+  );
+
   return (
     <>
       <ChatbotToggle
@@ -120,19 +195,32 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
       />
       <Chatbot isVisible={chatbotVisible} displayMode={displayMode}>
         <ChatbotHeader>
-          {/* <ChatbotHeaderMenu
+          <ChatbotHeaderMain>
+            <ChatbotHeaderActions>
+              <ClearContextButton
+                variant="secondary"
+                tooltipContent="Clear context"
+                text="Clear context"
+                onClick={() => {
+                  setMessages([]);
+                  setConversationId(undefined);
+                }}
+              />
+            </ChatbotHeaderActions>
+            {/* <ChatbotHeaderMenu
           onMenuToggle={() => alert("Menu toggle clicked")}
         /> */}
-          <ChatbotHeaderTitle>
-            <Bullseye>
-              <div className="show-light">
-                <Brand src={lightspeedLogo} alt="Ansible" />
-              </div>
-              <div className="show-dark">
-                <Brand src={lightspeedLogoDark} alt="Ansible" />
-              </div>
-            </Bullseye>
-          </ChatbotHeaderTitle>
+            <ChatbotHeaderTitle>
+              <Bullseye>
+                <div className="show-light">
+                  <Brand src={lightspeedLogo} alt="Ansible" />
+                </div>
+                <div className="show-dark">
+                  <Brand src={lightspeedLogoDark} alt="Ansible" />
+                </div>
+              </Bullseye>
+            </ChatbotHeaderTitle>
+          </ChatbotHeaderMain>
           <ChatbotHeaderActions>
             {inDebugMode() && (
               <ChatbotHeaderSelectorDropdown
