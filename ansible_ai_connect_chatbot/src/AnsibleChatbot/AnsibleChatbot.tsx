@@ -199,7 +199,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             <ChatbotHeaderActions>
               <ClearContextButton
                 variant="secondary"
-                tooltipContent="Clear context"
+                tooltipContent="Clear context and start a new chat"
                 text="Clear context"
                 onClick={() => {
                   setMessages([]);
