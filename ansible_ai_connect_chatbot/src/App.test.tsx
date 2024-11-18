@@ -82,6 +82,15 @@ describe("App tests", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Create variables")).toBeInTheDocument();
+
+    const clearContextButton = screen.getByLabelText("Clear context");
+    await act(async () => fireEvent.click(clearContextButton));
+    expect(
+      screen.queryByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeNull();
+    expect(screen.queryByText("Create variables")).toBeNull();
   });
 
   it("Chat service returns 500", async () => {

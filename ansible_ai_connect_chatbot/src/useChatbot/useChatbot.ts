@@ -37,8 +37,11 @@ const getTimestamp = () => {
 };
 
 export const inDebugMode = () => {
+  // In the production environment, the debug UI becomes available only when the innter text of
+  // the hidden debug div is set to "true". In the debug environment, the debug UI is enabled by
+  // default and can be disabled by setting the innter text of the debug div is set to "false"
   const debug = document.getElementById("debug")?.innerText ?? "false";
-  return debug === "true";
+  return import.meta.env.PROD ? debug === "true" : debug !== "false";
 };
 
 export const botMessage = (content: string): MessageProps => ({
@@ -152,11 +155,13 @@ export const useChatbot = () => {
 
   return {
     messages,
+    setMessages,
     isLoading,
     handleSend,
     alertMessage,
     setAlertMessage,
     selectedModel,
     setSelectedModel,
+    setConversationId,
   };
 };
