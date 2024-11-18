@@ -201,6 +201,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                 variant="secondary"
                 tooltipContent="Clear context and start a new chat"
                 text="Clear context"
+                ariaLabel="Clear context"
                 onClick={() => {
                   setMessages([]);
                   setConversationId(undefined);
