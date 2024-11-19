@@ -97,6 +97,23 @@ describe("App tests", () => {
       ),
     ).toBeNull();
     expect(screen.queryByText("Create variables")).toBeNull();
+
+    const footNoteLink = screen.getByText(
+      "Lightspeed uses AI. Check for mistakes.",
+    );
+    await act(async () => fireEvent.click(footNoteLink));
+    expect(
+      screen.getByText("While Lightspeed strives for accuracy,", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    const gotItButton = screen.getByText("Got it");
+    await act(async () => fireEvent.click(gotItButton));
+    expect(
+      screen.queryByText("While Lightspeed strives for accuracy,", {
+        exact: false,
+      }),
+    ).not.toBeVisible();
   });
 
   it("Chat service returns 500", async () => {
