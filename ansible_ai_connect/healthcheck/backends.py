@@ -152,8 +152,14 @@ class ChatbotServiceHealthCheck(BaseLightspeedHealthCheck):
 
         try:
             headers = {"Content-Type": "application/json"}
-            r = requests.get(settings.CHATBOT_URL + "/liveness", headers=headers)
-            if r.status_code != 200:
+            r = requests.get(settings.CHATBOT_URL + "/readiness", headers=headers)
+            if r.status_code == 200:
+                data = r.json()
+                ready = data.get("ready")
+                if not ready:
+                    reason = data.get("reason")
+                    raise Exception(reason)
+            else:
                 raise Exception(f"Status code {r.status_code} returned")
         except Exception as e:
             self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
