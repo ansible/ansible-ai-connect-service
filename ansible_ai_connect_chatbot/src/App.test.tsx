@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import userEvent from "@testing-library/user-event";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 describe("App tests", () => {
   const renderApp = (debug = false) => {
@@ -27,12 +27,18 @@ describe("App tests", () => {
       },
     );
   };
-  const mockAxios = (status: number, reject = false) => {
+  const mockAxios = (status: number, reject = false, timeout = false) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(new Error("mocked error")),
-      );
+      if (timeout) {
+        spy.mockImplementationOnce(() =>
+          Promise.reject(new AxiosError("timeout of 28000ms exceeded")),
+        );
+      } else {
+        spy.mockImplementationOnce(() =>
+          Promise.reject(new Error("mocked error")),
+        );
+      }
     } else {
       spy.mockResolvedValue({
         data: {
@@ -103,6 +109,21 @@ describe("App tests", () => {
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual("Bot returned status_code 500");
+  });
+
+  it("Chat service returns a timeout error", async () => {
+    mockAxios(-1, true, true);
+    renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "Chatbot service is taking too long to respond to your query. ",
+        { exact: false },
+      ),
+    ).toBeInTheDocument();
   });
 
   it("Chat service returns an unexpected error", async () => {
