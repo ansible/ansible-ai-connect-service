@@ -9,6 +9,7 @@ import type {
 import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
+import { API_TIMEOUT, TIMEOUT_MSG } from "../Constants";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -56,6 +57,18 @@ export const botMessage = (content: string): MessageProps => ({
   },
 });
 
+const isTimeoutError = (e: any) =>
+  e?.name === "AxiosError" &&
+  e?.message === `timeout of ${API_TIMEOUT}ms exceeded`;
+
+export const timeoutMessage = (): MessageProps => ({
+  role: "bot",
+  content: TIMEOUT_MSG,
+  name: botName,
+  avatar: logo,
+  timestamp: getTimestamp(),
+});
+
 type AlertMessage = {
   title: string;
   message: string;
@@ -82,6 +95,10 @@ export const useChatbot = () => {
   >(undefined);
   const [selectedModel, setSelectedModel] = useState("granite-8b");
 
+  const addMessage = (newMessage: ExtendedMessage) => {
+    setMessages((msgs: ExtendedMessage[]) => [...msgs, newMessage]);
+  };
+
   const handleSend = async (message: string) => {
     const userMessage: ExtendedMessage = {
       role: "user",
@@ -91,7 +108,7 @@ export const useChatbot = () => {
       timestamp: getTimestamp(),
       referenced_documents: [],
     };
-    setMessages((msgs: ExtendedMessage[]) => [...msgs, userMessage]);
+    addMessage(userMessage);
 
     const chatRequest: ChatRequest = {
       conversation_id: conversationId,
@@ -120,6 +137,7 @@ export const useChatbot = () => {
             "Content-Type": "application/json",
             "X-CSRFToken": csrfToken,
           },
+          timeout: API_TIMEOUT,
         },
       );
       if (resp.status === 200) {
@@ -128,13 +146,11 @@ export const useChatbot = () => {
         if (!conversationId) {
           setConversationId(chatResponse.conversation_id);
         }
-        setMessages((msgs: ExtendedMessage[]) => [
-          ...msgs,
-          {
-            referenced_documents,
-            ...botMessage(chatResponse.response),
-          },
-        ]);
+        const newBotMessage = {
+          referenced_documents,
+          ...botMessage(chatResponse.response),
+        };
+        addMessage(newBotMessage);
       } else {
         setAlertMessage({
           title: "Error",
@@ -143,11 +159,19 @@ export const useChatbot = () => {
         });
       }
     } catch (e) {
-      setAlertMessage({
-        title: "Error",
-        message: `An unexpected error occured: ${e}`,
-        variant: "danger",
-      });
+      if (isTimeoutError(e)) {
+        const newBotMessage = {
+          referenced_documents: [],
+          ...timeoutMessage(),
+        };
+        addMessage(newBotMessage);
+      } else {
+        setAlertMessage({
+          title: "Error",
+          message: `An unexpected error occured: ${e}`,
+          variant: "danger",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
