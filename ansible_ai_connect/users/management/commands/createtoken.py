@@ -69,13 +69,10 @@ class Command(BaseCommand):
         if u is None:
             if create_user:
                 self.stdout.write(f"Creating a new user {username}")
-                n = now()
                 u = User.objects.create_user(
                     username=username,
                     password=password,
                     external_username=username,
-                    community_terms_accepted=n,
-                    commercial_terms_accepted=n,
                 )
                 if organization_id:
                     u.organization = Organization.objects.get_or_create(id=organization_id)[0]
