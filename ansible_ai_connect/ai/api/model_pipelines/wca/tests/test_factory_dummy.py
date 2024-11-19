@@ -14,48 +14,41 @@
 
 from django.test import override_settings
 
+from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
+    NopContentMatchPipeline,
+    NopPlaybookExplanationPipeline,
+    NopPlaybookGenerationPipeline,
+)
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
-    ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
 )
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
-    WCABaseRoleGenerationPipeline,
-    WCAOnPremCompletionsPipeline,
-    WCAOnPremContentMatchPipeline,
-    WCAOnPremPlaybookExplanationPipeline,
-    WCAOnPremPlaybookGenerationPipeline,
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_dummy import (
+    WCADummyCompletionsPipeline,
 )
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem"))
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-dummy"))
 class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
 
     def test_completions_pipeline(self):
-        self.assert_concrete_implementation(ModelPipelineCompletions, WCAOnPremCompletionsPipeline)
+        self.assert_concrete_implementation(ModelPipelineCompletions, WCADummyCompletionsPipeline)
 
     def test_content_match_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelineContentMatch, WCAOnPremContentMatchPipeline
-        )
+        self.assert_default_implementation(ModelPipelineContentMatch, NopContentMatchPipeline)
 
     def test_playbook_generation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelinePlaybookGeneration, WCAOnPremPlaybookGenerationPipeline
-        )
-
-    def test_role_generation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelineRoleGeneration, WCABaseRoleGenerationPipeline
+        self.assert_default_implementation(
+            ModelPipelinePlaybookGeneration, NopPlaybookGenerationPipeline
         )
 
     def test_playbook_explanation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelinePlaybookExplanation, WCAOnPremPlaybookExplanationPipeline
+        self.assert_default_implementation(
+            ModelPipelinePlaybookExplanation, NopPlaybookExplanationPipeline
         )

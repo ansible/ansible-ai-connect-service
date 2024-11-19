@@ -17,11 +17,13 @@ from typing import Any, Dict
 
 import grpc
 import requests
-from django.conf import settings
 from health_check.exceptions import ServiceUnavailable
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
 from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
+from ansible_ai_connect.ai.api.model_pipelines.grpc.configuration import (
+    GrpcConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.grpc.grpc_pb import (
     ansiblerequest_pb2,
     wisdomextservice_pb2_grpc,
@@ -45,11 +47,11 @@ logger = logging.getLogger(__name__)
 
 
 @Register(api_type="grpc")
-class GrpcMetaData(MetaData):
+class GrpcMetaData(MetaData[GrpcConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-        i = settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+    def __init__(self, config: GrpcConfiguration):
+        super().__init__(config=config)
+        i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
     def timeout(self, task_count=1):
@@ -57,10 +59,10 @@ class GrpcMetaData(MetaData):
 
 
 @Register(api_type="grpc")
-class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions):
+class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions[GrpcConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: GrpcConfiguration):
+        super().__init__(config=config)
         self._inference_stub = self.get_inference_stub()
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
@@ -96,21 +98,20 @@ class GrpcCompletionsPipeline(GrpcMetaData, ModelPipelineCompletions):
                 raise
 
     def get_inference_stub(self) -> wisdomextservice_pb2_grpc.WisdomExtServiceStub:
-        logger.debug("Inference URL: " + self._inference_url)
-        channel = grpc.insecure_channel(self._inference_url)
+        channel = grpc.insecure_channel(self.config.inference_url)
         stub = wisdomextservice_pb2_grpc.WisdomExtServiceStub(channel)
         logger.debug("Inference Stub: " + str(stub))
         return stub
 
     def set_inference_url(self, inference_url):
-        self._inference_url = inference_url
+        self.config.inference_url = inference_url
         self._inference_stub = self.get_inference_stub()
 
     def self_test(self) -> HealthCheckSummary:
-        url = f"{settings.ANSIBLE_GRPC_HEALTHCHECK_URL}/oauth/healthz"
+        url = f"{self.config.health_check_url}/oauth/healthz"
         summary: HealthCheckSummary = HealthCheckSummary(
             {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "grpc",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
         )

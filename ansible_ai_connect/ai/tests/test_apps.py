@@ -18,10 +18,6 @@ from django.test import override_settings
 from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
     DummyCompletionsPipeline,
 )
-from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
-    WcaKeyNotFound,
-    WcaUsernameNotFound,
-)
 from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
     GrpcCompletionsPipeline,
 )
@@ -29,6 +25,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpCompletionsPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_dummy import (
     WCADummyCompletionsPipeline,
 )
@@ -50,7 +47,7 @@ from ansible_ai_connect.users.reports.postman import (
 
 
 class TestAiApp(WisdomServiceLogAwareTestCase):
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="grpc")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
     def test_grpc_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -58,7 +55,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
             app_config.get_model_pipeline(ModelPipelineCompletions), GrpcCompletionsPipeline
         )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
     def test_wca_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -66,9 +63,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
             app_config.get_model_pipeline(ModelPipelineCompletions), WCASaaSCompletionsPipeline
         )
 
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem"))
     def test_wca_on_prem_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -76,24 +71,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
             app_config.get_model_pipeline(ModelPipelineCompletions), WCAOnPremCompletionsPipeline
         )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="12345")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    def test_wca_on_prem_client_missing_username(self):
-        app_config = AppConfig.create("ansible_ai_connect.ai")
-        app_config.ready()
-        with self.assertRaises(WcaUsernameNotFound):
-            app_config.get_model_pipeline(ModelPipelineCompletions)
-
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY=None)
-    def test_wca_on_prem_client_missing_api_key(self):
-        app_config = AppConfig.create("ansible_ai_connect.ai")
-        app_config.ready()
-        with self.assertRaises(WcaKeyNotFound):
-            app_config.get_model_pipeline(ModelPipelineCompletions)
-
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="http")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("http"))
     def test_http_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -101,7 +79,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
             app_config.get_model_pipeline(ModelPipelineCompletions), HttpCompletionsPipeline
         )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-dummy")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-dummy"))
     def test_wca_dummy_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -109,7 +87,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
             app_config.get_model_pipeline(ModelPipelineCompletions), WCADummyCompletionsPipeline
         )
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
     def test_mock_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -118,22 +96,23 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
         )
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
     def test_enable_ari_default(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNotNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="dummy")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
     def test_disable_ari_default(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(
+        ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca", enable_ari_postprocessing=True)
+    )
     def test_enable_ari_wca_cloud(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -141,7 +120,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
     def test_enable_ari_wca_cloud_disable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -149,7 +128,7 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
     def test_disable_ari_wca_cloud_enable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
@@ -157,47 +136,43 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
     def test_disable_ari_wca_cloud_disable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    @override_settings(
+        ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem", enable_ari_postprocessing=True)
+    )
     def test_enable_ari_wca_onprem(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNotNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    @override_settings(
+        ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem", enable_ari_postprocessing=False)
+    )
     def test_enable_ari_wca_onprem_disable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    @override_settings(
+        ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem", enable_ari_postprocessing=True)
+    )
     def test_disable_ari_wca_onprem_enable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
         self.assertIsNone(app_config.get_ari_caller())
 
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(WCA_ENABLE_ARI_POSTPROCESS=False)
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
-    @override_settings(ANSIBLE_WCA_USERNAME="username")
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_KEY="api-key")
+    @override_settings(
+        ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem", enable_ari_postprocessing=False)
+    )
     def test_disable_ari_wca_onprem_disable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()

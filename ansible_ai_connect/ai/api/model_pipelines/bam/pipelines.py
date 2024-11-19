@@ -22,6 +22,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.messages import BaseMessage
 
+from ansible_ai_connect.ai.api.model_pipelines.bam.configuration import BAMConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
     LangchainMetaData,
@@ -91,55 +92,55 @@ class ChatBAM(SimpleChatModel):
 
 
 @Register(api_type="bam")
-class BAMMetaData(LangchainMetaData):
+class BAMMetaData(LangchainMetaData[BAMConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: BAMConfiguration):
+        super().__init__(config=config)
 
 
 @Register(api_type="bam")
-class BAMCompletionsPipeline(LangchainCompletionsPipeline):
+class BAMCompletionsPipeline(LangchainCompletionsPipeline[BAMConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: BAMConfiguration):
+        super().__init__(config=config)
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
         return ChatBAM(
-            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
+            api_key=self.config.api_key,
             model_id=model_id,
-            prediction_url=f"{self._inference_url}/v2/text/chat?version=2024-01-10",
+            prediction_url=f"{self.config.inference_url}/v2/text/chat?version=2024-01-10",
             timeout=self.timeout,
         )
 
 
 @Register(api_type="bam")
-class BAMPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline):
+class BAMPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline[BAMConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: BAMConfiguration):
+        super().__init__(config=config)
 
     def get_chat_model(self, model_id):
         return ChatBAM(
-            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
+            api_key=self.config.api_key,
             model_id=model_id,
-            prediction_url=f"{self._inference_url}/v2/text/chat?version=2024-01-10",
+            prediction_url=f"{self.config.inference_url}/v2/text/chat?version=2024-01-10",
             timeout=self.timeout,
         )
 
 
 @Register(api_type="bam")
-class BAMPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline):
+class BAMPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline[BAMConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: BAMConfiguration):
+        super().__init__(config=config)
 
     def get_chat_model(self, model_id):
         return ChatBAM(
-            api_key=settings.ANSIBLE_AI_MODEL_MESH_API_KEY,
+            api_key=self.config.api_key,
             model_id=model_id,
-            prediction_url=f"{self._inference_url}/v2/text/chat?version=2024-01-10",
+            prediction_url=f"{self.config.inference_url}/v2/text/chat?version=2024-01-10",
             timeout=self.timeout,
         )

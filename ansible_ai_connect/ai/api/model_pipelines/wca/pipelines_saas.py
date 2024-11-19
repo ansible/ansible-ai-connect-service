@@ -14,7 +14,7 @@
 
 import logging
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Generic, Optional
 
 import backoff
 from django.apps import apps
@@ -35,12 +35,23 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaTokenFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PIPELINE_PARAMETERS,
+    PIPELINE_RETURN,
+    CompletionsParameters,
+    CompletionsResponse,
+    ContentMatchParameters,
+    ContentMatchResponse,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleGenerationParameters,
+    RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_saas import (
+    WCASaaSConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     MODEL_MESH_HEALTH_CHECK_TOKENS,
     WCA_REQUEST_ID_HEADER,
@@ -76,15 +87,15 @@ logger = logging.getLogger(__name__)
 
 
 @Register(api_type="wca")
-class WCASaaSMetaData(WCABaseMetaData):
+class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def get_token(self, api_key):
         basic = None
-        if settings.ANSIBLE_WCA_IDP_LOGIN:
-            basic = HTTPBasicAuth(settings.ANSIBLE_WCA_IDP_LOGIN, settings.ANSIBLE_WCA_IDP_PASSWORD)
+        if self.config.idp_login:
+            basic = HTTPBasicAuth(self.config.idp_login, self.config.idp_password)
         # Store token and only fetch a new one if it has expired
         # https://cloud.ibm.com/docs/account?topic=account-iamtoken_from_apikey
         logger.debug("Fetching WCA token")
@@ -104,11 +115,11 @@ class WCASaaSMetaData(WCABaseMetaData):
         @ibm_cloud_identity_token_hist.time()
         def post_request():
             return self.session.post(
-                f"{settings.ANSIBLE_WCA_IDP_URL}/token",
+                f"{self.config.idp_url}/token",
                 headers=headers,
                 data=data,
                 auth=basic,
-                verify=settings.ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+                verify=self.config.verify_ssl,
             )
 
         try:
@@ -128,8 +139,8 @@ class WCASaaSMetaData(WCABaseMetaData):
             # The organization_id parameter should be removed
             organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
         # use the environment API key override if it's set
-        if settings.ANSIBLE_AI_MODEL_MESH_API_KEY:
-            return settings.ANSIBLE_AI_MODEL_MESH_API_KEY
+        if self.config.api_key:
+            return self.config.api_key
 
         if organization_id is None:
             logger.error(
@@ -144,7 +155,7 @@ class WCASaaSMetaData(WCABaseMetaData):
             and user.organization
             and not user.organization.has_api_key
         ):
-            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY
+            return self.config.one_click_default_api_key
 
         try:
             api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
@@ -179,14 +190,14 @@ class WCASaaSMetaData(WCABaseMetaData):
             and user.organization
             and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
         ):
-            return settings.ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID
+            return self.config.one_click_default_model_id
 
         if requested_model_id:
             # requested_model_id defined: i.e. not None, not "", not {} etc.
             # let them use what they ask for
             return requested_model_id
-        elif settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID:
-            return settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
+        elif self.config.model_id:
+            return self.config.model_id
         elif organization_id is None:
             logger.error(
                 "User is not linked to an organization and no default WCA model ID is found"
@@ -207,10 +218,15 @@ class WCASaaSMetaData(WCABaseMetaData):
         raise WcaModelIdNotFound(model_id=requested_model_id if requested_model_id else "none")
 
 
-class WCASaaSPipeline(WCASaaSMetaData, WCABasePipeline, metaclass=ABCMeta):
+class WCASaaSPipeline(
+    WCASaaSMetaData,
+    WCABasePipeline[WCASaaSConfiguration, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    Generic[PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def get_request_headers(
         self, api_key: str, identifier: Optional[str]
@@ -230,17 +246,20 @@ class WCASaaSPipeline(WCASaaSMetaData, WCABasePipeline, metaclass=ABCMeta):
 
 
 @Register(api_type="wca")
-class WCASaaSCompletionsPipeline(WCASaaSPipeline, WCABaseCompletionsPipeline):
+class WCASaaSCompletionsPipeline(
+    WCASaaSPipeline[CompletionsParameters, CompletionsResponse],
+    WCABaseCompletionsPipeline[WCASaaSConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def self_test(self) -> HealthCheckSummary:
-        wca_api_key = settings.ANSIBLE_WCA_HEALTHCHECK_API_KEY
-        wca_model_id = settings.ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
+        wca_api_key = self.config.health_check_api_key
+        wca_model_id = self.config.health_check_model_id
         summary: HealthCheckSummary = HealthCheckSummary(
             {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
                 MODEL_MESH_HEALTH_CHECK_TOKENS: "ok",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
@@ -274,10 +293,13 @@ class WCASaaSCompletionsPipeline(WCASaaSPipeline, WCABaseCompletionsPipeline):
 
 
 @Register(api_type="wca")
-class WCASaaSContentMatchPipeline(WCASaaSPipeline, WCABaseContentMatchPipeline):
+class WCASaaSContentMatchPipeline(
+    WCASaaSPipeline[ContentMatchParameters, ContentMatchResponse],
+    WCABaseContentMatchPipeline[WCASaaSConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
@@ -287,10 +309,13 @@ class WCASaaSContentMatchPipeline(WCASaaSPipeline, WCABaseContentMatchPipeline):
 
 
 @Register(api_type="wca")
-class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerationPipeline):
+class WCASaaSPlaybookGenerationPipeline(
+    WCASaaSPipeline[PlaybookGenerationParameters, PlaybookGenerationResponse],
+    WCABasePlaybookGenerationPipeline[WCASaaSConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         if settings.ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT:
@@ -303,20 +328,26 @@ class WCASaaSPlaybookGenerationPipeline(WCASaaSPipeline, WCABasePlaybookGenerati
 
 
 @Register(api_type="wca")
-class WCASaaSRoleGenerationPipeline(WCASaaSPipeline, WCABaseRoleGenerationPipeline):
+class WCASaaSRoleGenerationPipeline(
+    WCASaaSPipeline[RoleGenerationParameters, RoleGenerationResponse],
+    WCABaseRoleGenerationPipeline[WCASaaSConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def self_test(self):
         raise NotImplementedError
 
 
 @Register(api_type="wca")
-class WCASaaSPlaybookExplanationPipeline(WCASaaSPipeline, WCABasePlaybookExplanationPipeline):
+class WCASaaSPlaybookExplanationPipeline(
+    WCASaaSPipeline[PlaybookExplanationParameters, PlaybookExplanationResponse],
+    WCABasePlaybookExplanationPipeline[WCASaaSConfiguration],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         if settings.ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT:

@@ -21,10 +21,8 @@ from django.conf import settings
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ansible_ai_connect.healthcheck.backends import (
-    MODEL_MESH_HEALTH_CHECK_MODELS,
-    MODEL_MESH_HEALTH_CHECK_PROVIDER,
-    HealthCheckSummary,
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
+    PIPELINE_CONFIGURATION,
 )
 
 logger = logging.getLogger(__name__)
@@ -185,44 +183,46 @@ class PlaybookExplanationParameters:
 PlaybookExplanationResponse = str
 
 
-class MetaData(metaclass=ABCMeta):
+class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
-    def __init__(self, inference_url):
-        self._inference_url = inference_url
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        self.config = config
 
     def get_model_id(
         self, user, organization_id: Optional[int] = None, requested_model_id: Optional[str] = None
     ) -> str:
-        return requested_model_id or settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
+        return requested_model_id or self.config.model_id
 
     def supports_ari_postprocessing(self):
         return settings.ENABLE_ARI_POSTPROCESS
 
 
-class ModelPipeline(Generic[PIPELINE_PARAMETERS, PIPELINE_RETURN], MetaData, metaclass=ABCMeta):
+class ModelPipeline(
+    MetaData[PIPELINE_CONFIGURATION],
+    Generic[PIPELINE_CONFIGURATION, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     @abstractmethod
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
         raise NotImplementedError
 
+    @abstractmethod
     def self_test(self):
-        return HealthCheckSummary(
-            {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: settings.ANSIBLE_AI_MODEL_MESH_API_TYPE,
-                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
-            }
-        )
+        raise NotImplementedError
 
 
 class ModelPipelineCompletions(
-    ModelPipeline[CompletionsParameters, CompletionsResponse], metaclass=ABCMeta
+    ModelPipeline[PIPELINE_CONFIGURATION, CompletionsParameters, CompletionsResponse],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     @abstractmethod
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
@@ -230,36 +230,42 @@ class ModelPipelineCompletions(
 
 
 class ModelPipelineContentMatch(
-    ModelPipeline[ContentMatchParameters, ContentMatchResponse],
+    ModelPipeline[PIPELINE_CONFIGURATION, ContentMatchParameters, ContentMatchResponse],
+    Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
 
 class ModelPipelinePlaybookGeneration(
-    ModelPipeline[PlaybookGenerationParameters, PlaybookGenerationResponse],
+    ModelPipeline[PIPELINE_CONFIGURATION, PlaybookGenerationParameters, PlaybookGenerationResponse],
+    Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
 
 class ModelPipelineRoleGeneration(
-    ModelPipeline[RoleGenerationParameters, RoleGenerationResponse],
+    ModelPipeline[PIPELINE_CONFIGURATION, RoleGenerationParameters, RoleGenerationResponse],
+    Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
 
 class ModelPipelinePlaybookExplanation(
-    ModelPipeline[PlaybookExplanationParameters, PlaybookExplanationResponse],
+    ModelPipeline[
+        PIPELINE_CONFIGURATION, PlaybookExplanationParameters, PlaybookExplanationResponse
+    ],
+    Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)

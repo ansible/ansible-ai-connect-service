@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-from abc import ABCMeta
 from typing import TYPE_CHECKING, Optional
 
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import WcaTokenFailure
@@ -21,13 +20,20 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
     MetaData,
-    ModelPipeline,
     ModelPipelineCompletions,
     ModelPipelineRoleGeneration,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_dummy import (
+    WCADummyConfiguration,
+)
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+)
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -38,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 @Register(api_type="wca-dummy")
-class WCADummyMetaData(MetaData):
+class WCADummyMetaData(MetaData[WCADummyConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCADummyConfiguration):
+        super().__init__(config=config)
 
     def get_model_id(
         self,
@@ -58,28 +64,12 @@ class WCADummyMetaData(MetaData):
 
 
 @Register(api_type="wca-dummy")
-class WCADummyPipeline(ModelPipeline, metaclass=ABCMeta):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-
-class WCADummyRoleGenerationPipeline(
-    WCADummyPipeline, ModelPipelineRoleGeneration, metaclass=ABCMeta
+class WCADummyCompletionsPipeline(
+    WCADummyMetaData, ModelPipelineCompletions[WCADummyConfiguration]
 ):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-
-    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        return "wca_dummy_role", [], "wca_dummy_outline"
-
-
-@Register(api_type="wca-dummy")
-class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
-
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: WCADummyConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         return {
@@ -89,3 +79,26 @@ class WCADummyCompletionsPipeline(WCADummyPipeline, ModelPipelineCompletions):
 
     def infer_from_parameters(self, *args, **kwargs):
         return ""
+
+    def self_test(self):
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "dummy",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+
+
+@Register(api_type="wca-dummy")
+class WCADummyRoleGenerationPipeline(
+    WCADummyMetaData, ModelPipelineRoleGeneration[WCADummyConfiguration]
+):
+
+    def __init__(self, config: WCADummyConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        return "wca_dummy_role", [], "wca_dummy_outline"
+
+    def self_test(self):
+        raise NotImplementedError

@@ -8,6 +8,9 @@ from django.test import TestCase
 from langchain_community.llms import FakeListLLM
 from langchain_core.messages.base import BaseMessage
 
+from ansible_ai_connect.ai.api.model_pipelines.langchain.configuration import (
+    LangchainConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
     LangchainPlaybookExplanationPipeline,
@@ -111,7 +114,11 @@ class TestUnwrapPlaybookAnswer(TestCase):
 
 class TestLangChainClientNotImplemented(TestCase):
     def test_not_implemented(self):
-        my_client = LangchainCompletionsPipeline("a")
+        my_client = LangchainCompletionsPipeline(
+            LangchainConfiguration(
+                inference_url="http://localhost", model_id="a-model-id", timeout=None
+            )
+        )
 
         with self.assertRaises(NotImplementedError):
             my_client.get_chat_model("a")
@@ -120,7 +127,11 @@ class TestLangChainClientNotImplemented(TestCase):
 class TestLangChainPlaybookGenerationPipeline(WisdomServiceLogAwareTestCase):
 
     def setUp(self):
-        self.my_client = LangchainPlaybookGenerationPipeline("a")
+        self.my_client = LangchainPlaybookGenerationPipeline(
+            LangchainConfiguration(
+                inference_url="http://localhost", model_id="a-model-id", timeout=None
+            )
+        )
 
         def fake_get_chat_mode(model_id=None):
             logger.debug(f"get_chat_mode: model_id={model_id}")
@@ -168,7 +179,11 @@ class TestLangChainPlaybookGenerationPipeline(WisdomServiceLogAwareTestCase):
 
 class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):
     def setUp(self):
-        self.my_client = LangchainPlaybookExplanationPipeline("a")
+        self.my_client = LangchainPlaybookExplanationPipeline(
+            LangchainConfiguration(
+                inference_url="http://locahost", model_id="a-model-id", timeout=None
+            )
+        )
 
         def fake_get_chat_mode(model_id=None):
             logger.debug(f"get_chat_mode: model_id={model_id}")

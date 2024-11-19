@@ -18,8 +18,10 @@ import secrets
 import time
 
 import requests
-from django.conf import settings
 
+from ansible_ai_connect.ai.api.model_pipelines.dummy.configuration import (
+    DummyConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
@@ -36,6 +38,11 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -93,41 +100,51 @@ that are running Red Hat Enterprise Linux (RHEL) 9.
 
 
 @Register(api_type="dummy")
-class DummyMetaData(MetaData):
+class DummyMetaData(MetaData[DummyConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
         self.session = requests.Session()
         self.headers = {"Content-Type": "application/json"}
 
 
 @Register(api_type="dummy")
-class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions):
+class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions[DummyConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
-        if settings.DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER:
+        if self.config.latency_use_jitter:
             jitter: float = secrets.randbelow(1000) * 0.001
         else:
             jitter: float = 0.001
-        time.sleep(settings.DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC * jitter)
-        response_body = json.loads(settings.DUMMY_MODEL_RESPONSE_BODY)
+        time.sleep(self.config.latency_max_msec * jitter)
+        response_body = json.loads(self.config.body)
         response_body["model_id"] = "_"
         return response_body
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
+    def self_test(self):
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "dummy",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+
 
 @Register(api_type="dummy")
-class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGeneration):
+class DummyPlaybookGenerationPipeline(
+    DummyMetaData, ModelPipelinePlaybookGeneration[DummyConfiguration]
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         create_outline = params.create_outline
@@ -135,12 +152,15 @@ class DummyPlaybookGenerationPipeline(DummyMetaData, ModelPipelinePlaybookGenera
             return PLAYBOOK, OUTLINE, []
         return PLAYBOOK, "", []
 
+    def self_test(self):
+        raise NotImplementedError
+
 
 @Register(api_type="dummy")
-class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration):
+class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[DummyConfiguration]):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         create_outline = params.create_outline
@@ -148,12 +168,20 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration):
             return ROLES, ROLE_FILE, OUTLINE
         return ROLES, ROLE_FILE, ""
 
+    def self_test(self):
+        raise NotImplementedError
+
 
 @Register(api_type="dummy")
-class DummyPlaybookExplanationPipeline(DummyMetaData, ModelPipelinePlaybookExplanation):
+class DummyPlaybookExplanationPipeline(
+    DummyMetaData, ModelPipelinePlaybookExplanation[DummyConfiguration]
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         return EXPLANATION
+
+    def self_test(self):
+        raise NotImplementedError

@@ -16,6 +16,11 @@ import logging
 from copy import deepcopy
 from typing import get_args
 
+from rest_framework.serializers import Serializer
+
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
+    PipelineConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     MetaData,
     ModelPipelineCompletions,
@@ -24,21 +29,25 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleGeneration,
 )
-from ansible_ai_connect.main.settings.base import t_model_mesh_api_type
+from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 
 logger = logging.getLogger(__name__)
 
-EMPTY_PIPE = {
-    MetaData: None,
-    ModelPipelineCompletions: None,
-    ModelPipelineContentMatch: None,
-    ModelPipelinePlaybookGeneration: None,
-    ModelPipelineRoleGeneration: None,
-    ModelPipelinePlaybookExplanation: None,
-}
-PIPELINES = {}
+REGISTRY_ENTRY = dict.fromkeys(
+    [
+        MetaData,
+        ModelPipelineCompletions,
+        ModelPipelineContentMatch,
+        ModelPipelinePlaybookGeneration,
+        ModelPipelineRoleGeneration,
+        ModelPipelinePlaybookExplanation,
+        PipelineConfiguration,
+        Serializer,
+    ]
+)
+REGISTRY = {}
 for model_mesh_api_type in get_args(t_model_mesh_api_type):
-    PIPELINES[model_mesh_api_type] = deepcopy(EMPTY_PIPE)
+    REGISTRY[model_mesh_api_type] = deepcopy(REGISTRY_ENTRY)
 
 
 class Register:
@@ -46,11 +55,15 @@ class Register:
         self.api_type = api_type
 
     def __call__(self, cls):
-        for pipe in EMPTY_PIPE.keys():
-            # All pipes are sub classes of MetaData, checking it at the end
+        for pipe in REGISTRY_ENTRY.keys():
+            # All pipes are subclasses of MetaData, checking it at the end
             if not (pipe == MetaData) and issubclass(cls, pipe):
-                PIPELINES[self.api_type][pipe] = cls
+                REGISTRY[self.api_type][pipe] = cls
                 return cls
         if issubclass(cls, MetaData):
-            PIPELINES[self.api_type][MetaData] = cls
+            REGISTRY[self.api_type][MetaData] = cls
+        elif issubclass(cls, PipelineConfiguration):
+            REGISTRY[self.api_type][PipelineConfiguration] = cls
+        elif issubclass(cls, Serializer):
+            REGISTRY[self.api_type][Serializer] = cls
         return cls

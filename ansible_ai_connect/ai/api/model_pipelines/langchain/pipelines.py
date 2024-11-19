@@ -16,9 +16,9 @@ import logging
 import re
 from abc import ABCMeta
 from textwrap import dedent
+from typing import Generic, TypeVar
 
 import requests
-from django.conf import settings
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
@@ -27,7 +27,12 @@ from langchain_core.prompts.chat import (
 )
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.model_pipelines.langchain.configuration import (
+    LangchainConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    PIPELINE_PARAMETERS,
+    PIPELINE_RETURN,
     CompletionsParameters,
     CompletionsResponse,
     MetaData,
@@ -45,6 +50,10 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
 )
 
 logger = logging.getLogger(__name__)
+
+LANGCHAIN_PIPELINE_CONFIGURATION = TypeVar(
+    "LANGCHAIN_PIPELINE_CONFIGURATION", bound=LangchainConfiguration
+)
 
 SYSTEM_MESSAGE_TEMPLATE = (
     "You are an Ansible expert. Return a single task that best completes the "
@@ -103,27 +112,38 @@ def unwrap_task_answer(message: str | BaseMessage) -> str:
     return dedent(re.split(r"- name: .+\n", task)[-1]).rstrip()
 
 
-class LangchainMetaData(MetaData):
+class LangchainMetaData(
+    MetaData[LANGCHAIN_PIPELINE_CONFIGURATION], Generic[LANGCHAIN_PIPELINE_CONFIGURATION]
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
-        i = settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+        i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
     def timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
 
 
-class LangchainBase(LangchainMetaData, ModelPipeline, metaclass=ABCMeta):
+class LangchainBase(
+    LangchainMetaData,
+    ModelPipeline[LANGCHAIN_PIPELINE_CONFIGURATION, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    Generic[LANGCHAIN_PIPELINE_CONFIGURATION, PIPELINE_PARAMETERS, PIPELINE_RETURN],
+    metaclass=ABCMeta,
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
 
-class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
+class LangchainCompletionsPipeline(
+    LangchainBase[LANGCHAIN_PIPELINE_CONFIGURATION, CompletionsParameters, CompletionsResponse],
+    ModelPipelineCompletions[LANGCHAIN_PIPELINE_CONFIGURATION],
+    Generic[LANGCHAIN_PIPELINE_CONFIGURATION],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         request = params.request
@@ -158,6 +178,9 @@ class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
+    def self_test(self):
+        raise NotImplementedError
+
     def get_chat_model(self, model_id):
         raise NotImplementedError
 
@@ -165,10 +188,16 @@ class LangchainCompletionsPipeline(LangchainBase, ModelPipelineCompletions):
         raise NotImplementedError
 
 
-class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGeneration):
+class LangchainPlaybookGenerationPipeline(
+    LangchainBase[
+        LANGCHAIN_PIPELINE_CONFIGURATION, PlaybookGenerationParameters, PlaybookGenerationResponse
+    ],
+    ModelPipelinePlaybookGeneration[LANGCHAIN_PIPELINE_CONFIGURATION],
+    Generic[LANGCHAIN_PIPELINE_CONFIGURATION],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         request = params.request
@@ -223,7 +252,6 @@ class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGe
                 ),
             ]
         )
-
         chain = chat_template | llm
         output = chain.invoke({"text": text, "outline": outline})
         playbook, outline = unwrap_playbook_answer(output)
@@ -233,26 +261,44 @@ class LangchainPlaybookGenerationPipeline(LangchainBase, ModelPipelinePlaybookGe
 
         return playbook, outline, []
 
+    def self_test(self):
+        raise NotImplementedError
+
     def get_chat_model(self, model_id):
         raise NotImplementedError
 
 
-class LangchainRoleGenerationPipeline(LangchainBase, ModelPipelineRoleGeneration):
+class LangchainRoleGenerationPipeline(
+    LangchainBase[
+        LANGCHAIN_PIPELINE_CONFIGURATION, RoleGenerationParameters, RoleGenerationResponse
+    ],
+    ModelPipelineRoleGeneration[LANGCHAIN_PIPELINE_CONFIGURATION],
+    Generic[LANGCHAIN_PIPELINE_CONFIGURATION],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         return "dummy_role", [], "dummy_outline"
 
+    def self_test(self):
+        raise NotImplementedError
+
     def get_chat_model(self, model_id):
         raise NotImplementedError
 
 
-class LangchainPlaybookExplanationPipeline(LangchainBase, ModelPipelinePlaybookExplanation):
+class LangchainPlaybookExplanationPipeline(
+    LangchainBase[
+        LANGCHAIN_PIPELINE_CONFIGURATION, PlaybookExplanationParameters, PlaybookExplanationResponse
+    ],
+    ModelPipelinePlaybookExplanation[LANGCHAIN_PIPELINE_CONFIGURATION],
+    Generic[LANGCHAIN_PIPELINE_CONFIGURATION],
+):
 
-    def __init__(self, inference_url):
-        super().__init__(inference_url=inference_url)
+    def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         request = params.request
@@ -297,6 +343,9 @@ class LangchainPlaybookExplanationPipeline(LangchainBase, ModelPipelinePlaybookE
         chain = chat_template | llm
         explanation = chain.invoke({"playbook": content})
         return explanation
+
+    def self_test(self):
+        raise NotImplementedError
 
     def get_chat_model(self, model_id):
         raise NotImplementedError

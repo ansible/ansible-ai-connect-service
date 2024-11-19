@@ -35,6 +35,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
 
+from ..model_pipelines.tests import mock_pipeline_config
 from .test_views import WisdomServiceAPITestCaseBase
 
 
@@ -45,49 +46,41 @@ def mock_timeout_error():
 
 
 class TestApiTimeout(WisdomServiceAPITestCaseBase):
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
+
     def test_timeout_settings_is_none(self):
-        model_client = HttpMetaData(inference_url="http://example.com/")
+        model_client = HttpMetaData(mock_pipeline_config("http", timeout=None))
         self.assertIsNone(model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none(self):
-        model_client = HttpMetaData(inference_url="http://example.com/")
+        model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
         self.assertEqual(123, model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_multi_task(self):
-        model_client = HttpMetaData(inference_url="http://example.com/")
+        model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
         self.assertEqual(123 * 2, model_client.timeout(2))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_grpc(self):
-        model_client = GrpcMetaData(inference_url="http://example.com/")
+        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=None))
         self.assertIsNone(model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc(self):
-        model_client = GrpcMetaData(inference_url="http://example.com/")
+        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=123))
         self.assertEqual(123, model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_grpc_multi_task(self):
-        model_client = GrpcMetaData(inference_url="http://example.com/")
+        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=123))
         self.assertEqual(123 * 2, model_client.timeout(2))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=None)
     def test_timeout_settings_is_none_wca(self):
-        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=None))
         self.assertIsNone(model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca(self):
-        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=123))
         self.assertEqual(123, model_client.timeout(1))
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TIMEOUT=123)
     def test_timeout_settings_is_not_none_wca_multitask(self):
-        model_client = WCASaaSCompletionsPipeline(inference_url="http://example.com/")
+        model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=123))
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -101,7 +94,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=HttpCompletionsPipeline(inference_url="http://example.com/")),
+            Mock(return_value=HttpCompletionsPipeline(mock_pipeline_config("http"))),
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
@@ -120,7 +113,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
-            Mock(return_value=GrpcCompletionsPipeline(inference_url="http://example.com/")),
+            Mock(return_value=GrpcCompletionsPipeline(mock_pipeline_config("grpc"))),
         ):
             r = self.client.post(reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
