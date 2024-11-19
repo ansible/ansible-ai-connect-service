@@ -4,6 +4,11 @@ import { App } from "../App";
 
 describe("App", () => {
   it("Rendering::With Username", async () => {
+    global.ResizeObserver = jest.fn().mockImplementation(() => ({
+      observe: jest.fn(),
+      unobserve: jest.fn(),
+      disconnect: jest.fn(),
+    }));
     window.history.pushState({}, "Test page", "/console");
     render(
       <App

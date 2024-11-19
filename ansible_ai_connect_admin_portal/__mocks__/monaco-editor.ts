@@ -1,3 +1,15 @@
-module.exports = {
-  // Stub methods as needed (we should not need any for the Admin Portal)
+const editor = {
+  create: () => {
+    return {
+      dispose: () => {},
+    }
+  },
+  defineTheme: function() {}
 };
+
+const monaco = {
+  editor,
+  languages: {json: {jsonDefaults: { setDiagnosticsOptions: function () {}}}}
+};
+
+module.exports = monaco;

@@ -8,7 +8,7 @@
     "npm": ">=7.0.0"
   },
   "dependencies": {
-    "@ansible/ansible-ui-framework": "^2.4.2595",
+    "@ansible/ansible-ui-framework": "^2.4.2606",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",
     "@patternfly/patternfly": "^5.1",
@@ -17,16 +17,16 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@svgr/webpack": "8.1.0",
     "i18next-http-backend": "^2.2.1",
-    "monaco-editor": "^0.41.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.1.2",
     "react-router-dom": "^6.15.0"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.0.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
     "@types/react-test-renderer": "^18.0.1",
@@ -137,14 +137,19 @@
     },
     "transformIgnorePatterns": [
       "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|cjs|ts|tsx)$",
-      "^.+\\.module\\.(css|sass|scss)$"
+      "^.+\\.module\\.(css|sass|scss)$",
+      "node_modules\\/(?!(monaco-yaml)\\/)",
+      "node_modules\\/(?!(monaco-editor)\\/)"
     ],
     "modulePaths": [],
     "moduleNameMapper": {
       "^react-native$": "react-native-web",
       "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
-      "react-i18next": "<rootDir>/__mocks__/react-i18next.ts",
-      "monaco-editor": "<rootDir>/__mocks__/monaco-editor.ts"
+      "react-i18next": "<rootDir>/__mocks__/react-i18next.ts"
+    },
+    "module.exports": {
+      "monaco-editor": "<rootDir>/__mocks__/monaco-editor.ts",
+      "monaco-yaml": "<rootDir>/__mocks__/monaco-yaml.ts"
     },
     "moduleFileExtensions": [
       "web.js",
