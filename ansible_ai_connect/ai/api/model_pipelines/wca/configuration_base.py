@@ -74,7 +74,7 @@ class WCABasePipelineConfiguration(PipelineConfiguration[WCABaseConfiguration], 
 
 
 class WCABaseConfigurationSerializer(BaseConfigSerializer):
-    api_key = serializers.CharField(required=True)
+    api_key = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     verify_ssl = serializers.BooleanField(required=False, default=False)
     retry_count = serializers.IntegerField(required=False, default=4)
     enable_ari_postprocessing = serializers.BooleanField(required=False, default=False)

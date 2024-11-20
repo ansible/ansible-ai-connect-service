@@ -71,7 +71,7 @@ class WCAOnPremConfiguration(WCABaseConfiguration):
 
 
 @Register(api_type="wca-onprem")
-class WCASaaSPipelineConfiguration(WCABasePipelineConfiguration):
+class WCAOnPremPipelineConfiguration(WCABasePipelineConfiguration):
 
     def __init__(self, **kwargs):
         super().__init__(
