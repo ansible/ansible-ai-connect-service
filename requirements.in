@@ -15,7 +15,7 @@ ansible-lint==24.2.2
 # pin aiohttp on 3.10.2 to address SNYK-PYTHON-AIOHTTP-7675597
 # aiohttp is used by langchain and langchain-community that
 # specify a version ^3.8.3
-aiohttp==3.10.2
+aiohttp==3.10.11
 boto3==1.26.84
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
