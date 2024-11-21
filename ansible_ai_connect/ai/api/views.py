@@ -15,6 +15,7 @@
 import json
 import logging
 import time
+import timeit
 import traceback
 from string import Template
 
@@ -93,7 +94,10 @@ from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsRecommendationAction,
     AnalyticsTelemetryEvents,
 )
-from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
+from ansible_ai_connect.ai.api.utils.segment import (
+    send_chatbot_event,
+    send_schema1_event,
+)
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
@@ -110,6 +114,7 @@ from .permissions import (
     IsAAPLicensed,
 )
 from .serializers import (
+    ChatFeedback,
     ChatRequestSerializer,
     ChatResponseSerializer,
     CompletionRequestSerializer,
@@ -129,6 +134,11 @@ from .serializers import (
     PlaybookGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
+)
+from .telemetry.schema1 import (
+    ChatBotFeedbackEvent,
+    ChatBotOperationalEvent,
+    ChatBotResponseDocsReferences,
 )
 from .utils.segment import send_segment_event
 
@@ -316,6 +326,7 @@ class Feedback(APIView):
         playbook_generation_action_data: PlaybookGenerationAction = validated_data.get(
             "playbookGenerationAction"
         )
+        chatbot_feedback_data: ChatFeedback = validated_data.get("chatFeedback")
 
         ansible_extension_version = validated_data.get("metadata", {}).get(
             "ansibleExtensionVersion", None
@@ -424,11 +435,28 @@ class Feedback(APIView):
                     ansible_extension_version,
                 )
 
+        if chatbot_feedback_data:
+            response_data = chatbot_feedback_data.get("response")
+            chatbot_feedback_payload = ChatBotFeedbackEvent(
+                chat_prompt=chatbot_feedback_data.get("query"),
+                chat_response=response_data["response"],
+                chat_truncated=response_data["truncated"],
+                chat_referenced_documents=[
+                    ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
+                    for rd in response_data["referenced_documents"]
+                ],
+                conversation_id=response_data["conversation_id"],
+                rh_user_org_id=getattr(user, "org_id", None),
+                sentiment=chatbot_feedback_data.get("sentiment"),
+            )
+            send_chatbot_event(chatbot_feedback_payload, "chatFeedbackEvent", user)
+
         feedback_events = [
             inline_suggestion_data,
             suggestion_quality_data,
             sentiment_feedback_data,
             issue_feedback_data,
+            chatbot_feedback_data,
         ]
         if exception and all(not data for data in feedback_events):
             # When an exception is thrown before inline_suggestion_data or ansible_content_data
@@ -442,6 +470,8 @@ class Feedback(APIView):
                 event_type = "sentimentFeedback"
             elif "issueFeedback" in request_data:
                 event_type = "issueFeedback"
+            elif "chatFeedback" in request_data:
+                event_type = "chatFeedbackEvent"
             else:
                 event_type = "unknown"
 
@@ -1120,7 +1150,9 @@ class Chat(APIView):
     def post(self, request) -> Response:
         headers = {"Content-Type": "application/json"}
         request_serializer = ChatRequestSerializer(data=request.data)
+        rh_user_org_id = getattr(request.user, "org_id", None)
 
+        operational_event = {}
         try:
             if not self.chatbot_enabled:
                 raise ChatbotNotEnabledException()
@@ -1128,7 +1160,7 @@ class Chat(APIView):
             if not request_serializer.is_valid():
                 raise ChatbotInvalidRequestException()
 
-            data = {
+            req_data = {
                 "query": request_serializer.validated_data["query"],
                 "model": request_serializer.validated_data.get(
                     "model", settings.CHATBOT_DEFAULT_MODEL
@@ -1138,37 +1170,76 @@ class Chat(APIView):
                 ),
             }
             if "conversation_id" in request_serializer.validated_data:
-                data["conversation_id"] = str(request_serializer.validated_data["conversation_id"])
-            response = requests.post(settings.CHATBOT_URL + "/v1/query", headers=headers, json=data)
+                req_data["conversation_id"] = str(
+                    request_serializer.validated_data["conversation_id"]
+                )
+            req_query = req_data["query"]
+            req_provider = req_data["provider"]
+            req_model = req_data["model"]
+
+            start = timeit.default_timer()
+            response = requests.post(
+                settings.CHATBOT_URL + "/v1/query", headers=headers, json=req_data
+            )
+            duration = timeit.default_timer() - start
 
             if response.status_code == 200:
-                data = json.loads(response.text)
-                response_serializer = ChatResponseSerializer(data=data)
+                response_data = json.loads(response.text)
+                response_serializer = ChatResponseSerializer(data=response_data)
 
                 if not response_serializer.is_valid():
                     raise ChatbotInvalidResponseException()
 
+                operational_event = ChatBotOperationalEvent(
+                    chat_prompt=req_query,
+                    chat_response=response_data["response"],
+                    chat_truncated=response_data["truncated"],
+                    chat_referenced_documents=[
+                        ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
+                        for rd in response_data["referenced_documents"]
+                    ],
+                    conversation_id=response_data["conversation_id"],
+                    provider_id=req_provider,
+                    modelName=req_model,
+                    rh_user_org_id=rh_user_org_id,
+                    req_duration=duration,
+                )
+
                 return Response(
-                    data,
+                    response_data,
                     status=rest_framework_status.HTTP_200_OK,
                     headers=headers,
                 )
-            elif response.status_code == 401:
-                detail = json.loads(response.text).get("detail", "")
-                raise ChatbotUnauthorizedException(detail=detail)
-            elif response.status_code == 403:
-                detail = json.loads(response.text).get("detail", "")
-                raise ChatbotForbiddenException(detail=detail)
-            elif response.status_code == 413:
-                detail = json.loads(response.text).get("detail", "")
-                raise ChatbotPromptTooLongException(detail=detail)
-            elif response.status_code == 422:
-                detail = json.loads(response.text).get("detail", "")
-                raise ChatbotValidationException(detail=detail)
+
             else:
                 detail = json.loads(response.text).get("detail", "")
-                raise ChatbotInternalServerException(detail=detail)
+                operational_event = ChatBotOperationalEvent(
+                    chat_prompt=req_query,
+                    provider_id=req_provider,
+                    modelName=req_model,
+                    rh_user_org_id=rh_user_org_id,
+                    req_duration=duration,
+                    exception=detail,
+                )
+                if response.status_code == 401:
+                    raise ChatbotUnauthorizedException(detail=detail)
+                elif response.status_code == 403:
+                    raise ChatbotForbiddenException(detail=detail)
+                elif response.status_code == 413:
+                    raise ChatbotPromptTooLongException(detail=detail)
+                elif response.status_code == 422:
+                    raise ChatbotValidationException(detail=detail)
+                else:
+                    raise ChatbotInternalServerException(detail=detail)
 
         except Exception as exc:
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
-            raise
+            exception_message = f"An exception {exc.__class__} occurred during a chat generation"
+            logger.exception(exception_message)
+            operational_event = ChatBotOperationalEvent(
+                exception=exception_message,
+                rh_user_org_id=rh_user_org_id,
+            )
+            raise exc
+
+        finally:
+            send_chatbot_event(operational_event, "chatOperationalEvent", request.user)

@@ -664,6 +664,21 @@ components:
         * `0` - ACCEPTED
         * `1` - REJECTED
         * `2` - IGNORED
+    ChatFeedback:
+      type: object
+      properties:
+        query:
+          type: string
+          title: Prompt
+          description: Prompt being sent to the LLM.
+        response:
+          $ref: '#/components/schemas/ChatResponse'
+        sentiment:
+          $ref: '#/components/schemas/SentimentEnum'
+      required:
+      - query
+      - response
+      - sentiment
     ChatRequest:
       type: object
       properties:
@@ -903,6 +918,8 @@ components:
           $ref: '#/components/schemas/SentimentFeedback'
         suggestionQualityFeedback:
           $ref: '#/components/schemas/SuggestionQualityFeedback'
+        chatFeedback:
+          $ref: '#/components/schemas/ChatFeedback'
     GenerationRequest:
       type: object
       properties:
@@ -1217,6 +1234,16 @@ components:
       required:
       - docs_url
       - title
+    SentimentEnum:
+      enum:
+      - '0'
+      - '1'
+      - NOT_LIKE
+      type: string
+      description: |-
+        * `0` - LIKE
+        * `1` - 1
+        * `NOT_LIKE` - NOT_LIKE
     SentimentFeedback:
       type: object
       properties:
