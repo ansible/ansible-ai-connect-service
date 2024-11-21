@@ -1,4 +1,5 @@
 import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
+import { Sentiment } from "../Constants";
 
 // Types for OLS (OpenShift lightspeed-service) POST /v1/query API
 type LLMRequest = {
@@ -33,4 +34,10 @@ export type ReferencedDocumentsProp = {
 
 export type ExtendedMessage = MessageProps & {
   referenced_documents: ReferencedDocument[];
+};
+
+export type ChatFeedback = {
+  query: string;
+  response: ChatResponse;
+  sentiment: Sentiment;
 };

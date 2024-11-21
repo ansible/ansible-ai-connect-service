@@ -5,11 +5,12 @@ import type {
   ExtendedMessage,
   ChatRequest,
   ChatResponse,
+  ChatFeedback,
 } from "../types/Message";
 import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
-import { API_TIMEOUT, TIMEOUT_MSG } from "../Constants";
+import { API_TIMEOUT, Sentiment, TIMEOUT_MSG } from "../Constants";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -44,18 +45,6 @@ export const inDebugMode = () => {
   const debug = document.getElementById("debug")?.innerText ?? "false";
   return import.meta.env.PROD ? debug === "true" : debug !== "false";
 };
-
-export const botMessage = (content: string): MessageProps => ({
-  role: "bot",
-  content,
-  name: botName,
-  avatar: logo,
-  timestamp: getTimestamp(),
-  actions: {
-    positive: { onClick: () => console.log("Good response") },
-    negative: { onClick: () => console.log("Bad response") },
-  },
-});
 
 const isTimeoutError = (e: any) =>
   e?.name === "AxiosError" &&
@@ -97,6 +86,67 @@ export const useChatbot = () => {
 
   const addMessage = (newMessage: ExtendedMessage) => {
     setMessages((msgs: ExtendedMessage[]) => [...msgs, newMessage]);
+  };
+
+  const botMessage = (
+    response: ChatResponse | string,
+    query = "",
+  ): MessageProps => {
+    const sendFeedback = async (sentiment: Sentiment) => {
+      if (typeof response === "object") {
+        handleFeedback({ query, response, sentiment });
+      }
+    };
+    return {
+      role: "bot",
+      content: typeof response === "object" ? response.response : response,
+      name: botName,
+      avatar: logo,
+      timestamp: getTimestamp(),
+      actions: {
+        positive: {
+          onClick: () => {
+            sendFeedback(Sentiment.THUMBS_UP);
+          },
+        },
+        negative: {
+          onClick: () => {
+            sendFeedback(Sentiment.THUMBS_DOWN);
+          },
+        },
+      },
+    };
+  };
+
+  const handleFeedback = async (feedbackRequest: ChatFeedback) => {
+    try {
+      const csrfToken = readCookie("csrftoken");
+      const resp = await axios.post(
+        "/api/v0/ai/feedback/",
+        {
+          chatFeedback: feedbackRequest,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+        },
+      );
+      if (resp.status !== 200) {
+        setAlertMessage({
+          title: "Error",
+          message: `Feedback API returned status_code ${resp.status}`,
+          variant: "danger",
+        });
+      }
+    } catch (e) {
+      setAlertMessage({
+        title: "Error",
+        message: `An unexpected error occured: ${e}`,
+        variant: "danger",
+      });
+    }
   };
 
   const handleSend = async (message: string) => {
@@ -148,7 +198,7 @@ export const useChatbot = () => {
         }
         const newBotMessage = {
           referenced_documents,
-          ...botMessage(chatResponse.response),
+          ...botMessage(chatResponse, message),
         };
         addMessage(newBotMessage);
       } else {
@@ -180,6 +230,7 @@ export const useChatbot = () => {
   return {
     messages,
     setMessages,
+    botMessage,
     isLoading,
     handleSend,
     alertMessage,

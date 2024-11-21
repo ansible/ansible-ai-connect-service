@@ -15,3 +15,9 @@ export const FOOTNOTE_TITLE = "Verify accuracy";
 /* Footnote description */
 export const FOOTNOTE_DESCRIPTION =
   "While Lightspeed strives for accuracy, there's always a possibility of errors. It's a good practice to verify critical information from reliable sources, especially if it's crucial for decision-making or actions.";
+
+/* Sentiments */
+export enum Sentiment {
+  THUMBS_UP = 0,
+  THUMBS_DOWN = 1,
+}

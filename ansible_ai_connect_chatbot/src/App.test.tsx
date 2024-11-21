@@ -89,6 +89,12 @@ describe("App tests", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Create variables")).toBeInTheDocument();
 
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
+    await act(async () => fireEvent.click(thumbsUpIcon));
+
+    const thumbsDownIcon = screen.getByRole("button", { name: "Bad response" });
+    await act(async () => fireEvent.click(thumbsDownIcon));
+
     const clearContextButton = screen.getByLabelText("Clear context");
     await act(async () => fireEvent.click(clearContextButton));
     expect(
@@ -150,6 +156,56 @@ describe("App tests", () => {
     await act(async () => userEvent.type(textArea, "Hello"));
     const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
+    const alert = view.container.querySelector(".pf-v6-c-alert__description");
+    const textContent = alert?.textContent;
+    expect(textContent).toEqual(
+      "An unexpected error occured: Error: mocked error",
+    );
+  });
+
+  it("Feedback API returns 500", async () => {
+    mockAxios(200);
+    const view = renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
+
+    vi.restoreAllMocks();
+    mockAxios(500);
+
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
+    await act(async () => fireEvent.click(thumbsUpIcon));
+    const alert = view.container.querySelector(".pf-v6-c-alert__description");
+    const textContent = alert?.textContent;
+    expect(textContent).toEqual("Feedback API returned status_code 500");
+  });
+
+  it("Feedback API returns an unexpected error", async () => {
+    mockAxios(200);
+    const view = renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
+
+    vi.restoreAllMocks();
+    mockAxios(-1, true);
+
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
+    await act(async () => fireEvent.click(thumbsUpIcon));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
