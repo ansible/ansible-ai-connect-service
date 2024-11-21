@@ -86,9 +86,10 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
             return len(child_status) == len(children)
 
     @staticmethod
-    def mocked_requests_succeed(*args, **kwargs):
+    def mocked_requests_succeed(content=b"", *args, **kwargs):
         r = Response()
         r.status_code = HTTPStatus.OK
+        r._content = content
         return r
 
     @staticmethod
@@ -347,7 +348,9 @@ class TestHealthCheck(BaseTestHealthCheck):
     @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
-        side_effect=BaseTestHealthCheck.mocked_requests_succeed,
+        side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
+            content=b'{ "ready": true, "reason": "service is ready" }'
+        ),
     )
     def test_health_check_chatbot_service(self, mock_get):
         cache.clear()
@@ -361,6 +364,68 @@ class TestHealthCheck(BaseTestHealthCheck):
             _, dependencies = self.assert_basic_data(r, "ok")
             for dependency in dependencies:
                 self.assertTrue(self.is_status_ok(dependency["status"], "dummy"))
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
+            content=b'{ "ready": false, "reason": "index is not ready" }'
+        ),
+    )
+    def test_health_check_chatbot_service_index_not_ready(self, mock_get):
+        cache.clear()
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=DummyCompletionsPipeline(mock_pipeline_config("dummy"))),
+        ):
+            with self.assertLogs(logger="root", level="ERROR") as log:
+                r = self.client.get(reverse("health_check"))
+                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+                _, dependencies = self.assert_basic_data(r, "error")
+                for dependency in dependencies:
+                    if dependency["name"] == "chatbot-service":
+                        self.assertTrue(dependency["status"].startswith("unavailable:"))
+                    else:
+                        self.assertTrue(self.is_status_ok(dependency["status"], "dummy"))
+
+                self.assertHealthCheckErrorInLog(
+                    log,
+                    "Exception: index is not ready",
+                    "chatbot-service",
+                    "unavailable: An error occurred",
+                )
+
+    @override_settings(CHATBOT_URL="http://localhost:8080")
+    @mock.patch(
+        "requests.get",
+        side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
+            content=b'{ "ready": false, "reason": "llm is not ready" }'
+        ),
+    )
+    def test_health_check_chatbot_service_llm_not_ready(self, mock_get):
+        cache.clear()
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=DummyCompletionsPipeline(mock_pipeline_config("dummy"))),
+        ):
+            with self.assertLogs(logger="root", level="ERROR") as log:
+                r = self.client.get(reverse("health_check"))
+                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+                _, dependencies = self.assert_basic_data(r, "error")
+                for dependency in dependencies:
+                    if dependency["name"] == "chatbot-service":
+                        self.assertTrue(dependency["status"].startswith("unavailable:"))
+                    else:
+                        self.assertTrue(self.is_status_ok(dependency["status"], "dummy"))
+
+                self.assertHealthCheckErrorInLog(
+                    log,
+                    "Exception: llm is not ready",
+                    "chatbot-service",
+                    "unavailable: An error occurred",
+                )
 
     @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
