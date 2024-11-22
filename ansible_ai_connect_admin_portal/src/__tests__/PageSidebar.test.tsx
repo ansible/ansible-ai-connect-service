@@ -30,7 +30,7 @@ describe("PageSidebar", () => {
 
     // These are really horrible checks but <PageNavigation/> doesn't have much to query against.
     // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
-    const navItemElement = container.querySelector(".pf-c-nav__link");
+    const navItemElement = container.querySelector(".pf-v5-c-nav__link");
     expect(navItemElement).not.toBeNull();
     expect(navItemElement?.getAttribute("id")).toEqual("nav-item__id");
     expect(navItemElement?.textContent).toEqual("nav-item__label");
