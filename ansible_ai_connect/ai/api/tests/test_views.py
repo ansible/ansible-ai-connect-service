@@ -65,7 +65,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaValidationFailureException,
 )
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import BaseConfig
-from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILE, ROLES
+from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILES
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     ModelTimeoutError,
     WcaBadRequest,
@@ -3460,11 +3460,11 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
         r = self.client.post(reverse("generations/role"), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
-        self.assertEqual(r.data["files"], ROLE_FILE)
+        self.assertEqual(r.data["files"], ROLE_FILES)
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
         self.assertEqual(r.data["outline"], "")
-        self.assertEqual(r.data["role"], ROLES)
+        self.assertEqual(r.data["role"], "install_nginx")
 
     def test_unauthorized(self):
         payload = {}
