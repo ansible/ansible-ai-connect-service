@@ -32,6 +32,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaHAPFilterRejectionException,
+    WcaInferenceFailureException,
     WcaInstanceDeletedException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
@@ -39,6 +40,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaNoDefaultModelIdException,
     WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
+    WcaValidationFailureException,
     process_error_count,
 )
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
@@ -47,6 +49,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaCloudflareRejection,
     WcaEmptyResponse,
     WcaHAPFilterRejection,
+    WcaInferenceFailure,
     WcaInstanceDeleted,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -54,6 +57,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaNoDefaultModelId,
     WcaRequestIdCorrelationFailure,
     WcaUserTrialExpired,
+    WcaValidationFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
@@ -199,6 +203,24 @@ class InferenceStage(PipelineElement):
                 f"{payload.suggestionId} for model {e.model_id}"
             )
             raise WcaInstanceDeletedException(cause=e)
+
+        except WcaInferenceFailure as e:
+            exception = e
+            logger.exception(
+                "WCA inference failed. Completions failed for suggestion "
+                f"{payload.suggestionId} for model {e.model_id}."
+            )
+            raise WcaInferenceFailureException(cause=e)
+
+        except WcaValidationFailure as e:
+            exception = e
+            logger.exception(
+                "WCA failed to validate response from model. Completions failed for suggestion "
+                f"{payload.suggestionId} for model {e.model_id}. "
+                f"{json.dumps(exception.json_response)}"
+            )
+            detail = exception.json_response["detail"]
+            raise WcaValidationFailureException(cause=e, detail={"reason": detail})
 
         except Exception as e:
             exception = e

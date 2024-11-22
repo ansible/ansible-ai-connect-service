@@ -99,6 +99,11 @@ class WcaInferenceFailure(WcaException):
 
 
 @dataclass
+class WcaValidationFailure(WcaException):
+    """An attempt to run a WCA inference failed."""
+
+
+@dataclass
 class WcaCodeMatchFailure(WcaException):
     """An attempt to run a WCA code match failed."""
 
