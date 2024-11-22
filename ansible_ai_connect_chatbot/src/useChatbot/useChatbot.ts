@@ -132,10 +132,14 @@ export const useChatbot = () => {
       timestamp: getTimestamp(),
       actions: {
         positive: {
-          onClick: async () => await sendFeedback(Sentiment.THUMBS_UP),
+          onClick: async () => {
+            sendFeedback(Sentiment.THUMBS_UP);
+          },
         },
         negative: {
-          onClick: async () => await sendFeedback(Sentiment.THUMBS_DOWN),
+          onClick: async () => {
+            sendFeedback(Sentiment.THUMBS_DOWN);
+          },
         },
       },
     };
