@@ -149,6 +149,16 @@ class WcaInstanceDeletedException(BaseWisdomAPIException):
     )
 
 
+class WcaInferenceFailureException(WisdomBadRequest):
+    default_code = "error__wca_inference_failure"
+    default_detail = "WCA inference failed. Completions request failed."
+
+
+class WcaValidationFailureException(WisdomBadRequest):
+    default_code = "error__wca_validation_failure"
+    default_detail = "WCA failed to validate response from model. Completions request failed."
+
+
 class WcaUserTrialExpiredException(WisdomAccessDenied):
     default_code = "permission_denied__user_trial_expired"
     default_detail = "User trial expired. Please contact your administrator."

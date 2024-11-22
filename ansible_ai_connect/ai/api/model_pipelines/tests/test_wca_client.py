@@ -46,6 +46,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaNoDefaultModelId,
     WcaRequestIdCorrelationFailure,
     WcaTokenFailure,
+    WcaValidationFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
@@ -1069,6 +1070,53 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
                     suggestion_id=DEFAULT_REQUEST_ID,
                 ),
             )
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_wca_validation_failure(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: delete virtual server with rate limit 50",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        response = MockResponse(
+            json={"detail": "ARI processing failed"},
+            status_code=422,
+            headers={"Content-Type": "application/json"},
+        )
+        model_client = WCASaaSCompletionsPipeline(self.config)
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(return_value=response)
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        with self.assertRaises(WcaValidationFailure) as e:
+            with self.assertLogs(logger="root", level="ERROR") as log:
+                model_client.invoke(
+                    CompletionsParameters.init(
+                        request=Mock(),
+                        model_input=model_input,
+                        model_id=model_id,
+                        suggestion_id=DEFAULT_REQUEST_ID,
+                    ),
+                )
+        self.assertEqual(e.exception.model_id, model_id)
+        self.assertInLog(
+            "WCA request failed with 422. Content-Type:application/json, "
+            'Content:b\'{"detail": "ARI processing failed"}\'',
+            log,
+        )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_multitask_with_task_preamble(self):

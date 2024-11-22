@@ -54,6 +54,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaCloudflareRejectionException,
     WcaEmptyResponseException,
     WcaHAPFilterRejectionException,
+    WcaInferenceFailureException,
     WcaInstanceDeletedException,
     WcaInvalidModelIdException,
     WcaKeyNotFoundException,
@@ -61,6 +62,7 @@ from ansible_ai_connect.ai.api.exceptions import (
     WcaNoDefaultModelIdException,
     WcaRequestIdCorrelationFailureException,
     WcaUserTrialExpiredException,
+    WcaValidationFailureException,
 )
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import BaseConfig
 from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILE, ROLES
@@ -941,6 +943,64 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
                     WcaInstanceDeletedException.default_detail,
                 )
                 self.assertInLog("WCA Instance has been deleted", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_inference_failed(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={},
+            status_code=HTTPStatus.NOT_FOUND,
+            headers={"Content-Type": "application/json"},
+        )
+        model_client.session.post = Mock(return_value=response)
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=model_client),
+        ):
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                r = self.client.post(reverse("completions"), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assert_error_detail(
+                    r,
+                    WcaInferenceFailureException.default_code,
+                    WcaInferenceFailureException.default_detail,
+                )
+                self.assertInLog("WCA inference failed", log)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
+    @override_settings(ENABLE_ARI_POSTPROCESS=False)
+    def test_wca_validation_failed(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+
+        model_client, model_input = self.stub_wca_client()
+        response = MockResponse(
+            json={"detail": "ARI processing failed."},
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            headers={"Content-Type": "application/json"},
+        )
+        model_client.session.post = Mock(return_value=response)
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=model_client),
+        ):
+            with self.assertLogs(logger="root", level="DEBUG") as log:
+                r = self.client.post(reverse("completions"), model_input)
+                self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+                self.assert_error_detail(
+                    r,
+                    WcaValidationFailureException.default_code,
+                    WcaValidationFailureException.default_detail,
+                )
+                self.assertInLog("WCA failed to validate response from model", log)
 
 
 @modify_settings()

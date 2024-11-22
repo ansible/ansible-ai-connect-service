@@ -27,6 +27,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaInvalidModelId,
     WcaTokenFailureApiKeyError,
     WcaUserTrialExpired,
+    WcaValidationFailure,
 )
 
 T = TypeVar("T")
@@ -199,6 +200,18 @@ class ResponseStatusCode404(Check[Context]):
             raise WcaInferenceFailure(model_id=context.model_id)
 
 
+class ResponseStatusCode422WCAValidationFailure(Check[Context]):
+    def check(self, context: Context):
+        if context.result.status_code == 422:
+            payload_json = context.result.json()
+            if isinstance(payload_json, dict):
+                payload_detail = payload_json.get("detail")
+                if payload_detail and "ari processing failed" in payload_detail.lower():
+                    raise WcaValidationFailure(
+                        model_id=context.model_id, json_response=context.result.json()
+                    )
+
+
 class InferenceResponseChecks(Checks[Context]):
 
     def __init__(self):
@@ -215,6 +228,7 @@ class InferenceResponseChecks(Checks[Context]):
                 ResponseStatusCode404WCABadRequestModelId(),
                 ResponseStatusCode404WCAInstanceDeleted(),
                 ResponseStatusCode404(),
+                ResponseStatusCode422WCAValidationFailure(),
             ]
         )
 
