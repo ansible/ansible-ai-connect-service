@@ -19,8 +19,7 @@
     "i18next-http-backend": "^2.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-i18next": "^13.1.2",
-    "react-router-dom": "^6.15.0"
+    "react-i18next": "^13.1.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.4",
@@ -82,7 +81,9 @@
     "webpack-dev-server": "^4.6.0",
     "webpack-manifest-plugin": "^4.0.2",
     "webpack-mock-server": "^1.0.18",
-    "workbox-webpack-plugin": "^6.4.1"
+    "workbox-webpack-plugin": "^6.4.1",
+    "react-router-dom": "^6.28.0",
+    "identity-obj-proxy": "^3.0.0"
   },
   "scripts": {
     "start": "node scripts/start.js",
@@ -145,9 +146,8 @@
     "moduleNameMapper": {
       "^react-native$": "react-native-web",
       "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
-      "react-i18next": "<rootDir>/__mocks__/react-i18next.ts"
-    },
-    "module.exports": {
+      "react-i18next": "<rootDir>/__mocks__/react-i18next.ts",
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
       "monaco-editor": "<rootDir>/__mocks__/monaco-editor.ts",
       "monaco-yaml": "<rootDir>/__mocks__/monaco-yaml.ts"
     },

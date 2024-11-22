@@ -32,7 +32,7 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
       id={id}
       onSelect={onSelect}
       toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-        <MenuToggle ref={toggleRef} onClick={onToggle} isExpanded={isOpen}>
+        <MenuToggle ref={toggleRef} onClick={onToggle} isExpanded={isOpen} data-testid="page-masthead-dropdown__button">
           <Flex
             alignItems={{ default: "alignItemsCenter" }}
             flexWrap={{ default: "nowrap" }}
@@ -46,7 +46,7 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
       isOpen={open}
       isPlain
       data-cy={id}
-      data-testid="page-masthead-dropdown"
+      data-testid="page-masthead-dropdown__button"
     >
       <DropdownList>
         <DropdownItem>{_children}</DropdownItem>

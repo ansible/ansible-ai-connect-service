@@ -16,7 +16,7 @@ describe("App", () => {
         adminDashboardUrl={"http://admin_dashboard-url/"}
       />,
     );
-    const accountMenu = await screen.findByTestId("page-masthead-dropdown");
+    const accountMenu = await screen.findByTestId("page-masthead-dropdown__button");
     expect(accountMenu).toBeInTheDocument();
     expect(accountMenu).toHaveTextContent("Batman");
   });
