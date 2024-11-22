@@ -97,7 +97,12 @@ ROLE_FILES = [
     },
 ]
 
-OUTLINE = """
+ROLE_OUTLINE = """
+1. Install the Nginx packages
+2. Start the service
+"""
+
+PLAYBOOK_OUTLINE = """
 1. First, ensure that your RHEL 9 system is up-to-date.
 2. Next, you install the Nginx package using the package manager.
 3. After installation, start the ginx service.
@@ -161,8 +166,7 @@ class DummyPlaybookGenerationPipeline(
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         create_outline = params.create_outline
-        if create_outline:
-            return PLAYBOOK, OUTLINE, []
+        return PLAYBOOK, PLAYBOOK_OUTLINE.strip() if create_outline else "", []
         return PLAYBOOK, "", []
 
     def self_test(self):
@@ -176,8 +180,9 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[Dum
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        print(params)
         create_outline = params.create_outline
-        return "install_nginx", ROLE_FILES, OUTLINE if create_outline else ""
+        return "install_nginx", ROLE_FILES, ROLE_OUTLINE.strip() if create_outline else ""
 
     def self_test(self):
         raise NotImplementedError
