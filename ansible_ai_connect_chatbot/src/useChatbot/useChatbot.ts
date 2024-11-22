@@ -10,7 +10,12 @@ import type {
 import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
-import { API_TIMEOUT, Sentiment, TIMEOUT_MSG } from "../Constants";
+import {
+  API_TIMEOUT,
+  GITHUB_NEW_ISSUE_URL,
+  Sentiment,
+  TIMEOUT_MSG,
+} from "../Constants";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -56,6 +61,28 @@ export const timeoutMessage = (): MessageProps => ({
   name: botName,
   avatar: logo,
   timestamp: getTimestamp(),
+});
+
+export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
+  role: "bot",
+  content:
+    "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_).",
+  name: botName,
+  avatar: logo,
+  timestamp: getTimestamp(),
+  quickResponses: [
+    {
+      content: "Sure!",
+      id: "response",
+      onClick: () =>
+        window
+          .open(
+            `${GITHUB_NEW_ISSUE_URL}&conversation_id=${f.response.conversation_id}&prompt=${f.prompt}&response=${f.response.response}`,
+            "_blank",
+          )
+          ?.focus(),
+    },
+  ],
 });
 
 type AlertMessage = {
@@ -123,7 +150,15 @@ export const useChatbot = () => {
           "X-CSRFToken": csrfToken,
         },
       });
-      if (resp.status !== 200) {
+      if (resp.status === 200) {
+        if (feedbackRequest.sentiment === Sentiment.THUMBS_DOWN) {
+          const newBotMessage = {
+            referenced_documents: [],
+            ...feedbackMessage(feedbackRequest),
+          };
+          addMessage(newBotMessage);
+        }
+      } else {
         setAlertMessage({
           title: "Error",
           message: `Feedback API returned status_code ${resp.status}`,
