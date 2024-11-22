@@ -11,7 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from dataclasses import dataclass
 from typing import Optional
 
 from rest_framework import serializers
@@ -31,7 +30,6 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # DUMMY_MODEL_RESPONSE_BODY
 
 
-@dataclass
 class DummyConfiguration(BaseConfig):
 
     def __init__(
@@ -47,10 +45,6 @@ class DummyConfiguration(BaseConfig):
         self.latency_use_jitter = latency_use_jitter
         self.latency_max_msec = latency_max_msec
         self.body = body
-
-    latency_use_jitter: bool
-    latency_max_msec: int
-    body: str
 
 
 @Register(api_type="dummy")

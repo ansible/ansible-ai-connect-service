@@ -48,11 +48,12 @@ class ConfigurationSerializer(serializers.Serializer):
         from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY
 
         pipelines = list(filter(lambda p: issubclass(p, MetaData), REGISTRY_ENTRY.keys()))
-        pipeline_fields: dict = {}
-        for pipeline in pipelines:
-            pipeline_fields[pipeline.__name__] = PipelineConfigurationSerializer(
+        pipeline_fields: dict = {
+            p.__name__: PipelineConfigurationSerializer(
                 required=False, default={"provider": "nop", "config": {}}
             )
+            for p in pipelines
+        }
         self.pipeline_fields = pipeline_fields
 
     def get_fields(self):

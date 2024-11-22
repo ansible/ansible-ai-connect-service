@@ -45,9 +45,10 @@ REGISTRY_ENTRY = dict.fromkeys(
         Serializer,
     ]
 )
-REGISTRY = {}
-for model_mesh_api_type in get_args(t_model_mesh_api_type):
-    REGISTRY[model_mesh_api_type] = deepcopy(REGISTRY_ENTRY)
+REGISTRY = {
+    model_mesh_api_type: deepcopy(REGISTRY_ENTRY)
+    for model_mesh_api_type in get_args(t_model_mesh_api_type)
+}
 
 
 class Register:

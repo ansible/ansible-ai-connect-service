@@ -671,6 +671,16 @@ elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
             "username": ANSIBLE_WCA_USERNAME,
         },
     }
+elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
+    ANSIBLE_AI_WCA_CONFIG = {
+        "provider": "dummy",
+        "config": {
+            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
+            "body": DUMMY_MODEL_RESPONSE_BODY,
+            "latency_max_msec": DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC,
+            "latency_use_jitter": DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER,
+        },
+    }
 else:
     ANSIBLE_AI_WCA_CONFIG = {
         "provider": "wca-dummy",
@@ -679,14 +689,13 @@ else:
         },
     }
 
+
 # Lazy import to avoid circular dependencies
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  # noqa
 
-pipelines = list(filter(lambda p: issubclass(p, MetaData), REGISTRY_ENTRY.keys()))
-pipeline_config: dict = {}
-for pipeline in pipelines:
-    pipeline_config[pipeline.__name__] = ANSIBLE_AI_WCA_CONFIG
+pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
+pipeline_config: dict = {k.__name__: ANSIBLE_AI_WCA_CONFIG for k in pipelines}
 
 ANSIBLE_AI_MODEL_MESH_CONFIG = json.dumps(pipeline_config)
 # ==========================================
