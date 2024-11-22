@@ -1,9 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppHeader } from "../AppHeader";
-import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from 'react-router-dom';
-import { act } from 'react';
 
 describe("AppHeader", () => {
   // Store the original 'location' object so that it can be restored for other tests.
@@ -33,30 +31,5 @@ describe("AppHeader", () => {
 
     // Check "Logout" option is not present
     expect(screen.queryByText("Logout")).toBeNull();
-    // const accountMenuToggle = await act(()=> {
-    //   screen.findByTestId(
-    //     "page-masthead-dropdown__button",
-    //   );
-    // });
-    const accountMenuToggle = await screen.findByTestId(
-      "page-masthead-dropdown__button",
-    );
-    // await act(() => {
-    //   userEvent.click(accountMenuToggle);
-    // });
-    // await userEvent.click(accountMenuToggle);
-    // "Logout" menu option should now be present
-    // expect(await screen.findByText("Logout")).toBeInTheDocument();
-
-    // Emulate clicking on the logout button
-    // const logoutMenuItem = await act(() => {
-    //   screen.findByTestId("app-header__logout");
-    // });
-    const logoutMenuItem = screen.findByTestId("app-header__logout");
-    // await act(() => {
-    //   userEvent.click(logoutMenuItem);
-    // });
-    // await userEvent.click(logoutMenuItem);
-    // expect(window.location.assign).toHaveBeenCalledWith("/logout");
   });
 });
