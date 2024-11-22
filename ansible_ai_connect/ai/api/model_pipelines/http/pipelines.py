@@ -18,15 +18,25 @@ import logging
 import requests
 from health_check.exceptions import ServiceUnavailable
 
-from ansible_ai_connect.ai.api.exceptions import ModelTimeoutError
+from ansible_ai_connect.ai.api.exceptions import (
+    ChatbotForbiddenException,
+    ChatbotInternalServerException,
+    ChatbotPromptTooLongException,
+    ChatbotUnauthorizedException,
+    ChatbotValidationException,
+    ModelTimeoutError,
+)
 from ansible_ai_connect.ai.api.formatter import get_task_names_from_prompt
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ChatBotParameters,
+    ChatBotResponse,
     CompletionsParameters,
     CompletionsResponse,
     MetaData,
+    ModelPipelineChatBot,
     ModelPipelineCompletions,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
@@ -106,4 +116,56 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
         return summary
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+        raise NotImplementedError
+
+
+@Register(api_type="http")
+class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration]):
+
+    def __init__(self, config: HttpConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+        query = params.query
+        conversation_id = params.conversation_id
+        provider = params.provider
+        model_id = params.model_id
+
+        data = {
+            "query": query,
+            "model": model_id,
+            "provider": provider,
+        }
+        if conversation_id:
+            data["conversation_id"] = str(conversation_id)
+
+        response = requests.post(
+            self.config.inference_url + "/v1/query",
+            headers=self.headers,
+            json=data,
+            timeout=self.timeout(1),
+            verify=self.config.verify_ssl,
+        )
+
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            return data
+
+        elif response.status_code == 401:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotUnauthorizedException(detail=detail)
+        elif response.status_code == 403:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotForbiddenException(detail=detail)
+        elif response.status_code == 413:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotPromptTooLongException(detail=detail)
+        elif response.status_code == 422:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotValidationException(detail=detail)
+        else:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotInternalServerException(detail=detail)
+
+    def self_test(self):
         raise NotImplementedError

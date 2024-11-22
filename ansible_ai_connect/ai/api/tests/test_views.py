@@ -78,6 +78,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaNoDefaultModelId,
     WcaUserTrialExpired,
 )
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     CompletionsParameters,
     CompletionsResponse,
@@ -4059,7 +4060,6 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         expected_log_message=None,
         user=None,
     ):
-        mocked_client = Mock()
         if user is None:
             user = self.user
         self.client.force_authenticate(user=user)
@@ -4067,7 +4067,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=mocked_client),
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
@@ -4160,13 +4160,12 @@ class TestChatView(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry(self):
-        mocked_client = Mock()
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=mocked_client),
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
@@ -4194,13 +4193,12 @@ class TestChatView(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_error(self):
-        mocked_client = Mock()
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=mocked_client),
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
@@ -4223,13 +4221,12 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         payload = {
             "query": q,
         }
-        mocked_client = Mock()
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=mocked_client),
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
@@ -4247,13 +4244,12 @@ class TestChatView(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
-        mocked_client = Mock()
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=mocked_client),
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):

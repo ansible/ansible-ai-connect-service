@@ -23,6 +23,7 @@ from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     MetaData,
+    ModelPipelineChatBot,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
@@ -41,6 +42,7 @@ REGISTRY_ENTRY = dict.fromkeys(
         ModelPipelinePlaybookGeneration,
         ModelPipelineRoleGeneration,
         ModelPipelinePlaybookExplanation,
+        ModelPipelineChatBot,
         PipelineConfiguration,
         Serializer,
     ]
