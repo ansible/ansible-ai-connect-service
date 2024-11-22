@@ -74,14 +74,27 @@ PLAYBOOK = """
 ```
 """
 
-ROLES = "TMP_DUMP_ROLES"
-
-ROLE_FILE = [
+ROLE_FILES = [
+    {
+        "path": "tasks/main.yml",
+        "file_type": "task",
+        "content": "- name: Install the Nginx packages\n"
+        "  ansible.builtin.package:\n"
+        '    name: "{{ install_nginx_packages }}"\n'
+        "    state: present\n"
+        "  become: true\n"
+        "- name: Start the service\n"
+        "  ansible.builtin.service:\n"
+        "    name: nginx\n"
+        "    enabled: true\n"
+        "    state: started\n"
+        "    become: true",
+    },
     {
         "path": "defaults/main.yml",
         "file_type": "default",
         "content": "install_nginx_packages:\n  - nginx",
-    }
+    },
 ]
 
 OUTLINE = """
@@ -164,9 +177,7 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[Dum
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         create_outline = params.create_outline
-        if create_outline:
-            return ROLES, ROLE_FILE, OUTLINE
-        return ROLES, ROLE_FILE, ""
+        return "install_nginx", ROLE_FILES, OUTLINE if create_outline else ""
 
     def self_test(self):
         raise NotImplementedError
