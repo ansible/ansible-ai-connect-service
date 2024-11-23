@@ -11,6 +11,10 @@
   inset: 0;
   content: "";
   background-color: var(--pf-t--global--background--color--floating--default);
-  opacity: 0.8;
+  opacity: 0;
   box-shadow: var(--pf-t--global--box-shadow--sm);
+}
+
+.action-button-clicked {
+  background-color: #80808040 !important;
 }

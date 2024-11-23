@@ -21,3 +21,8 @@ export enum Sentiment {
   THUMBS_UP = 0,
   THUMBS_DOWN = 1,
 }
+
+export const GITHUB_NEW_ISSUE_URL =
+  "https://github.com/ansible/ansible-lightspeed-va-feedback/issues/new" +
+  "?assignees=korenaren&labels=bug%2Ctriage&projects=&template=chatbot_feedback.yml" +
+  "&title=Chatbot+response+can+be+improved";

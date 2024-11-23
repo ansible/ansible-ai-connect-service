@@ -10,7 +10,12 @@ import type {
 import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
-import { API_TIMEOUT, Sentiment, TIMEOUT_MSG } from "../Constants";
+import {
+  API_TIMEOUT,
+  GITHUB_NEW_ISSUE_URL,
+  Sentiment,
+  TIMEOUT_MSG,
+} from "../Constants";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -58,6 +63,33 @@ export const timeoutMessage = (): MessageProps => ({
   timestamp: getTimestamp(),
 });
 
+export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
+  role: "bot",
+  content:
+    f.sentiment === Sentiment.THUMBS_UP
+      ? "Thank you for your feedback!"
+      : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_).",
+  name: botName,
+  avatar: logo,
+  timestamp: getTimestamp(),
+  quickResponses:
+    f.sentiment === Sentiment.THUMBS_UP
+      ? []
+      : [
+          {
+            content: "Sure!",
+            id: "response",
+            onClick: () =>
+              window
+                .open(
+                  `${GITHUB_NEW_ISSUE_URL}&conversation_id=${f.response.conversation_id}&prompt=${f.query}&response=${f.response.response}`,
+                  "_blank",
+                )
+                ?.focus(),
+          },
+        ],
+});
+
 type AlertMessage = {
   title: string;
   message: string;
@@ -97,25 +129,37 @@ export const useChatbot = () => {
         handleFeedback({ query, response, sentiment });
       }
     };
-    return {
+    const message: MessageProps = {
       role: "bot",
       content: typeof response === "object" ? response.response : response,
       name: botName,
       avatar: logo,
       timestamp: getTimestamp(),
-      actions: {
-        positive: {
-          onClick: () => {
-            sendFeedback(Sentiment.THUMBS_UP);
-          },
+    };
+
+    message.actions = {
+      positive: {
+        onClick: () => {
+          sendFeedback(Sentiment.THUMBS_UP);
+          if (message.actions) {
+            message.actions.positive.isDisabled = true;
+            message.actions.negative.isDisabled = true;
+            message.actions.positive.className = "action-button-clicked";
+          }
         },
-        negative: {
-          onClick: () => {
-            sendFeedback(Sentiment.THUMBS_DOWN);
-          },
+      },
+      negative: {
+        onClick: () => {
+          sendFeedback(Sentiment.THUMBS_DOWN);
+          if (message.actions) {
+            message.actions.positive.isDisabled = true;
+            message.actions.negative.isDisabled = true;
+            message.actions.negative.className = "action-button-clicked";
+          }
         },
       },
     };
+    return message;
   };
 
   const handleFeedback = async (feedbackRequest: ChatFeedback) => {
@@ -133,7 +177,13 @@ export const useChatbot = () => {
           },
         },
       );
-      if (resp.status !== 200) {
+      if (resp.status === 200) {
+        const newBotMessage = {
+          referenced_documents: [],
+          ...feedbackMessage(feedbackRequest),
+        };
+        addMessage(newBotMessage);
+      } else {
         setAlertMessage({
           title: "Error",
           message: `Feedback API returned status_code ${resp.status}`,
@@ -196,10 +246,8 @@ export const useChatbot = () => {
         if (!conversationId) {
           setConversationId(chatResponse.conversation_id);
         }
-        const newBotMessage = {
-          referenced_documents,
-          ...botMessage(chatResponse, message),
-        };
+        const newBotMessage: any = botMessage(chatResponse, message);
+        newBotMessage.referenced_documents = referenced_documents;
         addMessage(newBotMessage);
       } else {
         setAlertMessage({

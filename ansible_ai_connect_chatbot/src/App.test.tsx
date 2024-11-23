@@ -122,6 +122,27 @@ describe("App tests", () => {
     ).not.toBeVisible();
   });
 
+  it("ThumbsDown icon test", async () => {
+    mockAxios(200);
+    renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
+
+    const thumbsDownIcon = screen.getByRole("button", { name: "Bad response" });
+    await act(async () => fireEvent.click(thumbsDownIcon));
+
+    const sureButton = screen.getByText("Sure!");
+    await act(async () => fireEvent.click(sureButton));
+  });
+
   it("Chat service returns 500", async () => {
     mockAxios(500);
     const view = renderApp();
