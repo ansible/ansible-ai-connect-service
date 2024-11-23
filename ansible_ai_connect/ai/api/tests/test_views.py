@@ -28,6 +28,7 @@ from unittest.mock import Mock, patch
 import requests
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.test import modify_settings, override_settings
 from django.urls import reverse
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -4046,14 +4047,22 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         "requests.post",
         side_effect=mocked_requests_post,
     )
+    @override_settings(CHATBOT_URL="")
     def query_without_chat_config(self, payload, mock_post):
         return self.client.post(reverse("chat"), payload, format="json")
 
     def assert_test(
-        self, payload, expected_status_code=200, expected_exception=None, expected_log_message=None
+        self,
+        payload,
+        expected_status_code=200,
+        expected_exception=None,
+        expected_log_message=None,
+        user=None,
     ):
         mocked_client = Mock()
-        self.client.force_authenticate(user=self.user)
+        if user is None:
+            user = self.user
+        self.client.force_authenticate(user=user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
@@ -4062,7 +4071,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
-            self.client.force_authenticate(user=self.user)
+            self.client.force_authenticate(user=user)
 
             if expected_exception == ChatbotNotEnabledException:
                 r = self.query_without_chat_config(payload)
@@ -4260,3 +4269,25 @@ class TestChatView(WisdomServiceAPITestCaseBase):
                 segment_events[0]["properties"]["chat_prompt"],
                 "Hello ansible@ansible.com",
             )
+
+    def test_chat_rate_limit(self):
+        # Call chat API five times using self.user
+        for i in range(5):
+            self.assert_test(TestChatView.VALID_PAYLOAD)
+        try:
+            username = "u" + "".join(random.choices(string.digits, k=5))
+            password = "secret"
+            email = "user2@example.com"
+            self.user2 = get_user_model().objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+            )
+            # Call chart API five times using self.user2
+            for i in range(5):
+                self.assert_test(TestChatView.VALID_PAYLOAD, user=self.user2)
+            # The next chat API call should be the 11th from two users and should receive a 429.
+            self.assert_test(TestChatView.VALID_PAYLOAD, expected_status_code=429, user=self.user2)
+        finally:
+            if self.user2:
+                self.user2.delete()

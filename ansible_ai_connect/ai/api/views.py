@@ -103,6 +103,7 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
+from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_pipelines.exceptions import ModelTimeoutError
@@ -1117,11 +1118,15 @@ class Chat(APIView):
     Send a message to the backend chatbot service and get a reply.
     """
 
+    class ChatEndpointThrottle(EndpointRateThrottle):
+        scope = "chat"
+
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
     ]
     required_scopes = ["read", "write"]
+    throttle_classes = [ChatEndpointThrottle]
 
     def __init__(self):
         self.chatbot_enabled = (
