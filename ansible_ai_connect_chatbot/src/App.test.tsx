@@ -28,6 +28,8 @@ describe("App tests", () => {
     );
   };
 
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
   const createError = (message: string, status: number): AxiosError => {
     const request = { path: "/chat" };
     const headers = new AxiosHeaders({
@@ -209,6 +211,7 @@ describe("App tests", () => {
     await act(async () => userEvent.type(textArea, "Hello"));
     const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
+    await delay(3100);
     expect(
       screen.getByText("Chatbot service is busy with too many requests. ", {
         exact: false,

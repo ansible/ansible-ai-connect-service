@@ -97,6 +97,8 @@ export const timeoutMessage = (): MessageProps => fixedMessage(TIMEOUT_MSG);
 export const tooManyRequestsMessage = (): MessageProps =>
   fixedMessage(TOO_MANY_REQUESTS_MSG);
 
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 type AlertMessage = {
   title: string;
   message: string;
@@ -271,6 +273,9 @@ export const useChatbot = () => {
         };
         addMessage(newBotMessage);
       } else if (isTooManyRequestsError(e)) {
+        // Insert a 3-sec delay before showing the "Too Many Request" message
+        // for reducing the number of chat requests when the server is busy.
+        await delay(3000);
         const newBotMessage = {
           referenced_documents: [],
           ...tooManyRequestsMessage(),
