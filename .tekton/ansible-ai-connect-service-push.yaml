@@ -420,7 +420,7 @@ spec:
         - "false"
     - name: sast-snyk-check
       runAfter:
-      - build-container
+      - clone-repository
       taskRef:
         params:
         - name: name
@@ -438,11 +438,6 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
-      params:
-      - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
-      - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
     - name: clamav-scan
       params:
       - name: image-digest
