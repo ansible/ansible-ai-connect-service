@@ -11,22 +11,19 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 
-import Chatbot, {
-  ChatbotDisplayMode,
-} from "@patternfly/virtual-assistant/dist/dynamic/Chatbot";
-import ChatbotContent from "@patternfly/virtual-assistant/dist/dynamic/ChatbotContent";
-import ChatbotWelcomePrompt from "@patternfly/virtual-assistant/dist/dynamic/ChatbotWelcomePrompt";
+import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
+import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
   ChatbotFootnote,
-} from "@patternfly/virtual-assistant/dist/dynamic/ChatbotFooter";
-import MessageBar from "@patternfly/virtual-assistant/dist/dynamic/MessageBar";
-import MessageBox from "@patternfly/virtual-assistant/dist/dynamic/MessageBox";
-import Message from "@patternfly/virtual-assistant/dist/dynamic/Message";
+} from "@patternfly/chatbot/dist/dynamic/ChatbotFooter";
+import MessageBar from "@patternfly/chatbot/dist/dynamic/MessageBar";
+import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
+import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
   ChatbotHeaderTitle,
   ChatbotHeaderActions,
   ChatbotHeaderOptionsDropdown,
-} from "@patternfly/virtual-assistant/dist/dynamic/ChatbotHeader";
+} from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
 import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
 import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
@@ -45,12 +42,14 @@ import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments"
 
 import type { ExtendedMessage } from "../types/Message";
 import {
+  Chatbot,
   ChatbotAlert,
+  ChatbotDisplayMode,
   ChatbotHeaderMain,
   ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   FileDropZone,
-} from "@patternfly/virtual-assistant";
+} from "@patternfly/chatbot";
 import {
   FOOTNOTE_DESCRIPTION,
   FOOTNOTE_LABEL,
@@ -192,7 +191,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   return (
     <>
       <ChatbotToggle
-        toolTipLabel="Chatbot"
+        tooltipLabel="Chatbot"
         isChatbotVisible={chatbotVisible}
         onToggleChatbot={() => setChatbotVisible(!chatbotVisible)}
       />

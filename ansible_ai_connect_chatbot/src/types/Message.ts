@@ -1,4 +1,4 @@
-import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
+import { MessageProps } from "@patternfly/chatbot";
 import { Sentiment } from "../Constants";
 
 // Types for OLS (OpenShift lightspeed-service) POST /v1/query API
