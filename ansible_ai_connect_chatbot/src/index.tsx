@@ -9,7 +9,7 @@ import "@patternfly/react-core/dist/styles/base.css";
 // import '@patternfly/patternfly/patternfly-addons.css';
 
 // Add your extension CSS below
-import "@patternfly/virtual-assistant/dist/css/main.css";
+import "@patternfly/chatbot/dist/css/main.css";
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );

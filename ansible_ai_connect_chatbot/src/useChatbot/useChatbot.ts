@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
-import type { MessageProps } from "@patternfly/virtual-assistant/dist/dynamic/Message";
+import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   ExtendedMessage,
   ChatRequest,
