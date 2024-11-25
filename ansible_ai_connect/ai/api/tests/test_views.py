@@ -4283,6 +4283,8 @@ class TestChatView(WisdomServiceAPITestCaseBase):
                 email=email,
                 password=password,
             )
+            (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+            self.user2.organization = org
             # Call chart API five times using self.user2
             for i in range(5):
                 self.assert_test(TestChatView.VALID_PAYLOAD, user=self.user2)
