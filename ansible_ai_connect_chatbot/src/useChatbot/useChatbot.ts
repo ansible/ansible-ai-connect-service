@@ -15,6 +15,7 @@ import {
   GITHUB_NEW_ISSUE_URL,
   Sentiment,
   TIMEOUT_MSG,
+  TOO_MANY_REQUESTS_MSG,
 } from "../Constants";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
@@ -52,12 +53,14 @@ export const inDebugMode = () => {
 };
 
 const isTimeoutError = (e: any) =>
-  e?.name === "AxiosError" &&
-  e?.message === `timeout of ${API_TIMEOUT}ms exceeded`;
+  axios.isAxiosError(e) && e.message === `timeout of ${API_TIMEOUT}ms exceeded`;
 
-export const timeoutMessage = (): MessageProps => ({
+const isTooManyRequestsError = (e: any) =>
+  axios.isAxiosError(e) && e.response?.status === 429;
+
+export const fixedMessage = (content: string): MessageProps => ({
   role: "bot",
-  content: TIMEOUT_MSG,
+  content,
   name: botName,
   avatar: logo,
   timestamp: getTimestamp(),
@@ -89,6 +92,12 @@ export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
           },
         ],
 });
+
+export const timeoutMessage = (): MessageProps => fixedMessage(TIMEOUT_MSG);
+export const tooManyRequestsMessage = (): MessageProps =>
+  fixedMessage(TOO_MANY_REQUESTS_MSG);
+
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 type AlertMessage = {
   title: string;
@@ -261,6 +270,15 @@ export const useChatbot = () => {
         const newBotMessage = {
           referenced_documents: [],
           ...timeoutMessage(),
+        };
+        addMessage(newBotMessage);
+      } else if (isTooManyRequestsError(e)) {
+        // Insert a 3-sec delay before showing the "Too Many Request" message
+        // for reducing the number of chat requests when the server is busy.
+        await delay(3000);
+        const newBotMessage = {
+          referenced_documents: [],
+          ...tooManyRequestsMessage(),
         };
         addMessage(newBotMessage);
       } else {

@@ -83,3 +83,26 @@ class GroupSpecificThrottle(UserRateThrottle):
             86400: "day",
         }[duration]
         return f"{num_requests}/{duration_unit}"
+
+
+class EndpointRateThrottle(GroupSpecificThrottle):
+    """
+    Rate limit on the total number of calls from authenticated users. For test
+    and unauthenticated users, this works in the same way as its base class,
+    GroupSpecificThrottle
+    """
+
+    def get_scope(self, request, view):
+        scope = super().get_scope(request, view)
+        return scope if scope != "user" else self.scope
+
+    def get_cache_key(self, request, view):
+        # For test and unauthenticated users, return the same cache key as
+        # the one GroupSpecificThrottle provides.
+        scope = super().get_scope(request, view)
+        if scope != "user" or not request.user.is_authenticated:
+            return super().get_cache_key(request, view)
+
+        # Return the same cache key for all authenticated users.
+        ident = "user"
+        return self.cache_format % {"scope": self.scope, "ident": ident}

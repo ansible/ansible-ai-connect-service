@@ -6,6 +6,10 @@ export const TIMEOUT_MSG =
   "_Chatbot service is taking too long to respond to your query. " +
   "Try to submit a different query or try again later._";
 
+/* Too many request message */
+export const TOO_MANY_REQUESTS_MSG =
+  "_Chatbot service is busy with too many requests. Please try again later._";
+
 /* Footnote label */
 export const FOOTNOTE_LABEL = "Lightspeed uses AI. Check for mistakes.";
 

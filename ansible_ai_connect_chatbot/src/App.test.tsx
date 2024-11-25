@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import userEvent from "@testing-library/user-event";
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosHeaders } from "axios";
 
 describe("App tests", () => {
   const renderApp = (debug = false) => {
@@ -27,12 +27,46 @@ describe("App tests", () => {
       },
     );
   };
+
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  const createError = (message: string, status: number): AxiosError => {
+    const request = { path: "/chat" };
+    const headers = new AxiosHeaders({
+      "Content-Type": "application/json",
+    });
+    const config = {
+      url: "http://localhost:8000",
+      headers,
+    };
+    const code = "SOME_ERR";
+
+    const error = new AxiosError(message, code, config, request);
+    if (status > 0) {
+      const response = {
+        data: {},
+        status,
+        statusText: "",
+        config,
+        headers,
+      };
+      error.response = response;
+    }
+    return error;
+  };
+
   const mockAxios = (status: number, reject = false, timeout = false) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
       if (timeout) {
         spy.mockImplementationOnce(() =>
           Promise.reject(new AxiosError("timeout of 28000ms exceeded")),
+        );
+      } else if (status === 429) {
+        spy.mockImplementationOnce(() =>
+          Promise.reject(
+            createError("Request failed with status code 429", 429),
+          ),
         );
       } else {
         spy.mockImplementationOnce(() =>
@@ -167,6 +201,21 @@ describe("App tests", () => {
         "Chatbot service is taking too long to respond to your query. ",
         { exact: false },
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("Chat service returns 429 Too Many Requests error", async () => {
+    mockAxios(429, true);
+    renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    await delay(3100);
+    expect(
+      screen.getByText("Chatbot service is busy with too many requests. ", {
+        exact: false,
+      }),
     ).toBeInTheDocument();
   });
 
