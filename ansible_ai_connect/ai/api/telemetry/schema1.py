@@ -16,9 +16,12 @@
 import logging
 import platform
 import time
+from string import Template
 
+from ansible_anonymizer import anonymizer
 from attr import Factory, asdict, field
 from attrs import define, validators
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 from yaml.error import MarkedYAMLError
@@ -28,6 +31,10 @@ from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
+
+
+def _anonymize_struct(value):
+    return anonymizer.anonymize_struct(value, value_template=Template("{{ _${variable_name}_ }}"))
 
 
 @define
@@ -151,3 +158,51 @@ class ExplainPlaybookEvent(Schema1Event):
     event_name: str = "explainPlaybook"
     playbook_length: int = field(validator=validators.instance_of(int), default=0)
     explanationId: str = field(validator=validators.instance_of(str), converter=str, default="")
+
+
+@define
+class ChatBotResponseDocsReferences:
+    docs_url: str = field(validator=validators.instance_of(str), converter=str, default="")
+    title: str = field(validator=validators.instance_of(str), converter=str, default="")
+
+
+@define
+class ChatBotBaseEvent:
+    chat_prompt: str = field(validator=validators.instance_of(str), converter=str, default="")
+    chat_response: str = field(validator=validators.instance_of(str), converter=str, default="")
+    chat_truncated: bool = field(
+        validator=validators.instance_of(bool), converter=bool, default=False
+    )
+    chat_referenced_documents: list[ChatBotResponseDocsReferences] = field(factory=list)
+    conversation_id: str = field(validator=validators.instance_of(str), converter=str, default="")
+    provider_id: str = field(
+        validator=validators.instance_of(str),
+        converter=str,
+        default=settings.CHATBOT_DEFAULT_PROVIDER,
+    )
+    modelName: str = field(
+        validator=validators.instance_of(str), converter=str, default=settings.CHATBOT_DEFAULT_MODEL
+    )
+    rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=-1)
+    timestamp: str = field(
+        default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
+    )
+
+    def __attrs_post_init__(self):
+        self.chat_prompt = _anonymize_struct(self.chat_prompt)
+        self.chat_response = _anonymize_struct(self.chat_response)
+
+
+@define
+class ChatBotFeedbackEvent(ChatBotBaseEvent):
+    sentiment: int = field(
+        validator=[validators.instance_of(int), validators.in_([0, 1])], converter=int, default=0
+    )
+
+
+@define
+class ChatBotOperationalEvent(ChatBotBaseEvent):
+    req_duration: float = field(
+        validator=[validators.instance_of(float)], converter=float, default=0
+    )
+    exception: str = field(validator=validators.instance_of(str), converter=str, default="")

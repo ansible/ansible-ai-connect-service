@@ -5,14 +5,14 @@ repos:
   - id: isort
     name: isort (python)
 - repo: https://github.com/ambv/black
-  rev: 24.8.0
+  rev: 24.10.0
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
     language_version: python3
     require_serial: true
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
   - id: trailing-whitespace
     language_version: python3
@@ -29,7 +29,7 @@ repos:
     args: [--config=.flake8]
     language_version: python3
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.17.0
+  rev: v3.19.0
   hooks:
   - id: pyupgrade
     language_version: python3

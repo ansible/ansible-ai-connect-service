@@ -1597,6 +1597,12 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
 @modify_settings()
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
 class TestFeedbackView(WisdomServiceAPITestCaseBase):
+
+    def setUp(self):
+        super().setUp()
+        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        self.user.organization = org
+
     def test_feedback_full_payload(self):
         payload = {
             "inlineSuggestion": {
@@ -1736,7 +1742,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 r = self.client.post(reverse("feedback"), payload, format="json")
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertInLog("Failed to retrieve Model Name for Feedback.", log)
-                self.assertInLog("Org ID: None", log)
+                self.assertInLog("Org ID: 123", log)
 
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
@@ -1945,6 +1951,57 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             properties = segment_events[0]["properties"]
             self.assertEqual(properties["action"], 3)
+
+    def test_feedback_chatbot(self):
+        payload = {
+            "chatFeedback": {
+                "query": "Hello chatbot",
+                "response": {
+                    "response": "Hello to you",
+                    "conversation_id": TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID[
+                        "conversation_id"
+                    ],
+                    "truncated": False,
+                    "referenced_documents": [],
+                },
+                "sentiment": "1",
+            }
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("feedback"), payload, format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertTrue(len(segment_events) > 0)
+            self.assertEqual(
+                segment_events[0]["properties"]["rh_user_org_id"],
+                123,
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                "Hello chatbot",
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_response"],
+                "Hello to you",
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                False,
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_referenced_documents"],
+                [],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["sentiment"],
+                1,
+            )
 
 
 class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
@@ -3911,6 +3968,11 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         "referenced_documents": [],
     }
 
+    def setUp(self):
+        super().setUp()
+        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        self.user.organization = org
+
     @staticmethod
     def mocked_requests_post(*args, **kwargs):
         class MockResponse:
@@ -4086,3 +4148,115 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         r = self.assert_test(TestChatView.PAYLOAD_WITH_MODEL_AND_PROVIDER)
         self.assertIn('"model": "non_default_model"', r.data["response"])
         self.assertIn('"provider": "non_default_provider"', r.data["response"])
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry(self):
+        mocked_client = Mock()
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=mocked_client),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["query"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_response"],
+                TestChatView.JSON_RESPONSE["response"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                TestChatView.JSON_RESPONSE["truncated"],
+            )
+            self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_error(self):
+        mocked_client = Mock()
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=mocked_client),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.PAYLOAD_INVALID_RESPONSE)
+            self.assertEqual(r.status_code, 500)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["rh_user_org_id"],
+                123,
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["exception"],
+                "An exception <class 'ansible_ai_connect.ai.api.exceptions."
+                "ChatbotInvalidResponseException'> occurred during a chat generation",
+            )
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_limit_exceeded(self):
+        q = "".join("hello " for i in range(6500))
+        payload = {
+            "query": q,
+        }
+        mocked_client = Mock()
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=mocked_client),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(payload)
+            self.assertEqual(r.status_code, 200)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["rh_user_org_id"],
+                123,
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_response"],
+                "",
+            )
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_anonymizer(self):
+        mocked_client = Mock()
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=mocked_client),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(
+                {
+                    "query": "Hello ansible@ansible.com",
+                    "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+                }
+            )
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertNotEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                "Hello ansible@ansible.com",
+            )
