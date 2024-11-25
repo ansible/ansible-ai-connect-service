@@ -37,7 +37,6 @@ import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import {
-  botMessage,
   inDebugMode,
   modelsSupported,
   useChatbot,
@@ -82,6 +81,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   const {
     messages,
     setMessages,
+    botMessage,
     isLoading,
     handleSend,
     alertMessage,
