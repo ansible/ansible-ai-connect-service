@@ -622,7 +622,10 @@ CHATBOT_DEBUG_UI = os.getenv("CHATBOT_DEBUG_UI", "False").lower() == "true"
 # Playbook Generation/Explanation endpoints
 # ------------------------------------------
 ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
-    True
+    os.getenv(
+         "ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT", "True"
+     ).lower()
+     == "true"
 )
 # ==========================================
 
