@@ -239,8 +239,6 @@ spec:
         value: $(params.build-args-file)
       - name: TARGET_STAGE
         value: production
-      - name: SKIP_PUSH
-        value: "true"
       - name: BUILD_ARGS
         value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
