@@ -309,10 +309,10 @@ spec:
           value: task
         resolver: bundles
       when:
-        - input: $(tasks.sast-snyk-check.results.result)
+        - input: $(tasks.sast-snyk-check.results.TEST_OUTPUT)
           operator: in
           values:
-            - "SUCCESS"
+            - '"result":"SUCCESS"'
     - name: git-metadata
       runAfter:
       - clone-repository
