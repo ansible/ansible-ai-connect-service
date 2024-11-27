@@ -281,7 +281,7 @@ spec:
         - input: $(tasks.sast-snyk-check.results.TEST_OUTPUT)
           operator: in
           values:
-            - '"result":"TEST"'
+            - '"result":"SUCCESS"'
     - name: git-metadata
       runAfter:
       - clone-repository
