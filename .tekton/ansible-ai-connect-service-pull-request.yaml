@@ -277,6 +277,11 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      when:
+        - input: $(tasks.sast-snyk-check.results.result)
+          operator: in
+          values:
+            - "SUCCESS"
     - name: git-metadata
       runAfter:
       - clone-repository
