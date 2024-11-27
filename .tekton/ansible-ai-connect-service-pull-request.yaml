@@ -240,7 +240,7 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["IMAGE_TAGS=pr-{{pull_request_number}} pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -267,7 +267,7 @@ spec:
       - name: ADDITIONAL_TAGS
         value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)"]
       runAfter:
-      - build-container
+      - sast-snyk-check
       taskRef:
         params:
         - name: name
