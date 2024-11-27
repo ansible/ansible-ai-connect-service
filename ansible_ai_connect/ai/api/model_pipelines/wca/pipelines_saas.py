@@ -304,7 +304,7 @@ class WCASaaSContentMatchPipeline(
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -323,7 +323,7 @@ class WCASaaSPlaybookGenerationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -336,7 +336,7 @@ class WCASaaSRoleGenerationPipeline(
     def __init__(self, config: WCASaaSConfiguration):
         super().__init__(config=config)
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -355,5 +355,5 @@ class WCASaaSPlaybookExplanationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

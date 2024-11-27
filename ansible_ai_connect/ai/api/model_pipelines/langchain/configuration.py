@@ -27,6 +27,7 @@ from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 # ANSIBLE_AI_MODEL_MESH_API_URL
 # ANSIBLE_AI_MODEL_MESH_MODEL_ID
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+# ENABLE_HEALTHCHECK_XXX
 
 
 class LangchainConfiguration(BaseConfig):
@@ -36,8 +37,9 @@ class LangchainConfiguration(BaseConfig):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool] = False,
     ):
-        super().__init__(inference_url, model_id, timeout)
+        super().__init__(inference_url, model_id, timeout, enable_health_check)
 
 
 class LangchainBasePipelineConfiguration(

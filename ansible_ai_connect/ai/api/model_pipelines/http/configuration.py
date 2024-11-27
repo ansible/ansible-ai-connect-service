@@ -28,6 +28,7 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # ANSIBLE_AI_MODEL_MESH_API_URL
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
 # ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL
+# ENABLE_HEALTHCHECK_XXX
 
 
 @dataclass
@@ -38,9 +39,10 @@ class HttpConfiguration(BaseConfig):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         verify_ssl: bool,
     ):
-        super().__init__(inference_url, model_id, timeout)
+        super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.verify_ssl = verify_ssl
 
     verify_ssl: bool
@@ -56,6 +58,7 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
                 inference_url=kwargs["inference_url"],
                 model_id=kwargs["model_id"],
                 timeout=kwargs["timeout"],
+                enable_health_check=kwargs["enable_health_check"],
                 verify_ssl=kwargs["verify_ssl"],
             ),
         )

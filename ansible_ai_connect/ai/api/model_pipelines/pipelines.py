@@ -24,6 +24,7 @@ from rest_framework.response import Response
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     PIPELINE_CONFIGURATION,
 )
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 
 logger = logging.getLogger(__name__)
 
@@ -235,12 +236,17 @@ class ModelPipeline(
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
+    @staticmethod
+    @abstractmethod
+    def alias() -> str:
+        raise NotImplementedError
+
     @abstractmethod
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
         raise NotImplementedError
 
     @abstractmethod
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -252,6 +258,10 @@ class ModelPipelineCompletions(
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "model-server"
 
     @abstractmethod
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
@@ -267,6 +277,10 @@ class ModelPipelineContentMatch(
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
+    @staticmethod
+    def alias():
+        return "content-match"
+
 
 class ModelPipelinePlaybookGeneration(
     ModelPipeline[PIPELINE_CONFIGURATION, PlaybookGenerationParameters, PlaybookGenerationResponse],
@@ -277,6 +291,10 @@ class ModelPipelinePlaybookGeneration(
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
+    @staticmethod
+    def alias():
+        return "playbook-generation"
+
 
 class ModelPipelineRoleGeneration(
     ModelPipeline[PIPELINE_CONFIGURATION, RoleGenerationParameters, RoleGenerationResponse],
@@ -286,6 +304,10 @@ class ModelPipelineRoleGeneration(
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "role-generation"
 
 
 class ModelPipelinePlaybookExplanation(
@@ -299,6 +321,10 @@ class ModelPipelinePlaybookExplanation(
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
+    @staticmethod
+    def alias():
+        return "playbook-explanation"
+
 
 class ModelPipelineChatBot(
     ModelPipeline[PIPELINE_CONFIGURATION, ChatBotParameters, ChatBotResponse],
@@ -308,3 +334,7 @@ class ModelPipelineChatBot(
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
         super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "chatbot-service"

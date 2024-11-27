@@ -23,6 +23,9 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 # -- Base
 # ANSIBLE_AI_MODEL_MESH_API_URL
+# ANSIBLE_AI_MODEL_MESH_MODEL_ID
+# ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+# ENABLE_HEALTHCHECK_XXX
 
 
 @dataclass
@@ -32,10 +35,7 @@ class WCADummyConfiguration(BaseConfig):
         self,
         inference_url: str,
     ):
-        super().__init__("dummy", "dummy", None)
-        self.inference_url = inference_url
-
-    inference_url: str
+        super().__init__(inference_url, "dummy", None, False)
 
 
 @Register(api_type="wca-dummy")

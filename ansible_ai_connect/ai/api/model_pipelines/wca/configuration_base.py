@@ -30,6 +30,7 @@ from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 # ANSIBLE_AI_MODEL_MESH_API_KEY
 # ANSIBLE_AI_MODEL_MESH_MODEL_ID
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+# ENABLE_HEALTHCHECK_XXX
 # ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL
 # ANSIBLE_WCA_RETRY_COUNT
 # WCA_ENABLE_ARI_POSTPROCESS
@@ -45,13 +46,14 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
         api_key: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         verify_ssl: bool,
         retry_count: int,
         enable_ari_postprocessing: bool,
         health_check_api_key: str,
         health_check_model_id: str,
     ):
-        super().__init__(inference_url, model_id, timeout)
+        super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.api_key = api_key
         self.verify_ssl = verify_ssl
         self.retry_count = retry_count

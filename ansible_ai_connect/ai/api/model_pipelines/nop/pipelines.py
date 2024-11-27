@@ -11,6 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import Optional
+
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ChatBotParameters,
@@ -34,6 +36,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 
 
 @Register(api_type="nop")
@@ -55,7 +58,7 @@ class NopCompletionsPipeline(NopMetaData, ModelPipelineCompletions[NopConfigurat
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -68,7 +71,7 @@ class NopContentMatchPipeline(NopMetaData, ModelPipelineContentMatch[NopConfigur
     def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -81,7 +84,7 @@ class NopPlaybookGenerationPipeline(NopMetaData, ModelPipelinePlaybookGeneration
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -94,7 +97,7 @@ class NopRoleGenerationPipeline(NopMetaData, ModelPipelineRoleGeneration[NopConf
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -109,7 +112,7 @@ class NopPlaybookExplanationPipeline(
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -122,5 +125,5 @@ class NopChatBotPipeline(NopMetaData, ModelPipelineChatBot[NopConfiguration]):
     def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

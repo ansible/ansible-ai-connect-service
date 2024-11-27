@@ -23,10 +23,12 @@ class BaseConfig(metaclass=ABCMeta):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool] = False,
     ):
         self.inference_url = inference_url
         self.model_id = model_id
         self.timeout = timeout
+        self.enable_health_check = enable_health_check
 
     inference_url: str
     model_id: str

@@ -11,13 +11,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import requests
+from typing import Optional, Type
+
 from django.apps import apps
 from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import HealthCheckException, ServiceUnavailable
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
+    PIPELINE_CONFIGURATION,
+)
 
 ERROR_MESSAGE = "An error occurred"
 MODEL_MESH_HEALTH_CHECK_MODELS = "models"
@@ -31,10 +35,6 @@ class HealthCheckSummaryException:
     def __init__(self, exception: HealthCheckException, cause: Exception = None) -> None:
         self.exception = exception
         self.cause = cause
-
-
-class ChatbotServiceException(Exception):
-    pass
 
 
 class HealthCheckSummary:
@@ -76,34 +76,6 @@ class BaseLightspeedHealthCheck(BaseHealthCheckBackend):  # noqa
         return str(super().pretty_status())
 
 
-class ModelServerHealthCheck(BaseLightspeedHealthCheck):
-    # If this is set to False, the status endpoints will respond with a 200
-    # status code even if the check errors.
-    critical_service = True
-
-    def check_status(self):
-        self.enabled = settings.ENABLE_HEALTHCHECK_MODEL_MESH
-        if not self.enabled:
-            return
-
-        from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-            ModelPipelineCompletions,
-        )
-
-        model_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
-            ModelPipelineCompletions
-        )
-        summary: HealthCheckSummary = model_client.self_test()
-        self.summary = summary
-        for key in self.summary.items:
-            value = self.summary.items[key]
-            if isinstance(value, HealthCheckSummaryException):
-                self.add_error(value.exception, value.cause)
-
-    def identifier(self):
-        return self.__class__.__name__  # Display name on the endpoint.
-
-
 class AWSSecretManagerHealthCheck(BaseLightspeedHealthCheck):
     critical_service = True
 
@@ -141,32 +113,37 @@ class AuthorizationHealthCheck(BaseLightspeedHealthCheck):
         return self.__class__.__name__
 
 
-class ChatbotServiceHealthCheck(BaseLightspeedHealthCheck):
+class ModelPipelineHealthCheck(BaseLightspeedHealthCheck):
+    # If this is set to False, the status endpoints will respond with a 200
+    # status code even if the check errors.
     critical_service = True
 
-    def check_status(self):
-        self.enabled = (
-            settings.ENABLE_HEALTHCHECK_CHATBOT_SERVICE
-            and settings.CHATBOT_URL
-            and settings.CHATBOT_DEFAULT_MODEL
-            and settings.CHATBOT_DEFAULT_PROVIDER
+    def __init__(self, pipeline_type: Type[PIPELINE_CONFIGURATION]):
+        super().__init__()
+        pipeline_config: PIPELINE_CONFIGURATION = apps.get_app_config("ai").get_model_pipeline(
+            pipeline_type
         )
-        if not self.enabled or settings.CHATBOT_URL == "dummy":
+        self.pipeline_type = pipeline_type
+        self.enabled = pipeline_config.config.enable_health_check
+
+    def check_status(self):
+        if not self.enabled:
             return
 
         try:
-            headers = {"Content-Type": "application/json"}
-            r = requests.get(settings.CHATBOT_URL + "/readiness", headers=headers)
-            if r.status_code == 200:
-                data = r.json()
-                ready = data.get("ready")
-                if not ready:
-                    reason = data.get("reason")
-                    raise ChatbotServiceException(reason)
-            else:
-                raise ChatbotServiceException(f"Status code {r.status_code} returned")
-        except Exception as e:
-            self.add_error(ServiceUnavailable(ERROR_MESSAGE), e)
+            model_pipeline = apps.get_app_config("ai").get_model_pipeline(self.pipeline_type)
+            summary: Optional[HealthCheckSummary] = model_pipeline.self_test()
+        except NotImplementedError:
+            return
+
+        if summary is None:
+            return
+
+        self.summary = summary
+        for key in self.summary.items:
+            value = self.summary.items[key]
+            if isinstance(value, HealthCheckSummaryException):
+                self.add_error(value.exception, value.cause)
 
     def identifier(self):
-        return self.__class__.__name__
+        return self.pipeline_type.__name__

@@ -16,6 +16,7 @@ import json
 import logging
 import secrets
 import time
+from typing import Optional
 
 import requests
 
@@ -142,7 +143,7 @@ class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions[DummyConf
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         return HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: "dummy",
@@ -165,7 +166,7 @@ class DummyPlaybookGenerationPipeline(
             return PLAYBOOK, OUTLINE, []
         return PLAYBOOK, "", []
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -179,7 +180,7 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[Dum
         create_outline = params.create_outline
         return "install_nginx", ROLE_FILES, OUTLINE if create_outline else ""
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -194,5 +195,5 @@ class DummyPlaybookExplanationPipeline(
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         return EXPLANATION
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

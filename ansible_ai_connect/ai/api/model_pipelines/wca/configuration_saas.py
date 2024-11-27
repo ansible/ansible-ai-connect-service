@@ -28,6 +28,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_base import (
 # ANSIBLE_AI_MODEL_MESH_API_KEY
 # ANSIBLE_AI_MODEL_MESH_MODEL_ID
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+# ENABLE_HEALTHCHECK_XXX
 # ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL
 # ANSIBLE_WCA_RETRY_COUNT
 # WCA_ENABLE_ARI_POSTPROCESS
@@ -51,6 +52,7 @@ class WCASaaSConfiguration(WCABaseConfiguration):
         api_key: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         verify_ssl: bool,
         retry_count: int,
         enable_ari_postprocessing: bool,
@@ -67,6 +69,7 @@ class WCASaaSConfiguration(WCABaseConfiguration):
             api_key,
             model_id,
             timeout,
+            enable_health_check,
             verify_ssl,
             retry_count,
             enable_ari_postprocessing,
@@ -97,6 +100,7 @@ class WCASaaSPipelineConfiguration(WCABasePipelineConfiguration):
                 api_key=kwargs["api_key"],
                 model_id=kwargs["model_id"],
                 timeout=kwargs["timeout"],
+                enable_health_check=kwargs["enable_health_check"],
                 verify_ssl=kwargs["verify_ssl"],
                 retry_count=kwargs["retry_count"],
                 enable_ari_postprocessing=kwargs["enable_ari_postprocessing"],

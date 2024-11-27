@@ -14,6 +14,7 @@
 
 import json
 import logging
+from typing import Optional
 
 import requests
 
@@ -29,6 +30,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 
 logger = logging.getLogger(__name__)
 
@@ -124,5 +126,5 @@ class LlamaCppCompletionsPipeline(
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
