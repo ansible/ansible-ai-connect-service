@@ -237,7 +237,6 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                         <SplitItem>
                           <BusyButton
                             variant={"tertiary"}
-                            isSmall={true}
                             isBusy={isValidatingKey}
                             isDisabled={isValidatingKey}
                             onClick={testKey}
@@ -409,7 +408,6 @@ export const ModelSettingsOverview = (props: ModelSettingsOverviewProps) => {
                           <SplitItem>
                             <BusyButton
                               variant={"tertiary"}
-                              isSmall={true}
                               isBusy={isValidatingModelId}
                               isDisabled={isValidatingModelId}
                               onClick={testModelId}

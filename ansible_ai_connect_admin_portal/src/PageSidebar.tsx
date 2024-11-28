@@ -44,7 +44,7 @@ export function PageSidebar(props: PageSidebarProps) {
   const navBar = usePageNavSideBar();
   const { navigation } = props;
   const barStateClassName = navBar.isOpen ? "pf-m-expanded" : "pf-m-collapsed";
-  const groupClassName = " pf-c-page__sidebar " + barStateClassName;
+  const groupClassName = " pf-v5-c-page__sidebar " + barStateClassName;
   return (
     <div className={groupClassName}>
       <LSBrand cName={groupClassName} aria-hidden={!navBar.isOpen} />
