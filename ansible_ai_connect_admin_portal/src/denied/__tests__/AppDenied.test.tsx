@@ -6,7 +6,9 @@ describe("App", () => {
   it("Rendering::With Username", async () => {
     window.history.pushState({}, "Test page", "/console");
     render(<AppDenied userName={"Batman"} hasSubscription={true} />);
-    const accountMenu = await screen.findByTestId("page-masthead-dropdown__button");
+    const accountMenu = await screen.findByTestId(
+      "page-masthead-dropdown__button",
+    );
     expect(accountMenu).toBeInTheDocument();
     expect(accountMenu).toHaveTextContent("Batman");
   });
@@ -14,7 +16,9 @@ describe("App", () => {
   it("Rendering::Without Username", async () => {
     window.history.pushState({}, "Test page", "/console");
     render(<AppDenied hasSubscription={false} />);
-    const accountMenu = await screen.findByTestId("page-masthead-dropdown__button");
+    const accountMenu = await screen.findByTestId(
+      "page-masthead-dropdown__button",
+    );
     expect(accountMenu).toBeInTheDocument();
     expect(accountMenu).toHaveTextContent("UnknownUser");
   });

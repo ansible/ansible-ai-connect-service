@@ -35,7 +35,7 @@ export function AppHeader(props: AppHeaderProps) {
         <ToolbarItem>
           <PageMastheadDropdown
             id="account-menu"
-            icon={<UserCircleIcon/>}
+            icon={<UserCircleIcon />}
             userName={userName}
           >
             <DropdownItem

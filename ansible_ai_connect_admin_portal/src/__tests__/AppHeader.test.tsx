@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppHeader } from "../AppHeader";
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from "react-router-dom";
 
 describe("AppHeader", () => {
   // Store the original 'location' object so that it can be restored for other tests.
@@ -23,9 +23,11 @@ describe("AppHeader", () => {
     render(
       <BrowserRouter>
         <AppHeader userName={"Batman"} />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
-    const accountMenu = await screen.findByTestId("page-masthead-dropdown__button");
+    const accountMenu = await screen.findByTestId(
+      "page-masthead-dropdown__button",
+    );
     expect(accountMenu).toBeInTheDocument();
     expect(accountMenu).toHaveTextContent("Batman");
 

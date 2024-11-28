@@ -7,7 +7,7 @@ import {
   DropdownList,
   DropdownItem,
 } from "@patternfly/react-core";
-import React from 'react';
+import React from "react";
 import { ReactNode, useCallback, useState } from "react";
 import { useBreakpoint } from "@ansible/ansible-ui-framework";
 
@@ -32,7 +32,12 @@ export function PageMastheadDropdown(props: PageMastheadDropdownProps) {
       id={id}
       onSelect={onSelect}
       toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-        <MenuToggle ref={toggleRef} onClick={onToggle} isExpanded={isOpen} data-testid="page-masthead-dropdown__button">
+        <MenuToggle
+          ref={toggleRef}
+          onClick={onToggle}
+          isExpanded={isOpen}
+          data-testid="page-masthead-dropdown__button"
+        >
           <Flex
             alignItems={{ default: "alignItemsCenter" }}
             flexWrap={{ default: "nowrap" }}
