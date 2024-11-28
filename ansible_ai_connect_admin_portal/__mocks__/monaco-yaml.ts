@@ -1,5 +1,5 @@
 const monacoYaml = {
-    configureMonacoYaml: function () {}
-  };
+  configureMonacoYaml: function () {},
+};
 
 module.exports = monacoYaml;
