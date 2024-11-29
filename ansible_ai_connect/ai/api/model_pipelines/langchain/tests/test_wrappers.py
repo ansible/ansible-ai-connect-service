@@ -1,6 +1,6 @@
-from django.test import TestCase
 from textwrap import dedent
 
+from django.test import TestCase
 from langchain_core.messages.base import BaseMessage
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
