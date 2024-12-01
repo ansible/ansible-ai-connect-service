@@ -10,4 +10,7 @@ pip-tools
 pre-commit
 responses==0.24.1
 torch-model-archiver
-yamllint==1.32.0
+yamllint
+# pin virtualenv on 20.28.0 to address CVE-2024-53899
+# Remove once a pre-commit>4.0.1 is released with an updated dep on virtualenv
+virtualenv==20.28.0
