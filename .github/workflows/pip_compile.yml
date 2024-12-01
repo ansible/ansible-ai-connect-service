@@ -48,5 +48,5 @@ jobs:
       run: |
         pip install pip-tools
         pip-compile --quiet -o requirements-${{ env.ARCH }}.txt requirements.in
-        pip-compile --quiet -o requirements-dev-${{ env.ARCH }}.txt requirements-dev.in
+        pip-compile --quiet -o requirements-dev-${{ env.ARCH }}.txt -c requirements-${{ env.ARCH }}.txt requirements-dev.in
         git diff --exit-code -- requirements-${{ env.ARCH }}.txt requirements-dev-${{ env.ARCH }}.txt
