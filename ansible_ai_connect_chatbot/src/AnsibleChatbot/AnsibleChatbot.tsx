@@ -46,7 +46,6 @@ import {
   ChatbotAlert,
   ChatbotDisplayMode,
   ChatbotHeaderMain,
-  ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   FileDropZone,
 } from "@patternfly/chatbot";
@@ -225,20 +224,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
             </ChatbotHeaderTitle>
           </ChatbotHeaderMain>
           <ChatbotHeaderActions>
-            {inDebugMode() && (
-              <ChatbotHeaderSelectorDropdown
-                value={selectedModel}
-                onSelect={onSelectModel}
-              >
-                <DropdownList>
-                  {modelsSupported.map((m) => (
-                    <DropdownItem value={m.model} key={m.model}>
-                      {m.model}
-                    </DropdownItem>
-                  ))}
-                </DropdownList>
-              </ChatbotHeaderSelectorDropdown>
-            )}
             <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
               <DropdownGroup label="Display mode">
                 <DropdownList>
