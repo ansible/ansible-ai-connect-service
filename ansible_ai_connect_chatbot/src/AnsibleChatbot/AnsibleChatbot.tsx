@@ -34,8 +34,6 @@ import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import {
-  inDebugMode,
-  modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
@@ -84,8 +82,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     handleSend,
     alertMessage,
     setAlertMessage,
-    selectedModel,
-    setSelectedModel,
     setConversationId,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
@@ -101,13 +97,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const onSelectModel = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setSelectedModel(value as string);
-  };
 
   const onSelectDisplayMode = (
     _event: React.MouseEvent<Element, MouseEvent> | undefined,
