@@ -100,7 +100,7 @@ docker-compose-clean:
 
 .PHONY: pip-compile-x86_64
 pip-compile-x86_64:
-	${CONTAINER_RUNTIME} run --platform linux/x86_64 \
+	${CONTAINER_RUNTIME} run --arch amd64 --os linux \
 		--volume $(PWD):/var/www/wisdom:Z \
 		--workdir /var/www/wisdom \
 		registry.access.redhat.com/ubi9/ubi:latest \
@@ -108,7 +108,7 @@ pip-compile-x86_64:
 
 .PHONY: pip-compile-aarch64
 pip-compile-aarch64:
-	${CONTAINER_RUNTIME} run --platform linux/aarch64 \
+	${CONTAINER_RUNTIME} run --arch arm64 --os linux \
 		--volume $(PWD):/var/www/wisdom:Z \
 		--workdir /var/www/wisdom \
 		registry.access.redhat.com/ubi9/ubi:latest \
