@@ -13,11 +13,14 @@
 #  limitations under the License.
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ChatBotParameters,
+    ChatBotResponse,
     CompletionsParameters,
     CompletionsResponse,
     ContentMatchParameters,
     ContentMatchResponse,
     MetaData,
+    ModelPipelineChatBot,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
@@ -104,6 +107,19 @@ class NopPlaybookExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        raise NotImplementedError
+
+    def self_test(self):
+        raise NotImplementedError
+
+
+@Register(api_type="nop")
+class NopChatBotPipeline(NopMetaData, ModelPipelineChatBot[NopConfiguration]):
+
+    def __init__(self, config: NopConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
         raise NotImplementedError
 
     def self_test(self):

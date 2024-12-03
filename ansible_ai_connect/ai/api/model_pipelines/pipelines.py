@@ -183,6 +183,35 @@ class PlaybookExplanationParameters:
 PlaybookExplanationResponse = str
 
 
+@define
+class ChatBotParameters:
+    request: Request
+    query: str
+    provider: str
+    model_id: str
+    conversation_id: Optional[str]
+
+    @classmethod
+    def init(
+        cls,
+        request,
+        query: str,
+        provider: Optional[str] = None,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+    ):
+        return cls(
+            request=request,
+            query=query,
+            provider=provider,
+            model_id=model_id,
+            conversation_id=conversation_id,
+        )
+
+
+ChatBotResponse = Any
+
+
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
@@ -263,6 +292,16 @@ class ModelPipelinePlaybookExplanation(
     ModelPipeline[
         PIPELINE_CONFIGURATION, PlaybookExplanationParameters, PlaybookExplanationResponse
     ],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+
+class ModelPipelineChatBot(
+    ModelPipeline[PIPELINE_CONFIGURATION, ChatBotParameters, ChatBotResponse],
     Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):

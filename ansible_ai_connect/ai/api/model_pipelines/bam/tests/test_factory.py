@@ -20,10 +20,12 @@ from ansible_ai_connect.ai.api.model_pipelines.bam.pipelines import (
     BAMPlaybookGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
+    NopChatBotPipeline,
     NopContentMatchPipeline,
     NopRoleGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ModelPipelineChatBot,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
@@ -57,3 +59,6 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookExplanation, BAMPlaybookExplanationPipeline
         )
+
+    def test_chatbot_pipeline(self):
+        self.assert_default_implementation(ModelPipelineChatBot, NopChatBotPipeline)

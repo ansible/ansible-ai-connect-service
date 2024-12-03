@@ -15,11 +15,13 @@
 from django.test import override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
+    NopChatBotPipeline,
     NopContentMatchPipeline,
     NopPlaybookExplanationPipeline,
     NopPlaybookGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ModelPipelineChatBot,
     ModelPipelineCompletions,
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
@@ -52,3 +54,6 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
         self.assert_default_implementation(
             ModelPipelinePlaybookExplanation, NopPlaybookExplanationPipeline
         )
+
+    def test_chatbot_pipeline(self):
+        self.assert_default_implementation(ModelPipelineChatBot, NopChatBotPipeline)

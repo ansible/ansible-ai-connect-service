@@ -696,5 +696,15 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  #
 pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
 pipeline_config: dict = {k.__name__: ANSIBLE_AI_WCA_CONFIG for k in pipelines}
 
+# The ChatBot does not use the same configuration as everything else
+pipeline_config["ModelPipelineChatBot"] = {
+    "provider": "http",
+    "config": {
+        "inference_url": CHATBOT_URL or "http://localhost:8000",
+        "model_id": CHATBOT_DEFAULT_MODEL or "granite3-8b",
+        "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
+    },
+}
+
 ANSIBLE_AI_MODEL_MESH_CONFIG = json.dumps(pipeline_config)
 # ==========================================
