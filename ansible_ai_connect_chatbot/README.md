@@ -62,6 +62,7 @@ one of models defined in the configuration used by the chat service.
 ```commandline
 CHATBOT_URL=http://127.0.0.1:8080
 CHATBOT_DEFAULT_PROVIDER=wisdom
+CHATBOT_DEFAULT_MODEL=granite3-8b
 ```
 
 You also need to configure Red Hat SSO authentication on your local

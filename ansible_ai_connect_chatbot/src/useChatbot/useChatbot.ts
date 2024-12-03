@@ -22,6 +22,10 @@ const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
+export const modelsSupported: LLMModel[] = [
+  { model: "granite3-8b", provider: "my_rhoai_g3" },
+];
+
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
   const ca = document.cookie.split(";");
@@ -118,6 +122,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
+  const [selectedModel, setSelectedModel] = useState("granite3-8b");
 
   const addMessage = (newMessage: ExtendedMessage) => {
     setMessages((msgs: ExtendedMessage[]) => [...msgs, newMessage]);
@@ -218,6 +223,15 @@ export const useChatbot = () => {
       query: message,
     };
 
+    if (inDebugMode()) {
+      for (const m of modelsSupported) {
+        if (selectedModel === m.model) {
+          chatRequest.model = m.model;
+          chatRequest.provider = m.provider;
+        }
+      }
+    }
+
     setIsLoading(true);
     try {
       const csrfToken = readCookie("csrftoken");
@@ -286,6 +300,8 @@ export const useChatbot = () => {
     handleSend,
     alertMessage,
     setAlertMessage,
+    selectedModel,
+    setSelectedModel,
     setConversationId,
   };
 };
