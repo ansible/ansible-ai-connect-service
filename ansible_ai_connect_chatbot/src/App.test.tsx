@@ -311,9 +311,8 @@ describe("App tests", () => {
     mockAxios(200);
 
     renderApp(true);
-    const modelSelection = screen.getByText("granite-8b");
+    const modelSelection = screen.getByText("granite3-8b");
     await act(async () => fireEvent.click(modelSelection));
-    expect(screen.getByRole("menuitem", { name: "granite-8b" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "granite3-8b" })).toBeTruthy();
     await act(async () =>
       screen.getByRole("menuitem", { name: "granite3-8b" }).click(),

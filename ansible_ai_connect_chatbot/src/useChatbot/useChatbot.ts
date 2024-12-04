@@ -23,7 +23,6 @@ const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite-8b", provider: "my_rhoai" },
   { model: "granite3-8b", provider: "my_rhoai_g3" },
 ];
 
@@ -123,7 +122,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
-  const [selectedModel, setSelectedModel] = useState("granite-8b");
+  const [selectedModel, setSelectedModel] = useState("granite3-8b");
 
   const addMessage = (newMessage: ExtendedMessage) => {
     setMessages((msgs: ExtendedMessage[]) => [...msgs, newMessage]);
