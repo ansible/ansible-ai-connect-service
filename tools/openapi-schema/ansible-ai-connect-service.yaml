@@ -24,9 +24,6 @@ paths:
               $ref: '#/components/schemas/ChatRequest'
         required: true
       security:
-      - oauth2:
-        - read
-        - write
       - cookieAuth: []
       responses:
         '200':
