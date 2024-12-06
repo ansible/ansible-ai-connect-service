@@ -63,22 +63,71 @@ SYSTEM_MESSAGE_TEMPLATE = (
 HUMAN_MESSAGE_TEMPLATE = "{prompt}"
 
 
-def unwrap_playbook_answer(message: str | BaseMessage) -> tuple[str, str]:
-    task: str = ""
+def message_to_string(message: str | BaseMessage) -> str:
+    if isinstance(message, str):
+        # Ollama currently answers with just a string
+        return message
+
     if isinstance(message, BaseMessage):
         if (
             isinstance(message.content, list)
             and len(message.content)
             and isinstance(message.content[0], str)
         ):
-            task = message.content[0]
+            return message.content[0]
         elif isinstance(message.content, str):
-            task = message.content
-    elif isinstance(message, str):
-        # Ollama currently answers with just a string
-        task = message
-    if not task:
-        raise ValueError
+            return message.content
+
+    raise ValueError
+
+
+def create_role_outline(yaml: str) -> str:
+    outline = ""
+    index = 1
+    for line in yaml.split("\n"):
+        line = line.strip()
+        if line.find("- name: ") != -1:
+            step = line[line.find("- name: ") + 8 :].strip()
+            outline += f"{str(index)}. {step}\n"
+            index += 1
+    return outline
+
+
+def unwrap_role_answer(message: str | BaseMessage, create_outline: bool) -> tuple[str, list, str]:
+    text = message_to_string(message)
+    role = text.strip().split("\n", 1)[0]
+    role = "role_name" if (role.find(":") == -1) else role[role.find(":") + 1 :].strip()
+    # Sometimes Granite 3b creates explanation string with : at the end
+    role = "role_name" if not role else role
+
+    if text.find("```") == -1:
+        main_yml_content = text.strip().split("\n", 1)[1].strip()
+    else:
+        main_yml_content = unwrap_message_with_yaml_answer(text)
+
+    outline = ""
+    if create_outline:
+        outline = create_role_outline(main_yml_content)
+
+    tasks = {"path": "tasks/main.yml", "content": main_yml_content, "file_type": "tasks"}
+    default = {
+        "path": "defaults/main.yml",
+        "content": "",
+        "file_type": "defaults",
+    }
+
+    return role, [tasks, default], outline
+
+
+def unwrap_message_with_yaml_answer(message: str | BaseMessage) -> str:
+    task: str = message_to_string(message)
+
+    m = re.search(r".*?```(yaml|yml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
+    return m.group(2).strip() if m else ""
+
+
+def unwrap_playbook_answer(message: str | BaseMessage) -> tuple[str, str]:
+    task: str = message_to_string(message)
 
     m = re.search(r".*?```(yaml|)\n+(.+)```(.*)", task, re.MULTILINE | re.DOTALL)
     if m:
@@ -90,21 +139,7 @@ def unwrap_playbook_answer(message: str | BaseMessage) -> tuple[str, str]:
 
 
 def unwrap_task_answer(message: str | BaseMessage) -> str:
-    task: str = ""
-    if isinstance(message, BaseMessage):
-        if (
-            isinstance(message.content, list)
-            and len(message.content)
-            and isinstance(message.content[0], str)
-        ):
-            task = message.content[0]
-        elif isinstance(message.content, str):
-            task = message.content
-    elif isinstance(message, str):
-        # Ollama currently answers with just a string
-        task = message
-    if not task:
-        raise ValueError
+    task: str = message_to_string(message)
 
     m = re.search(r"```(yaml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
     if m:
@@ -134,6 +169,19 @@ class LangchainBase(
 
     def __init__(self, config: LANGCHAIN_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
+
+    def create_template(self, system, human):
+        return ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(
+                    dedent(system),
+                    additional_kwargs={"role": "system"},
+                ),
+                HumanMessagePromptTemplate.from_template(
+                    dedent(human), additional_kwargs={"role": "user"}
+                ),
+            ]
+        )
 
 
 class LangchainCompletionsPipeline(
@@ -280,7 +328,52 @@ class LangchainRoleGenerationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        return "dummy_role", [], "dummy_outline"
+        request = params.request
+        text = params.text
+        create_outline = params.create_outline
+        outline = params.outline
+        model_id = params.model_id
+
+        SYSTEM_MESSAGE_ROLE_REQUEST = """
+        You are an ansible expert optimized to generate Ansible roles.
+        First line the role name in a way: role_name.
+        After that the answer is a plain tasks/main.yml file for the user's request.
+        Prefix your comments with the hash character.
+        """
+
+        SYSTEM_MESSAGE_TEMPLATE_DEFAULTS = """
+        You are an ansible expert optimized to generate Ansible roles.
+        Prepare a plain defaults/main.yml file based on provided tasks/main.yml.
+        New file is a list of variables name and value from provided tasks/main.yml.
+        Do not provide any addition information or explanation.
+        Prefix your comments with the hash character.
+        """
+
+        HUMAN_MESSAGE_TEMPLATE = """
+        This is what the role should do: {text}
+        """
+
+        model_id = self.get_model_id(request.user, None, model_id)
+        llm = self.get_chat_model(model_id)
+
+        chat_template = self.create_template(SYSTEM_MESSAGE_ROLE_REQUEST, HUMAN_MESSAGE_TEMPLATE)
+        chain = chat_template | llm
+        output = chain.invoke({"text": text, "outline": outline})
+        role, files, outline = unwrap_role_answer(output, create_outline)
+
+        llm = self.get_chat_model(model_id)
+        chat_template = self.create_template(
+            SYSTEM_MESSAGE_TEMPLATE_DEFAULTS, HUMAN_MESSAGE_TEMPLATE
+        )
+        chain = chat_template | llm
+        output = chain.invoke({"text": files[0]["content"], "outline": outline})
+        content = message_to_string(output)
+        if content.find("```") == -1:
+            files[1]["content"] = content
+        else:
+            files[1]["content"] = unwrap_message_with_yaml_answer(content)
+
+        return role, files, outline
 
     def self_test(self):
         raise NotImplementedError
