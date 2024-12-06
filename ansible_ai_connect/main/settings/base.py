@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import sys
+from copy import deepcopy
 from importlib.resources import files
 from pathlib import Path
 from typing import cast
@@ -694,7 +695,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  # noqa
 
 pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
-pipeline_config: dict = {k.__name__: ANSIBLE_AI_PIPELINE_CONFIG for k in pipelines}
+pipeline_config: dict = {k.__name__: deepcopy(ANSIBLE_AI_PIPELINE_CONFIG) for k in pipelines}
 
 # The ChatBot does not use the same configuration as everything else
 pipeline_config["ModelPipelineChatBot"] = {
@@ -705,6 +706,14 @@ pipeline_config["ModelPipelineChatBot"] = {
         "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
     },
 }
+
+# Enable Health Checks where we have them implemented
+pipeline_config["ModelPipelineCompletions"]["config"][
+    "enable_health_check"
+] = ENABLE_HEALTHCHECK_MODEL_MESH
+pipeline_config["ModelPipelineChatBot"]["config"][
+    "enable_health_check"
+] = ENABLE_HEALTHCHECK_MODEL_MESH
 
 ANSIBLE_AI_MODEL_MESH_CONFIG = json.dumps(pipeline_config)
 # ==========================================

@@ -72,6 +72,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 api_key=extract("api_key", "an-api-key", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
             )
         case "dummy":
@@ -80,6 +81,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 inference_url=inference_url,
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 latency_use_jitter=extract("latency_use_jitter", False, **kwargs),
                 latency_max_msec=extract("latency_max_msec", 0, **kwargs),
                 body=extract("body", "body", **kwargs),
@@ -90,6 +92,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 health_check_url=extract("health_check_url", "another-url", **kwargs),
             )
         case "http":
@@ -97,6 +100,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
             )
         case "llamacpp":
@@ -104,6 +108,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
             )
         case "ollama":
@@ -111,6 +116,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
             )
         case "wca":
             return WCASaaSConfiguration(
@@ -118,6 +124,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 api_key=extract("api_key", "an-api-key", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
                 retry_count=extract("retry_count", 4, **kwargs),
                 enable_ari_postprocessing=extract("enable_ari_postprocessing", False, **kwargs),
@@ -143,6 +150,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 api_key=extract("api_key", "an-api-key", **kwargs),
                 model_id=extract("model_id", "a-model-id", **kwargs),
                 timeout=extract("timeout", 1000, **kwargs),
+                enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
                 retry_count=extract("retry_count", 4, **kwargs),
                 enable_ari_postprocessing=extract("enable_ari_postprocessing", False, **kwargs),

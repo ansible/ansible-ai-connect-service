@@ -176,7 +176,7 @@ class WCAOnPremContentMatchPipeline(
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -195,7 +195,7 @@ class WCAOnPremPlaybookGenerationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -208,7 +208,7 @@ class WCAOnPremRoleGenerationPipeline(
     def __init__(self, config: WCAOnPremConfiguration):
         super().__init__(config=config)
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -227,5 +227,5 @@ class WCAOnPremPlaybookExplanationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

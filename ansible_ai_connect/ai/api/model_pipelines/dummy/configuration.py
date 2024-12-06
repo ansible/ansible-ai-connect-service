@@ -37,11 +37,12 @@ class DummyConfiguration(BaseConfig):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         latency_use_jitter: bool,
         latency_max_msec: int,
         body: str,
     ):
-        super().__init__(inference_url, model_id, timeout)
+        super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.latency_use_jitter = latency_use_jitter
         self.latency_max_msec = latency_max_msec
         self.body = body
@@ -57,6 +58,7 @@ class DummyPipelineConfiguration(PipelineConfiguration[DummyConfiguration]):
                 inference_url=kwargs["inference_url"],
                 model_id=kwargs["model_id"],
                 timeout=kwargs["timeout"],
+                enable_health_check=kwargs["enable_health_check"],
                 latency_use_jitter=kwargs["latency_use_jitter"],
                 latency_max_msec=kwargs["latency_max_msec"],
                 body=kwargs["body"],

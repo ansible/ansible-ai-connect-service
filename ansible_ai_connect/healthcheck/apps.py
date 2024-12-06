@@ -20,14 +20,17 @@ class HealthCheckAppConfig(AppConfig):
     name = "ansible_ai_connect.healthcheck"
 
     def ready(self):
+        from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipeline
+        from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY
+
         from .backends import (
             AuthorizationHealthCheck,
             AWSSecretManagerHealthCheck,
-            ChatbotServiceHealthCheck,
-            ModelServerHealthCheck,
+            ModelPipelineHealthCheck,
         )
 
-        plugin_dir.register(ModelServerHealthCheck)
         plugin_dir.register(AWSSecretManagerHealthCheck)
         plugin_dir.register(AuthorizationHealthCheck)
-        plugin_dir.register(ChatbotServiceHealthCheck)
+        for pipeline in REGISTRY_ENTRY.keys():
+            if issubclass(pipeline, ModelPipeline):
+                plugin_dir.register(ModelPipelineHealthCheck, pipeline_type=pipeline)

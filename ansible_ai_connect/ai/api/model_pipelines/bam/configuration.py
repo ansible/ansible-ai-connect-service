@@ -27,6 +27,7 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # ANSIBLE_AI_MODEL_MESH_API_URL
 # ANSIBLE_AI_MODEL_MESH_MODEL_ID
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
+# ENABLE_HEALTHCHECK_XXX
 
 # -- BAM
 # ANSIBLE_AI_MODEL_MESH_API_KEY
@@ -41,6 +42,7 @@ class BAMConfiguration(LangchainConfiguration):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         api_key: str,
         verify_ssl: bool,
     ):
@@ -48,6 +50,7 @@ class BAMConfiguration(LangchainConfiguration):
             inference_url,
             model_id,
             timeout,
+            enable_health_check,
         )
         self.api_key = api_key
         self.verify_ssl = verify_ssl
@@ -66,6 +69,7 @@ class BAMPipelineConfiguration(LangchainBasePipelineConfiguration):
                 inference_url=kwargs["inference_url"],
                 model_id=kwargs["model_id"],
                 timeout=kwargs["timeout"],
+                enable_health_check=kwargs["enable_health_check"],
                 api_key=kwargs["api_key"],
                 verify_ssl=kwargs["verify_ssl"],
             ),

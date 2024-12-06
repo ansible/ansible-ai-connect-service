@@ -14,6 +14,7 @@
 
 import json
 import logging
+from typing import Optional
 
 import requests
 from health_check.exceptions import ServiceUnavailable
@@ -167,5 +168,31 @@ class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration])
             detail = json.loads(response.text).get("detail", "")
             raise ChatbotInternalServerException(detail=detail)
 
-    def self_test(self):
-        raise NotImplementedError
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "http",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            headers = {"Content-Type": "application/json"}
+            r = requests.get(self.config.inference_url + "/readiness", headers=headers)
+            r.raise_for_status()
+
+            data = r.json()
+            ready = data.get("ready")
+            if not ready:
+                reason = data.get("reason")
+                summary.add_exception(
+                    MODEL_MESH_HEALTH_CHECK_MODELS,
+                    HealthCheckSummaryException(ServiceUnavailable(reason)),
+                )
+
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
+            )
+        return summary

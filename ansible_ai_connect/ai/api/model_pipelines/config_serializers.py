@@ -27,6 +27,7 @@ class BaseConfigSerializer(serializers.Serializer):
     inference_url = serializers.CharField(required=True)
     model_id = serializers.CharField(required=False, allow_null=True, default=None)
     timeout = serializers.IntegerField(required=False, allow_null=True, default=None)
+    enable_health_check = serializers.BooleanField(required=False, default=False)
 
 
 class PipelineConfigurationSerializer(serializers.Serializer):

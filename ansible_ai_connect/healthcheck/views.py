@@ -53,15 +53,18 @@ def common_data():
 
 
 class HealthCheckCustomView(MainView):
+
+    from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipeline
+    from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY
+
     _plugin_name_map = {
         "DatabaseBackend": "db",
-        "ModelServerHealthCheck": "model-server",
         "AWSSecretManagerHealthCheck": "secret-manager",
-        "WCAHealthCheck": "wca",
-        "WCAOnPremHealthCheck": "wca-onprem",
         "AuthorizationHealthCheck": "authorization",
-        "ChatbotServiceHealthCheck": "chatbot-service",
     }
+    for pipeline in REGISTRY_ENTRY.keys():
+        if issubclass(pipeline, ModelPipeline):
+            _plugin_name_map[pipeline.__name__] = pipeline.alias()
 
     @method_decorator(cache_page(CACHE_TIMEOUT))
     def get(self, request, *args, **kwargs):

@@ -16,7 +16,7 @@ import logging
 import re
 from abc import ABCMeta
 from textwrap import dedent
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 import requests
 from langchain_core.messages import BaseMessage
@@ -48,6 +48,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +179,7 @@ class LangchainCompletionsPipeline(
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -261,7 +262,7 @@ class LangchainPlaybookGenerationPipeline(
 
         return playbook, outline, []
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -282,7 +283,7 @@ class LangchainRoleGenerationPipeline(
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         return "dummy_role", [], "dummy_outline"
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -344,7 +345,7 @@ class LangchainPlaybookExplanationPipeline(
         explanation = chain.invoke({"playbook": content})
         return explanation
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):

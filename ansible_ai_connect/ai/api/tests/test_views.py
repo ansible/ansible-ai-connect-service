@@ -125,6 +125,7 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
@@ -217,7 +218,7 @@ class MockedPipelineCompletions(ModelPipelineCompletions[MockedConfig]):
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -229,7 +230,7 @@ class MockedPipelineContentMatch(ModelPipelineContentMatch[MockedConfig]):
     def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise NotImplementedError
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -242,7 +243,7 @@ class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration[MockedCon
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         return self.response_data, self.response_data, []
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -255,7 +256,7 @@ class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration[MockedConfig]):
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         return self.response_data, [], self.response_data
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 
@@ -268,7 +269,7 @@ class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation[MockedC
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         return self.response_data
 
-    def self_test(self):
+    def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
 

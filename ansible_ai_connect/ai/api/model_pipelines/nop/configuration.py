@@ -26,7 +26,7 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 class NopConfiguration(BaseConfig):
 
     def __init__(self):
-        super().__init__("NOP", "NOP", None)
+        super().__init__("NOP", "NOP", None, False)
 
 
 @Register(api_type="nop")

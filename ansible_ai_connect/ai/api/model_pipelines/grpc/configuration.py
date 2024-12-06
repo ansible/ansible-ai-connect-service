@@ -27,7 +27,7 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 # ANSIBLE_AI_MODEL_MESH_API_URL
 # ANSIBLE_AI_MODEL_MESH_API_TIMEOUT
-# ANSIBLE_GRPC_HEALTHCHECK_URL
+# ENABLE_HEALTHCHECK_XXX
 
 
 @dataclass
@@ -38,9 +38,10 @@ class GrpcConfiguration(BaseConfig):
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
+        enable_health_check: Optional[bool],
         health_check_url: str,
     ):
-        super().__init__(inference_url, model_id, timeout)
+        super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.health_check_url = health_check_url
 
     health_check_url: str
@@ -56,6 +57,7 @@ class GrpcPipelineConfiguration(PipelineConfiguration[GrpcConfiguration]):
                 inference_url=kwargs["inference_url"],
                 model_id=kwargs["model_id"],
                 timeout=kwargs["timeout"],
+                enable_health_check=kwargs["enable_health_check"],
                 health_check_url=kwargs["health_check_url"],
             ),
         )
