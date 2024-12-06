@@ -681,7 +681,7 @@ elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
         },
     }
 elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
-    ANSIBLE_AI_WCA_CONFIG = {
+    ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "ollama",
         "config": {
             "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
