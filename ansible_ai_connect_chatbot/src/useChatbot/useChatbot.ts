@@ -106,10 +106,11 @@ type AlertMessage = {
 
 const INITIAL_NOTICE: AlertMessage = {
   title: "Important",
-  message: `Red Hat Ansible Automation Platform Lightspeed can answer questions
-related to Ansible Automation Platform. Do not include personal or buisness
-sensitive information in your input. Interactions with Ansible Automation Platform
-Lightspeed may be reviewed and used to improve our products and services`,
+  message: `The Red Hat Ansible Automation Platform Lightspeed service provides 
+  answers to questions related to the Ansible Automation Platform. Please refrain
+  from including personal or business sensitive information in your input. 
+  Interactions with the Ansible Automation Platform Lightspeed may be reviewed 
+  and utilized to enhance our products and services. `,
   variant: "info",
 };
 
