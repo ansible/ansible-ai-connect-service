@@ -8,11 +8,15 @@ on:
       - main
     paths:
       - ansible_ai_connect/**
+      - ansible_ai_connect_chatbot/**
+      - ansible_ai_connect_admin_portal/**
   pull_request:
     branches:
       - main
     paths:
       - ansible_ai_connect/**
+      - ansible_ai_connect_chatbot/**
+      - ansible_ai_connect_admin_portal/**
 permissions:
   contents: read
 
