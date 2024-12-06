@@ -635,7 +635,7 @@ ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
 # [manstis] For now, populate the configuration from the environment variables
 
 if ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-    ANSIBLE_AI_WCA_CONFIG = {
+    ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "wca",
         "config": {
             "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
@@ -655,7 +655,7 @@ if ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
         },
     }
 elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
-    ANSIBLE_AI_WCA_CONFIG = {
+    ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "wca-onprem",
         "config": {
             "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
@@ -671,7 +671,7 @@ elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
         },
     }
 elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
-    ANSIBLE_AI_WCA_CONFIG = {
+    ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "dummy",
         "config": {
             "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
@@ -681,7 +681,7 @@ elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
         },
     }
 else:
-    ANSIBLE_AI_WCA_CONFIG = {
+    ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "wca-dummy",
         "config": {
             "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
@@ -694,7 +694,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  # noqa
 
 pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
-pipeline_config: dict = {k.__name__: ANSIBLE_AI_WCA_CONFIG for k in pipelines}
+pipeline_config: dict = {k.__name__: ANSIBLE_AI_PIPELINE_CONFIG for k in pipelines}
 
 # The ChatBot does not use the same configuration as everything else
 pipeline_config["ModelPipelineChatBot"] = {
