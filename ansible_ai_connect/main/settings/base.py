@@ -681,6 +681,15 @@ elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
             "latency_use_jitter": DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER,
         },
     }
+elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
+    ANSIBLE_AI_PIPELINE_CONFIG = {
+        "provider": "ollama",
+        "config": {
+            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
+            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
+        },
+    }
 else:
     ANSIBLE_AI_PIPELINE_CONFIG = {
         "provider": "wca-dummy",
