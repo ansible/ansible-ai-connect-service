@@ -84,6 +84,11 @@ def github_get_username(strategy, details, backend, user=None, *args, **kwargs):
         return get_username(strategy, details, backend, user, *args, **kwargs)
 
 
+def is_rh_email_domain(email):
+    email_domain: str = email[email.find("@") + 1 :] if email else None
+    return email_domain.lower() == "redhat.com" if email_domain else False
+
+
 def redhat_organization(backend, user, response, *args, **kwargs):
     if backend.name != "oidc":
         return
@@ -106,7 +111,7 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     user.email = payload.get("email")
     user.email_verified = payload.get("email_verified")
     user.rh_user_is_org_admin = "admin:org:all" in roles
-    user.rh_employee = "redhat:employees" in roles
+    user.rh_employee = "redhat:employees" in roles and is_rh_email_domain(user.email)
 
     if settings.AUTHZ_BACKEND_TYPE == "dummy":
         if settings.AUTHZ_DUMMY_RH_ORG_ADMINS == "*":
