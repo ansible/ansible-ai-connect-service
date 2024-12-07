@@ -44,6 +44,7 @@ class LoginView(auth_views.LoginView):
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
+        context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
         return context
 
     def dispatch(self, request, *args, **kwargs):
