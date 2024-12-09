@@ -262,10 +262,7 @@ Then run `runserver` in Debug mode with PyCharms Run > Debug… menu. Console ou
 import sys; print('Python %s on %s' % (sys.version, sys.platform))
 /home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/bin/python -X pycache_prefix=/home/ttakamiy/.cache/JetBrains/PyCharmCE2024.1/cpython-cache /home/ttakamiy/.local/share/JetBrains/Toolbox/apps/pycharm-community/plugins/python-ce/helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client 127.0.0.1 --port 35229 --file /home/ttakamiy/git/ansible/ansible-ai-connect-service/ansible_ai_connect/manage.py runserver --noreload
 Connected to pydev debugger (build 241.18034.82)
-/home/ttakamiy/git/ansible/ansible-ai-connect-service/venv/lib/python3.11/site-packages/langchain/llms/__init__.py:548: LangChainDeprecationWarning: Importing LLMs from langchain is deprecated. Importing from langchain will no longer be supported as of langchain==0.2.0. Please import from langchain-community instead:
-`from langchain_community.llms import Ollama`.
-To install langchain-community run `pip install -U langchain-community`.
-  warnings.warn(
+(...)
 Performing system checks...
 System check identified no issues (0 silenced).
 June 28, 2024 - 16:56:26

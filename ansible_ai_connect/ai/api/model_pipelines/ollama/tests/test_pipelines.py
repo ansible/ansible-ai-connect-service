@@ -43,7 +43,7 @@ class TestOllama(TestCase):
             "model_id": "a-model-id",
         }
 
-    @patch("ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines.Ollama")
+    @patch("ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines.OllamaLLM")
     def test_infer(self, m_ollama):
         def final(_):
             return f"- name: Vache volante!\n{indent(self.expected_task_body, '  ')}"
