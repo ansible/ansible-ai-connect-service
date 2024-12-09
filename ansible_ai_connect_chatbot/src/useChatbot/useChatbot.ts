@@ -167,6 +167,12 @@ export const useChatbot = () => {
           }
         },
       },
+      copy: {
+        onClick: () => {
+          message.actions.copy.isDisabled = true;
+          navigator.clipboard.writeText(response.response)
+        },
+      },
     };
     return message;
   };
