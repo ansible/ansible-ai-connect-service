@@ -14,7 +14,7 @@
 
 import logging
 
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 
 from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainCompletionsPipeline,
@@ -48,7 +48,7 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline[OllamaConfiguration
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
-        return Ollama(
+        return OllamaLLM(
             base_url=self.config.inference_url,
             model=model_id,
         )
@@ -61,7 +61,7 @@ class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline[Ollam
         super().__init__(config=config)
 
     def get_chat_model(self, model_id):
-        return Ollama(
+        return OllamaLLM(
             base_url=self.config.inference_url,
             model=model_id,
         )
@@ -74,7 +74,7 @@ class OllamaRoleGenerationPipeline(LangchainRoleGenerationPipeline[OllamaConfigu
         super().__init__(config=config)
 
     def get_chat_model(self, model_id):
-        return Ollama(
+        return OllamaLLM(
             base_url=self.config.inference_url,
             model=model_id,
         )
@@ -87,7 +87,7 @@ class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline[Oll
         super().__init__(config=config)
 
     def get_chat_model(self, model_id):
-        return Ollama(
+        return OllamaLLM(
             base_url=self.config.inference_url,
             model=model_id,
         )
