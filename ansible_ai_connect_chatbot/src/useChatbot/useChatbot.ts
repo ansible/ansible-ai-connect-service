@@ -171,7 +171,7 @@ export const useChatbot = () => {
         onClick: () => {
           if (message.actions) {
             message.actions.copy.isDisabled = true;
-            message.actions.negative.className = "action-button-clicked";
+            message.actions.copy.className = "action-button-clicked";
             navigator.clipboard.writeText(
               typeof response === "object" ? response.response : response,
             );
