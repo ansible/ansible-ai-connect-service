@@ -167,6 +167,16 @@ export const useChatbot = () => {
           }
         },
       },
+      copy: {
+        onClick: () => {
+          if (message.actions) {
+            message.actions.copy.className = "action-button-clicked";
+            navigator.clipboard.writeText(
+              typeof response === "object" ? response.response : response,
+            );
+          }
+        },
+      },
     };
     return message;
   };
