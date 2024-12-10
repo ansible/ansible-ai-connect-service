@@ -12,6 +12,7 @@ class OneClickTrial:
     def is_available(self):
         return (
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
+            and self.user.organization
             and self.user.is_authenticated
             and self.user.is_oidc_user
             and self.user.rh_org_has_subscription
