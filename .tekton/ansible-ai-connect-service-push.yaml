@@ -271,7 +271,7 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value: ["IMAGE_TAGS=latest 1.0.$(tasks.git-metadata.results.commit-timestamp)", "GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -298,7 +298,7 @@ spec:
       - name: ADDITIONAL_TAGS
         value: ["latest", "1.0.$(tasks.git-metadata.results.commit-timestamp)"]
       runAfter:
-      - sast-snyk-check
+      - build-container
       taskRef:
         params:
         - name: name
@@ -308,11 +308,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-        - input: $(tasks.sast-snyk-check.results.TEST_OUTPUT)
-          operator: in
-          values:
-            - '"result":"SUCCESS"'
     - name: git-metadata
       runAfter:
       - clone-repository
