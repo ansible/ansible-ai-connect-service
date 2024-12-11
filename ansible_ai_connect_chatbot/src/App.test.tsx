@@ -55,7 +55,16 @@ describe("App tests", () => {
     return error;
   };
 
-  const mockAxios = (status: number, reject = false, timeout = false) => {
+  const referencedDocumentExample = [
+    "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
+  ];
+
+  const mockAxios = (
+    status: number,
+    reject = false,
+    timeout = false,
+    refDocs: string[] = referencedDocumentExample,
+  ) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
       if (timeout) {
@@ -77,14 +86,10 @@ describe("App tests", () => {
       spy.mockResolvedValue({
         data: {
           conversation_id: "123e4567-e89b-12d3-a456-426614174000",
-          referenced_documents: [
-            {
-              docs_url:
-                "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html-single/" +
-                "getting_started_with_playbooks/index#ref-create-variables",
-              title: "Create variables",
-            },
-          ],
+          referenced_documents: refDocs.map((d, index) => ({
+            docs_url: d,
+            title: "Create variables" + (index > 0 ? index : ""),
+          })),
           response:
             "In Ansible, the precedence of variables is determined by the order...",
           truncated: false,
@@ -157,6 +162,7 @@ describe("App tests", () => {
   });
 
   it("ThumbsDown icon test", async () => {
+    const ghIssueLinkSpy = vi.spyOn(global, "open");
     mockAxios(200);
     renderApp();
     const textArea = screen.getByLabelText("Send a message...");
@@ -175,6 +181,50 @@ describe("App tests", () => {
 
     const sureButton = screen.getByText("Sure!");
     await act(async () => fireEvent.click(sureButton));
+
+    expect(ghIssueLinkSpy.mock.calls.length).toEqual(1);
+    expect(ghIssueLinkSpy.mock.calls[0][0]).toContain(
+      encodeURIComponent(referencedDocumentExample[0]),
+    );
+  });
+
+  const REF_DOCUMENT_EXAMPLE_REGEXP = new RegExp(
+    encodeURIComponent(referencedDocumentExample[0]),
+    "g",
+  );
+
+  it("Too many reference documents for the GU issue creation query param.", async () => {
+    const ghIssueLinkSpy = vi.spyOn(global, "open");
+    // Initialize 35 reference documents for this test case, in order to verify that the url
+    // will not contain more than the max allowed documents (30).
+    const lotsOfRefDocs = [];
+    for (let i = 0; i < 35; i++) {
+      lotsOfRefDocs.push(referencedDocumentExample[0]);
+    }
+    mockAxios(200, false, false, lotsOfRefDocs);
+    renderApp();
+    const textArea = screen.getByLabelText("Send a message...");
+    await act(async () => userEvent.type(textArea, "Hello"));
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    expect(
+      screen.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
+
+    const thumbsDownIcon = screen.getByRole("button", { name: "Bad response" });
+    await act(async () => fireEvent.click(thumbsDownIcon));
+
+    const sureButton = screen.getByText("Sure!");
+    await act(async () => fireEvent.click(sureButton));
+
+    expect(ghIssueLinkSpy.mock.calls.length).toEqual(1);
+    // Assert the size of the resulting documents in the query parameter is 30,
+    // as the max defined, instead of the 35 being present.
+    const url: string | undefined = ghIssueLinkSpy.mock.calls[0][0]?.toString();
+    expect((url?.match(REF_DOCUMENT_EXAMPLE_REGEXP) || []).length).toEqual(30);
   });
 
   it("Chat service returns 500", async () => {
