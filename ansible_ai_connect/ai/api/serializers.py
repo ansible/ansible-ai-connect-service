@@ -608,7 +608,7 @@ class GenerationWarningResponseSerializer(serializers.Serializer):
 class GenerationRoleFileEntrySerializer(serializers.Serializer):
     path = serializers.CharField()
     content = serializers.CharField()
-    fileType = serializers.CharField()
+    file_type = serializers.CharField()
 
 
 class GenerationResponseSerializer(serializers.Serializer):
@@ -625,7 +625,7 @@ class GenerationResponseSerializer(serializers.Serializer):
 
 
 class GenerationRoleResponseSerializer(serializers.Serializer):
-    name = serializers.CharField()
+    role = serializers.CharField(help_text=("Name of the role."))
     files = serializers.ListField(child=GenerationRoleFileEntrySerializer())
     generationId = serializers.UUIDField(
         format="hex_verbose",
