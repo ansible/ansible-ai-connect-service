@@ -68,7 +68,7 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via black
-cryptography==43.0.1
+cryptography==43.0.3
     # via
     #   -r requirements.in
     #   ansible-core
