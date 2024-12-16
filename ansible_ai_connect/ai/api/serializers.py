@@ -424,6 +424,7 @@ class ExplanationRequestSerializer(Metadata):
         required=False,
         label="Custom prompt",
         help_text="Custom prompt passed to the LLM when explaining a playbook.",
+        default="",
     )
     explanationId = serializers.UUIDField(
         format="hex_verbose",
@@ -432,8 +433,9 @@ class ExplanationRequestSerializer(Metadata):
         help_text=(
             "A UUID that identifies the particular explanation data is being requested for."
         ),
+        default="",
     )
-    model = serializers.CharField(required=False, allow_blank=True)
+    model = serializers.CharField(required=False, allow_blank=True, default="")
     metadata = Metadata(required=False)
 
     def validate(self, data):
@@ -483,12 +485,14 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
         required=False,
         label="Custom prompt",
         help_text="Custom prompt passed to the LLM when generating the text of a playbook.",
+        default="",
     )
     generationId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
         label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
+        default="",
     )
     createOutline = serializers.BooleanField(
         required=False,
@@ -503,12 +507,14 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
         required=False,
         label="outline",
         help_text="A long step by step outline of the expected Ansible Playbook.",
+        default="",
     )
     wizardId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
+        default="",
     )
     model = serializers.CharField(required=False, allow_blank=True)
 
@@ -622,7 +628,7 @@ class GenerationPlaybookResponseSerializer(serializers.Serializer):
     generationId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
-        label="Explanation ID",
+        label="Generation ID",
         help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
     outline = serializers.CharField()
@@ -635,7 +641,7 @@ class GenerationRoleResponseSerializer(serializers.Serializer):
     generationId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
-        label="Explanation ID",
+        label="Generation ID",
         help_text=("A UUID that identifies the particular summary data is being requested for."),
     )
     outline = serializers.CharField()
