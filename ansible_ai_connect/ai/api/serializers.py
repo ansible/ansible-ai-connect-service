@@ -461,7 +461,7 @@ class ExplanationResponseSerializer(serializers.Serializer):
     )
 
 
-class GenerationRequestSerializer(serializers.Serializer):
+class GenerationPlaybookRequestSerializer(serializers.Serializer):
     class Meta:
         fields = [
             "text",
@@ -616,7 +616,7 @@ class GenerationRoleFileEntrySerializer(serializers.Serializer):
     file_type = serializers.CharField()
 
 
-class GenerationResponseSerializer(serializers.Serializer):
+class GenerationPlaybookResponseSerializer(serializers.Serializer):
     playbook = serializers.CharField()
     format = serializers.CharField()
     generationId = serializers.UUIDField(

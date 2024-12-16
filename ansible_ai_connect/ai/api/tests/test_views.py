@@ -3262,7 +3262,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("generations"), payload, format="json")
+        r = self.client.post(reverse("generations/playbook"), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["playbook"])
         self.assertEqual(r.data["format"], "plaintext")
@@ -3280,7 +3280,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -3303,7 +3303,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations"), payload, format="json")
+            self.client.post(reverse("generations/playbook"), payload, format="json")
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -3322,7 +3322,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             # Hit the API without authentication
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -3336,7 +3336,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -3354,7 +3354,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_pii_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data["playbook"])
             self.assertIsNotNone(r.data["outline"])
@@ -3375,7 +3375,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         }
         self.client.force_authenticate(user=self.user)
         with self.assertRaises(Exception):
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -3395,7 +3395,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations"), payload, format="json")
+            self.client.post(reverse("generations/playbook"), payload, format="json")
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -3422,7 +3422,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -3448,7 +3448,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -3472,7 +3472,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations"), payload, format="json")
+            r = self.client.post(reverse("generations/playbook"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -3498,7 +3498,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations"), payload, format="json")
+            self.client.post(reverse("generations/playbook"), payload, format="json")
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -3587,7 +3587,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("generations"), self.payload, format="json")
+                r = self.client.post(reverse("generations/playbook"), self.payload, format="json")
                 self.assertEqual(r.status_code, expected_status_code)
                 if expected_exception() is not None:
                     self.assert_error_detail(
@@ -3898,7 +3898,7 @@ class TestGenerationFeatureEnableForWcaOnprem(
     @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=False)
     def test_feature_not_enabled_yet(self):
         self.client.force_login(user=self.aap_user)
-        r = self.client.post(reverse("generations"), self.payload_json, format="json")
+        r = self.client.post(reverse("generations/playbook"), self.payload_json, format="json")
         self.assertEqual(r.status_code, 404)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
@@ -3912,7 +3912,7 @@ class TestGenerationFeatureEnableForWcaOnprem(
             "get_model_pipeline",
             Mock(return_value=self.stub_wca_client()),
         ):
-            r = self.client.post(reverse("generations"), self.payload_json, format="json")
+            r = self.client.post(reverse("generations/playbook"), self.payload_json, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data["playbook"], "---\n- hosts: all\n")
             self.assertEqual(r.data["format"], "plaintext")

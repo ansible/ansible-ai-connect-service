@@ -20,7 +20,7 @@ from .views import (
     ContentMatches,
     Explanation,
     Feedback,
-    Generation,
+    GenerationPlaybook,
     GenerationRole,
 )
 
@@ -28,7 +28,9 @@ urlpatterns = [
     path("completions/", Completions.as_view(), name="completions"),
     path("contentmatches/", ContentMatches.as_view(), name="contentmatches"),
     path("explanations/", Explanation.as_view(), name="explanations"),
-    path("generations/", Generation.as_view(), name="generations"),
+    # Legacy
+    path("generations/", GenerationPlaybook.as_view(), name="generations"),
+    path("generations/playbook", GenerationPlaybook.as_view(), name="generations/playbook"),
     path("generations/role", GenerationRole.as_view(), name="generations/role"),
     path("feedback/", Feedback.as_view(), name="feedback"),
     path("chat/", Chat.as_view(), name="chat"),
