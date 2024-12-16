@@ -3604,7 +3604,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.NO_CONTENT,
             WcaBadRequestException,
-            "bad request for playbook generation",
+            "WCA returned a bad request response",
         )
 
     def test_missing_api_key(self):
@@ -3616,7 +3616,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.FORBIDDEN,
             WcaKeyNotFoundException,
-            "A WCA Api Key was expected but not found for playbook generation",
+            "A WCA Api Key was expected but not found",
         )
 
     def test_missing_model_id(self):
@@ -3628,7 +3628,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.FORBIDDEN,
             WcaModelIdNotFoundException,
-            "A WCA Model ID was expected but not found for playbook generation",
+            "A WCA Model ID was expected but not found",
         )
 
     def test_missing_default_model_id(self):
@@ -3640,7 +3640,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.FORBIDDEN,
             WcaNoDefaultModelIdException,
-            "A default WCA Model ID was expected but not found for playbook generation",
+            "No default WCA Model ID was found",
         )
 
     def test_request_id_correlation_failure(self):
@@ -3656,7 +3656,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.INTERNAL_SERVER_ERROR,
             WcaRequestIdCorrelationFailureException,
-            "WCA Request/Response GenerationId correlation failed",
+            "WCA Request/Response Request Id correlation failed",
         )
 
     def test_invalid_model_id(self):
@@ -3669,7 +3669,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.FORBIDDEN,
             WcaInvalidModelIdException,
-            "WCA Model ID is invalid for playbook generation",
+            "WCA Model ID is invalid",
         )
 
     def test_empty_response(self):
@@ -3680,7 +3680,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.NO_CONTENT,
             WcaEmptyResponseException,
-            "WCA returned an empty response for playbook generation",
+            "WCA returned an empty response",
         )
 
     def test_cloudflare_rejection(self):
@@ -3689,7 +3689,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.BAD_REQUEST,
             WcaCloudflareRejectionException,
-            "Cloudflare rejected the request for playbook generation",
+            "Cloudflare rejected the request",
         )
 
     def test_hap_filter(self):
@@ -3704,7 +3704,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.BAD_REQUEST,
             WcaHAPFilterRejectionException,
-            "WCA Hate, Abuse, and Profanity filter rejected the request for playbook generation",
+            "WCA Hate, Abuse, and Profanity filter rejected the request",
         )
 
     def test_user_trial_expired(self):
@@ -3716,7 +3716,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.FORBIDDEN,
             WcaUserTrialExpiredException,
-            "User trial expired, when requesting playbook generation",
+            "User trial expired",
         )
 
     def test_wca_instance_deleted(self):
@@ -3733,7 +3733,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             model_client,
             HTTPStatus.IM_A_TEAPOT,
             WcaInstanceDeletedException,
-            "WCA Instance has been deleted when requesting playbook generation",
+            "The WCA instance associated with the Model ID has been deleted",
         )
 
     def test_wca_request_with_model_id_given(self):

@@ -21,7 +21,12 @@ from django.utils import timezone
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 from ansible_ai_connect.users.models import Plan
 
-from .schema1 import ExplainPlaybookEvent, OneClickTrialStartedEvent, Schema1Event
+from .schema1 import (
+    ExplainPlaybookEvent,
+    GenerationPlaybookEvent,
+    OneClickTrialStartedEvent,
+    Schema1Event,
+)
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
@@ -107,3 +112,12 @@ class TestExplainPlaybookEvent(WisdomServiceAPITestCaseBaseOIDC):
     def test_base(self):
         event1 = ExplainPlaybookEvent()
         self.assertEqual(event1.event_name, "explainPlaybook")
+
+
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestGenerationPlaybookEvent(WisdomServiceAPITestCaseBaseOIDC):
+    def test_base(self):
+        event1 = GenerationPlaybookEvent()
+        self.assertEqual(event1.event_name, "codegenPlaybook")
+        self.assertFalse(event1.create_outline)

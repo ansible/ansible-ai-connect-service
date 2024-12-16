@@ -185,7 +185,7 @@ class AACSAPIView(APIView):
         # should exposed as self.validated_data.model, or using a special
         # method.
         # See: https://github.com/ansible/ansible-ai-connect-service/pull/1147/files#diff-ecfb6919dfd8379aafba96af7457b253e4dce528897dfe6bfc207ca2b3b2ada9R143-R151  # noqa: E501
-        self.model_id: str = ""
+        self.req_model_id: str = ""
 
         return super().initialize_request(request, *args, **kwargs)
 
@@ -223,7 +223,9 @@ class AACSAPIView(APIView):
             model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
             user = request.user
             org_id = hasattr(user, "organization") and user.organization and user.organization.id
-            self.event.modelName = model_meta_data.get_model_id(request.user, org_id, self.model_id)
+            self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
+                request.user, org_id, self.req_model_id
+            )
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
         self.event.set_response(response)
@@ -762,7 +764,7 @@ class Explanation(AACSAPIView):
         explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
         playbook = request_serializer.validated_data.get("content")
         custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
-        self.model_id = str(request_serializer.validated_data.get("model", ""))
+        self.req_model_id = str(request_serializer.validated_data.get("model", ""))
 
         llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelinePlaybookExplanation
@@ -797,13 +799,14 @@ class Explanation(AACSAPIView):
         )
 
 
-class GenerationPlaybook(APIView):
+class GenerationPlaybook(AACSAPIView):
     """
     Returns a playbook based on a text input.
     """
 
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
+    schema1_event = schema1.GenerationPlaybookEvent
 
     throttle_cache_key_suffix = "_generation_playbook"
 
@@ -820,194 +823,66 @@ class GenerationPlaybook(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        exception = None
         generation_id = None
         wizard_id = None
-        duration = None
         create_outline = None
         anonymized_playbook = ""
         playbook = ""
-        request_serializer = GenerationPlaybookRequestSerializer(data=request.data)
         answer = {}
         model_id = ""
-        try:
-            request_serializer.is_valid(raise_exception=True)
-            generation_id = str(request_serializer.validated_data.get("generationId", ""))
-            create_outline = request_serializer.validated_data["createOutline"]
-            outline = str(request_serializer.validated_data.get("outline", ""))
-            text = request_serializer.validated_data["text"]
-            custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
-            wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
-            model_id = str(request_serializer.validated_data.get("model", ""))
 
-            llm: ModelPipelinePlaybookGeneration = apps.get_app_config("ai").get_model_pipeline(
-                ModelPipelinePlaybookGeneration
-            )
-            start_time = time.time()
-            playbook, outline, warnings = llm.invoke(
-                PlaybookGenerationParameters.init(
-                    request=request,
-                    text=text,
-                    custom_prompt=custom_prompt,
-                    create_outline=create_outline,
-                    outline=outline,
-                    generation_id=generation_id,
-                    model_id=model_id,
-                )
-            )
-            duration = round((time.time() - start_time) * 1000, 2)
+        request_serializer = GenerationPlaybookRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        generation_id = str(request_serializer.validated_data.get("generationId", ""))
+        create_outline = request_serializer.validated_data["createOutline"]
+        outline = str(request_serializer.validated_data.get("outline", ""))
+        text = request_serializer.validated_data["text"]
+        custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
+        wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
+        self.req_model_id = str(request_serializer.validated_data.get("model", ""))
 
-            # Anonymize responses
-            # Anonymized in the View to be consistent with where Completions are anonymized
-            anonymized_playbook = anonymizer.anonymize_struct(
-                playbook, value_template=Template("{{ _${variable_name}_ }}")
-            )
-            anonymized_outline = anonymizer.anonymize_struct(
-                outline, value_template=Template("{{ _${variable_name}_ }}")
-            )
+        self.event.generationId = generation_id
+        self.event.wizardId = wizard_id
+        self.event.modelName = model_id
 
-            answer = {
-                "playbook": anonymized_playbook,
-                "outline": anonymized_outline,
-                "warnings": warnings,
-                "format": "plaintext",
-                "generationId": generation_id,
-            }
-
-        except WcaBadRequest as e:
-            exception = e
-            logger.exception(f"bad request for playbook generation {generation_id}")
-            raise WcaBadRequestException(cause=e)
-
-        except WcaInvalidModelId as e:
-            exception = e
-            logger.exception(f"WCA Model ID is invalid for playbook generation {generation_id}")
-            raise WcaInvalidModelIdException(cause=e)
-
-        except WcaKeyNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Api Key was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaKeyNotFoundException(cause=e)
-
-        except WcaModelIdNotFound as e:
-            exception = e
-            logger.exception(
-                f"A WCA Model ID was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaModelIdNotFoundException(cause=e)
-
-        except WcaNoDefaultModelId as e:
-            exception = e
-            logger.exception(
-                "A default WCA Model ID was expected but not found for "
-                f"playbook generation {generation_id}"
-            )
-            raise WcaNoDefaultModelIdException(cause=e)
-
-        except WcaRequestIdCorrelationFailure as e:
-            exception = e
-            logger.exception(
-                f"WCA Request/Response GenerationId correlation failed "
-                f"for suggestion {generation_id}"
-            )
-            raise WcaRequestIdCorrelationFailureException(cause=e)
-
-        except WcaEmptyResponse as e:
-            exception = e
-            logger.exception(
-                f"WCA returned an empty response for playbook generation {generation_id}"
-            )
-            raise WcaEmptyResponseException(cause=e)
-
-        except WcaCloudflareRejection as e:
-            exception = e
-            logger.exception(
-                f"Cloudflare rejected the request for playbook generation {generation_id}"
-            )
-            raise WcaCloudflareRejectionException(cause=e)
-
-        except WcaHAPFilterRejection as e:
-            exception = e
-            logger.exception(
-                f"WCA Hate, Abuse, and Profanity filter rejected "
-                f"the request for playbook generation {generation_id}"
-            )
-            raise WcaHAPFilterRejectionException(cause=e)
-
-        except WcaUserTrialExpired as e:
-            exception = e
-            logger.exception(
-                f"User trial expired, when requesting playbook generation {generation_id}"
-            )
-            raise WcaUserTrialExpiredException(cause=e)
-
-        except WcaInstanceDeleted as e:
-            exception = e
-            logger.exception(
-                "WCA Instance has been deleted when requesting playbook generation "
-                f"{generation_id} for model {e.model_id}"
-            )
-            raise WcaInstanceDeletedException(cause=e)
-
-        except Exception as exc:
-            exception = exc
-            logger.exception(f"An exception {exc.__class__} occurred during a playbook generation")
-            raise
-
-        finally:
-            self.write_to_segment(
-                request.user,
-                generation_id,
-                wizard_id,
-                exception,
-                duration,
-                create_outline,
-                playbook_length=len(anonymized_playbook),
+        self.event.create_outline = create_outline
+        llm: ModelPipelinePlaybookGeneration = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelinePlaybookGeneration
+        )
+        playbook, outline, warnings = llm.invoke(
+            PlaybookGenerationParameters.init(
+                request=request,
+                text=text,
+                custom_prompt=custom_prompt,
+                create_outline=create_outline,
+                outline=outline,
+                generation_id=generation_id,
                 model_id=model_id,
             )
+        )
+
+        # Anonymize responses
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_playbook = anonymizer.anonymize_struct(
+            playbook, value_template=Template("{{ _${variable_name}_ }}")
+        )
+        anonymized_outline = anonymizer.anonymize_struct(
+            outline, value_template=Template("{{ _${variable_name}_ }}")
+        )
+        self.event.playbook_length = len(anonymized_playbook)
+
+        answer = {
+            "playbook": anonymized_playbook,
+            "outline": anonymized_outline,
+            "warnings": warnings,
+            "format": "plaintext",
+            "generationId": generation_id,
+        }
 
         return Response(
             answer,
             status=rest_framework_status.HTTP_200_OK,
         )
-
-    def write_to_segment(
-        self,
-        user,
-        generation_id,
-        wizard_id,
-        exception,
-        duration,
-        create_outline,
-        playbook_length,
-        model_id,
-    ):
-        model_name = ""
-        try:
-            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            model_name = model_meta_data.get_model_id(user, user.org_id, model_id)
-        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-            pass
-        event = {
-            "create_outline": create_outline,
-            "duration": duration,
-            "exception": exception is not None,
-            "generationId": generation_id,
-            "modelName": model_name,
-            "playbook_length": playbook_length,
-            "wizardId": wizard_id,
-        }
-        if exception:
-            event["response"] = (
-                {
-                    "exception": str(exception),
-                },
-            )
-        send_segment_event(event, "codegenPlaybook", user)
 
 
 class GenerationRole(APIView):
