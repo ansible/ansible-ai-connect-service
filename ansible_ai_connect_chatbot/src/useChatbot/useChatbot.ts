@@ -12,7 +12,7 @@ import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
 import {
   API_TIMEOUT,
-  GITHUB_NEW_ISSUE_BASE_URL,
+  GITHUB_NEW_ISSUE_URL,
   Sentiment,
   TIMEOUT_MSG,
   TOO_MANY_REQUESTS_MSG,
@@ -82,7 +82,12 @@ export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
             content: "Sure!",
             id: "response",
             onClick: () =>
-              window.open(createGitHubIssueURL(f), "_blank")?.focus(),
+              window
+                .open(
+                  `${GITHUB_NEW_ISSUE_URL}&conversation_id=${f.response.conversation_id}&prompt=${f.query}&response=${f.response.response}`,
+                  "_blank",
+                )
+                ?.focus(),
           },
         ],
 });
@@ -107,32 +112,6 @@ const INITIAL_NOTICE: AlertMessage = {
   Interactions with the Ansible Automation Platform Lightspeed may be reviewed
   and utilized to enhance our products and services. `,
   variant: "info",
-};
-
-const createGitHubIssueURL = (f: ChatFeedback): string => {
-  const searchParams: URLSearchParams = new URLSearchParams();
-  searchParams.append("assignees", "korenaren");
-  searchParams.append("labels", "bug,triage");
-  searchParams.append("projects", "");
-  searchParams.append("template", "chatbot_feedback.yml");
-  searchParams.append("conversation_id", f.response.conversation_id);
-  searchParams.append("prompt", f.query);
-  searchParams.append("response", f.response.response);
-  // Referenced documents may increase as more source documents being ingested,
-  // so let's be try not to generate long length for query parameter "ref_docs",
-  // otherwise GH returns 414 URI Too Long error page. Assuming max of 30 docs.
-  // See https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query.
-  searchParams.append(
-    "ref_docs",
-    f.response.referenced_documents
-      ?.slice(0, 30)
-      .map((doc) => doc.docs_url)
-      .join("\n"),
-  );
-
-  const url = new URL(GITHUB_NEW_ISSUE_BASE_URL);
-  url.search = searchParams.toString();
-  return url.toString();
 };
 
 export const useChatbot = () => {
@@ -206,9 +185,7 @@ export const useChatbot = () => {
     try {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
-        import.meta.env.PROD
-          ? "/api/v0/ai/feedback/"
-          : "http://localhost:8080/v1/feedback/",
+        "/api/v0/ai/feedback/",
         {
           chatFeedback: feedbackRequest,
         },
@@ -235,7 +212,7 @@ export const useChatbot = () => {
     } catch (e) {
       setAlertMessage({
         title: "Error",
-        message: `An unexpected error occurred: ${e}`,
+        message: `An unexpected error occured: ${e}`,
         variant: "danger",
       });
     }
@@ -317,7 +294,7 @@ export const useChatbot = () => {
       } else {
         setAlertMessage({
           title: "Error",
-          message: `An unexpected error occurred: ${e}`,
+          message: `An unexpected error occured: ${e}`,
           variant: "danger",
         });
       }

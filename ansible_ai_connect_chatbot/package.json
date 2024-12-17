@@ -26,7 +26,7 @@
     "postbuild": "rsync -a --delete ./dist/static/chatbot/ ../ansible_ai_connect/main/static/chatbot && rsync -a ./dist/index.html ../ansible_ai_connect/main/templates/chatbot/",
     "serve": "vite preview",
     "test": "vitest run",
-    "coverage": "vitest run --coverage --reporter=verbose --test-timeout=15000",
+    "coverage": "vitest run --coverage",
     "eslint": "eslint --max-warnings=0 src"
   },
   "eslintConfig": {
