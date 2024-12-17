@@ -121,8 +121,8 @@ from .serializers import (
     ExplanationRequestSerializer,
     ExplanationResponseSerializer,
     FeedbackRequestSerializer,
-    GenerationRequestSerializer,
-    GenerationResponseSerializer,
+    GenerationPlaybookRequestSerializer,
+    GenerationPlaybookResponseSerializer,
     GenerationRoleRequestSerializer,
     GenerationRoleResponseSerializer,
     InlineSuggestionFeedback,
@@ -797,7 +797,7 @@ class Explanation(AACSAPIView):
         )
 
 
-class Generation(APIView):
+class GenerationPlaybook(APIView):
     """
     Returns a playbook based on a text input.
     """
@@ -805,12 +805,12 @@ class Generation(APIView):
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
 
-    throttle_cache_key_suffix = "_generation"
+    throttle_cache_key_suffix = "_generation_playbook"
 
     @extend_schema(
-        request=GenerationRequestSerializer,
+        request=GenerationPlaybookRequestSerializer,
         responses={
-            200: GenerationResponseSerializer,
+            200: GenerationPlaybookResponseSerializer,
             204: OpenApiResponse(description="Empty response"),
             400: OpenApiResponse(description="Bad Request"),
             401: OpenApiResponse(description="Unauthorized"),
@@ -827,7 +827,7 @@ class Generation(APIView):
         create_outline = None
         anonymized_playbook = ""
         playbook = ""
-        request_serializer = GenerationRequestSerializer(data=request.data)
+        request_serializer = GenerationPlaybookRequestSerializer(data=request.data)
         answer = {}
         model_id = ""
         try:
