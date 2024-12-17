@@ -988,11 +988,11 @@ components:
           type: string
         content:
           type: string
-        file_type:
+        fileType:
           type: string
       required:
       - content
-      - file_type
+      - fileType
       - path
     GenerationRoleRequest:
       type: object
@@ -1045,9 +1045,8 @@ components:
     GenerationRoleResponse:
       type: object
       properties:
-        role:
+        name:
           type: string
-          description: Name of the role.
         files:
           type: array
           items:
@@ -1066,8 +1065,8 @@ components:
             $ref: '#/components/schemas/GenerationWarningResponse'
       required:
       - files
+      - name
       - outline
-      - role
     GenerationWarningResponse:
       type: object
       properties:

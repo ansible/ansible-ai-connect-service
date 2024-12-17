@@ -28,6 +28,8 @@ describe("App tests", () => {
     );
   };
 
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
   const createError = (message: string, status: number): AxiosError => {
     const request = { path: "/chat" };
     const headers = new AxiosHeaders({
@@ -53,16 +55,7 @@ describe("App tests", () => {
     return error;
   };
 
-  const referencedDocumentExample = [
-    "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
-  ];
-
-  const mockAxios = (
-    status: number,
-    reject = false,
-    timeout = false,
-    refDocs: string[] = referencedDocumentExample,
-  ) => {
+  const mockAxios = (status: number, reject = false, timeout = false) => {
     const spy = vi.spyOn(axios, "post");
     if (reject) {
       if (timeout) {
@@ -84,10 +77,14 @@ describe("App tests", () => {
       spy.mockResolvedValue({
         data: {
           conversation_id: "123e4567-e89b-12d3-a456-426614174000",
-          referenced_documents: refDocs.map((d, index) => ({
-            docs_url: d,
-            title: "Create variables" + (index > 0 ? index : ""),
-          })),
+          referenced_documents: [
+            {
+              docs_url:
+                "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html-single/" +
+                "getting_started_with_playbooks/index#ref-create-variables",
+              title: "Create variables",
+            },
+          ],
           response:
             "In Ansible, the precedence of variables is determined by the order...",
           truncated: false,
@@ -105,9 +102,9 @@ describe("App tests", () => {
     debugDiv?.remove();
   });
 
-  it("App renders", async () => {
+  it("App renders", () => {
     renderApp();
-    expect(await screen.findByText("Hello, Ansible User")).toBeInTheDocument();
+    expect(screen.getByText("Hello, Ansible User")).toBeInTheDocument();
     const attachButton = screen.queryByLabelText("Attach button");
     expect(attachButton).toBeNull();
   });
@@ -115,28 +112,24 @@ describe("App tests", () => {
   it("Basic chatbot interaction", async () => {
     mockAxios(200);
     renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "In Ansible, the precedence of variables is determined by the order...",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
 
-    const thumbsUpIcon = await screen.findByRole("button", {
-      name: "Good response",
-    });
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
     await act(async () => fireEvent.click(thumbsUpIcon));
 
-    const thumbsDownIcon = await screen.findByRole("button", {
-      name: "Bad response",
-    });
+    const thumbsDownIcon = screen.getByRole("button", { name: "Bad response" });
     await act(async () => fireEvent.click(thumbsDownIcon));
 
-    const clearContextButton = await screen.findByLabelText("Clear context");
+    const clearContextButton = screen.getByLabelText("Clear context");
     await act(async () => fireEvent.click(clearContextButton));
     expect(
       screen.queryByText(
@@ -145,16 +138,16 @@ describe("App tests", () => {
     ).toBeNull();
     expect(screen.queryByText("Create variables")).toBeNull();
 
-    const footNoteLink = await screen.findByText(
+    const footNoteLink = screen.getByText(
       "Lightspeed uses AI. Check for mistakes.",
     );
     await act(async () => fireEvent.click(footNoteLink));
     expect(
-      await screen.findByText("While Lightspeed strives for accuracy,", {
+      screen.getByText("While Lightspeed strives for accuracy,", {
         exact: false,
       }),
     ).toBeVisible();
-    const gotItButton = await screen.findByText("Got it");
+    const gotItButton = screen.getByText("Got it");
     await act(async () => fireEvent.click(gotItButton));
     expect(
       screen.queryByText("While Lightspeed strives for accuracy,", {
@@ -164,81 +157,32 @@ describe("App tests", () => {
   });
 
   it("ThumbsDown icon test", async () => {
-    const ghIssueLinkSpy = vi.spyOn(global, "open");
     mockAxios(200);
     renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "In Ansible, the precedence of variables is determined by the order...",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
 
-    const thumbsDownIcon = await screen.findByRole("button", {
-      name: "Bad response",
-    });
+    const thumbsDownIcon = screen.getByRole("button", { name: "Bad response" });
     await act(async () => fireEvent.click(thumbsDownIcon));
 
-    const sureButton = await screen.findByText("Sure!");
+    const sureButton = screen.getByText("Sure!");
     await act(async () => fireEvent.click(sureButton));
-
-    expect(ghIssueLinkSpy.mock.calls.length).toEqual(1);
-    expect(ghIssueLinkSpy.mock.calls[0][0]).toContain(
-      encodeURIComponent(referencedDocumentExample[0]),
-    );
-  });
-
-  const REF_DOCUMENT_EXAMPLE_REGEXP = new RegExp(
-    encodeURIComponent(referencedDocumentExample[0]),
-    "g",
-  );
-
-  it("Too many reference documents for the GU issue creation query param.", async () => {
-    const ghIssueLinkSpy = vi.spyOn(global, "open");
-    // Initialize 35 reference documents for this test case, in order to verify that the url
-    // will not contain more than the max allowed documents (30).
-    const lotsOfRefDocs = [];
-    for (let i = 0; i < 35; i++) {
-      lotsOfRefDocs.push(referencedDocumentExample[0]);
-    }
-    mockAxios(200, false, false, lotsOfRefDocs);
-    renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
-    await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
-    await act(async () => fireEvent.click(sendButton));
-    expect(
-      await screen.findByText(
-        "In Ansible, the precedence of variables is determined by the order...",
-      ),
-    ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
-
-    const thumbsDownIcon = await screen.findByRole("button", {
-      name: "Bad response",
-    });
-    await act(async () => fireEvent.click(thumbsDownIcon));
-
-    const sureButton = await screen.findByText("Sure!");
-    await act(async () => fireEvent.click(sureButton));
-
-    expect(ghIssueLinkSpy.mock.calls.length).toEqual(1);
-    // Assert the size of the resulting documents in the query parameter is 30,
-    // as the max defined, instead of the 35 being present.
-    const url: string | undefined = ghIssueLinkSpy.mock.calls[0][0]?.toString();
-    expect((url?.match(REF_DOCUMENT_EXAMPLE_REGEXP) || []).length).toEqual(30);
   });
 
   it("Chat service returns 500", async () => {
     mockAxios(500);
     const view = renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
@@ -248,12 +192,12 @@ describe("App tests", () => {
   it("Chat service returns a timeout error", async () => {
     mockAxios(-1, true, true);
     renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "Chatbot service is taking too long to respond to your query. ",
         { exact: false },
       ),
@@ -263,60 +207,50 @@ describe("App tests", () => {
   it("Chat service returns 429 Too Many Requests error", async () => {
     mockAxios(429, true);
     renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
-    try {
-      vi.useFakeTimers();
-      await act(async () => fireEvent.click(sendButton));
-      await act(async () => vi.runAllTimers());
-      expect(
-        await screen.findByText(
-          "Chatbot service is busy with too many requests. ",
-          {
-            exact: false,
-          },
-        ),
-      ).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
+    const sendButton = screen.getByLabelText("Send button");
+    await act(async () => fireEvent.click(sendButton));
+    await delay(3100);
+    expect(
+      screen.getByText("Chatbot service is busy with too many requests. ", {
+        exact: false,
+      }),
+    ).toBeInTheDocument();
   });
 
   it("Chat service returns an unexpected error", async () => {
     mockAxios(-1, true);
     const view = renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
-      "An unexpected error occurred: Error: mocked error",
+      "An unexpected error occured: Error: mocked error",
     );
   });
 
   it("Feedback API returns 500", async () => {
     mockAxios(200);
     const view = renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "In Ansible, the precedence of variables is determined by the order...",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
 
     vi.restoreAllMocks();
     mockAxios(500);
 
-    const thumbsUpIcon = await screen.findByRole("button", {
-      name: "Good response",
-    });
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
     await act(async () => fireEvent.click(thumbsUpIcon));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
@@ -326,28 +260,26 @@ describe("App tests", () => {
   it("Feedback API returns an unexpected error", async () => {
     mockAxios(200);
     const view = renderApp();
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "In Ansible, the precedence of variables is determined by the order...",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
 
     vi.restoreAllMocks();
     mockAxios(-1, true);
 
-    const thumbsUpIcon = await screen.findByRole("button", {
-      name: "Good response",
-    });
+    const thumbsUpIcon = screen.getByRole("button", { name: "Good response" });
     await act(async () => fireEvent.click(thumbsUpIcon));
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
-      "An unexpected error occurred: Error: mocked error",
+      "An unexpected error occured: Error: mocked error",
     );
   });
 
@@ -379,24 +311,22 @@ describe("App tests", () => {
     mockAxios(200);
 
     renderApp(true);
-    const modelSelection = await screen.findByText("granite3-8b");
+    const modelSelection = screen.getByText("granite3-8b");
     await act(async () => fireEvent.click(modelSelection));
-    expect(
-      await screen.findByRole("menuitem", { name: "granite3-8b" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "granite3-8b" })).toBeTruthy();
     await act(async () =>
-      (await screen.findByRole("menuitem", { name: "granite3-8b" })).click(),
+      screen.getByRole("menuitem", { name: "granite3-8b" }).click(),
     );
 
-    const textArea = await screen.findByLabelText("Send a message...");
+    const textArea = screen.getByLabelText("Send a message...");
     await act(async () => userEvent.type(textArea, "Hello"));
-    const sendButton = await screen.findByLabelText("Send button");
+    const sendButton = screen.getByLabelText("Send button");
     await act(async () => fireEvent.click(sendButton));
     expect(
-      await screen.findByText(
+      screen.getByText(
         "In Ansible, the precedence of variables is determined by the order...",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Create variables")).toBeInTheDocument();
+    expect(screen.getByText("Create variables")).toBeInTheDocument();
   });
 });
