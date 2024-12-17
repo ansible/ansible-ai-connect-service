@@ -229,7 +229,7 @@ describe("App tests", () => {
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
-      "An unexpected error occured: Error: mocked error",
+      "An unexpected error occurred: Error: mocked error",
     );
   });
 
@@ -279,7 +279,7 @@ describe("App tests", () => {
     const alert = view.container.querySelector(".pf-v6-c-alert__description");
     const textContent = alert?.textContent;
     expect(textContent).toEqual(
-      "An unexpected error occured: Error: mocked error",
+      "An unexpected error occurred: Error: mocked error",
     );
   });
 
