@@ -201,6 +201,12 @@ class TestMarkdownMe(TestCase):
         Logged in as: test_user_name<br>
         Plan: trial of 90 days<br>
         Expiration: {expired_at}
+
+            <br>Accelerate Playbook creation with AI-driven content recommendations
+            from <b>IBM Watsonx Code Assistant for Red Hat Ansible Lightspeed</b>,
+            enabling faster, more efficient automation development. <a href=
+            "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
+            Learn more</a>.
         """
         self.assertEqual(dedent(expectation).strip(), content)
 
@@ -223,7 +229,9 @@ class TestMarkdownMe(TestCase):
         r = self.client.get(reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         content = r.json()["content"]
-        self.assertTrue("Your trial has expired. Contact your Red Hat" in content)
+        self.assertTrue(
+            "Your trial has expired. To continue your Ansible automation journey" in content
+        )
 
         user.delete()
         trial_plan.delete()

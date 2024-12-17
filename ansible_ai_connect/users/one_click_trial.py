@@ -50,6 +50,14 @@ class OneClickTrial:
                     Plan: {active_plan.plan.name}<br>
                     Expiration: {expired_at}
                 """
+                if (active_plan.expired_at - timezone.now()).days <= 90:
+                    markdown_value += """
+                        <br>Accelerate Playbook creation with AI-driven content recommendations
+                        from <b>IBM Watsonx Code Assistant for Red Hat Ansible Lightspeed</b>,
+                        enabling faster, more efficient automation development. <a href=
+                        "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
+                        Learn more</a>.
+                    """
             elif active_plan and not active_plan.expired_at:
                 markdown_value = f"""
                     Logged in as: {self.user.username}<br>
@@ -59,11 +67,11 @@ class OneClickTrial:
             elif expired_plan:
                 markdown_value = f"""
                     Logged in as: {self.user.username}<br>
-                    Your trial has expired. Contact your Red Hat Organization's
-                    administrator to request access to
-                    <a href =
-                    "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
-                    Ansible Lightspeed with IBM watsonx Code Assistant</a>.
+                    Your trial has expired. To continue your Ansible automation journey,
+                    contact your Red Hat organization's administrator, or <a href=
+                    "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed
+                    ?schedulerform">connect with an IBM expert to subscribe to watsonx Code
+                    Assistant for Red Hat Ansible Lightspeed</a>.
                 """
             else:
                 markdown_value = f"""
