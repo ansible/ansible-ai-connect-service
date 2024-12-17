@@ -235,7 +235,7 @@ export const useChatbot = () => {
     } catch (e) {
       setAlertMessage({
         title: "Error",
-        message: `An unexpected error occured: ${e}`,
+        message: `An unexpected error occurred: ${e}`,
         variant: "danger",
       });
     }
@@ -317,7 +317,7 @@ export const useChatbot = () => {
       } else {
         setAlertMessage({
           title: "Error",
-          message: `An unexpected error occured: ${e}`,
+          message: `An unexpected error occurred: ${e}`,
           variant: "danger",
         });
       }
