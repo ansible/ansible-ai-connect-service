@@ -98,6 +98,7 @@ class TestOneClickTrialStartedEvent(WisdomServiceAPITestCaseBaseOIDC):
         self.assertEqual(event1.plans[0].name, "Some plan")
         self.assertTrue(event1.plans[0].created_at.startswith("20"))
         self.assertEqual(event1.plans[0].plan_id, self.trial_plan.id)
+        self.assertEqual(event1.plan_ids, [self.trial_plan.id])
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
