@@ -96,6 +96,7 @@ class Schema1Event:
     _user: User | None = None
     _created_at: int = time.time()
     plans: list[PlanEntry] = Factory(list)
+    plan_ids: list[int] = Factory(list)
     timestamp: str | None = None
     duration: float | None = None
 
@@ -119,6 +120,7 @@ class Schema1Event:
             self.rh_user_org_id = user.organization.id
         self.groups = list(user.groups.values_list("name", flat=True))
         self.plans = [PlanEntry.init(up) for up in user.userplan_set.all()]
+        self.plan_ids = [up.plan_id for up in user.userplan_set.all()]
 
     def set_request(self, request):
         if hasattr(request, "user"):  # e.g WSGIRequest generated when we run update-openapi-schema
