@@ -1,6 +1,7 @@
 {
   "name": "ansible-ai-connect-chatbot",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@patternfly/chatbot": "^2.2.0-prerelease.8",
