@@ -25,8 +25,8 @@
     "build": "tsc && vite build",
     "postbuild": "rsync -a --delete ./dist/static/chatbot/ ../ansible_ai_connect/main/static/chatbot && rsync -a ./dist/index.html ../ansible_ai_connect/main/templates/chatbot/",
     "serve": "vite preview",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
+    "test": "vitest run --browser.headless src/",
+    "coverage": "vitest run --browser.headless  --coverage src/",
     "eslint": "eslint --max-warnings=0 src"
   },
   "eslintConfig": {
@@ -51,9 +51,10 @@
     "@eslint/compat": "^1.2.1",
     "@eslint/js": "^9.13.0",
     "@types/eslint__js": "^8.42.3",
+    "@vitest/browser": "^2.1.8",
     "@vitest/coverage-v8": "^2.1.2",
     "buffer": "^6.0.3",
-    "dompurify": "^3.2.0",
+    "dompurify": "^3.2.3",
     "empty-module": "^0.0.2",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
@@ -62,12 +63,13 @@
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-testing-library": "^6.4.0",
-    "happy-dom": "^15.11.0",
+    "playwright": "^1.49.1",
     "process": "^0.11.10",
     "react-router-dom": "^6.26.2",
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.11.0",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.2",
+    "vitest-browser-react": "^0.0.4"
   }
 }
