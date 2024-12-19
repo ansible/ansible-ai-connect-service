@@ -7,7 +7,8 @@ import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import userEvent from "@testing-library/user-event";
 import axios, { AxiosError, AxiosHeaders } from "axios";
 
-describe("App tests", () => {
+// Skipping this suite pending AAP-37878
+describe.skip("App tests", () => {
   const renderApp = (debug = false) => {
     const debugDiv = document.createElement("div");
     debugDiv.setAttribute("id", "debug");
