@@ -3,42 +3,49 @@
 
 {% block content %}
 
-{% if start_trial_button and accept_trial_terms is False %}
-<div class="pf-c-alert pf-m-warning" aria-label="Terms and Conditions Information alert">
-  <div class="pf-c-alert__icon">
-    <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
-  </div>
-  <p class="pf-c-alert__title">
-    Please accept the Terms and Conditions and allow information to be shared with IBM.
-  </p>
-</div>
-{% endif %}
+  {% if start_trial_button and accept_trial_terms is False %}
+    <div class="pf-c-alert pf-m-warning" aria-label="Terms and Conditions Information alert">
+      <div class="pf-c-alert__icon">
+        <i class="fas fa-fw fa-exclamation-triangle" aria-hidden="true"></i>
+      </div>
+      <p class="pf-c-alert__title">
+        Please accept the Terms and Conditions and allow information to be shared with IBM.
+      </p>
+    </div>
+  {% endif %}
 
-<section class="pf-c-page__main-section pf-m-light">
-  <div class="pf-l-bullseye">
-    <div class="pf-l-bullseye__item">
-      <div class="pf-c-empty-state">
-        <div class="pf-c-empty-state__content">
+  <section class="pf-c-page__main-section pf-m-light">
+    <div class="pf-l-bullseye">
+      <div class="pf-l-bullseye__item">
+        <div class="pf-c-empty-state">
+          <div class="pf-c-empty-state__content">
 
-          <div class="pf-l-bullseye pf-u-p-xl ls_logo_home">
-            <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="{{ project_name }} logo"/>
-          </div>
+            <div class="pf-l-bullseye pf-u-p-xl ls_logo_home">
+              <img src="{% static 'users/lightspeed.png' %}" width="95px" alt="{{ project_name }} logo"/>
+            </div>
 
 
-          <h1 class="pf-c-title pf-m-lg">{{ project_name }}</h1>
+            <h1 class="pf-c-title pf-m-lg">{{ project_name }}</h1>
 
-          {% if user.is_authenticated %}
-          <div class = "ls_username">
-            <p>{% firstof user.external_username user.username %}</p>
-          </div>
+            {% if user.is_authenticated %}
+              <div class = "ls_username">
+                <p>{% firstof user.external_username user.username %}</p>
+              </div>
 
-          {% if deployment_mode != "saas" or not one_click_trial_available %}
+              {% if deployment_mode != "saas" or not one_click_trial_available %}
           <!-- Not supported -->
-          {% elif has_active_plan %}
-          <div class="ls_message_body">
-            You have {{ days_left }} days left on your trial period
-          </div>
-
+              {% elif has_active_plan %}
+                <div class="ls_message_body">
+                  <p>You have {{ days_left }} days left on your trial period</p>
+                  {% if days_left <= 90 %}
+                    <p>
+                      Accelerate Playbook creation with AI-driven content recommendations from <b>IBM Watsonx Code Assistant for Red Hat Ansible Lightspeed</b>, enabling faster, more efficient automation development.
+                      <a href =
+                          "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
+                        Learn more</a>.
+                    </p>
+                  {% endif %}
+                </div>
 
           <!--
               <div class="pf-v5-c-form__group pf-m-action">
@@ -53,68 +60,68 @@
               -->
 
               {% elif has_expired_plan %}
-              <div class="ls_message_body">
-              <p>
-                Your trial has expired. Contact your Red Hat Organization's administrator to request access to
-                <a href =
-                   "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed">
-                  Ansible Lightspeed with IBM watsonx Code Assistant</a>.
-              </p>
-              </div>
-              {% else  %}
-              <form action={% url 'trial' %} method="post">{% csrf_token %}
-
-                <div class="ls_button_checkbox_body pf-c-empty-state__content">
-                  <div class="ls_trial_text">
-                    <p>
-                      Start a trial to Ansible Lightspeed with IBM watsonx Code Assistant by accepting the terms below,
-                      and clicking the Start button.
-                    </p>
-                  </div>
-
-                  <div class="ls_checkbox_body">
-                    <div id = "ls_checkbox_terms" class = "ls_checkbox_wrapper">
-                      <p>
-                        <input type="checkbox" class="ls_checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
-                        By checking the box and activating this trial, you accept
-                        IBM <a href="https://www.ibm.com/terms/?id=i126-9853" target="_blank" rel="noopener">terms and conditions</a>
-                        and acknowledge that Red Hat will share your information with IBM.
-                        <i class = "ls_checkbox_required">Required <em class = "ls_checkbox_required_asterix">*</em></i>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="hr-line"></div>
-
-                  <div class="ls_trial_text">
-                    <p>
-                      Red Hat may use your personal data to inform you about its products, services, and events.
-                    </p>
-                  </div>
-
-                  <div class="ls_checkbox_body">
-                    <div class = "ls_checkbox_wrapper">
-                      <p>
-                        <input type="checkbox"  class="ls_checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
-                        Notify me about products, services, and events.
-                      </p>
-                    </div>
-                  </div>
-
+                <div class="ls_message_body">
                   <p>
-                    You can stop receiving marketing emails by clicking the unsubscribe link in each email or
-                    withdraw your consent at any time in the
-                    <a href = "https://www.redhat.com/en/email-preferences" target="_blank" rel="noopener">preference center</a>.
-                    See <a href = "https://www.redhat.com/en/about/privacy-policy" target="_blank" rel="noopener">Privacy Statement</a> for details.
+                    Your trial has expired. To continue your Ansible automation journey, contact your Red Hat organization's administrator, or
+                    <a href =
+                        "https://www.ibm.com/products/watsonx-code-assistant-ansible-lightspeed?schedulerform">
+                      connect with an IBM expert to subscribe to watsonx Code Assistant for Red Hat Ansible Lightspeed</a>.
                   </p>
-
                 </div>
-                <p>
-                  <button class="pf-c-button pf-m-primary ls_start_trial_button" type="submit" name="start_trial_button" value="True">
-                    Start trial
-                  </button>
-                </p>
-              </form>
+              {% else  %}
+                <form action={% url 'trial' %} method="post">{% csrf_token %}
+
+                  <div class="ls_button_checkbox_body pf-c-empty-state__content">
+                    <div class="ls_trial_text">
+                      <p>
+                        Start a trial to Ansible Lightspeed with IBM watsonx Code Assistant by accepting the terms below,
+                        and clicking the Start button.
+                      </p>
+                    </div>
+
+                    <div class="ls_checkbox_body">
+                      <div id = "ls_checkbox_terms" class = "ls_checkbox_wrapper">
+                        <p>
+                          <input type="checkbox" class="ls_checkbox" name="accept_trial_terms" {% if accept_trial_terms %}checked{% endif %} />
+                          By checking the box and activating this trial, you accept
+                          IBM <a href="https://www.ibm.com/terms/?id=i126-9853" target="_blank" rel="noopener">terms and conditions</a>
+                          and acknowledge that Red Hat will share your information with IBM.
+                          <i class = "ls_checkbox_required">Required <em class = "ls_checkbox_required_asterix">*</em></i>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="hr-line"></div>
+
+                    <div class="ls_trial_text">
+                      <p>
+                        Red Hat may use your personal data to inform you about its products, services, and events.
+                      </p>
+                    </div>
+
+                    <div class="ls_checkbox_body">
+                      <div class = "ls_checkbox_wrapper">
+                        <p>
+                          <input type="checkbox"  class="ls_checkbox" name="accept_marketing_emails" {% if accept_marketing_emails %}checked{% endif %}/>
+                          Notify me about products, services, and events.
+                        </p>
+                      </div>
+                    </div>
+
+                    <p>
+                      You can stop receiving marketing emails by clicking the unsubscribe link in each email or
+                      withdraw your consent at any time in the
+                      <a href = "https://www.redhat.com/en/email-preferences" target="_blank" rel="noopener">preference center</a>.
+                      See <a href = "https://www.redhat.com/en/about/privacy-policy" target="_blank" rel="noopener">Privacy Statement</a> for details.
+                    </p>
+
+                  </div>
+                  <p>
+                    <button class="pf-c-button pf-m-primary ls_start_trial_button" type="submit" name="start_trial_button" value="True">
+                      Start trial
+                    </button>
+                  </p>
+                </form>
               {% endif %}
               <div class="ls_message_body">
                 <form id="logout-form" method="post" action="{% url 'logout' %}">
@@ -122,25 +129,29 @@
                   <button class="pf-c-button pf-m-secondary" type="submit">Log out</button>
                 </form>
               </div>
-              {% else %}
+            {% else %}
               <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
               <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
-              {% endif %}
+            {% endif %}
 
-              <div class="pf-l-level ls_bottom_menu">
-                <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
-                <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank" rel="noopener"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
+            <div class="pf-l-bullseye">
+              <div class="pf-l-bullseye__item">
+                <div class="pf-l-level pf-m-gutter ls_bottom_menu">
+                  <a class="pf-l-level__item" href="{{ documentation_url }}" target="_blank"><span class="fas fa-sharp fa-solid fa-external-link-alt"></span> Documentation</a>
+                  <a class="pf-l-level__item" href="https://status.redhat.com/" target="_blank"><span class="fas fa-sharp fa-solid fa-check"></span> Status</a>
 
-                {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
-                <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
-                {% endif %}
-                {% if chatbot_enabled and deployment_mode == 'saas' and user.is_authenticated and rh_employee_or_test_user %}
-                <a class="pf-l-level__item" href="/chatbot"><span class="fas fa-solid fa-comments"></span> Chatbot</a>
-                {% endif %}
+                  {% if deployment_mode == 'saas' and user.is_authenticated and user.rh_user_is_org_admin %}
+                    <a class="pf-l-level__item" href="/console"><span class="fas fa-solid fa-cog"></span> Admin Portal</a>
+                  {% endif %}
+                  {% if chatbot_enabled and deployment_mode == 'saas' and user.is_authenticated and rh_employee_or_test_user %}
+                    <a class="pf-l-level__item" href="/chatbot"><span class="fas fa-solid fa-comments"></span> Chatbot</a>
+                  {% endif %}
+                </div>
               </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 {% endblock content %}
