@@ -119,6 +119,14 @@ jobs:
       run: npm install
       working-directory: ./ansible_ai_connect_chatbot
 
+    - name: Install Chromium dependencies (chatbot)
+      run: npx playwright install-deps chromium
+      working-directory: ./ansible_ai_connect_chatbot
+
+    - name: Install Chromium (chatbot)
+      run: npx playwright install chromium
+      working-directory: ./ansible_ai_connect_chatbot
+
     - name: Running Unit Tests with code coverage (TypeScript) (chatbot)
       run: npm run coverage
       working-directory: ./ansible_ai_connect_chatbot

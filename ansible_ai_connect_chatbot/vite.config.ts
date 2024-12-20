@@ -23,10 +23,12 @@ export default defineConfig({
     assetsDir: "static/chatbot/",
   },
   test: {
-    globals: true,
-    environment: "happy-dom",
-    // https://stackoverflow.com/questions/78989267/vitest-unknown-file-extension-css
-    pool: "vmThreads",
+    browser: {
+      name: "chromium",
+      enabled: true,
+      provider: "playwright",
+      viewport: { width: 1920, height: 1080 },
+    },
     setupFiles: "./src/setupTests.ts",
     coverage: {
       provider: "v8",
