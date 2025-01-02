@@ -152,7 +152,7 @@ googleapis-common-protos==1.63.2
     # via google-api-core
 greenlet==3.0.3
     # via sqlalchemy
-grpcio==1.66.2
+grpcio==1.68.1
     # via -r requirements.in
 h11==0.14.0
     # via httpcore
