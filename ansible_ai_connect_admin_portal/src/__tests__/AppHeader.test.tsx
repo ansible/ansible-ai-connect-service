@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppHeader } from "../AppHeader";
 import { BrowserRouter } from "react-router-dom";
+import userEvent from "@testing-library/user-event";
 
 describe("AppHeader", () => {
   // Store the original 'location' object so that it can be restored for other tests.
@@ -33,5 +34,16 @@ describe("AppHeader", () => {
 
     // Check "Logout" option is not present
     expect(screen.queryByText("Logout")).toBeNull();
+
+    // Emulate click on menu button
+    await userEvent.click(accountMenu);
+
+    // "Logout" menu option should now be present
+    const logoutMenuButton = await screen.findByText("Logout");
+    expect(logoutMenuButton).toBeInTheDocument();
+
+    // Emulate clicking on the logout button
+    await userEvent.click(logoutMenuButton);
+    expect(window.location.assign).toBeCalledWith("/logout");
   });
 });
