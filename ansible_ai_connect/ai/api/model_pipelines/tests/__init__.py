@@ -14,7 +14,6 @@
 import json
 from typing import TypeVar
 
-from ansible_ai_connect.ai.api.model_pipelines.bam.configuration import BAMConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.dummy.configuration import (
     DummyConfiguration,
 )
@@ -66,15 +65,6 @@ def extract(name: str, default: T, **kwargs) -> T:
 
 def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
     match pipeline_provider:
-        case "bam":
-            return BAMConfiguration(
-                inference_url=extract("inference_url", "http://localhost", **kwargs),
-                api_key=extract("api_key", "an-api-key", **kwargs),
-                model_id=extract("model_id", "a-model-id", **kwargs),
-                timeout=extract("timeout", 1000, **kwargs),
-                enable_health_check=extract("enable_health_check", False, **kwargs),
-                verify_ssl=extract("verify_ssl", False, **kwargs),
-            )
         case "dummy":
             inference_url = extract("inference_url", "http://localhost", **kwargs)
             c = DummyConfiguration(

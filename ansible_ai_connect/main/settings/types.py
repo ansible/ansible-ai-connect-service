@@ -28,7 +28,6 @@ t_model_mesh_api_type = Literal[
     "wca-dummy",
     "ollama",
     "llamacpp",
-    "bam",
     "nop",
 ]
 
