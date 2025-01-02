@@ -77,7 +77,6 @@ profile = "black"
 [tool.pyright]
 include = [
   "ansible_ai_connect/ai/api/aws/wca_secret_manager.py",
-  "ansible_ai_connect/ai/api/model_pipelines/bam/pipelines.py",
   "ansible_ai_connect/ai/api/model_pipelines/dummy/pipelines.py",
   "ansible_ai_connect/ai/api/model_pipelines/http/pipelines.py",
   "ansible_ai_connect/ai/api/model_pipelines/langchain/pipelines.py",

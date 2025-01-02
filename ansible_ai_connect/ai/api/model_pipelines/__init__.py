@@ -1,5 +1,3 @@
-import ansible_ai_connect.ai.api.model_pipelines.bam.configuration  # noqa
-import ansible_ai_connect.ai.api.model_pipelines.bam.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.dummy.configuration  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.grpc.configuration  # noqa
