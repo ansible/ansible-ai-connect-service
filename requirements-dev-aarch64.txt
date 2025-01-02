@@ -76,11 +76,11 @@ greenlet==3.0.3
     # via
     #   -c requirements-aarch64.txt
     #   sqlalchemy
-grpcio==1.66.2
+grpcio==1.68.1
     # via
     #   -c requirements-aarch64.txt
     #   grpcio-tools
-grpcio-tools==1.66.2
+grpcio-tools==1.68.1
     # via -r requirements-dev.in
 h11==0.14.0
     # via
