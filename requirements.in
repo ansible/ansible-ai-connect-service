@@ -37,7 +37,7 @@ ipython==8.10.0
 # remove this once django-oauth-toolkit is updated to properly
 # pull a version of jwcrypto >= 1.5.6.
 jwcrypto==1.5.6
-# pin jinja2 on 3.1.5 to address GHSA-h75v-3vvj-5mfj, 
+# pin jinja2 on 3.1.5 to address GHSA-h75v-3vvj-5mfj,
 # CVE-2024-56326, CVE-2024-56201
 # remove this once ansible-core or torch are updated
 jinja2==3.1.5
