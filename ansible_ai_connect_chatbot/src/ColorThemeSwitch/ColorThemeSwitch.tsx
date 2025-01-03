@@ -8,13 +8,13 @@ export const ColorThemeSwitch = () => {
     checked: boolean,
   ) => {
     setIsChecked(checked);
-    const element = document.getElementsByTagName("html");
-    element[0].classList.remove(
-      checked ? "pf-v6-theme-light" : "pf-v6-theme-dark",
-    );
-    element[0].classList.add(
-      checked ? "pf-v6-theme-dark" : "pf-v6-theme-light",
-    );
+    const htmlElementClassList =
+      document.getElementsByTagName("html")[0].classList;
+    if (checked) {
+      htmlElementClassList.add("pf-v6-theme-dark");
+    } else {
+      htmlElementClassList.remove("pf-v6-theme-dark");
+    }
   };
 
   return (

@@ -371,19 +371,15 @@ test("Color theme switch", async () => {
   if (colorThemeSwitch) {
     expect(colorThemeSwitch.checked).toBeFalsy();
 
-    const { getComputedStyle } = window;
-    const showLight = view.container.querySelector(".show-light");
-    const showDark = view.container.querySelector(".show-dark");
-    expect(getComputedStyle(showLight!).display).toEqual("block");
-
-    // NOTE: seem to be broken?
-    // expect(getComputedStyle(showDark!).display).toEqual("none")
+    const htmlElementClassList =
+      document.getElementsByTagName("html")[0].classList;
+    expect(htmlElementClassList.length).equals(0);
 
     await colorThemeSwitch.click();
     expect(colorThemeSwitch.checked).toBeTruthy();
 
-    // expect(getComputedStyle(showLight!).display).toEqual("none")
-    expect(getComputedStyle(showDark!).display).toEqual("block");
+    expect(htmlElementClassList.length).equals(1);
+    expect(htmlElementClassList[0]).equals("pf-v6-theme-dark");
   }
 });
 
