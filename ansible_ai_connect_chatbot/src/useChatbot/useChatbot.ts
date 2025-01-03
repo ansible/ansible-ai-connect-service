@@ -146,25 +146,45 @@ export const useChatbot = () => {
   >(undefined);
   const [selectedModel, setSelectedModel] = useState("granite3-8b");
 
-  const addMessage = (newMessage: ExtendedMessage) => {
-    setMessages((msgs: ExtendedMessage[]) => [...msgs, newMessage]);
+  const addMessage = (
+    newMessage: ExtendedMessage,
+    addAfter?: ExtendedMessage,
+  ) => {
+    setMessages((msgs: ExtendedMessage[]) => {
+      const newMsgs: ExtendedMessage[] = [];
+      newMessage.scrollToHere = true;
+      let inserted = false;
+      for (const msg of msgs) {
+        msg.scrollToHere = false;
+        newMsgs.push(msg);
+        if (msg === addAfter) {
+          newMsgs.push(newMessage);
+          inserted = true;
+        }
+      }
+      if (!inserted) {
+        newMsgs.push(newMessage);
+      }
+      return newMsgs;
+    });
   };
 
   const botMessage = (
     response: ChatResponse | string,
     query = "",
-  ): MessageProps => {
-    const sendFeedback = async (sentiment: Sentiment) => {
-      if (typeof response === "object") {
-        handleFeedback({ query, response, sentiment });
-      }
-    };
-    const message: MessageProps = {
+  ): ExtendedMessage => {
+    const message: ExtendedMessage = {
       role: "bot",
       content: typeof response === "object" ? response.response : response,
       name: botName,
       avatar: logo,
       timestamp: getTimestamp(),
+      referenced_documents: [],
+    };
+    const sendFeedback = async (sentiment: Sentiment) => {
+      if (typeof response === "object") {
+        handleFeedback({ query, response, sentiment, message });
+      }
     };
 
     message.actions = {
@@ -224,7 +244,7 @@ export const useChatbot = () => {
           referenced_documents: [],
           ...feedbackMessage(feedbackRequest),
         };
-        addMessage(newBotMessage);
+        addMessage(newBotMessage, feedbackRequest.message);
       } else {
         setAlertMessage({
           title: "Error",
