@@ -34,10 +34,12 @@ export type ReferencedDocumentsProp = {
 
 export type ExtendedMessage = MessageProps & {
   referenced_documents: ReferencedDocument[];
+  scrollToHere?: boolean;
 };
 
 export type ChatFeedback = {
   query: string;
   response: ChatResponse;
   sentiment: Sentiment;
+  message: ExtendedMessage;
 };
