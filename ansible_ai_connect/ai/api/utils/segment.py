@@ -100,13 +100,13 @@ def send_chatbot_event(event: ChatBotBaseEvent, event_name: str, user: User) -> 
     if not settings.SEGMENT_WRITE_KEY:
         logger.info("segment write key not set, skipping event")
         return
-    if _is_segment_message_exceeds_limit(asdict(event)):
+    if is_segment_message_exceeds_limit(asdict(event)):
         # Prioritize the prompt and referenced documents.
         event.chat_response = ""
     base_send_segment_event(asdict(event), event_name, user, analytics)
 
 
-def _is_segment_message_exceeds_limit(msg_dict):
+def is_segment_message_exceeds_limit(msg_dict):
     msg_dict = clean(msg_dict)
     msg_size = len(json.dumps(msg_dict, cls=DatetimeSerializer).encode())
     if msg_size > MAX_MSG_SIZE:

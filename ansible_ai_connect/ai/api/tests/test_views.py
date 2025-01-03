@@ -4072,7 +4072,6 @@ class TestChatView(WisdomServiceAPITestCaseBase):
     ):
         if user is None:
             user = self.user
-        self.client.force_authenticate(user=user)
         with (
             patch.object(
                 apps.get_app_config("ai"),
@@ -4224,9 +4223,8 @@ class TestChatView(WisdomServiceAPITestCaseBase):
                 123,
             )
             self.assertEqual(
-                segment_events[0]["properties"]["exception"],
-                "An exception <class 'ansible_ai_connect.ai.api.exceptions."
-                "ChatbotInvalidResponseException'> occurred during a chat generation",
+                segment_events[0]["properties"]["problem"],
+                "Invalid response",
             )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
