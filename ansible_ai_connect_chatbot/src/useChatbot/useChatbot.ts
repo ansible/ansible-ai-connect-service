@@ -155,7 +155,7 @@ export const useChatbot = () => {
       newMessage.scrollToHere = true;
       let inserted = false;
       for (const msg of msgs) {
-        delete msg.scrollToHere;
+        msg.scrollToHere = false;
         newMsgs.push(msg);
         if (msg === addAfter) {
           newMsgs.push(newMessage);
