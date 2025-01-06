@@ -169,6 +169,9 @@ class ChatBotResponseDocsReferences:
 @define
 class ChatBotBaseEvent:
     chat_prompt: str = field(validator=validators.instance_of(str), converter=str, default="")
+    chat_system_prompt: str = field(
+        validator=validators.instance_of(str), converter=str, default=""
+    )
     chat_response: str = field(validator=validators.instance_of(str), converter=str, default="")
     chat_truncated: bool = field(
         validator=validators.instance_of(bool), converter=bool, default=False

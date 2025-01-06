@@ -330,6 +330,11 @@ class ChatRequestSerializer(serializers.Serializer):
         label="Provider name",
         help_text=("A name that identifies a LLM provider."),
     )
+    system_prompt = serializers.CharField(
+        required=False,
+        label="System prompt",
+        help_text=("An optional non-default system prompt to be used on LLM (debug mode only)."),
+    )
 
 
 class ReferencedDocumentsSerializer(serializers.Serializer):
