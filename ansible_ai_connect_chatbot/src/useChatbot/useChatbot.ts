@@ -214,7 +214,7 @@ export const useChatbot = () => {
             message.actions.copy.className = "action-button-clicked";
             const ref_docs =
               typeof response === "object"
-                ? response.referenced_documents?.slice(0, 30)
+                ? response.referenced_documents?.slice(0, 5)
                 : response;
             if (ref_docs) {
               const llmResponse = [
