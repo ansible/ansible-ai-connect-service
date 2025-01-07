@@ -55,6 +55,7 @@ import {
   FOOTNOTE_LABEL,
   FOOTNOTE_TITLE,
 } from "../Constants";
+import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
 const footnoteProps = {
   label: FOOTNOTE_LABEL,
@@ -88,6 +89,8 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     selectedModel,
     setSelectedModel,
     setConversationId,
+    systemPrompt,
+    setSystemPrompt,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
@@ -209,6 +212,10 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   setConversationId(undefined);
                 }}
               />
+              <SystemPromptModal
+                systemPrompt={systemPrompt}
+                setSystemPrompt={setSystemPrompt}
+              />
             </ChatbotHeaderActions>
             {/* <ChatbotHeaderMenu
           onMenuToggle={() => alert("Menu toggle clicked")}
@@ -291,11 +298,15 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
               )}
               {messages.map(
                 (
-                  { referenced_documents, ...message }: ExtendedMessage,
+                  {
+                    referenced_documents,
+                    scrollToHere,
+                    ...message
+                  }: ExtendedMessage,
                   index,
                 ) => (
                   <>
-                    {message.scrollToHere && <div ref={messagesEndRef} />}
+                    {scrollToHere && <div ref={messagesEndRef} />}
                     <div key={`m_div_${index}`}>
                       <Message key={`m_msg_${index}`} {...message} />
                       <ReferencedDocuments
