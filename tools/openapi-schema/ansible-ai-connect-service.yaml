@@ -699,6 +699,10 @@ components:
           type: string
           title: Provider name
           description: A name that identifies a LLM provider.
+        system_prompt:
+          type: string
+          description: An optional non-default system prompt to be used on LLM (debug
+            mode only).
       required:
       - query
     ChatResponse:

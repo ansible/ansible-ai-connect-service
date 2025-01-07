@@ -1156,6 +1156,7 @@ class Chat(APIView):
 
         data = {}
         req_query = "<undefined>"
+        req_system_prompt = "<undefined>"
         req_model_id = "<undefined>"
         req_provider = "<undefined>"
         duration = 0
@@ -1169,6 +1170,11 @@ class Chat(APIView):
                 raise ChatbotInvalidRequestException()
 
             req_query = request_serializer.validated_data["query"]
+            req_system_prompt = (
+                request_serializer.validated_data["system_prompt"]
+                if "system_prompt" in request_serializer.validated_data
+                else None
+            )
             req_model_id = (
                 request_serializer.validated_data["model"]
                 if "model" in request_serializer.validated_data
@@ -1195,6 +1201,7 @@ class Chat(APIView):
                 ChatBotParameters.init(
                     request=request,
                     query=req_query,
+                    system_prompt=req_system_prompt,
                     model_id=req_model_id,
                     provider=req_provider,
                     conversation_id=conversation_id,
@@ -1210,6 +1217,7 @@ class Chat(APIView):
 
             operational_event = ChatBotOperationalEvent(
                 chat_prompt=req_query,
+                chat_system_prompt=req_system_prompt,
                 chat_response=data["response"],
                 chat_truncated=bool(data["truncated"]),
                 chat_referenced_documents=[
@@ -1234,6 +1242,7 @@ class Chat(APIView):
                 detail = data.get("detail", "")
                 operational_event = ChatBotOperationalEvent(
                     chat_prompt=req_query,
+                    chat_system_prompt=req_system_prompt,
                     provider_id=req_provider,
                     modelName=req_model_id,
                     rh_user_org_id=rh_user_org_id,

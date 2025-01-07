@@ -191,6 +191,7 @@ class ChatBotParameters:
     provider: str
     model_id: str
     conversation_id: Optional[str]
+    system_prompt: str
 
     @classmethod
     def init(
@@ -200,6 +201,7 @@ class ChatBotParameters:
         provider: Optional[str] = None,
         model_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
     ):
         return cls(
             request=request,
@@ -207,6 +209,7 @@ class ChatBotParameters:
             provider=provider,
             model_id=model_id,
             conversation_id=conversation_id,
+            system_prompt=system_prompt,
         )
 
 
