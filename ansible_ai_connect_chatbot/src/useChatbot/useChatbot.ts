@@ -222,7 +222,7 @@ export const useChatbot = () => {
                 ",\n",
                 typeof response === "object"
                   ? response.referenced_documents
-                      ?.slice(0, 30)
+                      ?.slice(0, 5)
                       .map((doc) => doc.docs_url)
                       .join(",\n")
                   : response,
