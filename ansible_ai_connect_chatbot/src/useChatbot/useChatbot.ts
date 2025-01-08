@@ -212,9 +212,25 @@ export const useChatbot = () => {
         onClick: () => {
           if (message.actions) {
             message.actions.copy.className = "action-button-clicked";
-            navigator.clipboard.writeText(
-              typeof response === "object" ? response.response : response,
-            );
+            const ref_docs =
+              typeof response === "object"
+                ? response.referenced_documents?.slice(0, 5)
+                : response;
+            if (ref_docs) {
+              const llmResponse = [
+                typeof response === "object" ? response.response : response,
+                ",\n",
+                typeof response === "object"
+                  ? response.referenced_documents
+                      ?.slice(0, 5)
+                      .map((doc) => doc.docs_url)
+                      .join(",\n")
+                  : response,
+              ];
+              navigator.clipboard.writeText(
+                llmResponse?.map((llmResponse) => llmResponse).join(""),
+              );
+            }
           }
         },
       },
