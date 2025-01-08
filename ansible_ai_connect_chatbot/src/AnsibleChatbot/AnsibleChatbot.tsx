@@ -212,10 +212,12 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   setConversationId(undefined);
                 }}
               />
-              <SystemPromptModal
-                systemPrompt={systemPrompt}
-                setSystemPrompt={setSystemPrompt}
-              />
+              {inDebugMode() && (
+                <SystemPromptModal
+                  systemPrompt={systemPrompt}
+                  setSystemPrompt={setSystemPrompt}
+                />
+              )}
             </ChatbotHeaderActions>
             {/* <ChatbotHeaderMenu
           onMenuToggle={() => alert("Menu toggle clicked")}

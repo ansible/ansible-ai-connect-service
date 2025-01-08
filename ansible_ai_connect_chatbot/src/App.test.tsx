@@ -416,7 +416,7 @@ test("Debug mode test", async () => {
 
 test("Test system prompt override", async () => {
   const spy = mockAxios(200);
-  await renderApp();
+  await renderApp(true);
 
   const systemPromptIcon = page.getByLabelText("SystemPrompt");
   await systemPromptIcon.click();

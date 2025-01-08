@@ -131,6 +131,7 @@ class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration])
         conversation_id = params.conversation_id
         provider = params.provider
         model_id = params.model_id
+        system_prompt = params.system_prompt
 
         data = {
             "query": query,
@@ -139,6 +140,8 @@ class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration])
         }
         if conversation_id:
             data["conversation_id"] = str(conversation_id)
+        if system_prompt:
+            data["system_prompt"] = str(system_prompt)
 
         response = requests.post(
             self.config.inference_url + "/v1/query",
