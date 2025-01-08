@@ -11,6 +11,7 @@ import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
+import { screen } from "@testing-library/react";
 import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import { userEvent, page } from "@vitest/browser/context";
@@ -184,12 +185,12 @@ test("ThumbsDown icon test", async () => {
 
   await expect.element(page.getByText("Create variables")).toBeVisible();
 
-  const thumbsDownIcon = view.getByRole("button", {
+  const thumbsDownIcon = await screen.findByRole("button", {
     name: "Bad response",
   });
   await thumbsDownIcon.click();
 
-  const sureButton = page.getByText("sure!");
+  const sureButton = await screen.findByText("Sure!");
   await expect.element(sureButton).toBeVisible();
   await sureButton.click();
 
