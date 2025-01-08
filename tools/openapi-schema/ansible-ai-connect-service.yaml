@@ -245,13 +245,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerationRequest'
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GenerationRequest'
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GenerationRequest'
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
         required: true
       security:
       - oauth2:
@@ -263,7 +263,48 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenerationResponse'
+                $ref: '#/components/schemas/GenerationPlaybookResponse'
+          description: ''
+        '204':
+          description: Empty response
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Request was throttled
+        '503':
+          description: Service Unavailable
+  /api/v0/ai/generations/playbook:
+    post:
+      operationId: ai_generations_playbook_create
+      description: Returns a playbook based on a text input.
+      summary: Inline code suggestions
+      tags:
+      - ai
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerationPlaybookRequest'
+        required: true
+      security:
+      - oauth2:
+        - read
+        - write
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationPlaybookResponse'
           description: ''
         '204':
           description: Empty response
@@ -924,7 +965,7 @@ components:
           $ref: '#/components/schemas/SuggestionQualityFeedback'
         chatFeedback:
           $ref: '#/components/schemas/ChatFeedback'
-    GenerationRequest:
+    GenerationPlaybookRequest:
       type: object
       properties:
         text:
@@ -962,7 +1003,7 @@ components:
           $ref: '#/components/schemas/Metadata'
       required:
       - text
-    GenerationResponse:
+    GenerationPlaybookResponse:
       type: object
       properties:
         playbook:
