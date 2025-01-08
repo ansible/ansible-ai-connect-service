@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 version_info = VersionInfo()
 
 
-def _anonymize_struct(value):
+def anonymize_struct(value):
     return anonymizer.anonymize_struct(value, value_template=Template("{{ _${variable_name}_ }}"))
 
 
@@ -169,7 +169,7 @@ class ChatBotResponseDocsReferences:
 
 
 @define
-class ChatBotBaseEvent:
+class ChatBotBaseEvent(Schema1Event):
     chat_prompt: str = field(validator=validators.instance_of(str), converter=str, default="")
     chat_system_prompt: str = field(
         validator=validators.instance_of(str), converter=str, default=""
@@ -185,21 +185,15 @@ class ChatBotBaseEvent:
         converter=str,
         default=settings.CHATBOT_DEFAULT_PROVIDER,
     )
-    modelName: str = field(
-        validator=validators.instance_of(str), converter=str, default=settings.CHATBOT_DEFAULT_MODEL
-    )
-    rh_user_org_id: int = field(validator=validators.instance_of(int), converter=int, default=-1)
-    timestamp: str = field(
-        default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
-    )
 
     def __attrs_post_init__(self):
-        self.chat_prompt = _anonymize_struct(self.chat_prompt)
-        self.chat_response = _anonymize_struct(self.chat_response)
+        self.chat_prompt = anonymize_struct(self.chat_prompt)
+        self.chat_response = anonymize_struct(self.chat_response)
 
 
 @define
 class ChatBotFeedbackEvent(ChatBotBaseEvent):
+    event_name: str = "chatFeedbackEvent"
     sentiment: int = field(
         validator=[validators.instance_of(int), validators.in_([0, 1])], converter=int, default=0
     )
@@ -207,7 +201,4 @@ class ChatBotFeedbackEvent(ChatBotBaseEvent):
 
 @define
 class ChatBotOperationalEvent(ChatBotBaseEvent):
-    req_duration: float = field(
-        validator=[validators.instance_of(float)], converter=float, default=0
-    )
-    exception: str = field(validator=validators.instance_of(str), converter=str, default="")
+    event_name: str = "chatOperationalEvent"

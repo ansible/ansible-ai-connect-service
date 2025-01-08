@@ -14,11 +14,11 @@
 
 import logging
 import time
-import timeit
 import traceback
 from string import Template
 
 from ansible_anonymizer import anonymizer
+from attr import asdict
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
@@ -134,10 +134,10 @@ from .serializers import (
 )
 from .telemetry.schema1 import (
     ChatBotFeedbackEvent,
-    ChatBotOperationalEvent,
     ChatBotResponseDocsReferences,
+    anonymize_struct,
 )
-from .utils.segment import send_segment_event
+from .utils.segment import is_segment_message_exceeds_limit, send_segment_event
 
 logger = logging.getLogger(__name__)
 
@@ -176,9 +176,18 @@ PERMISSIONS_MAP = {
 
 
 class AACSAPIView(APIView):
+    def __init__(self):
+        super().__init__()
+        self.event = None
+        self.model_id = None
+        self.exception = None
+
     def initialize_request(self, request, *args, **kwargs):
+        # Call super first to ensure request object is correctly
+        # initialised before instantiating event
+        initialised_request = super().initialize_request(request, *args, **kwargs)
         self.event: schema1.Schema1Event = self.schema1_event()
-        self.event.set_request(request)
+        self.event.set_request(initialised_request)
 
         # TODO: when we will move the request_serializer handling in this
         # class, we will change this line below. The model_id attribute
@@ -187,7 +196,7 @@ class AACSAPIView(APIView):
         # See: https://github.com/ansible/ansible-ai-connect-service/pull/1147/files#diff-ecfb6919dfd8379aafba96af7457b253e4dce528897dfe6bfc207ca2b3b2ada9R143-R151  # noqa: E501
         self.model_id: str = ""
 
-        return super().initialize_request(request, *args, **kwargs)
+        return initialised_request
 
     def handle_exception(self, exc):
         self.exception = exc
@@ -1109,7 +1118,7 @@ class GenerationRole(APIView):
         )
 
 
-class Chat(APIView):
+class Chat(AACSAPIView):
     """
     Send a message to the backend chatbot service and get a reply.
     """
@@ -1124,6 +1133,7 @@ class Chat(APIView):
     ]
     required_scopes = ["read", "write"]
     throttle_classes = [ChatEndpointThrottle]
+    schema1_event = schema1.ChatBotOperationalEvent
 
     def __init__(self):
         self.chatbot_enabled = (
@@ -1152,114 +1162,76 @@ class Chat(APIView):
     def post(self, request) -> Response:
         headers = {"Content-Type": "application/json"}
         request_serializer = ChatRequestSerializer(data=request.data)
-        rh_user_org_id = getattr(request.user, "org_id", None)
 
-        data = {}
-        req_query = "<undefined>"
-        req_system_prompt = "<undefined>"
-        req_model_id = "<undefined>"
-        req_provider = "<undefined>"
-        duration = 0
-        operational_event = {}
+        if not self.chatbot_enabled:
+            raise ChatbotNotEnabledException()
 
-        try:
-            if not self.chatbot_enabled:
-                raise ChatbotNotEnabledException()
+        if not request_serializer.is_valid():
+            raise ChatbotInvalidRequestException()
 
-            if not request_serializer.is_valid():
-                raise ChatbotInvalidRequestException()
+        req_query = request_serializer.validated_data["query"]
+        req_system_prompt = (
+            request_serializer.validated_data["system_prompt"]
+            if "system_prompt" in request_serializer.validated_data
+            else None
+        )
+        req_model_id = (
+            request_serializer.validated_data["model"]
+            if "model" in request_serializer.validated_data
+            else settings.CHATBOT_DEFAULT_MODEL
+        )
+        req_provider = (
+            request_serializer.validated_data["provider"]
+            if "provider" in request_serializer.validated_data
+            else settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        conversation_id = (
+            request_serializer.validated_data["conversation_id"]
+            if "conversation_id" in request_serializer.validated_data
+            else None
+        )
 
-            req_query = request_serializer.validated_data["query"]
-            req_system_prompt = (
-                request_serializer.validated_data["system_prompt"]
-                if "system_prompt" in request_serializer.validated_data
-                else None
+        # Initialise Segment Event early, in case of exceptions
+        self.model_id = req_model_id
+        self.event.chat_prompt = anonymize_struct(req_query)
+        self.event.chat_system_prompt = req_system_prompt
+        self.event.provider_id = req_provider
+        self.event.conversation_id = conversation_id
+        self.event.modelName = req_model_id
+
+        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineChatBot
+        )
+
+        data = llm.invoke(
+            ChatBotParameters.init(
+                request=request,
+                query=req_query,
+                system_prompt=req_system_prompt,
+                model_id=req_model_id,
+                provider=req_provider,
+                conversation_id=conversation_id,
             )
-            req_model_id = (
-                request_serializer.validated_data["model"]
-                if "model" in request_serializer.validated_data
-                else settings.CHATBOT_DEFAULT_MODEL
-            )
-            req_provider = (
-                request_serializer.validated_data["provider"]
-                if "provider" in request_serializer.validated_data
-                else settings.CHATBOT_DEFAULT_PROVIDER
-            )
-            conversation_id = (
-                request_serializer.validated_data["conversation_id"]
-                if "conversation_id" in request_serializer.validated_data
-                else None
-            )
+        )
 
-            start = timeit.default_timer()
+        response_serializer = ChatResponseSerializer(data=data)
 
-            llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
-                ModelPipelineChatBot
-            )
+        if not response_serializer.is_valid():
+            raise ChatbotInvalidResponseException()
 
-            data = llm.invoke(
-                ChatBotParameters.init(
-                    request=request,
-                    query=req_query,
-                    system_prompt=req_system_prompt,
-                    model_id=req_model_id,
-                    provider=req_provider,
-                    conversation_id=conversation_id,
-                )
-            )
+        # Finalise Segment Event with response details
+        self.event.chat_truncated = bool(data["truncated"])
+        self.event.chat_referenced_documents = [
+            ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
+            for rd in data["referenced_documents"]
+        ]
+        self.event.chat_response = anonymize_struct(data["response"])
+        self.event.chat_response = (
+            "" if is_segment_message_exceeds_limit(asdict(self.event)) else self.event.chat_response
+        )
 
-            duration = timeit.default_timer() - start
-
-            response_serializer = ChatResponseSerializer(data=data)
-
-            if not response_serializer.is_valid():
-                raise ChatbotInvalidResponseException()
-
-            operational_event = ChatBotOperationalEvent(
-                chat_prompt=req_query,
-                chat_system_prompt=req_system_prompt,
-                chat_response=data["response"],
-                chat_truncated=bool(data["truncated"]),
-                chat_referenced_documents=[
-                    ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
-                    for rd in data["referenced_documents"]
-                ],
-                conversation_id=data["conversation_id"],
-                provider_id=req_provider,
-                modelName=req_model_id,
-                rh_user_org_id=rh_user_org_id,
-                req_duration=duration,
-            )
-
-            return Response(
-                data,
-                status=rest_framework_status.HTTP_200_OK,
-                headers=headers,
-            )
-
-        except Exception as exc:
-            if "detail" in data:
-                detail = data.get("detail", "")
-                operational_event = ChatBotOperationalEvent(
-                    chat_prompt=req_query,
-                    chat_system_prompt=req_system_prompt,
-                    provider_id=req_provider,
-                    modelName=req_model_id,
-                    rh_user_org_id=rh_user_org_id,
-                    req_duration=duration,
-                    exception=detail,
-                )
-            else:
-                exception_message = (
-                    f"An exception {exc.__class__} occurred during a chat generation"
-                )
-                logger.exception(exception_message)
-                operational_event = ChatBotOperationalEvent(
-                    exception=exception_message,
-                    rh_user_org_id=rh_user_org_id,
-                )
-
-            raise exc
-
-        finally:
-            send_chatbot_event(operational_event, "chatOperationalEvent", request.user)
+        return Response(
+            data,
+            status=rest_framework_status.HTTP_200_OK,
+            headers=headers,
+        )
