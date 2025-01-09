@@ -13,6 +13,7 @@ import userLogo from "../assets/user_logo.png";
 import {
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
+  QUERY_SYSTEM_INSTRUCTION,
   Sentiment,
   TIMEOUT_MSG,
   TOO_MANY_REQUESTS_MSG,
@@ -145,6 +146,7 @@ export const useChatbot = () => {
     string | null | undefined
   >(undefined);
   const [selectedModel, setSelectedModel] = useState("granite3-8b");
+  const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
 
   const addMessage = (
     newMessage: ExtendedMessage,
@@ -293,6 +295,10 @@ export const useChatbot = () => {
       query: message,
     };
 
+    if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
+      chatRequest.system_prompt = systemPrompt;
+    }
+
     if (inDebugMode()) {
       for (const m of modelsSupported) {
         if (selectedModel === m.model) {
@@ -373,5 +379,7 @@ export const useChatbot = () => {
     selectedModel,
     setSelectedModel,
     setConversationId,
+    systemPrompt,
+    setSystemPrompt,
   };
 };

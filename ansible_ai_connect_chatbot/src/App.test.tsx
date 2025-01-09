@@ -92,6 +92,7 @@ function mockAxios(
       status,
     });
   }
+  return spy;
 }
 
 function createError(message: string, status: number): AxiosError {
@@ -124,12 +125,21 @@ beforeEach(() => {
 });
 
 test("Basic chatbot interaction", async () => {
-  mockAxios(200);
+  const spy = mockAxios(200);
   const view = await renderApp();
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("Hello");
 
   await userEvent.keyboard("{Enter}");
+
+  expect(spy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      conversation_id: undefined,
+      query: "Hello",
+    }),
+    expect.anything(),
+  );
 
   await expect
     .element(
@@ -403,4 +413,33 @@ test("Debug mode test", async () => {
     )
     .toBeVisible();
   await expect.element(page.getByText("Create variables")).toBeVisible();
+});
+
+test("Test system prompt override", async () => {
+  const spy = mockAxios(200);
+  await renderApp(true);
+
+  const systemPromptIcon = page.getByLabelText("SystemPrompt");
+  await systemPromptIcon.click();
+
+  const systemPromptTextArea = page.getByLabelText(
+    "system-prompt-form-text-area",
+  );
+  await systemPromptTextArea.fill("MY SYSTEM PROMPT");
+  const systemPromptButton = page.getByLabelText("system-prompt-form-button");
+  await systemPromptButton.click();
+
+  const textArea = page.getByLabelText("Send a message...");
+  await textArea.fill("Hello with system prompt override");
+
+  await userEvent.keyboard("{Enter}");
+  expect(spy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      conversation_id: undefined,
+      query: "Hello with system prompt override",
+      system_prompt: "MY SYSTEM PROMPT",
+    }),
+    expect.anything(),
+  );
 });
