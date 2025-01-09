@@ -163,6 +163,17 @@ class ExplainPlaybookEvent(Schema1Event):
 
 
 @define
+class GenerationPlaybookEvent(Schema1Event):
+    event_name: str = "codegenPlaybook"
+    playbook_length: int = field(validator=validators.instance_of(int), default=0)
+    generationId: str = field(validator=validators.instance_of(str), converter=str, default="")
+    wizardId: str = field(validator=validators.instance_of(str), converter=str, default="")
+    create_outline: bool = field(
+        validator=validators.instance_of(bool), converter=bool, default=False
+    )
+
+
+@define
 class ChatBotResponseDocsReferences:
     docs_url: str = field(validator=validators.instance_of(str), converter=str, default="")
     title: str = field(validator=validators.instance_of(str), converter=str, default="")
