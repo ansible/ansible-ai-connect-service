@@ -66,4 +66,4 @@ class LlamaCppPipelineConfiguration(PipelineConfiguration[LlamaCppConfiguration]
 
 @Register(api_type="llamacpp")
 class LlamaCppConfigurationSerializer(BaseConfigSerializer):
-    verify_ssl = serializers.BooleanField(required=False, default=False)
+    verify_ssl = serializers.BooleanField(required=False, default=True)

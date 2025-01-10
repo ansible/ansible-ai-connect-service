@@ -237,9 +237,7 @@ class TestMarkdownMe(TestCase):
         trial_plan.delete()
 
 
-@override_settings(CHATBOT_URL="http://127.0.0.1:8080")
 @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
-@override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
 @override_settings(ANSIBLE_AI_CHATBOT_NAME="Awesome Chatbot")
 @override_settings(CHATBOT_DEBUG_UI=False)
 class TestChatbotView(TestCase):
@@ -299,9 +297,7 @@ class TestChatbotView(TestCase):
         self.assertContains(r, TestChatbotView.DOCUMENT_URL)
         self.assertContains(r, "Chatbot")
 
-    @override_settings(CHATBOT_URL="")
     @override_settings(CHATBOT_DEFAULT_PROVIDER="")
-    @override_settings(CHATBOT_DEFAULT_MODEL="")
     def test_chatbot_link_with_rh_user_but_chatbot_disabled(self):
         self.client.force_login(user=self.rh_user)
         r = self.client.get(reverse("home"))
@@ -326,9 +322,7 @@ class TestChatbotView(TestCase):
         r = self.client.get(reverse("chatbot"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
-    @override_settings(CHATBOT_URL="")
     @override_settings(CHATBOT_DEFAULT_PROVIDER="")
-    @override_settings(CHATBOT_DEFAULT_MODEL="")
     def test_chatbot_view_with_rh_user_but_chatbot_disabled(self):
         self.client.force_login(user=self.rh_user)
         r = self.client.get(reverse("chatbot"))

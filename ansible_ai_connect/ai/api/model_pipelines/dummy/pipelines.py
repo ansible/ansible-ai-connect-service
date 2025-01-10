@@ -134,7 +134,7 @@ class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions[DummyConf
         super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
-        logger.debug("!!!! settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == 'dummy' !!!!")
+        logger.debug("!!!! ModelPipelineCompletions.provider == 'dummy' !!!!")
         logger.debug("!!!! Mocking Model response !!!!")
         if self.config.latency_use_jitter:
             jitter: float = secrets.randbelow(1000) * 0.001

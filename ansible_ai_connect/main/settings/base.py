@@ -28,14 +28,13 @@ import json
 import logging
 import os
 import sys
-from copy import deepcopy
 from importlib.resources import files
 from pathlib import Path
 from typing import cast
 
+from ansible_ai_connect.main.settings.legacy import load_from_env_vars
 from ansible_ai_connect.main.settings.types import (
     t_deployment_mode,
-    t_model_mesh_api_type,
     t_one_click_reports_postman_type,
     t_wca_secret_backend_type,
 )
@@ -48,52 +47,6 @@ ANSIBLE_AI_CHATBOT_NAME = os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible Light
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
-
-# ==========================================
-# Model Provider
-# ------------------------------------------
-ANSIBLE_AI_MODEL_MESH_API_TYPE: t_model_mesh_api_type = os.getenv(
-    "ANSIBLE_AI_MODEL_MESH_API_TYPE"
-) or cast(t_model_mesh_api_type, "http")
-
-ANSIBLE_AI_MODEL_MESH_API_URL = (
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_URL") or "https://model.wisdom.testing.ansible.com:443"
-)
-
-ANSIBLE_AI_MODEL_MESH_API_KEY = os.getenv("ANSIBLE_AI_MODEL_MESH_API_KEY")
-ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_ID")
-if "ANSIBLE_AI_MODEL_MESH_MODEL_NAME" in os.environ:
-    logger.warning(
-        "Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated and "
-        "should be replaced with ANSIBLE_AI_MODEL_MESH_MODEL_ID."
-    )
-    if "ANSIBLE_AI_MODEL_MESH_MODEL_ID" in os.environ:
-        logger.warning(
-            "Environment variable ANSIBLE_AI_MODEL_MESH_MODEL_ID is set and will take precedence."
-        )
-    else:
-        logger.warning(
-            "Setting the value of ANSIBLE_AI_MODEL_MESH_MODEL_ID to "
-            "the value of ANSIBLE_AI_MODEL_MESH_MODEL_NAME."
-        )
-        ANSIBLE_AI_MODEL_MESH_MODEL_ID = os.getenv("ANSIBLE_AI_MODEL_MESH_MODEL_NAME")
-
-# Model API Timeout (in seconds). Default is None.
-ANSIBLE_AI_MODEL_MESH_API_TIMEOUT = os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT")
-
-# WCA - General
-ANSIBLE_WCA_IDP_URL = os.getenv("ANSIBLE_WCA_IDP_URL") or "https://iam.cloud.ibm.com/identity"
-ANSIBLE_WCA_IDP_LOGIN = os.getenv("ANSIBLE_WCA_IDP_LOGIN")
-ANSIBLE_WCA_IDP_PASSWORD = os.getenv("ANSIBLE_WCA_IDP_PASSWORD")
-ANSIBLE_WCA_RETRY_COUNT = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT") or "4")
-ANSIBLE_WCA_HEALTHCHECK_API_KEY = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
-ANSIBLE_WCA_HEALTHCHECK_MODEL_ID = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
-# WCA - "On prem"
-ANSIBLE_WCA_USERNAME = os.getenv("ANSIBLE_WCA_USERNAME")
-
-# GRPC
-ANSIBLE_GRPC_HEALTHCHECK_URL = os.getenv("ANSIBLE_GRPC_HEALTHCHECK_URL")
-# ==========================================
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
@@ -187,9 +140,6 @@ def is_ssl_enabled(value: str) -> bool:
 AAP_API_URL = os.environ.get("AAP_API_URL")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
 SOCIAL_AUTH_VERIFY_SSL = is_ssl_enabled(os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True"))
-ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL = is_ssl_enabled(
-    os.getenv("ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL", "True")
-)
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
 SOCIAL_AUTH_AAP_SCOPE = ["read"]
@@ -465,21 +415,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = True
 
-DUMMY_MODEL_RESPONSE_BODY = os.environ.get(
-    "DUMMY_MODEL_RESPONSE_BODY",
-    (
-        '{"predictions":["ansible.builtin.apt:\\n  name: nginx\\n'
-        '  update_cache: true\\n  state: present\\n"]}'
-    ),
-)
-
-DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC = int(
-    os.environ.get("DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC", 3000)
-)
-DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER = bool(
-    os.environ.get("DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER", False)
-)
-
 ENABLE_ARI_POSTPROCESS = os.getenv("ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 ARI_BASE_DIR = os.getenv("ARI_KB_PATH") or "/etc/ari/kb/"
 ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, "rules")
@@ -546,7 +481,6 @@ WCA_SECRET_MANAGER_PRIMARY_REGION = os.getenv("WCA_SECRET_MANAGER_PRIMARY_REGION
 WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv("WCA_SECRET_MANAGER_REPLICA_REGIONS", "").split(",") if c
 ]
-WCA_ENABLE_ARI_POSTPROCESS = os.getenv("WCA_ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 
 CSP_DEFAULT_SRC = ("'self'", "data:")
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
@@ -560,7 +494,6 @@ DEPLOYED_REGION = os.getenv("DEPLOYED_REGION") or "unknown"
 # ------------------------------------------
 # Support to disable health checks. The default is that they are enabled.
 # The naming convention in the existing settings is to ENABLE_XXX and not DISABLE_XXX.
-ENABLE_HEALTHCHECK_MODEL_MESH = os.getenv("ENABLE_HEALTHCHECK_MODEL_MESH", "True").lower() == "true"
 ENABLE_HEALTHCHECK_SECRET_MANAGER = (
     os.getenv("ENABLE_HEALTHCHECK_SECRET_MANAGER", "True").lower() == "true"
 )
@@ -570,10 +503,6 @@ ENABLE_HEALTHCHECK_AUTHORIZATION = (
 ENABLE_HEALTHCHECK_ATTRIBUTION = (
     os.getenv("ENABLE_HEALTHCHECK_ATTRIBUTION", "True").lower() == "true"
 )
-ENABLE_HEALTHCHECK_CHATBOT_SERVICE = (
-    os.getenv("ENABLE_HEALTHCHECK_CHATBOT_SERVICE", "True").lower() == "true"
-)
-
 # ==========================================
 
 # ==========================================
@@ -593,16 +522,9 @@ ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL = (
     os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL", "False").lower() == "true"
 )
 
-ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY: str = (
-    os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY") or ""
+ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN: t_one_click_reports_postman_type = cast(
+    t_one_click_reports_postman_type, os.getenv("ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN") or "none"
 )
-ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID: str = (
-    os.getenv("ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID") or ""
-)
-
-ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN: t_one_click_reports_postman_type = os.getenv(
-    "ANSIBLE_AI_ONE_CLICK_REPORTS_POSTMAN"
-) or cast(t_one_click_reports_postman_type, "none")
 ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
     json.loads(os.getenv("ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG"), strict=False)
     if os.getenv("ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG")
@@ -613,9 +535,7 @@ ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
 # ==========================================
 # Chatbot
 # ------------------------------------------
-CHATBOT_URL = os.getenv("CHATBOT_URL")
 CHATBOT_DEFAULT_PROVIDER = os.getenv("CHATBOT_DEFAULT_PROVIDER")
-CHATBOT_DEFAULT_MODEL = os.getenv("CHATBOT_DEFAULT_MODEL")
 CHATBOT_DEBUG_UI = os.getenv("CHATBOT_DEBUG_UI", "False").lower() == "true"
 # ==========================================
 
@@ -630,99 +550,5 @@ ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
 # ==========================================
 # Pipeline configuration
 # ------------------------------------------
-# [manstis] This will be enabled when we update AWS SM configuration
-# ANSIBLE_AI_MODEL_MESH_CONFIG = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG")
-#
-# [manstis] For now, populate the configuration from the environment variables
-
-if ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca":
-    ANSIBLE_AI_PIPELINE_CONFIG = {
-        "provider": "wca",
-        "config": {
-            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
-            "api_key": ANSIBLE_AI_MODEL_MESH_API_KEY,
-            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
-            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
-            "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
-            "retry_count": ANSIBLE_WCA_RETRY_COUNT,
-            "enable_ari_postprocessing": WCA_ENABLE_ARI_POSTPROCESS,
-            "health_check_api_key": ANSIBLE_WCA_HEALTHCHECK_API_KEY,
-            "health_check_model_id": ANSIBLE_WCA_HEALTHCHECK_MODEL_ID,
-            "idp_url": ANSIBLE_WCA_IDP_URL,
-            "idp_login": ANSIBLE_WCA_IDP_LOGIN,
-            "idp_password": ANSIBLE_WCA_IDP_PASSWORD,
-            "one_click_default_api_key": ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_API_KEY,
-            "one_click_default_model_id": ANSIBLE_AI_ENABLE_ONE_CLICK_DEFAULT_MODEL_ID,
-        },
-    }
-elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca-onprem":
-    ANSIBLE_AI_PIPELINE_CONFIG = {
-        "provider": "wca-onprem",
-        "config": {
-            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
-            "api_key": ANSIBLE_AI_MODEL_MESH_API_KEY,
-            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
-            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
-            "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
-            "retry_count": ANSIBLE_WCA_RETRY_COUNT,
-            "enable_ari_postprocessing": WCA_ENABLE_ARI_POSTPROCESS,
-            "health_check_api_key": ANSIBLE_WCA_HEALTHCHECK_API_KEY,
-            "health_check_model_id": ANSIBLE_WCA_HEALTHCHECK_MODEL_ID,
-            "username": ANSIBLE_WCA_USERNAME,
-        },
-    }
-elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "dummy":
-    ANSIBLE_AI_PIPELINE_CONFIG = {
-        "provider": "dummy",
-        "config": {
-            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
-            "body": DUMMY_MODEL_RESPONSE_BODY,
-            "latency_max_msec": DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC,
-            "latency_use_jitter": DUMMY_MODEL_RESPONSE_LATENCY_USE_JITTER,
-        },
-    }
-elif ANSIBLE_AI_MODEL_MESH_API_TYPE == "ollama":
-    ANSIBLE_AI_PIPELINE_CONFIG = {
-        "provider": "ollama",
-        "config": {
-            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
-            "model_id": ANSIBLE_AI_MODEL_MESH_MODEL_ID,
-            "timeout": ANSIBLE_AI_MODEL_MESH_API_TIMEOUT,
-        },
-    }
-else:
-    ANSIBLE_AI_PIPELINE_CONFIG = {
-        "provider": "wca-dummy",
-        "config": {
-            "inference_url": ANSIBLE_AI_MODEL_MESH_API_URL,
-        },
-    }
-
-
-# Lazy import to avoid circular dependencies
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
-from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY  # noqa
-
-pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
-pipeline_config: dict = {k.__name__: deepcopy(ANSIBLE_AI_PIPELINE_CONFIG) for k in pipelines}
-
-# The ChatBot does not use the same configuration as everything else
-pipeline_config["ModelPipelineChatBot"] = {
-    "provider": "http",
-    "config": {
-        "inference_url": CHATBOT_URL or "http://localhost:8000",
-        "model_id": CHATBOT_DEFAULT_MODEL or "granite3-8b",
-        "verify_ssl": ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL,
-    },
-}
-
-# Enable Health Checks where we have them implemented
-pipeline_config["ModelPipelineCompletions"]["config"][
-    "enable_health_check"
-] = ENABLE_HEALTHCHECK_MODEL_MESH
-pipeline_config["ModelPipelineChatBot"]["config"][
-    "enable_health_check"
-] = ENABLE_HEALTHCHECK_MODEL_MESH
-
-ANSIBLE_AI_MODEL_MESH_CONFIG = json.dumps(pipeline_config)
+ANSIBLE_AI_MODEL_MESH_CONFIG = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG") or load_from_env_vars()
 # ==========================================
