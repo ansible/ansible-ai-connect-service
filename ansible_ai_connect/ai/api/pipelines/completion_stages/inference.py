@@ -19,7 +19,6 @@ from string import Template
 
 from ansible_anonymizer import anonymizer
 from django.apps import apps
-from django.conf import settings
 from django_prometheus.conf import NAMESPACE
 from prometheus_client import Histogram
 
@@ -124,7 +123,7 @@ class InferenceStage(PipelineElement):
         except ModelTimeoutError as e:
             exception = e
             logger.warning(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} "
+                f"model timed out after {model_mesh_client.config.timeout} "
                 f"seconds (per task) for suggestion {suggestion_id}"
             )
             raise ModelTimeoutException(cause=e)

@@ -19,7 +19,6 @@ from unittest.mock import Mock, patch
 from urllib.parse import urlencode
 
 from django.apps import apps
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 from segment import analytics
@@ -39,7 +38,6 @@ def dummy_redact_seated_users_data(event, allow_list):
 @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID="wisdom")
 class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC):
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
@@ -73,7 +71,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
 
@@ -100,9 +98,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
                 for event in segment_events:
                     properties = event["properties"]
                     self.assertTrue("modelName" in properties)
-                    self.assertEqual(
-                        properties["modelName"], settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID
-                    )
+                    self.assertEqual(properties["modelName"], "a-model-id")
                     self.assertTrue("imageTags" in properties)
                     self.assertTrue("groups" in properties)
                     self.assertTrue("Group 1" in properties["groups"])
@@ -184,7 +180,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -231,7 +227,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             "status_code": 204,
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
         }
         self.client.force_authenticate(user=self.user)
 
@@ -307,7 +303,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             },
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
 

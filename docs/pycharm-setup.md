@@ -194,16 +194,15 @@ ANSIBLE_AI_DATABASE_USER=wisdom
 DJANGO_SETTINGS_MODULE=main.settings.development
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
-ANSIBLE_AI_MODEL_MESH_API_TYPE=ollama
-ANSIBLE_AI_MODEL_MESH_MODEL_ID="mistral:instruct"
-ANSIBLE_AI_MODEL_MESH_API_URL=http://127.0.0.1:11434
 ENABLE_ARI_POSTPROCESS=False
 DEPLOYMENT_MODE=upstream
+ANSIBLE_AI_MODEL_MESH_CONFIG="..."
 ```
+See the example [ANSIBLE_AI_MODEL_MESH_CONFIG](./config/examples/README-ANSIBLE_AI_MODEL_MESH_CONFIG.md).
 
 > [!TIP]
-> The example shown above uses local Ollama server with Mistral 7B Instruct model.
-> For using a other type of model server that provides prediction results,
+> The example referenced above uses local Ollama server with Mistral 7B Instruct model.
+> For using a different type of model server that provides prediction results,
 > you need to set extra environment variables for a client type that is used
 > to connect to the model server.
 

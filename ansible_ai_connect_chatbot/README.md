@@ -51,18 +51,26 @@ in the `coverage` sub-directory.
 ## Test Chatbot in Local environment
 
 **Chatbot is enabled when all of
-the following three environment variables are defined:**
+the following three parameters are defined:**
 
-1. `CHATBOT_URL` URL of the chat service to be used.
-2. `CHATBOT_DEFAULT_PROVIDER` Default AI model provider. It should be
-one of providers defined in the configuration used by the chat service.
-3. `CHATBOT_DEFAULT_MODEL` Default AI model. It should be
+1. `ModelPipelineChatBot.config.inference_url` URL of the chat service to be used.
+2. `ModelPipelineChatBot.config.model_id` Default AI model. It should be
 one of models defined in the configuration used by the chat service.
+3. `CHATBOT_DEFAULT_PROVIDER` Default AI model provider. It should be
+   one of providers defined in the configuration used by the chat service.
 
 ```commandline
-CHATBOT_URL=http://127.0.0.1:8080
 CHATBOT_DEFAULT_PROVIDER=wisdom
-CHATBOT_DEFAULT_MODEL=granite3-8b
+```
+```json
+{
+  "ModelPipelineChatBot": {
+    "config": {
+      "inference_url": "http://127.0.0.1:8080",
+      "model_id": "granite3-8b"
+    }
+  }
+}
 ```
 
 You also need to configure Red Hat SSO authentication on your local

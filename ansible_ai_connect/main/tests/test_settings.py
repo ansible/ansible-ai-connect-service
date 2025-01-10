@@ -100,47 +100,6 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
     @patch.dict(
         os.environ,
         {
-            "ANSIBLE_AI_MODEL_MESH_MODEL_NAME": "a-model",
-        },
-    )
-    def test_use_of_model_mesh_model_name(self):
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            settings = self.reload_settings()
-            self.assertEqual(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID, "a-model")
-            self.assertTrue(
-                self.searchInLogOutput("Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated", log)
-            )
-            self.assertTrue(
-                self.searchInLogOutput("Setting the value of ANSIBLE_AI_MODEL_MESH_MODEL_ID", log)
-            )
-
-    @patch.dict(
-        os.environ,
-        {
-            "ANSIBLE_AI_MODEL_MESH_MODEL_NAME": "a-model",
-            "ANSIBLE_AI_MODEL_MESH_MODEL_ID": "b-model",
-        },
-    )
-    def test_use_of_model_mesh_model_name_and_model_id(self):
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            settings = self.reload_settings()
-            self.assertEqual(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID, "b-model")
-            self.assertTrue(
-                self.searchInLogOutput("Use of ANSIBLE_AI_MODEL_MESH_MODEL_NAME is deprecated", log)
-            )
-            self.assertTrue(
-                self.searchInLogOutput(
-                    "ANSIBLE_AI_MODEL_MESH_MODEL_ID is set and will take precedence", log
-                )
-            )
-
-    def test_ansible_ai_model_mesh_model_id_has_no_default(self):
-        settings = self.reload_settings()
-        self.assertIsNone(settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID)
-
-    @patch.dict(
-        os.environ,
-        {
             "ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG": '{"config": "value"}',
         },
     )
