@@ -379,6 +379,7 @@ export const useChatbot = () => {
     setAlertMessage,
     selectedModel,
     setSelectedModel,
+    conversationId,
     setConversationId,
     systemPrompt,
     setSystemPrompt,

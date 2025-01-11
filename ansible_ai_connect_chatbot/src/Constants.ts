@@ -46,3 +46,5 @@ Here are some basic facts about Ansible:
     configuration management, application deployment, orchestration, and many other \
     IT processes. It is free to use, and the project benefits from the experience and \
     intelligence of its thousands of contributors.`;
+
+export const CHAT_HISTORY_HEADER = "Chat History";
