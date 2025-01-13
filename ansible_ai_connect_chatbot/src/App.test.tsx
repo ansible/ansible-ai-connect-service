@@ -403,9 +403,9 @@ test("Debug mode test", async () => {
     .element(view.getByRole("menuitem", { name: "granite3-8b" }))
     .toBeTruthy();
   await expect
-    .element(view.getByRole("menuitem", { name: "granite31-8b" }))
+    .element(view.getByRole("menuitem", { name: "granite3-1-8b" }))
     .toBeTruthy();
-  await view.getByRole("menuitem", { name: "granite31-8b" }).click();
+  await view.getByRole("menuitem", { name: "granite3-1-8b" }).click();
 
   await sendMessage("Hello");
   await expect
