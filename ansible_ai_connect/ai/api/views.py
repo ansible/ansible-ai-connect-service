@@ -192,9 +192,9 @@ class AACSAPIView(APIView):
         return initialised_request
 
     def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
         if hasattr(request, "data"):
             self.load_parameters(request)
-        return super().initial(request, *args, **kwargs)
 
     def load_parameters(self, request) -> Response:
         if hasattr(self, "request_serializer_class"):
@@ -870,7 +870,7 @@ class GenerationPlaybook(AACSAPIView):
         )
 
 
-class GenerationRole(APIView):
+class GenerationRole(AACSAPIView):
     """
     Returns a role based on a text input.
     """
@@ -883,7 +883,8 @@ class GenerationRole(APIView):
         IsAuthenticatedOrTokenHasScope,
     ]
     required_scopes = ["read", "write"]
-
+    schema1_event = schema1.GenerationRoleEvent
+    request_serializer_class = GenerationRoleRequestSerializer
     throttle_cache_key_suffix = "_generation_role"
 
     @extend_schema(
@@ -895,73 +896,42 @@ class GenerationRole(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        # Declaring but commenting out variables to define them but also comply pre-commit
-        text = ""
-        outline = ""
-        create_outline = False
-        additional_context = {}
-        file_types = ["task", "default"]
-        generation_id = ""
-        wizard_id = ""
-        request_serializer = GenerationRoleRequestSerializer(data=request.data)
-        answer = {}
-        model_id = ""
-        try:
-            request_serializer.is_valid(raise_exception=True)
+        self.event.create_outline = self.validated_data["createOutline"]
+        self.event.generationId = self.validated_data["generationId"]
+        self.event.wizardId = self.validated_data["wizardId"]
+        llm: ModelPipelineRoleGeneration = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineRoleGeneration
+        )
 
-            text = request_serializer.validated_data["text"]
-            outline = str(request_serializer.validated_data.get("outline", outline))
-            create_outline = request_serializer.validated_data["createOutline"]
-            additional_context = request_serializer.validated_data.get(
-                "additionalContext", additional_context
+        roles, files, outline = llm.invoke(
+            RoleGenerationParameters.init(
+                request=request,
+                text=self.validated_data["text"],
+                outline=self.validated_data["outline"],
+                model_id=self.req_model_id,
+                create_outline=self.validated_data["createOutline"],
+                additional_context=self.validated_data.get("additionalContext", {}),
+                file_types=self.validated_data["fileTypes"],
+                generation_id=self.validated_data["generationId"],
             )
-            file_types = request_serializer.validated_data.get("fileTypes", file_types)
-            generation_id = str(
-                request_serializer.validated_data.get("generationId", generation_id)
-            )
-            wizard_id = str(request_serializer.validated_data.get("wizardId", wizard_id))
-            model_id = str(request_serializer.validated_data.get("model", ""))
+        )
 
-            llm: ModelPipelineRoleGeneration = apps.get_app_config("ai").get_model_pipeline(
-                ModelPipelineRoleGeneration
-            )
+        # Anonymize responses
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_role = anonymizer.anonymize_struct(
+            roles, value_template=Template("{{ _${variable_name}_ }}")
+        )
+        anonymized_outline = anonymizer.anonymize_struct(
+            outline, value_template=Template("{{ _${variable_name}_ }}")
+        )
 
-            roles, files, outline = llm.invoke(
-                RoleGenerationParameters.init(
-                    request=request,
-                    text=text,
-                    outline=outline,
-                    model_id=model_id,
-                    create_outline=create_outline,
-                    additional_context=additional_context,
-                    file_types=file_types,
-                    generation_id=generation_id,
-                )
-            )
-
-            # Anonymize responses
-            # Anonymized in the View to be consistent with where Completions are anonymized
-            anonymized_role = anonymizer.anonymize_struct(
-                roles, value_template=Template("{{ _${variable_name}_ }}")
-            )
-            anonymized_outline = anonymizer.anonymize_struct(
-                outline, value_template=Template("{{ _${variable_name}_ }}")
-            )
-
-            answer = {
-                "role": anonymized_role,
-                "outline": anonymized_outline,
-                "files": files,
-                "format": "plaintext",
-                "generationId": generation_id,
-            }
-            ##################################################
-        except Exception as e:
-            logger.exception(f"An exception {e.__class__} occurred during a role generation")
-            raise
-        finally:
-            # implement write to segment there.
-            pass
+        answer = {
+            "role": anonymized_role,
+            "outline": anonymized_outline,
+            "files": files,
+            "format": "plaintext",
+            "generationId": self.validated_data["generationId"],
+        }
 
         return Response(
             answer,
