@@ -34,7 +34,6 @@ from rest_framework.views import APIView
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
-    ChatbotInvalidRequestException,
     ChatbotInvalidResponseException,
     ChatbotNotEnabledException,
     FeedbackInternalServerException,
@@ -179,8 +178,9 @@ class AACSAPIView(APIView):
     def __init__(self):
         super().__init__()
         self.event = None
-        self.model_id = None
+        self.req_model_id = None
         self.exception = None
+        self.validated_data = {}
 
     def initialize_request(self, request, *args, **kwargs):
         # Call super first to ensure request object is correctly
@@ -189,14 +189,22 @@ class AACSAPIView(APIView):
         self.event: schema1.Schema1Event = self.schema1_event()
         self.event.set_request(initialised_request)
 
-        # TODO: when we will move the request_serializer handling in this
-        # class, we will change this line below. The model_id attribute
-        # should exposed as self.validated_data.model, or using a special
-        # method.
-        # See: https://github.com/ansible/ansible-ai-connect-service/pull/1147/files#diff-ecfb6919dfd8379aafba96af7457b253e4dce528897dfe6bfc207ca2b3b2ada9R143-R151  # noqa: E501
-        self.req_model_id: str = ""
-
         return initialised_request
+
+    def initial(self, request, *args, **kwargs):
+        if hasattr(request, "data"):
+            self.load_parameters(request)
+        return super().initial(request, *args, **kwargs)
+
+    def load_parameters(self, request) -> Response:
+        if hasattr(self, "request_serializer_class"):
+            request_serializer = self.request_serializer_class(data=request.data)
+            request_serializer.is_valid(raise_exception=True)
+            self.validated_data = request_serializer.validated_data
+            if req_model_id := self.validated_data.get("model") or self.validated_data.get(
+                "model_id"
+            ):
+                self.req_model_id = req_model_id
 
     def handle_exception(self, exc):
         self.exception = exc
@@ -747,7 +755,7 @@ class Explanation(AACSAPIView):
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
     schema1_event = schema1.ExplainPlaybookEvent
-
+    request_serializer_class = ExplanationRequestSerializer
     throttle_cache_key_suffix = "_explanation"
 
     @extend_schema(
@@ -763,32 +771,20 @@ class Explanation(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        explanation_id: str = None
-        playbook: str = ""
-        answer = {}
-
-        # TODO: This request_serializer block will move in AACSAPIView later
-        request_serializer = ExplanationRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        explanation_id = str(request_serializer.validated_data.get("explanationId", ""))
-        playbook = request_serializer.validated_data.get("content")
-        custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
-        self.req_model_id = str(request_serializer.validated_data.get("model", ""))
-
+        self.event.playbook_length = len(self.validated_data["content"])
+        self.event.explanationId = self.validated_data["explanationId"]
         llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelinePlaybookExplanation
         )
         explanation = llm.invoke(
             PlaybookExplanationParameters.init(
                 request=request,
-                content=playbook,
-                custom_prompt=custom_prompt,
-                explanation_id=explanation_id,
-                model_id=self.model_id,
+                content=self.validated_data["content"],
+                custom_prompt=self.validated_data["customPrompt"],
+                explanation_id=self.validated_data["explanationId"],
+                model_id=self.validated_data["model"],
             )
         )
-        self.event.playbook_length = len(playbook)
-        self.event.explanationId = explanation_id
 
         # Anonymize response
         # Anonymized in the View to be consistent with where Completions are anonymized
@@ -799,7 +795,7 @@ class Explanation(AACSAPIView):
         answer = {
             "content": anonymized_explanation,
             "format": "markdown",
-            "explanationId": explanation_id,
+            "explanationId": self.validated_data["explanationId"],
         }
 
         return Response(
@@ -816,7 +812,7 @@ class GenerationPlaybook(AACSAPIView):
     permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
     required_scopes = ["read", "write"]
     schema1_event = schema1.GenerationPlaybookEvent
-
+    request_serializer_class = GenerationPlaybookRequestSerializer
     throttle_cache_key_suffix = "_generation_playbook"
 
     @extend_schema(
@@ -832,44 +828,24 @@ class GenerationPlaybook(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
-        generation_id = None
-        wizard_id = None
-        create_outline = None
-        anonymized_playbook = ""
-        playbook = ""
-        answer = {}
-        model_id = ""
+        self.event.create_outline = self.validated_data["createOutline"]
+        self.event.generationId = self.validated_data["generationId"]
+        self.event.wizardId = self.validated_data["wizardId"]
 
-        request_serializer = GenerationPlaybookRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
-        generation_id = str(request_serializer.validated_data.get("generationId", ""))
-        create_outline = request_serializer.validated_data["createOutline"]
-        outline = str(request_serializer.validated_data.get("outline", ""))
-        text = request_serializer.validated_data["text"]
-        custom_prompt = str(request_serializer.validated_data.get("customPrompt", ""))
-        wizard_id = str(request_serializer.validated_data.get("wizardId", ""))
-        self.req_model_id = str(request_serializer.validated_data.get("model", ""))
-
-        self.event.generationId = generation_id
-        self.event.wizardId = wizard_id
-        self.event.modelName = model_id
-
-        self.event.create_outline = create_outline
         llm: ModelPipelinePlaybookGeneration = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelinePlaybookGeneration
         )
         playbook, outline, warnings = llm.invoke(
             PlaybookGenerationParameters.init(
                 request=request,
-                text=text,
-                custom_prompt=custom_prompt,
-                create_outline=create_outline,
-                outline=outline,
-                generation_id=generation_id,
-                model_id=model_id,
+                text=self.validated_data["text"],
+                custom_prompt=self.validated_data["customPrompt"],
+                create_outline=self.validated_data["createOutline"],
+                outline=self.validated_data["outline"],
+                generation_id=self.validated_data["generationId"],
+                model_id=self.req_model_id,
             )
         )
-
         # Anonymize responses
         # Anonymized in the View to be consistent with where Completions are anonymized
         anonymized_playbook = anonymizer.anonymize_struct(
@@ -885,7 +861,7 @@ class GenerationPlaybook(AACSAPIView):
             "outline": anonymized_outline,
             "warnings": warnings,
             "format": "plaintext",
-            "generationId": generation_id,
+            "generationId": self.validated_data["generationId"],
         }
 
         return Response(
@@ -1007,10 +983,12 @@ class Chat(AACSAPIView):
         IsRHEmployee | IsTestUser,
     ]
     required_scopes = ["read", "write"]
-    throttle_classes = [ChatEndpointThrottle]
     schema1_event = schema1.ChatBotOperationalEvent
+    request_serializer_class = ChatRequestSerializer
+    throttle_classes = [ChatEndpointThrottle]
 
     def __init__(self):
+        super().__init__()
         self.chatbot_enabled = (
             settings.CHATBOT_URL
             and settings.CHATBOT_DEFAULT_MODEL
@@ -1036,43 +1014,21 @@ class Chat(AACSAPIView):
     )
     def post(self, request) -> Response:
         headers = {"Content-Type": "application/json"}
-        request_serializer = ChatRequestSerializer(data=request.data)
 
         if not self.chatbot_enabled:
             raise ChatbotNotEnabledException()
 
-        if not request_serializer.is_valid():
-            raise ChatbotInvalidRequestException()
-
-        req_query = request_serializer.validated_data["query"]
-        req_system_prompt = (
-            request_serializer.validated_data["system_prompt"]
-            if "system_prompt" in request_serializer.validated_data
-            else None
-        )
-        req_model_id = (
-            request_serializer.validated_data["model"]
-            if "model" in request_serializer.validated_data
-            else settings.CHATBOT_DEFAULT_MODEL
-        )
-        req_provider = (
-            request_serializer.validated_data["provider"]
-            if "provider" in request_serializer.validated_data
-            else settings.CHATBOT_DEFAULT_PROVIDER
-        )
-        conversation_id = (
-            request_serializer.validated_data["conversation_id"]
-            if "conversation_id" in request_serializer.validated_data
-            else None
-        )
+        req_query = self.validated_data["query"]
+        req_system_prompt = self.validated_data.get("system_prompt")
+        req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
+        conversation_id = self.validated_data.get("conversation_id")
 
         # Initialise Segment Event early, in case of exceptions
-        self.model_id = req_model_id
         self.event.chat_prompt = anonymize_struct(req_query)
         self.event.chat_system_prompt = req_system_prompt
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
-        self.event.modelName = req_model_id
+        self.event.modelName = self.req_model_id or settings.CHATBOT_DEFAULT_MODEL
 
         llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineChatBot
@@ -1083,7 +1039,7 @@ class Chat(AACSAPIView):
                 request=request,
                 query=req_query,
                 system_prompt=req_system_prompt,
-                model_id=req_model_id,
+                model_id=self.req_model_id or settings.CHATBOT_DEFAULT_MODEL,
                 provider=req_provider,
                 conversation_id=conversation_id,
             )

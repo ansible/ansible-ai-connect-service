@@ -907,16 +907,19 @@ components:
           description: The playbook that needs to be explained.
         customPrompt:
           type: string
+          default: ''
           title: Custom prompt
           description: Custom prompt passed to the LLM when explaining a playbook.
         explanationId:
           type: string
           format: uuid
+          default: ''
           title: Explanation ID
           description: A UUID that identifies the particular explanation data is being
             requested for.
         model:
           type: string
+          default: ''
         metadata:
           $ref: '#/components/schemas/Metadata'
       required:
@@ -974,12 +977,14 @@ components:
           description: The description that needs to be converted to a playbook.
         customPrompt:
           type: string
+          default: ''
           title: Custom prompt
           description: Custom prompt passed to the LLM when generating the text of
             a playbook.
         generationId:
           type: string
           format: uuid
+          default: ''
           title: generation ID
           description: A UUID that identifies the particular generation data is being
             requested for.
@@ -991,10 +996,12 @@ components:
             of the Ansible Playbook.
         outline:
           type: string
+          default: ''
           description: A long step by step outline of the expected Ansible Playbook.
         wizardId:
           type: string
           format: uuid
+          default: ''
           title: wizard ID
           description: A UUID to track the succession of interaction from the user.
         model:
@@ -1013,7 +1020,7 @@ components:
         generationId:
           type: string
           format: uuid
-          title: Explanation ID
+          title: Generation ID
           description: A UUID that identifies the particular summary data is being
             requested for.
         outline:
@@ -1100,7 +1107,7 @@ components:
         generationId:
           type: string
           format: uuid
-          title: Explanation ID
+          title: Generation ID
           description: A UUID that identifies the particular summary data is being
             requested for.
         outline:

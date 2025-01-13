@@ -201,11 +201,6 @@ class ChatbotNotEnabledException(BaseWisdomAPIException):
     default_detail = "Chatbot is not enabled"
 
 
-class ChatbotInvalidRequestException(WisdomBadRequest):
-    default_code = "error__chatbot_invalid_request"
-    default_detail = "Invalid request"
-
-
 class ChatbotInvalidResponseException(BaseWisdomAPIException):
     status_code = 500
     default_code = "error__chatbot_invalid_response"

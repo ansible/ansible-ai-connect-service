@@ -40,7 +40,6 @@ from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
     ChatbotForbiddenException,
     ChatbotInternalServerException,
-    ChatbotInvalidRequestException,
     ChatbotInvalidResponseException,
     ChatbotNotEnabledException,
     ChatbotPromptTooLongException,
@@ -2747,7 +2746,7 @@ This playbook emails admin@redhat.com with a list of passwords.
 """
 
     def test_ok(self):
-        explanation_id = str(uuid.uuid4())
+        explanation_id = uuid.uuid4()
         payload = {
             "content": """---
 - name: Setup nginx
@@ -2773,7 +2772,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         self.assertEqual(r.data["explanationId"], explanation_id)
 
     def test_ok_with_model_id(self):
-        explanation_id = str(uuid.uuid4())
+        explanation_id = uuid.uuid4()
         model = "mymodel"
         payload = {
             "content": """---
@@ -3255,7 +3254,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_ok(self):
-        generation_id = str(uuid.uuid4())
+        generation_id = uuid.uuid4()
         payload = {
             "text": "Install nginx on RHEL9",
             "generationId": generation_id,
@@ -3270,7 +3269,7 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_ok_with_model_id(self):
-        generation_id = str(uuid.uuid4())
+        generation_id = uuid.uuid4()
         model = "mymodel"
         payload = {
             "text": "Install nginx on RHEL9",
@@ -3787,7 +3786,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
 
-    explanation_id = str(uuid.uuid4())
+    explanation_id = uuid.uuid4()
     payload_json = {
         "content": "Install Wordpress on a RHEL9",
         "explanationId": explanation_id,
@@ -3853,7 +3852,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
 class TestGenerationFeatureEnableForWcaOnprem(
     WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
-    generation_id = str(uuid.uuid4())
+    generation_id = uuid.uuid4()
     payload_json = {
         "text": "Install nginx on RHEL9",
         "generationId": generation_id,
@@ -4104,14 +4103,6 @@ class TestChatView(WisdomServiceAPITestCaseBase):
     def test_chat_not_enabled_exception(self):
         self.assert_test(
             TestChatView.VALID_PAYLOAD, 503, ChatbotNotEnabledException, "Chatbot is not enabled"
-        )
-
-    def test_chat_invalid_request_exception(self):
-        self.assert_test(
-            TestChatView.INVALID_PAYLOAD,
-            400,
-            ChatbotInvalidRequestException,
-            "ChatbotInvalidRequestException",
         )
 
     def test_chat_invalid_response_exception(self):
