@@ -19,6 +19,8 @@ import axios, { AxiosError, AxiosHeaders } from "axios";
 // See: https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
 
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 async function renderApp(debug = false) {
   let rootDiv = document.getElementById("root");
   rootDiv?.remove();
@@ -150,7 +152,13 @@ test("Basic chatbot interaction", async () => {
     .toBeVisible();
   await expect.element(view.getByText("Create variables")).toBeVisible();
 
-  await view.getByRole("button", { name: "Clear context" }).click();
+  await page.getByLabelText("Toggle menu").click();
+  const newChatButton = page
+    .getByText("New chat")
+    .element() as HTMLButtonElement;
+  await expect(newChatButton).toBeVisible();
+  await newChatButton.click();
+
   await expect
     .element(
       page.getByText(
@@ -161,6 +169,7 @@ test("Basic chatbot interaction", async () => {
   await expect
     .element(view.getByText("Create variables"))
     .not.toBeInTheDocument();
+
   const footNoteLink = page.getByText(
     "Lightspeed uses AI. Check for mistakes.",
   );
@@ -172,6 +181,32 @@ test("Basic chatbot interaction", async () => {
   await expect
     .element(view.getByText("While Lightspeed strives for accuracy,"))
     .not.toBeVisible();
+
+  await textArea.fill("Tell me about Ansible.");
+  await userEvent.keyboard("{Enter}");
+  await expect
+    .element(
+      view.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    )
+    .toBeVisible();
+  await expect.element(view.getByText("Create variables")).toBeVisible();
+
+  await page.getByLabelText("Toggle menu").click();
+
+  const filterHistory = page.getByLabelText("Filter menu items");
+  await expect.element(filterHistory).toBeVisible();
+
+  await filterHistory.fill("Some non-existent string");
+  await expect
+    .element(page.getByRole("menuitem", { name: "No results found" }))
+    .toBeVisible();
+
+  await filterHistory.fill("the precedence of variables");
+  await expect
+    .element(page.getByRole("menuitem", { name: "Hello" }))
+    .toBeVisible();
 });
 
 test("ThumbsDown icon test", async () => {
@@ -299,6 +334,9 @@ test("Chat service returns 429 Too Many Requests error", async () => {
   await textArea.fill("Hello");
   await userEvent.keyboard("{Enter}");
 
+  // Insert an artificial 3s delay, which is inserted in useChatbot.ts.
+  await delay(3000);
+
   await expect
     .element(
       page.getByText("Chatbot service is busy with too many requests. ", {
@@ -397,15 +435,13 @@ test("Color theme switch", async () => {
 test("Debug mode test", async () => {
   mockAxios(200);
 
-  const view = await renderApp(true);
+  await renderApp(true);
+  await expect.element(page.getByText("granite3-8b")).toBeVisible();
   await page.getByText("granite3-8b").click();
   await expect
-    .element(view.getByRole("menuitem", { name: "granite3-8b" }))
-    .toBeTruthy();
-  await expect
-    .element(view.getByRole("menuitem", { name: "granite3-1-8b" }))
-    .toBeTruthy();
-  await view.getByRole("menuitem", { name: "granite3-1-8b" }).click();
+    .element(page.getByRole("menuitem", { name: "granite3-1-8b" }))
+    .toBeVisible();
+  await page.getByRole("menuitem", { name: "granite3-1-8b" }).click();
 
   await sendMessage("Hello");
   await expect
@@ -422,6 +458,7 @@ test("Test system prompt override", async () => {
   const spy = mockAxios(200);
   await renderApp(true);
 
+  await expect.element(page.getByLabelText("SystemPrompt")).toBeVisible();
   const systemPromptIcon = page.getByLabelText("SystemPrompt");
   await systemPromptIcon.click();
 
