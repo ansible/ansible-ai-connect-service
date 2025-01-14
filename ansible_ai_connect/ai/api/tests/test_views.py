@@ -3508,15 +3508,19 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_ok(self):
-        generation_id = str(uuid.uuid4())
+        generation_id = uuid.uuid4()
         payload = {
             "text": "Install nginx and enable the service",
             "generationId": generation_id,
             "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("generations/role"), payload, format="json")
+        with self.assertLogs(logger="root", level="DEBUG") as log:
+            r = self.client.post(reverse("generations/role"), payload, format="json")
+            segment_events = self.extractSegmentEventsFromLog(log)
+            roleGenEvent = segment_events[0]
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
         self.assertEqual(r.data["files"], ROLE_FILES)
@@ -3524,6 +3528,8 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
         self.assertEqual(r.data["generationId"], generation_id)
         self.assertEqual(r.data["outline"], "")
         self.assertEqual(r.data["role"], "install_nginx")
+        self.assertEqual(roleGenEvent["event"], "codegenRole")
+        self.assertEqual(roleGenEvent["properties"]["generationId"], str(generation_id))
 
     def test_unauthorized(self):
         payload = {}

@@ -464,17 +464,6 @@ class ExplanationResponseSerializer(serializers.Serializer):
 
 
 class GenerationPlaybookRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = [
-            "text",
-            "generationId",
-            "wizardId",
-            "createOutline",
-            "customPrompt",
-            "ansibleExtensionVersion",
-            "outline",
-        ]
-
     text = AnonymizedCharField(
         required=True,
         label="Description content",
@@ -539,18 +528,6 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
 
 
 class GenerationRoleRequestSerializer(serializers.Serializer):
-    class Meta:
-        fields = [
-            "text",
-            "outline",
-            "createOutline",
-            "additionalContext",
-            "fileTypes",
-            "generationId",
-            "wizardId",
-            "ansibleExtensionVersion",
-        ]
-
     text = AnonymizedCharField(
         required=True,
         label="the goal of the role",
@@ -563,6 +540,7 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
         required=False,
         label="an outline of the role",
         help_text="An outline of the role should be a numbered list.",
+        default="",
     )
     createOutline = serializers.BooleanField(
         required=False,
@@ -588,18 +566,21 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
             "The file type name is based on the inner role directories, "
             "without the trailing 's'"
         ),
+        default=["task", "default"],
     )
     generationId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
         label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
+        default="",
     )
     wizardId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
+        default="",
     )
     model = serializers.CharField(required=False, allow_blank=True)
 
