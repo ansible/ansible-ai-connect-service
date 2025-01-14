@@ -19,9 +19,6 @@ from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     BaseConfig,
     PipelineConfiguration,
 )
-from ansible_ai_connect.ai.api.model_pipelines.config_serializers import (
-    BaseConfigSerializer,
-)
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 
 # ANSIBLE_AI_MODEL_MESH_API_URL
@@ -29,20 +26,22 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # DUMMY_MODEL_RESPONSE_MAX_LATENCY_MSEC
 # DUMMY_MODEL_RESPONSE_BODY
 
+DEFAULT_BODY = (
+    '{"predictions":'
+    '["ansible.builtin.apt:\\n  name: nginx\\n  update_cache: true\\n  state: present\\n"]}'
+)
+
 
 class DummyConfiguration(BaseConfig):
 
     def __init__(
         self,
-        inference_url: str,
-        model_id: str,
-        timeout: Optional[int],
         enable_health_check: Optional[bool],
         latency_use_jitter: bool,
         latency_max_msec: int,
         body: str,
     ):
-        super().__init__(inference_url, model_id, timeout, enable_health_check)
+        super().__init__("dummy", "dummy", None, enable_health_check)
         self.latency_use_jitter = latency_use_jitter
         self.latency_max_msec = latency_max_msec
         self.body = body
@@ -55,9 +54,6 @@ class DummyPipelineConfiguration(PipelineConfiguration[DummyConfiguration]):
         super().__init__(
             "dummy",
             DummyConfiguration(
-                inference_url=kwargs["inference_url"],
-                model_id=kwargs["model_id"],
-                timeout=kwargs["timeout"],
                 enable_health_check=kwargs["enable_health_check"],
                 latency_use_jitter=kwargs["latency_use_jitter"],
                 latency_max_msec=kwargs["latency_max_msec"],
@@ -67,7 +63,10 @@ class DummyPipelineConfiguration(PipelineConfiguration[DummyConfiguration]):
 
 
 @Register(api_type="dummy")
-class DummyConfigurationSerializer(BaseConfigSerializer):
+class DummyConfigurationSerializer(serializers.Serializer):
+    enable_health_check = serializers.BooleanField(required=False, default=False)
     latency_use_jitter = serializers.BooleanField(required=False, default=False)
     latency_max_msec = serializers.IntegerField(required=False, default=3000)
-    body = serializers.CharField(required=True)
+    body = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True, default=DEFAULT_BODY
+    )
