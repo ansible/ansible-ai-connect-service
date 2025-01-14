@@ -61,6 +61,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
         on_delete=models.CASCADE,
     )
     rh_user_is_org_admin = models.BooleanField(default=False)
+    # TODO: Rename to rh_internal?
     rh_employee = models.BooleanField(default=False)
     external_username = models.CharField(default="", null=False)
     name = models.CharField(default=None, null=True)

@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="user",
+            # TODO: Another migration script for renaming the field to rh_internal?.
             name="rh_employee",
             field=models.BooleanField(default=False),
         ),

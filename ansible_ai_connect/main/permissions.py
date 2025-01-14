@@ -14,11 +14,12 @@
 from rest_framework.permissions import BasePermission
 
 
-class IsRHEmployee(BasePermission):
+class IsRHInternalUser(BasePermission):
     """
-    Allow access only to users who are Red Hat employees
+    Allow access only to users who are Red Hat internal users.
     """
 
+    # TODO: Rename? Integ. tests or clients may be affected.
     code = "permission_denied__user_not_rh_employee"
     message = "The User is not a Red Hat employee."
 

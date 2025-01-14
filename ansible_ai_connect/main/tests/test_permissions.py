@@ -17,14 +17,14 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory, TestCase
 from django.urls import resolve, reverse
 
-from ansible_ai_connect.main.permissions import IsRHEmployee, IsTestUser
+from ansible_ai_connect.main.permissions import IsRHInternalUser, IsTestUser
 
 
-class TestIsRHEmployee(TestCase):
+class TestIsRHInternalUser(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.permission = IsRHEmployee()
+        self.permission = IsRHInternalUser()
 
         payload = {
             "query": "Hello",
