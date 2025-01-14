@@ -3985,7 +3985,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         super().setUp()
         (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
         self.user.organization = org
-        self.user.rh_employee = True
+        self.user.rh_internal = True
 
     @staticmethod
     def mocked_requests_post(*args, **kwargs):
@@ -4323,7 +4323,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             )
             (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
             self.user2.organization = org
-            self.user2.rh_employee = True
+            self.user2.rh_internal = True
             # Call chart API five times using self.user2
             for i in range(5):
                 self.assert_test(TestChatView.VALID_PAYLOAD, user=self.user2)
@@ -4333,7 +4333,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             if self.user2:
                 self.user2.delete()
 
-    def test_not_rh_employee_user(self):
+    def test_not_rh_internal_user(self):
         try:
             username = "u" + "".join(random.choices(string.digits, k=5))
             self.user2 = get_user_model().objects.create_user(
@@ -4342,7 +4342,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             self.user2.organization = Organization.objects.get_or_create(
                 id=123, telemetry_opt_out=False
             )[0]
-            self.user2.rh_employee = False
+            self.user2.rh_internal = False
             self.assert_test(TestChatView.VALID_PAYLOAD, expected_status_code=403, user=self.user2)
         finally:
             if self.user2:

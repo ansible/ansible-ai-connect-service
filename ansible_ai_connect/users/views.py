@@ -88,8 +88,8 @@ class HomeView(TemplateView):
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         user = self.request.user
-        context["rh_employee_or_test_user"] = user.is_authenticated and (
-            user.rh_employee or user.groups.filter(name="test").exists()
+        context["rh_internal_user_or_test_user"] = user.is_authenticated and (
+            user.rh_internal or user.groups.filter(name="test").exists()
         )
 
         context["chatbot_enabled"] = (
