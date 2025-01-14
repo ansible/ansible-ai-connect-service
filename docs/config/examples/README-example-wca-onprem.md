@@ -1,7 +1,7 @@
 # Example `ANSIBLE_AI_MODEL_MESH_CONFIG` configuration for `wca-onprem`
 
-```text
-ANSIBLE_AI_MODEL_MESH_CONFIG="{
+```json
+{
     "ModelPipelineCompletions": {
         "provider": "wca-onprem",
         "config": {
@@ -14,7 +14,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>",
-            "enable_health_check": True}},
+            "enable_health_check": "True"
+        }
+    },
     "ModelPipelineContentMatch": {
         "provider": "wca-onprem",
         "config": {
@@ -26,7 +28,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
-            "username": "<username>"}},
+            "username": "<username>"
+        }
+    },
     "ModelPipelinePlaybookGeneration": {
         "provider": "wca-onprem",
         "config": {
@@ -38,7 +42,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
-            "username": "<username>"}},
+            "username": "<username>"
+        }
+    },
     "ModelPipelineRoleGeneration": {
         "provider": "wca-onprem",
         "config": {
@@ -50,7 +56,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
-            "username": "<username>"}},
+            "username": "<username>"
+        }
+    },
     "ModelPipelinePlaybookExplanation": {
         "provider": "wca-onprem",
         "config": {
@@ -62,11 +70,15 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
-            "username": "<username>"}},
+            "username": "<username>"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {
             "inference_url": "<CHATBOT_URL>",
-            "model_id": "<CHATBOT_DEFAULT_MODEL>"}}
-}"
+            "model_id": "<CHATBOT_DEFAULT_MODEL>"
+        }
+    }
+}
 ```

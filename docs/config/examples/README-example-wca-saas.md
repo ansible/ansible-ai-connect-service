@@ -1,7 +1,7 @@
 # Example `ANSIBLE_AI_MODEL_MESH_CONFIG` configuration for `wca` (SaaS)
 
-```text
-ANSIBLE_AI_MODEL_MESH_CONFIG="{
+```json
+{
     "ModelPipelineCompletions": {
         "provider": "wca",
         "config": {
@@ -18,7 +18,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "idp_password": "<idp_password>",
             "one_click_default_api_key": "<api_key>",
             "one_click_default_model_id": "<model_id>",
-            "enable_health_check": "True"}},
+            "enable_health_check": "True"
+        }
+    },
     "ModelPipelineContentMatch": {
         "provider": "wca",
         "config": {
@@ -34,7 +36,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "idp_login": "<idp_login>",
             "idp_password": "<idp_password>",
             "one_click_default_api_key": "<api_key>",
-            "one_click_default_model_id": "<model_id>"}},
+            "one_click_default_model_id": "<model_id>"
+        }
+    },
     "ModelPipelinePlaybookGeneration": {
         "provider": "wca",
         "config": {
@@ -50,7 +54,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "idp_login": "<idp_login>",
             "idp_password": "<idp_password>",
             "one_click_default_api_key": "<api_key>",
-            "one_click_default_model_id": "<model_id>4"}},
+            "one_click_default_model_id": "<model_id>4"
+        }
+    },
     "ModelPipelineRoleGeneration": {
         "provider": "wca",
         "config": {
@@ -66,7 +72,9 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "idp_login": "<idp_login>",
             "idp_password": "<idp_password>",
             "one_click_default_api_key": "<api_key>",
-            "one_click_default_model_id": "<model_id>"}},
+            "one_click_default_model_id": "<model_id>"
+        }
+    },
     "ModelPipelinePlaybookExplanation": {
         "provider": "wca",
         "config": {
@@ -82,11 +90,15 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
             "idp_login": "<idp_login>",
             "idp_password": "<idp_password>",
             "one_click_default_api_key": "<api_key>",
-            "one_click_default_model_id": "<model_id>"}},
+            "one_click_default_model_id": "<model_id>"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {
             "inference_url": "<CHATBOT_URL>",
-            "model_id": "<CHATBOT_DEFAULT_MODEL>"}}
-}"
+            "model_id": "<CHATBOT_DEFAULT_MODEL>"
+        }
+    }
+}
 ```

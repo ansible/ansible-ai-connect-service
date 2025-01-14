@@ -1,40 +1,87 @@
 # Example `ANSIBLE_AI_MODEL_MESH_CONFIG` configuration
 
-Pay close attention to the formatting of the blocks.
+`ANSIBLE_AI_MODEL_MESH_CONFIG` can be defined with either JSON or YAML.
 
-Each ends with `}},` otherwise conversion of the multi-line setting to a `str` can fail.
+## JSON Configuration
 
-```text
-ANSIBLE_AI_MODEL_MESH_CONFIG="{
+```json
+{
     "ModelPipelineCompletions": {
         "provider": "ollama",
         "config": {
             "inference_url": "http://host.containers.internal:11434",
-            "model_id": "mistral:instruct"}},
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelineContentMatch": {
         "provider": "ollama",
         "config": {
             "inference_url": "http://host.containers.internal:11434",
-            "model_id": "mistral:instruct"}},
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelinePlaybookGeneration": {
         "provider": "ollama",
         "config": {
             "inference_url": "http://host.containers.internal:11434",
-            "model_id": "mistral:instruct"}},
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelineRoleGeneration": {
         "provider": "ollama",
         "config": {
             "inference_url": "http://host.containers.internal:11434",
-            "model_id": "mistral:instruct"}},
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelinePlaybookExplanation": {
         "provider": "ollama",
         "config": {
             "inference_url": "http://host.containers.internal:11434",
-            "model_id": "mistral:instruct"}},
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {
             "inference_url": "http://localhost:8000",
-            "model_id": "granite3-8b"}}
-}"
+            "model_id": "granite3-8b"
+        }
+    }
+}
+```
+
+## YAML Configuration
+
+```yaml
+MetaData:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelineCompletions:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelinePlaybookGeneration:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelineRoleGeneration:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelinePlaybookExplanation:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelineChatBot:
+  provider: http,
+  config:
+    inference_url: http://localhost
+    model_id: granite3-8b
 ```
