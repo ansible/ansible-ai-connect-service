@@ -97,7 +97,7 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
-from ...main.permissions import IsRHEmployee, IsTestUser
+from ...main.permissions import IsRHInternalUser, IsTestUser
 from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
@@ -950,7 +950,7 @@ class Chat(AACSAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsRHEmployee | IsTestUser,
+        IsRHInternalUser | IsTestUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.ChatBotOperationalEvent
