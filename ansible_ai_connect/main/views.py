@@ -16,6 +16,7 @@
 
 import logging
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import AnonymousUser
@@ -27,6 +28,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineChatBot
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
@@ -121,11 +123,10 @@ class ChatbotView(ProtectedTemplateView):
 
     def get(self, request):
         # Open the chatbot page when the chatbot service is configured.
-        if (
-            settings.CHATBOT_URL
-            and settings.CHATBOT_DEFAULT_MODEL
-            and settings.CHATBOT_DEFAULT_PROVIDER
-        ):
+        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineChatBot
+        )
+        if llm.config.inference_url and llm.config.model_id and settings.CHATBOT_DEFAULT_PROVIDER:
             return super().get(request)
 
         # Otherwise, redirect to the home page.

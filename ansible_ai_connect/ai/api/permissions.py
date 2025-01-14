@@ -164,4 +164,4 @@ class IsWCASaaSModelPipeline(permissions.BasePermission):
     message = "User doesn't have access to the IBM watsonx Code Assistant."
 
     def has_permission(self, request, view):
-        return CONTINUE if settings.ANSIBLE_AI_MODEL_MESH_API_TYPE == "wca" else BLOCK
+        return CONTINUE if settings.DEPLOYMENT_MODE == "saas" else BLOCK

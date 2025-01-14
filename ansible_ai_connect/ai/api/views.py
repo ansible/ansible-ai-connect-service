@@ -611,7 +611,7 @@ class ContentMatches(GenericAPIView):
         except ModelTimeoutError as e:
             exception = e
             logger.warn(
-                f"model timed out after {settings.ANSIBLE_AI_MODEL_MESH_API_TIMEOUT} seconds"
+                f"model timed out after {model_mesh_client.config.timeout} seconds"
                 f" for suggestion {suggestion_id}"
             )
             raise ModelTimeoutException(cause=e)
@@ -957,11 +957,15 @@ class Chat(AACSAPIView):
     request_serializer_class = ChatRequestSerializer
     throttle_classes = [ChatEndpointThrottle]
 
+    llm: ModelPipelineChatBot
+
     def __init__(self):
         super().__init__()
+        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineChatBot)
+
         self.chatbot_enabled = (
-            settings.CHATBOT_URL
-            and settings.CHATBOT_DEFAULT_MODEL
+            self.llm.config.inference_url
+            and self.llm.config.model_id
             and settings.CHATBOT_DEFAULT_PROVIDER
         )
         if self.chatbot_enabled:
@@ -998,18 +1002,14 @@ class Chat(AACSAPIView):
         self.event.chat_system_prompt = req_system_prompt
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
-        self.event.modelName = self.req_model_id or settings.CHATBOT_DEFAULT_MODEL
+        self.event.modelName = self.req_model_id or self.llm.config.model_id
 
-        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
-            ModelPipelineChatBot
-        )
-
-        data = llm.invoke(
+        data = self.llm.invoke(
             ChatBotParameters.init(
                 request=request,
                 query=req_query,
                 system_prompt=req_system_prompt,
-                model_id=self.req_model_id or settings.CHATBOT_DEFAULT_MODEL,
+                model_id=self.req_model_id or self.llm.config.model_id,
                 provider=req_provider,
                 conversation_id=conversation_id,
             )

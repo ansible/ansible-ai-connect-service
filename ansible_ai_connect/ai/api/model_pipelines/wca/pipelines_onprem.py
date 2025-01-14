@@ -108,8 +108,8 @@ class WCAOnPremPipeline(
             raise WcaUsernameNotFound
         if not self.config.api_key:
             raise WcaKeyNotFound
-        # ANSIBLE_AI_MODEL_MESH_MODEL_ID cannot be validated until runtime. The
-        # User may provide an override value if the Environment Variable is not set.
+        # WCAOnPremConfiguration.model_id cannot be validated until runtime. The
+        # User may provide an override value if the setting is not defined.
 
     def get_request_headers(
         self, api_key: str, identifier: Optional[str]

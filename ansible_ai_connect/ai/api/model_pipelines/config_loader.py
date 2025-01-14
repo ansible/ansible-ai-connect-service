@@ -12,8 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+from json import JSONDecodeError
 
+import yaml
 from django.conf import settings
+from yaml import YAMLError
 
 from ansible_ai_connect.ai.api.model_pipelines.config_providers import Configuration
 from ansible_ai_connect.ai.api.model_pipelines.config_serializers import (
@@ -22,8 +25,25 @@ from ansible_ai_connect.ai.api.model_pipelines.config_serializers import (
 
 
 def load_config() -> Configuration:
-    source = json.loads(settings.ANSIBLE_AI_MODEL_MESH_CONFIG)
+    # yaml.safe_load(..) seems to also support loading JSON. Nice.
+    # However, try to load JSON with the correct _loader_ first in case of corner cases
+    source = load_json() or load_yaml()
     serializer = ConfigurationSerializer(data=source)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return serializer.instance
+
+
+def load_json():
+    try:
+        return json.loads(settings.ANSIBLE_AI_MODEL_MESH_CONFIG)
+    except JSONDecodeError:
+        return None
+
+
+def load_yaml():
+    try:
+        y = yaml.safe_load(settings.ANSIBLE_AI_MODEL_MESH_CONFIG)
+        return y
+    except YAMLError:
+        return None

@@ -44,7 +44,7 @@ from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(DEPLOYMENT_MODE="saas")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
@@ -319,7 +319,7 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomAppsBackendMocking, WisdomServiceA
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+@override_settings(DEPLOYMENT_MODE="saas")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)

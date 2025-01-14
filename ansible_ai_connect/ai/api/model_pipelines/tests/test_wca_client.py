@@ -1325,7 +1325,6 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_MODEL_ID=None)
 class TestDummySecretManager(TestCase):
     def setUp(self):
         super().setUp()
