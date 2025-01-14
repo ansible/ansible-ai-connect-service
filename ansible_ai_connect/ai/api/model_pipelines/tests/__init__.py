@@ -66,17 +66,12 @@ def extract(name: str, default: T, **kwargs) -> T:
 def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
     match pipeline_provider:
         case "dummy":
-            inference_url = extract("inference_url", "http://localhost", **kwargs)
-            c = DummyConfiguration(
-                inference_url=inference_url,
-                model_id=extract("model_id", "a-model-id", **kwargs),
-                timeout=extract("timeout", 1000, **kwargs),
+            return DummyConfiguration(
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 latency_use_jitter=extract("latency_use_jitter", False, **kwargs),
                 latency_max_msec=extract("latency_max_msec", 0, **kwargs),
                 body=extract("body", "body", **kwargs),
             )
-            return c
         case "grpc":
             return GrpcConfiguration(
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
