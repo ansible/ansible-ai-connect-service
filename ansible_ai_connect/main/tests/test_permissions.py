@@ -17,14 +17,14 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory, TestCase
 from django.urls import resolve, reverse
 
-from ansible_ai_connect.main.permissions import IsRHEmployee, IsTestUser
+from ansible_ai_connect.main.permissions import IsRHInternalUser, IsTestUser
 
 
-class TestIsRHEmployee(TestCase):
+class TestIsRHInternalUser(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.permission = IsRHEmployee()
+        self.permission = IsRHInternalUser()
 
         payload = {
             "query": "Hello",
@@ -35,13 +35,13 @@ class TestIsRHEmployee(TestCase):
             username="non-rh-user",
             password="non-rh-password",
             email="non-rh-user@email.com",
-            rh_employee=False,
+            rh_internal=False,
         )
         self.rh_user = get_user_model().objects.create_user(
             username="rh-user",
             password="rh-password",
             email="rh-user@redhat.com",
-            rh_employee=True,
+            rh_internal=True,
         )
 
     def tearDown(self):
@@ -82,7 +82,7 @@ class TestIsTestUser(TestCase):
             username="non-rh-user",
             password="non-rh-password",
             email="non-rh-user@email.com",
-            rh_employee=False,
+            rh_internal=False,
         )
         self.test_group = Group(name="test")
         self.test_group.save()
@@ -90,7 +90,7 @@ class TestIsTestUser(TestCase):
             username="non-rh-test-user",
             password="non-rh-test-password",
             email="non-rh-test-user@email.com",
-            rh_employee=False,
+            rh_internal=False,
         )
         self.non_rh_test_user.groups.add(self.test_group)
 

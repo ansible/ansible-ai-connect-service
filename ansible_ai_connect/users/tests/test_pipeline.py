@@ -25,7 +25,11 @@ from social_django.models import UserSocialAuth
 
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
-from ansible_ai_connect.users.pipeline import load_extra_data, redhat_organization
+from ansible_ai_connect.users.pipeline import (
+    is_rh_email_domain,
+    load_extra_data,
+    redhat_organization,
+)
 
 
 def build_access_token(private_key, payload):
@@ -174,7 +178,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
-            "rh_employee": False,
+            "rh_internal": False,
             "rh_user_is_org_admin": True,
             "external_username": "jean-michel",
         }
@@ -201,7 +205,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
-            "rh_employee": False,
+            "rh_internal": False,
             "rh_user_is_org_admin": False,
             "external_username": "yves",
         }
@@ -239,7 +243,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
-            "rh_employee": False,
+            "rh_internal": False,
             "rh_user_is_org_admin": True,
             "external_username": "yves",
         }
@@ -267,7 +271,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         )
         assert answer == {
             "organization_id": 345,
-            "rh_employee": False,
+            "rh_internal": False,
             "rh_user_is_org_admin": True,
             "external_username": "yves",
         }
@@ -297,7 +301,7 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
 
         assert answer == {
             "organization_id": 345,
-            "rh_employee": False,
+            "rh_internal": False,
             "rh_user_is_org_admin": False,
             "external_username": "yves",
         }
@@ -305,14 +309,15 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         assert self.rh_user.rh_user_is_org_admin is False
         assert self.rh_user.external_username == "yves"
 
-    def test_rh_employee_field(self):
+    def test_rh_internal_user_field(self):
         response = {
             "access_token": build_access_token(
                 self.rsa_private_key,
                 {
-                    "realm_access": {"roles": ["redhat:employees"]},
                     "preferred_username": "jean-michel",
                     "organization": {"id": "345"},
+                    "email": "jean-michel@redhat.com",
+                    "email_verified": True,
                 },
             )
         }
@@ -322,7 +327,60 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
             user=self.rh_user,
             response=response,
         )
-        self.assertEqual(answer["rh_employee"], True)
+        self.assertEqual(answer["rh_internal"], True)
+
+    def test_not_rh_internal_user_fields(self):
+        response = {
+            "access_token": build_access_token(
+                self.rsa_private_key,
+                {
+                    "preferred_username": "jean-michel",
+                    "organization": {"id": "345"},
+                },
+            )
+        }
+        answer = redhat_organization(
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
+            user=self.rh_user,
+            response=response,
+        )
+        self.assertEqual(answer["rh_internal"], False)
+
+    def test_rh_internal_user_field_not_rh_email(self):
+        response = {
+            "access_token": build_access_token(
+                self.rsa_private_key,
+                {
+                    "email": "jean-michel@company.com",
+                    "preferred_username": "jean-michel",
+                    "organization": {"id": "345"},
+                },
+            )
+        }
+        answer = redhat_organization(
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
+            user=self.rh_user,
+            response=response,
+        )
+        self.assertEqual(answer["rh_internal"], False)
+
+    def test_rh_internal_user_field_not_email_verified(self):
+        response = {
+            "access_token": build_access_token(
+                self.rsa_private_key,
+                {
+                    "email": "jean-michel@redhat.com",
+                    "preferred_username": "jean-michel",
+                    "organization": {"id": "345"},
+                },
+            )
+        }
+        answer = redhat_organization(
+            backend=DummyRHBackend(public_key=self.jwk_public_key),
+            user=self.rh_user,
+            response=response,
+        )
+        self.assertEqual(answer["rh_internal"], False)
 
     def test_rhoss_user_and_email(self):
         response = {
@@ -348,3 +406,12 @@ class TestExtraData(WisdomServiceLogAwareTestCase):
         self.assertEqual(self.rh_user.email, "francis.drake@example.foo")
         self.assertEqual(self.rh_user.given_name, "Francis")
         self.assertEqual(self.rh_user.name, "Francis Drake")
+
+    def test_is_rh_email_domain(self):
+        self.assertFalse(is_rh_email_domain(None))
+        self.assertFalse(is_rh_email_domain(""))
+        self.assertFalse(is_rh_email_domain("user.com"))
+        self.assertFalse(is_rh_email_domain("user@domain.com"))
+        self.assertTrue(is_rh_email_domain("user@redhat.com"))
+        self.assertTrue(is_rh_email_domain("user@REDHAT.com"))
+        self.assertTrue(is_rh_email_domain("@REDHAT.com"))

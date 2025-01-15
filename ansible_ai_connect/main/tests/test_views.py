@@ -255,13 +255,13 @@ class TestChatbotView(TestCase):
             username="non-rh-user",
             password="non-rh-password",
             email="non-rh-user@email.com",
-            rh_employee=False,
+            rh_internal=False,
         )
         self.rh_user = get_user_model().objects.create_user(
             username="rh-user",
             password="rh-password",
             email="rh-user@redhat.com",
-            rh_employee=True,
+            rh_internal=True,
         )
         self.test_group = Group(name="test")
         self.test_group.save()
@@ -269,7 +269,7 @@ class TestChatbotView(TestCase):
             username="non-rh-test-user",
             password="non-rh-test-password",
             email="non-rh-test-user@email.com",
-            rh_employee=False,
+            rh_internal=False,
         )
         self.non_rh_test_user.groups.add(self.test_group)
 

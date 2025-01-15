@@ -14,17 +14,17 @@
 from rest_framework.permissions import BasePermission
 
 
-class IsRHEmployee(BasePermission):
+class IsRHInternalUser(BasePermission):
     """
-    Allow access only to users who are Red Hat employees
+    Allow access only to users who are Red Hat internal users.
     """
 
-    code = "permission_denied__user_not_rh_employee"
+    code = "permission_denied__user_not_rh_internal"
     message = "The User is not a Red Hat employee."
 
     def has_permission(self, request, view):
         user = request.user
-        return user.is_authenticated and user.rh_employee
+        return user.is_authenticated and user.rh_internal
 
 
 class IsTestUser(BasePermission):
