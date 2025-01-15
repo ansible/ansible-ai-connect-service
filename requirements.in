@@ -17,7 +17,7 @@ boto3==1.26.84
 black==24.3.0
 certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
 cryptography==43.0.1
-Django==4.2.17
+Django==4.2.18
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
