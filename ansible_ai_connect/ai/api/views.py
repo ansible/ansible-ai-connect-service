@@ -32,6 +32,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
+from ansible_ai_connect.ai.api.eventbus.source import EventBus, EventType
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
     ChatbotInvalidResponseException,
@@ -68,7 +69,6 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    ChatBotParameters,
     ContentMatchParameters,
     MetaData,
     ModelPipelineChatBot,
@@ -1007,14 +1007,14 @@ class Chat(AACSAPIView):
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
 
-        data = self.llm.invoke(
-            ChatBotParameters.init(
-                query=req_query,
-                system_prompt=req_system_prompt,
-                model_id=self.req_model_id or self.llm.config.model_id,
-                provider=req_provider,
-                conversation_id=conversation_id,
-            )
+        event_bus: EventBus = apps.get_app_config("ai").get_event_bus()
+        data = event_bus.send(
+            EventType.CHAT,
+            conversation_id=conversation_id,
+            query=req_query,
+            system_prompt=req_system_prompt,
+            model_id=self.req_model_id,
+            provider=req_provider,
         )
 
         response_serializer = ChatResponseSerializer(data=data)
