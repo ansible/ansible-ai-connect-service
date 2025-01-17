@@ -14,10 +14,14 @@
 
 from django.urls import include, path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from .ai import urls as ai_urls
+from .telemetry import urls as telemetry_urls
+from .users import urls as me_urls
+from .wca import urls as wca_urls
 
 urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
+    path("ai/", include(ai_urls)),
+    path("me/", include(me_urls)),
+    path("telemetry/", include(telemetry_urls)),
+    path("wca/", include(wca_urls)),
 ]

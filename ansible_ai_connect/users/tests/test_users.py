@@ -30,6 +30,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
@@ -57,7 +58,7 @@ class TestUsers(APITransactionTestCase, WisdomServiceLogAwareTestCase):
 
     def test_users(self):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(self.user.username, r.data.get("username"))
 
@@ -243,7 +244,7 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
             external_username=external_username,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(external_username, r.data.get("external_username"))
         self.assertNotEqual(user.username, r.data.get("external_username"))
@@ -255,7 +256,7 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
             external_username=external_username,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(external_username, r.data.get("external_username"))
         self.assertNotEqual(user.username, r.data.get("external_username"))
@@ -272,11 +273,11 @@ class TestThirdPartyAuthentication(WisdomAppsBackendMocking, APITransactionTestC
         )
 
         self.client.force_authenticate(user=oidc_user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(external_username, r.data.get("external_username"))
 
         self.client.force_authenticate(user=github_user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(external_username, r.data.get("external_username"))
 
         self.assertNotEqual(oidc_user.username, github_user.username)
@@ -326,7 +327,7 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             external_username="github_username",
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
@@ -337,7 +338,7 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             external_username="aap_username",
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
@@ -349,7 +350,7 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             org_opt_out=False,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
@@ -364,7 +365,7 @@ class TestTelemetryOptInOut(APITransactionTestCase):
             org_opt_out=True,
         )
         self.client.force_authenticate(user=user)
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get("org_telemetry_opt_out"))
 
@@ -382,20 +383,20 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         self.client.force_authenticate(user=user)
 
         # Default is False
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
         # Update to True
         r = self.client.post(
-            reverse("telemetry_settings"),
+            api_version_reverse("telemetry_settings"),
             data='{ "optOut": "True" }',
             content_type="application/json",
         )
         self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
 
         # Cached value should persist
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertFalse(r.data.get("org_telemetry_opt_out"))
 
@@ -403,6 +404,6 @@ class TestTelemetryOptInOut(APITransactionTestCase):
         cache.clear()
 
         # Cache should update
-        r = self.client.get(reverse("me"))
+        r = self.client.get(api_version_reverse("me"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data.get("org_telemetry_opt_out"))

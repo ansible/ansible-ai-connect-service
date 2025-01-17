@@ -15,7 +15,9 @@
 from importlib import reload
 from re import compile
 
+from django.conf import settings
 from django.test import Client, TestCase, override_settings
+from django.urls import resolve
 
 import ansible_ai_connect.main.urls
 
@@ -48,11 +50,9 @@ class TestUrls(TestCase):
         self.assertIn("connect-src 'self'", csp_headers)
 
     def test_telemetry_patterns(self):
-        r = compile("api/v0/telemetry/")
-        patterns = list(
-            filter(
-                r.match,
-                [str(pattern.pattern) for pattern in ansible_ai_connect.main.urls.urlpatterns],
-            )
-        )
-        self.assertEqual(1, len(patterns))
+        api_versions = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]
+        self.assertGreater(len(api_versions), 0)
+        for api_version in api_versions:
+            match = resolve(f"/api/{api_version}/telemetry/")
+            self.assertEqual(match.url_name, "telemetry_settings")
+            self.assertEqual(match.view_name, f"{api_version}:telemetry_settings")

@@ -12,12 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from django.urls import include, path
+from django.urls import path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from . import views
 
 urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
+    path("completions/", views.Completions.as_view(), name="completions"),
+    path("contentmatches/", views.ContentMatches.as_view(), name="contentmatches"),
+    path("explanations/", views.Explanation.as_view(), name="explanations"),
+    path("generations/playbook/", views.GenerationPlaybook.as_view(), name="generations/playbook"),
+    path("generations/role/", views.GenerationRole.as_view(), name="generations/role"),
+    path("feedback/", views.Feedback.as_view(), name="feedback"),
+    path("chat/", views.Chat.as_view(), name="chat"),
 ]

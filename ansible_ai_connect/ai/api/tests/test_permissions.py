@@ -16,7 +16,6 @@ from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 from django.test import override_settings
-from django.urls import reverse
 
 from ansible_ai_connect.ai.api.permissions import (
     BlockUserWithoutSeat,
@@ -28,6 +27,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.tests.test_users import create_user

@@ -20,7 +20,6 @@ import uuid
 from ansible_anonymizer import anonymizer
 from django.conf import settings
 from django.http import QueryDict
-from django.urls import reverse
 from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
@@ -35,6 +34,7 @@ from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,12 @@ class SegmentMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    def _api_completions_paths(self):
+        return [
+            api_version_reverse("completions", api_version=api_version)
+            for api_version in settings.REST_FRAMEWORK.get("ALLOWED_VERSIONS", [])
+        ]
+
     def __call__(self, request):
         start_time = time.time()
 
@@ -82,7 +88,7 @@ class SegmentMiddleware:
                 # analytics.send = False # for code development only
                 analytics.on_error = on_segment_error
 
-            if request.path == reverse("completions") and request.method == "POST":
+            if request.path in self._api_completions_paths() and request.method == "POST":
                 if request.content_type == "application/json":
                     try:
                         request_data = (
@@ -97,7 +103,7 @@ class SegmentMiddleware:
         response = self.get_response(request)
 
         if settings.SEGMENT_WRITE_KEY:
-            if request.path == reverse("completions") and request.method == "POST":
+            if request.path in self._api_completions_paths() and request.method == "POST":
                 request_suggestion_id = getattr(
                     request, "_suggestion_id", request_data.get("suggestionId")
                 )

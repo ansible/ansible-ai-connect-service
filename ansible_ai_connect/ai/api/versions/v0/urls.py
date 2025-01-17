@@ -12,12 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from django.conf import settings
 from django.urls import include, path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from .ai import urls as ai_urls
+from .telemetry import urls as telemetry_urls
+from .users import urls as me_urls
+from .wca import urls as wca_urls
 
 urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
+    path("ai/", include(ai_urls)),
+    path("me/", include(me_urls)),
 ]
+
+if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
+    urlpatterns += [
+        path("telemetry/", include(telemetry_urls)),
+        path("wca/", include(wca_urls)),
+    ]

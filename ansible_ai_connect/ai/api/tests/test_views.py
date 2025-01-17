@@ -29,7 +29,6 @@ import requests
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.test import modify_settings, override_settings
-from django.urls import reverse
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.utils import Input, Output
 from requests.exceptions import ReadTimeout
@@ -123,6 +122,7 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization

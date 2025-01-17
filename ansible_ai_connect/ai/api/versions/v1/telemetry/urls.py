@@ -12,12 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from django.urls import include, path
+from django.urls import path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from . import views
 
 urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
+    path("", views.TelemetrySettingsView.as_view(), name="telemetry_settings"),
 ]
