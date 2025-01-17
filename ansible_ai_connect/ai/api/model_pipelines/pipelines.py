@@ -186,7 +186,6 @@ PlaybookExplanationResponse = str
 
 @define
 class ChatBotParameters:
-    request: Request
     query: str
     provider: str
     model_id: str
@@ -196,7 +195,6 @@ class ChatBotParameters:
     @classmethod
     def init(
         cls,
-        request,
         query: str,
         provider: Optional[str] = None,
         model_id: Optional[str] = None,
@@ -204,7 +202,6 @@ class ChatBotParameters:
         system_prompt: Optional[str] = None,
     ):
         return cls(
-            request=request,
             query=query,
             provider=provider,
             model_id=model_id,

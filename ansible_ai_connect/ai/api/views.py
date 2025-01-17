@@ -1006,7 +1006,6 @@ class Chat(AACSAPIView):
 
         data = self.llm.invoke(
             ChatBotParameters.init(
-                request=request,
                 query=req_query,
                 system_prompt=req_system_prompt,
                 model_id=self.req_model_id or self.llm.config.model_id,
