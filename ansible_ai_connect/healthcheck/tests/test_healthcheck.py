@@ -81,9 +81,7 @@ for pipeline in REGISTRY_ENTRY.keys():
 @override_settings(LAUNCHDARKLY_SDK_KEY=None)
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-@override_settings(CHATBOT_URL="dummy")
 @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
-@override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
 class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
@@ -390,7 +388,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                 else:
                     self.assertTrue(self.is_status_ok(dependency["status"], "dummy"))
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
@@ -414,7 +411,6 @@ class TestHealthCheck(BaseTestHealthCheck):
             for dependency in dependencies:
                 self.assertTrue(self.is_status_ok(dependency["status"], "http"))
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
@@ -449,7 +445,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: index is not ready"},
                 )
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
@@ -484,7 +479,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: llm is not ready"},
                 )
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=HTTPError,
@@ -517,7 +511,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: An error occurred"},
                 )
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=BaseTestHealthCheck.mocked_requests_failed,
@@ -550,8 +543,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: An error occurred"},
                 )
 
-    @override_settings(ENABLE_HEALTHCHECK_CHATBOT_SERVICE=False)
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @mock.patch(
         "requests.get",
         side_effect=BaseTestHealthCheck.mocked_requests_succeed,

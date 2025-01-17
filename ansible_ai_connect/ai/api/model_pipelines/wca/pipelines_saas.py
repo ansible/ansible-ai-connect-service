@@ -144,7 +144,7 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
 
         if organization_id is None:
             logger.error(
-                "User does not have an organization and no ANSIBLE_AI_MODEL_MESH_API_KEY is set"
+                "User does not have an organization and WCASaaSConfiguration.api_key is not set"
             )
             raise WcaKeyNotFound
 

@@ -27,7 +27,6 @@ from unittest.mock import Mock, patch
 
 import requests
 from django.apps import apps
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import modify_settings, override_settings
 from django.urls import reverse
@@ -1017,7 +1016,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1039,7 +1038,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": [
                 "- name:  Install Apache\n  ansible.builtin.apt:\n    name: apache2\n    state: latest\n- name:  start Apache\n  ansible.builtin.service:\n    name: apache2\n    state: started\n    enabled: yes\n"  # noqa: E501
             ],
@@ -1087,7 +1086,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": [
                 "    - name:  Install Apache\n      ansible.builtin.apt:\n        name: apache2\n        state: latest\n    - name:  say hello test@example.com\n      ansible.builtin.debug:\n        msg: Hello there olivia1@example.com\n"  # noqa: E501
             ],
@@ -1126,7 +1125,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1150,7 +1149,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1171,7 +1170,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         # self.client.force_authenticate(user=self.user)
@@ -1200,7 +1199,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1226,7 +1225,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1250,7 +1249,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1275,7 +1274,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # quotation in the last line is not closed, but the truncate function can handle this.
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": [
                 '      ansible.builtin.apt:\n        name: apache2\n      register: "test'
             ],
@@ -1302,7 +1301,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
         }
         # this prediction has indentation problem with the prompt above
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1374,7 +1373,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": ["      ansible.builtin.apt:\n        name: apache2"],
         }
         self.client.force_authenticate(user=self.user)
@@ -1557,7 +1556,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             "suggestionId": str(uuid.uuid4()),
         }
         response_data = {
-            "model_id": settings.ANSIBLE_AI_MODEL_MESH_MODEL_ID,
+            "model_id": "a-model-id",
             "predictions": [""],
         }
         self.client.force_authenticate(user=self.user)
@@ -4049,9 +4048,7 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             json_response["response"] = input
         return MockResponse(json_response, status_code)
 
-    @override_settings(CHATBOT_URL="http://localhost:8080")
     @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
-    @override_settings(CHATBOT_DEFAULT_MODEL="granite-8b")
     @mock.patch(
         "requests.post",
         side_effect=mocked_requests_post,
@@ -4063,7 +4060,6 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         "requests.post",
         side_effect=mocked_requests_post,
     )
-    @override_settings(CHATBOT_URL="")
     def query_without_chat_config(self, payload, mock_post):
         return self.client.post(reverse("chat"), payload, format="json")
 
@@ -4175,7 +4171,11 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
@@ -4282,7 +4282,11 @@ class TestChatView(WisdomServiceAPITestCaseBase):
             patch.object(
                 apps.get_app_config("ai"),
                 "get_model_pipeline",
-                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):

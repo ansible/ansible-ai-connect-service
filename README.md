@@ -26,10 +26,9 @@ SECRET_KEY="somesecretvalue"
 ENABLE_ARI_POSTPROCESS="False"
 WCA_SECRET_BACKEND_TYPE="dummy"
 # configure model server
-ANSIBLE_AI_MODEL_MESH_API_URL="http://host.containers.internal:11434"
-ANSIBLE_AI_MODEL_MESH_API_TYPE="ollama"
-ANSIBLE_AI_MODEL_MESH_MODEL_ID="mistral:instruct"
+ANSIBLE_AI_MODEL_MESH_CONFIG="..."
 ```
+See the example [ANSIBLE_AI_MODEL_MESH_CONFIG](./docs/config/examples/README-ANSIBLE_AI_MODEL_MESH_CONFIG.md).
 
 ### Start service and dependencies
 
@@ -108,9 +107,9 @@ command line the variable `DEBUG=True`.
 
 The Django service listens on <http://127.0.0.1:8000>.
 
-Note that there is no pytorch service defined in the docker-compose
-file. You should adjust the `ANSIBLE_AI_MODEL_MESH_API_URL`
-configuration key to point on an existing service.
+Note that there is no pytorch service defined in the `docker-compose`
+file. You should adjust the `ANSIBLE_AI_MODEL_MESH_CONFIG`
+configuration to point to an existing service.
 
 ## <a name="aws-config">Use the WCA API Keys Manager</a>
 
@@ -460,11 +459,10 @@ To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](htt
    ```
 1. Set the appropriate environment variables
    ```bash
-   ANSIBLE_AI_MODEL_MESH_API_URL=http://$YOUR_REAL_IP:8080
-   ANSIBLE_AI_MODEL_MESH_API_TYPE=llamacpp
-   ANSIBLE_AI_MODEL_MESH_MODEL_ID=mistral-7b-instruct-v0.2.Q5_K_M.gguf
+   ANSIBLE_AI_MODEL_MESH_CONFIG="..."
    ENABLE_ARI_POSTPROCESS=False
    ```
+See the example [ANSIBLE_AI_MODEL_MESH_CONFIG](./docs/config/examples/README-ANSIBLE_AI_MODEL_MESH_CONFIG.md).
 
 # Testing
 

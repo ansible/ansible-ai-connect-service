@@ -66,4 +66,4 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
 
 @Register(api_type="http")
 class HttpConfigurationSerializer(BaseConfigSerializer):
-    verify_ssl = serializers.BooleanField(required=False, default=False)
+    verify_ssl = serializers.BooleanField(required=False, default=True)

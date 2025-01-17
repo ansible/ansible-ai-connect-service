@@ -31,6 +31,7 @@ from rest_framework.throttling import UserRateThrottle
 from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerMissingCredentialsError,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineChatBot
 from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.telemetry import schema2_utils as schema2
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
@@ -92,10 +93,12 @@ class HomeView(TemplateView):
             user.rh_internal or user.groups.filter(name="test").exists()
         )
 
+        # Show chatbot link when the chatbot service is configured.
+        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineChatBot
+        )
         context["chatbot_enabled"] = (
-            settings.CHATBOT_URL
-            and settings.CHATBOT_DEFAULT_MODEL
-            and settings.CHATBOT_DEFAULT_PROVIDER
+            llm.config.inference_url and llm.config.model_id and settings.CHATBOT_DEFAULT_PROVIDER
         )
 
         return context

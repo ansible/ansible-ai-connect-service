@@ -209,10 +209,10 @@ class TestBlockWCANotReadyButTrialAvailable(WisdomAppsBackendMocking):
 
 class TestBlockUserWithoutWCASaaSConfiguration(WisdomAppsBackendMocking):
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca")
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_wca_saas_enabled(self):
         self.assertEqual(IsWCASaaSModelPipeline().has_permission(Mock(), None), CONTINUE)
 
-    @override_settings(ANSIBLE_AI_MODEL_MESH_API_TYPE="wca-onprem")
+    @override_settings(DEPLOYMENT_MODE="onprem")
     def test_wca_saas_not_enabled(self):
         self.assertEqual(IsWCASaaSModelPipeline().has_permission(Mock(), None), BLOCK)

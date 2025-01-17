@@ -35,7 +35,8 @@ class PipelineConfigurationSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         provider_part = super().to_internal_value(data)
-        serializer = REGISTRY[provider_part["provider"]][Serializer](data=data["config"])
+        config_part = data["config"] if "config" in data else {}
+        serializer = REGISTRY[provider_part["provider"]][Serializer](data=config_part)
         serializer.is_valid(raise_exception=True)
 
         return {**provider_part, "config": serializer.validated_data}
