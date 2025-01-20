@@ -45,6 +45,7 @@ PERMISSION_CLASSES = [
 class TelemetrySettingsView(RetrieveAPIView, CreateAPIView):
     required_scopes = ["read", "write"]
     throttle_cache_key_suffix = "_telemetry_settings"
+    throttle_cache_multiplier = 2.0
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
