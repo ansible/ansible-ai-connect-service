@@ -1968,6 +1968,8 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
                 "sentiment": "1",
             }
         }
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(reverse("feedback"), payload, format="json")
@@ -1977,7 +1979,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             self.assertTrue(len(segment_events) > 0)
             self.assertEqual(
                 segment_events[0]["properties"]["rh_user_org_id"],
-                123,
+                self.user.organization.id,
             )
             self.assertEqual(
                 segment_events[0]["properties"]["chat_prompt"],
@@ -4166,6 +4168,8 @@ class TestChatView(WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(

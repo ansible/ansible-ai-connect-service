@@ -270,6 +270,48 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST["trialExpired"]), expected_result
         )
 
+    def test_redact_chat_operational_event(self, *args):
+        test_data = {
+            "type": "chatOperationalEvent",
+            "modelName": "org-model-id",
+            "rh_user_has_seat": True,
+            "rh_user_org_id": 101,
+            "anything": "whatever",
+        }
+
+        expected_result = {
+            "type": "chatOperationalEvent",
+            "modelName": "org-model-id",
+            "rh_user_has_seat": True,
+            "rh_user_org_id": 101,
+            "anything": "whatever",  # Any properties won't be redacted for chatOperationalEvent
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST["chatOperationalEvent"]), expected_result
+        )
+
+    def test_redact_chat_feedback_event(self, *args):
+        test_data = {
+            "type": "chatFeedbackEvent",
+            "modelName": "org-model-id",
+            "rh_user_has_seat": True,
+            "rh_user_org_id": 101,
+            "anything": "whatever",
+        }
+
+        expected_result = {
+            "type": "chatFeedbackEvent",
+            "modelName": "org-model-id",
+            "rh_user_has_seat": True,
+            "rh_user_org_id": 101,
+            "anything": "whatever",  # Any properties won't be redacted for chatFeedbackEvent
+        }
+
+        self.assertEqual(
+            redact_seated_users_data(test_data, ALLOW_LIST["chatFeedbackEvent"]), expected_result
+        )
+
     @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.group")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_send_segment_group(self, group_method):

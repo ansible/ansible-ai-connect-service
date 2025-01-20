@@ -181,6 +181,10 @@ def redact_seated_users_data(event: Dict[str, Any], allow_list: Dict[str, Any]) 
     Returns:
     - dict: A new dictionary containing only the allowed nested keys from the source dictionary.
     """
+    # If an asterisk is found in the allow list, just return the given event dict to allow all keys.
+    if "*" in allow_list:
+        return event
+
     redacted_event = {}
     for key, sub_whitelist in (
         allow_list.items() if isinstance(allow_list, dict) else allow_list[0].items()

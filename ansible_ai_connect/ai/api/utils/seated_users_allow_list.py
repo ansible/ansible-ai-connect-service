@@ -384,4 +384,10 @@ ALLOW_LIST = {
         "rh_user_org_id": None,
         "plans": None,
     },
+    "chatFeedbackEvent": {
+        "*": None,
+    },
+    "chatOperationalEvent": {
+        "*": None,
+    },
 }
