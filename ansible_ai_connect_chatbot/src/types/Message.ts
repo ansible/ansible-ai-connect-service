@@ -9,6 +9,7 @@ type LLMRequest = {
   model?: string | null;
   attachments?: object[] | null;
   system_prompt?: string | null;
+  media_type?: "text/plain" | "application/json";
 };
 
 type LLMResponse = {
@@ -43,4 +44,16 @@ export type ChatFeedback = {
   response: ChatResponse;
   sentiment: Sentiment;
   message: ExtendedMessage;
+};
+
+export type AlertMessage = {
+  title: string;
+  message: string;
+  variant: "success" | "danger" | "warning" | "info" | "custom";
+};
+
+export type RagChunk = {
+  text?: string;
+  doc_url: string;
+  doc_title: string;
 };

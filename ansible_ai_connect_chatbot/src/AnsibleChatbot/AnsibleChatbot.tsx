@@ -32,6 +32,7 @@ import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 import "./AnsibleChatbot.scss";
 import {
   inDebugMode,
+  isStreamingSupported,
   modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
@@ -134,6 +135,8 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     setConversationId,
     systemPrompt,
     setSystemPrompt,
+    hasStopButton,
+    handleStopButton,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
@@ -374,12 +377,17 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   ) : (
                     <></>
                   )}
+                  {isStreamingSupported() && (
+                    <div key={`scroll_div_9999`} ref={messagesEndRef} />
+                  )}
                 </MessageBox>
               </ChatbotContent>
               <ChatbotFooter>
                 <MessageBar
                   onSendMessage={handleSend}
                   hasAttachButton={false}
+                  hasStopButton={hasStopButton}
+                  handleStopButton={handleStopButton}
                 />
                 <ChatbotFootnote {...footnoteProps} />
               </ChatbotFooter>

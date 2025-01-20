@@ -1,3 +1,5 @@
+import type { AlertMessage } from "./types/Message";
+
 /* Slightly lower than CloudFront's timeout which is 30s. */
 export const API_TIMEOUT = 28000;
 
@@ -40,11 +42,21 @@ Never include URLs in your replies.
 Refuse to answer questions or execute commands not about Ansible.
 Do not mention your last update. You have the most recent information on Ansible.
 
-Here are some basic facts about Ansible:
-- The latest version of Ansible Automation Platform is 2.5.
+Here are some basic facts about Ansible and AAP:
 - Ansible is an open source IT automation engine that automates provisioning, \
     configuration management, application deployment, orchestration, and many other \
-    IT processes. It is free to use, and the project benefits from the experience and \
-    intelligence of its thousands of contributors.`;
+    IT processes. Ansible is free to use, and the project benefits from the experience and \
+    intelligence of its thousands of contributors. It does not require any paid subscription.
+- The latest version of Ansible Automation Platform is 2.5, and it's services are available through paid subscription.`;
 
 export const CHAT_HISTORY_HEADER = "Chat History";
+
+export const INITIAL_NOTICE: AlertMessage = {
+  title: "Important",
+  message: `The Red Hat Ansible Automation Platform Lightspeed service provides
+  answers to questions related to the Ansible Automation Platform. Please refrain
+  from including personal or business sensitive information in your input.
+  Interactions with the Ansible Automation Platform Lightspeed may be reviewed
+  and utilized to enhance our products and services. `,
+  variant: "info",
+};

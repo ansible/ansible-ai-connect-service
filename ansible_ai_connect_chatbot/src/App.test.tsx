@@ -21,16 +21,24 @@ import "@vitest/browser/matchers.d.ts";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-async function renderApp(debug = false) {
+async function renderApp(debug = false, stream = false) {
   let rootDiv = document.getElementById("root");
   rootDiv?.remove();
+
   let debugDiv = document.getElementById("debug");
   debugDiv?.remove();
-
   debugDiv = document.createElement("div");
   debugDiv.setAttribute("id", "debug");
   debugDiv.innerText = debug.toString();
   document.body.appendChild(debugDiv);
+
+  let streamDiv = document.getElementById("stream");
+  streamDiv?.remove();
+  streamDiv = document.createElement("div");
+  streamDiv.setAttribute("id", "stream");
+  streamDiv.innerText = stream.toString();
+  document.body.appendChild(streamDiv);
+
   rootDiv = document.createElement("div");
   rootDiv.setAttribute("id", "root");
   const view = render(
@@ -122,8 +130,94 @@ function createError(message: string, status: number): AxiosError {
   return error;
 }
 
+function mockFetchEventSource() {
+  const streamData: object[] = [
+    {
+      event: "start",
+      data: { conversation_id: "1ec5ba5b-c12d-465b-a722-0b95fee55e8c" },
+    },
+    { event: "token", data: { id: 0, token: "" } },
+    { event: "token", data: { id: 1, token: "The" } },
+    { event: "token", data: { id: 2, token: " Full" } },
+    { event: "token", data: { id: 3, token: " Support" } },
+    { event: "token", data: { id: 4, token: " Phase" } },
+    { event: "token", data: { id: 5, token: " for" } },
+    { event: "token", data: { id: 6, token: " A" } },
+    { event: "token", data: { id: 7, token: "AP" } },
+    { event: "token", data: { id: 8, token: " " } },
+    { event: "token", data: { id: 9, token: "2" } },
+    { event: "token", data: { id: 10, token: "." } },
+    { event: "token", data: { id: 11, token: "4" } },
+    { event: "token", data: { id: 12, token: " ends" } },
+    { event: "token", data: { id: 13, token: " on" } },
+    { event: "token", data: { id: 14, token: " October" } },
+    { event: "token", data: { id: 15, token: " " } },
+    { event: "token", data: { id: 16, token: "1" } },
+    { event: "token", data: { id: 17, token: "," } },
+    { event: "token", data: { id: 18, token: " " } },
+    { event: "token", data: { id: 19, token: "2" } },
+    { event: "token", data: { id: 20, token: "0" } },
+    { event: "token", data: { id: 21, token: "2" } },
+    { event: "token", data: { id: 22, token: "4" } },
+    { event: "token", data: { id: 23, token: "." } },
+    { event: "token", data: { id: 24, token: "" } },
+    {
+      event: "end",
+      data: {
+        referenced_documents: [
+          {
+            doc_title: "AAP Lifecycle Dates",
+            doc_url:
+              "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/additional_content.txt",
+          },
+          {
+            doc_title: "Ansible Components Versions",
+            doc_url:
+              "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/components_versions.txt",
+          },
+        ],
+        truncated: false,
+        input_tokens: 819,
+        output_tokens: 20,
+      },
+    },
+  ];
+
+  return vi.fn(async (_, init) => {
+    let status = 200;
+    const o = JSON.parse(init.body);
+    if (o.query.startsWith("status=")) {
+      status = parseInt(o.query.substring(7));
+    }
+    console.log(`status ${status}`);
+
+    const ok = status === 200;
+    await init.onopen({ status, ok });
+    if (status === 200) {
+      for (const data of streamData) {
+        init.onmessage({ data: JSON.stringify(data) });
+      }
+    }
+    init.onclose();
+  });
+}
+
+let copiedString = "";
+function mockSetClipboard() {
+  return vi.fn((s: string) => {
+    copiedString = s;
+    console.log(`mockedSetClipboard:${s}`);
+  });
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.mock("@microsoft/fetch-event-source", () => ({
+    fetchEventSource: mockFetchEventSource(),
+  }));
+  vi.mock("./Clipboard", () => ({
+    setClipboard: mockSetClipboard(),
+  }));
 });
 
 test("Basic chatbot interaction", async () => {
@@ -151,6 +245,16 @@ test("Basic chatbot interaction", async () => {
     )
     .toBeVisible();
   await expect.element(view.getByText("Create variables")).toBeVisible();
+
+  const copyIcon = await screen.findByRole("button", {
+    name: "Copy",
+  });
+  await copyIcon.click();
+  expect(
+    copiedString.startsWith(
+      "In Ansible, the precedence of variables is determined by the order...",
+    ),
+  );
 
   await page.getByLabelText("Toggle menu").click();
   const newChatButton = page
@@ -482,4 +586,32 @@ test("Test system prompt override", async () => {
     }),
     expect.anything(),
   );
+});
+
+test("Chat streaming test", async () => {
+  const view = await renderApp(false, true);
+  const textArea = page.getByLabelText("Send a message...");
+  await textArea.fill("Hello");
+
+  await userEvent.keyboard("{Enter}");
+
+  await expect
+    .element(
+      view.getByText(
+        "The Full Support Phase for AAP 2.4 ends on October 1, 2024.",
+      ),
+    )
+    .toBeVisible();
+});
+
+test("Chat streaming error case", async () => {
+  const view = await renderApp(false, true);
+  const textArea = page.getByLabelText("Send a message...");
+  await textArea.fill("status=400");
+
+  await userEvent.keyboard("{Enter}");
+
+  const alert = view.container.querySelector(".pf-v6-c-alert__description");
+  const textContent = alert?.textContent;
+  expect(textContent).toEqual("Bot returned status_code 400");
 });
