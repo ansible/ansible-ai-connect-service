@@ -182,6 +182,12 @@ class InternalServerError(BaseWisdomAPIException):
     default_detail = "An error occurred attempting to complete the request."
 
 
+class NotImplementedException(BaseWisdomAPIException):
+    status_code = 501
+    default_code = "not_implemented"
+    default_detail = "This functionality is not implemented."
+
+
 class FeedbackValidationException(WisdomBadRequest):
     default_code = "error__feedback_validation"
 

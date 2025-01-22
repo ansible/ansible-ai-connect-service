@@ -15,8 +15,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory, TestCase
-from django.urls import resolve, reverse
+from django.urls import resolve
 
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.main.permissions import IsRHInternalUser, IsTestUser
 
 
@@ -29,7 +30,7 @@ class TestIsRHInternalUser(TestCase):
         payload = {
             "query": "Hello",
         }
-        self.request = RequestFactory().post(reverse("chat"), payload, format="json")
+        self.request = RequestFactory().post(api_version_reverse("chat"), payload, format="json")
 
         self.non_rh_user = get_user_model().objects.create_user(
             username="non-rh-user",
@@ -50,7 +51,7 @@ class TestIsRHInternalUser(TestCase):
 
     def get_permission(self, user):
         self.request.user = user
-        return self.permission.has_permission(self.request, resolve(reverse("chat")))
+        return self.permission.has_permission(self.request, resolve(api_version_reverse("chat")))
 
     def test_permission_with_rh_user(self):
         self.client.force_login(user=self.rh_user)
@@ -76,7 +77,7 @@ class TestIsTestUser(TestCase):
         payload = {
             "query": "Hello",
         }
-        self.request = RequestFactory().post(reverse("chat"), payload, format="json")
+        self.request = RequestFactory().post(api_version_reverse("chat"), payload, format="json")
 
         self.non_rh_user = get_user_model().objects.create_user(
             username="non-rh-user",
@@ -101,7 +102,7 @@ class TestIsTestUser(TestCase):
 
     def get_permission(self, user):
         self.request.user = user
-        return self.permission.has_permission(self.request, resolve(reverse("chat")))
+        return self.permission.has_permission(self.request, resolve(api_version_reverse("chat")))
 
     def test_permission_with_non_rh_user(self):
         self.client.force_login(user=self.non_rh_user)

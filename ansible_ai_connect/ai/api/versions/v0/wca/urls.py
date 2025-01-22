@@ -12,12 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from django.urls import include, path
+from django.urls import path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from . import views
 
 urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
+    path("apikey/", views.WCAApiKeyView.as_view(), name="wca_api_key"),
+    path("modelid/", views.WCAModelIdView.as_view(), name="wca_model_id"),
+    path("apikey/test/", views.WCAApiKeyValidatorView.as_view(), name="wca_api_key_validator"),
+    path("modelid/test/", views.WCAModelIdValidatorView.as_view(), name="wca_model_id_validator"),
 ]

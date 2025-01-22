@@ -25,6 +25,7 @@ from django.test import RequestFactory, TestCase, modify_settings, override_sett
 from django.urls import reverse
 from rest_framework.test import APITransactionTestCase
 
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
 from ansible_ai_connect.test_utils import create_user_with_provider
@@ -176,7 +177,7 @@ class TestMarkdownMe(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user=user)
 
-        r = self.client.get(reverse("me_summary"))
+        r = self.client.get(api_version_reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Logged in as: test_user_name")
 
@@ -193,7 +194,7 @@ class TestMarkdownMe(TestCase):
         up.save()
         user.userplan_set.first().expired_at = ""
 
-        r = self.client.get(reverse("me_summary"))
+        r = self.client.get(api_version_reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         content = r.json()["content"]
         expired_at = up.expired_at.strftime("%Y-%m-%d")
@@ -226,7 +227,7 @@ class TestMarkdownMe(TestCase):
         up.save()
         user.userplan_set.first().expired_at = ""
 
-        r = self.client.get(reverse("me_summary"))
+        r = self.client.get(api_version_reverse("me_summary"))
         self.assertEqual(r.status_code, 200)
         content = r.json()["content"]
         self.assertTrue(

@@ -19,7 +19,6 @@ from unittest.mock import Mock, patch
 import grpc
 from django.apps import apps
 from django.test import override_settings
-from django.urls import reverse
 from requests.exceptions import ReadTimeout
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutException
@@ -34,6 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 
 from ..model_pipelines.tests import mock_pipeline_config
 from .test_views import WisdomServiceAPITestCaseBase

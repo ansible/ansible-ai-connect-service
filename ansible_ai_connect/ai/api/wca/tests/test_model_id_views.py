@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 from django.apps import apps
 from django.test import override_settings
-from django.urls import resolve, reverse
+from django.urls import resolve
 from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import ValidationError
@@ -40,6 +40,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
 

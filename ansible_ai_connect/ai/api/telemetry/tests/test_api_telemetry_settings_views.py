@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 from django.db.utils import DatabaseError
 from django.test import override_settings
-from django.urls import resolve, reverse
+from django.urls import resolve
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.permissions import IsAuthenticated
 
@@ -27,6 +27,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
 
 
@@ -116,7 +117,6 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         LDClient.return_value.variation.return_value = True
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
-
         # Settings should initially be False
         r = self.client.get(reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.OK)

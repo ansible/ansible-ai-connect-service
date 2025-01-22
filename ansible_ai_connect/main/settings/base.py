@@ -268,6 +268,10 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "ansible_ai_connect.main.exception_handler."
     "exception_handler_with_error_type",
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
+    "ALLOWED_VERSIONS": ("v0", "v1"),
+    "DEFAULT_VERSION": "v0",
+    "VERSION_PARAM": "version",
 }
 
 # Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
