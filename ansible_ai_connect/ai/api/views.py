@@ -86,6 +86,7 @@ from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsPlaybookGenerationWizard,
     AnalyticsProductFeedback,
     AnalyticsRecommendationAction,
+    AnalyticsRoleGenerationWizard,
     AnalyticsTelemetryEvents,
 )
 from ansible_ai_connect.ai.api.utils.segment import (
@@ -128,6 +129,7 @@ from .serializers import (
     IssueFeedback,
     PlaybookExplanationFeedback,
     PlaybookGenerationAction,
+    RoleGenerationAction,
     SentimentFeedback,
     SuggestionQualityFeedback,
 )
@@ -342,6 +344,9 @@ class Feedback(APIView):
         playbook_generation_action_data: PlaybookGenerationAction = validated_data.get(
             "playbookGenerationAction"
         )
+        role_generation_action_data: RoleGenerationAction = validated_data.get(
+            "roleGenerationAction"
+        )
         chatbot_feedback_data: ChatFeedback = validated_data.get("chatFeedback")
 
         ansible_extension_version = validated_data.get("metadata", {}).get(
@@ -446,6 +451,31 @@ class Feedback(APIView):
                         model_name=model_name,
                         rh_user_org_id=org_id,
                         wizard_id=str(playbook_generation_action_data.get("wizardId", "")),
+                    ),
+                    user,
+                    ansible_extension_version,
+                )
+        if role_generation_action_data:
+            action = int(role_generation_action_data.get("action"))
+            from_page = role_generation_action_data.get("fromPage", 0)
+            to_page = role_generation_action_data.get("toPage", 0)
+            wizard_id = str(role_generation_action_data.get("wizardId", ""))
+            event = {
+                "action": action,
+                "wizardId": wizard_id,
+                "fromPage": from_page,
+                "toPage": to_page,
+                "modelName": model_name,
+            }
+            send_segment_event(event, "roleGenerationAction", user)
+            if False and from_page > 1 and action in [1, 3]:
+                send_segment_analytics_event(
+                    AnalyticsTelemetryEvents.ROLE_GENERATION_ACTION,
+                    lambda: AnalyticsRoleGenerationWizard(
+                        action=action,
+                        model_name=model_name,
+                        rh_user_org_id=org_id,
+                        wizard_id=str(role_generation_action_data.get("wizardId", "")),
                     ),
                     user,
                     ansible_extension_version,

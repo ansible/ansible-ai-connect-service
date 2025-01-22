@@ -24,6 +24,7 @@ class AnalyticsTelemetryEvents(Enum):
     RECOMMENDATION_ACTION = "Recommendation Action"
     PRODUCT_FEEDBACK = "Product Feedback"
     PLAYBOOK_GENERATION_ACTION = "Playbook Generation Action"
+    ROLE_GENERATION_ACTION = "Role Generation Action"
     ONECLICK_TRIAL_STARTED = "OneClickTrial Started"
 
 
@@ -59,6 +60,11 @@ class AnalyticsPlaybookGenerationWizard:
     timestamp: str = field(
         default=Factory(lambda self: timezone.now().isoformat(), takes_self=True)
     )
+
+
+@frozen
+class AnalyticsRoleGenerationWizard(AnalyticsPlaybookGenerationWizard):
+    pass
 
 
 @frozen

@@ -705,6 +705,18 @@ components:
         * `0` - ACCEPTED
         * `1` - REJECTED
         * `2` - IGNORED
+    Action693Enum:
+      enum:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      type: string
+      description: |-
+        * `0` - OPEN
+        * `1` - CLOSE_CANCEL
+        * `2` - TRANSITION
+        * `3` - CLOSE_ACCEPT
     ChatFeedback:
       type: object
       properties:
@@ -962,6 +974,8 @@ components:
           $ref: '#/components/schemas/PlaybookGenerationFeedback'
         playbookGenerationAction:
           $ref: '#/components/schemas/PlaybookGenerationAction'
+        roleGenerationAction:
+          $ref: '#/components/schemas/RoleGenerationAction'
         sentimentFeedback:
           $ref: '#/components/schemas/SentimentFeedback'
         suggestionQualityFeedback:
@@ -1228,7 +1242,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/Action4c6Enum'
+          $ref: '#/components/schemas/Action693Enum'
         explanationId:
           type: string
           format: uuid
@@ -1241,7 +1255,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/PlaybookGenerationActionActionEnum'
+          $ref: '#/components/schemas/Action693Enum'
         wizardId:
           type: string
           format: uuid
@@ -1258,18 +1272,6 @@ components:
       required:
       - action
       - wizardId
-    PlaybookGenerationActionActionEnum:
-      enum:
-      - '0'
-      - '1'
-      - '2'
-      - '3'
-      type: string
-      description: |-
-        * `0` - OPEN
-        * `1` - CLOSE_CANCEL
-        * `2` - TRANSITION
-        * `3` - CLOSE_ACCEPT
     PlaybookGenerationFeedback:
       type: object
       properties:
@@ -1293,6 +1295,27 @@ components:
       required:
       - docs_url
       - title
+    RoleGenerationAction:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/Action693Enum'
+        wizardId:
+          type: string
+          format: uuid
+          title: wizard ID
+          description: A UUID that identifies the UI session.
+        fromPage:
+          type: integer
+          title: page of origin
+          description: A number that indicate the page of origin
+        toPage:
+          type: integer
+          title: destination page
+          description: A number that indicate the destination page
+      required:
+      - action
+      - wizardId
     SentimentEnum:
       enum:
       - '0'
