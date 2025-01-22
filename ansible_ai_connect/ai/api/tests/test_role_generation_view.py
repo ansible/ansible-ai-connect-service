@@ -21,7 +21,6 @@ from unittest.mock import Mock, patch
 
 from django.apps import apps
 from django.test import override_settings
-from django.urls import reverse
 
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import BaseConfig
 from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILES
@@ -31,6 +30,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
