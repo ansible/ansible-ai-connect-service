@@ -924,11 +924,14 @@ class GenerationRole(AACSAPIView):
         anonymized_outline = anonymizer.anonymize_struct(
             outline, value_template=Template("{{ _${variable_name}_ }}")
         )
+        anonymized_files = anonymizer.anonymize_struct(
+            files, value_template=Template("{{ _${variable_name}_ }}")
+        )
 
         answer = {
             "role": anonymized_role,
             "outline": anonymized_outline,
-            "files": files,
+            "files": anonymized_files,
             "format": "plaintext",
             "generationId": self.validated_data["generationId"],
         }
