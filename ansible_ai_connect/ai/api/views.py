@@ -925,11 +925,6 @@ class GenerationRole(AACSAPIView):
             outline, value_template=Template("{{ _${variable_name}_ }}")
         )
 
-        for file in files:
-            file["content"] = anonymizer.anonymize_struct(
-                file["content"], value_template=Template("{{ _${variable_name}_ }}")
-            )
-
         answer = {
             "role": anonymized_role,
             "outline": anonymized_outline,
