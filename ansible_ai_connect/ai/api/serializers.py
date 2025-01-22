@@ -262,22 +262,21 @@ class IssueFeedback(serializers.Serializer):
     )
 
 
-class PlaybookGenerationFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
-
-    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
-    wizardId = serializers.UUIDField(
-        format="hex_verbose",
-        required=True,
-        label="Outline ID",
-        help_text="A UUID that identifies the UI session.",
-    )
+class GenerationActionEnum(serializers.ChoiceField):
+    def __init__(self):
+        super().__init__(
+            choices=(
+                ("0", "OPEN"),
+                ("1", "CLOSE_CANCEL"),
+                ("2", "TRANSITION"),
+                ("3", "CLOSE_ACCEPT"),
+            ),
+            required=True,
+        )
 
 
 class PlaybookGenerationAction(serializers.Serializer):
-    ACTIONS = (("0", "OPEN"), ("1", "CLOSE_CANCEL"), ("2", "TRANSITION"), ("3", "CLOSE_ACCEPT"))
-
-    action = serializers.ChoiceField(choices=ACTIONS, required=True)
+    action = GenerationActionEnum()
     wizardId = serializers.UUIDField(
         format="hex_verbose",
         required=True,
@@ -297,15 +296,17 @@ class PlaybookGenerationAction(serializers.Serializer):
 
 
 class PlaybookExplanationFeedback(serializers.Serializer):
-    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
-
-    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
+    action = GenerationActionEnum()
     explanationId = serializers.UUIDField(
         format="hex_verbose",
         required=True,
         label="Explanation ID",
         help_text="A UUID that identifies the playbook explanation.",
     )
+
+
+class RoleGenerationAction(PlaybookGenerationAction):
+    pass
 
 
 class ChatRequestSerializer(serializers.Serializer):
@@ -395,8 +396,8 @@ class FeedbackRequestSerializer(Metadata):
     metadata = Metadata(required=False)
     model = serializers.CharField(required=False)
     playbookExplanationFeedback = PlaybookExplanationFeedback(required=False)
-    playbookGenerationFeedback = PlaybookGenerationFeedback(required=False)
     playbookGenerationAction = PlaybookGenerationAction(required=False)
+    roleGenerationAction = RoleGenerationAction(required=False)
     sentimentFeedback = SentimentFeedback(required=False)
     suggestionQualityFeedback = SuggestionQualityFeedback(required=False)
     chatFeedback = ChatFeedback(required=False)
