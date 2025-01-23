@@ -22,7 +22,10 @@ from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.config_providers import Configuration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE
-from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY, REGISTRY_ENTRY
+from ansible_ai_connect.ai.api.model_pipelines.registry import (
+    REGISTRY_ENTRY,
+    get_registry_entry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +50,7 @@ class ModelPipelineFactory:
             # Get the configuration for the requested pipeline
             pipeline_config: PipelineConfiguration = self.pipelines_config[pipeline_type.__name__]
             # Get the pipeline class for the configured provider
-            pipelines = REGISTRY[pipeline_config.provider]
+            pipelines = get_registry_entry(pipeline_config.provider)
             pipeline = pipelines[pipeline_type]
             config = pipeline_config.config
             # No explicit implementation defined; fallback to NOP
