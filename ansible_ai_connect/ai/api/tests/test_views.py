@@ -18,6 +18,7 @@ import logging
 import platform
 import random
 import string
+import time
 import uuid
 from http import HTTPStatus
 from typing import Optional, Union
@@ -28,6 +29,7 @@ from django.apps import apps
 from django.test import modify_settings, override_settings
 from rest_framework.exceptions import APIException
 
+from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
     FeedbackValidationException,
     ModelTimeoutException,
@@ -54,6 +56,9 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    CompletionsParameters,
+    CompletionsResponse,
+    ModelPipelineCompletions,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
     PlaybookExplanationParameters,
@@ -79,6 +84,11 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSPlaybookExplanationPipeline,
     WCASaaSPlaybookGenerationPipeline,
 )
+from ansible_ai_connect.ai.api.pipelines.completion_context import CompletionContext
+from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
+    completion_pre_process,
+)
+from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
 from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
@@ -89,6 +99,7 @@ from ansible_ai_connect.test_utils import (
     WisdomServiceAPITestCaseBase,
 )
 from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
+from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +107,74 @@ logger = logging.getLogger(__name__)
 class MockedConfig(BaseConfig):
     def __init__(self):
         super().__init__(inference_url="mock-url", model_id="mock-model", timeout=None)
+
+
+class MockedPipelineCompletions(ModelPipelineCompletions[MockedConfig]):
+
+    def __init__(
+        self,
+        test,
+        payload,
+        response_data,
+        test_inference_match=True,
+        rh_user_has_seat=False,
+    ):
+        super().__init__(MockedConfig())
+        self.test = test
+        self.test_inference_match = test_inference_match
+
+        if "prompt" in payload:
+            try:
+                user = Mock(rh_user_has_seat=rh_user_has_seat)
+                request = Mock(user=user)
+                serializer = CompletionRequestSerializer(context={"request": request})
+                data = serializer.validate(payload.copy())
+
+                api_payload = APIPayload(prompt=data.get("prompt"), context=data.get("context"))
+                api_payload.original_prompt = payload["prompt"]
+
+                context = CompletionContext(
+                    request=request,
+                    payload=api_payload,
+                )
+                completion_pre_process(context)
+
+                self.expects = {
+                    "instances": [
+                        {
+                            "context": context.payload.context,
+                            "prompt": context.payload.prompt,
+                            "suggestionId": payload.get("suggestionId"),
+                        }
+                    ]
+                }
+            except Exception:  # ignore exception thrown here
+                logger.exception("MockedMeshClient: cannot set the .expects key")
+                pass
+
+        self.response_data = response_data
+
+    def get_model_id(
+        self,
+        user: User = None,
+        organization_id: Optional[int] = None,
+        requested_model_id: str = "",
+    ) -> str:
+        return requested_model_id or ""
+
+    def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
+        model_input = params.model_input
+        if self.test_inference_match:
+            self.test.assertEqual(model_input, self.expects)
+        time.sleep(0.1)  # w/o this line test_rate_limit() fails...
+        # i.e., still receives 200 after 10 API calls...
+        return self.response_data
+
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+        raise NotImplementedError
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
 
 
 class MockedPipelinePlaybookGeneration(ModelPipelinePlaybookGeneration[MockedConfig]):
