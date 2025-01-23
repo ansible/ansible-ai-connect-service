@@ -80,7 +80,7 @@ ModelPipelinePlaybookExplanation:
     inference_url: http://localhost
     model_id: a-model-id
 ModelPipelineChatBot:
-  provider: http,
+  provider: http
   config:
     inference_url: http://localhost
     model_id: granite3-8b
