@@ -17,3 +17,6 @@ import ansible_ai_connect.ai.api.model_pipelines.wca.configuration_saas  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_dummy  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas  # noqa
+from ansible_ai_connect.ai.api.model_pipelines.registry import set_defaults
+
+set_defaults()
