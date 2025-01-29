@@ -242,6 +242,11 @@ class WCABasePipeline(
         wca_codegen_playbook_retry_counter.inc()
 
     @staticmethod
+    def on_backoff_codegen_role(details):
+        WCABasePipeline.log_backoff_exception(details)
+        wca_codegen_playbook_retry_counter.inc()
+
+    @staticmethod
     def on_backoff_explain_playbook(details):
         WCABasePipeline.log_backoff_exception(details)
         wca_explain_playbook_retry_counter.inc()
@@ -507,7 +512,70 @@ class WCABaseRoleGenerationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        raise NotImplementedError
+        request = params.request
+        text = params.text
+        create_outline = params.create_outline
+        outline = params.outline
+        model_id = params.model_id
+        generation_id = params.generation_id
+
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id, model_id)
+
+        headers = self.get_request_headers(api_key, generation_id)
+        data = {
+            "model_id": model_id,
+            "text": text,
+            "create_outline": create_outline,
+        }
+        if outline:
+            data["outline"] = outline
+
+        @backoff.on_exception(
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_codegen_role,
+        )
+        @wca_codegen_playbook_hist.time()
+        def post_request():
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
+
+        result = post_request()
+
+        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+        if generation_id and x_request_id:
+            # request/payload suggestion_id is a UUID not a string whereas
+            # HTTP headers are strings.
+            if x_request_id != str(generation_id):
+                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+
+        context = Context(model_id, result, False)
+        InferenceResponseChecks().run_checks(context)
+        result.raise_for_status()
+
+        response = json.loads(result.text)
+
+        name = response["name"]
+        files = response["files"]
+        outline = response["outline"]
+        warnings = response["warnings"] if "warnings" in response else []
+
+        from ansible_ai_connect.ai.apps import AiConfig
+
+        ai_config = cast(AiConfig, apps.get_app_config("ai"))
+        if ansible_lint_caller := ai_config.get_ansible_lint_caller():
+            for file in files:
+                file["content"] = ansible_lint_caller.run_linter(file["content"])
+
+        return name, files, outline, warnings
 
 
 class WCABasePlaybookExplanationPipeline(
