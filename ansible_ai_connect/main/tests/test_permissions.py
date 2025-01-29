@@ -17,11 +17,11 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.test import RequestFactory, TestCase
 from django.urls import resolve
 
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.main.permissions import IsRHInternalUser, IsTestUser
+from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 
 
-class TestIsRHInternalUser(TestCase):
+class TestIsRHInternalUser(APIVersionTestCaseBase, TestCase):
     def setUp(self):
         super().setUp()
 
@@ -30,7 +30,9 @@ class TestIsRHInternalUser(TestCase):
         payload = {
             "query": "Hello",
         }
-        self.request = RequestFactory().post(api_version_reverse("chat"), payload, format="json")
+        self.request = RequestFactory().post(
+            self.api_version_reverse("chat"), payload, format="json"
+        )
 
         self.non_rh_user = get_user_model().objects.create_user(
             username="non-rh-user",
@@ -51,7 +53,9 @@ class TestIsRHInternalUser(TestCase):
 
     def get_permission(self, user):
         self.request.user = user
-        return self.permission.has_permission(self.request, resolve(api_version_reverse("chat")))
+        return self.permission.has_permission(
+            self.request, resolve(self.api_version_reverse("chat"))
+        )
 
     def test_permission_with_rh_user(self):
         self.client.force_login(user=self.rh_user)
@@ -68,7 +72,7 @@ class TestIsRHInternalUser(TestCase):
         self.assertFalse(r)
 
 
-class TestIsTestUser(TestCase):
+class TestIsTestUser(APIVersionTestCaseBase, TestCase):
     def setUp(self):
         super().setUp()
 
@@ -77,7 +81,9 @@ class TestIsTestUser(TestCase):
         payload = {
             "query": "Hello",
         }
-        self.request = RequestFactory().post(api_version_reverse("chat"), payload, format="json")
+        self.request = RequestFactory().post(
+            self.api_version_reverse("chat"), payload, format="json"
+        )
 
         self.non_rh_user = get_user_model().objects.create_user(
             username="non-rh-user",
@@ -102,7 +108,9 @@ class TestIsTestUser(TestCase):
 
     def get_permission(self, user):
         self.request.user = user
-        return self.permission.has_permission(self.request, resolve(api_version_reverse("chat")))
+        return self.permission.has_permission(
+            self.request, resolve(self.api_version_reverse("chat"))
+        )
 
     def test_permission_with_non_rh_user(self):
         self.client.force_login(user=self.non_rh_user)

@@ -80,7 +80,7 @@ class WCAApiKeyView(saas.APIViewSaasMixin, _BaseWCAApiKeyView):
         operation_id="wca_api_key_delete",
     )
     def delete(self, request, *args, **kwargs):
-        super().delete(request, *args, **kwargs)
+        return super().delete(request, *args, **kwargs)
 
 
 class WCAApiKeyValidatorView(saas.APIViewSaasMixin, _BaseWCAApiKeyValidatorView):

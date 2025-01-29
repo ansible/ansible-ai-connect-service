@@ -31,16 +31,18 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
-from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomServiceAPITestCaseBase,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @modify_settings()
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-class TestFeedbackView(WisdomServiceAPITestCaseBase):
+class TestFeedbackView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     VALID_PAYLOAD_WITH_CONVERSATION_ID = {
         "query": "Hello",
@@ -90,7 +92,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         with self.assertLogs(logger="root", level="DEBUG") as log:
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertSegmentTimestamp(log)
 
@@ -105,7 +107,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         # self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
             self.assertSegmentTimestamp(log)
 
@@ -127,7 +129,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
             segment_events = self.extractSegmentEventsFromLog(log)
@@ -158,7 +160,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
             segment_events = self.extractSegmentEventsFromLog(log)
@@ -188,7 +190,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("feedback"), payload, format="json")
+                r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertInLog("Failed to retrieve Model Name for Feedback.", log)
                 self.assertInLog("Org ID: 123", log)
@@ -220,7 +222,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("feedback"), payload, format="json")
+                r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertInLog("Failed to retrieve Model Name for Feedback.", log)
 
@@ -242,7 +244,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_error_detail(r, FeedbackValidationException.default_code)
 
@@ -273,7 +275,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertTrue(len(segment_events) == 0)
@@ -293,7 +295,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_error_detail(r, FeedbackValidationException.default_code)
 
@@ -319,7 +321,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_error_detail(r, FeedbackValidationException.default_code)
 
@@ -346,7 +348,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_error_detail(r, FeedbackValidationException.default_code)
 
@@ -372,7 +374,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
             segment_events = self.extractSegmentEventsFromLog(log)
@@ -393,7 +395,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
             segment_events = self.extractSegmentEventsFromLog(log)
@@ -420,7 +422,7 @@ class TestFeedbackView(WisdomServiceAPITestCaseBase):
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("feedback"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
             segment_events = self.extractSegmentEventsFromLog(log)

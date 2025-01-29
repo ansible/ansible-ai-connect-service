@@ -62,9 +62,11 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.response import (
     CompletionsPromptType,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
-from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomServiceAPITestCaseBase,
+)
 from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -144,7 +146,7 @@ class MockedPipelineCompletions(ModelPipelineCompletions[MockedConfig]):
 
 
 @modify_settings()
-class TestCompletionView(WisdomServiceAPITestCaseBase):
+class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     # An artificial model ID for model-ID related test cases.
     DUMMY_MODEL_ID = "01234567-1234-5678-9abc-0123456789ab<|sepofid|>wisdom_codegen"
 
@@ -165,7 +167,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertSegmentTimestamp(log)
@@ -194,7 +196,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
 
@@ -243,7 +245,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertIn(pii_task.capitalize(), r.data["predictions"][0])
@@ -274,11 +276,11 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 for _ in range(10):
-                    r = self.client.post(reverse("completions"), payload)
+                    r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.TOO_MANY_REQUESTS)
                 self.assertSegmentTimestamp(log)
 
@@ -298,7 +300,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertSegmentTimestamp(log)
 
@@ -319,7 +321,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
@@ -348,7 +350,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assert_error_detail(
                     r,
@@ -374,7 +376,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("failed to validate request", log)
                 self.assertTrue("prompt does not contain the name parameter" in str(r.content))
@@ -398,7 +400,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("skipped ari post processing because ari was not initialized", log)
@@ -425,7 +427,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 "get_model_pipeline",
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertNotInLog("the recommendation_yaml is not a valid YAML", log)
@@ -450,7 +452,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 "get_model_pipeline",
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assert_error_detail(
                     r, PostprocessException.default_code, PostprocessException.default_detail
@@ -482,7 +484,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 "get_model_pipeline",
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
                 self.assertIsNone(r.data)
                 self.assert_error_detail(
@@ -526,7 +528,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertSegmentTimestamp(log)
@@ -555,7 +557,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertEqual(
@@ -595,7 +597,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             ),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertEqual(
@@ -654,7 +656,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=WCASaaSCompletionsPipeline(mock_pipeline_config("wca"))),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, status_code_expected)
                 if isinstance(error, APIException):
                     self.assert_error_detail(r, error.default_code, error.default_detail)
@@ -705,7 +707,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
                 "get_model_pipeline",
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data, False)),
             ):
-                self.client.post(reverse("completions"), payload)
+                self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertInLog("Create an account for james8@example.com", log)
                 self.assertSegmentTimestamp(log)
 
@@ -726,7 +728,7 @@ class TestCompletionView(WisdomServiceAPITestCaseBase):
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertIsNotNone(r.data["model"])

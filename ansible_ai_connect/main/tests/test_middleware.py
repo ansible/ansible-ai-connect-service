@@ -26,8 +26,10 @@ from ansible_ai_connect.ai.api.tests.test_views import (
     MockedPipelineCompletions,
     WisdomAppsBackendMocking,
 )
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse
-from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomServiceAPITestCaseBaseOIDC,
+)
 
 
 def dummy_redact_seated_users_data(event, allow_list):
@@ -38,7 +40,9 @@ def dummy_redact_seated_users_data(event, allow_list):
 @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")
 @override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="*")
-class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC):
+class TestMiddleware(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC
+):
 
     @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
@@ -82,7 +86,9 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             Mock(return_value=MockedPipelineCompletions(self, expected, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(api_version_reverse("completions"), payload, format="json")
+                r = self.client.post(
+                    self.api_version_reverse("completions"), payload, format="json"
+                )
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("DEBUG:segment:queueing:", log)
@@ -121,7 +127,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
 
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    api_version_reverse("completions"),
+                    self.api_version_reverse("completions"),
                     urlencode(payload),
                     content_type="application/x-www-form-urlencoded",
                 )
@@ -137,7 +143,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
 
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    api_version_reverse("completions"),
+                    self.api_version_reverse("completions"),
                     urlencode(payload),
                     content_type="application/json",
                 )
@@ -163,7 +169,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
 
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            self.client.post(api_version_reverse("completions"), payload, format="json")
+            self.client.post(self.api_version_reverse("completions"), payload, format="json")
             self.assertInLog(
                 "ERROR:ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process:failed"
                 " to preprocess:",
@@ -202,7 +208,9 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
-                    r = self.client.post(api_version_reverse("completions"), payload, format="json")
+                    r = self.client.post(
+                        self.api_version_reverse("completions"), payload, format="json"
+                    )
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.OK)
                     self.assertIsNotNone(r.data["predictions"])
@@ -248,7 +256,9 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
                 Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
             ):
                 with self.assertLogs(logger="root", level="DEBUG") as log:
-                    r = self.client.post(api_version_reverse("completions"), payload, format="json")
+                    r = self.client.post(
+                        self.api_version_reverse("completions"), payload, format="json"
+                    )
                     analytics.flush()
                     self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                     self.assertIsNone(r.data)
@@ -317,7 +327,7 @@ class TestMiddleware(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC)
             Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                self.client.post(api_version_reverse("completions"), payload, format="json")
+                self.client.post(self.api_version_reverse("completions"), payload, format="json")
                 analytics.flush()
                 self.assertInLog("Message exceeds 32kb limit. msg_len=", log)
                 self.assertInLog("sent segment event: segmentError", log)

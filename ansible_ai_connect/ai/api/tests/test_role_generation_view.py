@@ -30,9 +30,9 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleGenerationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
     WisdomServiceAPITestCaseBase,
 )
@@ -61,7 +61,9 @@ class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration[MockedConfig]):
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
-class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestRoleGenerationView(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_ok(self):
@@ -73,7 +75,9 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("generations/role"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/role"), payload, format="json"
+            )
             segment_events = self.extractSegmentEventsFromLog(log)
             roleGenEvent = segment_events[0]
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -89,7 +93,7 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
     def test_unauthorized(self):
         payload = {}
         # Hit the API without authentication
-        r = self.client.post(reverse("generations/role"), payload, format="json")
+        r = self.client.post(self.api_version_reverse("generations/role"), payload, format="json")
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -127,7 +131,9 @@ class TestRoleGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseB
             ),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/role"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/role"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data["role"])
             self.assertEqual(len(r.data["files"]), 1)

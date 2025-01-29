@@ -33,7 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
+from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 
 from ..model_pipelines.tests import mock_pipeline_config
 from .test_views import WisdomServiceAPITestCaseBase
@@ -45,7 +45,7 @@ def mock_timeout_error():
     return e
 
 
-class TestApiTimeout(WisdomServiceAPITestCaseBase):
+class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def test_timeout_settings_is_none(self):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=None))
@@ -96,7 +96,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "get_model_pipeline",
             Mock(return_value=HttpCompletionsPipeline(mock_pipeline_config("http"))),
         ):
-            r = self.client.post(reverse("completions"), payload)
+            r = self.client.post(self.api_version_reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assert_error_detail(
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
@@ -115,7 +115,7 @@ class TestApiTimeout(WisdomServiceAPITestCaseBase):
             "get_model_pipeline",
             Mock(return_value=GrpcCompletionsPipeline(mock_pipeline_config("grpc"))),
         ):
-            r = self.client.post(reverse("completions"), payload)
+            r = self.client.post(self.api_version_reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
             self.assert_error_detail(
                 r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail

@@ -32,6 +32,7 @@ from segment import analytics
 from social_django.models import UserSocialAuth
 
 from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
+from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
 
@@ -246,3 +247,11 @@ class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
             rh_org_id=1981,
             social_auth_extra_data={},
         )
+
+
+class APIVersionTestCaseBase:
+    api_version: str = "v0"
+
+    @classmethod
+    def api_version_reverse(cls, view_name, **kwargs):
+        return api_version_reverse(view_name, api_version=cls.api_version, **kwargs)

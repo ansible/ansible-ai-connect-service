@@ -40,9 +40,12 @@ from ansible_ai_connect.ai.api.permissions import (
     IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
-from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, WisdomLogAwareMixin
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomAppsBackendMocking,
+    WisdomLogAwareMixin,
+)
 
 
 @override_settings(DEPLOYMENT_MODE="saas")
@@ -50,7 +53,10 @@ from ansible_ai_connect.test_utils import WisdomAppsBackendMocking, WisdomLogAwa
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
 class TestWCAModelIdView(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
+    APIVersionTestCaseBase,
+    WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBase,
+    WisdomLogAwareMixin,
 ):
     def setUp(self):
         super().setUp()
@@ -71,7 +77,7 @@ class TestWCAModelIdView(
 
     def test_get_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("wca_model_id"))
+        r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -79,12 +85,12 @@ class TestWCAModelIdView(
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id"))
+            r = self.client.get(self.api_version_reverse("wca_model_id"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelIdGet", None)
 
     def test_permission_classes(self, *args):
-        url = reverse("wca_model_id")
+        url = self.api_version_reverse("wca_model_id")
         view = resolve(url).func.view_class
 
         required_permissions = [
@@ -106,7 +112,7 @@ class TestWCAModelIdView(
         mock_secret_manager.get_secret.return_value = None
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id"))
+            r = self.client.get(self.api_version_reverse("wca_model_id"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
             self.assert_segment_log(log, "modelIdGet", None)
@@ -131,7 +137,7 @@ class TestWCAModelIdView(
         }
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id"))
+            r = self.client.get(self.api_version_reverse("wca_model_id"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data["model_id"], "secret_model_id")
             self.assertEqual(r.data["last_update"], date_time)
@@ -146,14 +152,14 @@ class TestWCAModelIdView(
         mock_secret_manager.get_secret.side_effect = WcaSecretManagerError("Test")
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id"))
+            r = self.client.get(self.api_version_reverse("wca_model_id"))
             self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assertInLog("ansible_ai_connect.ai.api.aws.exceptions.WcaSecretManagerError", log)
             self.assert_segment_log(log, "modelIdGet", "WcaSecretManagerError")
 
     def test_set_model_id_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("wca_model_id"))
+        r = self.client.post(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -161,7 +167,7 @@ class TestWCAModelIdView(
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("wca_model_id"))
+            r = self.client.post(self.api_version_reverse("wca_model_id"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelIdSet", None)
 
@@ -181,7 +187,7 @@ class TestWCAModelIdView(
 
         # ModelId should initially not exist
         mock_secret_manager.get_secret.return_value = None
-        r = self.client.get(reverse("wca_model_id"))
+        r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
@@ -190,7 +196,7 @@ class TestWCAModelIdView(
         with self.assertLogs(logger="ansible_ai_connect.users.signals", level="DEBUG") as signals:
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    reverse("wca_model_id"),
+                    self.api_version_reverse("wca_model_id"),
                     data='{ "model_id": "secret_model_id" }',
                     content_type="application/json",
                 )
@@ -213,7 +219,7 @@ class TestWCAModelIdView(
             "SecretString": "secret_model_id",
             "CreatedDate": timezone.now().isoformat(),
         }
-        r = self.client.get(reverse("wca_model_id"))
+        r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertEqual(r.data["model_id"], "secret_model_id")
         mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
@@ -230,7 +236,7 @@ class TestWCAModelIdView(
         # ModelId should initially not exist
         mock_secret_manager.get_secret.return_value = None
 
-        r = self.client.get(reverse("wca_model_id"))
+        r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
@@ -240,7 +246,7 @@ class TestWCAModelIdView(
         with self.assertLogs(logger="root", level="DEBUG") as log:
             mock_wca_client.infer_from_parameters.side_effect = ValidationError
             r = self.client.post(
-                reverse("wca_model_id"),
+                self.api_version_reverse("wca_model_id"),
                 data='{ "model_id": "secret_model_id" }',
                 content_type="application/json",
             )
@@ -258,7 +264,7 @@ class TestWCAModelIdView(
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(
-                reverse("wca_model_id"),
+                self.api_version_reverse("wca_model_id"),
                 data='{ "model_id": "secret_model_id" }',
                 content_type="application/json",
             )
@@ -275,7 +281,7 @@ class TestWCAModelIdView(
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(
-                reverse("wca_model_id"),
+                self.api_version_reverse("wca_model_id"),
                 data='{ "unknown_json_field": "secret_model_id" }',
                 content_type="application/json",
             )
@@ -296,7 +302,7 @@ class TestWCAModelIdView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaEmptyResponse)
         with self.assertLogs(logger="root", level="INFO") as log:
             r = self.client.post(
-                reverse("wca_model_id"),
+                self.api_version_reverse("wca_model_id"),
                 data='{ "model_id": "secret_model_id" }',
                 content_type="application/json",
             )
@@ -312,11 +318,13 @@ class TestWCAModelIdView(
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
-class TestWCAModelIdViewAsNonSubscriber(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestWCAModelIdViewAsNonSubscriber(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
     def test_get_model_id_as_non_subscriber(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("wca_model_id"))
+        r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
 
 
@@ -325,7 +333,10 @@ class TestWCAModelIdViewAsNonSubscriber(WisdomAppsBackendMocking, WisdomServiceA
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
 class TestWCAModelIdValidatorView(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
+    APIVersionTestCaseBase,
+    WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBase,
+    WisdomLogAwareMixin,
 ):
     def setUp(self):
         super().setUp()
@@ -352,12 +363,12 @@ class TestWCAModelIdValidatorView(
         )
         mock_wca_client.infer = Mock(return_value={})
 
-        r = self.client.get(reverse("wca_model_id_validator"))
+        r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
 
     def test_validate_error_authentication(self, *args):
         # self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("wca_model_id_validator"))
+        r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -365,7 +376,7 @@ class TestWCAModelIdValidatorView(
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "modelIdValidate", None)
 
@@ -382,7 +393,7 @@ class TestWCAModelIdValidatorView(
 
         mock_secret_manager.get_secret.side_effect = mock_get_secret_no_api_key
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog(
                 "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaKeyNotFound", log
@@ -402,7 +413,7 @@ class TestWCAModelIdValidatorView(
 
         mock_secret_manager.get_secret.side_effect = mock_get_secret_no_model_id
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog(
                 "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaModelIdNotFound", log
@@ -431,7 +442,7 @@ class TestWCAModelIdValidatorView(
         mock_secret_manager.get_secret.side_effect = mock_get_secret_model_id
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assert_segment_log(log, "modelIdValidate", None)
 
@@ -445,7 +456,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=ValidationError)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog("ValidationError", log)
             self.assert_segment_log(log, "modelIdValidate", "ValidationError")
@@ -460,7 +471,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaKeyNotFound)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertInLog(
                 "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaKeyNotFound", log
@@ -477,7 +488,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaUserTrialExpired)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assertEqual(r.data["code"], "permission_denied__user_trial_expired")
             self.assertEqual(
@@ -498,7 +509,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaInvalidModelId)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertInLog(
                 "ansible_ai_connect.ai.api.model_pipelines.exceptions.WcaInvalidModelId", log
@@ -515,7 +526,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=Exception)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
             self.assertInLog("Exception", log)
             self.assert_segment_log(log, "modelIdValidate", "Exception")
@@ -532,7 +543,7 @@ class TestWCAModelIdValidatorView(
         mock_wca_client.infer_from_parameters = Mock(side_effect=WcaEmptyResponse)
 
         with self.assertLogs(logger="root", level="INFO") as log:
-            r = self.client.get(reverse("wca_model_id_validator"))
+            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertInLog(
                 "WCA returned an empty response validating model_id 'my-model-id'", log
