@@ -139,7 +139,11 @@ class ChatbotView(ProtectedTemplateView):
         if user and user.is_authenticated:
             context["user_name"] = user.username
         context["debug"] = "true" if settings.CHATBOT_DEBUG_UI else "false"
-        context["stream"] = "true" if settings.CHATBOT_STREAM else "false"
+
+        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineChatBot
+        )
+        context["stream"] = "true" if llm.config.stream else "false"
 
         return context
 

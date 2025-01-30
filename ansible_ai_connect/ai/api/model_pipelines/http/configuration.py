@@ -41,11 +41,14 @@ class HttpConfiguration(BaseConfig):
         timeout: Optional[int],
         enable_health_check: Optional[bool],
         verify_ssl: bool,
+        stream: bool = False,
     ):
         super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.verify_ssl = verify_ssl
+        self.stream = stream
 
     verify_ssl: bool
+    stream: bool
 
 
 @Register(api_type="http")
@@ -60,6 +63,7 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
                 timeout=kwargs["timeout"],
                 enable_health_check=kwargs["enable_health_check"],
                 verify_ssl=kwargs["verify_ssl"],
+                stream=kwargs["stream"],
             ),
         )
 
@@ -67,3 +71,4 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
 @Register(api_type="http")
 class HttpConfigurationSerializer(BaseConfigSerializer):
     verify_ssl = serializers.BooleanField(required=False, default=True)
+    stream = serializers.BooleanField(required=False, default=False)
