@@ -51,9 +51,9 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
     WisdomServiceAPITestCaseBase,
 )
@@ -64,7 +64,9 @@ DEFAULT_SUGGESTION_ID = uuid.uuid4()
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestCompletionWCAView(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
     def stub_wca_client(
         self,
         status_code=None,
@@ -106,7 +108,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("completions"), model_input)
+            r = self.client.post(self.api_version_reverse("completions"), model_input)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             model_client.get_token.assert_called_once()
             self.assertEqual(
@@ -149,7 +151,9 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("completions"), model_input, format="json")
+            r = self.client.post(
+                self.api_version_reverse("completions"), model_input, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             prompt = model_client.session.post.call_args.kwargs["json"]["prompt"]
             self.assertTrue("external_var_1: value1" in prompt)
@@ -176,7 +180,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r, WcaKeyNotFoundException.default_code, WcaKeyNotFoundException.default_detail
@@ -210,7 +214,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -237,7 +241,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -265,7 +269,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -299,7 +303,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -325,7 +329,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -351,7 +355,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 self.assert_error_detail(
                     r,
@@ -380,7 +384,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assert_error_detail(
                     r,
@@ -408,7 +412,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assert_error_detail(
                     r,
@@ -437,7 +441,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -461,7 +465,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -487,7 +491,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -515,7 +519,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -544,7 +548,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("completions"), payload)
+            r = self.client.post(self.api_version_reverse("completions"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(model_client.session.post.call_args[1]["timeout"], 1000)
 
@@ -576,7 +580,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("completions"), payload)
+            r = self.client.post(self.api_version_reverse("completions"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(model_client.session.post.call_args[1]["timeout"], 2000)
 
@@ -604,7 +608,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
                 self.assert_error_detail(
                     r,
@@ -650,7 +654,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), payload)
+                r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
                 self.assert_error_detail(
                     r,
@@ -692,7 +696,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
                 self.assert_error_detail(
                     r,
@@ -728,7 +732,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.IM_A_TEAPOT)
                 self.assert_error_detail(
                     r,
@@ -757,7 +761,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assert_error_detail(
                     r,
@@ -786,7 +790,7 @@ class TestCompletionWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("completions"), model_input)
+                r = self.client.post(self.api_version_reverse("completions"), model_input)
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assert_error_detail(
                     r,

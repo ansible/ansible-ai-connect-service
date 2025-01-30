@@ -27,8 +27,10 @@ from ansible_ai_connect.ai.api.permissions import (
     IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
-from ansible_ai_connect.test_utils import WisdomAppsBackendMocking
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomAppsBackendMocking,
+)
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.tests.test_users import create_user
 
@@ -38,10 +40,10 @@ BLOCK = False
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=False)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
-class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
+class TestIfUserIsOrgAdministrator(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     def test_user_rh_user_is_org_admin(self, *args):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("wca_api_key"))
+        r = self.client.get(self.api_version_reverse("wca_api_key"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(
             r, IsOrganisationAdministrator.code, IsOrganisationAdministrator.message
@@ -50,10 +52,10 @@ class TestIfUserIsOrgAdministrator(WisdomServiceAPITestCaseBase):
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
-class TestIfOrgIsLightspeedSubscriber(WisdomServiceAPITestCaseBase):
+class TestIfOrgIsLightspeedSubscriber(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     def test_user_is_lightspeed_subscriber_admin(self, *args):
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("wca_api_key"))
+        r = self.client.get(self.api_version_reverse("wca_api_key"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
         self.assert_error_detail(
             r, IsOrganisationLightspeedSubscriber.code, IsOrganisationLightspeedSubscriber.message

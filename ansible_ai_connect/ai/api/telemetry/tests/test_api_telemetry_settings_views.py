@@ -27,24 +27,24 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
-class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
+class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     def setUp(self):
         super().setUp()
         feature_flags.FeatureFlags.instance = None
 
     def test_get_settings_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("telemetry_settings"))
+        r = self.client.get(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     def test_permission_classes(self, *args):
-        url = reverse("telemetry_settings")
+        url = self.api_version_reverse("telemetry_settings")
         view = resolve(url).func.view_class
 
         required_permissions = [
@@ -62,7 +62,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("telemetry_settings"))
+            r = self.client.get(self.api_version_reverse("telemetry_settings"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "telemetrySettingsGet", None)
 
@@ -75,7 +75,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("telemetry_settings"))
+            r = self.client.get(self.api_version_reverse("telemetry_settings"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertFalse(r.data["optOut"])
             self.assert_segment_log(log, "telemetrySettingsGet", None, opt_out=False)
@@ -91,14 +91,14 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(reverse("telemetry_settings"))
+            r = self.client.get(self.api_version_reverse("telemetry_settings"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertTrue(r.data["optOut"])
             self.assert_segment_log(log, "telemetrySettingsGet", None, opt_out=True)
 
     def test_set_settings_authentication_error(self, *args):
         # self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("telemetry_settings"))
+        r = self.client.post(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -106,7 +106,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("telemetry_settings"))
+            r = self.client.post(self.api_version_reverse("telemetry_settings"))
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assert_segment_log(log, "telemetrySettingsSet", None)
 
@@ -118,7 +118,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         # Settings should initially be False
-        r = self.client.get(reverse("telemetry_settings"))
+        r = self.client.get(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertFalse(r.data["optOut"])
 
@@ -126,7 +126,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         with self.assertLogs(logger="ansible_ai_connect.users.signals", level="DEBUG") as signals:
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    reverse("telemetry_settings"),
+                    self.api_version_reverse("telemetry_settings"),
                     data='{ "optOut": "True" }',
                     content_type="application/json",
                 )
@@ -141,7 +141,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
             )
 
         # Check Settings were stored
-        r = self.client.get(reverse("telemetry_settings"))
+        r = self.client.get(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertTrue(r.data["optOut"])
 
@@ -156,7 +156,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
         with patch("django.db.models.base.Model.save", side_effect=DatabaseError()):
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
-                    reverse("telemetry_settings"),
+                    self.api_version_reverse("telemetry_settings"),
                     data='{ "optOut": "False" }',
                     content_type="application/json",
                 )
@@ -173,7 +173,7 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(
-                reverse("telemetry_settings"),
+                self.api_version_reverse("telemetry_settings"),
                 data='{ "unknown_json_field": "a-new-key" }',
                 content_type="application/json",
             )
@@ -183,9 +183,11 @@ class TestTelemetrySettingsView(WisdomServiceAPITestCaseBase):
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
-class TestTelemetrySettingsViewAsNonSubscriber(WisdomServiceAPITestCaseBase):
+class TestTelemetrySettingsViewAsNonSubscriber(
+    APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
+):
     def test_get_settings_as_non_subscriber(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
-        r = self.client.get(reverse("telemetry_settings"))
+        r = self.client.get(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)

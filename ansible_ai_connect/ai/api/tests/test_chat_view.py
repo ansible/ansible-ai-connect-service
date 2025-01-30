@@ -36,14 +36,16 @@ from ansible_ai_connect.ai.api.exceptions import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.organizations.models import Organization
-from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBase
+from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
+    WisdomServiceAPITestCaseBase,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class TestChatView(WisdomServiceAPITestCaseBase):
+class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     VALID_PAYLOAD = {
         "query": "Hello",
@@ -174,14 +176,14 @@ class TestChatView(WisdomServiceAPITestCaseBase):
         side_effect=mocked_requests_post,
     )
     def query_with_no_error(self, payload, mock_post):
-        return self.client.post(reverse("chat"), payload, format="json")
+        return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
     @mock.patch(
         "requests.post",
         side_effect=mocked_requests_post,
     )
     def query_without_chat_config(self, payload, mock_post):
-        return self.client.post(reverse("chat"), payload, format="json")
+        return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
     def assert_test(
         self,

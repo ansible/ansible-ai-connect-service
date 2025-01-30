@@ -85,11 +85,11 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
     completion_pre_process,
 )
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
-from ansible_ai_connect.ai.api.utils.version import api_version_reverse as reverse
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
+    APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
     WisdomLogAwareMixin,
     WisdomServiceAPITestCaseBase,
@@ -199,7 +199,9 @@ class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation[MockedC
         raise NotImplementedError
 
 
-class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestContentMatchesWCAView(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
     def test_wca_contentmatch_single_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -270,7 +272,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
         model_client.get_token.assert_called_once()
@@ -365,7 +367,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
         model_client.get_token.assert_called_once()
@@ -437,7 +439,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
         model_client.get_token.assert_called_once()
@@ -494,7 +496,7 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             "get_model_pipeline",
             Mock(return_value=model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
         model_client.get_token.assert_called_once()
@@ -508,7 +510,10 @@ class TestContentMatchesWCAView(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 
 
 class TestContentMatchesWCAViewErrors(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase, WisdomLogAwareMixin
+    APIVersionTestCaseBase,
+    WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBase,
+    WisdomLogAwareMixin,
 ):
     def setUp(self):
         super().setUp()
@@ -666,7 +671,7 @@ class TestContentMatchesWCAViewErrors(
                 "get_model_pipeline",
                 Mock(return_value=self.model_client),
             ):
-                r = self.client.post(reverse("contentmatches"), self.payload)
+                r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
                 self.assertEqual(r.status_code, exception.status_code)
             self.assertInLog(str(exception.__name__), log)
 
@@ -675,7 +680,7 @@ class TestContentMatchesWCAViewErrors(
             "get_model_pipeline",
             Mock(return_value=self.model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), self.payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
             self.assert_error_detail(r, exception().default_code, exception().default_detail)
 
     def _assert_model_id_in_exception(self, expected_model_id):
@@ -684,12 +689,12 @@ class TestContentMatchesWCAViewErrors(
             "get_model_pipeline",
             Mock(return_value=self.model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), self.payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
             self.assertEqual(r.data["model"], expected_model_id)
 
 
 class TestContentMatchesWCAViewSegmentEvents(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
     def setUp(self):
         super().setUp()
@@ -746,7 +751,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             "get_model_pipeline",
             Mock(return_value=self.model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), self.payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
             self.assertEqual(r.status_code, HTTPStatus.OK)
 
         event = {
@@ -804,7 +809,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             "get_model_pipeline",
             Mock(return_value=self.model_client),
         ):
-            r = self.client.post(reverse("contentmatches"), self.payload)
+            r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assert_error_detail(
                 r,
@@ -854,7 +859,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             Mock(return_value=self.model_client),
         ):
             with self.assertLogs(logger="root", level="ERROR") as log:
-                r = self.client.post(reverse("contentmatches"), self.payload)
+                r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
                 self.assertInLog("WCA returned an empty response.", log)
             self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
             self.assert_error_detail(
@@ -896,7 +901,7 @@ class TestContentMatchesWCAViewSegmentEvents(
             Mock(return_value=self.model_client),
         ):
             with self.assertLogs(logger="root", level="ERROR") as log:
-                r = self.client.post(reverse("contentmatches"), self.payload)
+                r = self.client.post(self.api_version_reverse("contentmatches"), self.payload)
                 self.assertInLog("A WCA Api Key was expected but not found.", log)
             self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
             self.assert_error_detail(
@@ -929,7 +934,9 @@ class TestContentMatchesWCAViewSegmentEvents(
 @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-class TestExplanationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestExplanationView(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
     response_data = """# Information
 This playbook installs the Nginx web server on all hosts
 that are running Red Hat Enterprise Linux 9.
@@ -956,7 +963,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["playbook_length"], 165)
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -984,7 +991,7 @@ This playbook emails admin@redhat.com with a list of passwords.
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["playbook_length"], 197)
             self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
@@ -1006,7 +1013,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("explanations"), payload, format="json")
+            self.client.post(self.api_version_reverse("explanations"), payload, format="json")
 
         args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
         self.assertEqual(args.content, "william10@example.com")
@@ -1033,7 +1040,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=MockedPipelinePlaybookExplanation(self.response_data)),
         ):
             # Hit the API without authentication
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1050,7 +1057,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=MockedPipelinePlaybookExplanation(self.response_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1078,7 +1085,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=MockedPipelinePlaybookExplanation(self.response_pii_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data["content"])
             self.assertFalse("admin@redhat.com" in r.data["content"])
@@ -1107,7 +1114,7 @@ This playbook emails admin@redhat.com with a list of passwords.
 
         self.client.force_authenticate(user=self.user)
         with self.assertRaises(Exception):
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1125,7 +1132,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("explanations"), payload, format="json")
+            self.client.post(self.api_version_reverse("explanations"), payload, format="json")
 
         args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
         self.assertEqual(args.content, "william10@example.com")
@@ -1146,7 +1153,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.invoke.called)
             self.assertIn("detail", r.data)
@@ -1168,7 +1175,7 @@ This playbook emails admin@redhat.com with a list of passwords.
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("explanations"), payload, format="json")
+            r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.explain_playbook.called)
             self.assertIn("detail", r.data)
@@ -1177,7 +1184,9 @@ This playbook emails admin@redhat.com with a list of passwords.
 
 
 @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
-class TestExplanationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestExplanationViewWithWCA(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
 
     response_data = """# Information
 This playbook installs the Nginx web server on all hosts
@@ -1232,7 +1241,9 @@ that are running Red Hat Enterprise Linux 9.
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("explanations"), self.payload, format="json")
+                r = self.client.post(
+                    self.api_version_reverse("explanations"), self.payload, format="json"
+                )
                 self.assertEqual(r.status_code, expected_status_code)
                 if expected_exception() is not None:
                     self.assert_error_detail(
@@ -1406,7 +1417,9 @@ that are running Red Hat Enterprise Linux 9.
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
 @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestGenerationView(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
 
     response_data = """yaml
 ---
@@ -1454,7 +1467,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(reverse("generations/playbook"), payload, format="json")
+        r = self.client.post(
+            self.api_version_reverse("generations/playbook"), payload, format="json"
+        )
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["playbook"])
         self.assertEqual(r.data["format"], "plaintext")
@@ -1472,7 +1487,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         }
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
         self.assertEqual(r.status_code, HTTPStatus.OK)
@@ -1495,7 +1512,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations/playbook"), payload, format="json")
+            self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -1514,7 +1533,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             # Hit the API without authentication
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.UNAUTHORIZED)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1528,7 +1549,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1546,7 +1569,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=MockedPipelinePlaybookGeneration(self.response_pii_data)),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertIsNotNone(r.data["playbook"])
             self.assertIsNotNone(r.data["outline"])
@@ -1567,7 +1592,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
         }
         self.client.force_authenticate(user=self.user)
         with self.assertRaises(Exception):
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.SERVICE_UNAVAILABLE)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
@@ -1587,7 +1614,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations/playbook"), payload, format="json")
+            self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -1614,7 +1643,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -1640,7 +1671,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -1664,7 +1697,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            r = self.client.post(reverse("generations/playbook"), payload, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
             self.assertFalse(mocked_client.generate_playbook.called)
             self.assertIn("detail", r.data)
@@ -1690,7 +1725,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
             Mock(return_value=mocked_client),
         ):
             self.client.force_authenticate(user=self.user)
-            self.client.post(reverse("generations/playbook"), payload, format="json")
+            self.client.post(
+                self.api_version_reverse("generations/playbook"), payload, format="json"
+            )
 
         args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
         self.assertFalse(args.create_outline)
@@ -1701,7 +1738,9 @@ class TestGenerationView(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase)
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
 @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=True)
-class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase):
+class TestGenerationViewWithWCA(
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+):
 
     response_data = """yaml
 ---
@@ -1753,7 +1792,9 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
             Mock(return_value=model_client),
         ):
             with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(reverse("generations/playbook"), self.payload, format="json")
+                r = self.client.post(
+                    self.api_version_reverse("generations/playbook"), self.payload, format="json"
+                )
                 self.assertEqual(r.status_code, expected_status_code)
                 if expected_exception() is not None:
                     self.assert_error_detail(
@@ -1950,7 +1991,7 @@ class TestGenerationViewWithWCA(WisdomAppsBackendMocking, WisdomServiceAPITestCa
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(DEPLOYMENT_MODE="onprem")
 class TestExplanationFeatureEnableForWcaOnprem(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
 
     explanation_id = uuid.uuid4()
@@ -1993,7 +2034,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
     @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=False)
     def test_feature_not_enabled_yet(self):
         self.client.force_login(user=self.aap_user)
-        r = self.client.post(reverse("explanations"), self.payload_json)
+        r = self.client.post(self.api_version_reverse("explanations"), self.payload_json)
         self.assertEqual(r.status_code, 404)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
@@ -2005,7 +2046,9 @@ class TestExplanationFeatureEnableForWcaOnprem(
             "get_model_pipeline",
             Mock(return_value=self.stub_wca_client()),
         ):
-            r = self.client.post(reverse("explanations"), self.payload_json, format="json")
+            r = self.client.post(
+                self.api_version_reverse("explanations"), self.payload_json, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data["content"], "dummy explanation")
             self.assertEqual(r.data["format"], "markdown")
@@ -2017,7 +2060,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(DEPLOYMENT_MODE="onprem")
 class TestGenerationFeatureEnableForWcaOnprem(
-    WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
     generation_id = uuid.uuid4()
     payload_json = {
@@ -2064,7 +2107,9 @@ class TestGenerationFeatureEnableForWcaOnprem(
     @override_settings(ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT=False)
     def test_feature_not_enabled_yet(self):
         self.client.force_login(user=self.aap_user)
-        r = self.client.post(reverse("generations/playbook"), self.payload_json, format="json")
+        r = self.client.post(
+            self.api_version_reverse("generations/playbook"), self.payload_json, format="json"
+        )
         self.assertEqual(r.status_code, 404)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
@@ -2078,7 +2123,9 @@ class TestGenerationFeatureEnableForWcaOnprem(
             "get_model_pipeline",
             Mock(return_value=self.stub_wca_client()),
         ):
-            r = self.client.post(reverse("generations/playbook"), self.payload_json, format="json")
+            r = self.client.post(
+                self.api_version_reverse("generations/playbook"), self.payload_json, format="json"
+            )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             self.assertEqual(r.data["playbook"], "---\n- hosts: all\n")
             self.assertEqual(r.data["format"], "plaintext")
