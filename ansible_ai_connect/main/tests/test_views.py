@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from textwrap import dedent
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 from django.http import HttpResponseRedirect
@@ -25,6 +26,7 @@ from django.test import RequestFactory, TestCase, modify_settings, override_sett
 from django.urls import reverse
 from rest_framework.test import APITransactionTestCase
 
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineChatBot
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
 from ansible_ai_connect.test_utils import (
@@ -339,6 +341,7 @@ class TestChatbotView(TestCase):
         self.assertContains(r, TestChatbotView.CHATBOT_PAGE_TITLE)
         self.assertContains(r, self.rh_user.username)
         self.assertContains(r, '<div id="debug" hidden>false</div>')
+        self.assertContains(r, '<div id="stream" hidden>false</div>')
 
     @override_settings(CHATBOT_DEBUG_UI=True)
     def test_chatbot_view_with_debug_ui(self):
@@ -346,3 +349,13 @@ class TestChatbotView(TestCase):
         r = self.client.get(reverse("chatbot"), {"debug": "true"})
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, '<div id="debug" hidden>true</div>')
+
+    def test_chatbot_view_with_streaming_enabled(self):
+        llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineChatBot
+        )
+        llm.config.stream = True
+        self.client.force_login(user=self.rh_user)
+        r = self.client.get(reverse("chatbot"), {"stream": "true"})
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, '<div id="stream" hidden>true</div>')
