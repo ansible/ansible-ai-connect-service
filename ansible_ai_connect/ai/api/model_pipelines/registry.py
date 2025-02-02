@@ -70,3 +70,18 @@ class Register:
         elif issubclass(cls, Serializer):
             REGISTRY[self.api_type][Serializer] = cls
         return cls
+
+
+def get_registry_entry(pipeline_provider):
+
+    def v_or_default(k, v):
+        defaults = REGISTRY["nop"]
+        if v is None:
+            logger.error(
+                f"'{k.alias()}' is not available for provider={pipeline_provider},"
+                " failing back to 'nop'"
+            )
+            return defaults[k]
+        return v
+
+    return {k: v_or_default(k, v) for k, v in REGISTRY[pipeline_provider].items()}

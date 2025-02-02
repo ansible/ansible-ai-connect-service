@@ -16,6 +16,7 @@ from typing import Dict
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     PipelineConfiguration,
 )
+from ansible_ai_connect.ai.api.model_pipelines.registry import get_registry_entry
 
 
 class Configuration(Dict):
@@ -23,12 +24,10 @@ class Configuration(Dict):
     def __init__(self, **kwargs):
         super().__init__(kwargs)
 
-        from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY
-
         for k, v in self.items():
             pipeline_config = v["config"]
             pipeline_provider = v["provider"]
-            registry_entry = REGISTRY[pipeline_provider]
+            registry_entry = get_registry_entry(pipeline_provider)
             config_class = registry_entry[PipelineConfiguration]
             config_instance = config_class(**pipeline_config)
             self[k] = config_instance
