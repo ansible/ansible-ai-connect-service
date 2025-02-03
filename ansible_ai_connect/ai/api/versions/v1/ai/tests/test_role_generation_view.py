@@ -20,3 +20,7 @@ from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
 
 class TestRoleGenerationViewVersion1(TestRoleGenerationView):
     api_version = API_VERSION
+
+    def test_generation_role_version_url(self):
+        url = self.api_version_reverse("generations/role")
+        self.assertEqual(url, f"/api/{self.api_version}/ai/generations/role/")
