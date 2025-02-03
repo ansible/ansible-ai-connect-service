@@ -12,6 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from http import HTTPStatus
+
+from django.test import override_settings
+
 from ansible_ai_connect.ai.api.telemetry.tests.test_api_telemetry_settings_views import (
     TestTelemetrySettingsView,
     TestTelemetrySettingsViewAsNonSubscriber,
@@ -21,6 +25,16 @@ from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
 
 class TestTelemetrySettingsViewVersion1(TestTelemetrySettingsView):
     api_version = API_VERSION
+
+    @override_settings(DEBUG=False, DEPLOYMENT_MODE="DUMMY_VALUE")
+    def test_get_telemetry_settings_non_saas_non_debug(self):
+        r = self.client.get(self.api_version_reverse("telemetry_settings"))
+        self.assertEqual(r.status_code, HTTPStatus.NOT_IMPLEMENTED)
+
+    @override_settings(DEBUG=False, DEPLOYMENT_MODE="DUMMY_VALUE")
+    def test_set_telemetry_settings_non_saas_non_debug(self):
+        r = self.client.post(self.api_version_reverse("telemetry_settings"))
+        self.assertEqual(r.status_code, HTTPStatus.NOT_IMPLEMENTED)
 
 
 class TestTelemetrySettingsViewAsNonSubscriberVersion1(TestTelemetrySettingsViewAsNonSubscriber):
