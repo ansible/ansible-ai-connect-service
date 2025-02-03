@@ -57,6 +57,10 @@ class TestGenerationFeatureEnableForWcaOnpremVersion1(TestGenerationFeatureEnabl
 class TestGenerationViewVersion1(TestGenerationView):
     api_version = API_VERSION
 
+    def test_generation_playbook_version_url(self):
+        url = self.api_version_reverse("generations/playbook")
+        self.assertEqual(url, f"/api/{self.api_version}/ai/generations/playbook/")
+
 
 class TestGenerationViewWithWCAVersion1(TestGenerationViewWithWCA):
     api_version = API_VERSION
