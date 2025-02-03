@@ -64,6 +64,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     wca_codegen_playbook_hist,
     wca_codegen_playbook_retry_counter,
     wca_codegen_retry_counter,
+    wca_codegen_role_hist,
     wca_codematch_hist,
     wca_codematch_retry_counter,
     wca_explain_playbook_hist,
@@ -537,7 +538,7 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
 
-    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     def test_role_gen_with_lint(self):
         fake_linter = Mock()
@@ -554,9 +555,9 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
         for file in files:
             self.assertEqual(file["content"], "I'm super fake!")
 
-    @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    def test_tole_gen_when_is_not_initialized(self):
+    def test_role_gen_when_is_not_initialized(self):
         self.mock_ansible_lint_caller_with(None)
         name, files, outline, warnings = self.wca_client.invoke(
             RoleGenerationParameters.init(
