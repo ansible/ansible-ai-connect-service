@@ -443,7 +443,7 @@ class Feedback(APIView):
                 "modelName": model_name,
             }
             send_segment_event(event, "playbookGenerationAction", user)
-            if False and from_page > 1 and action in [1, 3]:
+            if from_page > 1 and action in [1, 3]:
                 send_segment_analytics_event(
                     AnalyticsTelemetryEvents.PLAYBOOK_GENERATION_ACTION,
                     lambda: AnalyticsPlaybookGenerationWizard(
@@ -468,7 +468,7 @@ class Feedback(APIView):
                 "modelName": model_name,
             }
             send_segment_event(event, "roleGenerationAction", user)
-            if False and from_page > 1 and action in [1, 3]:
+            if from_page > 1 and action in [1, 3]:
                 send_segment_analytics_event(
                     AnalyticsTelemetryEvents.ROLE_GENERATION_ACTION,
                     lambda: AnalyticsRoleGenerationWizard(
