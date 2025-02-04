@@ -270,9 +270,11 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.NamespaceVersioning",
     "ALLOWED_VERSIONS": ("v0", "v1"),
-    "DEFAULT_VERSION": "v0",
+    "DEFAULT_VERSION": "v1",
     "VERSION_PARAM": "version",
 }
+
+API_VERSION = "1.0.0"
 
 # Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:

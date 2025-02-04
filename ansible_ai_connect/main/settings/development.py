@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from .base import *  # NOQA
-from .base import MIDDLEWARE, cast, os
+from .base import API_VERSION, MIDDLEWARE, cast, os
 from .types import t_wca_secret_backend_type
 
 DEBUG = True
@@ -24,7 +24,7 @@ if DEBUG:
     SPECTACULAR_SETTINGS = {
         "TITLE": f"{ANSIBLE_AI_PROJECT_NAME}.",  # noqa: F405
         "DESCRIPTION": "Equip the automation developer at Lightspeed.",
-        "VERSION": "0.0.9",
+        "VERSION": API_VERSION,
         "SERVE_INCLUDE_SCHEMA": False,
         # OTHER SETTINGS
         "TAGS": [
