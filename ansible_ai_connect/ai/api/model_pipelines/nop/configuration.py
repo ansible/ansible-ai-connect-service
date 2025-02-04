@@ -40,5 +40,5 @@ class NopPipelineConfiguration(PipelineConfiguration[NopConfiguration]):
 
 
 @Register(api_type="nop")
-class LlamaCppConfigurationSerializer(serializers.Serializer):
+class NopConfigurationSerializer(serializers.Serializer):
     pass

@@ -70,3 +70,23 @@ class Register:
         elif issubclass(cls, Serializer):
             REGISTRY[self.api_type][Serializer] = cls
         return cls
+
+
+def set_defaults():
+
+    def set_defaults_for_api_type(pipeline_provider):
+
+        def v_or_default(k, v):
+            defaults = REGISTRY["nop"]
+            if v is None:
+                logger.warning(
+                    f"'{k.alias()}' is not available for provider '{pipeline_provider}',"
+                    " failing back to 'nop'"
+                )
+                return defaults[k]
+            return v
+
+        return {k: v_or_default(k, v) for k, v in REGISTRY[pipeline_provider].items()}
+
+    for model_mesh_api_type in get_args(t_model_mesh_api_type):
+        REGISTRY[model_mesh_api_type] = set_defaults_for_api_type(model_mesh_api_type)

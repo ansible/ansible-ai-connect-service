@@ -21,6 +21,7 @@ from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     PipelineConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.config_providers import Configuration
+from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import NopMetaData
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY, REGISTRY_ENTRY
 
@@ -46,16 +47,19 @@ class ModelPipelineFactory:
         try:
             # Get the configuration for the requested pipeline
             pipeline_config: PipelineConfiguration = self.pipelines_config[pipeline_type.__name__]
+
             # Get the pipeline class for the configured provider
             pipelines = REGISTRY[pipeline_config.provider]
             pipeline = pipelines[pipeline_type]
-            config = pipeline_config.config
-            # No explicit implementation defined; fallback to NOP
-            if pipeline_config.provider == "nop":
+
+            # Ensure NOP instances are created with NOP configuration
+            if issubclass(pipeline, NopMetaData):
                 logger.info(f"Using NOP implementation for '{pipeline_type.__name__}'.")
+                pipelines = REGISTRY["nop"]
+                pipeline_config = pipelines[PipelineConfiguration]()
 
             # Construct an instance of the pipeline class with the applicable configuration
-            self.cache[pipeline_type] = pipeline(config)
+            self.cache[pipeline_type] = pipeline(pipeline_config.config)
 
         except KeyError:
             pass
