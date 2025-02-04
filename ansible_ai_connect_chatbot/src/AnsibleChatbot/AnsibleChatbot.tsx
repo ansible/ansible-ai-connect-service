@@ -119,7 +119,9 @@ const findMatchingItems = (targetValue: string) => {
   return filteredConversations;
 };
 
-export const AnsibleChatbot: React.FunctionComponent = () => {
+export const AnsibleChatbot: React.FunctionComponent = (props: {
+  username?: string;
+}) => {
   const {
     messages,
     setMessages,
@@ -322,7 +324,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
               <ChatbotContent>
                 <MessageBox>
                   <ChatbotWelcomePrompt
-                    title="Hello, Ansible User"
+                    title={"Hello " + props.username}
                     description="How may I help you today?"
                   />
                   {alertMessage && (

@@ -1,14 +1,26 @@
 {
   "name": "ansible-ai-connect-chatbot",
+  "type": "module",
   "version": "0.1.0",
-  "private": true,
+  "main": "./dist/ansible-chatbot.umd.cjs",
+  "module": "./dist/ansible-chatbot.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/ansible-chatbot.js",
+      "require": "./dist/ansible-chatbot.umd.cjs"
+    },
+    "./dist": "./dist/*"
+  },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@patternfly/chatbot": "^2.2.0-prerelease.10",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
-    "@types/node": "^18.0.0",
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
@@ -51,6 +63,7 @@
     "@eslint/compat": "^1.2.1",
     "@eslint/js": "^9.13.0",
     "@types/eslint__js": "^8.42.3",
+    "@types/node": "^22.13.1",
     "@vitest/browser": "^2.1.8",
     "@vitest/coverage-v8": "^2.1.2",
     "buffer": "^6.0.3",
@@ -69,6 +82,7 @@
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.11.0",
+    "vite-plugin-dts": "^4.5.0",
     "vitest": "^2.1.2",
     "vitest-browser-react": "^0.0.4"
   }

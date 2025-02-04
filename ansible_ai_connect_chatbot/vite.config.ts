@@ -1,26 +1,21 @@
-/// <reference types="vitest" />
-/// <reference types="vite/client" />
+import { configDefaults, defineConfig } from "vitest/config";
+import { resolve } from "path";
+import dts from "vite-plugin-dts";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { configDefaults } from "vitest/config";
 
+// https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      crypto: "empty-module",
-    },
-    // https://stackoverflow.com/questions/73143071/vitest-unexpected-token-export
-    mainFields: ["module", "browser"],
-  },
-  server: {
-    port: 3000,
-  },
-  define: {
-    global: "globalThis",
-  },
   build: {
-    assetsDir: "static/chatbot/",
+    lib: {
+      entry: resolve(__dirname, "src/index.tsx"),
+      name: "ansible-chatbot",
+      fileName: "ansible-chatbot",
+    },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ["react"],
+    },
   },
   test: {
     browser: {
@@ -42,4 +37,5 @@ export default defineConfig({
       reporter: ["text", "html", "lcov"],
     },
   },
+  plugins: [react(), dts()],
 });
