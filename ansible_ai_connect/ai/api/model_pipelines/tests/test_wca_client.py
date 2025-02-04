@@ -53,6 +53,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ContentMatchParameters,
     PlaybookExplanationParameters,
     PlaybookGenerationParameters,
+    RoleGenerationParameters,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
@@ -63,6 +64,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     wca_codegen_playbook_hist,
     wca_codegen_playbook_retry_counter,
     wca_codegen_retry_counter,
+    wca_codegen_role_hist,
     wca_codematch_hist,
     wca_codematch_retry_counter,
     wca_explain_playbook_hist,
@@ -77,6 +79,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSContentMatchPipeline,
     WCASaaSPlaybookExplanationPipeline,
     WCASaaSPlaybookGenerationPipeline,
+    WCASaaSRoleGenerationPipeline,
 )
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
@@ -335,7 +338,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
-class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         wca_client = WCASaaSPlaybookGenerationPipeline(
@@ -508,6 +511,64 @@ class TestWCAClientGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTes
                     generation_id=str(DEFAULT_REQUEST_ID),
                 )
             )
+
+
+@override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+    def setUp(self):
+        super().setUp()
+        wca_client = WCASaaSRoleGenerationPipeline(
+            mock_pipeline_config("wca", api_key=None, model_id=None)
+        )
+        wca_client.get_api_key = Mock(return_value="some-key")
+        wca_client.get_token = Mock(return_value={"access_token": "a-token"})
+        wca_client.get_model_id = Mock(return_value="a-random-model")
+        wca_client.session = Mock()
+        response = Mock
+        response.text = (
+            '{"name": "foo_bar", "outline": "Ahh!", "files": [{"path": '
+            '"roles/foo_bar/tasks/main.yml", "content": "some content", '
+            '"file_type": "task"}, {"path": "roles/foo_bar/defaults/main.yml", '
+            '"content": "some content", "file_type": "default"}], "warnings": []}'
+        )
+        response.status_code = 200
+        response.headers = {WCA_REQUEST_ID_HEADER: WCA_REQUEST_ID_HEADER}
+        response.raise_for_status = Mock()
+        wca_client.session.post.return_value = response
+        self.wca_client = wca_client
+
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_role_gen_with_lint(self):
+        fake_linter = Mock()
+        fake_linter.run_linter.return_value = "I'm super fake!"
+        self.mock_ansible_lint_caller_with(fake_linter)
+        name, files, outline, warnings = self.wca_client.invoke(
+            RoleGenerationParameters.init(
+                request=Mock(), text="Install Wordpress", create_outline=True
+            )
+        )
+        self.assertEqual(name, "foo_bar")
+        self.assertEqual(outline, "Ahh!")
+        self.assertEqual(warnings, [])
+        for file in files:
+            self.assertEqual(file["content"], "I'm super fake!")
+
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_role_gen_when_is_not_initialized(self):
+        self.mock_ansible_lint_caller_with(None)
+        name, files, outline, warnings = self.wca_client.invoke(
+            RoleGenerationParameters.init(
+                request=Mock(), text="Install Wordpress", create_outline=True
+            )
+        )
+        self.assertEqual(name, "foo_bar")
+        self.assertEqual(outline, "Ahh!")
+        self.assertEqual(warnings, [])
+        for file in files:
+            self.assertEqual(file["content"], "some content")
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")

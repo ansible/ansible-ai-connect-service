@@ -316,7 +316,7 @@ class TestLangChainRoleGenerationPipeline(WisdomServiceLogAwareTestCase):
         self.my_client.get_chat_model = fake_get_chat_mode
 
     def test_generate_role(self):
-        role, files, outline = self.my_client.invoke(
+        role, files, outline, warnings = self.my_client.invoke(
             RoleGenerationParameters.init(
                 request=Mock(),
                 text="foo",
@@ -326,9 +326,10 @@ class TestLangChainRoleGenerationPipeline(WisdomServiceLogAwareTestCase):
         self.assertEqual(role, "vpc_subnet_ec2")
         self.assertEqual(files[1]["content"], TestUnwrapRoleAnswer._expected_second_request_content)
         self.assertEqual(outline, "")
+        self.assertEqual(warnings, [])
 
     def test_generate_role_with_outline(self):
-        role, files, outline = self.my_client.invoke(
+        role, files, outline, warnings = self.my_client.invoke(
             RoleGenerationParameters.init(
                 request=Mock(),
                 text="foo",
@@ -343,6 +344,7 @@ class TestLangChainRoleGenerationPipeline(WisdomServiceLogAwareTestCase):
 2. Display EC2 Instance ID
 """,
         )
+        self.assertEqual(warnings, [])
 
 
 class TestLangChainPlaybookExplanationPipeline(WisdomServiceLogAwareTestCase):

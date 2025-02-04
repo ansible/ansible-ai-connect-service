@@ -374,7 +374,7 @@ class LangchainRoleGenerationPipeline(
         else:
             files[1]["content"] = unwrap_message_with_yaml_answer(content)
 
-        return role, files, outline
+        return role, files, outline, []
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

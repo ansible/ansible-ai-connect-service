@@ -181,7 +181,7 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[Dum
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         create_outline = params.create_outline
-        return "install_nginx", ROLE_FILES, ROLE_OUTLINE.strip() if create_outline else ""
+        return "install_nginx", ROLE_FILES, ROLE_OUTLINE.strip() if create_outline else "", []
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

@@ -152,7 +152,7 @@ class RoleGenerationParameters:
         )
 
 
-RoleGenerationResponse = tuple[str, list, str]
+RoleGenerationResponse = tuple[str, list, str, list]
 
 
 @define

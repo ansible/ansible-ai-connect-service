@@ -98,7 +98,7 @@ class WCADummyRoleGenerationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        return "wca_dummy_role", [], "wca_dummy_outline"
+        return "wca_dummy_role", [], "wca_dummy_outline", []
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

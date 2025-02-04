@@ -120,6 +120,12 @@ wca_codegen_playbook_hist = Histogram(
     namespace=NAMESPACE,
     buckets=DEFAULT_LATENCY_BUCKETS,
 )
+wca_codegen_role_hist = Histogram(
+    "wca_codegen_role_latency_seconds",
+    "Histogram of WCA codegen-role API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
 wca_explain_playbook_hist = Histogram(
     "wca_explain_playbook_latency_seconds",
     "Histogram of WCA explain-playbook API processing time",
@@ -145,6 +151,11 @@ wca_codematch_retry_counter = Counter(
 wca_codegen_playbook_retry_counter = Counter(
     "wca_codegen_playbook_retries",
     "Counter of WCA codegen-playbook API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_codegen_role_retry_counter = Counter(
+    "wca_codegen_role_retries",
+    "Counter of WCA codegen-role API invocation retries",
     namespace=NAMESPACE,
 )
 wca_explain_playbook_retry_counter = Counter(
@@ -240,6 +251,11 @@ class WCABasePipeline(
     def on_backoff_codegen_playbook(details):
         WCABasePipeline.log_backoff_exception(details)
         wca_codegen_playbook_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_codegen_role(details):
+        WCABasePipeline.log_backoff_exception(details)
+        wca_codegen_role_retry_counter.inc()
 
     @staticmethod
     def on_backoff_explain_playbook(details):

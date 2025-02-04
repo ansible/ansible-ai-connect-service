@@ -47,14 +47,26 @@ class MockedConfig(BaseConfig):
 
 class MockedPipelineRoleGeneration(ModelPipelineRoleGeneration[MockedConfig]):
 
-    def __init__(self, response_roles: str, response_files: list, response_outline: str):
+    def __init__(
+        self,
+        response_roles: str,
+        response_files: list,
+        response_outline: str,
+        response_warnings: list,
+    ):
         super().__init__(MockedConfig())
         self.response_roles = response_roles
         self.response_files = response_files
         self.response_outline = response_outline
+        self.response_warnings = response_warnings
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        return self.response_roles, self.response_files, self.response_outline
+        return (
+            self.response_roles,
+            self.response_files,
+            self.response_outline,
+            self.response_warnings,
+        )
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -127,6 +139,7 @@ class TestRoleGenerationView(
                         }
                     ],
                     "Install mysql and email admin@redhat.com",
+                    [],
                 )
             ),
         ):
