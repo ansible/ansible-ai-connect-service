@@ -1219,7 +1219,7 @@ components:
       type: object
       properties:
         action:
-          $ref: '#/components/schemas/Action693Enum'
+          $ref: '#/components/schemas/Action4c6Enum'
         explanationId:
           type: string
           format: uuid
