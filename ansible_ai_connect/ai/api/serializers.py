@@ -309,7 +309,9 @@ class PlaybookGenerationAction(serializers.Serializer):
 
 
 class PlaybookExplanationFeedback(serializers.Serializer):
-    action = GenerationActionEnum()
+    USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
+
+    action = serializers.ChoiceField(choices=USER_ACTION_CHOICES, required=True)
     explanationId = serializers.UUIDField(
         format="hex_verbose",
         required=True,
