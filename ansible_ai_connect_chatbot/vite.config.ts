@@ -2,6 +2,7 @@ import { configDefaults, defineConfig } from "vitest/config";
 import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import react from "@vitejs/plugin-react";
+import cleanPlugin from "vite-plugin-clean";
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
@@ -37,5 +38,5 @@ export default defineConfig({
       reporter: ["text", "html", "lcov"],
     },
   },
-  plugins: [react(), dts()],
+  plugins: [cleanPlugin(), react(), dts()],
 });
