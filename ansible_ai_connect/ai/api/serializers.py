@@ -646,6 +646,27 @@ class GenerationRoleResponseSerializer(serializers.Serializer):
     warnings = serializers.ListField(child=GenerationWarningResponseSerializer(), required=False)
 
 
+class ExplanationRoleRequestSerializer(Metadata):
+
+    files = serializers.ListField(
+        child=GenerationRoleFileEntrySerializer(),
+        required=True,
+        label="Files",
+        help_text="A list of role files to be explained.",
+    )
+    roleName = serializers.CharField(
+        required=True,
+        label="Role name",
+        help_text="The name of the role.",
+    )
+    model = serializers.CharField(required=False, allow_blank=True, default="")
+    focusOnFile = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        return data
+
+
 class ContentMatchRequestSerializer(Metadata):
     suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(

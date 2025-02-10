@@ -12,24 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_ai_connect.ai.api.views import (
-    Chat,
-    Completions,
-    ContentMatches,
-    Explanation,
-    ExplanationRole,
-    Feedback,
-    GenerationPlaybook,
-    GenerationRole,
+from ansible_ai_connect.ai.api.tests.test_role_explanation_view import (
+    TestRoleExplanationView as TestRoleExplanationView,
 )
+from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
 
-__all__ = [
-    "Completions",
-    "ContentMatches",
-    "Explanation",
-    "GenerationPlaybook",
-    "GenerationRole",
-    "ExplanationRole",
-    "Feedback",
-    "Chat",
-]
+
+class TestRoleExplanationViewVersion1(TestRoleExplanationView):
+    api_version = API_VERSION
+
+    def test_explanation_role_version_url(self):
+        url = self.api_version_reverse("explanations/role")
+        self.assertEqual(url, f"/api/{self.api_version}/ai/explanations/role/")

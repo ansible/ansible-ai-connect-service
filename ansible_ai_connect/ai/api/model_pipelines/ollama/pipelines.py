@@ -23,6 +23,10 @@ from ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines import (
     LangchainPlaybookGenerationPipeline,
     LangchainRoleGenerationPipeline,
 )
+from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
+from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
+    NopRoleExplanationPipeline,
+)
 from ansible_ai_connect.ai.api.model_pipelines.ollama.configuration import (
     OllamaConfiguration,
 )
@@ -71,6 +75,19 @@ class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline[Ollam
 class OllamaRoleGenerationPipeline(LangchainRoleGenerationPipeline[OllamaConfiguration]):
 
     def __init__(self, config: OllamaConfiguration):
+        super().__init__(config=config)
+
+    def get_chat_model(self, model_id):
+        return OllamaLLM(
+            base_url=self.config.inference_url,
+            model=model_id,
+        )
+
+
+@Register(api_type="ollama")
+class OllamaRoleExplanationPipeline(NopRoleExplanationPipeline):
+
+    def __init__(self, config: NopConfiguration):
         super().__init__(config=config)
 
     def get_chat_model(self, model_id):

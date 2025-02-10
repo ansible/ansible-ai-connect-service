@@ -22,6 +22,7 @@ from ansible_ai_connect.ai.api.model_pipelines.ollama.pipelines import (
     OllamaCompletionsPipeline,
     OllamaPlaybookExplanationPipeline,
     OllamaPlaybookGenerationPipeline,
+    OllamaRoleExplanationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
@@ -29,6 +30,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
@@ -53,6 +55,11 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
     def test_playbook_explanation_pipeline(self):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookExplanation, OllamaPlaybookExplanationPipeline
+        )
+
+    def test_role_explanation_pipeline(self):
+        self.assert_concrete_implementation(
+            ModelPipelineRoleExplanation, OllamaRoleExplanationPipeline
         )
 
     def test_chatbot_pipeline(self):

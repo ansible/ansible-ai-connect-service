@@ -185,6 +185,35 @@ PlaybookExplanationResponse = str
 
 
 @define
+class RoleExplanationParameters:
+    request: Request
+    files: list
+    role_name: str
+    model_id: str
+    focus_on_file: str
+
+    @classmethod
+    def init(
+        cls,
+        request,
+        files: list = [],
+        role_name: str = "",
+        model_id: str = "",
+        focus_on_file: str = "",
+    ):
+        return cls(
+            request=request,
+            files=files,
+            role_name=role_name,
+            model_id=model_id,
+            focus_on_file=focus_on_file,
+        )
+
+
+RoleExplanationResponse = str
+
+
+@define
 class ChatBotParameters:
     query: str
     provider: str
@@ -324,6 +353,20 @@ class ModelPipelinePlaybookExplanation(
     @staticmethod
     def alias():
         return "playbook-explanation"
+
+
+class ModelPipelineRoleExplanation(
+    ModelPipeline[PIPELINE_CONFIGURATION, RoleExplanationParameters, RoleExplanationResponse],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "role-explanation"
 
 
 class ModelPipelineChatBot(

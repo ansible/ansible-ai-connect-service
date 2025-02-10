@@ -37,6 +37,13 @@
             "model_id": "ollama-model"
         }
     },
+    "ModelPipelineRoleExplanation": {
+        "provider": "ollama",
+        "config": {
+            "inference_url": "http://localhost:8000",
+            "model_id": "ollama-model"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {

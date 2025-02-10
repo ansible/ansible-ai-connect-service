@@ -41,6 +41,13 @@
             "model_id": "mistral:instruct"
         }
     },
+    "ModelPipelineRoleExplanation": {
+        "provider": "ollama",
+        "config": {
+            "inference_url": "http://host.containers.internal:11434",
+            "model_id": "mistral:instruct"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {
@@ -75,6 +82,11 @@ ModelPipelineRoleGeneration:
     inference_url: http://localhost
     model_id: a-model-id
 ModelPipelinePlaybookExplanation:
+  provider: ollama
+  config:
+    inference_url: http://localhost
+    model_id: a-model-id
+ModelPipelineRoleExplanation:
   provider: ollama
   config:
     inference_url: http://localhost

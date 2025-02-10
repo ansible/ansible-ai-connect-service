@@ -27,11 +27,14 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
@@ -110,6 +113,19 @@ class NopPlaybookExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        raise NotImplementedError
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+@Register(api_type="nop")
+class NopRoleExplanationPipeline(NopMetaData, ModelPipelineRoleExplanation[NopConfiguration]):
+
+    def __init__(self, config: NopConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
         raise NotImplementedError
 
     def self_test(self) -> Optional[HealthCheckSummary]:

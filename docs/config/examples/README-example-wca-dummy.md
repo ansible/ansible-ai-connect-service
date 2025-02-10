@@ -32,6 +32,12 @@
             "inference_url": "http://localhost:8000"
         }
     },
+    "ModelPipelineRoleExplanation": {
+        "provider": "wca-dummy",
+        "config": {
+            "inference_url": "http://localhost:8000"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {

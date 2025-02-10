@@ -20,6 +20,7 @@ urlpatterns = [
     path("completions/", views.Completions.as_view(), name="completions"),
     path("contentmatches/", views.ContentMatches.as_view(), name="contentmatches"),
     path("explanations/", views.Explanation.as_view(), name="explanations"),
+    path("explanations/role/", views.ExplanationRole.as_view(), name="explanations/role"),
     path("generations/playbook/", views.GenerationPlaybook.as_view(), name="generations/playbook"),
     path("generations/role/", views.GenerationRole.as_view(), name="generations/role"),
     path("feedback/", views.Feedback.as_view(), name="feedback"),

@@ -75,9 +75,11 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookGenerationParameters,
+    RoleExplanationParameters,
     RoleGenerationParameters,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
@@ -120,6 +122,7 @@ from .serializers import (
     ContentMatchResponseSerializer,
     ExplanationRequestSerializer,
     ExplanationResponseSerializer,
+    ExplanationRoleRequestSerializer,
     FeedbackRequestSerializer,
     GenerationPlaybookRequestSerializer,
     GenerationPlaybookResponseSerializer,
@@ -826,6 +829,60 @@ class Explanation(AACSAPIView):
             "content": anonymized_explanation,
             "format": "markdown",
             "explanationId": self.validated_data["explanationId"],
+        }
+
+        return Response(
+            answer,
+            status=rest_framework_status.HTTP_200_OK,
+        )
+
+
+class ExplanationRole(AACSAPIView):
+    """
+    Returns a text that explains a role.
+    """
+
+    permission_classes = PERMISSIONS_MAP.get(settings.DEPLOYMENT_MODE)
+    required_scopes = ["read", "write"]
+    schema1_event = schema1.ExplainRoleEvent
+    request_serializer_class = ExplanationRoleRequestSerializer
+    throttle_cache_key_suffix = "_explanation"
+
+    @extend_schema(
+        request=ExplanationRoleRequestSerializer,
+        responses={
+            200: ExplanationResponseSerializer,
+            204: OpenApiResponse(description="Empty response"),
+            400: OpenApiResponse(description="Bad Request"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Request was throttled"),
+            503: OpenApiResponse(description="Service Unavailable"),
+        },
+        summary="Inline code suggestions",
+    )
+    def post(self, request) -> Response:
+        llm: ModelPipelineRoleExplanation = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineRoleExplanation
+        )
+        explanation = llm.invoke(
+            RoleExplanationParameters.init(
+                request=request,
+                files=self.validated_data["files"],
+                role_name=self.validated_data["roleName"],
+                model_id=self.validated_data["model"],
+                focus_on_file=self.validated_data["focusOnFile"],
+            )
+        )
+
+        # Anonymize response
+        # Anonymized in the View to be consistent with where Completions are anonymized
+        anonymized_explanation = anonymizer.anonymize_struct(
+            explanation, value_template=Template("{{ _${variable_name}_ }}")
+        )
+
+        answer = {
+            "content": anonymized_explanation,
+            "format": "markdown",
         }
 
         return Response(

@@ -51,11 +51,14 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
@@ -590,3 +593,17 @@ class WCABasePlaybookExplanationPipeline(
 
         response = json.loads(result.text)
         return response["explanation"]
+
+
+class WCABaseRoleExplanationPipeline(
+    WCABasePipeline[WCA_PIPELINE_CONFIGURATION, RoleExplanationParameters, RoleExplanationResponse],
+    ModelPipelineRoleExplanation[WCA_PIPELINE_CONFIGURATION],
+    Generic[WCA_PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
+        raise NotImplementedError

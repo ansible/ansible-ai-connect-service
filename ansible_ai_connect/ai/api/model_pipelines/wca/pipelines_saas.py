@@ -47,6 +47,8 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
@@ -63,6 +65,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCABasePipeline,
     WCABasePlaybookExplanationPipeline,
     WCABasePlaybookGenerationPipeline,
+    WCABaseRoleExplanationPipeline,
     WCABaseRoleGenerationPipeline,
     WcaModelRequestException,
     WcaTokenRequestException,
@@ -407,6 +410,22 @@ class WCASaaSRoleGenerationPipeline(
                 file["content"] = ansible_lint_caller.run_linter(file["content"])
 
         return name, files, outline, warnings
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+@Register(api_type="wca")
+class WCASaaSRoleExplanationPipeline(
+    WCASaaSPipeline[RoleExplanationParameters, RoleExplanationResponse],
+    WCABaseRoleExplanationPipeline[WCASaaSConfiguration],
+):
+
+    def __init__(self, config: WCASaaSConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
+        raise NotImplementedError
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

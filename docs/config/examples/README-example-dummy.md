@@ -47,6 +47,15 @@
             "latency_use_jitter": "False"
         }
     },
+    "ModelPipelineRoleExplanation": {
+        "provider": "dummy",
+        "config": {
+            "inference_url": "http://localhost:8000",
+            "body": "{\"predictions\":[\"ansible.builtin.apt:\\n  name: nginx\\n  update_cache: true\\n  state: present\\n\"]}",
+            "latency_max_msec": "3000",
+            "latency_use_jitter": "False"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {
