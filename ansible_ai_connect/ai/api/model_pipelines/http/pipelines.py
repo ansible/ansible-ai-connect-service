@@ -16,7 +16,9 @@ import json
 import logging
 from typing import Optional
 
+import aiohttp
 import requests
+from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
 
 from ansible_ai_connect.ai.api.exceptions import (
@@ -39,6 +41,8 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     MetaData,
     ModelPipelineChatBot,
     ModelPipelineCompletions,
+    ModelPipelineStreamingChatBot,
+    StreamingChatBotParameters,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
@@ -120,13 +124,12 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
         raise NotImplementedError
 
 
-@Register(api_type="http")
-class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration]):
+class HttpChatBotMetaData(HttpMetaData):
 
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
 
-    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+    def prepare_data(self, params: ChatBotParameters):
         query = params.query
         conversation_id = params.conversation_id
         provider = params.provider
@@ -142,34 +145,7 @@ class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration])
             data["conversation_id"] = str(conversation_id)
         if system_prompt:
             data["system_prompt"] = str(system_prompt)
-
-        response = requests.post(
-            self.config.inference_url + "/v1/query",
-            headers=self.headers,
-            json=data,
-            timeout=self.timeout(1),
-            verify=self.config.verify_ssl,
-        )
-
-        if response.status_code == 200:
-            data = json.loads(response.text)
-            return data
-
-        elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotUnauthorizedException(detail=detail)
-        elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotForbiddenException(detail=detail)
-        elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotPromptTooLongException(detail=detail)
-        elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotValidationException(detail=detail)
-        else:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotInternalServerException(detail=detail)
+        return data
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         summary: HealthCheckSummary = HealthCheckSummary(
@@ -199,3 +175,81 @@ class HttpChatBotPipeline(HttpMetaData, ModelPipelineChatBot[HttpConfiguration])
                 HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
             )
         return summary
+
+
+@Register(api_type="http")
+class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfiguration]):
+
+    def __init__(self, config: HttpConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+        response = requests.post(
+            self.config.inference_url + "/v1/query",
+            headers=self.headers,
+            json=self.prepare_data(params),
+            timeout=self.timeout(1),
+            verify=self.config.verify_ssl,
+        )
+
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            return data
+
+        elif response.status_code == 401:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotUnauthorizedException(detail=detail)
+        elif response.status_code == 403:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotForbiddenException(detail=detail)
+        elif response.status_code == 413:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotPromptTooLongException(detail=detail)
+        elif response.status_code == 422:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotValidationException(detail=detail)
+        else:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotInternalServerException(detail=detail)
+
+
+class HttpStreamingChatBotMetaData(HttpChatBotMetaData):
+
+    def __init__(self, config: HttpConfiguration):
+        super().__init__(config=config)
+
+    def prepare_data(self, params: StreamingChatBotParameters):
+        data = super().prepare_data(params)
+
+        media_type = params.media_type
+        if media_type:
+            data["media_type"] = str(media_type)
+
+        return data
+
+
+@Register(api_type="http")
+class HttpStreamingChatBotPipeline(
+    HttpStreamingChatBotMetaData, ModelPipelineStreamingChatBot[HttpConfiguration]
+):
+
+    def __init__(self, config: HttpConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
+        raise NotImplementedError
+
+    async def async_invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json,text/event-stream",
+            }
+            async with session.post(
+                self.config.inference_url + "/v1/streaming_query",
+                json=self.prepare_data(params),
+                headers=headers,
+            ) as r:
+                async for chunk in r.content:
+                    logger.debug(chunk)
+                    yield chunk
