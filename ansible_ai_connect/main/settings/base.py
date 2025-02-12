@@ -558,3 +558,10 @@ ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
 # ------------------------------------------
 ANSIBLE_AI_MODEL_MESH_CONFIG = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG") or load_from_env_vars()
 # ==========================================
+
+# ==========================================
+# Role Generation/Explanation endpoints
+# ------------------------------------------
+ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT = (
+    os.getenv("ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT", "False").lower() == "true"
+) or False
