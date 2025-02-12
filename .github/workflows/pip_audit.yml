@@ -56,3 +56,6 @@ jobs:
             GHSA-32p4-gm2c-wmch
             GHSA-jpxc-vmjf-9fcj
             GHSA-99w6-3xph-cx78
+            # To remove once we can install cryptography 44.0.1
+            # See: https://github.com/ansible/ansible-ai-connect-service/pull/1530
+            GHSA-79v4-65xg-pq4g
