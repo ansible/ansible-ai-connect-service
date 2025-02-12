@@ -42,6 +42,12 @@ COPY ansible_ai_connect /var/www/ansible-ai-connect-service/ansible_ai_connect
 RUN /usr/bin/python3.11 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3.11 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
+
+# Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
+# Please remove once jwcrypto and cryptography can be both upgraded
+RUN dnf install -y openssl-devel
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
+
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi
