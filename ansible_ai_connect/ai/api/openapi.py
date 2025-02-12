@@ -11,14 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from ansible_base.resource_registry.urls import urlpatterns as resource_api_urls
-from django.urls import include, path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
 
-urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
-    path("v1/", include(resource_api_urls)),
-]
+def preprocessing_filter_spec(endpoints):
+    filtered = []
+    for path, path_regex, method, callback in endpoints:
+        # do not add internal endpoints to schema
+        if not path.startswith("/api/v1/service-index"):
+            filtered.append((path, path_regex, method, callback))
+    return filtered

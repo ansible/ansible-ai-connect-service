@@ -38,3 +38,16 @@ class IsTestUser(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return user.is_authenticated and user.groups.filter(name="test").exists()
+
+
+class IsAAPUser(BasePermission):
+    """
+    Allow access only to authenticated AAP users
+    """
+
+    code = "permission_denied_user_not_from_aap"
+    message = "The user is not an AAP User"
+
+    def has_permission(self, request, view):
+        user = request.user
+        return user.is_authenticated and user.aap_user

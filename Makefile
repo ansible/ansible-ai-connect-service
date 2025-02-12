@@ -199,3 +199,6 @@ chatbot-test:
 .PHONY: chatbot-lint
 chatbot-lint:
 	npm --prefix ./ansible_ai_connect_chatbot run eslint
+
+pre-commit:
+	pre-commit run --color=always --all-files
