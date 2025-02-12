@@ -349,6 +349,55 @@ paths:
           description: ''
         '401':
           description: Unauthorized
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: Service Liveness Probe View
+      summary: Liveness probe
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: OK
+  /api/v1/health/status/:
+    get:
+      operationId: health_status_retrieve
+      description: Service Health Check
+      summary: Health check with backend server status
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+              examples:
+                ExampleOutput:
+                  value:
+                    status: ok
+                    timestamp: '2023-03-13T17:25:17.240683'
+                    version: latest 0.1.202303131417
+                    git_commit: b987bc43b90f8aca2deaf3bda85596f4b95a10a0
+                    deployed_region: dev
+                    dependencies:
+                    - name: db
+                      status: ok
+                      time_taken: 233.538
+                    - name: model-server
+                      status: ok
+                      time_taken: 0.001
+                  summary: Example output
+          description: ''
+        '500':
+          description: One or more backend services are unavailable.
   /api/v1/me/:
     get:
       operationId: me_retrieve
