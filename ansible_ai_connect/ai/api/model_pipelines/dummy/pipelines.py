@@ -120,6 +120,11 @@ This playbook installs the Nginx web server on all hosts
 that are running Red Hat Enterprise Linux (RHEL) 9.
 """
 
+ROLE_EXPLANATION = """# Information
+This role installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux (RHEL) 9.
+"""
+
 
 @Register(api_type="dummy")
 class DummyMetaData(MetaData[DummyConfiguration]):
@@ -212,7 +217,7 @@ class DummyRoleExplanationPipeline(DummyMetaData, ModelPipelineRoleExplanation[D
         super().__init__(config=config)
 
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        return EXPLANATION
+        return ROLE_EXPLANATION
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
