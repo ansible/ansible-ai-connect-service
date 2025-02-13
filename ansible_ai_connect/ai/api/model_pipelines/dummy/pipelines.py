@@ -50,9 +50,7 @@ from ansible_ai_connect.healthcheck.backends import (
 
 logger = logging.getLogger(__name__)
 
-PLAYBOOK = """
-```yaml
----
+PLAYBOOK = """---
 - hosts: rhel9
   become: yes
   tasks:
@@ -75,7 +73,6 @@ PLAYBOOK = """
         name: nginx
         state: started
         enabled: yes
-```
 """
 
 ROLE_FILES = [
