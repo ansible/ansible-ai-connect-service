@@ -369,13 +369,12 @@ export const useChatbot = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Accept: "application/json,text/event-stream",
               "X-CSRFToken": csrfToken!,
             },
             body: JSON.stringify(chatRequest),
             async onopen(resp: any) {
-              if (resp.ok && resp.status === 200) {
-                setIsLoading(false);
-              } else if (
+              if (
                 resp.status >= 400 &&
                 resp.status < 500 &&
                 resp.status !== 429
@@ -394,6 +393,9 @@ export const useChatbot = () => {
                   setConversationId(message.data.conversation_id);
                 }
               } else if (message.event === "token") {
+                if (message.data.token !== "") {
+                  setIsLoading(false);
+                }
                 appendMessageChunk(message.data.token);
               } else if (message.event === "end") {
                 if (message.data.referenced_documents.length > 0) {

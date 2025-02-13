@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@patternfly/chatbot": "^2.2.0-prerelease.17",
+    "@patternfly/chatbot": "^2.2.0-prerelease.21",
+    "@patternfly/react-table": "^6.1.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^18.0.0",
     "@types/react": "^18.3.7",
@@ -62,13 +63,13 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-testing-library": "^6.4.0",
+    "eslint-plugin-testing-library": "^7.1.1",
     "playwright": "^1.49.1",
     "process": "^0.11.10",
     "react-router-dom": "^6.26.2",
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.11.0",
+    "typescript-eslint": "^8.24.0",
     "vitest": "^2.1.2",
     "vitest-browser-react": "^0.0.4"
   }
