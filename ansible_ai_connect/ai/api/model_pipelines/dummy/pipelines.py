@@ -30,11 +30,14 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
@@ -196,6 +199,19 @@ class DummyPlaybookExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        return EXPLANATION
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+@Register(api_type="dummy")
+class DummyRoleExplanationPipeline(DummyMetaData, ModelPipelineRoleExplanation[DummyConfiguration]):
+
+    def __init__(self, config: DummyConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
         return EXPLANATION
 
     def self_test(self) -> Optional[HealthCheckSummary]:

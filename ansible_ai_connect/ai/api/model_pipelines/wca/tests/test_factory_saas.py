@@ -21,6 +21,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
@@ -35,6 +36,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSContentMatchPipeline,
     WCASaaSPlaybookExplanationPipeline,
     WCASaaSPlaybookGenerationPipeline,
+    WCASaaSRoleExplanationPipeline,
 )
 
 
@@ -60,6 +62,11 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
     def test_playbook_explanation_pipeline(self):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookExplanation, WCASaaSPlaybookExplanationPipeline
+        )
+
+    def test_role_explanation_pipeline(self):
+        self.assert_concrete_implementation(
+            ModelPipelineRoleExplanation, WCASaaSRoleExplanationPipeline
         )
 
     def test_chatbot_pipeline(self):

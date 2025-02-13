@@ -31,6 +31,11 @@ ANSIBLE_AI_MODEL_MESH_CONFIG="{
         "config": {
             "inference_url": "http://host.containers.internal:11434",
             "model_id": "mistral:instruct"}},
+    "ModelPipelineRoleExplanation": {
+        "provider": "ollama",
+        "config": {
+            "inference_url": "http://host.containers.internal:11434",
+            "model_id": "mistral:instruct"}},
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {

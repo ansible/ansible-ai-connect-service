@@ -73,6 +73,20 @@
             "username": "<username>"
         }
     },
+    "ModelPipelineRoleExplanation": {
+        "provider": "wca-onprem",
+        "config": {
+            "inference_url": "<ibm-cpd-url>",
+            "api_key": "<api_key>",
+            "model_id": "<model_id>",
+            "verify_ssl": "True",
+            "retry_count": "4",
+            "enable_ari_postprocessing": "False",
+            "health_check_api_key": "<api_key>",
+            "health_check_model_id": "<model_id>",
+            "username": "<username>"
+        }
+    },
     "ModelPipelineChatBot": {
         "provider": "http",
         "config": {

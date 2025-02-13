@@ -163,6 +163,12 @@ class ExplainPlaybookEvent(Schema1Event):
 
 
 @define
+class ExplainRoleEvent(Schema1Event):
+    event_name: str = "explainRole"
+    explanationId: str = field(validator=validators.instance_of(str), converter=str, default="")
+
+
+@define
 class GenerationPlaybookEvent(Schema1Event):
     event_name: str = "codegenPlaybook"
     playbook_length: int = field(validator=validators.instance_of(int), default=0)

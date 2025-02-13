@@ -23,6 +23,7 @@ from ansible_ai_connect.users.models import Plan
 
 from .schema1 import (
     ExplainPlaybookEvent,
+    ExplainRoleEvent,
     GenerationPlaybookEvent,
     OneClickTrialStartedEvent,
     Schema1Event,
@@ -112,6 +113,14 @@ class TestExplainPlaybookEvent(WisdomServiceAPITestCaseBaseOIDC):
     def test_base(self):
         event1 = ExplainPlaybookEvent()
         self.assertEqual(event1.event_name, "explainPlaybook")
+
+
+@override_settings(AUTHZ_BACKEND_TYPE="dummy")
+@override_settings(WCA_SECRET_DUMMY_SECRETS="1981:valid")
+class TestExplainRoleEvent(WisdomServiceAPITestCaseBaseOIDC):
+    def test_base(self):
+        event1 = ExplainRoleEvent()
+        self.assertEqual(event1.event_name, "explainRole")
 
 
 @override_settings(AUTHZ_BACKEND_TYPE="dummy")

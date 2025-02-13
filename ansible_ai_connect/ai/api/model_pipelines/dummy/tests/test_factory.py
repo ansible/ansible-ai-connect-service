@@ -18,6 +18,7 @@ from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
     DummyCompletionsPipeline,
     DummyPlaybookExplanationPipeline,
     DummyPlaybookGenerationPipeline,
+    DummyRoleExplanationPipeline,
     DummyRoleGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
@@ -30,6 +31,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
@@ -60,6 +62,11 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
     def test_playbook_explanation_pipeline(self):
         self.assert_concrete_implementation(
             ModelPipelinePlaybookExplanation, DummyPlaybookExplanationPipeline
+        )
+
+    def test_role_explanation_pipeline(self):
+        self.assert_concrete_implementation(
+            ModelPipelineRoleExplanation, DummyRoleExplanationPipeline
         )
 
     def test_chatbot_pipeline(self):

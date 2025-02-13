@@ -36,6 +36,8 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
 )
@@ -51,6 +53,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCABasePipeline,
     WCABasePlaybookExplanationPipeline,
     WCABasePlaybookGenerationPipeline,
+    WCABaseRoleExplanationPipeline,
     WCABaseRoleGenerationPipeline,
     WcaModelRequestException,
 )
@@ -207,6 +210,22 @@ class WCAOnPremRoleGenerationPipeline(
 
     def __init__(self, config: WCAOnPremConfiguration):
         super().__init__(config=config)
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+@Register(api_type="wca-onprem")
+class WCAOnPremRoleExplanationPipeline(
+    WCAOnPremPipeline[RoleExplanationParameters, RoleExplanationResponse],
+    WCABaseRoleExplanationPipeline[WCAOnPremConfiguration],
+):
+
+    def __init__(self, config: WCAOnPremConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
+        raise NotImplementedError
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

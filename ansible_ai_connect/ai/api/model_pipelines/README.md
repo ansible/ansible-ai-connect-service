@@ -35,6 +35,7 @@ Implementations of a pipeline, for a particular provider, for a particular featu
 - `ModelPipelinePlaybookGeneration`
 - `ModelPipelineRoleGeneration`
 - `ModelPipelinePlaybookExplanation`
+- `ModelPipelineRoleExplanation`
 - `ModelPipelineChatBot`
 
 ### Registering pipelines
@@ -74,6 +75,7 @@ REGISTRY = {
         ModelPipelinePlaybookGeneration: <Implementing class>
         ModelPipelineRoleGeneration: <Implementing class>
         ModelPipelinePlaybookExplanation: <Implementing class>
+        ModelPipelineRoleExplanation: <Implementing class>
         ModelPipelineChatBot: <Implementing class>
         PipelineConfiguration: <Implementing class>
         Serializer: <Implementing class>

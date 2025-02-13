@@ -17,6 +17,7 @@ from ansible_ai_connect.ai.api.views import (
     Completions,
     ContentMatches,
     Explanation,
+    ExplanationRole,
     Feedback,
     GenerationPlaybook,
     GenerationRole,
@@ -28,6 +29,7 @@ __all__ = [
     "Explanation",
     "GenerationPlaybook",
     "GenerationRole",
+    "ExplanationRole",
     "Feedback",
     "Chat",
 ]

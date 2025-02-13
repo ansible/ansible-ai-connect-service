@@ -58,10 +58,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
     PlaybookGenerationResponse,
+    RoleExplanationParameters,
+    RoleExplanationResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import (
     mock_config,
@@ -193,6 +196,19 @@ class MockedPipelinePlaybookExplanation(ModelPipelinePlaybookExplanation[MockedC
         self.response_data = response_data
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
+        return self.response_data
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+class MockedPipelineRoleExplanation(ModelPipelineRoleExplanation[MockedConfig]):
+
+    def __init__(self, response_data):
+        super().__init__(MockedConfig())
+        self.response_data = response_data
+
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
         return self.response_data
 
     def self_test(self) -> Optional[HealthCheckSummary]:

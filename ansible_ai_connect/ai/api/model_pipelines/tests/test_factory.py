@@ -21,6 +21,7 @@ from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopContentMatchPipeline,
     NopPlaybookExplanationPipeline,
     NopPlaybookGenerationPipeline,
+    NopRoleExplanationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PIPELINE_TYPE,
@@ -28,6 +29,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineContentMatch,
     ModelPipelinePlaybookExplanation,
     ModelPipelinePlaybookGeneration,
+    ModelPipelineRoleExplanation,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
@@ -88,6 +90,20 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
             self.assertIsInstance(pipeline, NopPlaybookExplanationPipeline)
             self.assertInLog(
                 "Using NOP implementation for 'ModelPipelinePlaybookExplanation'.",
+                log,
+            )
+
+    # 'grpc' does not have a Role Explanation pipeline
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
+    def test_default_fallback_role_explanation(self):
+        factory = ModelPipelineFactory()
+
+        with self.assertLogs(logger="root", level="INFO") as log:
+            pipeline = factory.get_pipeline(ModelPipelineRoleExplanation)
+            self.assertIsNotNone(pipeline)
+            self.assertIsInstance(pipeline, NopRoleExplanationPipeline)
+            self.assertInLog(
+                "Using NOP implementation for 'ModelPipelineRoleExplanation'.",
                 log,
             )
 
