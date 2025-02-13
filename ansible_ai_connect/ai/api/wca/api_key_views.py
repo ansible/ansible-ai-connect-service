@@ -65,6 +65,7 @@ PERMISSION_CLASSES = [
 class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     required_scopes = ["read", "write", "delete"]
     throttle_cache_key_suffix = "_wca_api_key"
+    throttle_cache_multiplier = 2.0
     permission_classes = PERMISSION_CLASSES
 
     @extend_schema(
