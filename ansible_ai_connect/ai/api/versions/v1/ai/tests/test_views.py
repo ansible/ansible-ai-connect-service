@@ -17,7 +17,6 @@ from ansible_ai_connect.ai.api.tests.test_views import (
     TestContentMatchesWCAViewErrors,
     TestContentMatchesWCAViewSegmentEvents,
     TestExplanationFeatureEnableForWcaOnprem,
-    TestExplanationView,
     TestExplanationViewWithWCA,
     TestGenerationFeatureEnableForWcaOnprem,
     TestGenerationView,
@@ -39,10 +38,6 @@ class TestContentMatchesWCAViewSegmentEventsVersion1(TestContentMatchesWCAViewSe
 
 
 class TestExplanationFeatureEnableForWcaOnpremVersion1(TestExplanationFeatureEnableForWcaOnprem):
-    api_version = API_VERSION
-
-
-class TestExplanationViewVersion1(TestExplanationView):
     api_version = API_VERSION
 
 
