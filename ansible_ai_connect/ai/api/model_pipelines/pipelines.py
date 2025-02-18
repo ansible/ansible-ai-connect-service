@@ -414,7 +414,7 @@ class ModelPipelineChatBot(
 
 
 class ModelPipelineStreamingChatBot(
-    ModelPipeline[PIPELINE_CONFIGURATION, ChatBotParameters, StreamingChatBotResponse],
+    ModelPipeline[PIPELINE_CONFIGURATION, StreamingChatBotParameters, StreamingChatBotResponse],
     Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
