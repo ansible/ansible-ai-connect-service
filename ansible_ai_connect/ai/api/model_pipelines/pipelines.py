@@ -14,7 +14,7 @@
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, AsyncGenerator, Dict, Generic, Optional, TypeVar
 
 from attrs import define
 from django.conf import settings
@@ -301,7 +301,7 @@ class ModelPipeline(
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
         raise NotImplementedError
 
-    async def async_invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
+    def async_invoke(self, params: PIPELINE_PARAMETERS) -> AsyncGenerator:
         raise NotImplementedError
 
     @abstractmethod
@@ -414,7 +414,7 @@ class ModelPipelineChatBot(
 
 
 class ModelPipelineStreamingChatBot(
-    ModelPipeline[PIPELINE_CONFIGURATION, ChatBotParameters, StreamingChatBotResponse],
+    ModelPipeline[PIPELINE_CONFIGURATION, StreamingChatBotParameters, StreamingChatBotResponse],
     Generic[PIPELINE_CONFIGURATION],
     metaclass=ABCMeta,
 ):
