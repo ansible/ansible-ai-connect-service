@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import aiohttp
 import requests
@@ -222,7 +222,7 @@ class HttpStreamingChatBotPipeline(
     def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
         raise NotImplementedError
 
-    async def async_invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
+    async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             headers = {
                 "Content-Type": "application/json",
