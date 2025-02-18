@@ -346,6 +346,9 @@ class WCASaaSRoleGenerationPipeline(
 
     # This should be moved to the base WCA class when it becomes available on-prem
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
+        if not settings.ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT:
+            raise FeatureNotAvailable
+
         request = params.request
         text = params.text
         create_outline = params.create_outline
