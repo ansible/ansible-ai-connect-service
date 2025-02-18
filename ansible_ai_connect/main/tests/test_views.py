@@ -350,6 +350,7 @@ class TestChatbotView(TestCase):
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, '<div id="debug" hidden>true</div>')
 
+    @override_settings(CHATBOT_STREAMING=True)
     def test_chatbot_view_with_streaming_enabled(self):
         llm: ModelPipelineChatBot = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineChatBot
