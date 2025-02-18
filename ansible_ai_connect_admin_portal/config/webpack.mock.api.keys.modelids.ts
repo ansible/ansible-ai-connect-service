@@ -16,7 +16,7 @@ export default webpackMockServer.add((app, helper) => {
   const modelIds = new Map<string, { model_id: string; last_update: Date }>();
 
   //API KEY RELATED ENDPOINTS
-  app.get("/api/v0/wca/apikey/", async (_req, res) => {
+  app.get("/api/v1/wca/apikey/", async (_req, res) => {
     await delay(DELAY_MS);
     if (keys.has(ORG_ID)) {
       // Key response only contains the Last Updated field
@@ -27,7 +27,7 @@ export default webpackMockServer.add((app, helper) => {
     }
   });
 
-  app.get("/api/v0/wca/apikey/test/", async (_req, res) => {
+  app.get("/api/v1/wca/apikey/test/", async (_req, res) => {
     await delay(DELAY_MS);
     if (!keys.has(ORG_ID)) {
       res.sendStatus(404);
@@ -49,7 +49,7 @@ export default webpackMockServer.add((app, helper) => {
     res.sendStatus(200);
   });
 
-  app.post("/api/v0/wca/apikey/", async (_req, res) => {
+  app.post("/api/v1/wca/apikey/", async (_req, res) => {
     await delay(DELAY_MS);
     const key = _req.body["key"];
     if (key === "error") {
@@ -67,7 +67,7 @@ export default webpackMockServer.add((app, helper) => {
     res.sendStatus(200);
   });
 
-  app.delete("/api/v0/wca/apikey/", async (_req, res) => {
+  app.delete("/api/v1/wca/apikey/", async (_req, res) => {
     await delay(DELAY_MS);
     if (keys.has(ORG_ID)) {
       keys.delete(ORG_ID);
@@ -81,7 +81,7 @@ export default webpackMockServer.add((app, helper) => {
   });
 
   //MODEL ID RELATED ENDPOINTS
-  app.get("/api/v0/wca/modelid/", async (_req, res) => {
+  app.get("/api/v1/wca/modelid/", async (_req, res) => {
     await delay(DELAY_MS);
     if (modelIds.has(ORG_ID)) {
       res.json(modelIds.get(ORG_ID));
@@ -90,7 +90,7 @@ export default webpackMockServer.add((app, helper) => {
     }
   });
 
-  app.get("/api/v0/wca/modelid/test/", async (_req, res) => {
+  app.get("/api/v1/wca/modelid/test/", async (_req, res) => {
     await delay(DELAY_MS);
     if (!modelIds.has(ORG_ID)) {
       res.sendStatus(404);
@@ -112,7 +112,7 @@ export default webpackMockServer.add((app, helper) => {
     res.sendStatus(200);
   });
 
-  app.post("/api/v0/wca/modelid/", async (_req, res) => {
+  app.post("/api/v1/wca/modelid/", async (_req, res) => {
     await delay(DELAY_MS);
     const modelId = _req.body[MODEL_ID_FIELD];
     if (modelId === "error") {

@@ -285,7 +285,7 @@ export const useChatbot = () => {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
         import.meta.env.PROD
-          ? "/api/v0/ai/feedback/"
+          ? "/api/v1/ai/feedback/"
           : "http://localhost:8080/v1/feedback/",
         {
           chatFeedback: feedbackRequest,
@@ -415,7 +415,7 @@ export const useChatbot = () => {
       } else {
         const resp = await axios.post(
           import.meta.env.PROD
-            ? "/api/v0/ai/chat/"
+            ? "/api/v1/ai/chat/"
             : "http://localhost:8080/v1/query/",
           chatRequest,
           {

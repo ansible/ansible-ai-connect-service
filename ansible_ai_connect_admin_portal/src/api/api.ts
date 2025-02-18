@@ -1,11 +1,11 @@
 import { TelemetryRequest, WcaKeyRequest, WcaModelIdRequest } from "./types";
 import axios from "axios";
 
-export const API_TELEMETRY_PATH = "/api/v0/telemetry/";
-export const API_WCA_KEY_PATH = "/api/v0/wca/apikey/";
-export const API_WCA_MODEL_ID_PATH = "/api/v0/wca/modelid/";
-export const API_WCA_KEY_TEST_PATH = "/api/v0/wca/apikey/test";
-export const API_WCA_MODEL_ID_TEST_PATH = "/api/v0/wca/modelid/test";
+export const API_TELEMETRY_PATH = "/api/v1/telemetry/";
+export const API_WCA_KEY_PATH = "/api/v1/wca/apikey/";
+export const API_WCA_MODEL_ID_PATH = "/api/v1/wca/modelid/";
+export const API_WCA_KEY_TEST_PATH = "/api/v1/wca/apikey/test/";
+export const API_WCA_MODEL_ID_TEST_PATH = "/api/v1/wca/modelid/test/";
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
