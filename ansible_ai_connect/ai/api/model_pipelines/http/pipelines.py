@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import aiohttp
 import requests
@@ -129,24 +129,6 @@ class HttpChatBotMetaData(HttpMetaData):
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
 
-    def prepare_data(self, params: ChatBotParameters):
-        query = params.query
-        conversation_id = params.conversation_id
-        provider = params.provider
-        model_id = params.model_id
-        system_prompt = params.system_prompt
-
-        data = {
-            "query": query,
-            "model": model_id,
-            "provider": provider,
-        }
-        if conversation_id:
-            data["conversation_id"] = str(conversation_id)
-        if system_prompt:
-            data["system_prompt"] = str(system_prompt)
-        return data
-
     def self_test(self) -> Optional[HealthCheckSummary]:
         summary: HealthCheckSummary = HealthCheckSummary(
             {
@@ -184,10 +166,26 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         super().__init__(config=config)
 
     def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+        query = params.query
+        conversation_id = params.conversation_id
+        provider = params.provider
+        model_id = params.model_id
+        system_prompt = params.system_prompt
+
+        data = {
+            "query": query,
+            "model": model_id,
+            "provider": provider,
+        }
+        if conversation_id:
+            data["conversation_id"] = str(conversation_id)
+        if system_prompt:
+            data["system_prompt"] = str(system_prompt)
+
         response = requests.post(
             self.config.inference_url + "/v1/query",
             headers=self.headers,
-            json=self.prepare_data(params),
+            json=data,
             timeout=self.timeout(1),
             verify=self.config.verify_ssl,
         )
@@ -213,24 +211,9 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             raise ChatbotInternalServerException(detail=detail)
 
 
-class HttpStreamingChatBotMetaData(HttpChatBotMetaData):
-
-    def __init__(self, config: HttpConfiguration):
-        super().__init__(config=config)
-
-    def prepare_data(self, params: StreamingChatBotParameters):
-        data = super().prepare_data(params)
-
-        media_type = params.media_type
-        if media_type:
-            data["media_type"] = str(media_type)
-
-        return data
-
-
 @Register(api_type="http")
 class HttpStreamingChatBotPipeline(
-    HttpStreamingChatBotMetaData, ModelPipelineStreamingChatBot[HttpConfiguration]
+    HttpChatBotMetaData, ModelPipelineStreamingChatBot[HttpConfiguration]
 ):
 
     def __init__(self, config: HttpConfiguration):
@@ -239,15 +222,35 @@ class HttpStreamingChatBotPipeline(
     def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
         raise NotImplementedError
 
-    async def async_invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
+    async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json,text/event-stream",
             }
+
+            query = params.query
+            conversation_id = params.conversation_id
+            provider = params.provider
+            model_id = params.model_id
+            system_prompt = params.system_prompt
+            media_type = params.media_type
+
+            data = {
+                "query": query,
+                "model": model_id,
+                "provider": provider,
+            }
+            if conversation_id:
+                data["conversation_id"] = str(conversation_id)
+            if system_prompt:
+                data["system_prompt"] = str(system_prompt)
+            if media_type:
+                data["media_type"] = str(media_type)
+
             async with session.post(
                 self.config.inference_url + "/v1/streaming_query",
-                json=self.prepare_data(params),
+                json=data,
                 headers=headers,
             ) as r:
                 async for chunk in r.content:
