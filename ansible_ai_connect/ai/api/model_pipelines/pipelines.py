@@ -301,7 +301,7 @@ class ModelPipeline(
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
         raise NotImplementedError
 
-    async def async_invoke(self, params: PIPELINE_PARAMETERS) -> AsyncGenerator:
+    def async_invoke(self, params: PIPELINE_PARAMETERS) -> AsyncGenerator:
         raise NotImplementedError
 
     @abstractmethod
