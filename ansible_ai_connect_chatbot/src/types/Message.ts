@@ -19,7 +19,7 @@ type LLMResponse = {
   truncated: boolean;
 };
 
-// Type for Ansible AI Connct service /api/v0/ai/talk API
+// Type for Ansible AI Connct service /api/v1/ai/talk API
 // Currently they are defined in the same way as OLS API
 export type ChatRequest = LLMRequest;
 export type ChatResponse = LLMResponse;
