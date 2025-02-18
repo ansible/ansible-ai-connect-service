@@ -28,7 +28,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineChatBot
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ModelPipelineStreamingChatBot,
+)
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
@@ -121,12 +123,12 @@ class ChatbotView(ProtectedTemplateView):
         IsRHInternalUser | IsTestUser,
     ]
 
-    llm: ModelPipelineChatBot
+    llm: ModelPipelineStreamingChatBot
     chatbot_enabled: bool
 
     def __init__(self):
         super().__init__()
-        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineChatBot)
+        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineStreamingChatBot)
         self.chatbot_enabled = (
             self.llm.config.inference_url
             and self.llm.config.model_id
@@ -148,7 +150,7 @@ class ChatbotView(ProtectedTemplateView):
         if user and user.is_authenticated:
             context["user_name"] = user.username
         context["debug"] = "true" if settings.CHATBOT_DEBUG_UI else "false"
-        context["stream"] = "true" if self.llm.config.stream else "false"
+        context["stream"] = "true" if settings.CHATBOT_STREAMING else "false"
 
         return context
 

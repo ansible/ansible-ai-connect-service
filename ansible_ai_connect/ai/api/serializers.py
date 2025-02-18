@@ -352,6 +352,14 @@ class ChatRequestSerializer(serializers.Serializer):
     )
 
 
+class StreamingChatRequestSerializer(ChatRequestSerializer):
+    media_type = serializers.CharField(
+        required=False,
+        label="Media type",
+        help_text=("A media type to be used in the output from LLM."),
+    )
+
+
 class ReferencedDocumentsSerializer(serializers.Serializer):
     docs_url = serializers.CharField()
     title = serializers.CharField()

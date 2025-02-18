@@ -14,7 +14,7 @@
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, AsyncGenerator, Dict, Generic, Optional, TypeVar
 
 from attrs import define
 from django.conf import settings
@@ -242,6 +242,33 @@ class ChatBotParameters:
 ChatBotResponse = Any
 
 
+@define
+class StreamingChatBotParameters(ChatBotParameters):
+    media_type: str
+
+    @classmethod
+    def init(
+        cls,
+        query: str,
+        provider: Optional[str] = None,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        media_type: Optional[str] = None,
+    ):
+        return cls(
+            query=query,
+            provider=provider,
+            model_id=model_id,
+            conversation_id=conversation_id,
+            system_prompt=system_prompt,
+            media_type=media_type,
+        )
+
+
+StreamingChatBotResponse = Any
+
+
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
@@ -272,6 +299,9 @@ class ModelPipeline(
 
     @abstractmethod
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
+        raise NotImplementedError
+
+    def async_invoke(self, params: PIPELINE_PARAMETERS) -> AsyncGenerator:
         raise NotImplementedError
 
     @abstractmethod
@@ -381,3 +411,17 @@ class ModelPipelineChatBot(
     @staticmethod
     def alias():
         return "chatbot-service"
+
+
+class ModelPipelineStreamingChatBot(
+    ModelPipeline[PIPELINE_CONFIGURATION, StreamingChatBotParameters, StreamingChatBotResponse],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "streaming-chatbot-service"
