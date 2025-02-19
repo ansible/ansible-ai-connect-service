@@ -12,19 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from django.urls import include, path
 
-from ansible_ai_connect.healthcheck.views import WisdomServiceLivenessProbeView
-
-from .ai import urls as ai_urls
-from .telemetry import urls as telemetry_urls
-from .users import urls as me_urls
-from .wca import urls as wca_urls
-
-urlpatterns = [
-    path("ai/", include(ai_urls)),
-    path("me/", include(me_urls)),
-    path("telemetry/", include(telemetry_urls)),
-    path("wca/", include(wca_urls)),
-    path("status/", WisdomServiceLivenessProbeView.as_view(), name="health_status"),
-]
+def preprocessing_filter_spec(endpoints):
+    filtered = []
+    for path, path_regex, method, callback in endpoints:
+        # do not add internal endpoints to schema
+        if not path.startswith("/api/v1/service-index"):
+            filtered.append((path, path_regex, method, callback))
+    return filtered

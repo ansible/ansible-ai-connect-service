@@ -74,6 +74,8 @@ INSTALLED_APPS = [
     "ansible_ai_connect.healthcheck",
     "oauth2_provider",
     "import_export",
+    "ansible_base.resource_registry",
+    "ansible_base.jwt_consumer",
 ]
 
 MIDDLEWARE = [
@@ -262,6 +264,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "rest_framework.authentication.SessionAuthentication",
+        "ansible_ai_connect.users.authentication.LightspeedJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -275,6 +278,9 @@ REST_FRAMEWORK = {
 }
 
 API_VERSION = "1.0.0"
+
+ANSIBLE_BASE_ORGANIZATION_MODEL = "ansible_ai_connect.organizations.models.Organization"
+ANSIBLE_BASE_RESOURCE_CONFIG_MODULE = "ansible_ai_connect.ai.resource_api"
 
 # Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:

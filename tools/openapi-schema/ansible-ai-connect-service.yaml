@@ -377,6 +377,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkdownUserResponse'
           description: ''
+  /api/v1/status/:
+    get:
+      operationId: status_retrieve
+      description: Service Liveness Probe View
+      summary: Liveness probe
+      tags:
+      - status
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: OK
   /api/v1/telemetry/:
     get:
       operationId: telemetry_settings_get
