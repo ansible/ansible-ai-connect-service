@@ -266,7 +266,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         )
 
 
-StreamingChatBotResponse = Any
+StreamingChatBotResponse = AsyncGenerator
 
 
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
@@ -299,9 +299,6 @@ class ModelPipeline(
 
     @abstractmethod
     def invoke(self, params: PIPELINE_PARAMETERS) -> PIPELINE_RETURN:
-        raise NotImplementedError
-
-    def async_invoke(self, params: PIPELINE_PARAMETERS) -> AsyncGenerator:
         raise NotImplementedError
 
     @abstractmethod

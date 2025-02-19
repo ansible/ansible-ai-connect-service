@@ -220,7 +220,10 @@ class HttpStreamingChatBotPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
-        raise NotImplementedError
+        return StreamingHttpResponse(
+            self.llm.async_invoke(params),
+            content_type="text/event-stream",
+        )
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
