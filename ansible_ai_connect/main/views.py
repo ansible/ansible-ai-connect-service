@@ -29,6 +29,7 @@ from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ModelPipelineChatBot,
     ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.permissions import (
@@ -123,17 +124,26 @@ class ChatbotView(ProtectedTemplateView):
         IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
 
-    llm: ModelPipelineStreamingChatBot
     chatbot_enabled: bool
+    streaming_chatbot_enabled: bool
 
     def __init__(self):
         super().__init__()
-        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineStreamingChatBot)
+        chat_llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineChatBot)
         self.chatbot_enabled = (
-            self.llm.config.inference_url
-            and self.llm.config.model_id
+            chat_llm.config.inference_url
+            and chat_llm.config.model_id
             and settings.CHATBOT_DEFAULT_PROVIDER
         )
+        streaming_chat_llm = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineStreamingChatBot
+        )
+        self.streaming_chatbot_enabled = (
+            streaming_chat_llm.config.inference_url
+            and streaming_chat_llm.config.model_id
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        self.chatbot_enabled = self.chatbot_enabled or self.streaming_chatbot_enabled
 
     def get(self, request):
         # Open the chatbot page when the chatbot service is configured.
@@ -150,7 +160,7 @@ class ChatbotView(ProtectedTemplateView):
         if user and user.is_authenticated:
             context["user_name"] = user.username
         context["debug"] = "true" if settings.CHATBOT_DEBUG_UI else "false"
-        context["stream"] = "true" if settings.CHATBOT_STREAMING else "false"
+        context["stream"] = "true" if self.streaming_chatbot_enabled else "false"
 
         return context
 
