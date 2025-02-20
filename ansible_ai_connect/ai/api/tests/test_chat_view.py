@@ -184,6 +184,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase, TestCha
     def query_with_no_error(self, payload, mock_post):
         return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
     @mock.patch(
         "requests.post",
         side_effect=mocked_requests_post,
@@ -562,6 +563,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     def query_with_no_error(self, payload, mock_post):
         return self.client.post(self.api_version_reverse("streaming_chat"), payload, format="json")
 
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
     @mock.patch(
         "requests.post",
         side_effect=mocked_requests_post,
@@ -608,10 +610,10 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     def test_chat_with_conversation_id(self):
         self.assert_test(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
 
-    # def test_chat_not_enabled_exception(self):
-    #     self.assert_test(
-    #         TestChatView.VALID_PAYLOAD, 503, ChatbotNotEnabledException, "Chatbot is not enabled"
-    #     )
+    def test_chat_not_enabled_exception(self):
+        self.assert_test(
+            TestChatView.VALID_PAYLOAD, 503, ChatbotNotEnabledException, "Chatbot is not enabled"
+        )
 
     # def test_chat_invalid_response_exception(self):
     #     self.assert_test(
