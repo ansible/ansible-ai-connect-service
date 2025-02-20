@@ -390,4 +390,7 @@ ALLOW_LIST = {
     "chatOperationalEvent": {
         "*": None,
     },
+    "streamingChatOperationalEvent": {
+        "*": None,
+    },
 }
