@@ -48,7 +48,7 @@ from ansible_ai_connect.test_utils import (
 logger = logging.getLogger(__name__)
 
 
-class TestChatViewBase:
+class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     VALID_PAYLOAD = {
         "query": "Hello",
@@ -104,9 +104,6 @@ class TestChatViewBase:
         "truncated": False,
         "referenced_documents": [],
     }
-
-
-class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase, TestChatViewBase):
 
     def setUp(self):
         super().setUp()
@@ -484,7 +481,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase, TestCha
                 self.user2.delete()
 
 
-class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase, TestChatViewBase):
+class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     api_version = "v1"
 
     def setUp(self):
@@ -623,13 +620,13 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     #         "ChatbotInvalidResponseException",
     #     )
 
-    # def test_chat_unauthorized_exception(self):
-    #     self.assert_test(
-    #         TestChatView.PAYLOAD_UNAUTHORIZERD,
-    #         503,
-    #         ChatbotUnauthorizedException,
-    #         "ChatbotUnauthorizedException",
-    #     )
+    def test_chat_unauthorized_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_UNAUTHORIZERD,
+            503,
+            ChatbotUnauthorizedException,
+            "ChatbotUnauthorizedException",
+        )
 
     # def test_chat_forbidden_exception(self):
     #     self.assert_test(

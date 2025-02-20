@@ -220,10 +220,29 @@ class HttpStreamingChatBotPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
-        return StreamingHttpResponse(
+        response = StreamingHttpResponse(
             self.async_invoke(params),
             content_type="text/event-stream",
         )
+
+        if response.status_code == 200:
+            return response
+
+        elif response.status_code == 401:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotUnauthorizedException(detail=detail)
+        elif response.status_code == 403:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotForbiddenException(detail=detail)
+        elif response.status_code == 413:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotPromptTooLongException(detail=detail)
+        elif response.status_code == 422:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotValidationException(detail=detail)
+        else:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotInternalServerException(detail=detail)
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
