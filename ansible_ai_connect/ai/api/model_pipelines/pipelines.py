@@ -14,10 +14,11 @@
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, AsyncGenerator, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 from attrs import define
 from django.conf import settings
+from django.http import StreamingHttpResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -266,7 +267,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         )
 
 
-StreamingChatBotResponse = AsyncGenerator
+StreamingChatBotResponse = StreamingHttpResponse
 
 
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
