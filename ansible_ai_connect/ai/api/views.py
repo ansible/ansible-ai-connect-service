@@ -21,7 +21,6 @@ from ansible_anonymizer import anonymizer
 from attr import asdict
 from django.apps import apps
 from django.conf import settings
-from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -1196,16 +1195,13 @@ class StreamingChat(AACSAPIView):
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
 
-        return StreamingHttpResponse(
-            self.llm.async_invoke(
-                StreamingChatBotParameters.init(
-                    query=req_query,
-                    system_prompt=req_system_prompt,
-                    model_id=self.req_model_id or self.llm.config.model_id,
-                    provider=req_provider,
-                    conversation_id=conversation_id,
-                    media_type=media_type,
-                )
-            ),
-            content_type="text/event-stream",
+        return self.llm.invoke(
+            StreamingChatBotParameters.init(
+                query=req_query,
+                system_prompt=req_system_prompt,
+                model_id=self.req_model_id or self.llm.config.model_id,
+                provider=req_provider,
+                conversation_id=conversation_id,
+                media_type=media_type,
+            )
         )

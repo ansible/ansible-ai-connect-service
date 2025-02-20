@@ -221,7 +221,7 @@ class HttpStreamingChatBotPipeline(
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
         return StreamingHttpResponse(
-            self.llm.async_invoke(params),
+            self.async_invoke(params),
             content_type="text/event-stream",
         )
 
