@@ -14,6 +14,7 @@
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import AsyncGenerator, Optional
 
 import aiohttp
@@ -43,6 +44,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineCompletions,
     ModelPipelineStreamingChatBot,
     StreamingChatBotParameters,
+    StreamingChatBotResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
@@ -219,30 +221,21 @@ class HttpStreamingChatBotPipeline(
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
 
-    def invoke(self, params: StreamingChatBotParameters) -> StreamingHttpResponse:
-        response = StreamingHttpResponse(
-            self.async_invoke(params),
-            content_type="text/event-stream",
-        )
+    def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
+        response = self.get_streaming_http_response(params)
 
         if response.status_code == 200:
             return response
-
-        elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotUnauthorizedException(detail=detail)
-        elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotForbiddenException(detail=detail)
-        elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotPromptTooLongException(detail=detail)
-        elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotValidationException(detail=detail)
         else:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotInternalServerException(detail=detail)
+            raise ChatbotInternalServerException(detail="Internal server error")
+
+    def get_streaming_http_response(
+        self, params: StreamingChatBotParameters
+    ) -> StreamingHttpResponse:
+        return StreamingHttpResponse(
+            self.async_invoke(params),
+            content_type="text/event-stream",
+        )
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
@@ -274,7 +267,41 @@ class HttpStreamingChatBotPipeline(
                 self.config.inference_url + "/v1/streaming_query",
                 json=data,
                 headers=headers,
-            ) as r:
-                async for chunk in r.content:
-                    logger.debug(chunk)
-                    yield chunk
+                raise_for_status=False,
+            ) as response:
+                if response.status == 200:
+                    async for chunk in response.content:
+                        try:
+                            if chunk:
+                                s = chunk.decode("utf-8").strip()
+                                if s and s.startswith("data: "):
+                                    o = json.loads(s[len("data: ") :])
+                                    if o["event"] == "error" and "data" in o:
+                                        data = o["data"]
+                                        logger.error(
+                                            "An error received in chat streaming content:"
+                                            + " response="
+                                            + data.get("response")
+                                            + ", cause="
+                                            + data.get("cause")
+                                        )
+                        except JSONDecodeError:
+                            pass
+                        logger.debug(chunk)
+                        yield chunk
+                else:
+                    logging.error(
+                        "Streaming query API returned status code="
+                        + str(response.status)
+                        + ", reason="
+                        + str(response.reason)
+                    )
+                    error = {
+                        "event": "error",
+                        "data": {
+                            "response": f"Non-200 status code ({response.status}) was received.",
+                            "cause": response.reason,
+                        },
+                    }
+                    yield json.dumps(error).encode("utf-8")
+                    return

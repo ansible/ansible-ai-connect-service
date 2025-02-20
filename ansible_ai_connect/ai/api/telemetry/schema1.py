@@ -229,3 +229,8 @@ class ChatBotFeedbackEvent(ChatBotBaseEvent):
 @define
 class ChatBotOperationalEvent(ChatBotBaseEvent):
     event_name: str = "chatOperationalEvent"
+
+
+@define
+class StreamingChatBotOperationalEvent(ChatBotBaseEvent):
+    event_name: str = "streamingChatOperationalEvent"

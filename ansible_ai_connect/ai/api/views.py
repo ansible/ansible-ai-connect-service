@@ -21,6 +21,7 @@ from ansible_anonymizer import anonymizer
 from attr import asdict
 from django.apps import apps
 from django.conf import settings
+from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -1145,7 +1146,7 @@ class StreamingChat(AACSAPIView):
         IsRHInternalUser | IsTestUser,
     ]
     required_scopes = ["read", "write"]
-    schema1_event = schema1.ChatBotOperationalEvent  # TODO
+    schema1_event = schema1.StreamingChatBotOperationalEvent
     request_serializer_class = StreamingChatRequestSerializer
     throttle_classes = [StreamingChatEndpointThrottle]
 
@@ -1178,7 +1179,7 @@ class StreamingChat(AACSAPIView):
         },
         summary="Streaming chat request",
     )
-    def post(self, request) -> Response:
+    def post(self, request) -> StreamingHttpResponse:
         if not self.chatbot_enabled:
             raise ChatbotNotEnabledException()
 

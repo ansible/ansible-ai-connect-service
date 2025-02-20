@@ -87,6 +87,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 timeout=extract("timeout", 1000, **kwargs),
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
+                stream=extract("stream", False, **kwargs),
             )
         case "llamacpp":
             return LlamaCppConfiguration(
