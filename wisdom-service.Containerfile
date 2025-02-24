@@ -50,7 +50,7 @@ RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install --no-binary=all c
 
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
-RUN mkdir /var/run/uwsgi
+RUN mkdir /var/run/uwsgi /var/run/daphne
 
 RUN echo -e "\
 {\n\
@@ -99,6 +99,7 @@ RUN for dir in \
       /var/log/supervisor \
       /var/run/supervisor \
       /var/run/uwsgi \
+      /var/run/daphne \
       /var/www/wisdom \
       /var/log/nginx \
       /etc/ari \
