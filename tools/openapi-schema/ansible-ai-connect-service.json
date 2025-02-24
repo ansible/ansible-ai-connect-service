@@ -1,0 +1,2222 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Ansible AI Connect.",
+        "version": "1.0.0 (v1)",
+        "description": "Equip the automation developer at Lightspeed."
+    },
+    "paths": {
+        "/api/v1/ai/chat/": {
+            "post": {
+                "operationId": "ai_chat_create",
+                "description": "Send a message to the backend chatbot service and get a reply.",
+                "summary": "Chat request",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "413": {
+                        "description": "Prompt too long"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "description": "Service unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/completions/": {
+            "post": {
+                "operationId": "ai_completions_create",
+                "description": "Returns inline code suggestions based on a given Ansible editor context.",
+                "summary": "Inline code suggestions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompletionRequest"
+                            },
+                            "examples": {
+                                "ValidExample": {
+                                    "value": {
+                                        "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n  - name: Install ssh\n"
+                                    },
+                                    "summary": "Request Sample",
+                                    "description": "A valid sample request."
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompletionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompletionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompletionResponse"
+                                },
+                                "examples": {
+                                    "ValidExample": {
+                                        "value": {
+                                            "predictions": [
+                                                "    ansible.builtin.package:\n      name: openssh-server\n      state: present"
+                                            ]
+                                        },
+                                        "summary": "Response sample",
+                                        "description": "A valid sample response."
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/contentmatches/": {
+            "post": {
+                "operationId": "ai_contentmatches_create",
+                "description": "Returns content matches that were the highest likelihood sources for a given code suggestion.",
+                "summary": "Code suggestion attributions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContentMatchRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContentMatchRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ContentMatchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContentMatchResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/explanations/": {
+            "post": {
+                "operationId": "ai_explanations_create",
+                "description": "Returns a text that explains a playbook.",
+                "summary": "Inline code suggestions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExplanationResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/explanations/role/": {
+            "post": {
+                "operationId": "ai_explanations_role_create",
+                "description": "Returns a text that explains a role.",
+                "summary": "Inline code suggestions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRoleRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRoleRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExplanationRoleRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExplanationResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/feedback/": {
+            "post": {
+                "operationId": "ai_feedback_create",
+                "description": "Feedback API for the AI service",
+                "summary": "Feedback API for the AI service",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackRequest"
+                            },
+                            "examples": {
+                                "ValidInlineSuggestionFeedbackExample": {
+                                    "value": {
+                                        "inlineSuggestion": {
+                                            "userActionTime": 5155,
+                                            "action": "0",
+                                            "suggestionId": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6"
+                                        }
+                                    },
+                                    "summary": "Feedback Request sample for inline suggestion to identify if the suggestion is accepted or ignored.",
+                                    "description": "A valid inline suggestion feedback sample request to get details about the suggestion like user decision time, user action and suggestion id."
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FeedbackRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/generations/playbook/": {
+            "post": {
+                "operationId": "ai_generations_playbook_create",
+                "description": "Returns a playbook based on a text input.",
+                "summary": "Inline code suggestions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationPlaybookRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationPlaybookRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationPlaybookRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GenerationPlaybookResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/api/v1/ai/generations/role/": {
+            "post": {
+                "operationId": "ai_generations_role_create",
+                "description": "Returns a role based on a text input.",
+                "summary": "Inline code suggestions",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationRoleRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationRoleRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenerationRoleRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GenerationRoleResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/api/v1/me/": {
+            "get": {
+                "operationId": "me_retrieve",
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/me/summary/": {
+            "get": {
+                "operationId": "me_summary_retrieve",
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MarkdownUserResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/telemetry/": {
+            "get": {
+                "operationId": "telemetry_settings_get",
+                "summary": "Get the telemetry settings for an Organisation",
+                "tags": [
+                    "telemetry"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "telemetry_settings_set",
+                "summary": "Set the Telemetry settings for an Organisation",
+                "tags": [
+                    "telemetry"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TelemetrySettingsRequest"
+                            },
+                            "examples": {
+                                "ValidExample": {
+                                    "value": {
+                                        "optOut": "true"
+                                    },
+                                    "summary": "Request Telemetry settings",
+                                    "description": "A valid request to set the Telemetry settings."
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TelemetrySettingsRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TelemetrySettingsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            }
+        },
+        "/api/v1/wca/apikey/": {
+            "get": {
+                "operationId": "wca_api_key_get",
+                "summary": "Get WCA key for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write",
+                            "delete"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "wca_api_key_set",
+                "summary": "Set the WCA key for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaKeyRequest"
+                            },
+                            "examples": {
+                                "ValidExample": {
+                                    "value": {
+                                        "key": "1234567890"
+                                    },
+                                    "summary": "Request Sample",
+                                    "description": "A valid WCA Key request."
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaKeyRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaKeyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write",
+                            "delete"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "wca_api_key_delete",
+                "summary": "DELETE WCA key for an Organization",
+                "tags": [
+                    "wca"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write",
+                            "delete"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            }
+        },
+        "/api/v1/wca/apikey/test/": {
+            "get": {
+                "operationId": "wca_api_key_validator_get",
+                "summary": "Validate WCA key for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            }
+        },
+        "/api/v1/wca/modelid/": {
+            "get": {
+                "operationId": "wca_model_id_get",
+                "summary": "Get WCA Model Id for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "wca_model_id_set",
+                "summary": "Set the Model Id to be used for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaModelIdRequest"
+                            },
+                            "examples": {
+                                "ValidExample": {
+                                    "value": {
+                                        "model_id": "1234567890"
+                                    },
+                                    "summary": "Request Sample",
+                                    "description": "A valid WCA Model Id request."
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaModelIdRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WcaModelIdRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Empty response"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            }
+        },
+        "/api/v1/wca/modelid/test/": {
+            "get": {
+                "operationId": "wca_model_id_validator_get",
+                "summary": "Validate WCA Model Id for an Organisation",
+                "tags": [
+                    "wca"
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "read"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "429": {
+                        "description": "Request was throttled"
+                    },
+                    "500": {
+                        "description": "Internal service error"
+                    },
+                    "501": {
+                        "description": "Not implemented"
+                    }
+                }
+            }
+        },
+        "/check/": {
+            "get": {
+                "operationId": "check_retrieve",
+                "description": "Service Liveness Probe View",
+                "summary": "Liveness probe",
+                "tags": [
+                    "check"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/check/status/": {
+            "get": {
+                "operationId": "check_status_retrieve",
+                "description": "Service Health Check",
+                "summary": "Health check with backend server status",
+                "tags": [
+                    "check"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                },
+                                "examples": {
+                                    "ExampleOutput": {
+                                        "value": {
+                                            "status": "ok",
+                                            "timestamp": "2023-03-13T17:25:17.240683",
+                                            "version": "latest 0.1.202303131417",
+                                            "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
+                                            "deployed_region": "dev",
+                                            "dependencies": [
+                                                {
+                                                    "name": "db",
+                                                    "status": "ok",
+                                                    "time_taken": 233.538
+                                                },
+                                                {
+                                                    "name": "model-server",
+                                                    "status": "ok",
+                                                    "time_taken": 0.001
+                                                }
+                                            ]
+                                        },
+                                        "summary": "Example output"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "500": {
+                        "description": "One or more backend services are unavailable."
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Action4c6Enum": {
+                "enum": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "type": "string",
+                "description": "* `0` - ACCEPTED\n* `1` - REJECTED\n* `2` - IGNORED"
+            },
+            "Action693Enum": {
+                "enum": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ],
+                "type": "string",
+                "description": "* `0` - OPEN\n* `1` - CLOSE_CANCEL\n* `2` - TRANSITION\n* `3` - CLOSE_ACCEPT"
+            },
+            "ChatFeedback": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "title": "Prompt",
+                        "description": "Prompt being sent to the LLM."
+                    },
+                    "response": {
+                        "$ref": "#/components/schemas/ChatResponse"
+                    },
+                    "sentiment": {
+                        "$ref": "#/components/schemas/SentimentEnum"
+                    }
+                },
+                "required": [
+                    "query",
+                    "response",
+                    "sentiment"
+                ]
+            },
+            "ChatRequest": {
+                "type": "object",
+                "properties": {
+                    "conversation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "A UUID that identifies the particular conversation is being requested for."
+                    },
+                    "query": {
+                        "type": "string",
+                        "title": "Query string",
+                        "description": "A query string to be sent to LLM."
+                    },
+                    "model": {
+                        "type": "string",
+                        "title": "Model name",
+                        "description": "A model to be used on LLM."
+                    },
+                    "provider": {
+                        "type": "string",
+                        "title": "Provider name",
+                        "description": "A name that identifies a LLM provider."
+                    },
+                    "system_prompt": {
+                        "type": "string",
+                        "description": "An optional non-default system prompt to be used on LLM (debug mode only)."
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            },
+            "ChatResponse": {
+                "type": "object",
+                "properties": {
+                    "conversation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "A UUID that identifies the particular conversation is being requested for."
+                    },
+                    "referenced_documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ReferencedDocuments"
+                        }
+                    },
+                    "response": {
+                        "type": "string"
+                    },
+                    "truncated": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "conversation_id",
+                    "response",
+                    "truncated"
+                ]
+            },
+            "CompletionMetadata": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "documentUri": {
+                        "type": "string"
+                    },
+                    "activityId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Activity ID",
+                        "description": "A UUID that identifies a user activity session within a given document."
+                    },
+                    "ansibleFileType": {
+                        "type": "string",
+                        "title": "Ansible File Type",
+                        "description": "Ansible file type (playbook/tasks_in_role/tasks)"
+                    },
+                    "additionalContext": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "title": "Additional Context",
+                        "description": "Additional context for completion API"
+                    }
+                }
+            },
+            "CompletionRequest": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Editor prompt."
+                    },
+                    "suggestionId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Suggestion ID",
+                        "description": "A UUID that identifies a suggestion."
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/CompletionMetadata"
+                    },
+                    "model": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "prompt"
+                ]
+            },
+            "CompletionResponse": {
+                "type": "object",
+                "properties": {
+                    "model": {
+                        "type": "string"
+                    },
+                    "suggestionId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "predictions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "predictions"
+                ]
+            },
+            "ContentMatch": {
+                "type": "object",
+                "properties": {
+                    "repo_name": {
+                        "type": "string"
+                    },
+                    "repo_url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "license": {
+                        "type": "string"
+                    },
+                    "data_source_description": {
+                        "type": "string"
+                    },
+                    "score": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "data_source_description",
+                    "license",
+                    "path",
+                    "repo_name",
+                    "repo_url",
+                    "score"
+                ]
+            },
+            "ContentMatchList": {
+                "type": "object",
+                "properties": {
+                    "contentmatch": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContentMatch"
+                        }
+                    }
+                },
+                "required": [
+                    "contentmatch"
+                ]
+            },
+            "ContentMatchRequest": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "suggestions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "suggestionId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Suggestion ID",
+                        "description": "A UUID that identifies the particular suggestion content match data is being requested for."
+                    },
+                    "model": {
+                        "type": "string"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    }
+                },
+                "required": [
+                    "suggestions"
+                ]
+            },
+            "ContentMatchResponse": {
+                "type": "object",
+                "properties": {
+                    "contentmatches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ContentMatchList"
+                        }
+                    }
+                },
+                "required": [
+                    "contentmatches"
+                ]
+            },
+            "ExplanationRequest": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Playbook content",
+                        "description": "The playbook that needs to be explained."
+                    },
+                    "customPrompt": {
+                        "type": "string",
+                        "default": "",
+                        "title": "Custom prompt",
+                        "description": "Custom prompt passed to the LLM when explaining a playbook."
+                    },
+                    "explanationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "default": "",
+                        "title": "Explanation ID",
+                        "description": "A UUID that identifies the particular explanation data is being requested for."
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    }
+                },
+                "required": [
+                    "content"
+                ]
+            },
+            "ExplanationResponse": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string"
+                    },
+                    "format": {
+                        "type": "string"
+                    },
+                    "explanationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Explanation ID",
+                        "description": "A UUID that identifies the particular explanation data is being requested for."
+                    }
+                },
+                "required": [
+                    "content",
+                    "format"
+                ]
+            },
+            "ExplanationRoleRequest": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GenerationRoleFileEntry"
+                        },
+                        "description": "A list of role files to be explained."
+                    },
+                    "roleName": {
+                        "type": "string",
+                        "title": "Role name",
+                        "description": "The name of the role."
+                    },
+                    "model": {
+                        "type": "string",
+                        "default": ""
+                    },
+                    "focusOnFile": {
+                        "type": "string",
+                        "default": ""
+                    }
+                },
+                "required": [
+                    "files",
+                    "roleName"
+                ]
+            },
+            "FeedbackRequest": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    },
+                    "inlineSuggestion": {
+                        "$ref": "#/components/schemas/InlineSuggestionFeedback"
+                    },
+                    "issueFeedback": {
+                        "$ref": "#/components/schemas/IssueFeedback"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    },
+                    "model": {
+                        "type": "string"
+                    },
+                    "playbookExplanationFeedback": {
+                        "$ref": "#/components/schemas/PlaybookExplanationFeedback"
+                    },
+                    "playbookGenerationFeedback": {
+                        "$ref": "#/components/schemas/PlaybookGenerationFeedback"
+                    },
+                    "playbookGenerationAction": {
+                        "$ref": "#/components/schemas/PlaybookGenerationAction"
+                    },
+                    "roleGenerationAction": {
+                        "$ref": "#/components/schemas/RoleGenerationAction"
+                    },
+                    "sentimentFeedback": {
+                        "$ref": "#/components/schemas/SentimentFeedback"
+                    },
+                    "suggestionQualityFeedback": {
+                        "$ref": "#/components/schemas/SuggestionQualityFeedback"
+                    },
+                    "chatFeedback": {
+                        "$ref": "#/components/schemas/ChatFeedback"
+                    }
+                }
+            },
+            "GenerationPlaybookRequest": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "title": "Description content",
+                        "description": "The description that needs to be converted to a playbook."
+                    },
+                    "customPrompt": {
+                        "type": "string",
+                        "default": "",
+                        "title": "Custom prompt",
+                        "description": "Custom prompt passed to the LLM when generating the text of a playbook."
+                    },
+                    "generationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "default": "",
+                        "title": "generation ID",
+                        "description": "A UUID that identifies the particular generation data is being requested for."
+                    },
+                    "createOutline": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "generate outline",
+                        "description": "Indicates whether the answer should also include an outline of the Ansible Playbook."
+                    },
+                    "outline": {
+                        "type": "string",
+                        "default": "",
+                        "description": "A long step by step outline of the expected Ansible Playbook."
+                    },
+                    "wizardId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "default": "",
+                        "title": "wizard ID",
+                        "description": "A UUID to track the succession of interaction from the user."
+                    },
+                    "model": {
+                        "type": "string"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    }
+                },
+                "required": [
+                    "text"
+                ]
+            },
+            "GenerationPlaybookResponse": {
+                "type": "object",
+                "properties": {
+                    "playbook": {
+                        "type": "string"
+                    },
+                    "format": {
+                        "type": "string"
+                    },
+                    "generationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Generation ID",
+                        "description": "A UUID that identifies the particular summary data is being requested for."
+                    },
+                    "outline": {
+                        "type": "string"
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GenerationWarningResponse"
+                        }
+                    }
+                },
+                "required": [
+                    "format",
+                    "outline",
+                    "playbook"
+                ]
+            },
+            "GenerationRoleFileEntry": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "file_type": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "content",
+                    "file_type",
+                    "path"
+                ]
+            },
+            "GenerationRoleRequest": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "title": "the goal of the role",
+                        "description": "Can be in one or a few sentences. WCA will do HAP filtering as appropriate, and reject input above a certain HAP threshold."
+                    },
+                    "outline": {
+                        "type": "string",
+                        "default": "",
+                        "title": "an outline of the role",
+                        "description": "An outline of the role should be a numbered list."
+                    },
+                    "createOutline": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "generate outline",
+                        "description": "Indicates whether the answer should also include an outline of the Ansible Role."
+                    },
+                    "additionalContext": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "title": "inline suggestions",
+                        "description": "Parameter use for the inline suggestions."
+                    },
+                    "fileTypes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "default": [
+                            "task",
+                            "default"
+                        ],
+                        "title": "file types",
+                        "description": "The file types generated by the model. Default is ['task', 'default']. The file type name is based on the inner role directories, without the trailing 's'"
+                    },
+                    "generationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "default": "",
+                        "title": "generation ID",
+                        "description": "A UUID that identifies the particular generation data is being requested for."
+                    },
+                    "wizardId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "default": "",
+                        "title": "wizard ID",
+                        "description": "A UUID to track the succession of interaction from the user."
+                    },
+                    "model": {
+                        "type": "string"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    }
+                },
+                "required": [
+                    "text"
+                ]
+            },
+            "GenerationRoleResponse": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "description": "Name of the role."
+                    },
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GenerationRoleFileEntry"
+                        }
+                    },
+                    "generationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Generation ID",
+                        "description": "A UUID that identifies the particular summary data is being requested for."
+                    },
+                    "outline": {
+                        "type": "string"
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GenerationWarningResponse"
+                        }
+                    }
+                },
+                "required": [
+                    "files",
+                    "outline",
+                    "role"
+                ]
+            },
+            "GenerationWarningResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "details": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "message"
+                ]
+            },
+            "InlineSuggestionFeedback": {
+                "type": "object",
+                "properties": {
+                    "userActionTime": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "documentUri": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "$ref": "#/components/schemas/Action4c6Enum"
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "suggestionId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Suggestion ID",
+                        "description": "A UUID that identifies a suggestion."
+                    }
+                },
+                "required": [
+                    "action",
+                    "suggestionId"
+                ]
+            },
+            "IssueFeedback": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "$ref": "#/components/schemas/TypeEnum"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Issue title",
+                        "description": "The title of the issue."
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Issue description",
+                        "description": "The description of the issue."
+                    }
+                },
+                "required": [
+                    "description",
+                    "title",
+                    "type"
+                ]
+            },
+            "MarkdownUserResponse": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "content"
+                ]
+            },
+            "Metadata": {
+                "type": "object",
+                "properties": {
+                    "ansibleExtensionVersion": {
+                        "type": "string",
+                        "title": "Ansible vscode/vscodium extension version",
+                        "description": "User's installed Ansible extension version, in format vMAJOR.MINOR.PATCH",
+                        "pattern": "v?\\d+\\.\\d+\\.\\d+"
+                    }
+                }
+            },
+            "Organization": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "has_api_key": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "has_telemetry_opt_out": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "has_api_key",
+                    "has_telemetry_opt_out",
+                    "id",
+                    "name"
+                ]
+            },
+            "Plan": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 80
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "PlaybookExplanationFeedback": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "$ref": "#/components/schemas/Action4c6Enum"
+                    },
+                    "explanationId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Explanation ID",
+                        "description": "A UUID that identifies the playbook explanation."
+                    }
+                },
+                "required": [
+                    "action",
+                    "explanationId"
+                ]
+            },
+            "PlaybookGenerationAction": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "$ref": "#/components/schemas/Action693Enum"
+                    },
+                    "wizardId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "wizard ID",
+                        "description": "A UUID that identifies the UI session."
+                    },
+                    "fromPage": {
+                        "type": "integer",
+                        "title": "page of origin",
+                        "description": "A number that indicate the page of origin"
+                    },
+                    "toPage": {
+                        "type": "integer",
+                        "title": "destination page",
+                        "description": "A number that indicate the destination page"
+                    }
+                },
+                "required": [
+                    "action",
+                    "wizardId"
+                ]
+            },
+            "PlaybookGenerationFeedback": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "$ref": "#/components/schemas/Action4c6Enum"
+                    },
+                    "wizardId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Outline ID",
+                        "description": "A UUID that identifies the UI session."
+                    }
+                },
+                "required": [
+                    "action",
+                    "wizardId"
+                ]
+            },
+            "ReferencedDocuments": {
+                "type": "object",
+                "properties": {
+                    "docs_url": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "docs_url",
+                    "title"
+                ]
+            },
+            "RoleGenerationAction": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "$ref": "#/components/schemas/Action693Enum"
+                    },
+                    "wizardId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "wizard ID",
+                        "description": "A UUID that identifies the UI session."
+                    },
+                    "fromPage": {
+                        "type": "integer",
+                        "title": "page of origin",
+                        "description": "A number that indicate the page of origin"
+                    },
+                    "toPage": {
+                        "type": "integer",
+                        "title": "destination page",
+                        "description": "A number that indicate the destination page"
+                    }
+                },
+                "required": [
+                    "action",
+                    "wizardId"
+                ]
+            },
+            "SentimentEnum": {
+                "enum": [
+                    "0",
+                    "1",
+                    "NOT_LIKE"
+                ],
+                "type": "string",
+                "description": "* `0` - LIKE\n* `1` - 1\n* `NOT_LIKE` - NOT_LIKE"
+            },
+            "SentimentFeedback": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1
+                    },
+                    "feedback": {
+                        "type": "string",
+                        "title": "Free form text feedback",
+                        "description": "Free form text feedback describing the reason for sentiment value."
+                    }
+                },
+                "required": [
+                    "feedback",
+                    "value"
+                ]
+            },
+            "SuggestionQualityFeedback": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "title": "File Content used as context",
+                        "description": "File Content till end of task name description before cursor position."
+                    },
+                    "providedSuggestion": {
+                        "type": "string",
+                        "title": "Provided Model suggestion",
+                        "description": "Inline suggestion from model as shared by user for given prompt."
+                    },
+                    "expectedSuggestion": {
+                        "type": "string",
+                        "title": "Expected Model suggestion",
+                        "description": "Suggestion expected by the user."
+                    },
+                    "additionalComment": {
+                        "type": "string",
+                        "title": "Additional Comment",
+                        "description": "Additional comment describing why the                    change was required in suggestion."
+                    }
+                },
+                "required": [
+                    "expectedSuggestion",
+                    "prompt",
+                    "providedSuggestion"
+                ]
+            },
+            "TelemetrySettingsRequest": {
+                "type": "object",
+                "properties": {
+                    "optOut": {
+                        "type": "boolean",
+                        "description": "Indicates whether the Red Hat Organization opts out of telemetry collection."
+                    }
+                },
+                "required": [
+                    "optOut"
+                ]
+            },
+            "TypeEnum": {
+                "enum": [
+                    "bug-report",
+                    "feature-request"
+                ],
+                "type": "string",
+                "description": "* `bug-report` - Bug Report\n* `feature-request` - Feature Request"
+            },
+            "UserPlan": {
+                "type": "object",
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "expired_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "accept_marketing": {
+                        "type": "boolean"
+                    },
+                    "plan": {
+                        "$ref": "#/components/schemas/Plan"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "plan"
+                ]
+            },
+            "UserResponse": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "external_username": {
+                        "type": "string"
+                    },
+                    "family_name": {
+                        "type": "string"
+                    },
+                    "given_name": {
+                        "type": "string"
+                    },
+                    "org_telemetry_opt_out": {
+                        "type": "boolean"
+                    },
+                    "organization": {
+                        "$ref": "#/components/schemas/Organization"
+                    },
+                    "rh_org_has_subscription": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "rh_user_has_seat": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "rh_user_is_org_admin": {
+                        "type": "boolean"
+                    },
+                    "username": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "userplan_set": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserPlan"
+                        }
+                    },
+                    "uuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "rh_org_has_subscription",
+                    "rh_user_has_seat",
+                    "username",
+                    "userplan_set",
+                    "uuid"
+                ]
+            },
+            "WcaKeyRequest": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "WCA API Key."
+                    }
+                },
+                "required": [
+                    "key"
+                ]
+            },
+            "WcaModelIdRequest": {
+                "type": "object",
+                "properties": {
+                    "model_id": {
+                        "type": "string",
+                        "description": "WCA Model Id."
+                    }
+                },
+                "required": [
+                    "model_id"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "sessionid"
+            },
+            "oauth2": {
+                "type": "oauth2",
+                "flows": {}
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "ai",
+            "description": "AI-related operations"
+        },
+        {
+            "name": "me",
+            "description": "Authenticated user information"
+        },
+        {
+            "name": "check",
+            "description": "Health check"
+        },
+        {
+            "name": "wca",
+            "description": "watsonx Code Assistant"
+        }
+    ]
+}

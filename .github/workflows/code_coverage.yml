@@ -150,3 +150,4 @@ jobs:
         make create-cachetable
         make update-openapi-schema
         git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.yaml
+        git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.json
