@@ -30,3 +30,16 @@ class TestWCASaaSConfigurationSerializer(WisdomServiceAPITestCaseBaseOIDC):
         config: WCASaaSConfiguration = mock_pipeline_config("wca", api_key=None)
         serializer = WCASaaSConfigurationSerializer(data=config.__dict__)
         self.assertTrue(serializer.is_valid())
+
+    def test_serializer_with_idp_url(self):
+        config: WCASaaSConfiguration = mock_pipeline_config("wca")
+        serializer = WCASaaSConfigurationSerializer(data=config.__dict__)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data["idp_url"], "an-idp-url")
+
+    def test_serializer_without_idp_url(self):
+        config: WCASaaSConfiguration = mock_pipeline_config("wca")
+        del config.__dict__["idp_url"]
+        serializer = WCASaaSConfigurationSerializer(data=config.__dict__)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.validated_data["idp_url"], "https://iam.cloud.ibm.com/identity")
