@@ -117,7 +117,7 @@ class WCASaaSPipelineConfiguration(WCABasePipelineConfiguration):
 
 @Register(api_type="wca")
 class WCASaaSConfigurationSerializer(WCABaseConfigurationSerializer):
-    idp_url = serializers.CharField(required=False, allow_null=True, default=None)
+    idp_url = serializers.CharField(required=False, default="https://iam.cloud.ibm.com/identity")
     idp_login = serializers.CharField(required=False, allow_null=True, default=None)
     idp_password = serializers.CharField(required=False, allow_null=True, default=None)
     one_click_default_api_key = serializers.CharField(
