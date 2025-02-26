@@ -34,6 +34,7 @@ from ansible_ai_connect.users.reports.postman import (
 )
 
 from .api.aws.wca_secret_manager import AWSSecretManager, DummySecretManager
+from .api.eventbus.source import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class AiConfig(AppConfig):
     _ansible_lint_caller = UNINITIALIZED
     _reports_postman = UNINITIALIZED
     _pipeline_factory = UNINITIALIZED
+    _event_bus = UNINITIALIZED
 
     def ready(self) -> None:
         self._pipeline_factory = ModelPipelineFactory()
@@ -57,6 +59,11 @@ class AiConfig(AppConfig):
 
     def get_model_pipeline(self, feature: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         return self._pipeline_factory.get_pipeline(feature)
+
+    def get_event_bus(self):
+        if self._event_bus is UNINITIALIZED:
+            self._event_bus = EventBus()
+        return self._event_bus
 
     def get_ari_caller(self):
         # Django calls apps.ready() when registering INSTALLED_APPS
