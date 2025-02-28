@@ -14,6 +14,11 @@
 
 from django.urls import include, path
 
+from ansible_ai_connect.healthcheck.views import (
+    WisdomServiceHealthView,
+    WisdomServiceLivenessProbeView,
+)
+
 from .ai import urls as ai_urls
 from .telemetry import urls as telemetry_urls
 from .users import urls as me_urls
@@ -24,4 +29,6 @@ urlpatterns = [
     path("me/", include(me_urls)),
     path("telemetry/", include(telemetry_urls)),
     path("wca/", include(wca_urls)),
+    path("health/", WisdomServiceLivenessProbeView.as_view(), name="health"),
+    path("health/status/", WisdomServiceHealthView.as_view(), name="health_status"),
 ]

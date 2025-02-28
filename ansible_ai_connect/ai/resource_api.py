@@ -11,14 +11,24 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from ansible_base.resource_registry.urls import urlpatterns as resource_api_urls
-from django.urls import include, path
 
-from .versions.v0 import urls as v0_urls
-from .versions.v1 import urls as v1_urls
+from ansible_base.resource_registry.registry import (
+    ResourceConfig,
+    ServiceAPIConfig,
+    SharedResource,
+)
+from ansible_base.resource_registry.shared_types import UserType
+from django.contrib.auth import get_user_model
 
-urlpatterns = [
-    path("v0/", include((v0_urls, "ai"), namespace="v0")),
-    path("v1/", include((v1_urls, "ai"), namespace="v1")),
-    path("v1/", include(resource_api_urls)),
+
+class APIConfig(ServiceAPIConfig):
+    service_type = "lightspeed"
+
+
+RESOURCE_LIST = [
+    ResourceConfig(
+        get_user_model(),
+        shared_resource=SharedResource(serializer=UserType, is_provider=False),
+        name_field="username",
+    ),
 ]

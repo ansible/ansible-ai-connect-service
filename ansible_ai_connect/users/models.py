@@ -62,12 +62,13 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     )
     rh_user_is_org_admin = models.BooleanField(default=False)
     rh_internal = models.BooleanField(default=False)
-    external_username = models.CharField(default="", null=False)
-    name = models.CharField(default=None, null=True)
-    given_name = models.CharField(default=None, null=True)
-    family_name = models.CharField(default=None, null=True)
-    email = models.CharField(default=None, null=True)
+    external_username = models.CharField(default="", null=False, max_length=150)
+    name = models.CharField(default=None, null=True, max_length=150)
+    given_name = models.CharField(default=None, null=True, max_length=150)
+    family_name = models.CharField(default=None, null=True, max_length=150)
+    email = models.CharField(default=None, null=True, max_length=150)
     email_verified = models.BooleanField(default=False, null=True)
+    aap_user = models.BooleanField(default=False)
 
     @property
     def org_id(self) -> int | None:

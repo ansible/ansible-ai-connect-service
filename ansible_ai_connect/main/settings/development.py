@@ -34,6 +34,7 @@ if DEBUG:
             {"name": "wca", "description": "watsonx Code Assistant"},
         ],
         "SCHEMA_PATH_PREFIX": r"/api/v[0-9]+",
+        "PREPROCESSING_HOOKS": ["ansible_ai_connect.ai.api.openapi.preprocessing_filter_spec"],
     }
 
     # social_django does not process auth exceptions when DEBUG=True by default.

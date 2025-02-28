@@ -14,12 +14,12 @@ services:
       - $PWD/ari/kb:/etc/ari/kb:Z
       - $PWD/tools/scripts:/etc/wisdom/scripts:Z
     ports:
-      - "8000:8000"
+      - "${LIGHTSPEED_PORT:-8000}:8000"
     expose:
-      - "8000"
+      - "${LIGHTSPEED_PORT:-8000}"
       - "8001-8011" # django-prometheus
     environment:
-      - DJANGO_SETTINGS_MODULE=ansible_ai_connect.main.settings.development
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-ansible_ai_connect.main.settings.development}
       - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL}
       - ANSIBLE_AI_DATABASE_NAME=wisdom
       - ANSIBLE_AI_DATABASE_USER=wisdom
@@ -81,6 +81,7 @@ services:
       - /etc/wisdom/scripts/launch-wisdom.sh
     networks:
       - dbnet
+      - service-mesh
   db:
     image: docker.io/library/postgres:15-alpine
     environment:
@@ -120,3 +121,5 @@ services:
 
 networks:
   dbnet:
+  service-mesh:
+    name: service-mesh
