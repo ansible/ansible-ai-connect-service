@@ -32,7 +32,7 @@ class HealthCheckSummaryException:
     exception: HealthCheckException
     cause: Exception
 
-    def __init__(self, exception: HealthCheckException, cause: Exception = None) -> None:
+    def __init__(self, exception: HealthCheckException, cause: Exception | None = None) -> None:
         self.exception = exception
         self.cause = cause
 
