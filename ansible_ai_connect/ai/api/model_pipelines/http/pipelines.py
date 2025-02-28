@@ -276,8 +276,12 @@ class HttpStreamingChatBotPipeline(
                                 s = chunk.decode("utf-8").strip()
                                 if s and s.startswith("data: "):
                                     o = json.loads(s[len("data: ") :])
-                                    if o["event"] == "error" and "data" in o:
-                                        data = o["data"]
+                                    if o["event"] == "error":
+                                        default_data = {
+                                            "response": "(not provided)",
+                                            "cause": "(not provided)",
+                                        }
+                                        data = o.get("data", default_data)
                                         logger.error(
                                             "An error received in chat streaming content:"
                                             + " response="
