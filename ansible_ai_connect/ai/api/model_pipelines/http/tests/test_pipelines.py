@@ -87,6 +87,11 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         },
     ]
 
+    STREAM_DATA_PROMPT_ERROR_WITH_NO_DATA = [
+        {"event": "start", "data": {"conversation_id": "92766ddd-dfc8-4830-b269-7a4b3dbc7c3c"}},
+        {"event": "error"},
+    ]
+
     def setUp(self):
         self.pipeline = HttpStreamingChatBotPipeline(mock_pipeline_config("http"))
 
@@ -156,3 +161,13 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             async for _ in self.pipeline.async_invoke(self.get_params()):
                 pass
             self.assertInLog("Streaming query API returned status code=500", log)
+
+    @patch("aiohttp.ClientSession.post")
+    async def test_async_invoke_error_with_no_data(self, mock_post):
+        mock_post.return_value = self.get_return_value(
+            self.STREAM_DATA_PROMPT_ERROR_WITH_NO_DATA,
+        )
+        with self.assertLogs(logger="root", level="ERROR") as log:
+            async for _ in self.pipeline.async_invoke(self.get_params()):
+                pass
+            self.assertInLog("(not provided)", log)

@@ -306,7 +306,7 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "DEBUG"},
+        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
     },
     "loggers": {
         "django": {
@@ -348,7 +348,7 @@ LOGGING = {
         },
         "ansible_ai_connect.ai.api.streaming_chat": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": False,
         },
     },
