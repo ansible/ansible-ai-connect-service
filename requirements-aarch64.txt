@@ -325,7 +325,7 @@ pyasn1-modules==0.4.0
     # via
     #   google-auth
     #   oauth2client
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pydantic==2.9.2
     # via
