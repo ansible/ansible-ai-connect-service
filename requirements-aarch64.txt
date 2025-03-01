@@ -406,7 +406,7 @@ resolvelib==1.0.1
     # via ansible-core
 rich==13.7.1
     # via ansible-lint
-rpds-py==0.18.0
+rpds-py==0.23.1
     # via
     #   jsonschema
     #   referencing
