@@ -1143,7 +1143,7 @@ class StreamingChat(AACSAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser,
+        IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.StreamingChatBotOperationalEvent
