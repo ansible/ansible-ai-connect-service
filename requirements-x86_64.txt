@@ -242,7 +242,7 @@ launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
