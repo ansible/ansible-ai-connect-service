@@ -32,7 +32,7 @@ asgiref==3.8.1
     # via
     #   django
     #   django-ansible-base
-asttokens==2.4.1
+asttokens==3.0.0
     # via stack-data
 attrs==23.2.0
     # via
