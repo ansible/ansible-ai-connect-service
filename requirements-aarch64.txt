@@ -135,7 +135,7 @@ drf-spectacular==0.27.2
     # via -r requirements.in
 et-xmlfile==1.1.0
     # via openpyxl
-executing==2.0.1
+executing==2.2.0
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
