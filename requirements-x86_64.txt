@@ -47,7 +47,7 @@ black==24.3.0
     # via
     #   -r requirements.in
     #   ansible-lint
-boto3==1.26.84
+boto3==1.37.4
     # via -r requirements.in
 botocore==1.29.165
     # via
