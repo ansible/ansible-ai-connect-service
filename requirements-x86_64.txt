@@ -472,7 +472,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   django-test-migrations
     #   jwcrypto
