@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements-x86_64.txt requirements.in
 #
-aiohappyeyeballs==2.3.5
+aiohappyeyeballs==2.4.6
     # via aiohttp
 aiohttp==3.10.11
     # via langchain
