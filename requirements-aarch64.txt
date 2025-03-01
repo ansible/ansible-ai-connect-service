@@ -102,7 +102,7 @@ django==4.2.18
     #   djangorestframework
     #   drf-spectacular
     #   social-auth-app-django
-django-allow-cidr==0.6.0
+django-allow-cidr==0.7.1
     # via -r requirements.in
 django-ansible-base[jwt-consumer,resource-registry] @ git+https://github.com/ansible/django-ansible-base@devel
     # via -r requirements.in
