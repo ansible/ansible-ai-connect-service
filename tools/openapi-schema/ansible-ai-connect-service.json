@@ -554,6 +554,77 @@
                 }
             }
         },
+        "/api/v1/ai/streaming_chat/": {
+            "post": {
+                "operationId": "ai_streaming_chat_create",
+                "description": "Send a message to the backend chatbot service and get a streaming reply.",
+                "summary": "Streaming chat request",
+                "tags": [
+                    "ai"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamingChatRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamingChatRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StreamingChatRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "read",
+                            "write"
+                        ]
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "413": {
+                        "description": "Prompt too long"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "description": "Service unavailable"
+                    }
+                }
+            }
+        },
         "/api/v1/health/": {
             "get": {
                 "operationId": "health_retrieve",
@@ -627,77 +698,6 @@
                     },
                     "500": {
                         "description": "One or more backend services are unavailable."
-                    }
-                }
-            }
-        },
-        "/api/v1/ai/streaming_chat/": {
-            "post": {
-                "operationId": "ai_streaming_chat_create",
-                "description": "Send a message to the backend chatbot service and get a streaming reply.",
-                "summary": "Streaming chat request",
-                "tags": [
-                    "ai"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StreamingChatRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StreamingChatRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StreamingChatRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "oauth2": [
-                            "read",
-                            "write"
-                        ]
-                    },
-                    {
-                        "cookieAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ChatResponse"
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "400": {
-                        "description": "Bad request"
-                    },
-                    "403": {
-                        "description": "Forbidden"
-                    },
-                    "413": {
-                        "description": "Prompt too long"
-                    },
-                    "422": {
-                        "description": "Validation failed"
-                    },
-                    "500": {
-                        "description": "Internal server error"
-                    },
-                    "503": {
-                        "description": "Service unavailable"
                     }
                 }
             }
