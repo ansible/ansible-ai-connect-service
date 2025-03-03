@@ -160,7 +160,8 @@ class ChatbotView(ProtectedTemplateView):
         if user and user.is_authenticated:
             context["user_name"] = user.username
         context["debug"] = "true" if settings.CHATBOT_DEBUG_UI else "false"
-        context["stream"] = "true" if self.streaming_chatbot_enabled else "false"
+        # context["stream"] = "true" if self.streaming_chatbot_enabled else "false"
+        context["stream"] = "false"  # Disable chat streaming temporarily
 
         return context
 
