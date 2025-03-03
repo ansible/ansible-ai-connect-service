@@ -11,13 +11,24 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import List
 
 from .base import *  # NOQA
 from .base import os
 
+
+def get_allowed_hosts(ansible_wisdom_domain: str) -> List[str]:
+    allowed_hosts = list(filter(len, ansible_wisdom_domain.split(",")))
+    if "*" in allowed_hosts:
+        return ["*"]
+    if "daphne" not in allowed_hosts:
+        allowed_hosts.append("daphne")
+    return allowed_hosts
+
+
 DEBUG = False
 
-ALLOWED_HOSTS = list(filter(len, os.getenv("ANSIBLE_WISDOM_DOMAIN", "").split(",")))
+ALLOWED_HOSTS = get_allowed_hosts(os.getenv("ANSIBLE_WISDOM_DOMAIN", ""))
 
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = os.getenv("SOCIAL_AUTH_REDIRECT_IS_HTTPS", "True").lower() == "true"
 
