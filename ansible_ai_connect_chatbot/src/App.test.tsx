@@ -131,7 +131,7 @@ function createError(message: string, status: number): AxiosError {
 }
 
 function mockFetchEventSource() {
-  const streamData: object[] = [
+  const streamNormalData: object[] = [
     {
       event: "start",
       data: { conversation_id: "1ec5ba5b-c12d-465b-a722-0b95fee55e8c" },
@@ -183,17 +183,35 @@ function mockFetchEventSource() {
     },
   ];
 
+  const streamErrorData: object[] = [
+    {
+      event: "start",
+      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb3" },
+    },
+    {
+      event: "error",
+      data: {
+        response: "Oops, something went wrong during LLM invocation",
+        cause: "Error code: 404 - {'detail': 'Not Found'}",
+      },
+    },
+  ];
+
   return vi.fn(async (_, init) => {
     let status = 200;
+    let errorCase = false;
     const o = JSON.parse(init.body);
     if (o.query.startsWith("status=")) {
       status = parseInt(o.query.substring(7));
+    } else if (o.query.startsWith("error in stream")) {
+      errorCase = true;
     }
     console.log(`status ${status}`);
 
     const ok = status === 200;
     await init.onopen({ status, ok });
     if (status === 200) {
+      const streamData = errorCase ? streamErrorData : streamNormalData;
       for (const data of streamData) {
         init.onmessage({ data: JSON.stringify(data) });
       }
@@ -604,7 +622,7 @@ test("Chat streaming test", async () => {
     .toBeVisible();
 });
 
-test("Chat streaming error case", async () => {
+test("Chat streaming error at API call", async () => {
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("status=400");
@@ -614,4 +632,20 @@ test("Chat streaming error case", async () => {
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual("Bot returned status_code 400");
+});
+
+test("Chat streaming error in streaming data", async () => {
+  const view = await renderApp(false, true);
+  const textArea = page.getByLabelText("Send a message...");
+  await textArea.fill("error in stream");
+
+  await userEvent.keyboard("{Enter}");
+
+  const alert = view.container.querySelector(".pf-v6-c-alert__description");
+  const textContent = alert?.textContent;
+  expect(textContent).toEqual(
+    "Bot returned an error: " +
+      'response="Oops, something went wrong during LLM invocation", ' +
+      "cause=\"Error code: 404 - {'detail': 'Not Found'}\"",
+  );
 });

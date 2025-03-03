@@ -401,6 +401,15 @@ export const useChatbot = () => {
                 if (message.data.referenced_documents.length > 0) {
                   addReferencedDocuments(message.data.referenced_documents);
                 }
+              } else if (message.event === "error") {
+                const data = message.data;
+                setAlertMessage({
+                  title: "Error",
+                  message:
+                    `Bot returned an error: response="${data.response}", ` +
+                    `cause="${data.cause}"`,
+                  variant: "danger",
+                });
               }
             },
             onclose() {
