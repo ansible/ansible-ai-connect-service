@@ -18,6 +18,7 @@ from typing import Any, Dict, Generic, Optional, TypeVar
 
 from attrs import define
 from django.conf import settings
+from django.http import StreamingHttpResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -242,6 +243,33 @@ class ChatBotParameters:
 ChatBotResponse = Any
 
 
+@define
+class StreamingChatBotParameters(ChatBotParameters):
+    media_type: str
+
+    @classmethod
+    def init(
+        cls,
+        query: str,
+        provider: Optional[str] = None,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        media_type: Optional[str] = None,
+    ):
+        return cls(
+            query=query,
+            provider=provider,
+            model_id=model_id,
+            conversation_id=conversation_id,
+            system_prompt=system_prompt,
+            media_type=media_type,
+        )
+
+
+StreamingChatBotResponse = StreamingHttpResponse
+
+
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
     def __init__(self, config: PIPELINE_CONFIGURATION):
@@ -381,3 +409,17 @@ class ModelPipelineChatBot(
     @staticmethod
     def alias():
         return "chatbot-service"
+
+
+class ModelPipelineStreamingChatBot(
+    ModelPipeline[PIPELINE_CONFIGURATION, StreamingChatBotParameters, StreamingChatBotResponse],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "streaming-chatbot-service"

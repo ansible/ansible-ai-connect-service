@@ -23,6 +23,7 @@ from unittest.mock import Mock, patch
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.http import StreamingHttpResponse
 from django.test import override_settings
 
 from ansible_ai_connect.ai.api.exceptions import (
@@ -34,7 +35,10 @@ from ansible_ai_connect.ai.api.exceptions import (
     ChatbotUnauthorizedException,
     ChatbotValidationException,
 )
-from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+    HttpChatBotPipeline,
+    HttpStreamingChatBotPipeline,
+)
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
@@ -178,6 +182,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     def query_with_no_error(self, payload, mock_post):
         return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
     @mock.patch(
         "requests.post",
         side_effect=mocked_requests_post,
@@ -426,6 +431,278 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
                 segment_events[0]["properties"]["chat_response"],
             )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                TestChatView.JSON_RESPONSE["truncated"],
+            )
+            self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_system_prompt"],
+                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["system_prompt"],
+            )
+
+    def test_chat_rate_limit(self):
+        # Call chat API five times using self.user
+        for i in range(5):
+            self.assert_test(TestChatView.VALID_PAYLOAD)
+        try:
+            username = "u" + "".join(random.choices(string.digits, k=5))
+            password = "secret"
+            email = "user2@example.com"
+            self.user2 = get_user_model().objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+            )
+            (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+            self.user2.organization = org
+            self.user2.rh_internal = True
+            # Call chart API five times using self.user2
+            for i in range(5):
+                self.assert_test(TestChatView.VALID_PAYLOAD, user=self.user2)
+            # The next chat API call should be the 11th from two users and should receive a 429.
+            self.assert_test(TestChatView.VALID_PAYLOAD, expected_status_code=429, user=self.user2)
+        finally:
+            if self.user2:
+                self.user2.delete()
+
+    def test_not_rh_internal_user(self):
+        try:
+            username = "u" + "".join(random.choices(string.digits, k=5))
+            self.user2 = get_user_model().objects.create_user(
+                username=username,
+            )
+            self.user2.organization = Organization.objects.get_or_create(
+                id=123, telemetry_opt_out=False
+            )[0]
+            self.user2.rh_internal = False
+            self.assert_test(TestChatView.VALID_PAYLOAD, expected_status_code=403, user=self.user2)
+        finally:
+            if self.user2:
+                self.user2.delete()
+
+
+class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
+    api_version = "v1"
+
+    def setUp(self):
+        super().setUp()
+        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        self.user.organization = org
+        self.user.rh_internal = True
+
+    @staticmethod
+    def mocked_response(*args, **kwargs):
+
+        # Make sure that the given json data is serializable
+        input = json.dumps(kwargs["json"])
+        assert input is not None
+
+        json_response = {
+            "response": "AAP 2.5 introduces an updated, unified UI.",
+            "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+        status_code = 200
+
+        if kwargs["json"]["query"] == TestChatView.PAYLOAD_INTERNAL_SERVER_ERROR["query"]:
+            status_code = 500
+            json_response = {
+                "detail": "Internal server error",
+            }
+
+        response = StreamingHttpResponse()
+        response.status_code = status_code
+        response.text = json.dumps(json_response)
+        return response
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def query_with_status_code_override(self, payload, mock):
+        mock.return_value = TestStreamingChatView.mocked_response(json=payload)
+        return self.client.post(self.api_version_reverse("streaming_chat"), payload, format="json")
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
+    def query_without_chat_config(self, payload):
+        return self.client.post(self.api_version_reverse("streaming_chat"), payload, format="json")
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def query_with_no_error(self, payload, mock):
+        mock.return_value = TestStreamingChatView.mocked_response(json=payload)
+        return self.client.post(self.api_version_reverse("streaming_chat"), payload, format="json")
+
+    def assert_test(
+        self,
+        payload,
+        expected_status_code=200,
+        expected_exception=None,
+        expected_log_message=None,
+        user=None,
+    ):
+        if user is None:
+            user = self.user
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            self.client.force_authenticate(user=user)
+
+            if expected_status_code >= 400:
+                if expected_exception == ChatbotNotEnabledException:
+                    r = self.query_without_chat_config(payload)
+                else:
+                    r = self.query_with_status_code_override(payload)
+            else:
+                r = self.query_with_no_error(payload)
+
+            self.assertEqual(r.status_code, expected_status_code)
+            if expected_exception is not None:
+                self.assert_error_detail(
+                    r, expected_exception().default_code, expected_exception().default_detail
+                )
+                self.assertInLog(expected_log_message, log)
+        return r
+
+    def test_chat(self):
+        self.assert_test(TestChatView.VALID_PAYLOAD)
+
+    def test_chat_with_conversation_id(self):
+        self.assert_test(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+
+    def test_chat_not_enabled_exception(self):
+        self.assert_test(
+            TestChatView.VALID_PAYLOAD, 503, ChatbotNotEnabledException, "Chatbot is not enabled"
+        )
+
+    def test_chat_internal_server_exception(self):
+        self.assert_test(
+            TestChatView.PAYLOAD_INTERNAL_SERVER_ERROR,
+            500,
+            ChatbotInternalServerException,
+            "ChatbotInternalServerException",
+        )
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpStreamingChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["query"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                TestChatView.JSON_RESPONSE["truncated"],
+            )
+            self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_limit_exceeded(self):
+        q = "".join("hello " for i in range(6500))
+        payload = {
+            "query": q,
+        }
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(payload)
+            self.assertEqual(r.status_code, 200)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["rh_user_org_id"],
+                123,
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_response"],
+                "",
+            )
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_anonymizer(self):
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(
+                {
+                    "query": "Hello ansible@ansible.com",
+                    "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+                }
+            )
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertNotEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                "Hello ansible@ansible.com",
+            )
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_with_system_prompt_override(self):
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpStreamingChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 TestChatView.JSON_RESPONSE["truncated"],

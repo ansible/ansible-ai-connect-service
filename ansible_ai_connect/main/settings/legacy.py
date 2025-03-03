@@ -192,6 +192,15 @@ def load_from_env_vars():
             "stream": False,
         },
     }
+    model_pipelines_config["ModelPipelineStreamingChatBot"] = {
+        "provider": "http",
+        "config": {
+            "inference_url": chatbot_service_url or "http://localhost:8000",
+            "model_id": chatbot_service_model_id or "granite3-8b",
+            "verify_ssl": model_service_verify_ssl,
+            "stream": True,
+        },
+    }
 
     # Enable Health Checks where we have them implemented
     model_pipelines_config["ModelPipelineCompletions"]["config"][

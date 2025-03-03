@@ -29,6 +29,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
     PlaybookGenerationParameters,
@@ -37,6 +38,8 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
+    StreamingChatBotParameters,
+    StreamingChatBotResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
@@ -139,6 +142,19 @@ class NopChatBotPipeline(NopMetaData, ModelPipelineChatBot[NopConfiguration]):
         super().__init__(config=config)
 
     def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+        raise NotImplementedError
+
+    def self_test(self) -> Optional[HealthCheckSummary]:
+        raise NotImplementedError
+
+
+@Register(api_type="nop")
+class NopStreamingChatBotPipeline(NopMetaData, ModelPipelineStreamingChatBot[NopConfiguration]):
+
+    def __init__(self, config: NopConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
         raise NotImplementedError
 
     def self_test(self) -> Optional[HealthCheckSummary]:

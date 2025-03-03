@@ -55,6 +55,7 @@ ALLOWED_HOSTS = ["localhost"]
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -94,6 +95,11 @@ MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusAfterMiddleware",
     "csp.middleware.CSPMiddleware",
 ]
+
+if os.environ.get("CSRF_TRUSTED_ORIGINS"):
+    CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
+else:
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
 
 # Allow Prometheus to scrape metrics
 ALLOWED_CIDR_NETS = [os.environ.get("ALLOWED_CIDR_NETS", "10.0.0.0/8")]
@@ -340,6 +346,11 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "ansible_ai_connect.ai.api.streaming_chat": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     "root": {
         "handlers": ["console"],
@@ -364,6 +375,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "ansible_ai_connect.main.wsgi.application"
+ASGI_APPLICATION = "ansible_ai_connect.main.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

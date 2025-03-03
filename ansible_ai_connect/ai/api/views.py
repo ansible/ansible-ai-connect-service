@@ -21,6 +21,7 @@ from ansible_anonymizer import anonymizer
 from attr import asdict
 from django.apps import apps
 from django.conf import settings
+from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
@@ -77,10 +78,12 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
     PlaybookExplanationParameters,
     PlaybookGenerationParameters,
     RoleExplanationParameters,
     RoleGenerationParameters,
+    StreamingChatBotParameters,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
 from ansible_ai_connect.ai.api.telemetry import schema1
@@ -134,6 +137,7 @@ from .serializers import (
     PlaybookGenerationAction,
     RoleGenerationAction,
     SentimentFeedback,
+    StreamingChatRequestSerializer,
     SuggestionQualityFeedback,
 )
 from .telemetry.schema1 import (
@@ -1125,4 +1129,80 @@ class Chat(AACSAPIView):
             data,
             status=rest_framework_status.HTTP_200_OK,
             headers=headers,
+        )
+
+
+class StreamingChat(AACSAPIView):
+    """
+    Send a message to the backend chatbot service and get a streaming reply.
+    """
+
+    class StreamingChatEndpointThrottle(EndpointRateThrottle):
+        scope = "chat"
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        IsRHInternalUser | IsTestUser | IsAAPUser,
+    ]
+    required_scopes = ["read", "write"]
+    schema1_event = schema1.StreamingChatBotOperationalEvent
+    request_serializer_class = StreamingChatRequestSerializer
+    throttle_classes = [StreamingChatEndpointThrottle]
+
+    llm: ModelPipelineStreamingChatBot
+
+    def __init__(self):
+        super().__init__()
+        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineStreamingChatBot)
+
+        self.chatbot_enabled = (
+            self.llm.config.inference_url
+            and self.llm.config.model_id
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        if self.chatbot_enabled:
+            logger.debug("Chatbot is enabled.")
+        else:
+            logger.debug("Chatbot is not enabled.")
+
+    @extend_schema(
+        request=StreamingChatRequestSerializer,
+        responses={
+            200: ChatResponseSerializer,  # TODO
+            400: OpenApiResponse(description="Bad request"),
+            403: OpenApiResponse(description="Forbidden"),
+            413: OpenApiResponse(description="Prompt too long"),
+            422: OpenApiResponse(description="Validation failed"),
+            500: OpenApiResponse(description="Internal server error"),
+            503: OpenApiResponse(description="Service unavailable"),
+        },
+        summary="Streaming chat request",
+    )
+    def post(self, request) -> StreamingHttpResponse:
+        if not self.chatbot_enabled:
+            raise ChatbotNotEnabledException()
+
+        req_query = self.validated_data["query"]
+        req_system_prompt = self.validated_data.get("system_prompt")
+        req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
+        conversation_id = self.validated_data.get("conversation_id")
+        media_type = self.validated_data.get("media_type")
+
+        # Initialise Segment Event early, in case of exceptions
+        self.event.chat_prompt = anonymize_struct(req_query)
+        self.event.chat_system_prompt = req_system_prompt
+        self.event.provider_id = req_provider
+        self.event.conversation_id = conversation_id
+        self.event.modelName = self.req_model_id or self.llm.config.model_id
+
+        return self.llm.invoke(
+            StreamingChatBotParameters.init(
+                query=req_query,
+                system_prompt=req_system_prompt,
+                model_id=self.req_model_id or self.llm.config.model_id,
+                provider=req_provider,
+                conversation_id=conversation_id,
+                media_type=media_type,
+            )
         )

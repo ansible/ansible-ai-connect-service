@@ -30,6 +30,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 
@@ -45,6 +46,7 @@ REGISTRY_ENTRY = dict.fromkeys(
         ModelPipelinePlaybookExplanation,
         ModelPipelineRoleExplanation,
         ModelPipelineChatBot,
+        ModelPipelineStreamingChatBot,
         PipelineConfiguration,
         Serializer,
     ]
