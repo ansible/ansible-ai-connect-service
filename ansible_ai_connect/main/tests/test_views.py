@@ -17,6 +17,7 @@
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from textwrap import dedent
+from unittest import skip
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
@@ -336,6 +337,7 @@ class TestChatbotView(TestCase):
         self.assertEqual(r.status_code, HTTPStatus.FOUND)
         self.assertEqual(r.url, "/")
 
+    @skip("Chat streaming is temporarily disabled")
     def test_chatbot_view_with_rh_user(self):
         self.client.force_login(user=self.rh_user)
         r = self.client.get(reverse("chatbot"))
