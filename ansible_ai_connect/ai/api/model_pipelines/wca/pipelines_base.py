@@ -27,6 +27,7 @@ from health_check.exceptions import ServiceUnavailable
 from prometheus_client import Counter, Histogram
 from requests.exceptions import HTTPError
 
+from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.formatter import (
     get_task_names_from_prompt,
     strip_task_preamble_from_multi_task_prompt,
@@ -526,7 +527,7 @@ class WCABaseRoleGenerationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
 
 class WCABasePlaybookExplanationPipeline(
@@ -606,4 +607,4 @@ class WCABaseRoleExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable

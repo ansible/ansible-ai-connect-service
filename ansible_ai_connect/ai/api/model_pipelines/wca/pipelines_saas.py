@@ -427,9 +427,6 @@ class WCASaaSRoleExplanationPipeline(
     def __init__(self, config: WCASaaSConfiguration):
         super().__init__(config=config)
 
-    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        raise NotImplementedError
-
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 
