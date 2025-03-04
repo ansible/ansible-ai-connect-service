@@ -119,7 +119,7 @@ django==4.2.18
     #   social-auth-app-django
 django-allow-cidr==0.6.0
     # via -r requirements.in
-django-ansible-base[jwt-consumer,resource-registry] @ git+https://github.com/ansible/django-ansible-base@devel
+django-ansible-base[jwt-consumer,resource-registry] @ git+https://github.com/ansible/django-ansible-base@2025.1.31
     # via -r requirements.in
 django-crum==0.7.9
     # via django-ansible-base

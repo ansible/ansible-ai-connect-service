@@ -71,4 +71,4 @@ uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
 django-allow-cidr==0.6.0
 django-csp==3.7
-django-ansible-base @ git+https://github.com/ansible/django-ansible-base@devel#egg=django-ansible-base[jwt_consumer,resource-registry]
+django-ansible-base @ git+https://github.com/ansible/django-ansible-base@2025.1.31#egg=django-ansible-base[jwt_consumer,resource-registry]
