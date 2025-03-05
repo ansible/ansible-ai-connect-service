@@ -28,6 +28,7 @@ from rest_framework.exceptions import APIException
 
 from ansible_ai_connect.ai.api.data.data_model import APIPayload
 from ansible_ai_connect.ai.api.exceptions import (
+    FeatureNotAvailable,
     PostprocessException,
     PreprocessInvalidYamlException,
 )
@@ -628,6 +629,7 @@ class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             (WcaNoDefaultModelId(), HTTPStatus.FORBIDDEN),
             (WcaModelIdNotFound(), HTTPStatus.FORBIDDEN),
             (WcaEmptyResponse(), HTTPStatus.NO_CONTENT),
+            (FeatureNotAvailable(), HTTPStatus.NOT_FOUND),
             (ConnectionError(), HTTPStatus.SERVICE_UNAVAILABLE),
         ]:
             invoke.side_effect = self.get_side_effect(error)

@@ -16,6 +16,7 @@ from typing import Type
 
 from django.test import override_settings
 
+from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopContentMatchPipeline,
@@ -129,5 +130,5 @@ class TestModelPipelineFactoryImplementations(WisdomServiceAPITestCaseBaseOIDC):
                 f"Using NOP implementation for '{pipeline_type.__name__}'.",
                 log,
             )
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(FeatureNotAvailable):
                 pipeline.invoke(None)

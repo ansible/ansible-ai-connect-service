@@ -13,6 +13,7 @@
 #  limitations under the License.
 from typing import Optional
 
+from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ChatBotParameters,
@@ -59,7 +60,7 @@ class NopCompletionsPipeline(NopMetaData, ModelPipelineCompletions[NopConfigurat
         super().__init__(config=config)
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
@@ -75,7 +76,7 @@ class NopContentMatchPipeline(NopMetaData, ModelPipelineContentMatch[NopConfigur
         super().__init__(config=config)
 
     def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -88,7 +89,7 @@ class NopPlaybookGenerationPipeline(NopMetaData, ModelPipelinePlaybookGeneration
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -101,7 +102,7 @@ class NopRoleGenerationPipeline(NopMetaData, ModelPipelineRoleGeneration[NopConf
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -116,7 +117,7 @@ class NopPlaybookExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -129,7 +130,7 @@ class NopRoleExplanationPipeline(NopMetaData, ModelPipelineRoleExplanation[NopCo
         super().__init__(config=config)
 
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -142,7 +143,7 @@ class NopChatBotPipeline(NopMetaData, ModelPipelineChatBot[NopConfiguration]):
         super().__init__(config=config)
 
     def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
@@ -155,7 +156,7 @@ class NopStreamingChatBotPipeline(NopMetaData, ModelPipelineStreamingChatBot[Nop
         super().__init__(config=config)
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
-        raise NotImplementedError
+        raise FeatureNotAvailable
 
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError

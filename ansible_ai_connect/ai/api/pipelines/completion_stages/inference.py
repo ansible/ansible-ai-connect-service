@@ -25,6 +25,7 @@ from prometheus_client import Histogram
 from ansible_ai_connect.ai.api.data.data_model import ModelMeshPayload
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
+    FeatureNotAvailable,
     ModelTimeoutException,
     ServiceUnavailable,
     WcaBadRequestException,
@@ -220,6 +221,13 @@ class InferenceStage(PipelineElement):
             )
             detail = exception.json_response["detail"]
             raise WcaValidationFailureException(cause=e, detail={"reason": detail})
+
+        except FeatureNotAvailable as e:
+            exception = e
+            logger.exception(
+                f"Completions feature is not available for suggestion {payload.suggestionId}."
+            )
+            raise FeatureNotAvailable(cause=e)
 
         except Exception as e:
             exception = e
