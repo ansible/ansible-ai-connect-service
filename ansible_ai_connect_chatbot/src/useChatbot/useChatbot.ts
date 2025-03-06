@@ -30,8 +30,8 @@ const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite3-8b", provider: "my_rhoai_g3" },
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
+  { model: "granite3-8b", provider: "my_rhoai_g3" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -145,7 +145,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
-  const [selectedModel, setSelectedModel] = useState("granite3-8b");
+  const [selectedModel, setSelectedModel] = useState("granite3-1-8b");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
