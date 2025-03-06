@@ -427,6 +427,11 @@ class WCASaaSRoleExplanationPipeline(
     def __init__(self, config: WCASaaSConfiguration):
         super().__init__(config=config)
 
+    def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
+        if not settings.ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT:
+            raise FeatureNotAvailable
+        return super().invoke(params)
+
     def self_test(self) -> Optional[HealthCheckSummary]:
         raise NotImplementedError
 

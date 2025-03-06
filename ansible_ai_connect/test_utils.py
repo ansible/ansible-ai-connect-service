@@ -16,6 +16,7 @@ import logging
 import random
 import string
 from ast import literal_eval
+from datetime import datetime
 from http import HTTPStatus
 from typing import Optional, Union
 from unittest.mock import patch
@@ -35,6 +36,7 @@ from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.ai.api.utils.version import api_version_reverse
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
+from ansible_ai_connect.users.models import Plan
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +249,11 @@ class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
             rh_org_id=1981,
             social_auth_extra_data={},
         )
+
+    def start_user_plan(self):
+        self.trial_plan, _ = Plan.objects.get_or_create(name="Some plan", expires_after="10 days")
+        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        self.user.plans.add(self.trial_plan)
 
 
 class APIVersionTestCaseBase:
