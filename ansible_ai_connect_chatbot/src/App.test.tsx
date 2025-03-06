@@ -558,12 +558,12 @@ test("Debug mode test", async () => {
   mockAxios(200);
 
   await renderApp(true);
-  await expect.element(page.getByText("granite3-8b")).toBeVisible();
-  await page.getByText("granite3-8b").click();
+  await expect.element(page.getByText("granite3-1-8b")).toBeVisible();
+  await page.getByText("granite3-1-8b").click();
   await expect
-    .element(page.getByRole("menuitem", { name: "granite3-1-8b" }))
+    .element(page.getByRole("menuitem", { name: "granite3-8b" }))
     .toBeVisible();
-  await page.getByRole("menuitem", { name: "granite3-1-8b" }).click();
+  await page.getByRole("menuitem", { name: "granite3-8b" }).click();
 
   await sendMessage("Hello");
   await expect
