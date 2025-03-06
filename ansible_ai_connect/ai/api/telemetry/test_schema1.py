@@ -12,14 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime
 from unittest import mock
 
 from django.test import override_settings
-from django.utils import timezone
 
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
-from ansible_ai_connect.users.models import Plan
 
 from .schema1 import (
     ExplainPlaybookEvent,
@@ -83,9 +80,7 @@ class TestOneClickTrialStartedEvent(WisdomServiceAPITestCaseBaseOIDC):
 
     def setUp(self):
         super().setUp()
-        self.trial_plan, _ = Plan.objects.get_or_create(name="Some plan", expires_after="10 days")
-        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
-        self.user.plans.add(self.trial_plan)
+        self.start_user_plan()
 
     def tearDown(self):
         super().tearDown()

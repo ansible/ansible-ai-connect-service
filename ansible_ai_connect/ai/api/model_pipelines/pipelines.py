@@ -192,6 +192,7 @@ class RoleExplanationParameters:
     role_name: str
     model_id: str
     focus_on_file: str
+    explanation_id: str
 
     @classmethod
     def init(
@@ -201,6 +202,7 @@ class RoleExplanationParameters:
         role_name: str = "",
         model_id: str = "",
         focus_on_file: str = "",
+        explanation_id: str = "",
     ):
         return cls(
             request=request,
@@ -208,6 +210,7 @@ class RoleExplanationParameters:
             role_name=role_name,
             model_id=model_id,
             focus_on_file=focus_on_file,
+            explanation_id=explanation_id,
         )
 
 

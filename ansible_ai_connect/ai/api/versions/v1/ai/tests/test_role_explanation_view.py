@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from ansible_ai_connect.ai.api.tests.test_role_explanation_view import (
-    TestRoleExplanationView as TestRoleExplanationView,
+    TestRoleExplanationViewDummy as TestRoleExplanationView,
 )
 from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
 

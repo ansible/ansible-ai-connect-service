@@ -136,6 +136,12 @@ wca_explain_playbook_hist = Histogram(
     namespace=NAMESPACE,
     buckets=DEFAULT_LATENCY_BUCKETS,
 )
+wca_explain_role_hist = Histogram(
+    "wca_explain_role_latency_seconds",
+    "Histogram of WCA explain-role API processing time",
+    namespace=NAMESPACE,
+    buckets=DEFAULT_LATENCY_BUCKETS,
+)
 ibm_cloud_identity_token_hist = Histogram(
     "wca_ibm_identity_token_latency_seconds",
     "Histogram of IBM Cloud identity token API processing time",
@@ -165,6 +171,11 @@ wca_codegen_role_retry_counter = Counter(
 wca_explain_playbook_retry_counter = Counter(
     "wca_explain_playbook_retries",
     "Counter of WCA explain-playbook API invocation retries",
+    namespace=NAMESPACE,
+)
+wca_explain_role_retry_counter = Counter(
+    "wca_explain_role_retries",
+    "Counter of WCA explain-role API invocation retries",
     namespace=NAMESPACE,
 )
 ibm_cloud_identity_token_retry_counter = Counter(
@@ -265,6 +276,11 @@ class WCABasePipeline(
     def on_backoff_explain_playbook(details):
         WCABasePipeline.log_backoff_exception(details)
         wca_explain_playbook_retry_counter.inc()
+
+    @staticmethod
+    def on_backoff_explain_role(details):
+        WCABasePipeline.log_backoff_exception(details)
+        wca_explain_role_retry_counter.inc()
 
     @abstractmethod
     def get_request_headers(
@@ -607,4 +623,50 @@ class WCABaseRoleExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        raise FeatureNotAvailable
+        request = params.request
+        files = params.files
+        model_id = params.model_id
+        explanation_id = params.explanation_id
+
+        organization_id = request.user.organization.id if request.user.organization else None
+        api_key = self.get_api_key(request.user, organization_id)
+        model_id = self.get_model_id(request.user, organization_id, model_id)
+
+        headers = self.get_request_headers(api_key, explanation_id)
+        data = {
+            "role_name": params.role_name,
+            "model_id": model_id,
+            "files": files,
+        }
+
+        @backoff.on_exception(
+            backoff.expo,
+            Exception,
+            max_tries=self.retries + 1,
+            giveup=self.fatal_exception,
+            on_backoff=self.on_backoff_explain_role,
+        )
+        @wca_explain_role_hist.time()
+        def post_request():
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
+
+        result = post_request()
+
+        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+        if explanation_id and x_request_id:
+            # request/payload suggestion_id is a UUID not a string whereas
+            # HTTP headers are strings.
+            if x_request_id != str(explanation_id):
+                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+
+        context = Context(model_id, result, False)
+        InferenceResponseChecks().run_checks(context)
+        result.raise_for_status()
+
+        response = json.loads(result.text)
+        return response["explanation"]
