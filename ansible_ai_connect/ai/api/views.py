@@ -875,6 +875,7 @@ class ExplanationRole(AACSAPIView):
                 role_name=self.validated_data["roleName"],
                 model_id=self.validated_data["model"],
                 focus_on_file=self.validated_data["focusOnFile"],
+                explanation_id=self.validated_data["explanationId"],
             )
         )
 

@@ -96,14 +96,13 @@ class TestRoleExplanationViewWCA(
         def MockedSession():
             return mocked_session
 
-        patcher = unittest.mock.patch(
+        with unittest.mock.patch(
             "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.requests.Session",
             MockedSession,
-        )
-        patcher.start()
-
-        r = self.client.post(self.api_version_reverse("explanations/role"), payload, format="json")
-        patcher.stop()
+        ):
+            r = self.client.post(
+                self.api_version_reverse("explanations/role"), payload, format="json"
+            )
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
         self.assertEqual(r.data["format"], "markdown")
