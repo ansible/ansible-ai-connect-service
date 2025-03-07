@@ -79,12 +79,14 @@ class WCASaaSConfiguration(WCABaseConfiguration):
         self.idp_url = idp_url
         self.idp_login = idp_login
         self.idp_password = idp_password
+        self.inference_url = inference_url
         self.one_click_default_api_key = one_click_default_api_key
         self.one_click_default_model_id = one_click_default_model_id
 
     idp_url: str
     idp_login: str
     idp_password: str
+    inference_url: str
     one_click_default_api_key: str
     one_click_default_model_id: str
 
