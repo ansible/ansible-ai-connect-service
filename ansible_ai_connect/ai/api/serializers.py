@@ -669,6 +669,13 @@ class ExplanationRoleRequestSerializer(Metadata):
     )
     model = serializers.CharField(required=False, allow_blank=True, default="")
     focusOnFile = serializers.CharField(required=False, allow_blank=True, default="")
+    explanationId = serializers.UUIDField(
+        format="hex_verbose",
+        required=False,
+        label="Explanation ID",
+        help_text="A UUID that identifies the explanation.",
+        default="",
+    )
 
     def validate(self, attrs):
         data = super().validate(attrs)
