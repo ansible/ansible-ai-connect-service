@@ -1,0 +1,20 @@
+.ws-full-page-utils {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  padding: var(--pf-t--global--spacer--lg);
+  z-index: var(--pf-t--global--z-index--2xl);
+}
+
+.ws-full-page-utils::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background-color: var(--pf-t--global--background--color--floating--default);
+  opacity: 0;
+  box-shadow: var(--pf-t--global--box-shadow--sm);
+}
+
+.action-button-clicked {
+  background-color: #80808040 !important;
+}
