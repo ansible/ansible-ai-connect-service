@@ -140,7 +140,7 @@ class HttpChatBotMetaData(HttpMetaData):
         )
         try:
             headers = {"Content-Type": "application/json"}
-            r = requests.get(self.config.inference_url + "/readiness", headers=headers)
+            r = requests.get(self.config.inference_url + "/readiness", headers=headers, timeout=5)
             r.raise_for_status()
 
             data = r.json()
