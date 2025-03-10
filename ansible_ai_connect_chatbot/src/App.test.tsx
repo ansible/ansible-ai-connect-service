@@ -63,7 +63,7 @@ async function sendMessage(message: string) {
 }
 
 const referencedDocumentExample = [
-  "https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
+  "https://docs\\.redhat\\.com/en/documentation/red_hat_ansible_automation_platform/2\\.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
 ];
 
 function mockAxios(
