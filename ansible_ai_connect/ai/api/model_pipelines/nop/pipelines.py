@@ -11,8 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Optional
-
 from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
@@ -43,7 +41,11 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     StreamingChatBotResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
-from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+)
 
 
 @Register(api_type="nop")
@@ -65,8 +67,13 @@ class NopCompletionsPipeline(NopMetaData, ModelPipelineCompletions[NopConfigurat
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -78,8 +85,13 @@ class NopContentMatchPipeline(NopMetaData, ModelPipelineContentMatch[NopConfigur
     def invoke(self, params: ContentMatchParameters) -> ContentMatchResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -91,8 +103,13 @@ class NopPlaybookGenerationPipeline(NopMetaData, ModelPipelinePlaybookGeneration
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -104,8 +121,13 @@ class NopRoleGenerationPipeline(NopMetaData, ModelPipelineRoleGeneration[NopConf
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -119,8 +141,13 @@ class NopPlaybookExplanationPipeline(
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -132,8 +159,13 @@ class NopRoleExplanationPipeline(NopMetaData, ModelPipelineRoleExplanation[NopCo
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -145,8 +177,13 @@ class NopChatBotPipeline(NopMetaData, ModelPipelineChatBot[NopConfiguration]):
     def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="nop")
@@ -158,5 +195,10 @@ class NopStreamingChatBotPipeline(NopMetaData, ModelPipelineStreamingChatBot[Nop
     def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
         raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )

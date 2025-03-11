@@ -179,8 +179,13 @@ class WCAOnPremContentMatchPipeline(
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca-onprem")
@@ -198,8 +203,13 @@ class WCAOnPremPlaybookGenerationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca-onprem")
@@ -211,8 +221,13 @@ class WCAOnPremRoleGenerationPipeline(
     def __init__(self, config: WCAOnPremConfiguration):
         super().__init__(config=config)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca-onprem")
@@ -224,8 +239,13 @@ class WCAOnPremRoleExplanationPipeline(
     def __init__(self, config: WCAOnPremConfiguration):
         super().__init__(config=config)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca-onprem")
@@ -243,5 +263,10 @@ class WCAOnPremPlaybookExplanationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-onprem",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )

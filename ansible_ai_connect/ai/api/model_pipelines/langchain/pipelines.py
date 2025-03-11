@@ -16,7 +16,7 @@ import logging
 import re
 from abc import ABCMeta
 from textwrap import dedent
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import requests
 from langchain_core.messages import BaseMessage
@@ -227,7 +227,7 @@ class LangchainCompletionsPipeline(
         except requests.exceptions.Timeout:
             raise ModelTimeoutError
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -310,7 +310,7 @@ class LangchainPlaybookGenerationPipeline(
 
         return playbook, outline, []
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -376,7 +376,7 @@ class LangchainRoleGenerationPipeline(
 
         return role, files, outline, []
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):
@@ -438,7 +438,7 @@ class LangchainPlaybookExplanationPipeline(
         explanation = chain.invoke({"playbook": content})
         return explanation
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         raise NotImplementedError
 
     def get_chat_model(self, model_id):

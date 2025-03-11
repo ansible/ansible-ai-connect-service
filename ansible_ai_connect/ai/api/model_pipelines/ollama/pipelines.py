@@ -31,6 +31,11 @@ from ansible_ai_connect.ai.api.model_pipelines.ollama.configuration import (
     OllamaConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +56,14 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline[OllamaConfiguration
     def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         raise NotImplementedError
 
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "ollama",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
+
     def get_chat_model(self, model_id):
         return OllamaLLM(
             base_url=self.config.inference_url,
@@ -64,6 +77,14 @@ class OllamaPlaybookGenerationPipeline(LangchainPlaybookGenerationPipeline[Ollam
     def __init__(self, config: OllamaConfiguration):
         super().__init__(config=config)
 
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "ollama",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
+
     def get_chat_model(self, model_id):
         return OllamaLLM(
             base_url=self.config.inference_url,
@@ -76,6 +97,14 @@ class OllamaRoleGenerationPipeline(LangchainRoleGenerationPipeline[OllamaConfigu
 
     def __init__(self, config: OllamaConfiguration):
         super().__init__(config=config)
+
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "ollama",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
     def get_chat_model(self, model_id):
         return OllamaLLM(
@@ -102,6 +131,14 @@ class OllamaPlaybookExplanationPipeline(LangchainPlaybookExplanationPipeline[Oll
 
     def __init__(self, config: OllamaConfiguration):
         super().__init__(config=config)
+
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "ollama",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
     def get_chat_model(self, model_id):
         return OllamaLLM(

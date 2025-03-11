@@ -80,10 +80,10 @@ class WCADummyCompletionsPipeline(
     def infer_from_parameters(self, *args, **kwargs):
         return ""
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
             {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: "dummy",
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-dummy",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
         )
@@ -100,5 +100,10 @@ class WCADummyRoleGenerationPipeline(
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         return "wca_dummy_role", [], "wca_dummy_outline", []
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca-dummy",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )

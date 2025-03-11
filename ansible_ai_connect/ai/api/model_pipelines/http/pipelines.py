@@ -15,7 +15,7 @@
 import json
 import logging
 from json import JSONDecodeError
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 import aiohttp
 import requests
@@ -131,7 +131,7 @@ class HttpChatBotMetaData(HttpMetaData):
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         summary: HealthCheckSummary = HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: "http",
