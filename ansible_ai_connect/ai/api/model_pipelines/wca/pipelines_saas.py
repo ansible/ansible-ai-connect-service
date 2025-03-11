@@ -312,8 +312,13 @@ class WCASaaSContentMatchPipeline(
     def get_codematch_headers(self, api_key: str) -> dict[str, str]:
         return self._get_base_headers(api_key)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca")
@@ -331,8 +336,13 @@ class WCASaaSPlaybookGenerationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca")
@@ -414,8 +424,13 @@ class WCASaaSRoleGenerationPipeline(
 
         return name, files, outline, warnings
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca")
@@ -432,8 +447,13 @@ class WCASaaSRoleExplanationPipeline(
             raise FeatureNotAvailable
         return super().invoke(params)
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
 
 
 @Register(api_type="wca")
@@ -451,5 +471,10 @@ class WCASaaSPlaybookExplanationPipeline(
         else:
             raise FeatureNotAvailable
 
-    def self_test(self) -> Optional[HealthCheckSummary]:
-        raise NotImplementedError
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "wca",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )

@@ -306,7 +306,7 @@ class ModelPipeline(
         raise NotImplementedError
 
     @abstractmethod
-    def self_test(self) -> Optional[HealthCheckSummary]:
+    def self_test(self) -> HealthCheckSummary:
         raise NotImplementedError
 
 

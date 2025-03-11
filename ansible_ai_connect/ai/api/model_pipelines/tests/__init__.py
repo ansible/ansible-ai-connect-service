@@ -26,6 +26,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
 from ansible_ai_connect.ai.api.model_pipelines.llamacpp.configuration import (
     LlamaCppConfiguration,
 )
+from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.ollama.configuration import (
     OllamaConfiguration,
 )
@@ -97,6 +98,8 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
             )
+        case "nop":
+            return NopConfiguration()
         case "ollama":
             return OllamaConfiguration(
                 inference_url=extract("inference_url", "http://localhost", **kwargs),
