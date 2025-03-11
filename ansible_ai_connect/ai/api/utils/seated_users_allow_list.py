@@ -393,6 +393,19 @@ ALLOW_LIST = {
     "streamingChatOperationalEvent": {
         "*": None,
     },
+    "explainRole": {
+        "duration": None,
+        "exception": None,
+        "explanationId": None,
+        "groups": None,
+        "hostname": None,
+        "imageTags": None,
+        "response": None,
+        "rh_user_has_seat": None,
+        "rh_user_org_id": None,
+        "timestamp": None,
+        "plans": None,
+    },
     "codegenRole": {
         "duration": None,
         "exception": None,
