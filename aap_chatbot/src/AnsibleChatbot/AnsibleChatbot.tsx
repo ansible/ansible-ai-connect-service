@@ -32,6 +32,7 @@ import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 import "./AnsibleChatbot.scss";
 import {
   inDebugMode,
+  isStreamingSupported,
   modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
@@ -50,6 +51,7 @@ import {
   Conversation,
 } from "@patternfly/chatbot";
 import {
+  AAP_UI,
   CHAT_HISTORY_HEADER,
   FOOTNOTE_DESCRIPTION,
   FOOTNOTE_LABEL,
@@ -140,10 +142,12 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     setConversationId,
     systemPrompt,
     setSystemPrompt,
+    hasStopButton,
+    handleStopButton,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
-    ChatbotDisplayMode.default,
+    AAP_UI ? ChatbotDisplayMode.fullscreen : ChatbotDisplayMode.default,
   );
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [conversations, setConversations] = React.useState<
@@ -289,40 +293,46 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                       </DropdownList>
                     </ChatbotHeaderSelectorDropdown>
                   )}
-                  <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
-                    <DropdownGroup label="Display mode">
-                      <DropdownList>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.default}
-                          key="switchDisplayOverlay"
-                          icon={<OutlinedWindowRestoreIcon aria-hidden />}
-                          isSelected={
-                            displayMode === ChatbotDisplayMode.default
-                          }
-                        >
-                          <span>Overlay</span>
-                        </DropdownItem>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.docked}
-                          key="switchDisplayDock"
-                          icon={<OpenDrawerRightIcon aria-hidden />}
-                          isSelected={displayMode === ChatbotDisplayMode.docked}
-                        >
-                          <span>Dock to window</span>
-                        </DropdownItem>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.fullscreen}
-                          key="switchDisplayFullscreen"
-                          icon={<ExpandIcon aria-hidden />}
-                          isSelected={
-                            displayMode === ChatbotDisplayMode.fullscreen
-                          }
-                        >
-                          <span>Fullscreen</span>
-                        </DropdownItem>
-                      </DropdownList>
-                    </DropdownGroup>
-                  </ChatbotHeaderOptionsDropdown>
+                  {AAP_UI || (
+                    <ChatbotHeaderOptionsDropdown
+                      onSelect={onSelectDisplayMode}
+                    >
+                      <DropdownGroup label="Display mode">
+                        <DropdownList>
+                          <DropdownItem
+                            value={ChatbotDisplayMode.default}
+                            key="switchDisplayOverlay"
+                            icon={<OutlinedWindowRestoreIcon aria-hidden />}
+                            isSelected={
+                              displayMode === ChatbotDisplayMode.default
+                            }
+                          >
+                            <span>Overlay</span>
+                          </DropdownItem>
+                          <DropdownItem
+                            value={ChatbotDisplayMode.docked}
+                            key="switchDisplayDock"
+                            icon={<OpenDrawerRightIcon aria-hidden />}
+                            isSelected={
+                              displayMode === ChatbotDisplayMode.docked
+                            }
+                          >
+                            <span>Dock to window</span>
+                          </DropdownItem>
+                          <DropdownItem
+                            value={ChatbotDisplayMode.fullscreen}
+                            key="switchDisplayFullscreen"
+                            icon={<ExpandIcon aria-hidden />}
+                            isSelected={
+                              displayMode === ChatbotDisplayMode.fullscreen
+                            }
+                          >
+                            <span>Fullscreen</span>
+                          </DropdownItem>
+                        </DropdownList>
+                      </DropdownGroup>
+                    </ChatbotHeaderOptionsDropdown>
+                  )}
                 </ChatbotHeaderActions>
               </ChatbotHeader>
               <ChatbotContent>
@@ -380,12 +390,17 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                   ) : (
                     <></>
                   )}
+                  {isStreamingSupported() && (
+                    <div key={`scroll_div_9999`} ref={messagesEndRef} />
+                  )}
                 </MessageBox>
               </ChatbotContent>
               <ChatbotFooter>
                 <MessageBar
                   onSendMessage={handleSend}
                   hasAttachButton={false}
+                  hasStopButton={hasStopButton}
+                  handleStopButton={handleStopButton}
                 />
                 <ChatbotFootnote {...footnoteProps} />
               </ChatbotFooter>

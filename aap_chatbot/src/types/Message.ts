@@ -9,6 +9,7 @@ type LLMRequest = {
   model?: string | null;
   attachments?: object[] | null;
   system_prompt?: string | null;
+  media_type?: "text/plain" | "application/json";
 };
 
 type LLMResponse = {
@@ -18,7 +19,7 @@ type LLMResponse = {
   truncated: boolean;
 };
 
-// Type for Ansible AI Connct service /api/v0/ai/talk API
+// Type for Ansible AI Connct service /api/v1/ai/talk API
 // Currently they are defined in the same way as OLS API
 export type ChatRequest = LLMRequest;
 export type ChatResponse = LLMResponse;
@@ -43,4 +44,16 @@ export type ChatFeedback = {
   response: ChatResponse;
   sentiment: Sentiment;
   message: ExtendedMessage;
+};
+
+export type AlertMessage = {
+  title: string;
+  message: string;
+  variant: "success" | "danger" | "warning" | "info" | "custom";
+};
+
+export type RagChunk = {
+  text?: string;
+  doc_url: string;
+  doc_title: string;
 };
