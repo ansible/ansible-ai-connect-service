@@ -18,6 +18,9 @@ from attr import Factory, field, frozen
 from attrs import validators
 from django.utils import timezone
 
+# WARNING!
+# EVERY TIME WE ADD A NEW EVENT OR CHANGE A KEY IN THIS FILE, WE MUST ADD @akarve AS REVIEWER
+
 
 class AnalyticsTelemetryEvents(Enum):
     RECOMMENDATION_GENERATED = "Recommendation Generated"
