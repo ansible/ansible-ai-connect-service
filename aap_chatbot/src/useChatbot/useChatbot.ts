@@ -1,11 +1,15 @@
 import axios from "axios";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { useState } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
+  AlertMessage,
   ExtendedMessage,
   ChatRequest,
   ChatResponse,
   ChatFeedback,
+  RagChunk,
+  ReferencedDocument,
 } from "../types/Message";
 import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
@@ -13,19 +17,21 @@ import userLogo from "../assets/user_logo.png";
 import {
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
+  INITIAL_NOTICE,
   QUERY_SYSTEM_INSTRUCTION,
   Sentiment,
   TIMEOUT_MSG,
   TOO_MANY_REQUESTS_MSG,
 } from "../Constants";
+import { setClipboard } from "../Clipboard";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite3-8b", provider: "my_rhoai_g3" },
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
+  { model: "granite3-8b", provider: "my_rhoai_g3" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -51,6 +57,15 @@ export const inDebugMode = () => {
   // default and can be disabled by setting the innter text of the debug div is set to "false"
   const debug = document.getElementById("debug")?.innerText ?? "false";
   return import.meta.env.PROD ? debug === "true" : debug !== "false";
+};
+
+export const isStreamingSupported = () => {
+  // For making streaming mode debug easier.
+  if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
+    return true;
+  }
+  const stream = document.getElementById("stream")?.innerText ?? "false";
+  return stream === "true";
 };
 
 const isTimeoutError = (e: any) =>
@@ -95,22 +110,6 @@ export const tooManyRequestsMessage = (): MessageProps =>
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-type AlertMessage = {
-  title: string;
-  message: string;
-  variant: "success" | "danger" | "warning" | "info" | "custom";
-};
-
-const INITIAL_NOTICE: AlertMessage = {
-  title: "Important",
-  message: `The Red Hat Ansible Automation Platform Lightspeed service provides
-  answers to questions related to the Ansible Automation Platform. Please refrain
-  from including personal or business sensitive information in your input.
-  Interactions with the Ansible Automation Platform Lightspeed may be reviewed
-  and utilized to enhance our products and services. `,
-  variant: "info",
-};
-
 const createGitHubIssueURL = (f: ChatFeedback): string => {
   const searchParams: URLSearchParams = new URLSearchParams();
   searchParams.append("assignees", "korenaren");
@@ -146,8 +145,10 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
-  const [selectedModel, setSelectedModel] = useState("granite3-8b");
+  const [selectedModel, setSelectedModel] = useState("granite3-1-8b");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
+  const [hasStopButton, setHasStopButton] = useState<boolean>(false);
+  const [abortController, setAbortController] = useState(new AbortController());
 
   const addMessage = (
     newMessage: ExtendedMessage,
@@ -155,7 +156,7 @@ export const useChatbot = () => {
   ) => {
     setMessages((msgs: ExtendedMessage[]) => {
       const newMsgs: ExtendedMessage[] = [];
-      newMessage.scrollToHere = true;
+      newMessage.scrollToHere = !isStreamingSupported();
       let inserted = false;
       for (const msg of msgs) {
         msg.scrollToHere = false;
@@ -169,6 +170,44 @@ export const useChatbot = () => {
         newMsgs.push(newMessage);
       }
       return newMsgs;
+    });
+  };
+
+  const appendMessageChunk = (chunk: string) => {
+    setMessages((msgs: ExtendedMessage[]) => {
+      const lastMessage = msgs[msgs.length - 1];
+      if (!lastMessage || lastMessage.role === "user") {
+        const newMessage: ExtendedMessage = botMessage(chunk);
+        chunk = "";
+        return [...msgs, newMessage];
+      } else {
+        lastMessage.content += chunk;
+        chunk = "";
+        return [...msgs];
+      }
+    });
+  };
+
+  const addReferencedDocuments = (ragChunks: RagChunk[]) => {
+    setMessages((msgs: ExtendedMessage[]) => {
+      if (ragChunks.length === 0) {
+        return msgs;
+      }
+      const referenced_documents: ReferencedDocument[] = [];
+      for (const ragChunk of ragChunks) {
+        referenced_documents.push({
+          title: ragChunk.doc_title,
+          docs_url: ragChunk.doc_url,
+        });
+      }
+      const lastMessage = msgs[msgs.length - 1];
+      if (!lastMessage || lastMessage.role === "user") {
+        const newMessage: ExtendedMessage = botMessage("");
+        return [...msgs, newMessage];
+      } else {
+        lastMessage.referenced_documents = referenced_documents;
+        return [...msgs];
+      }
     });
   };
 
@@ -230,7 +269,7 @@ export const useChatbot = () => {
                       .join(",\n")
                   : response,
               ];
-              navigator.clipboard.writeText(
+              setClipboard(
                 llmResponse?.map((llmResponse) => llmResponse).join(""),
               );
             }
@@ -246,7 +285,7 @@ export const useChatbot = () => {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
         import.meta.env.PROD
-          ? "/api/v0/ai/feedback/"
+          ? "/api/v1/ai/feedback/"
           : "http://localhost:8080/v1/feedback/",
         {
           chatFeedback: feedbackRequest,
@@ -280,10 +319,15 @@ export const useChatbot = () => {
     }
   };
 
-  const handleSend = async (message: string) => {
+  const handleStopButton = () => {
+    abortController.abort();
+    setAbortController(new AbortController());
+  };
+
+  const handleSend = async (message: string | number) => {
     const userMessage: ExtendedMessage = {
       role: "user",
-      content: message,
+      content: message.toString(),
       name: userName,
       avatar: userLogo,
       timestamp: getTimestamp(),
@@ -293,7 +337,7 @@ export const useChatbot = () => {
 
     const chatRequest: ChatRequest = {
       conversation_id: conversationId,
-      query: message,
+      query: message.toString(),
     };
 
     if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
@@ -310,36 +354,106 @@ export const useChatbot = () => {
     }
 
     setIsLoading(true);
+
     try {
       const csrfToken = readCookie("csrftoken");
-      const resp = await axios.post(
-        import.meta.env.PROD
-          ? "/api/v0/ai/chat/"
-          : "http://localhost:8080/v1/query/",
-        chatRequest,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
+
+      if (isStreamingSupported()) {
+        setHasStopButton(true);
+        chatRequest.media_type = "application/json";
+        await fetchEventSource(
+          import.meta.env.PROD
+            ? "/api/v1/ai/streaming_chat/"
+            : "http://localhost:8080/v1/streaming_query",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json,text/event-stream",
+              "X-CSRFToken": csrfToken!,
+            },
+            body: JSON.stringify(chatRequest),
+            async onopen(resp: any) {
+              if (
+                resp.status >= 400 &&
+                resp.status < 500 &&
+                resp.status !== 429
+              ) {
+                setAlertMessage({
+                  title: "Error",
+                  message: `Bot returned status_code ${resp.status}`,
+                  variant: "danger",
+                });
+              }
+            },
+            onmessage(event: any) {
+              const message = JSON.parse(event.data);
+              if (message.event === "start") {
+                if (!conversationId) {
+                  setConversationId(message.data.conversation_id);
+                }
+              } else if (message.event === "token") {
+                if (message.data.token !== "") {
+                  setIsLoading(false);
+                }
+                appendMessageChunk(message.data.token);
+              } else if (message.event === "end") {
+                if (message.data.referenced_documents.length > 0) {
+                  addReferencedDocuments(message.data.referenced_documents);
+                }
+              } else if (message.event === "error") {
+                const data = message.data;
+                setAlertMessage({
+                  title: "Error",
+                  message:
+                    `Bot returned an error: response="${data.response}", ` +
+                    `cause="${data.cause}"`,
+                  variant: "danger",
+                });
+              }
+            },
+            onclose() {
+              console.log("Connection closed by the server");
+            },
+            onerror(err) {
+              console.log("There was an error from server", err);
+            },
+            signal: abortController.signal,
           },
-          timeout: API_TIMEOUT,
-        },
-      );
-      if (resp.status === 200) {
-        const chatResponse: ChatResponse = resp.data;
-        const referenced_documents = chatResponse.referenced_documents;
-        if (!conversationId) {
-          setConversationId(chatResponse.conversation_id);
-        }
-        const newBotMessage: any = botMessage(chatResponse, message);
-        newBotMessage.referenced_documents = referenced_documents;
-        addMessage(newBotMessage);
+        );
       } else {
-        setAlertMessage({
-          title: "Error",
-          message: `Bot returned status_code ${resp.status}`,
-          variant: "danger",
-        });
+        const resp = await axios.post(
+          import.meta.env.PROD
+            ? "/api/v1/ai/chat/"
+            : "http://localhost:8080/v1/query/",
+          chatRequest,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken,
+            },
+            timeout: API_TIMEOUT,
+          },
+        );
+        if (resp.status === 200) {
+          const chatResponse: ChatResponse = resp.data;
+          const referenced_documents = chatResponse.referenced_documents;
+          if (!conversationId) {
+            setConversationId(chatResponse.conversation_id);
+          }
+          const newBotMessage: any = botMessage(
+            chatResponse,
+            message.toString(),
+          );
+          newBotMessage.referenced_documents = referenced_documents;
+          addMessage(newBotMessage);
+        } else {
+          setAlertMessage({
+            title: "Error",
+            message: `Bot returned status_code ${resp.status}`,
+            variant: "danger",
+          });
+        }
       }
     } catch (e) {
       if (isTimeoutError(e)) {
@@ -365,6 +479,9 @@ export const useChatbot = () => {
         });
       }
     } finally {
+      if (isStreamingSupported()) {
+        setHasStopButton(false);
+      }
       setIsLoading(false);
     }
   };
@@ -383,5 +500,7 @@ export const useChatbot = () => {
     setConversationId,
     systemPrompt,
     setSystemPrompt,
+    hasStopButton,
+    handleStopButton,
   };
 };
