@@ -18,11 +18,19 @@ from ansible_base.resource_registry.registry import (
     SharedResource,
 )
 from ansible_base.resource_registry.shared_types import UserType
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 
-class APIConfig(ServiceAPIConfig):
+def get_service_type():
     service_type = "lightspeed"
+    if not getattr(settings, "RESOURCE_SERVER", None):
+        service_type = "aap"
+    return service_type
+
+
+class APIConfig(ServiceAPIConfig):
+    service_type = get_service_type()
 
 
 RESOURCE_LIST = [
