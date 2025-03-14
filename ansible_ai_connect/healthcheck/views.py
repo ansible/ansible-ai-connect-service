@@ -16,6 +16,7 @@ import json
 import logging
 from datetime import datetime
 
+import requests
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
@@ -154,6 +155,25 @@ class WisdomServiceLivenessProbeView(APIView):
     )
     @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
+
+        # TODO: PoC.
+        # TODO: This /health endpoint is being called either
+        #  by the AAP health (no user authenticated),
+        #  also when calling from the client after being authenticated in AAP.
+        aap_jwt = request._request.headers.get("X-DAB-JW-TOKEN")
+        if aap_jwt is not None:
+            response = requests.post(
+                url="http://127.0.0.1:8085/v1/query",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-DAB-JW-TOKEN": aap_jwt,
+                },
+                json={"query": "write a deployment yaml for the mongodb image"},
+                verify=False,
+            )
+            print(str(response))
+
         data = common_data()
         data["status"] = "ok"
         data_json = json.dumps(data)
