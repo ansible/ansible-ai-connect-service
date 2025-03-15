@@ -339,7 +339,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyasn1==0.6.0
+pyasn1==0.6.1
     # via
     #   oauth2client
     #   pyasn1-modules
