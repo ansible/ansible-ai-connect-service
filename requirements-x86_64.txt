@@ -359,7 +359,7 @@ pydantic==2.9.2
     #   langchain-core
     #   langsmith
     #   ollama
-pydantic-core==2.23.4
+pydantic-core==2.32.0
     # via pydantic
 pydrive2==1.20.0
     # via -r requirements.in
