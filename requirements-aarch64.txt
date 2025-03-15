@@ -26,7 +26,7 @@ ansible-lint==24.2.2
     # via -r requirements.in
 ansible-risk-insight==0.2.7
     # via -r requirements.in
-anyio==4.6.2.post1
+anyio==4.8.0
     # via httpx
 argparse==1.4.0
     # via uwsgi-readiness-check
