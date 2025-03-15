@@ -377,7 +377,7 @@ pyopenssl==24.2.1
     #   -r requirements.in
     #   pydrive2
     #   twisted
-pyparsing==3.1.2
+pyparsing==3.2.1
     # via httplib2
 pyrfc3339==1.1
     # via launchdarkly-server-sdk
