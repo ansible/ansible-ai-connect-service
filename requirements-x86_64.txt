@@ -73,7 +73,7 @@ certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5ac
     #   httpx
     #   launchdarkly-server-sdk
     #   requests
-cffi==1.16.0
+cffi==1.17.1
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
