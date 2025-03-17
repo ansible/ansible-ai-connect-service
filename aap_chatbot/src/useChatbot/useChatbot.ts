@@ -363,7 +363,7 @@ export const useChatbot = () => {
         chatRequest.media_type = "application/json";
         await fetchEventSource(
           import.meta.env.PROD
-            ? "/api/v1/ai/streaming_chat/"
+            ? "/api/lightspeed/v1/ai/streaming_chat/"
             : "http://localhost:8080/v1/streaming_query",
           {
             method: "POST",
@@ -424,7 +424,7 @@ export const useChatbot = () => {
       } else {
         const resp = await axios.post(
           import.meta.env.PROD
-            ? "/api/v1/ai/chat/"
+            ? "/api/lightspeed/v1/ai/chat/"
             : "http://localhost:8080/v1/query/",
           chatRequest,
           {
