@@ -553,6 +553,13 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
 
 
 class GenerationRoleRequestSerializer(serializers.Serializer):
+    name = AnonymizedCharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        label="the name of the role",
+        help_text=("You can force a specific role name for the role with this key."),
+    )
     text = AnonymizedCharField(
         required=True,
         label="the goal of the role",

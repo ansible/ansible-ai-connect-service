@@ -1822,6 +1822,12 @@
             "GenerationRoleRequest": {
                 "type": "object",
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "default": "",
+                        "title": "the name of the role",
+                        "description": "You can force a specific role name for the role with this key."
+                    },
                     "text": {
                         "type": "string",
                         "title": "the goal of the role",

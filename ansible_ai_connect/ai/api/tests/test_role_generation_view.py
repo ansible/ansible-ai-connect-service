@@ -98,7 +98,7 @@ class TestRoleGenerationView(
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
         self.assertEqual(r.data["outline"], "")
-        self.assertEqual(r.data["role"], "install_nginx")
+        self.assertEqual(r.data["name"], "install_nginx")
         self.assertEqual(roleGenEvent["event"], "codegenRole")
         self.assertEqual(roleGenEvent["properties"]["generationId"], str(generation_id))
 
@@ -148,12 +148,12 @@ class TestRoleGenerationView(
                 self.api_version_reverse("generations/role"), payload, format="json"
             )
             self.assertEqual(r.status_code, HTTPStatus.OK)
-            self.assertIsNotNone(r.data["role"])
+            self.assertIsNotNone(r.data["name"])
             self.assertEqual(len(r.data["files"]), 1)
             self.assertIsNotNone(r.data["outline"])
-            self.assertTrue("mysql" in r.data["role"])
+            self.assertTrue("mysql" in r.data["name"])
             self.assertTrue("mysql" in r.data["outline"])
-            self.assertFalse("admin@redhat.com" in r.data["role"])
+            self.assertFalse("admin@redhat.com" in r.data["name"])
             self.assertFalse("admin@redhat.com" in r.data["outline"])
             for file in r.data["files"]:
                 self.assertFalse("admin@redhat.com" in file["content"])

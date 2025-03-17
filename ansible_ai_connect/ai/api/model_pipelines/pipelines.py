@@ -121,6 +121,7 @@ PlaybookGenerationResponse = tuple[str, str, list]
 @define
 class RoleGenerationParameters:
     request: Request
+    name: str | None
     text: str
     additional_context: dict
     create_outline: bool
@@ -133,6 +134,7 @@ class RoleGenerationParameters:
     def init(
         cls,
         request,
+        name: Optional[str] = None,
         text: str = "",
         create_outline: bool = False,
         file_types: list = [],
@@ -143,6 +145,7 @@ class RoleGenerationParameters:
     ):
         return cls(
             request=request,
+            name=name,
             text=text,
             file_types=file_types,
             additional_context=additional_context,

@@ -360,6 +360,7 @@ class WCASaaSRoleGenerationPipeline(
             raise FeatureNotAvailable
 
         request = params.request
+        name = params.name
         text = params.text
         create_outline = params.create_outline
         outline = params.outline
@@ -376,6 +377,8 @@ class WCASaaSRoleGenerationPipeline(
             "text": text,
             "create_outline": create_outline,
         }
+        if name:
+            data["name"] = name
         if outline:
             data["outline"] = outline
 

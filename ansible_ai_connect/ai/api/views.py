@@ -998,6 +998,7 @@ class GenerationRole(AACSAPIView):
         roles, files, outline, warnings = llm.invoke(
             RoleGenerationParameters.init(
                 request=request,
+                name=self.validated_data["name"],
                 text=self.validated_data["text"],
                 outline=self.validated_data["outline"],
                 model_id=self.req_model_id,
@@ -1021,7 +1022,7 @@ class GenerationRole(AACSAPIView):
         )
 
         answer = {
-            "role": anonymized_role,
+            "name": anonymized_role,
             "outline": anonymized_outline,
             "files": anonymized_files,
             "format": "plaintext",
