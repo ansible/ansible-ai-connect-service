@@ -10,7 +10,8 @@
       "import": "./dist/ansible-chatbot.js",
       "require": "./dist/ansible-chatbot.umd.cjs"
     },
-    "./dist": "./dist/*"
+    "./dist": "./dist/*",
+    "./style.css": "./dist/ansible-chatbot.css"
   },
   "files": [
     "dist"

@@ -18,6 +18,9 @@ export default defineConfig({
       external: ["react"],
     },
   },
+  define: {
+    global: "globalThis",
+  },
   test: {
     browser: {
       name: "chromium",
