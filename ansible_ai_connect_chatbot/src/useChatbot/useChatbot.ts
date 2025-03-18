@@ -25,6 +25,9 @@ import {
 } from "../Constants";
 import { setClipboard } from "../Clipboard";
 
+import { AgentConfig } from "llama-stack-client/resources/shared";
+import LlamaStackClient from "llama-stack-client";
+
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
   document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
@@ -361,66 +364,69 @@ export const useChatbot = () => {
       if (isStreamingSupported()) {
         setHasStopButton(true);
         chatRequest.media_type = "application/json";
-        await fetchEventSource(
-          import.meta.env.PROD
-            ? "/api/v1/ai/streaming_chat/"
-            : "http://localhost:8080/v1/streaming_query",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json,text/event-stream",
-              "X-CSRFToken": csrfToken!,
-            },
-            body: JSON.stringify(chatRequest),
-            async onopen(resp: any) {
-              if (
-                resp.status >= 400 &&
-                resp.status < 500 &&
-                resp.status !== 429
-              ) {
-                setAlertMessage({
-                  title: "Error",
-                  message: `Bot returned status_code ${resp.status}`,
-                  variant: "danger",
-                });
-              }
-            },
-            onmessage(event: any) {
-              const message = JSON.parse(event.data);
-              if (message.event === "start") {
-                if (!conversationId) {
-                  setConversationId(message.data.conversation_id);
-                }
-              } else if (message.event === "token") {
-                if (message.data.token !== "") {
-                  setIsLoading(false);
-                }
-                appendMessageChunk(message.data.token);
-              } else if (message.event === "end") {
-                if (message.data.referenced_documents.length > 0) {
-                  addReferencedDocuments(message.data.referenced_documents);
-                }
-              } else if (message.event === "error") {
-                const data = message.data;
-                setAlertMessage({
-                  title: "Error",
-                  message:
-                    `Bot returned an error: response="${data.response}", ` +
-                    `cause="${data.cause}"`,
-                  variant: "danger",
-                });
-              }
-            },
-            onclose() {
-              console.log("Connection closed by the server");
-            },
-            onerror(err) {
-              console.log("There was an error from server", err);
-            },
-            signal: abortController.signal,
+
+        const client = new LlamaStackClient({
+          baseURL: "http://localhost:8321",
+        });
+
+        const agentConfig: AgentConfig = {
+          model: selectedModel,
+          instructions: "You are a helpful assistant",
+          sampling_params: {
+            strategy: { type: "top_p", temperature: 1.0, top_p: 0.9 },
           },
+          toolgroups: process.env["TAVILY_SEARCH_API_KEY"]
+            ? ["builtin::websearch"]
+            : [],
+          tool_choice: "auto",
+          tool_prompt_format: "python_list",
+          input_shields: [],
+          output_shields: [],
+          enable_session_persistence: false,
+          max_infer_iters: 10,
+        };
+        console.log(
+          "Agent Configuration:",
+          JSON.stringify(agentConfig, null, 2),
         );
+
+        const agentic_system_create_response = await client.agents.create({
+          agent_config: agentConfig,
+        });
+        const agent_id = agentic_system_create_response.agent_id;
+        console.log(`Agent ID: ${agent_id}`);
+
+        const create_session_response = await client.agents.session.create(
+          agent_id,
+          { session_name: "test-session" },
+        );
+        const session_id = create_session_response.session_id;
+        console.log(`Session ID: ${session_id}`);
+        const prompt = message;
+        console.log(`User: ${prompt}`);
+        const response = await client.agents.turn.create(agent_id, session_id, {
+          stream: true,
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+        });
+        // Log the response events
+        for await (const chunk of response) {
+          console.log(JSON.stringify(chunk));
+          if (
+            "event" in chunk &&
+            "payload" in chunk.event &&
+            "event_type" in chunk.event.payload &&
+            chunk.event.payload.event_type === "turn_complete"
+          ) {
+            console.log(" *** ");
+            console.log(chunk.event.payload.turn.output_message);
+            appendMessageChunk(chunk.event.payload.turn.output_message);
+          }
+        }
       } else {
         const resp = await axios.post(
           import.meta.env.PROD
