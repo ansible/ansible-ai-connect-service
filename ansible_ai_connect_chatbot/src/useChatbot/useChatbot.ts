@@ -31,7 +31,6 @@ const botName =
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
-  { model: "granite3-8b", provider: "my_rhoai_g3" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -324,10 +323,10 @@ export const useChatbot = () => {
     setAbortController(new AbortController());
   };
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (message: string | number) => {
     const userMessage: ExtendedMessage = {
       role: "user",
-      content: message,
+      content: message.toString(),
       name: userName,
       avatar: userLogo,
       timestamp: getTimestamp(),
@@ -337,7 +336,7 @@ export const useChatbot = () => {
 
     const chatRequest: ChatRequest = {
       conversation_id: conversationId,
-      query: message,
+      query: message.toString(),
     };
 
     if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
@@ -441,7 +440,10 @@ export const useChatbot = () => {
           if (!conversationId) {
             setConversationId(chatResponse.conversation_id);
           }
-          const newBotMessage: any = botMessage(chatResponse, message);
+          const newBotMessage: any = botMessage(
+            chatResponse,
+            message.toString(),
+          );
           newBotMessage.referenced_documents = referenced_documents;
           addMessage(newBotMessage);
         } else {
