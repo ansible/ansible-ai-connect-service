@@ -22,6 +22,7 @@ from typing import AsyncGenerator
 import requests
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
+from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
 
 from ansible_ai_connect.ai.api.exceptions import (
     ChatbotForbiddenException,
@@ -253,7 +254,7 @@ class HttpStreamingChatBotPipeline(
         # agent = AsyncAgent(client, chatbackend_config.get('agent_config'))
         session_id = await agent.create_session("lightspeed-session")
 
-        response = await agent.create_turn(
+        response: AsyncGenerator[AgentTurnResponseStreamChunk] = await agent.create_turn(
             # agent_id=chatbackend_config.get('agent_id'),
             messages=[
                 {
@@ -264,15 +265,37 @@ class HttpStreamingChatBotPipeline(
             stream=True,
             session_id=session_id,
         )
+        id = 0
         async for chunk in response:
-            if hasattr(chunk, "event"):
-                print(chunk.event)
-            if (
-                hasattr(chunk, "event")
-                and hasattr(chunk.event, "payload")
-                and hasattr(chunk.event.payload, "event_type")
-                and chunk.event.payload.event_type == "turn_complete"
-            ):
-                print(" *** ")
-                print(chunk.event.payload.turn.output_message)
-            yield chunk
+            # if hasattr(chunk, "event"):
+            #     print(chunk.event)
+            # if (
+            #     hasattr(chunk, "event")
+            #     and hasattr(chunk.event, "payload")
+            #     and hasattr(chunk.event.payload, "event_type")
+            #     and chunk.event.payload.event_type == "turn_complete"
+            # ):
+            #     print(" *** ")
+            #     print(chunk.event.payload.turn.output_message)
+            # yield chunk
+            print(chunk.model_dump_json())
+            o = chunk.model_dump()  # dump to python dict
+            d = {}
+            event = o.get("event")
+            if event:
+                payload = event.get("payload")
+                if payload:
+                    event_type = payload.get("event_type")
+                    if event_type == "step_start":
+                        d["event"] = "start"
+                        d["data"] = {"conversation_id": payload.get("step_id")}
+                    elif event_type == "step_progress":
+                        d["event"] = "token"
+                        d["data"] = {"id": id, "token": payload.get("delta", []).get("text", "")}
+                        id += 1
+                    elif event_type == "step_complete":
+                        d["event"] = "end"
+                        d["data"] = {"referenced_documents": []}
+                    converted_chunk = f"data: {json.dumps(d)}\n\n"
+                    print(converted_chunk)
+                    yield converted_chunk
