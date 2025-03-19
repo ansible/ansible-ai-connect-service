@@ -358,100 +358,98 @@ export const useChatbot = () => {
     try {
       const csrfToken = readCookie("csrftoken");
 
-      if (isStreamingSupported()) {
-        setHasStopButton(true);
-        chatRequest.media_type = "application/json";
-        await fetchEventSource(
-          import.meta.env.PROD
-            ? "/api/v1/ai/streaming_chat/"
-            : "http://localhost:8080/v1/streaming_query",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json,text/event-stream",
-              "X-CSRFToken": csrfToken!,
-            },
-            body: JSON.stringify(chatRequest),
-            async onopen(resp: any) {
-              if (
-                resp.status >= 400 &&
-                resp.status < 500 &&
-                resp.status !== 429
-              ) {
-                setAlertMessage({
-                  title: "Error",
-                  message: `Bot returned status_code ${resp.status}`,
-                  variant: "danger",
-                });
-              }
-            },
-            onmessage(event: any) {
-              const message = JSON.parse(event.data);
-              if (message.event === "start") {
-                if (!conversationId) {
-                  setConversationId(message.data.conversation_id);
-                }
-              } else if (message.event === "token") {
-                if (message.data.token !== "") {
-                  setIsLoading(false);
-                }
-                appendMessageChunk(message.data.token);
-              } else if (message.event === "end") {
-                if (message.data.referenced_documents.length > 0) {
-                  addReferencedDocuments(message.data.referenced_documents);
-                }
-              } else if (message.event === "error") {
-                const data = message.data;
-                setAlertMessage({
-                  title: "Error",
-                  message:
-                    `Bot returned an error: response="${data.response}", ` +
-                    `cause="${data.cause}"`,
-                  variant: "danger",
-                });
-              }
-            },
-            onclose() {
-              console.log("Connection closed by the server");
-            },
-            onerror(err) {
-              console.log("There was an error from server", err);
-            },
-            signal: abortController.signal,
+      // if (isStreamingSupported()) {
+      setHasStopButton(true);
+      chatRequest.media_type = "application/json";
+      await fetchEventSource(
+        "http://localhost:8000/api/v1/ai/streaming_chat/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json,text/event-stream",
+            "X-CSRFToken": csrfToken!,
           },
-        );
-      } else {
-        const resp = await axios.post(
-          import.meta.env.PROD
-            ? "/api/v1/ai/chat/"
-            : "http://localhost:8080/v1/query/",
-          chatRequest,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken,
-            },
-            timeout: API_TIMEOUT,
+          body: JSON.stringify(chatRequest),
+          async onopen(resp: any) {
+            if (
+              resp.status >= 400 &&
+              resp.status < 500 &&
+              resp.status !== 429
+            ) {
+              setAlertMessage({
+                title: "Error",
+                message: `Bot returned status_code ${resp.status}`,
+                variant: "danger",
+              });
+            }
           },
-        );
-        if (resp.status === 200) {
-          const chatResponse: ChatResponse = resp.data;
-          const referenced_documents = chatResponse.referenced_documents;
-          if (!conversationId) {
-            setConversationId(chatResponse.conversation_id);
-          }
-          const newBotMessage: any = botMessage(chatResponse, message);
-          newBotMessage.referenced_documents = referenced_documents;
-          addMessage(newBotMessage);
-        } else {
-          setAlertMessage({
-            title: "Error",
-            message: `Bot returned status_code ${resp.status}`,
-            variant: "danger",
-          });
-        }
-      }
+          onmessage(event: any) {
+            const message = JSON.parse(event.data);
+            if (message.event === "start") {
+              if (!conversationId) {
+                setConversationId(message.data.conversation_id);
+              }
+            } else if (message.event === "token") {
+              if (message.data.token !== "") {
+                setIsLoading(false);
+              }
+              appendMessageChunk(message.data.token);
+            } else if (message.event === "end") {
+              if (message.data.referenced_documents.length > 0) {
+                addReferencedDocuments(message.data.referenced_documents);
+              }
+            } else if (message.event === "error") {
+              const data = message.data;
+              setAlertMessage({
+                title: "Error",
+                message:
+                  `Bot returned an error: response="${data.response}", ` +
+                  `cause="${data.cause}"`,
+                variant: "danger",
+              });
+            }
+          },
+          onclose() {
+            console.log("Connection closed by the server");
+          },
+          onerror(err) {
+            console.log("There was an error from server", err);
+          },
+          signal: abortController.signal,
+        },
+      );
+      // } else {
+      //   const resp = await axios.post(
+      //     import.meta.env.PROD
+      //       ? "/api/v1/ai/chat/"
+      //       : "http://localhost:8000/v1/query/",
+      //     chatRequest,
+      //     {
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //         "X-CSRFToken": csrfToken,
+      //       },
+      //       timeout: API_TIMEOUT,
+      //     },
+      //   );
+      //   if (resp.status === 200) {
+      //     const chatResponse: ChatResponse = resp.data;
+      //     const referenced_documents = chatResponse.referenced_documents;
+      //     if (!conversationId) {
+      //       setConversationId(chatResponse.conversation_id);
+      //     }
+      //     const newBotMessage: any = botMessage(chatResponse, message);
+      //     newBotMessage.referenced_documents = referenced_documents;
+      //     addMessage(newBotMessage);
+      //   } else {
+      //     setAlertMessage({
+      //       title: "Error",
+      //       message: `Bot returned status_code ${resp.status}`,
+      //       variant: "danger",
+      //     });
+      //   }
+      // }
     } catch (e) {
       if (isTimeoutError(e)) {
         const newBotMessage = {
