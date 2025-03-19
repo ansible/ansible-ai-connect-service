@@ -22,6 +22,7 @@ from typing import AsyncGenerator
 import requests
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
+from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
 
 from ansible_ai_connect.ai.api.exceptions import (
     ChatbotForbiddenException,
@@ -238,6 +239,20 @@ class HttpStreamingChatBotPipeline(
             content_type="text/event-stream",
         )
 
+    def format_record(self, d):
+        return f"data: {json.dumps(d)}\n\n"
+
+    def format_token(self, token):
+        d = {
+            "event": "token",
+            "data": {
+                "id": self.id,
+                "token": token,
+            },
+        }
+        self.id += 1
+        return self.format_record(d)
+
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
         query = params.query
@@ -253,7 +268,7 @@ class HttpStreamingChatBotPipeline(
         # agent = AsyncAgent(client, chatbackend_config.get('agent_config'))
         session_id = await agent.create_session("lightspeed-session")
 
-        response = await agent.create_turn(
+        response: AsyncGenerator[AgentTurnResponseStreamChunk] = await agent.create_turn(
             # agent_id=chatbackend_config.get('agent_id'),
             messages=[
                 {
@@ -264,15 +279,82 @@ class HttpStreamingChatBotPipeline(
             stream=True,
             session_id=session_id,
         )
-        async for chunk in response:
-            if hasattr(chunk, "event"):
-                print(chunk.event)
-            if (
-                hasattr(chunk, "event")
-                and hasattr(chunk.event, "payload")
-                and hasattr(chunk.event.payload, "event_type")
-                and chunk.event.payload.event_type == "turn_complete"
-            ):
-                print(" *** ")
-                print(chunk.event.payload.turn.output_message)
-            yield chunk
+        self.id = 0
+        is_monospace = False
+        async for chunk in response:  # TODO
+            # async for o in generate_dummy_data(): # TODO FOR DEBUG
+            # if hasattr(chunk, "event"):
+            #     print(chunk.event)
+            # if (
+            #     hasattr(chunk, "event")
+            #     and hasattr(chunk.event, "payload")
+            #     and hasattr(chunk.event.payload, "event_type")
+            #     and chunk.event.payload.event_type == "turn_complete"
+            # ):
+            #     print(" *** ")
+            #     print(chunk.event.payload.turn.output_message)
+            # yield chunk
+            j = chunk.model_dump_json()  # TODO
+            print(j)
+            o = json.loads(j)  # dump to python dict # TODO
+            event = o.get("event")
+            if event:
+                payload = event.get("payload")
+                if payload:
+                    event_type = payload.get("event_type")
+                    if event_type == "step_start":
+                        d = {"event": "start", "data": {"conversation_id": payload.get("step_id")}}
+                        yield self.format_record(d)
+                    elif event_type == "step_progress":
+                        delta = payload.get("delta", [])
+                        if delta:
+                            delta_type = delta.get("type", "")
+                            if delta_type == "text":
+                                yield self.format_token(delta.get("text", ""))
+                            elif delta_type == "tool_call":
+                                if not is_monospace:
+                                    is_monospace = True
+                                    yield self.format_token("\n```\n")
+                                tool_call = delta.get("tool_call", "")
+                                if not isinstance(tool_call, str):
+                                    tool_call = json.dumps(tool_call, indent=2)
+                                yield self.format_token(tool_call)
+                    elif event_type == "step_complete":
+                        if not is_monospace:
+                            is_monospace = True
+                            yield self.format_token("\n```\n")
+
+                        step_details = payload.get("step_details")
+                        yield self.format_token(json.dumps(step_details, indent=2))
+
+                        if is_monospace:
+                            is_monospace = False
+                            yield self.format_token("\n```\n")
+
+                        d = {"event": "end", "data": {"referenced_documents": []}}
+                        yield self.format_record(d)
+                        self.id = 0
+
+                    elif event_type == "turn_complete":
+                        pass  # TODO
+                        # step_details = payload.get("step_details")
+                        #
+                        # d["event"] = "token"
+                        # d["data"] = {"id": id, "token": json.dumps(step_details, indent=2)}
+                        # id += 1
+                        # converted_chunk = f"data: {json.dumps(d)}\n\n"
+                        # yield converted_chunk
+
+                        # if is_monospace:
+                        #     is_monospace = False
+                        #     yield self.format_token("\n```\n", id)
+                        #     id += 1
+                        #
+                        # d = {
+                        #     "event":"end",
+                        #     "data": {
+                        #         "referenced_documents": []
+                        #     }
+                        # }
+                        # yield self.format_record(d)
+                        # id = 0

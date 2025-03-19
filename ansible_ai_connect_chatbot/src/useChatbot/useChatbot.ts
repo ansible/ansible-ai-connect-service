@@ -178,7 +178,7 @@ export const useChatbot = () => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
         const newMessage: ExtendedMessage = botMessage(chunk);
-        chunk = "";
+        //chunk = ""; TODO
         return [...msgs, newMessage];
       } else {
         lastMessage.content += chunk;
