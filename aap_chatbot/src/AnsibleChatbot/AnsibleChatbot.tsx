@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import {
-  Bullseye,
-  Brand,
-  DropdownList,
-  DropdownItem,
-} from "@patternfly/react-core";
-
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -16,18 +9,15 @@ import MessageBar from "@patternfly/chatbot/dist/dynamic/MessageBar";
 import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
 import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
-  ChatbotHeaderTitle,
   ChatbotHeaderActions,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
 import lightspeedLogo from "../assets/lightspeed.svg";
-import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import {
   inDebugMode,
   isStreamingSupported,
-  modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
@@ -40,7 +30,6 @@ import {
   ChatbotDisplayMode,
   ChatbotHeaderMain,
   ChatbotHeaderMenu,
-  ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   Conversation,
 } from "@patternfly/chatbot";
@@ -129,8 +118,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     handleSend,
     alertMessage,
     setAlertMessage,
-    selectedModel,
-    setSelectedModel,
     conversationId,
     setConversationId,
     systemPrompt,
@@ -156,13 +143,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const onSelectModel = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setSelectedModel(value as string);
-  };
 
   const setCurrentConversation = (
     newConversationId: string | undefined,
@@ -253,33 +233,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                       />
                     )}
                   </ChatbotHeaderActions>
-                  <ChatbotHeaderTitle>
-                    <Bullseye>
-                      <div className="show-light">
-                        <Brand src={lightspeedLogo} alt="Ansible" />
-                      </div>
-                      <div className="show-dark">
-                        <Brand src={lightspeedLogoDark} alt="Ansible" />
-                      </div>
-                    </Bullseye>
-                  </ChatbotHeaderTitle>
                 </ChatbotHeaderMain>
-                <ChatbotHeaderActions>
-                  {inDebugMode() && (
-                    <ChatbotHeaderSelectorDropdown
-                      value={selectedModel}
-                      onSelect={onSelectModel}
-                    >
-                      <DropdownList>
-                        {modelsSupported.map((m) => (
-                          <DropdownItem value={m.model} key={m.model}>
-                            {m.model}
-                          </DropdownItem>
-                        ))}
-                      </DropdownList>
-                    </ChatbotHeaderSelectorDropdown>
-                  )}
-                </ChatbotHeaderActions>
               </ChatbotHeader>
               <ChatbotContent>
                 <MessageBox>
