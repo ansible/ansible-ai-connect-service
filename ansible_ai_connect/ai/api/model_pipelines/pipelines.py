@@ -249,6 +249,7 @@ ChatBotResponse = Any
 @define
 class StreamingChatBotParameters(ChatBotParameters):
     media_type: str
+    chatbackend_config: dict[str, Any]
 
     @classmethod
     def init(
@@ -259,6 +260,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         conversation_id: Optional[str] = None,
         system_prompt: Optional[str] = None,
         media_type: Optional[str] = None,
+        chatbackend_config: dict[str, Any] = {},
     ):
         return cls(
             query=query,
@@ -267,6 +269,7 @@ class StreamingChatBotParameters(ChatBotParameters):
             conversation_id=conversation_id,
             system_prompt=system_prompt,
             media_type=media_type,
+            chatbackend_config=chatbackend_config,
         )
 
 

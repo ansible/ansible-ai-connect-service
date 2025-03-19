@@ -24,6 +24,9 @@ from django.conf import settings
 from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from llama_stack_client import AsyncLlamaStackClient
+from llama_stack_client.lib.agents.agent import AsyncAgent
+from llama_stack_client.types.agent_create_params import AgentConfig
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
 from rest_framework import permissions, serializers
@@ -103,7 +106,7 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
-from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
+# from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
@@ -246,12 +249,13 @@ class AACSAPIView(APIView):
         response = super().finalize_response(request, response, *args, **kwargs)
 
         try:
-            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            user = request.user
-            org_id = hasattr(user, "organization") and user.organization and user.organization.id
-            self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
-                request.user, org_id, self.req_model_id
-            )
+            pass
+            # model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+            # user = request.user
+            # org_id = hasattr(user, "organization") and user.organization and user.organization.id
+            # self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
+            #     request.user, org_id, self.req_model_id
+            # )
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             pass
         self.event.set_response(response)
@@ -1044,9 +1048,9 @@ class Chat(AACSAPIView):
         scope = "chat"
 
     permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        # permissions.IsAuthenticated,
+        # IsAuthenticatedOrTokenHasScope,
+        # IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.ChatBotOperationalEvent
@@ -1142,9 +1146,9 @@ class StreamingChat(AACSAPIView):
         scope = "chat"
 
     permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        # permissions.IsAuthenticated,
+        # IsAuthenticatedOrTokenHasScope,
+        # IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.StreamingChatBotOperationalEvent
@@ -1166,6 +1170,33 @@ class StreamingChat(AACSAPIView):
             logger.debug("Chatbot is enabled.")
         else:
             logger.debug("Chatbot is not enabled.")
+
+        agent_config = AgentConfig(
+            # model="anthropic/claude-3-5-haiku-latest",
+            model="llama3.2:3b-instruct-fp16",
+            instructions="You are a helpful Ansible Automation Platform assistant.",
+            sampling_params={
+                "strategy": {"type": "top_p", "temperature": 1.0, "top_p": 0.9},
+            },
+            toolgroups=(
+                [
+                    # "mcp::weather",
+                    # "mcp::github",
+                    # "mcp::fs",
+                    # "mcp::aap_api",
+                    # "mcp::gateway_api",
+                    # "builtin::websearch",
+                ]
+            ),
+            tool_choice="auto",
+            input_shields=[],  # available_shields if available_shields else [],
+            output_shields=[],  # available_shields if available_shields else [],
+            enable_session_persistence=False,
+        )
+        self.client = AsyncLlamaStackClient(
+            base_url="http://localhost:8321",
+        )
+        self.agent = AsyncAgent(self.client, agent_config)
 
     @extend_schema(
         request=StreamingChatRequestSerializer,
@@ -1205,5 +1236,12 @@ class StreamingChat(AACSAPIView):
                 provider=req_provider,
                 conversation_id=conversation_id,
                 media_type=media_type,
+                chatbackend_config={
+                    # "agent_config": self.agent_config,
+                    # "agent_id": self.agent.agent_id,
+                    # "session_id": self.session_id,
+                    "client": self.client,
+                    "agent": self.agent,
+                },
             )
         )

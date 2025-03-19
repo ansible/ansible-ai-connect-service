@@ -14,10 +14,11 @@
 
 import json
 import logging
-from json import JSONDecodeError
+
+# from json import JSONDecodeError
 from typing import AsyncGenerator
 
-import aiohttp
+# import aiohttp
 import requests
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
@@ -238,74 +239,40 @@ class HttpStreamingChatBotPipeline(
         )
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
-            headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json,text/event-stream",
-            }
 
-            query = params.query
-            conversation_id = params.conversation_id
-            provider = params.provider
-            model_id = params.model_id
-            system_prompt = params.system_prompt
-            media_type = params.media_type
+        query = params.query
+        # conversation_id = params.conversation_id
+        # provider = params.provider
+        # model_id = params.model_id
+        # system_prompt = params.system_prompt
+        # media_type = params.media_type
+        chatbackend_config = params.chatbackend_config
+        # client = chatbackend_config.get("client")
+        agent = chatbackend_config.get("agent")
 
-            data = {
-                "query": query,
-                "model": model_id,
-                "provider": provider,
-            }
-            if conversation_id:
-                data["conversation_id"] = str(conversation_id)
-            if system_prompt:
-                data["system_prompt"] = str(system_prompt)
-            if media_type:
-                data["media_type"] = str(media_type)
+        # agent = AsyncAgent(client, chatbackend_config.get('agent_config'))
+        session_id = await agent.create_session("lightspeed-session")
 
-            async with session.post(
-                self.config.inference_url + "/v1/streaming_query",
-                json=data,
-                headers=headers,
-                raise_for_status=False,
-            ) as response:
-                if response.status == 200:
-                    async for chunk in response.content:
-                        try:
-                            if chunk:
-                                s = chunk.decode("utf-8").strip()
-                                if s and s.startswith("data: "):
-                                    o = json.loads(s[len("data: ") :])
-                                    if o["event"] == "error":
-                                        default_data = {
-                                            "response": "(not provided)",
-                                            "cause": "(not provided)",
-                                        }
-                                        data = o.get("data", default_data)
-                                        logger.error(
-                                            "An error received in chat streaming content:"
-                                            + " response="
-                                            + data.get("response")
-                                            + ", cause="
-                                            + data.get("cause")
-                                        )
-                        except JSONDecodeError:
-                            pass
-                        logger.debug(chunk)
-                        yield chunk
-                else:
-                    logging.error(
-                        "Streaming query API returned status code="
-                        + str(response.status)
-                        + ", reason="
-                        + str(response.reason)
-                    )
-                    error = {
-                        "event": "error",
-                        "data": {
-                            "response": f"Non-200 status code ({response.status}) was received.",
-                            "cause": response.reason,
-                        },
-                    }
-                    yield json.dumps(error).encode("utf-8")
-                    return
+        response = await agent.create_turn(
+            # agent_id=chatbackend_config.get('agent_id'),
+            messages=[
+                {
+                    "role": "user",
+                    "content": query,
+                }
+            ],
+            stream=True,
+            session_id=session_id,
+        )
+        async for chunk in response:
+            if hasattr(chunk, "event"):
+                print(chunk.event)
+            if (
+                hasattr(chunk, "event")
+                and hasattr(chunk.event, "payload")
+                and hasattr(chunk.event.payload, "event_type")
+                and chunk.event.payload.event_type == "turn_complete"
+            ):
+                print(" *** ")
+                print(chunk.event.payload.turn.output_message)
+            yield chunk

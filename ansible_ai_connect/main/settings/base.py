@@ -77,9 +77,12 @@ INSTALLED_APPS = [
     "import_export",
     "ansible_base.resource_registry",
     "ansible_base.jwt_consumer",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "allow_cidr.middleware.AllowCIDRMiddleware",
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -95,6 +98,7 @@ MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusAfterMiddleware",
     "csp.middleware.CSPMiddleware",
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 if os.environ.get("CSRF_TRUSTED_ORIGINS"):
     CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
