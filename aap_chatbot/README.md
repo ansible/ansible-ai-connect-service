@@ -72,6 +72,3 @@ CHATBOT_DEFAULT_PROVIDER=wisdom
   }
 }
 ```
-
-You also need to configure Red Hat SSO authentication on your local
-AI Connect service.

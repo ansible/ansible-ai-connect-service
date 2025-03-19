@@ -1,0 +1,43 @@
+name: AAP Chatbot - Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+
+    env:
+      WORKING_DIRECTORY: ./aap_chatbot
+
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+          cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Test
+        run: npm run test
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Versioning
+        # Consider patch/minor/major versions later on, maybe as a workflow input.
+        run: npm version patch
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - uses: EndBug/add-and-commit@v9
+        with:
+          cwd: ${{env.WORKING_DIRECTORY}}
+          add: 'package.json package-lock.json'
+          message: 'Upgrading the AAP Chatbot UI module version.'
+          push: true
