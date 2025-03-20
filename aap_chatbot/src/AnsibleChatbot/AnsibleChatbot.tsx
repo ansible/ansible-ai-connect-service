@@ -1,13 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import {
-  Bullseye,
-  Brand,
-  DropdownList,
-  DropdownItem,
-  DropdownGroup,
-} from "@patternfly/react-core";
-
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -17,23 +9,15 @@ import MessageBar from "@patternfly/chatbot/dist/dynamic/MessageBar";
 import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
 import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
-  ChatbotHeaderTitle,
   ChatbotHeaderActions,
-  ChatbotHeaderOptionsDropdown,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
-import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
-import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
-import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
-
 import lightspeedLogo from "../assets/lightspeed.svg";
-import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import {
   inDebugMode,
   isStreamingSupported,
-  modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
@@ -46,12 +30,10 @@ import {
   ChatbotDisplayMode,
   ChatbotHeaderMain,
   ChatbotHeaderMenu,
-  ChatbotHeaderSelectorDropdown,
   ChatbotToggle,
   Conversation,
 } from "@patternfly/chatbot";
 import {
-  AAP_UI,
   CHAT_HISTORY_HEADER,
   FOOTNOTE_DESCRIPTION,
   FOOTNOTE_LABEL,
@@ -136,8 +118,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     handleSend,
     alertMessage,
     setAlertMessage,
-    selectedModel,
-    setSelectedModel,
     conversationId,
     setConversationId,
     systemPrompt,
@@ -146,8 +126,8 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     handleStopButton,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
-  const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
-    AAP_UI ? ChatbotDisplayMode.fullscreen : ChatbotDisplayMode.default,
+  const [displayMode] = useState<ChatbotDisplayMode>(
+    ChatbotDisplayMode.fullscreen,
   );
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [conversations, setConversations] = React.useState<
@@ -163,20 +143,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const onSelectModel = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setSelectedModel(value as string);
-  };
-
-  const onSelectDisplayMode = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setDisplayMode(value as ChatbotDisplayMode);
-  };
 
   const setCurrentConversation = (
     newConversationId: string | undefined,
@@ -267,73 +233,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                       />
                     )}
                   </ChatbotHeaderActions>
-                  <ChatbotHeaderTitle>
-                    <Bullseye>
-                      <div className="show-light">
-                        <Brand src={lightspeedLogo} alt="Ansible" />
-                      </div>
-                      <div className="show-dark">
-                        <Brand src={lightspeedLogoDark} alt="Ansible" />
-                      </div>
-                    </Bullseye>
-                  </ChatbotHeaderTitle>
                 </ChatbotHeaderMain>
-                <ChatbotHeaderActions>
-                  {inDebugMode() && (
-                    <ChatbotHeaderSelectorDropdown
-                      value={selectedModel}
-                      onSelect={onSelectModel}
-                    >
-                      <DropdownList>
-                        {modelsSupported.map((m) => (
-                          <DropdownItem value={m.model} key={m.model}>
-                            {m.model}
-                          </DropdownItem>
-                        ))}
-                      </DropdownList>
-                    </ChatbotHeaderSelectorDropdown>
-                  )}
-                  {AAP_UI || (
-                    <ChatbotHeaderOptionsDropdown
-                      onSelect={onSelectDisplayMode}
-                    >
-                      <DropdownGroup label="Display mode">
-                        <DropdownList>
-                          <DropdownItem
-                            value={ChatbotDisplayMode.default}
-                            key="switchDisplayOverlay"
-                            icon={<OutlinedWindowRestoreIcon aria-hidden />}
-                            isSelected={
-                              displayMode === ChatbotDisplayMode.default
-                            }
-                          >
-                            <span>Overlay</span>
-                          </DropdownItem>
-                          <DropdownItem
-                            value={ChatbotDisplayMode.docked}
-                            key="switchDisplayDock"
-                            icon={<OpenDrawerRightIcon aria-hidden />}
-                            isSelected={
-                              displayMode === ChatbotDisplayMode.docked
-                            }
-                          >
-                            <span>Dock to window</span>
-                          </DropdownItem>
-                          <DropdownItem
-                            value={ChatbotDisplayMode.fullscreen}
-                            key="switchDisplayFullscreen"
-                            icon={<ExpandIcon aria-hidden />}
-                            isSelected={
-                              displayMode === ChatbotDisplayMode.fullscreen
-                            }
-                          >
-                            <span>Fullscreen</span>
-                          </DropdownItem>
-                        </DropdownList>
-                      </DropdownGroup>
-                    </ChatbotHeaderOptionsDropdown>
-                  )}
-                </ChatbotHeaderActions>
               </ChatbotHeader>
               <ChatbotContent>
                 <MessageBox>

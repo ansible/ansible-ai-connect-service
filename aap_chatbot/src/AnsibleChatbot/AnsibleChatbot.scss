@@ -56,3 +56,17 @@
 .pf-v6-c-content--p {
     color: unset;
 }
+
+.pf-chatbot__header {
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+.pf-chatbot__header-main {
+  min-height: 0 !important;
+  padding: 1px !important;
+}
+
+.pf-chatbot__header__divider {
+  display: none;
+}
