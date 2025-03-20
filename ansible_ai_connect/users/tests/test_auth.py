@@ -159,6 +159,53 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
             authentication.get_config_endpoint(api_url),
         )
 
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_local_aap_setup(self, AAP_API_URL):
+        authentication = AAPOAuth2()
+
+        with patch.object(
+            authentication,
+            "get_json",
+            return_value={
+                "license_info": {
+                    "license_type": "open",
+                    "valid_key": True,
+                    "subscription_name": "OPEN",
+                    "product_name": "AWX",
+                }
+            },
+        ):
+            access_token = "dummy_token"
+            self.assertTrue(authentication.user_has_valid_license(access_token))
+
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_no_license_info(self, AAP_API_URL):
+        authentication = AAPOAuth2()
+
+        with patch.object(authentication, "get_json", return_value={}):
+            access_token = "dummy_token"
+            self.assertFalse(authentication.user_has_valid_license(access_token))
+
+    @patch("django.conf.settings.AAP_API_URL")
+    def test_license_expired(self, AAP_API_URL):
+        authentication = AAPOAuth2()
+
+        with patch.object(
+            authentication,
+            "get_json",
+            return_value={
+                "license_info": {
+                    "license_type": "whatever",
+                    "valid_key": True,
+                    "subscription_name": "Whatever",
+                    "product_name": "AWX",
+                    "date_expired": True,
+                }
+            },
+        ):
+            access_token = "dummy_token"
+            self.assertFalse(authentication.user_has_valid_license(access_token))
+
 
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
     def setUp(self):

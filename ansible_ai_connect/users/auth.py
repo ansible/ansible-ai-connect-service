@@ -69,7 +69,12 @@ class AAPOAuth2(BaseOAuth2):
     def user_has_valid_license(self, access_token):
         url = self.get_config_endpoint(settings.AAP_API_URL)
         data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
-        return not data["license_info"]["date_expired"] if "license_info" in data else False
+        license_info = data.get("license_info")
+        if not license_info:
+            return False
+        if license_info.get("license_type", "UNLICENSED") == "open":
+            return True
+        return not license_info.get("date_expired")
 
     def get_me_endpoint(self, api_url):
         """Creates me link to the AAP API depending on the Auth platform"""
