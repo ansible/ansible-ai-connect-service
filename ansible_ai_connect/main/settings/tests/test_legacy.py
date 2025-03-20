@@ -21,6 +21,7 @@ import django.conf
 from django.test import SimpleTestCase
 
 import ansible_ai_connect.main.settings.base
+from ansible_ai_connect.ai.api.model_pipelines.config_loader import load_config_from_str
 from ansible_ai_connect.test_utils import WisdomLogAwareMixin
 
 
@@ -257,3 +258,17 @@ class TestLegacySettings(SimpleTestCase, WisdomLogAwareMixin):
         )
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["model_id"], "model-id")
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["timeout"], 999)
+
+    def test_empty_configuration(self):
+        config = load_config_from_str("")
+
+        # Lazy import to avoid circular dependencies
+        from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData  # noqa
+        from ansible_ai_connect.ai.api.model_pipelines.registry import (  # noqa
+            REGISTRY_ENTRY,
+        )
+
+        pipelines = [i for i in REGISTRY_ENTRY.keys() if issubclass(i, MetaData)]
+        for k in pipelines:
+            self.assertTrue(k.__name__ in config)
+            self.assertEqual(config[k.__name__].provider, "nop")
