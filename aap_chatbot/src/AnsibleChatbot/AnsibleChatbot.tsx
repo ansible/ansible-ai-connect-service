@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-
+import { Content, ContentVariants } from "@patternfly/react-core";
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -28,6 +28,7 @@ import {
   ChatbotAlert,
   ChatbotConversationHistoryNav,
   ChatbotDisplayMode,
+  ChatbotFootnoteProps,
   ChatbotHeaderMain,
   ChatbotHeaderMenu,
   ChatbotToggle,
@@ -41,7 +42,7 @@ import {
 } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
-const footnoteProps = {
+const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
   popover: {
     title: FOOTNOTE_TITLE,
@@ -143,6 +144,31 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // For showing the popover from footnote in IFrame
+  useEffect(() => {
+    if (footnoteProps.popover) {
+      const popover = footnoteProps.popover;
+      const bodyElement = window[0].document.getElementsByTagName("body")[0];
+      // We need to override "appendTo" only, but "bodyContent" is a required property...
+      // Following lines were copied from PatternFly chatbot.
+      const popoverBodyContent = (
+        <>
+          {popover?.bannerImage && (
+            <img src={popover.bannerImage.src} alt={popover.bannerImage.alt} />
+          )}
+          <Content component={ContentVariants.h3}>{popover?.title}</Content>
+          <Content component={ContentVariants.p}>
+            {popover?.description}
+          </Content>
+        </>
+      );
+      footnoteProps.popover.popoverProps = {
+        appendTo: bodyElement,
+        bodyContent: popoverBodyContent,
+      };
+    }
+  }, []);
 
   const setCurrentConversation = (
     newConversationId: string | undefined,
