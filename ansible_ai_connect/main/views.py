@@ -28,6 +28,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import BaseRenderer
 from rest_framework.views import APIView
 
+from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
+    NopChatBotPipeline,
+    NopStreamingChatBotPipeline,
+)
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
     ModelPipelineStreamingChatBot,
@@ -127,19 +131,25 @@ class ChatbotView(ProtectedTemplateView):
     chatbot_enabled: bool
     streaming_chatbot_enabled: bool
 
+    def getModelPipelineChatBot(self):
+        return apps.get_app_config("ai").get_model_pipeline(ModelPipelineChatBot)
+
+    def getModelStreamingPipelineChatBot(self):
+        return apps.get_app_config("ai").get_model_pipeline(ModelPipelineStreamingChatBot)
+
     def __init__(self):
         super().__init__()
-        chat_llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineChatBot)
+        chat_llm = self.getModelPipelineChatBot()
         self.chatbot_enabled = (
-            chat_llm.config.inference_url
+            not isinstance(chat_llm, NopChatBotPipeline)
+            and chat_llm.config.inference_url
             and chat_llm.config.model_id
             and settings.CHATBOT_DEFAULT_PROVIDER
         )
-        streaming_chat_llm = apps.get_app_config("ai").get_model_pipeline(
-            ModelPipelineStreamingChatBot
-        )
+        streaming_chat_llm = self.getModelStreamingPipelineChatBot()
         self.streaming_chatbot_enabled = (
-            streaming_chat_llm.config.inference_url
+            not isinstance(streaming_chat_llm, NopStreamingChatBotPipeline)
+            and streaming_chat_llm.config.inference_url
             and streaming_chat_llm.config.model_id
             and settings.CHATBOT_DEFAULT_PROVIDER
         )
