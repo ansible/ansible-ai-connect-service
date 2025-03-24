@@ -324,10 +324,10 @@ export const useChatbot = () => {
     setAbortController(new AbortController());
   };
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (message: string | number) => {
     const userMessage: ExtendedMessage = {
       role: "user",
-      content: message,
+      content: message.toString(),
       name: userName,
       avatar: userLogo,
       timestamp: getTimestamp(),
@@ -337,7 +337,7 @@ export const useChatbot = () => {
 
     const chatRequest: ChatRequest = {
       conversation_id: conversationId,
-      query: message,
+      query: message.toString(),
     };
 
     if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {

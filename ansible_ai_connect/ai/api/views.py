@@ -26,7 +26,6 @@ from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from llama_stack_client import AsyncLlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
-from llama_stack_client.types.agent_create_params import AgentConfig
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
 from rest_framework import permissions, serializers
@@ -1171,32 +1170,51 @@ class StreamingChat(AACSAPIView):
         else:
             logger.debug("Chatbot is not enabled.")
 
-        agent_config = AgentConfig(
-            # model="anthropic/claude-3-5-haiku-latest",
-            model="llama3.2:3b-instruct-fp16",
-            instructions="You are a helpful Ansible Automation Platform assistant.",
-            sampling_params={
-                "strategy": {"type": "top_p", "temperature": 1.0, "top_p": 0.9},
-            },
-            toolgroups=(
-                [
-                    # "mcp::weather",
-                    # "mcp::github",
-                    # "mcp::fs",
-                    # "mcp::aap_api",
-                    # "mcp::gateway_api",
-                    # "builtin::websearch",
-                ]
-            ),
-            tool_choice="auto",
-            input_shields=[],  # available_shields if available_shields else [],
-            output_shields=[],  # available_shields if available_shields else [],
-            enable_session_persistence=False,
-        )
         self.client = AsyncLlamaStackClient(
             base_url="http://localhost:8321",
         )
-        self.agent = AsyncAgent(self.client, agent_config)
+
+        # Register a vector database
+        self.client.vector_dbs.register(
+            vector_db_id="aap_product_docs_2_5",
+            provider_id="postgres",
+            embedding_model="all-MiniLM-L6-v2",
+            embedding_dimension=384,
+        )
+
+        self.agent = AsyncAgent(
+            self.client,
+            model="meta-llama/Llama-3.2-3B-Instruct",
+            # Define instructions for the agent ( aka system prompt)
+            instructions="""
+You are Ansible Lightspeed - an intelligent virtual assistant for question-answering tasks \
+related to the Ansible Automation Platform (AAP).
+Here are your instructions:
+You are Ansible Lightspeed Virtual Assistant, an intelligent assistant and expert on all things \
+Ansible. Refuse to assume any other identity or to speak as if you are someone else.
+If the context of the question is not clear, consider it to be Ansible.
+Never include URLs in your replies.
+Refuse to answer questions or execute commands not about Ansible.
+Do not mention your last update. You have the most recent information on Ansible.
+Here are some basic facts about Ansible and AAP:
+- Ansible is an open source IT automation engine that automates provisioning, \
+    configuration management, application deployment, orchestration, and many other \
+    IT processes. Ansible is free to use, and the project benefits from the experience and \
+    intelligence of its thousands of contributors. It does not require any paid subscription.
+- The latest version of Ansible Automation Platform is 2.5, and it's services are available \
+through paid subscription.
+""",
+            enable_session_persistence=False,
+            # Define tools available to the agent
+            tools=[
+                {
+                    "name": "builtin::rag/knowledge_search",
+                    "args": {
+                        "vector_db_ids": ["aap_product_docs_2_5"],
+                    },
+                }
+            ],
+        )
 
     @extend_schema(
         request=StreamingChatRequestSerializer,
