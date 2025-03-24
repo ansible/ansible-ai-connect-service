@@ -20,6 +20,7 @@ from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopContentMatchPipeline,
+    NopMetaData,
     NopPlaybookExplanationPipeline,
     NopPlaybookGenerationPipeline,
     NopRoleExplanationPipeline,
@@ -40,8 +41,10 @@ class TestModelPipelineFactory(WisdomServiceAPITestCaseBaseOIDC):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=None)
     def test_config_undefined(self):
-        with self.assertRaises(TypeError):
-            ModelPipelineFactory()
+        factory = ModelPipelineFactory()
+        pipeline = factory.get_pipeline(MetaData)
+        self.assertIsNotNone(pipeline)
+        self.assertIsInstance(pipeline, NopMetaData)
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("dummy"))
     def test_caching(self):

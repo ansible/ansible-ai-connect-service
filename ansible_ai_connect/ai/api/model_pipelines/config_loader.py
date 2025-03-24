@@ -37,7 +37,7 @@ def load_config_from_str(model_pipeline_config: str) -> Configuration:
     result = {}
     errors: [Exception] = []
 
-    if model_pipeline_config != "":
+    if model_pipeline_config:
         result = load_json(model_pipeline_config)
         if isinstance(result, Exception):
             errors.append(result)

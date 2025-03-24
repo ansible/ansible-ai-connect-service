@@ -55,8 +55,7 @@ class TestConfigLoader(WisdomTestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=None)
     def test_config_undefined(self):
-        with self.assertRaises(TypeError):
-            load_config()
+        self.assert_config()
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=json.dumps(EMPTY))
     def test_config_empty(self):
