@@ -250,6 +250,35 @@ ChatBotResponse = Any
 
 
 @define
+class AgentParameters:
+    query: str
+    provider: str
+    model_id: str
+    conversation_id: Optional[str]
+    system_prompt: str
+
+    @classmethod
+    def init(
+        cls,
+        query: str,
+        provider: Optional[str] = None,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ):
+        return cls(
+            query=query,
+            provider=provider,
+            model_id=model_id,
+            conversation_id=conversation_id,
+            system_prompt=system_prompt,
+        )
+
+
+AgentResponse = Any
+
+
+@define
 class StreamingChatBotParameters(ChatBotParameters):
     media_type: str
 
@@ -274,6 +303,36 @@ class StreamingChatBotParameters(ChatBotParameters):
 
 
 StreamingChatBotResponse = StreamingHttpResponse
+
+
+@define
+class StreamingAgentParameters(AgentParameters):
+    media_type: str
+    chatbackend_config: dict[str, Any]
+
+    @classmethod
+    def init(
+        cls,
+        query: str,
+        provider: Optional[str] = None,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        media_type: Optional[str] = None,
+        chatbackend_config: dict[str, Any] = {},
+    ):
+        return cls(
+            query=query,
+            provider=provider,
+            model_id=model_id,
+            conversation_id=conversation_id,
+            system_prompt=system_prompt,
+            media_type=media_type,
+            chatbackend_config=chatbackend_config,
+        )
+
+
+StreamingAgentResponse = StreamingHttpResponse
 
 
 class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
@@ -429,3 +488,17 @@ class ModelPipelineStreamingChatBot(
     @staticmethod
     def alias():
         return "streaming-chatbot-service"
+
+
+class ModelPipelineStreamingAgent(
+    ModelPipeline[PIPELINE_CONFIGURATION, StreamingAgentParameters, StreamingAgentResponse],
+    Generic[PIPELINE_CONFIGURATION],
+    metaclass=ABCMeta,
+):
+
+    def __init__(self, config: PIPELINE_CONFIGURATION):
+        super().__init__(config=config)
+
+    @staticmethod
+    def alias():
+        return "streaming-agent-service"

@@ -28,6 +28,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingAgent,
     ModelPipelineStreamingChatBot,
     PlaybookExplanationParameters,
     PlaybookExplanationResponse,
@@ -37,6 +38,8 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     RoleExplanationResponse,
     RoleGenerationParameters,
     RoleGenerationResponse,
+    StreamingAgentParameters,
+    StreamingAgentResponse,
     StreamingChatBotParameters,
     StreamingChatBotResponse,
 )
@@ -193,6 +196,24 @@ class NopStreamingChatBotPipeline(NopMetaData, ModelPipelineStreamingChatBot[Nop
         super().__init__(config=config)
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
+        raise FeatureNotAvailable
+
+    def self_test(self) -> HealthCheckSummary:
+        return HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "nop",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
+            }
+        )
+
+
+@Register(api_type="nop")
+class NopStreamingAgentPipeline(NopMetaData, ModelPipelineStreamingAgent[NopConfiguration]):
+
+    def __init__(self, config: NopConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: StreamingAgentParameters) -> StreamingAgentResponse:
         raise FeatureNotAvailable
 
     def self_test(self) -> HealthCheckSummary:

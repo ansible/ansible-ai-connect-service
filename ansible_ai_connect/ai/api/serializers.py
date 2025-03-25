@@ -352,7 +352,44 @@ class ChatRequestSerializer(serializers.Serializer):
     )
 
 
+class AgentRequestSerializer(serializers.Serializer):
+    conversation_id = serializers.UUIDField(
+        format="hex_verbose",
+        required=False,
+        label="conversation ID",
+        help_text=("A UUID that identifies the particular conversation is being requested for."),
+    )
+    query = serializers.CharField(
+        required=True,
+        label="Query string",
+        help_text=("A query string to be sent to LLM."),
+    )
+    model = serializers.CharField(
+        required=False,
+        label="Model name",
+        help_text=("A model to be used on LLM."),
+    )
+    provider = serializers.CharField(
+        required=False,
+        label="Provider name",
+        help_text=("A name that identifies a LLM provider."),
+    )
+    system_prompt = serializers.CharField(
+        required=False,
+        label="System prompt",
+        help_text=("An optional non-default system prompt to be used on LLM (debug mode only)."),
+    )
+
+
 class StreamingChatRequestSerializer(ChatRequestSerializer):
+    media_type = serializers.CharField(
+        required=False,
+        label="Media type",
+        help_text=("A media type to be used in the output from LLM."),
+    )
+
+
+class StreamingAgentRequestSerializer(AgentRequestSerializer):
     media_type = serializers.CharField(
         required=False,
         label="Media type",

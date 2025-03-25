@@ -21,6 +21,7 @@ from ansible_ai_connect.ai.api.views import (
     Feedback,
     GenerationPlaybook,
     GenerationRole,
+    StreamingAgent,
     StreamingChat,
 )
 
@@ -33,5 +34,6 @@ __all__ = [
     "ExplanationRole",
     "Feedback",
     "Chat",
+    "StreamingAgent",
     "StreamingChat",
 ]

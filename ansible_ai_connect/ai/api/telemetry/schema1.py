@@ -234,3 +234,8 @@ class ChatBotOperationalEvent(ChatBotBaseEvent):
 @define
 class StreamingChatBotOperationalEvent(ChatBotBaseEvent):
     event_name: str = "streamingChatOperationalEvent"
+
+
+@define
+class StreamingAgentOperationalEvent(Schema1Event):  # TODO
+    event_name: str = "streamingAgentOperationalEvent"

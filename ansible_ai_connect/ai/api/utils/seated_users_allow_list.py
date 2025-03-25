@@ -393,6 +393,9 @@ ALLOW_LIST = {
     "streamingChatOperationalEvent": {
         "*": None,
     },
+    "streamingAgentOperationalEvent": {
+        "*": None,
+    },
     "explainRole": {
         "duration": None,
         "exception": None,

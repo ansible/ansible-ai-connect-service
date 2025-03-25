@@ -24,6 +24,8 @@ from django.conf import settings
 from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from llama_stack_client import AsyncLlamaStackClient
+from llama_stack_client.lib.agents.agent import AsyncAgent
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from prometheus_client import Histogram
 from rest_framework import permissions, serializers
@@ -34,6 +36,7 @@ from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
+    AgentNotEnabledException,
     BaseWisdomAPIException,
     ChatbotInvalidResponseException,
     ChatbotNotEnabledException,
@@ -78,11 +81,13 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingAgent,
     ModelPipelineStreamingChatBot,
     PlaybookExplanationParameters,
     PlaybookGenerationParameters,
     RoleExplanationParameters,
     RoleGenerationParameters,
+    StreamingAgentParameters,
     StreamingChatBotParameters,
 )
 from ansible_ai_connect.ai.api.pipelines.completions import CompletionsPipeline
@@ -137,6 +142,7 @@ from .serializers import (
     PlaybookGenerationAction,
     RoleGenerationAction,
     SentimentFeedback,
+    StreamingAgentRequestSerializer,
     StreamingChatRequestSerializer,
     SuggestionQualityFeedback,
 )
@@ -1206,5 +1212,134 @@ class StreamingChat(AACSAPIView):
                 provider=req_provider,
                 conversation_id=conversation_id,
                 media_type=media_type,
+            )
+        )
+
+
+class StreamingAgent(AACSAPIView):
+    """
+    Run an agent and get output in a stream.
+    """
+
+    class StreamingAgentEndpointThrottle(EndpointRateThrottle):
+        scope = "agent"
+
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsAuthenticatedOrTokenHasScope,
+        IsRHInternalUser | IsTestUser | IsAAPUser,
+    ]
+    required_scopes = ["read", "write"]
+    schema1_event = schema1.StreamingAgentOperationalEvent
+    request_serializer_class = StreamingAgentRequestSerializer
+    throttle_classes = [StreamingAgentEndpointThrottle]
+
+    llm: ModelPipelineStreamingAgent
+
+    def __init__(self):
+        super().__init__()
+        self.llm = apps.get_app_config("ai").get_model_pipeline(ModelPipelineStreamingAgent)
+
+        self.agent_enabled = (
+            self.llm.config.inference_url
+            and self.llm.config.model_id
+            and settings.CHATBOT_DEFAULT_PROVIDER
+        )
+        if self.agent_enabled:
+            logger.debug("Agent is enabled.")
+        else:
+            logger.debug("Agent is not enabled.")
+
+        self.client = AsyncLlamaStackClient(
+            base_url=self.llm.config.inference_url,
+        )
+
+        # Register a vector database
+        self.client.vector_dbs.register(
+            vector_db_id="aap_product_docs_2_5",
+            provider_id="postgres",
+            embedding_model="all-MiniLM-L6-v2",
+            embedding_dimension=384,
+        )
+
+        self.agent = AsyncAgent(
+            self.client,
+            model=self.llm.config.model_id,
+            # Define instructions for the agent ( aka system prompt)
+            instructions="""
+You are Ansible Lightspeed - an intelligent virtual assistant for question-answering tasks \
+related to the Ansible Automation Platform (AAP).
+Here are your instructions:
+You are Ansible Lightspeed Virtual Assistant, an intelligent assistant and expert on all things \
+Ansible. Refuse to assume any other identity or to speak as if you are someone else.
+If the context of the question is not clear, consider it to be Ansible.
+Never include URLs in your replies.
+Refuse to answer questions or execute commands not about Ansible.
+Do not mention your last update. You have the most recent information on Ansible.
+Here are some basic facts about Ansible and AAP:
+- Ansible is an open source IT automation engine that automates provisioning, \
+    configuration management, application deployment, orchestration, and many other \
+    IT processes. Ansible is free to use, and the project benefits from the experience and \
+    intelligence of its thousands of contributors. It does not require any paid subscription.
+- The latest version of Ansible Automation Platform is 2.5, and it's services are available \
+through paid subscription.
+""",
+            enable_session_persistence=False,
+            # Define tools available to the agent
+            tools=[
+                {
+                    "name": "builtin::rag/knowledge_search",
+                    "args": {
+                        "vector_db_ids": ["aap_product_docs_2_5"],
+                    },
+                }
+            ],
+        )
+
+    @extend_schema(
+        request=StreamingAgentRequestSerializer,
+        responses={
+            200: ChatResponseSerializer,  # TODO
+            400: OpenApiResponse(description="Bad request"),
+            403: OpenApiResponse(description="Forbidden"),
+            413: OpenApiResponse(description="Prompt too long"),
+            422: OpenApiResponse(description="Validation failed"),
+            500: OpenApiResponse(description="Internal server error"),
+            503: OpenApiResponse(description="Service unavailable"),
+        },
+        summary="Streaming agent request",
+    )
+    def post(self, request) -> StreamingHttpResponse:
+        if not self.agent_enabled:
+            raise AgentNotEnabledException()
+
+        req_query = self.validated_data["query"]
+        req_system_prompt = self.validated_data.get("system_prompt")
+        req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
+        conversation_id = self.validated_data.get("conversation_id")
+        media_type = self.validated_data.get("media_type")
+
+        # Initialise Segment Event early, in case of exceptions
+        # self.event.chat_prompt = anonymize_struct(req_query)
+        # self.event.chat_system_prompt = req_system_prompt
+        # self.event.provider_id = req_provider
+        # self.event.conversation_id = conversation_id
+        # self.event.modelName = self.req_model_id or self.llm.config.model_id
+
+        return self.llm.invoke(
+            StreamingAgentParameters.init(
+                query=req_query,
+                system_prompt=req_system_prompt,
+                model_id=self.req_model_id or self.llm.config.model_id,
+                provider=req_provider,
+                conversation_id=conversation_id,
+                media_type=media_type,
+                chatbackend_config={
+                    # "agent_config": self.agent_config,
+                    # "agent_id": self.agent.agent_id,
+                    # "session_id": self.session_id,
+                    "client": self.client,
+                    "agent": self.agent,
+                },
             )
         )

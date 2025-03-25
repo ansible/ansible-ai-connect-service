@@ -247,3 +247,51 @@ class ChatbotInternalServerException(BaseWisdomAPIException):
     status_code = 500
     default_code = "error__chatbot_internal_server_error"
     default_detail = "Internal server error"
+
+
+class AgentNotEnabledException(BaseWisdomAPIException):
+    status_code = 503
+    default_code = "error__agent_not_enabled"
+    default_detail = "Agent is not enabled"
+
+
+class AgentInvalidResponseException(BaseWisdomAPIException):
+    status_code = 500
+    default_code = "error__agent_invalid_response"
+    default_detail = "Invalid response"
+
+
+class AgentUnauthorizedException(BaseWisdomAPIException):
+    """
+    Since this exception is on the authentication between
+    AI Connect server and Agent, which is a backend service,
+    status_code 503 (Service Unavailable) is returned to
+    client instead of 401.
+    """
+
+    status_code = 503
+    default_code = "error__agent_unauthorized"
+    default_detail = "Unauthorized"
+
+
+class AgentForbiddenException(WisdomAccessDenied):
+    default_code = "error__agent_forbidden"
+    default_detail = "Forbidden"
+
+
+class AgentPromptTooLongException(BaseWisdomAPIException):
+    status_code = 413
+    default_code = "error__agent_prompt_too_long"
+    default_detail = "Prompt too long"
+
+
+class AgentValidationException(BaseWisdomAPIException):
+    status_code = 422
+    default_code = "error__agent_validation_failed"
+    default_detail = "Validation failed"
+
+
+class AgentInternalServerException(BaseWisdomAPIException):
+    status_code = 500
+    default_code = "error__agent_internal_server_error"
+    default_detail = "Internal server error"

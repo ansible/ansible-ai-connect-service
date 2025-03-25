@@ -26,4 +26,5 @@ urlpatterns = [
     path("feedback/", views.Feedback.as_view(), name="feedback"),
     path("chat/", views.Chat.as_view(), name="chat"),
     path("streaming_chat/", views.StreamingChat.as_view(), name="streaming_chat"),
+    path("streaming_agent/", views.StreamingAgent.as_view(), name="streaming_agent"),
 ]

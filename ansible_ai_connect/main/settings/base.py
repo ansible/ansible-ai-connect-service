@@ -249,6 +249,7 @@ ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get("ME_USER_CACHE_TIMEOUT_SEC", 30))
 ME_USER_RATE_THROTTLE = os.environ.get("ME_USER_RATE_THROTTLE") or "50/minute"
 SPECIAL_THROTTLING_GROUPS = ["test"]
 CHAT_RATE_THROTTLE = os.environ.get("CHAT_RATE_THROTTLE") or "10/minute"
+AGENT_RATE_THROTTLE = os.environ.get("AGENT_RATE_THROTTLE") or "10/minute"
 
 AMS_ORG_CACHE_TIMEOUT_SEC = int(os.environ.get("AMS_ORG_CACHE_TIMEOUT_SEC", 60 * 60 * 24))
 AMS_SUBSCRIPTION_CACHE_TIMEOUT_SEC = int(
@@ -265,6 +266,7 @@ REST_FRAMEWORK = {
         "test": "100000/minute",
         "me": ME_USER_RATE_THROTTLE,
         "chat": CHAT_RATE_THROTTLE,
+        "agent": AGENT_RATE_THROTTLE,
     },
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [
