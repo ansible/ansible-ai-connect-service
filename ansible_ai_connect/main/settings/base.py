@@ -574,7 +574,10 @@ ANSIBLE_AI_ENABLE_PLAYBOOK_ENDPOINT = (
 # ==========================================
 # Pipeline configuration
 # ------------------------------------------
-ANSIBLE_AI_MODEL_MESH_CONFIG = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG") or load_from_env_vars()
+model_pipeline_config = os.getenv("ANSIBLE_AI_MODEL_MESH_CONFIG")
+ANSIBLE_AI_MODEL_MESH_CONFIG = (
+    load_from_env_vars() if model_pipeline_config is None else model_pipeline_config
+)
 # ==========================================
 
 # ==========================================

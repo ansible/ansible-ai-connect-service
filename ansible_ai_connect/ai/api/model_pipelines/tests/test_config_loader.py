@@ -16,7 +16,6 @@ from json import JSONDecodeError
 
 import yaml
 from django.test import override_settings
-from rest_framework.exceptions import ValidationError
 from yaml import YAMLError
 
 from ansible_ai_connect.ai.api.model_pipelines.config_loader import load_config
@@ -56,8 +55,7 @@ class TestConfigLoader(WisdomTestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=None)
     def test_config_undefined(self):
-        with self.assertRaises(TypeError):
-            load_config()
+        self.assert_config()
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=json.dumps(EMPTY))
     def test_config_empty(self):
@@ -65,8 +63,7 @@ class TestConfigLoader(WisdomTestCase):
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG="")
     def test_config_empty_string(self):
-        with self.assertRaises(ValidationError):
-            self.assert_config()
+        self.assert_config()
 
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG='{"MetaData" : {')
     def test_config_invalid_json(self):
