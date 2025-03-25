@@ -9,18 +9,16 @@
       content="{{bot_name}}"
     />
     <title>{{bot_name}}</title>
+    <script type="module" crossorigin src="/static/chatbot/index-ecUyj60O.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/chatbot/index-Dm-_Ojks.css">
   </head>
   <body>
-    <p>THIS IS A PLACEHOLDER</p>
-  </body>
-{% block content %}
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- The chatbot needs to show the userName -->
-    <!-- It is safe to pass the value embedded in the host DOM -->
-    <!-- as it is only used for display purposes and servers no other value -->
+    <div id="root">
+    </div>
     <div id="user_name" hidden>{{user_name}}</div>
     <div id="bot_name" hidden>{{bot_name}}</div>
-    <div id="debug" hidden>{{debug}}</div>
     <div id="stream" hidden>{{stream}}</div>
-{% endblock content %}
+    <div id="debug" hidden>{{debug}}</div>
+  </body>
 </html>

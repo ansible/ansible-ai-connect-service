@@ -14,9 +14,17 @@
 
 from django.test import override_settings
 
+from ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines import (
+    LlamaStackStreamingChatBotPipeline,
+)
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopChatBotPipeline,
-    NopStreamingChatBotPipeline,
+    NopCompletionsPipeline,
+    NopContentMatchPipeline,
+    NopPlaybookExplanationPipeline,
+    NopPlaybookGenerationPipeline,
+    NopRoleExplanationPipeline,
+    NopRoleGenerationPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
@@ -32,51 +40,37 @@ from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
 )
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
-    WCABaseRoleGenerationPipeline,
-)
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
-    WCASaaSCompletionsPipeline,
-    WCASaaSContentMatchPipeline,
-    WCASaaSPlaybookExplanationPipeline,
-    WCASaaSPlaybookGenerationPipeline,
-    WCASaaSRoleExplanationPipeline,
-)
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("llama-stack"))
 class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
 
     def test_completions_pipeline(self):
-        self.assert_concrete_implementation(ModelPipelineCompletions, WCASaaSCompletionsPipeline)
+        self.assert_default_implementation(ModelPipelineCompletions, NopCompletionsPipeline)
 
     def test_content_match_pipeline(self):
-        self.assert_concrete_implementation(ModelPipelineContentMatch, WCASaaSContentMatchPipeline)
+        self.assert_default_implementation(ModelPipelineContentMatch, NopContentMatchPipeline)
 
     def test_playbook_generation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelinePlaybookGeneration, WCASaaSPlaybookGenerationPipeline
+        self.assert_default_implementation(
+            ModelPipelinePlaybookGeneration, NopPlaybookGenerationPipeline
         )
 
     def test_role_generation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelineRoleGeneration, WCABaseRoleGenerationPipeline
-        )
+        self.assert_default_implementation(ModelPipelineRoleGeneration, NopRoleGenerationPipeline)
 
     def test_playbook_explanation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelinePlaybookExplanation, WCASaaSPlaybookExplanationPipeline
+        self.assert_default_implementation(
+            ModelPipelinePlaybookExplanation, NopPlaybookExplanationPipeline
         )
 
     def test_role_explanation_pipeline(self):
-        self.assert_concrete_implementation(
-            ModelPipelineRoleExplanation, WCASaaSRoleExplanationPipeline
-        )
+        self.assert_default_implementation(ModelPipelineRoleExplanation, NopRoleExplanationPipeline)
 
     def test_chatbot_pipeline(self):
         self.assert_default_implementation(ModelPipelineChatBot, NopChatBotPipeline)
 
     def test_streaming_chatbot_pipeline(self):
-        self.assert_default_implementation(
-            ModelPipelineStreamingChatBot, NopStreamingChatBotPipeline
+        self.assert_concrete_implementation(
+            ModelPipelineStreamingChatBot, LlamaStackStreamingChatBotPipeline
         )

@@ -12,8 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from unittest import mock
-
 from django.test import override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
@@ -30,33 +28,31 @@ from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
     TestModelPipelineHealthCheck,
 )
-from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import MockResponse
 
 
-@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca-onprem"))
+@override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("llama-stack"))
 class TestModelPipelineFactory(TestModelPipelineHealthCheck):
 
-    @mock.patch("requests.Session.post", return_value=MockResponse({"access_token": "token"}, 200))
-    def test_completions_healthcheck(self, *args, **kwargs):
-        self.assert_ok(ModelPipelineCompletions, "wca-onprem")
+    def test_completions_healthcheck(self):
+        self.assert_skipped(ModelPipelineCompletions, "nop")
 
     def test_content_match_healthcheck(self):
-        self.assert_skipped(ModelPipelineContentMatch, "wca-onprem")
+        self.assert_skipped(ModelPipelineContentMatch, "nop")
 
     def test_playbook_generation_healthcheck(self):
-        self.assert_skipped(ModelPipelinePlaybookGeneration, "wca-onprem")
+        self.assert_skipped(ModelPipelinePlaybookGeneration, "nop")
 
     def test_role_generation_healthcheck(self):
-        self.assert_skipped(ModelPipelineRoleGeneration, "wca-onprem")
+        self.assert_skipped(ModelPipelineRoleGeneration, "nop")
 
     def test_playbook_explanation_healthcheck(self):
-        self.assert_skipped(ModelPipelinePlaybookExplanation, "wca-onprem")
+        self.assert_skipped(ModelPipelinePlaybookExplanation, "nop")
 
     def test_role_explanation_healthcheck(self):
-        self.assert_skipped(ModelPipelineRoleExplanation, "wca-onprem")
+        self.assert_skipped(ModelPipelineRoleExplanation, "nop")
 
     def test_chatbot_healthcheck(self):
         self.assert_skipped(ModelPipelineChatBot, "nop")
 
     def test_streaming_chatbot_healthcheck(self):
-        self.assert_skipped(ModelPipelineStreamingChatBot, "nop")
+        self.assert_skipped(ModelPipelineStreamingChatBot, "llama-stack")

@@ -561,6 +561,7 @@ ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
 # ------------------------------------------
 CHATBOT_DEFAULT_PROVIDER = os.getenv("CHATBOT_DEFAULT_PROVIDER")
 CHATBOT_DEBUG_UI = os.getenv("CHATBOT_DEBUG_UI", "False").lower() == "true"
+LIGHTSPEED_TOOL_GROUP_TOKEN = os.getenv("LIGHTSPEED_TOOL_GROUP_TOKEN")
 # ==========================================
 
 # ==========================================
