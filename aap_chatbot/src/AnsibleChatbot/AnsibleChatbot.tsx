@@ -149,24 +149,31 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   useEffect(() => {
     if (footnoteProps.popover) {
       const popover = footnoteProps.popover;
-      const bodyElement = window[0].document.getElementsByTagName("body")[0];
-      // We need to override "appendTo" only, but "bodyContent" is a required property...
-      // Following lines were copied from PatternFly chatbot.
-      const popoverBodyContent = (
-        <>
-          {popover?.bannerImage && (
-            <img src={popover.bannerImage.src} alt={popover.bannerImage.alt} />
-          )}
-          <Content component={ContentVariants.h3}>{popover?.title}</Content>
-          <Content component={ContentVariants.p}>
-            {popover?.description}
-          </Content>
-        </>
-      );
-      footnoteProps.popover.popoverProps = {
-        appendTo: bodyElement,
-        bodyContent: popoverBodyContent,
-      };
+      const frameWindow = window[0];
+      if (frameWindow) {
+        const bodyElement =
+          frameWindow.document.getElementsByTagName("body")[0];
+        // We need to override "appendTo" only, but "bodyContent" is a required property...
+        // Following lines were copied from PatternFly chatbot.
+        const popoverBodyContent = (
+          <>
+            {popover?.bannerImage && (
+              <img
+                src={popover.bannerImage.src}
+                alt={popover.bannerImage.alt}
+              />
+            )}
+            <Content component={ContentVariants.h3}>{popover?.title}</Content>
+            <Content component={ContentVariants.p}>
+              {popover?.description}
+            </Content>
+          </>
+        );
+        footnoteProps.popover.popoverProps = {
+          appendTo: bodyElement,
+          bodyContent: popoverBodyContent,
+        };
+      }
     }
   }, []);
 

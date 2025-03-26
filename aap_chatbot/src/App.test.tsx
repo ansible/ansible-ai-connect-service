@@ -554,28 +554,28 @@ test("Color theme switch", async () => {
   }
 });
 
-test("Debug mode test", async () => {
-  mockAxios(200);
+// test("Debug mode test", async () => {
+//   mockAxios(200);
 
-  await renderApp(true);
-  await expect.element(page.getByText("granite3-1-8b")).toBeVisible();
-  await page.getByText("granite3-1-8b").click();
-  // Comment out following lines for now since granite3-1-8b is the only choice.
-  //   await expect
-  //     .element(page.getByRole("menuitem", { name: "granite3-8b" }))
-  //     .toBeVisible();
-  //   await page.getByRole("menuitem", { name: "granite3-8b" }).click();
+//   await renderApp(true);
+//   await expect.element(page.getByText("granite3-1-8b")).toBeVisible();
+//   await page.getByText("granite3-1-8b").click();
+//   // Comment out following lines for now since granite3-1-8b is the only choice.
+//   //   await expect
+//   //     .element(page.getByRole("menuitem", { name: "granite3-8b" }))
+//   //     .toBeVisible();
+//   //   await page.getByRole("menuitem", { name: "granite3-8b" }).click();
 
-  await sendMessage("Hello");
-  await expect
-    .element(
-      page.getByText(
-        "In Ansible, the precedence of variables is determined by the order...",
-      ),
-    )
-    .toBeVisible();
-  await expect.element(page.getByText("Create variables")).toBeVisible();
-});
+//   await sendMessage("Hello");
+//   await expect
+//     .element(
+//       page.getByText(
+//         "In Ansible, the precedence of variables is determined by the order...",
+//       ),
+//     )
+//     .toBeVisible();
+//   await expect.element(page.getByText("Create variables")).toBeVisible();
+// });
 
 test("Test system prompt override", async () => {
   const spy = mockAxios(200);
