@@ -1254,10 +1254,12 @@ class StreamingAgent(AACSAPIView):
             base_url=self.llm.config.inference_url,
         )
 
+        vector_db_id = "aap-product-docs-2_5"
+
         # Register a vector database
         self.client.vector_dbs.register(
-            vector_db_id="aap_product_docs_2_5",
-            provider_id="postgres",
+            vector_db_id=vector_db_id,
+            provider_id="faiss",
             embedding_model="all-MiniLM-L6-v2",
             embedding_dimension=384,
         )
@@ -1290,7 +1292,7 @@ through paid subscription.
                 {
                     "name": "builtin::rag/knowledge_search",
                     "args": {
-                        "vector_db_ids": ["aap_product_docs_2_5"],
+                        "vector_db_ids": [vector_db_id],
                     },
                 }
             ],
