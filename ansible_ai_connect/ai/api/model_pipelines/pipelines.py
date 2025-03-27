@@ -281,9 +281,7 @@ class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
     def __init__(self, config: PIPELINE_CONFIGURATION):
         self.config = config
 
-    def get_model_id(
-        self, user, organization_id: Optional[int] = None, requested_model_id: Optional[str] = None
-    ) -> str:
+    def get_model_id(self, user, requested_model_id: Optional[str] = None) -> str:
         return requested_model_id or self.config.model_id
 
     def supports_ari_postprocessing(self):

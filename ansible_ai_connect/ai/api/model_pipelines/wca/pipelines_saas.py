@@ -181,13 +181,12 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
     def get_model_id(
         self,
         user,
-        organization_id: Optional[int] = None,
         requested_model_id: Optional[str] = None,
     ) -> str:
         logger.debug(f"requested_model_id={requested_model_id}")
-        if not organization_id and user.organization:
-            # The organization_id parameter should be removed
-            organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
+        organization_id = (
+            hasattr(user, "organization") and user.organization and user.organization.id
+        )
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
         if (
             settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
@@ -369,7 +368,7 @@ class WCASaaSRoleGenerationPipeline(
 
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, generation_id)
         data = {

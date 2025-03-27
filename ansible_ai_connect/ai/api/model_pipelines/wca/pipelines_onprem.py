@@ -85,7 +85,6 @@ class WCAOnPremMetaData(WCABaseMetaData[WCAOnPremConfiguration]):
     def get_model_id(
         self,
         user,
-        organization_id: Optional[int] = None,
         requested_model_id: Optional[str] = None,
     ) -> str:
         if requested_model_id:

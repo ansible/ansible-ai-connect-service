@@ -167,6 +167,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
         self.user = Mock()
+        self.user.organization.id = 123
         self.user.userplan_set.all.return_value = []
         config = mock_pipeline_config("wca", api_key=None, model_id=None)
         self.config = config
@@ -206,25 +207,25 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>my-great-model")
     def test_get_model_id_with_empty_model(self):
         wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, organization_id=123, requested_model_id="")
+        model_id = wca_client.get_model_id(self.user, requested_model_id="")
         self.assertEqual(model_id, "my-great-model")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>org-model")
     def test_get_model_id_get_org_default_model(self):
         wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, 123, None)
+        model_id = wca_client.get_model_id(self.user, None)
         self.assertEqual(model_id, "org-model")
 
     def test_get_model_id_with_model_override(self):
         wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, 123, "model-i-pick")
+        model_id = wca_client.get_model_id(self.user, "model-i-pick")
         self.assertEqual(model_id, "model-i-pick")
 
     def test_get_model_id_without_org_id(self):
         self.user.organization = None
         model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaNoDefaultModelId):
-            model_client.get_model_id(self.user, None, None)
+            model_client.get_model_id(self.user, None)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:")
     def test_get_api_key_org_cannot_have_no_key(self):
@@ -236,18 +237,18 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def test_get_model_id_org_cannot_have_no_model(self):
         wca_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaModelIdNotFound):
-            wca_client.get_model_id(self.user, 123, None)
+            wca_client.get_model_id(self.user, None)
 
     def test_model_id_with_override(self):
         self.config.model_id = "gemini"
         wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, 123, None)
+        model_id = wca_client.get_model_id(self.user, None)
         self.assertEqual(model_id, "gemini")
 
     def test_model_id_with_environment_and_user_override(self):
         self.config.model_id = "gemini"
         wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, 123, "bard")
+        model_id = wca_client.get_model_id(self.user, "bard")
         self.assertEqual(model_id, "bard")
 
     def test_fatal_exception(self):
@@ -297,9 +298,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
         self.user.plans.add(trial_plan)
 
     def test_get_model_id_with_active_trial(self):
-        model_id = self.model_client.get_model_id(
-            self.user, self.user.organization.id, "override-model-name"
-        )
+        model_id = self.model_client.get_model_id(self.user, "override-model-name")
         self.assertEqual(model_id, "fancy-model")
 
     def test_get_api_key_with_active_trial(self):
@@ -310,9 +309,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
         up = self.user.userplan_set.first()
         up.expired_at = up.created_at
         up.save()
-        model_id = self.model_client.get_model_id(
-            self.user, self.user.organization.id, "override-model-name"
-        )
+        model_id = self.model_client.get_model_id(self.user, "override-model-name")
         self.assertNotEqual(model_id, "fancy-model")
 
     def test_get_api_key_with_expired_trial(self):
@@ -331,7 +328,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
     )
     def test_get_api_key_with_wca_configured(self):
         api_key = self.model_client.get_api_key(self.user, self.user.organization.id)
-        model_id = self.model_client.get_model_id(self.user, self.user.organization.id)
+        model_id = self.model_client.get_model_id(self.user)
         self.assertEqual(api_key, "org_key")
         self.assertEqual(model_id, "org_model_id<|sepofid|>org_model_name")
 
@@ -444,7 +441,7 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
         model_client.get_token = Mock(return_value={"access_token": "a-token"})
         model_client.session = Mock()
 
-        def get_my_model_id(user, organization_id, model_id):
+        def get_my_model_id(user, model_id):
             self.assertEqual(model_id, "mymodel")
             self.assertion_count += 1
             return model_id
@@ -667,7 +664,7 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
 
         self.assertion_count = 0
 
-        def get_my_model_id(user, organization_id, model_id):
+        def get_my_model_id(user, model_id):
             self.assertEqual(model_id, "mymodel")
             self.assertion_count += 1
             return model_id
@@ -1444,7 +1441,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.config.api_key = "12345"
         self.config.model_id = "model-name"
         model_client = WCAOnPremCompletionsPipeline(self.config)
-        model_id = model_client.get_model_id(self.user, 11009103)
+        model_id = model_client.get_model_id(self.user)
         self.assertEqual(model_id, "model-name")
 
     def test_get_model_id_with_override(self):
@@ -1452,7 +1449,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.config.api_key = "12345"
         self.config.model_id = "model-name"
         model_client = WCAOnPremCompletionsPipeline(self.config)
-        model_id = model_client.get_model_id(self.user, 11009103, "override-model-name")
+        model_id = model_client.get_model_id(self.user, "override-model-name")
         self.assertEqual(model_id, "override-model-name")
 
     def test_get_model_id_without_setting(self):
@@ -1461,7 +1458,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.config.model_id = None
         model_client = WCAOnPremCompletionsPipeline(self.config)
         with self.assertRaises(WcaModelIdNotFound):
-            model_client.get_model_id(self.user, 11009103)
+            model_client.get_model_id(self.user)
 
 
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):

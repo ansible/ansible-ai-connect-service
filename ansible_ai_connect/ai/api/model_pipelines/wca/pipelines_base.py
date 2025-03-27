@@ -318,7 +318,7 @@ class WCABaseCompletionsPipeline(
 
         try:
             api_key = self.get_api_key(request.user, organization_id)
-            model_id = self.get_model_id(request.user, organization_id, model_id)
+            model_id = self.get_model_id(request.user, model_id)
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
@@ -404,7 +404,7 @@ class WCABaseContentMatchPipeline(
         suggestions = model_input.get("suggestions", "")
         organization_id = model_input.get("organization_id", None)
 
-        model_id = self.get_model_id(request.user, organization_id, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         data = {
             "model_id": model_id,
@@ -473,7 +473,7 @@ class WCABasePlaybookGenerationPipeline(
 
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, generation_id)
         data = {
@@ -567,7 +567,7 @@ class WCABasePlaybookExplanationPipeline(
 
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
         data = {
@@ -630,7 +630,7 @@ class WCABaseRoleExplanationPipeline(
 
         organization_id = request.user.organization.id if request.user.organization else None
         api_key = self.get_api_key(request.user, organization_id)
-        model_id = self.get_model_id(request.user, organization_id, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
         data = {
