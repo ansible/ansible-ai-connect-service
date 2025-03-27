@@ -362,7 +362,8 @@ export const useChatbot = () => {
         chatRequest.media_type = "application/json";
         await fetchEventSource(
           import.meta.env.PROD
-            ? "/api/v1/ai/streaming_chat/"
+            ? //              ? "/api/v1/ai/streaming_chat/"
+              "/api/v1/ai/streaming_agent/"
             : "http://localhost:8080/v1/streaming_query",
           {
             method: "POST",
@@ -385,8 +386,15 @@ export const useChatbot = () => {
                 });
               }
             },
-            onmessage(event: any) {
-              const message = JSON.parse(event.data);
+            onmessage(msg: any) {
+              console.log(`raw msg:${JSON.stringify(msg)}`);
+              let message = msg;
+              if (!msg.event) {
+                message = JSON.parse(msg.data);
+              } else {
+                message.data = JSON.parse(msg.data);
+              }
+              console.log(`[${message.event}] ${JSON.stringify(message.data)}`);
               if (message.event === "start") {
                 if (!conversationId) {
                   setConversationId(message.data.conversation_id);
@@ -409,6 +417,33 @@ export const useChatbot = () => {
                     `cause="${data.cause}"`,
                   variant: "danger",
                 });
+              } else if (
+                message.event === "tool_call" ||
+                message.event === "step_details"
+              ) {
+                console.log(
+                  `!![${message.event}] ${JSON.stringify(message.data)}`,
+                );
+                appendMessageChunk(
+                  "\n\n`[" +
+                    message.event +
+                    "]`\n```json\n" +
+                    message.data.token +
+                    "\n```\n",
+                );
+                // const newMessage: ExtendedMessage = botMessage(message.event);
+                // addMessage(newMessage);
+                // addMessage(botMessage(""));
+              } else if (message.event === "turn_complete") {
+                setMessages((msgs: ExtendedMessage[]) => {
+                  const lastMessage = msgs[msgs.length - 1];
+                  lastMessage.collapse = true;
+                  msgs.push(botMessage(message.data.token));
+                  return msgs;
+                });
+                // const newMessage: ExtendedMessage = botMessage(message.event);
+                // addMessage(newMessage);
+                // addMessage(botMessage(""));
               }
             },
             onclose() {

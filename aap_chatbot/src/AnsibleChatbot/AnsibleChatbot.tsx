@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Content, ContentVariants } from "@patternfly/react-core";
+import {
+  Content,
+  ContentVariants,
+  ExpandableSection,
+} from "@patternfly/react-core";
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -292,6 +296,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                       {
                         referenced_documents,
                         scrollToHere,
+                        collapse,
                         ...message
                       }: ExtendedMessage,
                       index,
@@ -303,14 +308,27 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                             ref={messagesEndRef}
                           />
                         )}
-                        <div key={`m_div_${index}`}>
-                          <Message key={`m_msg_${index}`} {...message} />
-                          <ReferencedDocuments
-                            key={`m_docs_${index}`}
-                            caption="Refer to the following for more information:"
-                            referenced_documents={referenced_documents}
-                          />
-                        </div>
+                        {collapse ? (
+                          <div key={`m_div_${index}`}>
+                            <ExpandableSection toggleText="Show more">
+                              <Message key={`m_msg_${index}`} {...message} />
+                              <ReferencedDocuments
+                                key={`m_docs_${index}`}
+                                caption="Refer to the following for more information:"
+                                referenced_documents={referenced_documents}
+                              />
+                            </ExpandableSection>
+                          </div>
+                        ) : (
+                          <div key={`m_div_${index}`}>
+                            <Message key={`m_msg_${index}`} {...message} />
+                            <ReferencedDocuments
+                              key={`m_docs_${index}`}
+                              caption="Refer to the following for more information:"
+                              referenced_documents={referenced_documents}
+                            />
+                          </div>
+                        )}
                       </div>
                     ),
                   )}

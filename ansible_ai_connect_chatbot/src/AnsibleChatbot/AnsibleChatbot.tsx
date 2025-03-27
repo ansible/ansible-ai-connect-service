@@ -6,6 +6,7 @@ import {
   DropdownList,
   DropdownItem,
   DropdownGroup,
+  ExpandableSection,
 } from "@patternfly/react-core";
 
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
@@ -346,6 +347,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       {
                         referenced_documents,
                         scrollToHere,
+                        collapse,
                         ...message
                       }: ExtendedMessage,
                       index,
@@ -357,14 +359,27 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                             ref={messagesEndRef}
                           />
                         )}
-                        <div key={`m_div_${index}`}>
-                          <Message key={`m_msg_${index}`} {...message} />
-                          <ReferencedDocuments
-                            key={`m_docs_${index}`}
-                            caption="Refer to the following for more information:"
-                            referenced_documents={referenced_documents}
-                          />
-                        </div>
+                        {collapse ? (
+                          <div key={`m_div_${index}`}>
+                            <ExpandableSection toggleText="Show more">
+                              <Message key={`m_msg_${index}`} {...message} />
+                              <ReferencedDocuments
+                                key={`m_docs_${index}`}
+                                caption="Refer to the following for more information:"
+                                referenced_documents={referenced_documents}
+                              />
+                            </ExpandableSection>
+                          </div>
+                        ) : (
+                          <div key={`m_div_${index}`}>
+                            <Message key={`m_msg_${index}`} {...message} />
+                            <ReferencedDocuments
+                              key={`m_docs_${index}`}
+                              caption="Refer to the following for more information:"
+                              referenced_documents={referenced_documents}
+                            />
+                          </div>
+                        )}
                       </div>
                     ),
                   )}

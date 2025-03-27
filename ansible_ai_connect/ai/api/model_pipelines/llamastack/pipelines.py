@@ -124,19 +124,20 @@ class LlamaStackStreamingChatBotPipeline(
             content_type="text/event-stream",
         )
 
-    def format_record(self, d):
-        return f"data: {json.dumps(d)}\n\n"
+    def format_record(self, d, event_name=None):
+        return (
+            f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
+            if event_name
+            else f"data: {json.dumps(d)}\n\n"
+        )
 
-    def format_token(self, token):
+    def format_token(self, token, event_name="token"):
         d = {
-            "event": "token",
-            "data": {
-                "id": self.id,
-                "token": token,
-            },
+            "id": self.id,
+            "token": token,
         }
         self.id += 1
-        return self.format_record(d)
+        return f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         query = params.query
@@ -160,7 +161,6 @@ class LlamaStackStreamingChatBotPipeline(
             toolgroups=[RAG_TOOL_GROUP, lightspeed_tool_group],
         )
         self.id = 0
-        is_monospace = False
         async for chunk in response:  # TODO
             # async for o in generate_dummy_data(): # TODO FOR DEBUG
             # if hasattr(chunk, "event"):
@@ -192,31 +192,20 @@ class LlamaStackStreamingChatBotPipeline(
                             if delta_type == "text":
                                 yield self.format_token(delta.get("text", ""))
                             elif delta_type == "tool_call":
-                                if not is_monospace:
-                                    is_monospace = True
-                                    yield self.format_token("\n```\n")
                                 tool_call = delta.get("tool_call", "")
                                 if not isinstance(tool_call, str):
                                     tool_call = json.dumps(tool_call, indent=2)
-                                yield self.format_token(tool_call)
+                                yield self.format_token(tool_call, "tool_call")
                     elif event_type == "step_complete":
-                        if not is_monospace:
-                            is_monospace = True
-                            yield self.format_token("\n```\n")
-
                         step_details = payload.get("step_details")
-                        yield self.format_token(json.dumps(step_details, indent=2))
-
-                        if is_monospace:
-                            is_monospace = False
-                            yield self.format_token("\n```\n")
-
-                        d = {"event": "end", "data": {"referenced_documents": []}}
-                        yield self.format_record(d)
+                        yield self.format_token(json.dumps(step_details, indent=2), "step_details")
                         self.id = 0
 
                     elif event_type == "turn_complete":
-                        pass  # TODO
+                        output_message = payload.get("turn").get("output_message").get("content")
+                        yield self.format_token(output_message, "turn_complete")
+                        d = {"event": "end", "data": {"referenced_documents": []}}
+                        yield self.format_record(d)
                         # step_details = payload.get("step_details")
                         #
                         # d["event"] = "token"
