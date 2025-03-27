@@ -18,9 +18,6 @@ from django.test import override_settings
 from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import (
     DummyCompletionsPipeline,
 )
-from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
-    GrpcCompletionsPipeline,
-)
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpCompletionsPipeline,
 )
@@ -47,14 +44,6 @@ from ansible_ai_connect.users.reports.postman import (
 
 
 class TestAiApp(WisdomServiceLogAwareTestCase):
-    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("grpc"))
-    def test_grpc_client(self):
-        app_config = AppConfig.create("ansible_ai_connect.ai")
-        app_config.ready()
-        self.assertIsInstance(
-            app_config.get_model_pipeline(ModelPipelineCompletions), GrpcCompletionsPipeline
-        )
-
     @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))
     def test_wca_client(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")

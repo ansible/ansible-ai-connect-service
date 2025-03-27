@@ -20,7 +20,6 @@ from typing import Literal
 # lead to circular reference errors.
 # ------------------------------------------------------------------
 t_model_mesh_api_type = Literal[
-    "grpc",
     "http",
     "dummy",
     "wca",

@@ -17,7 +17,6 @@ It supports API for the following features:
 A pipeline can exist for each feature for each type of provider.
 
 Types of provider are:
-- `grpc`
 - `http`
 - `dummy`
 - `wca`

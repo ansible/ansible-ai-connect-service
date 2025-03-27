@@ -17,9 +17,6 @@ from typing import TypeVar
 from ansible_ai_connect.ai.api.model_pipelines.dummy.configuration import (
     DummyConfiguration,
 )
-from ansible_ai_connect.ai.api.model_pipelines.grpc.configuration import (
-    GrpcConfiguration,
-)
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
 )
@@ -72,14 +69,6 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 latency_use_jitter=extract("latency_use_jitter", False, **kwargs),
                 latency_max_msec=extract("latency_max_msec", 0, **kwargs),
                 body=extract("body", "body", **kwargs),
-            )
-        case "grpc":
-            return GrpcConfiguration(
-                inference_url=extract("inference_url", "http://localhost", **kwargs),
-                model_id=extract("model_id", "a-model-id", **kwargs),
-                timeout=extract("timeout", 1000, **kwargs),
-                enable_health_check=extract("enable_health_check", False, **kwargs),
-                health_check_url=extract("health_check_url", "another-url", **kwargs),
             )
         case "http":
             return HttpConfiguration(

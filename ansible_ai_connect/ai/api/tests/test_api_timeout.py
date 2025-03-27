@@ -16,16 +16,11 @@ import uuid
 from http import HTTPStatus
 from unittest.mock import Mock, patch
 
-import grpc
 from django.apps import apps
 from django.test import override_settings
 from requests.exceptions import ReadTimeout
 
 from ansible_ai_connect.ai.api.exceptions import ModelTimeoutException
-from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
-    GrpcCompletionsPipeline,
-    GrpcMetaData,
-)
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpCompletionsPipeline,
     HttpMetaData,
@@ -37,12 +32,6 @@ from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 
 from ..model_pipelines.tests import mock_pipeline_config
 from .test_views import WisdomServiceAPITestCaseBase
-
-
-def mock_timeout_error():
-    e = grpc.RpcError(grpc.StatusCode.DEADLINE_EXCEEDED, "Deadline exceeded")
-    e.code = lambda: grpc.StatusCode.DEADLINE_EXCEEDED
-    return e
 
 
 class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
@@ -57,18 +46,6 @@ class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def test_timeout_settings_is_not_none_multi_task(self):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
-        self.assertEqual(123 * 2, model_client.timeout(2))
-
-    def test_timeout_settings_is_none_grpc(self):
-        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=None))
-        self.assertIsNone(model_client.timeout(1))
-
-    def test_timeout_settings_is_not_none_grpc(self):
-        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=123))
-        self.assertEqual(123, model_client.timeout(1))
-
-    def test_timeout_settings_is_not_none_grpc_multi_task(self):
-        model_client = GrpcMetaData(mock_pipeline_config("grpc", timeout=123))
         self.assertEqual(123 * 2, model_client.timeout(2))
 
     def test_timeout_settings_is_none_wca(self):
@@ -95,25 +72,6 @@ class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             apps.get_app_config("ai"),
             "get_model_pipeline",
             Mock(return_value=HttpCompletionsPipeline(mock_pipeline_config("http"))),
-        ):
-            r = self.client.post(self.api_version_reverse("completions"), payload)
-            self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-            self.assert_error_detail(
-                r, ModelTimeoutException.default_code, ModelTimeoutException.default_detail
-            )
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @patch("grpc._channel._UnaryUnaryMultiCallable.__call__", side_effect=mock_timeout_error())
-    def test_timeout_grpc_timeout(self, _):
-        self.client.force_authenticate(user=self.user)
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=GrpcCompletionsPipeline(mock_pipeline_config("grpc"))),
         ):
             r = self.client.post(self.api_version_reverse("completions"), payload)
             self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)

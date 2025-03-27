@@ -77,9 +77,7 @@ greenlet==3.0.3
     #   -c requirements-x86_64.txt
     #   sqlalchemy
 grpcio==1.68.1
-    # via
-    #   -c requirements-x86_64.txt
-    #   grpcio-tools
+    # via grpcio-tools
 grpcio-tools==1.68.1
     # via -r requirements-dev.in
 h11==0.14.0

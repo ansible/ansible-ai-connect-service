@@ -39,9 +39,6 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaInferenceFailure,
     WcaTokenFailure,
 )
-from ansible_ai_connect.ai.api.model_pipelines.grpc.pipelines import (
-    GrpcCompletionsPipeline,
-)
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpChatBotPipeline,
     HttpCompletionsPipeline,
@@ -566,77 +563,6 @@ class TestHealthCheck(BaseTestHealthCheck):
                     self.assertEqual(dependency["status"], "disabled")
                 else:
                     self.assertTrue(self.is_status_ok(dependency["status"], "dummy"))
-
-
-class TestHealthCheckGrpcClient(BaseTestHealthCheck):
-
-    @staticmethod
-    def mocked_requests_grpc_fail(*args, **kwargs):
-        r = Response()
-        if len(args) > 0 and args[0].endswith("/oauth/healthz"):
-            r.status_code = HTTPStatus.SERVICE_UNAVAILABLE
-        return r
-
-    def setUp(self):
-        super().setUp()
-        self.requests_patcher = patch("requests.get")
-        self.mock_requests = self.requests_patcher.start()
-
-    def tearDown(self):
-        super().tearDown()
-        self.requests_patcher.stop()
-
-    def test_health_check_model_mesh_grpc(self):
-        cache.clear()
-        self.mock_requests.side_effect = TestHealthCheck.mocked_requests_succeed
-
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(
-                return_value=GrpcCompletionsPipeline(
-                    mock_pipeline_config("grpc", enable_health_check=True)
-                )
-            ),
-        ):
-            r = self.client.get(reverse("health_check"))
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            _, dependencies = self.assert_basic_data(r, "ok")
-            for dependency in dependencies:
-                self.assertTrue(self.is_status_ok(dependency["status"], "grpc"))
-
-    def test_health_check_model_mesh_grpc_error(self):
-        cache.clear()
-        self.mock_requests.side_effect = TestHealthCheckGrpcClient.mocked_requests_grpc_fail
-
-        with self.assertLogs(logger="root", level="ERROR") as log:
-            with patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(
-                    return_value=GrpcCompletionsPipeline(
-                        mock_pipeline_config("grpc", enable_health_check=True)
-                    )
-                ),
-            ):
-                r = self.client.get(reverse("health_check"))
-                self.assertEqual(r.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
-                _, dependencies = self.assert_basic_data(r, "error")
-                for dependency in dependencies:
-                    if dependency["name"] in pipeline_aliases:
-                        self.assertTrue(dependency["status"]["models"].startswith("unavailable:"))
-                    else:
-                        self.assertTrue(self.is_status_ok(dependency["status"], "grpc"))
-
-                self.assertHealthCheckErrorInLog(
-                    log,
-                    "requests.exceptions.HTTPError",
-                    "model-server",
-                    {
-                        "provider": "grpc",
-                        "models": "unavailable: An error occurred",
-                    },
-                )
 
 
 class TestHealthCheckHttpClient(BaseTestHealthCheck):
