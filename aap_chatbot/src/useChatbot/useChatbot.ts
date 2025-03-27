@@ -60,11 +60,12 @@ export const inDebugMode = () => {
 
 export const isStreamingSupported = () => {
   // For making streaming mode debug easier.
-  if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
-    return true;
-  }
-  const stream = document.getElementById("stream")?.innerText ?? "false";
-  return stream === "true";
+  //   if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
+  //     return true;
+  //   }
+  //   const stream = document.getElementById("stream")?.innerText ?? "false";
+  //   return stream === "true";
+  return true;
 };
 
 const isTimeoutError = (e: any) =>
@@ -362,7 +363,8 @@ export const useChatbot = () => {
         chatRequest.media_type = "application/json";
         await fetchEventSource(
           import.meta.env.PROD
-            ? "/api/lightspeed/v1/ai/streaming_chat/"
+            ? //             ? "/api/lightspeed/v1/ai/streaming_chat/"
+              "/api/lightspeed/v1/ai/streaming_agent/"
             : "http://localhost:8080/v1/streaming_query",
           {
             method: "POST",

@@ -24,6 +24,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
@@ -56,3 +57,6 @@ class TestModelPipelineFactory(TestModelPipelineHealthCheck):
 
     def test_chatbot_healthcheck(self):
         self.assert_skipped(ModelPipelineChatBot, "nop")
+
+    def test_streaming_chatbot_healthcheck(self):
+        self.assert_skipped(ModelPipelineStreamingChatBot, "nop")

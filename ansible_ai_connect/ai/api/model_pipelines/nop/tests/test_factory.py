@@ -22,6 +22,7 @@ from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopPlaybookGenerationPipeline,
     NopRoleExplanationPipeline,
     NopRoleGenerationPipeline,
+    NopStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
@@ -31,6 +32,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
     TestModelPipelineFactoryImplementations,
@@ -64,3 +66,8 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
 
     def test_chatbot_pipeline(self):
         self.assert_default_implementation(ModelPipelineChatBot, NopChatBotPipeline)
+
+    def test_streaming_chatbot_pipeline(self):
+        self.assert_default_implementation(
+            ModelPipelineStreamingChatBot, NopStreamingChatBotPipeline
+        )

@@ -24,6 +24,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
@@ -57,3 +58,7 @@ class TestModelPipelineFactory(TestModelPipelineHealthCheck):
     @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
     def test_chatbot_healthcheck(self, *args, **kwargs):
         self.assert_ok(ModelPipelineChatBot, "http")
+
+    @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
+    def test_streaming_chatbot_healthcheck(self, *args, **kwargs):
+        self.assert_ok(ModelPipelineStreamingChatBot, "http")

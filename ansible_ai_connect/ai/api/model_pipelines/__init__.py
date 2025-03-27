@@ -5,6 +5,8 @@ import ansible_ai_connect.ai.api.model_pipelines.http.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.langchain.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.llamacpp.configuration  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.llamacpp.pipelines  # noqa
+import ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration  # noqa
+import ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.nop.configuration  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.nop.pipelines  # noqa
 import ansible_ai_connect.ai.api.model_pipelines.ollama.configuration  # noqa

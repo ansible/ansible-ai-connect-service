@@ -17,6 +17,7 @@ from django.test import override_settings
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpChatBotPipeline,
     HttpCompletionsPipeline,
+    HttpStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
     NopContentMatchPipeline,
@@ -33,6 +34,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelinePlaybookGeneration,
     ModelPipelineRoleExplanation,
     ModelPipelineRoleGeneration,
+    ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_factory import (
@@ -67,3 +69,8 @@ class TestModelPipelineFactory(TestModelPipelineFactoryImplementations):
 
     def test_chatbot_pipeline(self):
         self.assert_concrete_implementation(ModelPipelineChatBot, HttpChatBotPipeline)
+
+    def test_streaming_chatbot_pipeline(self):
+        self.assert_concrete_implementation(
+            ModelPipelineStreamingChatBot, HttpStreamingChatBotPipeline
+        )
