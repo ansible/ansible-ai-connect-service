@@ -142,10 +142,8 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
 
         return response.json()
 
-    def get_api_key(self, user, organization_id: Optional[int]) -> str:
-        if not organization_id and user.organization:
-            # The organization_id parameter should be removed
-            organization_id = user.organization.id  # type: ignore[reportAttributeAccessIssue]
+    def get_api_key(self, user) -> str:
+        organization_id = user.organization and user.organization.id
         # use the environment API key override if it's set
         if self.config.api_key:
             return self.config.api_key
@@ -366,8 +364,7 @@ class WCASaaSRoleGenerationPipeline(
         model_id = params.model_id
         generation_id = params.generation_id
 
-        organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(request.user, organization_id)
+        api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, generation_id)

@@ -226,7 +226,7 @@ class WCABaseMetaData(
         ibm_cloud_identity_token_retry_counter.inc()
 
     @abstractmethod
-    def get_api_key(self, user, organization_id: Optional[int]) -> str:
+    def get_api_key(self, user) -> str:
         raise NotImplementedError
 
     def supports_ari_postprocessing(self) -> bool:
@@ -309,7 +309,6 @@ class WCABaseCompletionsPipeline(
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
 
-        organization_id = request.user.org_id
         # WCA codegen fails if a multitask prompt includes the task preamble
         # https://github.com/rh-ibm-synergy/wca-feedback/issues/34
         prompt = strip_task_preamble_from_multi_task_prompt(prompt)
@@ -317,7 +316,7 @@ class WCABaseCompletionsPipeline(
         prompt = unify_prompt_ending(prompt)
 
         try:
-            api_key = self.get_api_key(request.user, organization_id)
+            api_key = self.get_api_key(request.user)
             model_id = self.get_model_id(request.user, model_id)
             result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
@@ -402,8 +401,6 @@ class WCABaseContentMatchPipeline(
         self._search_url = f"{self.config.inference_url}/v1/wca/codematch/ansible"
 
         suggestions = model_input.get("suggestions", "")
-        organization_id = model_input.get("organization_id", None)
-
         model_id = self.get_model_id(request.user, model_id)
 
         data = {
@@ -412,7 +409,7 @@ class WCABaseContentMatchPipeline(
         }
 
         try:
-            api_key = self.get_api_key(request.user, organization_id)
+            api_key = self.get_api_key(request.user)
             headers = self.get_codematch_headers(api_key)
             suggestion_count = len(suggestions)
 
@@ -471,8 +468,7 @@ class WCABasePlaybookGenerationPipeline(
         model_id = params.model_id
         generation_id = params.generation_id
 
-        organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(request.user, organization_id)
+        api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, generation_id)
@@ -565,8 +561,7 @@ class WCABasePlaybookExplanationPipeline(
         model_id = params.model_id
         explanation_id = params.explanation_id
 
-        organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(request.user, organization_id)
+        api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, explanation_id)
@@ -628,8 +623,7 @@ class WCABaseRoleExplanationPipeline(
         model_id = params.model_id
         explanation_id = params.explanation_id
 
-        organization_id = request.user.organization.id if request.user.organization else None
-        api_key = self.get_api_key(request.user, organization_id)
+        api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
         headers = self.get_request_headers(api_key, explanation_id)

@@ -79,7 +79,7 @@ class WCAOnPremMetaData(WCABaseMetaData[WCAOnPremConfiguration]):
     def __init__(self, config: WCAOnPremConfiguration):
         super().__init__(config=config)
 
-    def get_api_key(self, user, organization_id: Optional[int]) -> str:
+    def get_api_key(self, user) -> str:
         return self.config.api_key
 
     def get_model_id(

@@ -172,22 +172,22 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         config = mock_pipeline_config("wca", api_key=None, model_id=None)
         self.config = config
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="11009103:my-key<sep>my-optimized-model")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>my-optimized-model")
     def test_mock_wca_get_api_key(self):
         model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user, 11009103)
+        api_key = model_client.get_api_key(self.user)
         self.assertEqual(api_key, "my-key")
 
     def test_get_api_key_without_org_id(self):
         model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaKeyNotFound):
-            model_client.get_api_key(self.user, None)
+            model_client.get_api_key(self.user)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:12345<sep>my-model")
     def test_get_api_key_from_aws(self):
         secret_value = "12345"
         model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user, 123)
+        api_key = model_client.get_api_key(self.user)
         self.assertEqual(api_key, secret_value)
 
     def test_get_api_key_from_aws_error(self):
@@ -196,12 +196,12 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         self.mock_wca_secret_manager_with(m)
         model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaSecretManagerError):
-            model_client.get_api_key(self.user, 123)
+            model_client.get_api_key(self.user)
 
     def test_get_api_key_with_environment_override(self):
         self.config.api_key = "key"
         model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user, 123)
+        api_key = model_client.get_api_key(self.user)
         self.assertEqual(api_key, "key")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>my-great-model")
@@ -231,7 +231,7 @@ class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     def test_get_api_key_org_cannot_have_no_key(self):
         wca_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaKeyNotFound):
-            wca_client.get_api_key(self.user, 123)
+            wca_client.get_api_key(self.user)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_get_model_id_org_cannot_have_no_model(self):
@@ -302,7 +302,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
         self.assertEqual(model_id, "fancy-model")
 
     def test_get_api_key_with_active_trial(self):
-        api_key = self.model_client.get_api_key(self.user, self.user.organization.id)
+        api_key = self.model_client.get_api_key(self.user)
         self.assertEqual(api_key, "and-my-key")
 
     def test_get_model_id_with_expired_trial(self):
@@ -318,7 +318,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
         up.save()
         api_key = ""
         try:
-            api_key = self.model_client.get_api_key(self.user, self.user.organization.id)
+            api_key = self.model_client.get_api_key(self.user)
         except WcaKeyNotFound:
             pass
         self.assertNotEqual(api_key, "and-my-key")
@@ -327,7 +327,7 @@ class TestWCAClientWithTrial(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogA
         WCA_SECRET_DUMMY_SECRETS="1981:org_key<sep>org_model_id<|sepofid|>org_model_name"
     )
     def test_get_api_key_with_wca_configured(self):
-        api_key = self.model_client.get_api_key(self.user, self.user.organization.id)
+        api_key = self.model_client.get_api_key(self.user)
         model_id = self.model_client.get_model_id(self.user)
         self.assertEqual(api_key, "org_key")
         self.assertEqual(model_id, "org_model_id<|sepofid|>org_model_name")
@@ -462,7 +462,7 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
         self.wca_client.invoke(
             PlaybookGenerationParameters.init(request=request, text="Install Wordpress")
         )
-        self.wca_client.get_api_key.assert_called_with(request.user, None)
+        self.wca_client.get_api_key.assert_called_with(request.user)
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
@@ -686,7 +686,7 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         self.wca_client.invoke(
             PlaybookExplanationParameters.init(request=request, content="Install Wordpress")
         )
-        self.wca_client.get_api_key.assert_called_with(request.user, None)
+        self.wca_client.get_api_key.assert_called_with(request.user)
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
     def test_playbook_exp_no_org(self):
@@ -695,7 +695,7 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         self.wca_client.invoke(
             PlaybookExplanationParameters.init(request=request, content="Some playbook")
         )
-        self.wca_client.get_api_key.assert_called_with(request.user, None)
+        self.wca_client.get_api_key.assert_called_with(request.user)
 
     def test_playbook_exp_request_id_correlation_failure(self):
         request = Mock()
@@ -1419,6 +1419,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
     def setUp(self):
         super().setUp()
         self.user = Mock()
+        self.user.organization.id = 11009103
         self.user.userplan_set.all.return_value = []
         config = mock_pipeline_config("wca-onprem", model_id=None)
         self.config = config
@@ -1427,7 +1428,7 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
         self.config.username = "username"
         self.config.api_key = "12345"
         model_client = WCAOnPremCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(Mock(), 11009103)
+        api_key = model_client.get_api_key(Mock())
         self.assertEqual(api_key, "12345")
 
     def test_get_api_key_without_setting(self):
