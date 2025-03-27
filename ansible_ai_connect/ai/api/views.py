@@ -245,15 +245,18 @@ class AACSAPIView(APIView):
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        try:
-            model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            user = request.user
-            org_id = hasattr(user, "organization") and user.organization and user.organization.id
-            self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
-                request.user, org_id, self.req_model_id
-            )
-        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-            pass
+        if request.user.is_authenticated:
+            try:
+                model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+                user = request.user
+                org_id = (
+                    hasattr(user, "organization") and user.organization and user.organization.id
+                )
+                self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
+                    request.user, org_id, self.req_model_id
+                )
+            except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+                pass
         self.event.set_response(response)
         send_schema1_event(self.event)
         return response

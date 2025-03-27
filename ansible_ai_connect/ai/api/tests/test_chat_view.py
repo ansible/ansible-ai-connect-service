@@ -752,3 +752,16 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
         finally:
             if self.user2:
                 self.user2.delete()
+
+
+class TestStreamingChatViewWithAnonymousUser(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
+    api_version = "v1"
+
+    def setUp(self):
+        super().setUp()
+
+    def test(self):
+        response = self.client.post(
+            self.api_version_reverse("streaming_chat"), TestChatView.VALID_PAYLOAD, format="json"
+        )
+        self.assertEqual(response.status_code, 401)
