@@ -64,7 +64,7 @@ class LlamaCppCompletionsPipeline(
         request = params.request
         model_id = params.model_id
         model_input = params.model_input
-        model_id = self.get_model_id(request.user, None, model_id)
+        model_id = self.get_model_id(request.user, model_id)
         self._prediction_url = f"{self.config.inference_url}/completion"
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")

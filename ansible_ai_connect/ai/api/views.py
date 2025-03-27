@@ -242,21 +242,24 @@ class AACSAPIView(APIView):
         self.event.set_exception(exc)
         return response
 
+    @staticmethod
+    def get_model_name(request, req_model_id):
+        if not request.user.is_authenticated:
+            return
+
+        model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
+
+        try:
+            return model_meta_data.get_model_id(request.user, req_model_id)
+        except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
+            pass
+
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
 
-        if request.user.is_authenticated:
-            try:
-                model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-                user = request.user
-                org_id = (
-                    hasattr(user, "organization") and user.organization and user.organization.id
-                )
-                self.event.modelName = self.event.modelName or model_meta_data.get_model_id(
-                    request.user, org_id, self.req_model_id
-                )
-            except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
-                pass
+        self.event.modelName = self.event.modelName or self.get_model_name(
+            request, self.req_model_id
+        )
         self.event.set_response(response)
         send_schema1_event(self.event)
         return response
@@ -366,9 +369,7 @@ class Feedback(APIView):
         try:
             org_id = getattr(user, "org_id", None)
             model_meta_data: MetaData = apps.get_app_config("ai").get_model_pipeline(MetaData)
-            model_name = model_meta_data.get_model_id(
-                user, org_id, str(validated_data.get("model", ""))
-            )
+            model_name = model_meta_data.get_model_id(user, str(validated_data.get("model", "")))
         except (WcaNoDefaultModelId, WcaModelIdNotFound, WcaSecretManagerError):
             logger.debug(
                 f"Failed to retrieve Model Name for Feedback.\n "

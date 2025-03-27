@@ -240,6 +240,12 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
 class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
     """This class should ultimately replace WisdomServiceAPITestCaseBase"""
 
+    api_version: str = "v0"
+
+    @classmethod
+    def api_version_reverse(cls, view_name, **kwargs):
+        return api_version_reverse(view_name, api_version=cls.api_version, **kwargs)
+
     def create_user(self):
         self.user = create_user_with_provider(
             username=self.username,

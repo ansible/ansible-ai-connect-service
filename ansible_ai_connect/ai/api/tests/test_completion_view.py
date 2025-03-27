@@ -126,7 +126,6 @@ class MockedPipelineCompletions(ModelPipelineCompletions[MockedConfig]):
     def get_model_id(
         self,
         user: User = None,
-        organization_id: Optional[int] = None,
         requested_model_id: str = "",
     ) -> str:
         return requested_model_id or ""

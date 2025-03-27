@@ -198,7 +198,7 @@ class LangchainCompletionsPipeline(
         request = params.request
         model_id = params.model_id
         model_input = params.model_input
-        model_id = self.get_model_id(request.user, None, model_id)
+        model_id = self.get_model_id(request.user, model_id)
 
         prompt = model_input.get("instances", [{}])[0].get("prompt", "")
         context = model_input.get("instances", [{}])[0].get("context", "")
@@ -287,7 +287,7 @@ class LangchainPlaybookGenerationPipeline(
         )
         human_template = HUMAN_MESSAGE_TEMPLATE_WITH_OUTLINE if outline else HUMAN_MESSAGE_TEMPLATE
 
-        model_id = self.get_model_id(request.user, None, model_id)
+        model_id = self.get_model_id(request.user, model_id)
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(
@@ -354,7 +354,7 @@ class LangchainRoleGenerationPipeline(
         This is what the role should do: {text}
         """
 
-        model_id = self.get_model_id(request.user, None, model_id)
+        model_id = self.get_model_id(request.user, model_id)
         llm = self.get_chat_model(model_id)
 
         chat_template = self.create_template(SYSTEM_MESSAGE_ROLE_REQUEST, HUMAN_MESSAGE_TEMPLATE)
@@ -419,7 +419,7 @@ class LangchainPlaybookExplanationPipeline(
         if custom_prompt:
             logger.info("custom_prompt is not supported for explain_playbook and will be ignored.")
 
-        model_id = self.get_model_id(request.user, None, model_id)
+        model_id = self.get_model_id(request.user, model_id)
         llm = self.get_chat_model(model_id)
 
         chat_template = ChatPromptTemplate.from_messages(

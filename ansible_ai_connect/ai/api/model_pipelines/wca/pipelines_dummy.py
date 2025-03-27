@@ -52,7 +52,6 @@ class WCADummyMetaData(MetaData[WCADummyConfiguration]):
     def get_model_id(
         self,
         user: User,
-        organization_id: Optional[int] = None,
         requested_model_id: Optional[str] = None,
     ) -> str:
         return requested_model_id or ""
