@@ -88,6 +88,9 @@ services:
     networks:
       - dbnet
       - service-mesh
+#    extra_hosts:
+#      - "aap.foo.redhat.com:192.168.86.58"
+#      - "aap.foo.redhat.com:10.17.161.129"
   db:
     image: docker.io/library/postgres:15-alpine
     environment:
@@ -124,7 +127,40 @@ services:
       - $PWD/grafana:/var/lib/grafana:Z
     networks:
       - dbnet
-
+# https://stackoverflow.com/questions/47615751/docker-compose-run-a-script-after-container-has-started
+  mcp-setup:
+    image: quay.io/manstis/mcp-llamastack:latest
+    depends_on:
+      - mcp-llamastack
+    restart: "no"
+    entrypoint: curl
+    command: >
+      -X POST localhost:8321/v1/toolgroups
+      -H "Content-Type: application/json"
+      --data '{
+      "provider_id" : "model-context-protocol",
+      "toolgroup_id" : "mcp::lightspeed",
+      "mcp_endpoint" : { "uri" : "http://mcp-openapi:8000/sse"}}'
+  mcp-llamastack:
+    image: quay.io/manstis/mcp-llamastack:latest
+    depends_on:
+      - mcp-openapi
+    environment:
+      - INFERENCE_MODEL=claude-3-5-haiku-latest
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    ports:
+      - "8321:8321"
+    networks:
+      - dbnet
+  mcp-openapi:
+    image: quay.io/manstis/mcp-openapi:latest
+    environment:
+      - MCP_OPENAPI_API_KEY=${MCP_OPENAPI_API_KEY}
+      - OPENAPI_SPEC_URL=https://raw.githubusercontent.com/ansible/ansible-ai-connect-service/refs/heads/main/tools/openapi-schema/ansible-ai-connect-service.json
+      - SERVER_URL_OVERRIDE=https://stage.ai.ansible.redhat.com/
+    ports:
+      - "8001:8000"
+#
 networks:
   dbnet:
   service-mesh:
