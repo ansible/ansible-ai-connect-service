@@ -103,7 +103,6 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
-from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
@@ -1049,9 +1048,10 @@ class Chat(AACSAPIView):
         scope = "chat"
 
     permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        # -- ALL PERMISSIONS DISABLED FOR DEMO
+        # permissions.IsAuthenticated,
+        # IsAuthenticatedOrTokenHasScope,
+        # IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.ChatBotOperationalEvent
@@ -1147,9 +1147,10 @@ class StreamingChat(AACSAPIView):
         scope = "chat"
 
     permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        # -- ALL PERMISSIONS DISABLED FOR DEMO
+        # permissions.IsAuthenticated,
+        # IsAuthenticatedOrTokenHasScope,
+        # IsRHInternalUser | IsTestUser | IsAAPUser,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.StreamingChatBotOperationalEvent
