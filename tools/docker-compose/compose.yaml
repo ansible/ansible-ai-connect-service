@@ -157,7 +157,7 @@ services:
   mcp-openapi:
     image: quay.io/manstis/mcp-openapi:latest
     environment:
-      - MCP_OPENAPI_API_KEY=${MCP_OPENAPI_API_KEY}
+      - API_KEY=${MCP_OPENAPI_API_KEY}
       - OPENAPI_SPEC_URL=https://raw.githubusercontent.com/ansible/ansible-ai-connect-service/refs/heads/main/tools/openapi-schema/ansible-ai-connect-service.json
       - SERVER_URL_OVERRIDE=https://stage.ai.ansible.redhat.com/
     ports:
