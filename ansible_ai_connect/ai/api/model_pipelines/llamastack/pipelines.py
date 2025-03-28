@@ -161,6 +161,7 @@ class LlamaStackStreamingChatBotPipeline(
             toolgroups=[RAG_TOOL_GROUP, lightspeed_tool_group],
         )
         self.id = 0
+        self.last_delta_type = "text"
         async for chunk in response:  # TODO
             # async for o in generate_dummy_data(): # TODO FOR DEBUG
             # if hasattr(chunk, "event"):
@@ -192,10 +193,15 @@ class LlamaStackStreamingChatBotPipeline(
                             if delta_type == "text":
                                 yield self.format_token(delta.get("text", ""))
                             elif delta_type == "tool_call":
+                                if self.last_delta_type != "tool_call":
+                                    yield self.format_token("\n")
                                 tool_call = delta.get("tool_call", "")
                                 if not isinstance(tool_call, str):
                                     tool_call = json.dumps(tool_call, indent=2)
-                                yield self.format_token(tool_call, "tool_call")
+                                    yield self.format_token(tool_call, "tool_call")
+                                else:
+                                    yield self.format_token(tool_call)
+                            self.last_delta_type = delta_type
                     elif event_type == "step_complete":
                         step_details = payload.get("step_details")
                         yield self.format_token(json.dumps(step_details, indent=2), "step_details")
