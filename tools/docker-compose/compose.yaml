@@ -128,30 +128,32 @@ services:
     networks:
       - dbnet
 # https://stackoverflow.com/questions/47615751/docker-compose-run-a-script-after-container-has-started
-  mcp-setup:
-    image: quay.io/manstis/mcp-llamastack:latest
-    depends_on:
-      - mcp-llamastack
-    restart: "no"
-    entrypoint: curl
-    command: >
-      -X POST localhost:8321/v1/toolgroups
-      -H "Content-Type: application/json"
-      --data '{
-      "provider_id" : "model-context-protocol",
-      "toolgroup_id" : "mcp::lightspeed",
-      "mcp_endpoint" : { "uri" : "http://mcp-openapi:8000/sse"}}'
-  mcp-llamastack:
-    image: quay.io/manstis/mcp-llamastack:latest
-    depends_on:
-      - mcp-openapi
-    environment:
-      - INFERENCE_MODEL=claude-3-5-haiku-latest
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    ports:
-      - "8321:8321"
-    networks:
-      - dbnet
+#  mcp-setup:
+#    image: quay.io/manstis/mcp-llamastack:latest
+#    depends_on:
+#      - mcp-llamastack
+#    restart: "no"
+#    entrypoint: curl
+#    command: >
+#      -X POST mcp-llamastack:8321/v1/toolgroups
+#      -H "Content-Type: application/json"
+#      --data '{
+#      "provider_id" : "model-context-protocol",
+#      "toolgroup_id" : "mcp::lightspeed",
+#      "mcp_endpoint" : { "uri" : "http://mcp-openapi:8000/sse"}}'
+#  mcp-llamastack:
+#    image: quay.io/manstis/mcp-llamastack:latest
+#    depends_on:
+#      - mcp-openapi
+#    environment:
+#      - INFERENCE_MODEL=claude-3-5-haiku-latest
+#      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+#      - SQLITE_STORE_DIR=/.llama/distributions/anthropic
+#      - SQLITE_DB_PATH=/.llama/distributions/anthropic/trace_store.db
+#    ports:
+#      - "8321:8321"
+#    networks:
+#      - dbnet
   mcp-openapi:
     image: quay.io/manstis/mcp-openapi:latest
     environment:
