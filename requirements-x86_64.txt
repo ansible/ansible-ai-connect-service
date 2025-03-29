@@ -164,7 +164,7 @@ filelock==3.13.4
     # via
     #   ansible-lint
     #   ansible-risk-insight
-frozenlist==1.4.1
+frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
