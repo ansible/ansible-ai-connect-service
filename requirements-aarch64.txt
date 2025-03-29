@@ -530,7 +530,7 @@ twisted[tls]==24.11.0
     # via daphne
 txaio==23.1.1
     # via autobahn
-typing-extensions==4.11.0
+typing-extensions==4.13.0
     # via
     #   django-test-migrations
     #   jwcrypto
