@@ -362,9 +362,11 @@ export const useChatbot = () => {
         setHasStopButton(true);
         chatRequest.media_type = "application/json";
         await fetchEventSource(
-          import.meta.env.PROD
-            ? "/api/lightspeed/v1/ai/streaming_chat/"
-            : "http://localhost:8080/v1/streaming_query",
+          // TODO STREAMING HACK
+          //           import.meta.env.PROD
+          //             ? "/api/lightspeed/v1/ai/streaming_chat/"
+          //             : "http://localhost:8080/v1/streaming_query",
+          "http://aap.foo.redhat.com:7080/api/v1/ai/streaming_chat/",
           {
             method: "POST",
             headers: {
