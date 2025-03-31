@@ -608,6 +608,12 @@ test("Test system prompt override", async () => {
 });
 
 test("Chat streaming test", async () => {
+  let ghIssueLinkSpy = 0;
+  vi.stubGlobal("open", () => {
+    ghIssueLinkSpy++;
+  });
+  mockAxios(200);
+
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("Hello");
@@ -621,6 +627,17 @@ test("Chat streaming test", async () => {
       ),
     )
     .toBeVisible();
+
+  const thumbsDownIcon = await screen.findByRole("button", {
+    name: "Bad response",
+  });
+  await thumbsDownIcon.click();
+
+  const sureButton = await screen.findByText("Sure!");
+  await expect.element(sureButton).toBeVisible();
+  await sureButton.click();
+
+  expect(ghIssueLinkSpy).toEqual(1);
 });
 
 test("Chat streaming error at API call", async () => {
