@@ -172,11 +172,11 @@ export const useChatbot = () => {
     });
   };
 
-  const appendMessageChunk = (chunk: string) => {
+  const appendMessageChunk = (chunk: string, query: string = "") => {
     setMessages((msgs: ExtendedMessage[]) => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
-        const newMessage: ExtendedMessage = botMessage(chunk);
+        const newMessage: ExtendedMessage = botMessage(chunk, query);
         chunk = "";
         return [...msgs, newMessage];
       } else {
@@ -222,8 +222,22 @@ export const useChatbot = () => {
       timestamp: getTimestamp(),
       referenced_documents: [],
     };
-    const sendFeedback = async (sentiment: Sentiment) => {
-      if (typeof response === "object") {
+    const sendFeedback = async (
+      sentiment: Sentiment,
+      content: string = "",
+      referenced_documents: ReferencedDocument[] = [],
+    ) => {
+      if (typeof response === "string") {
+        const resp = {
+          conversation_id: conversationId
+            ? conversationId
+            : "00000000-0000-0000-0000-000000000000",
+          response: content,
+          referenced_documents,
+          truncated: false,
+        };
+        handleFeedback({ query, response: resp, sentiment, message });
+      } else {
         handleFeedback({ query, response, sentiment, message });
       }
     };
@@ -231,7 +245,11 @@ export const useChatbot = () => {
     message.actions = {
       positive: {
         onClick: () => {
-          sendFeedback(Sentiment.THUMBS_UP);
+          sendFeedback(
+            Sentiment.THUMBS_UP,
+            message.content,
+            message.referenced_documents,
+          );
           if (message.actions) {
             message.actions.positive.isDisabled = true;
             message.actions.negative.isDisabled = true;
@@ -241,7 +259,11 @@ export const useChatbot = () => {
       },
       negative: {
         onClick: () => {
-          sendFeedback(Sentiment.THUMBS_DOWN);
+          sendFeedback(
+            Sentiment.THUMBS_DOWN,
+            message.content,
+            message.referenced_documents,
+          );
           if (message.actions) {
             message.actions.positive.isDisabled = true;
             message.actions.negative.isDisabled = true;
@@ -284,7 +306,7 @@ export const useChatbot = () => {
       const csrfToken = readCookie("csrftoken");
       const resp = await axios.post(
         import.meta.env.PROD
-          ? "/api/v1/ai/feedback/"
+          ? "/api/lightspeed/v1/ai/feedback/"
           : "http://localhost:8080/v1/feedback/",
         {
           chatFeedback: feedbackRequest,
@@ -323,10 +345,10 @@ export const useChatbot = () => {
     setAbortController(new AbortController());
   };
 
-  const handleSend = async (message: string | number) => {
+  const handleSend = async (query: string | number) => {
     const userMessage: ExtendedMessage = {
       role: "user",
-      content: message.toString(),
+      content: query.toString(),
       name: userName,
       avatar: userLogo,
       timestamp: getTimestamp(),
@@ -336,7 +358,7 @@ export const useChatbot = () => {
 
     const chatRequest: ChatRequest = {
       conversation_id: conversationId,
-      query: message.toString(),
+      query: query.toString(),
     };
 
     if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
@@ -395,7 +417,7 @@ export const useChatbot = () => {
                 if (message.data.token !== "") {
                   setIsLoading(false);
                 }
-                appendMessageChunk(message.data.token);
+                appendMessageChunk(message.data.token, query.toString());
               } else if (message.event === "end") {
                 if (message.data.referenced_documents.length > 0) {
                   addReferencedDocuments(message.data.referenced_documents);
@@ -440,10 +462,7 @@ export const useChatbot = () => {
           if (!conversationId) {
             setConversationId(chatResponse.conversation_id);
           }
-          const newBotMessage: any = botMessage(
-            chatResponse,
-            message.toString(),
-          );
+          const newBotMessage: any = botMessage(chatResponse, query.toString());
           newBotMessage.referenced_documents = referenced_documents;
           addMessage(newBotMessage);
         } else {
