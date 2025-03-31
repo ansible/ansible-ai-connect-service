@@ -16,7 +16,8 @@ export const TOO_MANY_REQUESTS_MSG =
   "_Chatbot service is busy with too many requests. Please try again later._";
 
 /* Footnote label */
-export const FOOTNOTE_LABEL = "Lightspeed uses AI. Check for mistakes.";
+export const FOOTNOTE_LABEL =
+  "Always review AI-generated content prior to use.";
 
 /* Footnote title */
 export const FOOTNOTE_TITLE = "Verify accuracy";
