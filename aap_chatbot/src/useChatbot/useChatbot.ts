@@ -407,8 +407,13 @@ export const useChatbot = () => {
                 });
               }
             },
-            onmessage(event: any) {
-              const message = JSON.parse(event.data);
+            onmessage(msg: any) {
+              let message = msg;
+              if (!msg.event) {
+                message = JSON.parse(msg.data);
+              } else {
+                message.data = JSON.parse(msg.data);
+              }
               if (message.event === "start") {
                 if (!conversationId) {
                   setConversationId(message.data.conversation_id);
@@ -430,6 +435,27 @@ export const useChatbot = () => {
                     `Bot returned an error: response="${data.response}", ` +
                     `cause="${data.cause}"`,
                   variant: "danger",
+                });
+              } else if (
+                message.event === "tool_call" ||
+                message.event === "step_complete"
+              ) {
+                console.log(
+                  `!![${message.event}] ${JSON.stringify(message.data)}`,
+                );
+                appendMessageChunk(
+                  "\n\n`[" +
+                    message.event +
+                    "]`\n```json\n" +
+                    message.data.token +
+                    "\n```\n",
+                );
+              } else if (message.event === "turn_complete") {
+                setMessages((msgs: ExtendedMessage[]) => {
+                  const lastMessage = msgs[msgs.length - 1];
+                  lastMessage.collapse = true;
+                  msgs.push(botMessage(message.data.token));
+                  return msgs;
                 });
               }
             },
