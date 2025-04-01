@@ -234,3 +234,4 @@ class ChatBotOperationalEvent(ChatBotBaseEvent):
 @define
 class StreamingChatBotOperationalEvent(ChatBotBaseEvent):
     event_name: str = "streamingChatOperationalEvent"
+    phase: str = "init"

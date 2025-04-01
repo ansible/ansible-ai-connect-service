@@ -237,7 +237,15 @@ class HttpStreamingChatBotPipeline(
             content_type="text/event-stream",
         )
 
+    def send_schema1_event(self, ev):
+        # Import schema1-related functions/class here to avoid
+        # the AppRegistryNotReady exception
+        from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
+
+        send_schema1_event(ev)
+
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
+
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             headers = {
                 "Content-Type": "application/json",
@@ -270,13 +278,29 @@ class HttpStreamingChatBotPipeline(
                 raise_for_status=False,
             ) as response:
                 if response.status == 200:
+                    # Import schema1-related functions/class here to avoid
+                    # the AppRegistryNotReady exception
+                    from ansible_ai_connect.ai.api.telemetry.schema1 import (
+                        StreamingChatBotOperationalEvent,
+                        anonymize_struct,
+                    )
+
+                    # Initialise Segment Event
+                    ev = StreamingChatBotOperationalEvent()
+                    ev.chat_prompt = anonymize_struct(params.query)
+                    ev.chat_system_prompt = params.system_prompt
+                    ev.provider_id = params.provider
+                    ev.conversation_id = params.conversation_id
+                    ev.modelName = params.model_id
+
                     async for chunk in response.content:
                         try:
                             if chunk:
                                 s = chunk.decode("utf-8").strip()
                                 if s and s.startswith("data: "):
                                     o = json.loads(s[len("data: ") :])
-                                    if o["event"] == "error":
+                                    event = o.get("event")
+                                    if event == "error":
                                         default_data = {
                                             "response": "(not provided)",
                                             "cause": "(not provided)",
@@ -289,6 +313,43 @@ class HttpStreamingChatBotPipeline(
                                             + ", cause="
                                             + data.get("cause")
                                         )
+                                    elif event == "start":
+                                        ev.phase = event
+                                        default_data = {
+                                            "conversation_id": conversation_id,
+                                        }
+                                        data = o.get("data", default_data)
+                                        conversation_id = data.get("conversation_id")
+                                        ev.conversation_id = conversation_id
+                                        self.send_schema1_event(ev)
+                                    elif event == "end":
+                                        ev.phase = event
+                                        default_data = {
+                                            "referenced_documents": [],
+                                            "truncated": False,
+                                        }
+                                        data = o.get("data", default_data)
+                                        referenced_documents = []
+                                        for doc in data.get("referenced_documents"):
+                                            # Current version of ansible-chatbot-service
+                                            # uses incompatible document data structure
+                                            # between streaming and non-streaming chats.
+                                            # Following is the code to solve that
+                                            # incompatibility.
+                                            if "doc_title" in doc:
+                                                referenced_documents.append(
+                                                    {
+                                                        "title": doc["doc_title"],
+                                                        "docs_url": doc["doc_url"],
+                                                    }
+                                                )
+                                            else:
+                                                referenced_documents.append(doc)
+                                        truncated = data.get("truncated")
+                                        ev.conversation_id = conversation_id
+                                        ev.chat_referenced_documents = referenced_documents
+                                        ev.chat_truncated = truncated
+                                        self.send_schema1_event(ev)
                         except JSONDecodeError:
                             pass
                         logger.debug(chunk)
