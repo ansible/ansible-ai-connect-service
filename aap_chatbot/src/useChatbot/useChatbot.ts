@@ -454,7 +454,7 @@ export const useChatbot = () => {
                 setMessages((msgs: ExtendedMessage[]) => {
                   const lastMessage = msgs[msgs.length - 1];
                   lastMessage.collapse = true;
-                  msgs.push(botMessage(message.data.token));
+                  msgs.push(botMessage(message.data.token, query.toString()));
                   return msgs;
                 });
               }
