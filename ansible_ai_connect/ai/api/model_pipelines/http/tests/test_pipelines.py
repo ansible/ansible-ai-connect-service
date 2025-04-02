@@ -63,7 +63,16 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         {
             "event": "end",
             "data": {
-                "referenced_documents": [],
+                "referenced_documents": [
+                    {
+                        "doc_title": "Document 1",
+                        "doc_url": "https://example.com/document1",
+                    },
+                    {
+                        "title": "Document 2",
+                        "docs_url": "https://example.com/document2",
+                    },
+                ],
                 "truncated": False,
                 "input_tokens": 241,
                 "output_tokens": 25,
@@ -97,6 +106,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
 
     def setUp(self):
         self.pipeline = HttpStreamingChatBotPipeline(mock_pipeline_config("http"))
+        self.call_counter = 0
 
     def assertInLog(self, s, logs, number_of_matches_expected=None):
         self.assertTrue(self.searchInLogOutput(s, logs, number_of_matches_expected), logs)
@@ -133,11 +143,27 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             media_type="application/json",
         )
 
+    def send_event(self, ev):
+        self.call_counter += 1
+        self.assertEqual(ev.chat_prompt, "Hello")
+        self.assertEqual(ev.conversation_id, "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f")
+        if ev.phase == "end":
+            self.assertEqual(len(ev.chat_referenced_documents), 2)
+            for doc in ev.chat_referenced_documents:
+                self.assertIn("title", doc)
+                self.assertIn("docs_url", doc)
+
     @patch("aiohttp.ClientSession.post")
     async def test_async_invoke_with_no_error(self, mock_post):
         mock_post.return_value = self.get_return_value(self.STREAM_DATA)
-        async for _ in self.pipeline.async_invoke(self.get_params()):
-            pass
+        with patch(
+            "ansible_ai_connect.ai.api.model_pipelines.http.pipelines"
+            ".HttpStreamingChatBotPipeline.send_schema1_event",
+            wraps=self.send_event,
+        ):
+            async for _ in self.pipeline.async_invoke(self.get_params()):
+                pass
+        self.assertEqual(self.call_counter, 2)
 
     @patch("aiohttp.ClientSession.post")
     async def test_async_invoke_prompt_too_long(self, mock_post):
