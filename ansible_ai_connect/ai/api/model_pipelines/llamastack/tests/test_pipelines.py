@@ -13,20 +13,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import logging
+from datetime import datetime
 from unittest import IsolatedAsyncioTestCase, skip
 from unittest.mock import patch
 
-from llama_stack_client.types import CompletionMessage, InferenceStep
+from llama_stack_client.types import CompletionMessage, InferenceStep, ToolCall
 from llama_stack_client.types.agents import (
     AgentTurnResponseStreamChunk,
+    Turn,
     TurnResponseEvent,
 )
 from llama_stack_client.types.agents.turn_response_event_payload import (
     AgentTurnResponseStepCompletePayload,
     AgentTurnResponseStepProgressPayload,
     AgentTurnResponseStepStartPayload,
+    AgentTurnResponseTurnCompletePayload,
 )
-from llama_stack_client.types.shared.content_delta import TextDelta
+from llama_stack_client.types.shared.content_delta import TextDelta, ToolCallDelta
 
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines import (
     LlamaStackStreamingChatBotPipeline,
@@ -71,6 +74,19 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         {"event": "token", "data": {"id": 23, "token": " today"}},
         {"event": "token", "data": {"id": 24, "token": "?"}},
         {"event": "token", "data": {"id": 25, "token": ""}},
+        {"event": "tool_call", "data": {"id": 26, "tool_call": "knowledge_search"}},
+        {
+            "event": "tool_call",
+            "data": {
+                "id": 27,
+                "tool_call": {
+                    "arguments": {
+                        "query": "What is EDA?",
+                    },
+                    "tool_name": "knowledge_search",
+                },
+            },
+        },
         {
             "event": "end",
             "data": {
@@ -78,6 +94,13 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 "truncated": False,
                 "input_tokens": 241,
                 "output_tokens": 25,
+            },
+        },
+        {
+            "event": "turn_complete",
+            "data": {
+                "content": "EDA stands for Event Driven Ansible.",
+                "id": 0,
             },
         },
     ]
@@ -166,6 +189,53 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                                     content="done", role="assistant", stop_reason="end_of_turn"
                                 ),
                             ),
+                        )
+                    case "tool_call":
+                        payload = data["data"]
+                        _tool_call = payload["tool_call"]
+                        if isinstance(_tool_call, str):
+                            return AgentTurnResponseStepProgressPayload(
+                                event_type="step_progress",
+                                step_id=f"step-{payload['id']}",
+                                step_type="inference",
+                                delta=ToolCallDelta(
+                                    parse_status="in_progress",
+                                    tool_call=_tool_call,
+                                    type="tool_call",
+                                ),
+                            )
+                        else:
+                            tool_call = ToolCall(
+                                arguments=_tool_call["arguments"],
+                                call_id=f"call_id-{payload['id']}",
+                                tool_name=_tool_call["tool_name"],
+                            )
+                            return AgentTurnResponseStepProgressPayload(
+                                event_type="step_progress",
+                                step_id=f"step-{payload['id']}",
+                                step_type="inference",
+                                delta=ToolCallDelta(
+                                    parse_status="in_progress",
+                                    tool_call=tool_call,
+                                    type="tool_call",
+                                ),
+                            )
+                    case "turn_complete":
+                        payload = data["data"]
+                        output_message = CompletionMessage(
+                            content=payload["content"], role="assistant", stop_reason="end_of_turn"
+                        )
+                        turn = Turn(
+                            input_messages=[],
+                            output_message=output_message,
+                            session_id=f"session-{payload['id']}",
+                            started_at=datetime.now(),
+                            steps=[],
+                            turn_id=f"turn-{payload['id']}",
+                        )
+                        return AgentTurnResponseTurnCompletePayload(
+                            event_type="turn_complete",
+                            turn=turn,
                         )
 
             async def __aiter__(self):
