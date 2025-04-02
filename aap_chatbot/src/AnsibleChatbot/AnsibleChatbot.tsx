@@ -19,11 +19,7 @@ import ChatbotHeader, {
 import lightspeedLogo from "../assets/lightspeed.svg";
 
 import "./AnsibleChatbot.scss";
-import {
-  inDebugMode,
-  isStreamingSupported,
-  useChatbot,
-} from "../useChatbot/useChatbot";
+import { inDebugMode, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
@@ -129,6 +125,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     setSystemPrompt,
     hasStopButton,
     handleStopButton,
+    isStreamingSupported,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode] = useState<ChatbotDisplayMode>(

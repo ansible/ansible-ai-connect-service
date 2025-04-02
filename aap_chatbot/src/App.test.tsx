@@ -71,6 +71,7 @@ function mockAxios(
   reject = false,
   timeout = false,
   refDocs: string[] = referencedDocumentExample,
+  stream = false,
 ) {
   const spy = vi.spyOn(axios, "post");
   if (reject) {
@@ -101,6 +102,47 @@ function mockAxios(
       },
       status,
     });
+
+    const spyGet = vi.spyOn(axios, "get");
+    if (stream) {
+      spyGet.mockResolvedValue({
+        data: {
+          status: "ok",
+          dependencies: [
+            {
+              name: "chatbot-service",
+              status: { provider: "http", models: "ok" },
+              time_taken: 709.4,
+            },
+            {
+              name: "streaming-chatbot-service",
+              status: { provider: "http", models: "ok" },
+              time_taken: 709.491,
+            },
+          ],
+        },
+        status,
+      });
+    } else {
+      spyGet.mockResolvedValue({
+        data: {
+          status: "ok",
+          dependencies: [
+            {
+              name: "chatbot-service",
+              status: { provider: "http", models: "ok" },
+              time_taken: 709.4,
+            },
+            {
+              name: "streaming-chatbot-service",
+              status: "disabled",
+              time_taken: 0.002,
+            },
+          ],
+        },
+        status,
+      });
+    }
   }
   return spy;
 }
@@ -658,7 +700,7 @@ test("Chat streaming test", async () => {
   vi.stubGlobal("open", () => {
     ghIssueLinkSpy++;
   });
-  mockAxios(200);
+  mockAxios(200, false, false, referencedDocumentExample, true);
 
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
@@ -691,7 +733,7 @@ test("Agent chat streaming test", async () => {
   vi.stubGlobal("open", () => {
     ghIssueLinkSpy++;
   });
-  mockAxios(200);
+  mockAxios(200, false, false, referencedDocumentExample, true);
 
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
@@ -723,6 +765,8 @@ test("Agent chat streaming test", async () => {
 });
 
 test("Chat streaming error at API call", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true);
+
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("status=400");
@@ -735,6 +779,8 @@ test("Chat streaming error at API call", async () => {
 });
 
 test("Chat streaming error in streaming data", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true);
+
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("error in stream");

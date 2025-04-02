@@ -1,6 +1,6 @@
 import axios from "axios";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   AlertMessage,
@@ -56,15 +56,6 @@ export const inDebugMode = () => {
   // default and can be disabled by setting the innter text of the debug div is set to "false"
   const debug = document.getElementById("debug")?.innerText ?? "false";
   return import.meta.env.PROD ? debug === "true" : debug !== "false";
-};
-
-export const isStreamingSupported = () => {
-  // For making streaming mode debug easier.
-  if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
-    return true;
-  }
-  const stream = document.getElementById("stream")?.innerText ?? "false";
-  return stream === "true";
 };
 
 const isTimeoutError = (e: any) =>
@@ -148,6 +139,41 @@ export const useChatbot = () => {
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
+
+  const [stream, setStream] = useState(false);
+  useEffect(() => {
+    const checkStatus = async () => {
+      const csrfToken = readCookie("csrftoken");
+      const resp = await axios.get("/api/lightspeed/v1/health/status/", {
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+      });
+      if (resp.status === 200) {
+        const dependencies = resp.data?.dependencies;
+        if (dependencies) {
+          for (const d of dependencies) {
+            if (d.name === "streaming-chatbot-service") {
+              if (d.status !== "disabled") {
+                setStream(true);
+                break;
+              }
+            }
+          }
+        }
+      }
+    };
+    checkStatus();
+  }, []);
+
+  const isStreamingSupported = () => {
+    // For making streaming mode debug easier.
+    if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
+      return true;
+    }
+    return stream;
+  };
 
   const addMessage = (
     newMessage: ExtendedMessage,
@@ -546,5 +572,6 @@ export const useChatbot = () => {
     setSystemPrompt,
     hasStopButton,
     handleStopButton,
+    isStreamingSupported,
   };
 };
