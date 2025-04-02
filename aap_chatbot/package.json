@@ -1,5 +1,5 @@
 {
-  "name": "ansible-ai-connect-chatbot",
+  "name": "@ansible/ansible-ai-connect-chatbot",
   "type": "module",
   "version": "0.1.0",
   "main": "./dist/ansible-chatbot.umd.cjs",
