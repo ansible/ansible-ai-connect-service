@@ -37,6 +37,7 @@ export type ReferencedDocumentsProp = {
 export type ExtendedMessage = MessageProps & {
   referenced_documents: ReferencedDocument[];
   scrollToHere?: boolean;
+  collapse?: boolean;
 };
 
 export type ChatFeedback = {

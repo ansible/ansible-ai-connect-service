@@ -197,21 +197,67 @@ function mockFetchEventSource() {
     },
   ];
 
+  const streamAgentNormalData: object[] = [
+    {
+      event: "start",
+      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
+    },
+    {
+      event: "token",
+      data: { id: 0, token: "Let me search for " },
+    },
+    {
+      event: "token",
+      data: { id: 1, token: "information about EDA." },
+    },
+    {
+      event: "tool_call",
+      data: { id: 2, token: '{ "key":"value"}' },
+    },
+    {
+      event: "step_details",
+      data: { id: 3, token: '{ "key":"value"}' },
+    },
+    {
+      event: "token",
+      data: { id: 4, token: "EDA stands for " },
+    },
+    {
+      event: "token",
+      data: { id: 5, token: "Event Driven Ansible." },
+    },
+    {
+      event: "step_complete",
+      data: { id: 6, token: '{ "key":"value"}' },
+    },
+    {
+      event: "turn_complete",
+      data: { id: 0, token: "Turn complete." },
+    },
+  ];
+
   return vi.fn(async (_, init) => {
     let status = 200;
     let errorCase = false;
+    let agent = false;
     const o = JSON.parse(init.body);
     if (o.query.startsWith("status=")) {
       status = parseInt(o.query.substring(7));
     } else if (o.query.startsWith("error in stream")) {
       errorCase = true;
+    } else if (o.query.startsWith("agent")) {
+      agent = true;
     }
     console.log(`status ${status}`);
 
     const ok = status === 200;
     await init.onopen({ status, ok });
     if (status === 200) {
-      const streamData = errorCase ? streamErrorData : streamNormalData;
+      const streamData = agent
+        ? streamAgentNormalData
+        : errorCase
+          ? streamErrorData
+          : streamNormalData;
       for (const data of streamData) {
         init.onmessage({ data: JSON.stringify(data) });
       }
@@ -293,7 +339,7 @@ test("Basic chatbot interaction", async () => {
     .not.toBeInTheDocument();
 
   const footNoteLink = page.getByText(
-    "Lightspeed uses AI. Check for mistakes.",
+    "Always review AI-generated content prior to use.",
   );
   await footNoteLink.click();
   await expect
@@ -301,7 +347,7 @@ test("Basic chatbot interaction", async () => {
     .toBeVisible();
   await page.getByText("Got it").click();
   await expect
-    .element(view.getByText("While Lightspeed strives for accuracy,"))
+    .element(page.getByText("While Lightspeed strives for accuracy,"))
     .not.toBeVisible();
 
   await textArea.fill("Tell me about Ansible.");
@@ -608,6 +654,12 @@ test("Test system prompt override", async () => {
 });
 
 test("Chat streaming test", async () => {
+  let ghIssueLinkSpy = 0;
+  vi.stubGlobal("open", () => {
+    ghIssueLinkSpy++;
+  });
+  mockAxios(200);
+
   const view = await renderApp(false, true);
   const textArea = page.getByLabelText("Send a message...");
   await textArea.fill("Hello");
@@ -620,6 +672,53 @@ test("Chat streaming test", async () => {
         "The Full Support Phase for AAP 2.4 ends on October 1, 2024.",
       ),
     )
+    .toBeVisible();
+
+  const thumbsDownIcon = await screen.findByRole("button", {
+    name: "Bad response",
+  });
+  await thumbsDownIcon.click();
+
+  const sureButton = await screen.findByText("Sure!");
+  await expect.element(sureButton).toBeVisible();
+  await sureButton.click();
+
+  expect(ghIssueLinkSpy).toEqual(1);
+});
+
+test("Agent chat streaming test", async () => {
+  let ghIssueLinkSpy = 0;
+  vi.stubGlobal("open", () => {
+    ghIssueLinkSpy++;
+  });
+  mockAxios(200, false, false, referencedDocumentExample);
+
+  const view = await renderApp(false, true);
+  const textArea = page.getByLabelText("Send a message...");
+  await textArea.fill("agent test");
+
+  await userEvent.keyboard("{Enter}");
+
+  await expect.element(view.getByText("Turn complete")).toBeVisible();
+
+  const thumbsDownIcon = await screen.findByRole("button", {
+    name: "Bad response",
+  });
+  await thumbsDownIcon.click();
+
+  const sureButton = await screen.findByText("Sure!");
+  await expect.element(sureButton).toBeVisible();
+  await sureButton.click();
+
+  expect(ghIssueLinkSpy).toEqual(1);
+
+  await expect
+    .element(view.getByText("EDA stands for Event Driven Ansible."))
+    .not.toBeVisible();
+  const showMoreLink = await screen.findByRole("button", { name: "Show more" });
+  await showMoreLink.click();
+  await expect
+    .element(view.getByText("EDA stands for Event Driven Ansible."))
     .toBeVisible();
 });
 
