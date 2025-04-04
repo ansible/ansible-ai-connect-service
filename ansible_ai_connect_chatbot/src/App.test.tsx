@@ -252,13 +252,16 @@ function mockFetchEventSource() {
 
     const ok = status === 200;
     await init.onopen({ status, ok });
+
     if (status === 200) {
-      const streamData = agent
-        ? streamAgentNormalData
-        : errorCase
-          ? streamErrorData
-          : streamNormalData;
-      for (const data of streamData) {
+      const streamData = () => {
+        if (agent) {
+          return streamAgentNormalData;
+        } else {
+          return errorCase ? streamErrorData : streamNormalData;
+        }
+      };
+      for (const data of streamData()) {
         init.onmessage({ data: JSON.stringify(data) });
       }
     }
