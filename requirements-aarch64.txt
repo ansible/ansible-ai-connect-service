@@ -266,7 +266,7 @@ langsmith==0.1.138
     # via
     #   langchain
     #   langchain-core
-launchdarkly-server-sdk==8.3.0
+launchdarkly-server-sdk==9.10.0
     # via -r requirements.in
 llama-stack-client==0.1.8
     # via -r requirements.in
