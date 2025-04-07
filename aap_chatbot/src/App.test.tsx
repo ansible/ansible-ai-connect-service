@@ -295,6 +295,7 @@ function mockFetchEventSource() {
     const ok = status === 200;
     await init.onopen({ status, ok });
     if (status === 200) {
+      // eslint-disable-next-line no-nested-ternary
       const streamData = agent
         ? streamAgentNormalData
         : errorCase

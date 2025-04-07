@@ -12,8 +12,10 @@ jobs:
       WORKING_DIRECTORY: ./aap_chatbot
 
     steps:
-      - name: Checkout commit
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -30,14 +32,26 @@ jobs:
         run: npm run test
         working-directory: ${{env.WORKING_DIRECTORY}}
 
+      - name: Run linter
+        run: npm run eslint
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
       - name: Versioning
         # Consider patch/minor/major versions later on, maybe as a workflow input.
         run: npm version patch
         working-directory: ${{env.WORKING_DIRECTORY}}
 
-      - uses: EndBug/add-and-commit@v9
+      - name: Create Pull Request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
         with:
-          cwd: ${{env.WORKING_DIRECTORY}}
-          add: 'package.json package-lock.json'
-          message: 'Upgrading the AAP Chatbot UI module version.'
-          push: true
+          commit-message: "New AAP Chatbot UI package release."
+          committer: GitHub <noreply@github.com>
+          author: GitHub <noreply@github.com>
+          branch: aap-chatbot-release
+          delete-branch: true
+          title: "[Automated PR] Release the AAP Chatbot UI package."
+          body: "Release the AAP Chatbot UI package."
+          add-paths: |
+            aap_chatbot/package.json
+            aap_chatbot/package-lock.json
