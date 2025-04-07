@@ -72,3 +72,16 @@ CHATBOT_DEFAULT_PROVIDER=wisdom
   }
 }
 ```
+
+## Releasing and publishing
+
+Run the following GH workflows, in order:
+
+1.- [AAP Chatbot - Release](../.github/workflows/ui_release_aap_chatbot.yml)
+It validates the package by running tests, if successful, creates a new Pull Request with the package information.
+
+2.- [AAP Chatbot - Publish](../.github/workflows/ui_publish_aap_chatbot.yml)
+Should be run just after releasing. It validates the package by running tests, if successful, it builds, assembles and publishes the new [package version into npmjs](https://www.npmjs.com/package/@ansible/ansible-ai-connect-chatbot?activeTab=versions).
+
+NOTE: Split the whole process into two different workflows so it gives a bit more flexibility on how to release and when to publish.
+NOTE: Based on the [npmjs guideline for publishing new packages](https://docs.npmjs.com/updating-your-published-package-version-number).
