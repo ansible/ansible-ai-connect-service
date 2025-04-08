@@ -285,8 +285,24 @@ REST_FRAMEWORK = {
 
 API_VERSION = "1.0.0"
 
+# ==========================================
+# Django Ansible Base configuration
+# ------------------------------------------
 ANSIBLE_BASE_ORGANIZATION_MODEL = "ansible_ai_connect.organizations.models.Organization"
 ANSIBLE_BASE_RESOURCE_CONFIG_MODULE = "ansible_ai_connect.ai.resource_api"
+
+ANSIBLE_BASE_JWT_KEY = os.getenv("ANSIBLE_BASE_JWT_KEY")
+ANSIBLE_BASE_JWT_VALIDATE_CERT = (
+    os.getenv("ANSIBLE_BASE_JWT_VALIDATE_CERT", "False").lower() == "true"
+) or False
+ANSIBLE_BASE_MANAGED_ROLE_REGISTRY = json.loads(
+    os.getenv("ANSIBLE_BASE_MANAGED_ROLE_REGISTRY", "{}")
+)
+
+RESOURCE_SERVER__URL = os.getenv("RESOURCE_SERVER__URL")
+RESOURCE_SERVER__SECRET_KEY = os.getenv("RESOURCE_SERVER__SECRET_KEY")
+RESOURCE_SERVER__VALIDATE_HTTPS = os.getenv("RESOURCE_SERVER__VALIDATE_HTTPS")
+# ==========================================
 
 # Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
 if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
@@ -587,3 +603,4 @@ ANSIBLE_AI_MODEL_MESH_CONFIG = (
 ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT = (
     os.getenv("ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT", "False").lower() == "true"
 ) or False
+# ==========================================
