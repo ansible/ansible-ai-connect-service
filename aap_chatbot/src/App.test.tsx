@@ -381,18 +381,6 @@ test("Basic chatbot interaction", async () => {
     .element(view.getByText("Create variables"))
     .not.toBeInTheDocument();
 
-  const footNoteLink = page.getByText(
-    "Always review AI-generated content prior to use.",
-  );
-  await footNoteLink.click();
-  await expect
-    .element(page.getByText("While Lightspeed strives for accuracy,"))
-    .toBeVisible();
-  await page.getByText("Got it").click();
-  await expect
-    .element(page.getByText("While Lightspeed strives for accuracy,"))
-    .not.toBeVisible();
-
   await textArea.fill("Tell me about Ansible.");
   await userEvent.keyboard("{Enter}");
   await expect

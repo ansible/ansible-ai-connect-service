@@ -15,6 +15,7 @@ import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
 import {
+  ANSIBLE_LIGHTSPEED_PRODUCT_NAME,
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
   INITIAL_NOTICE,
@@ -27,7 +28,8 @@ import { setClipboard } from "../Clipboard";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
-  document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
+  document.getElementById("bot_name")?.innerText ??
+  ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
@@ -77,7 +79,9 @@ export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
   content:
     f.sentiment === Sentiment.THUMBS_UP
       ? "Thank you for your feedback!"
-      : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_).",
+      : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_). " +
+        "\\n\\n Do not include any personal information or other sensitive information in your feedback. " +
+        "Feedback may be used to improve Red Hat's products or services.",
   name: botName,
   avatar: logo,
   timestamp: getTimestamp(),
