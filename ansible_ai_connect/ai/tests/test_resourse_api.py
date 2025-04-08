@@ -9,10 +9,10 @@ class TestResourceAPI(APITransactionTestCase):
     def test_service_type_when_resource_service_not_defined(self):
         self.assertEqual(get_service_type(), "aap")
 
-    @override_settings(RESOURCE_SERVER={})
+    @override_settings(RESOURCE_SERVER__URL=None)
     def test_service_type_when_resource_service_is_empty(self):
         self.assertEqual(get_service_type(), "aap")
 
-    @override_settings(RESOURCE_SERVER={"URL": "https://localhost"})
+    @override_settings(RESOURCE_SERVER__URL="https://localhost")
     def test_service_type_when_resource_service_has_value(self):
         self.assertEqual(get_service_type(), "lightspeed")
