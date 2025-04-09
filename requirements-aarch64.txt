@@ -125,7 +125,7 @@ django==4.2.20
     #   social-auth-app-django
 django-allow-cidr==0.6.0
     # via -r requirements.in
-django-ansible-base[jwt-consumer,resource-registry] @ git+https://github.com/ansible/django-ansible-base@2025.1.31
+django-ansible-base[jwt-consumer,resource-registry]==2025.3.7
     # via -r requirements.in
 django-crum==0.7.9
     # via django-ansible-base
@@ -143,8 +143,6 @@ django-oauth-toolkit==3.0.1
     # via -r requirements.in
 django-prometheus==2.2.0
     # via -r requirements.in
-django-split-settings==1.3.2
-    # via django-ansible-base
 django-test-migrations==1.3.0
     # via -r requirements.in
 djangorestframework==3.15.2
@@ -154,6 +152,8 @@ djangorestframework==3.15.2
     #   drf-spectacular
 drf-spectacular==0.27.2
     # via -r requirements.in
+dynaconf==3.2.10
+    # via django-ansible-base
 et-xmlfile==1.1.0
     # via openpyxl
 executing==2.0.1
