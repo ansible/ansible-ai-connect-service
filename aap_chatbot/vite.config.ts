@@ -3,6 +3,7 @@ import { resolve } from "path";
 import dts from "vite-plugin-dts";
 import react from "@vitejs/plugin-react";
 import cleanPlugin from "vite-plugin-clean";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
@@ -41,5 +42,25 @@ export default defineConfig({
       reporter: ["text", "html", "lcov"],
     },
   },
-  plugins: [cleanPlugin(), react(), dts()],
+  plugins: [
+    cleanPlugin(),
+    react(),
+    dts(),
+    viteStaticCopy({
+      targets: [
+        {
+          src: "src/public/lightspeed.svg",
+          dest: "public/",
+        },
+        {
+          src: "src/public/lightspeed_dark.svg",
+          dest: "public/",
+        },
+        {
+          src: "src/public/user_logo.png",
+          dest: "public/",
+        },
+      ],
+    }),
+  ],
 });

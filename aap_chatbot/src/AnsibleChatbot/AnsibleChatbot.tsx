@@ -1,9 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Content,
-  ContentVariants,
-  ExpandableSection,
-} from "@patternfly/react-core";
+import { ExpandableSection } from "@patternfly/react-core";
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -15,8 +11,6 @@ import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
   ChatbotHeaderActions,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
-
-import lightspeedLogo from "../assets/lightspeed.svg";
 
 import "./AnsibleChatbot.scss";
 import { inDebugMode, useChatbot } from "../useChatbot/useChatbot";
@@ -34,32 +28,11 @@ import {
   ChatbotToggle,
   Conversation,
 } from "@patternfly/chatbot";
-import {
-  CHAT_HISTORY_HEADER,
-  FOOTNOTE_DESCRIPTION,
-  FOOTNOTE_LABEL,
-  FOOTNOTE_TITLE,
-} from "../Constants";
+import { CHAT_HISTORY_HEADER, FOOTNOTE_LABEL } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
-  popover: {
-    title: FOOTNOTE_TITLE,
-    description: FOOTNOTE_DESCRIPTION,
-    bannerImage: {
-      src: lightspeedLogo,
-      alt: "Lightspeed logo",
-    },
-    cta: {
-      label: "Got it",
-      onClick: () => {},
-    },
-    link: {
-      label: "Learn more",
-      url: "https://www.redhat.com/",
-    },
-  },
 };
 
 const conversationList: { [key: string]: Conversation[] } = {};
@@ -145,38 +118,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // For showing the popover from footnote in IFrame
-  useEffect(() => {
-    if (footnoteProps.popover) {
-      const popover = footnoteProps.popover;
-      const frameWindow = window[0];
-      if (frameWindow) {
-        const bodyElement =
-          frameWindow.document.getElementsByTagName("body")[0];
-        // We need to override "appendTo" only, but "bodyContent" is a required property...
-        // Following lines were copied from PatternFly chatbot.
-        const popoverBodyContent = (
-          <>
-            {popover?.bannerImage && (
-              <img
-                src={popover.bannerImage.src}
-                alt={popover.bannerImage.alt}
-              />
-            )}
-            <Content component={ContentVariants.h3}>{popover?.title}</Content>
-            <Content component={ContentVariants.p}>
-              {popover?.description}
-            </Content>
-          </>
-        );
-        footnoteProps.popover.popoverProps = {
-          appendTo: bodyElement,
-          bodyContent: popoverBodyContent,
-        };
-      }
-    }
-  }, []);
 
   const setCurrentConversation = (
     newConversationId: string | undefined,
