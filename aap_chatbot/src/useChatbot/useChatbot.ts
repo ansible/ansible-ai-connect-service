@@ -144,24 +144,29 @@ export const useChatbot = () => {
   useEffect(() => {
     const checkStatus = async () => {
       const csrfToken = readCookie("csrftoken");
-      const resp = await axios.get("/api/lightspeed/v1/health/status/", {
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-      });
-      if (resp.status === 200) {
-        const dependencies = resp.data?.dependencies;
-        if (dependencies) {
-          for (const d of dependencies) {
-            if (d.name === "streaming-chatbot-service") {
-              if (d.status !== "disabled") {
-                setStream(true);
-                break;
+      try {
+        const resp = await axios.get("/api/lightspeed/v1/health/status/", {
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+        });
+        if (resp.status === 200) {
+          const dependencies = resp.data?.dependencies;
+          if (dependencies) {
+            for (const d of dependencies) {
+              if (d.name === "streaming-chatbot-service") {
+                if (d.status !== "disabled") {
+                  // If streaming is enabled on the service side, use it.
+                  setStream(true);
+                  break;
+                }
               }
             }
           }
         }
+      } catch (e) {
+        // Ignore errors thrown and use non-streaming chat.
       }
     };
     checkStatus();

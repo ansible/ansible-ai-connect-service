@@ -66,44 +66,15 @@ const referencedDocumentExample = [
   "https://docs\\.redhat\\.com/en/documentation/red_hat_ansible_automation_platform/2\\.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
 ];
 
-function mockAxios(
-  status: number,
-  reject = false,
-  timeout = false,
-  refDocs: string[] = referencedDocumentExample,
-  stream = false,
-) {
-  const spy = vi.spyOn(axios, "post");
-  if (reject) {
-    if (timeout) {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(new AxiosError("timeout of 28000ms exceeded")),
-      );
-    } else if (status === 429) {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(createError("Request failed with status code 429", 429)),
-      );
-    } else {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(new Error("mocked error")),
-      );
-    }
-  } else {
-    spy.mockResolvedValue({
-      data: {
-        conversation_id: "123e4567-e89b-12d3-a456-426614174000",
-        referenced_documents: refDocs.map((d, index) => ({
-          docs_url: d,
-          title: "Create variables" + (index > 0 ? index : ""),
-        })),
-        response:
-          "In Ansible, the precedence of variables is determined by the order...",
-        truncated: false,
-      },
-      status,
-    });
+function mockAxiosGet(stream = false, reject = false) {
+  const spyGet = vi.spyOn(axios, "get");
 
-    const spyGet = vi.spyOn(axios, "get");
+  if (reject) {
+    spyGet.mockImplementationOnce(() =>
+      Promise.reject(new Error("mocked error")),
+    );
+  } else {
+    const status = 200;
     if (stream) {
       spyGet.mockResolvedValue({
         data: {
@@ -144,6 +115,47 @@ function mockAxios(
       });
     }
   }
+}
+
+function mockAxios(
+  status: number,
+  reject = false,
+  timeout = false,
+  refDocs: string[] = referencedDocumentExample,
+  stream = false,
+  get_reject = false,
+) {
+  const spy = vi.spyOn(axios, "post");
+  if (reject) {
+    if (timeout) {
+      spy.mockImplementationOnce(() =>
+        Promise.reject(new AxiosError("timeout of 28000ms exceeded")),
+      );
+    } else if (status === 429) {
+      spy.mockImplementationOnce(() =>
+        Promise.reject(createError("Request failed with status code 429", 429)),
+      );
+    } else {
+      spy.mockImplementationOnce(() =>
+        Promise.reject(new Error("mocked error")),
+      );
+    }
+  } else {
+    spy.mockResolvedValue({
+      data: {
+        conversation_id: "123e4567-e89b-12d3-a456-426614174000",
+        referenced_documents: refDocs.map((d, index) => ({
+          docs_url: d,
+          title: "Create variables" + (index > 0 ? index : ""),
+        })),
+        response:
+          "In Ansible, the precedence of variables is determined by the order...",
+        truncated: false,
+      },
+      status,
+    });
+  }
+  mockAxiosGet(stream, get_reject);
   return spy;
 }
 
@@ -795,4 +807,16 @@ test("Chat streaming error in streaming data", async () => {
       'response="Oops, something went wrong during LLM invocation", ' +
       "cause=\"Error code: 404 - {'detail': 'Not Found'}\"",
   );
+});
+
+test("Chat streaming error in status check", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true, true);
+
+  const view = await renderApp(false, true);
+  await delay(100);
+
+  // Make sure the error popup is NOT displayed in this error case.
+  const alert = view.container.querySelector(".pf-v6-c-alert__description");
+  const textContent = alert?.textContent;
+  expect(textContent).not.contain("mocked error");
 });
