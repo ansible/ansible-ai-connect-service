@@ -169,6 +169,7 @@ export const useChatbot = () => {
             }
           }
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         // Ignore errors thrown and use non-streaming chat.
       }
