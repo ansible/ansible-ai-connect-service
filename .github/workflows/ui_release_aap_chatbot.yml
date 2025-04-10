@@ -52,6 +52,7 @@ jobs:
           delete-branch: true
           title: "[Automated PR] Release the AAP Chatbot UI package."
           body: "Release the AAP Chatbot UI package."
+          sign-commits: true
           add-paths: |
             aap_chatbot/package.json
             aap_chatbot/package-lock.json
