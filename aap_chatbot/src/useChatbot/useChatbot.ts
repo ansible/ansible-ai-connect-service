@@ -12,8 +12,8 @@ import type {
   ReferencedDocument,
 } from "../types/Message";
 import type { LLMModel } from "../types/Model";
-import logo from "../assets/lightspeed.svg";
-import userLogo from "../assets/user_logo.png";
+import logo from "../public/lightspeed.svg";
+import userLogo from "../public/user_logo.png";
 import {
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME,
   API_TIMEOUT,
