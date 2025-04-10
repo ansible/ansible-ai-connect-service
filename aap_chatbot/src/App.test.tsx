@@ -815,9 +815,8 @@ test("Chat streaming error in status check", async () => {
   const view = await renderApp(false, true);
   await delay(100);
 
+  // Make sure the error popup is NOT displayed in this error case.
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
-  expect(textContent).toEqual(
-    "An unexpected error occurred in service status check: Error: mocked error",
-  );
+  expect(textContent).not.contain("mocked error");
 });

@@ -157,6 +157,7 @@ export const useChatbot = () => {
             for (const d of dependencies) {
               if (d.name === "streaming-chatbot-service") {
                 if (d.status !== "disabled") {
+                  // If streaming is enabled on the service side, use it.
                   setStream(true);
                   break;
                 }
@@ -165,11 +166,7 @@ export const useChatbot = () => {
           }
         }
       } catch (e) {
-        setAlertMessage({
-          title: "Error",
-          message: `An unexpected error occurred in service status check: ${e}`,
-          variant: "danger",
-        });
+        // Ignore errors thrown and use non-streaming chat.
       }
     };
     checkStatus();
