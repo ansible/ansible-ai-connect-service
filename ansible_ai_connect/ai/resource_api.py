@@ -24,7 +24,9 @@ from django.contrib.auth import get_user_model
 
 def get_service_type():
     service_type = "lightspeed"
-    if not getattr(settings, "RESOURCE_SERVER__URL", None):
+    if not getattr(settings, "RESOURCE_SERVER__URL", None) and not getattr(
+        settings, "RESOURCE_SERVER", None
+    ):
         service_type = "aap"
     return service_type
 
