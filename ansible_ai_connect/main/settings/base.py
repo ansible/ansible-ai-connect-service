@@ -292,6 +292,20 @@ API_VERSION = "1.0.0"
 # ------------------------------------------
 ANSIBLE_BASE_ORGANIZATION_MODEL = "ansible_ai_connect.organizations.models.Organization"
 ANSIBLE_BASE_RESOURCE_CONFIG_MODULE = "ansible_ai_connect.ai.resource_api"
+ANSIBLE_BASE_REST_FILTERS_RESERVED_NAMES = (
+    "page",
+    "page_size",
+    "format",
+    "order",
+    "order_by",
+    "search",
+    "type",
+    "host_filter",
+    "count_disabled",
+    "no_truncate",
+    "limit",
+    "validate",
+)
 
 ANSIBLE_BASE_JWT_KEY = os.getenv("ANSIBLE_BASE_JWT_KEY")
 ANSIBLE_BASE_JWT_VALIDATE_CERT = (
