@@ -31,6 +31,7 @@ const botName =
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
+  { model: "granite3-2-8b", provider: "my_rhoai_g32" },
 ];
 
 export const readCookie = (name: string): string | null => {
