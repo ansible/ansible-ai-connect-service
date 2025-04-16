@@ -237,12 +237,14 @@ class TestTrial(WisdomAppsBackendMocking, APITransactionTestCase):
     def test_no_aap_subscription__no_trial_for_you(self):
         r = self.client.get(reverse("trial"))
         self.assertEqual(r.status_code, 403)
+        self.assertIn("an active Ansible Automation Platform subscription.", str(r.content))
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1234567:valid")
     def test_wca_ready_org__no_trial_for_you(self):
         self.assertEqual(self.user.organization.id, 1234567)
         r = self.client.get(reverse("trial"))
         self.assertEqual(r.status_code, 403)
+        self.assertIn("Trial because an api_key was set.", str(r.content))
 
     def test_redirect_when_admin(self):
         self.user.rh_user_is_org_admin = True
