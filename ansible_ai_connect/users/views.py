@@ -185,10 +185,16 @@ class TrialView(TemplateView):
             return HttpResponseForbidden()
 
         if not self.request.user.rh_org_has_subscription:
-            return HttpResponseForbidden()
+            return HttpResponseForbidden(
+                "Your organization doesn't have an active "
+                "Ansible Automation Platform subscription."
+            )
 
         if request.user.organization.has_api_key:
-            return HttpResponseForbidden()
+            return HttpResponseForbidden(
+                "You and the user of your organization cannot "
+                "use the Trial because an api_key was set."
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
