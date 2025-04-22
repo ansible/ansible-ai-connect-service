@@ -56,6 +56,9 @@ Here are some basic facts about Ansible and AAP:
 
 export const CHAT_HISTORY_HEADER = "Chat History";
 
+export const REFERENCED_DOCUMENTS_CAPTION =
+  "Refer to the following for more information:";
+
 export const INITIAL_NOTICE: AlertMessage = {
   title: "Important",
   message:

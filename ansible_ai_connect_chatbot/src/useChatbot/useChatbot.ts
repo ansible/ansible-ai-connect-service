@@ -19,6 +19,7 @@ import {
   GITHUB_NEW_ISSUE_BASE_URL,
   INITIAL_NOTICE,
   QUERY_SYSTEM_INSTRUCTION,
+  REFERENCED_DOCUMENTS_CAPTION,
   Sentiment,
   TIMEOUT_MSG,
   TOO_MANY_REQUESTS_MSG,
@@ -275,26 +276,15 @@ export const useChatbot = () => {
       copy: {
         onClick: () => {
           if (message.actions) {
-            message.actions.copy.className = "action-button-clicked";
-            const ref_docs =
-              typeof response === "object"
-                ? response.referenced_documents?.slice(0, 5)
-                : response;
-            if (ref_docs) {
-              const llmResponse = [
-                typeof response === "object" ? response.response : response,
-                ",\n",
-                typeof response === "object"
-                  ? response.referenced_documents
-                      ?.slice(0, 5)
-                      .map((doc) => doc.docs_url)
-                      .join(",\n")
-                  : response,
-              ];
-              setClipboard(
-                llmResponse?.map((llmResponse) => llmResponse).join(""),
+            const contents = [message.content];
+            if (message.referenced_documents.length > 0) {
+              contents.push(`\n${REFERENCED_DOCUMENTS_CAPTION}`);
+              const ref_docs = message.referenced_documents.map(
+                (doc) => `- [${doc.title}](${doc.docs_url})`,
               );
+              contents.push(...ref_docs);
             }
+            setClipboard(contents.join("\n"));
           }
         },
       },

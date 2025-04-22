@@ -28,7 +28,11 @@ import {
   ChatbotToggle,
   Conversation,
 } from "@patternfly/chatbot";
-import { CHAT_HISTORY_HEADER, FOOTNOTE_LABEL } from "../Constants";
+import {
+  CHAT_HISTORY_HEADER,
+  FOOTNOTE_LABEL,
+  REFERENCED_DOCUMENTS_CAPTION,
+} from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
@@ -252,7 +256,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                               <Message key={`m_msg_${index}`} {...message} />
                               <ReferencedDocuments
                                 key={`m_docs_${index}`}
-                                caption="Refer to the following for more information:"
+                                caption={REFERENCED_DOCUMENTS_CAPTION}
                                 referenced_documents={referenced_documents}
                               />
                             </ExpandableSection>
@@ -262,7 +266,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                             <Message key={`m_msg_${index}`} {...message} />
                             <ReferencedDocuments
                               key={`m_docs_${index}`}
-                              caption="Refer to the following for more information:"
+                              caption={REFERENCED_DOCUMENTS_CAPTION}
                               referenced_documents={referenced_documents}
                             />
                           </div>

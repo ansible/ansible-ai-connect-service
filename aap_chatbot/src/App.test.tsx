@@ -8,7 +8,7 @@ import React from "react";
 // vitest-browser-react documentation
 /* eslint-disable testing-library/prefer-screen-queries */
 
-import { beforeEach, expect, test, vi } from "vitest";
+import { assert, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
 import { screen } from "@testing-library/react";
@@ -367,11 +367,14 @@ test("Basic chatbot interaction", async () => {
     name: "Copy",
   });
   await copyIcon.click();
-  expect(
+  assert(
     copiedString.startsWith(
       "In Ansible, the precedence of variables is determined by the order...",
     ),
   );
+  assert(copiedString.includes("Refer to the following for more information:"));
+  assert(copiedString.includes("Create variables"));
+  assert(copiedString.includes("https://"));
 
   await page.getByLabelText("Toggle menu").click();
   const newChatButton = page
@@ -694,6 +697,15 @@ test("Chat streaming test", async () => {
       ),
     )
     .toBeVisible();
+
+  const copyIcon = await screen.findByRole("button", {
+    name: "Copy",
+  });
+  await copyIcon.click();
+  assert(copiedString.startsWith("The Full Support Phase for AAP 2.4"));
+  assert(copiedString.includes("Refer to the following for more information:"));
+  assert(copiedString.includes("Ansible Components Versions"));
+  assert(copiedString.includes("https://"));
 
   const thumbsDownIcon = await screen.findByRole("button", {
     name: "Bad response",

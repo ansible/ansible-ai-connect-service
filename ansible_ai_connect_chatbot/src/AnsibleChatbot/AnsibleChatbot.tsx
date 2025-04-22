@@ -57,6 +57,7 @@ import {
   FOOTNOTE_DESCRIPTION,
   FOOTNOTE_LABEL,
   FOOTNOTE_TITLE,
+  REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
@@ -366,7 +367,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                               <Message key={`m_msg_${index}`} {...message} />
                               <ReferencedDocuments
                                 key={`m_docs_${index}`}
-                                caption="Refer to the following for more information:"
+                                caption={REFERENCED_DOCUMENTS_CAPTION}
                                 referenced_documents={referenced_documents}
                               />
                             </ExpandableSection>
@@ -376,7 +377,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                             <Message key={`m_msg_${index}`} {...message} />
                             <ReferencedDocuments
                               key={`m_docs_${index}`}
-                              caption="Refer to the following for more information:"
+                              caption={REFERENCED_DOCUMENTS_CAPTION}
                               referenced_documents={referenced_documents}
                             />
                           </div>
