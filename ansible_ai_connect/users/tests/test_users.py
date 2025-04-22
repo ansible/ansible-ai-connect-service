@@ -44,7 +44,9 @@ from ansible_ai_connect.users.constants import (
 )
 
 
+@override_settings(DEPLOYMENT_MODE="upstream")
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
+@override_settings(SOCIAL_AUTH_GITHUB_TEAM_KEY="github-team-key")
 class TestUsers(APIVersionTestCaseBase, APITransactionTestCase, WisdomServiceLogAwareTestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -88,14 +90,17 @@ class TestUserSeat(WisdomAppsBackendMocking):
         super().setUp()
         cache.clear()
 
+    @override_settings(DEPLOYMENT_MODE="upstream")
     def test_rh_user_has_seat_with_no_rhsso_user(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.assertFalse(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_has_seat_with_rhsso_user_no_seat(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, username="not-seated")
         self.assertFalse(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_has_seat_with_rhsso_user_with_seat(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -105,11 +110,13 @@ class TestUserSeat(WisdomAppsBackendMocking):
         )
         self.assertTrue(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_has_seat_with_no_seat_checker(self):
         with patch.object(apps.get_app_config("ai"), "get_seat_checker", lambda: None):
             user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
             self.assertFalse(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_in_unlimited_org(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         org = Organization(None, None)
@@ -117,6 +124,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         user.organization = org
         self.assertTrue(user.rh_org_has_subscription)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_onprem_has_valid_license(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, social_auth_extra_data={"aap_licensed": True}
@@ -125,6 +133,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
             return_true.return_value = True
             self.assertTrue(user.rh_org_has_subscription)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_onprem_has_no_valid_license(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, social_auth_extra_data={"aap_licensed": False}
@@ -133,6 +142,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
             return_true.return_value = True
             self.assertFalse(user.rh_org_has_subscription)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_org_with_sub_but_no_seat_in_ams(self):
         user = create_user(
             provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
@@ -142,6 +152,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         )
         self.assertTrue(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_rh_user_org_with_sub_but_no_sec_and_tech_preview(self):
@@ -153,6 +164,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
         )
         self.assertFalse(user.rh_user_has_seat)
 
+    @override_settings(DEPLOYMENT_MODE="saas")
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_rh_user_org_with_sub_but_no_sec_after_tech_preview(self):

@@ -116,8 +116,10 @@
             </form>
 
           {% else %}
-            <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
-            <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
+              {%  if is_auth_configured %}
+                <div class="pf-c-empty-state__body">You are currently not logged in. Please log in using the button below.</div>
+                <a class="pf-c-button pf-m-primary" type="button" href="{% url 'login' %}">Log in</a>
+              {% endif %}
           {% endif %}
 
             <div class="pf-l-bullseye">
