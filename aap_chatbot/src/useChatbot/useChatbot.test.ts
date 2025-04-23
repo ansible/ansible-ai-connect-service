@@ -4,6 +4,8 @@ import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import { Sentiment } from "../Constants";
 import type { ChatFeedback } from "../types/Message";
 
+const CONVERSATION_ID = "123e4567-e89b-12d3-a456-426614174000";
+
 describe("feedbackMessage", () => {
   it("should return a message with a thank you note for positive feedback", () => {
     const feedback: ChatFeedback = {
@@ -24,7 +26,7 @@ describe("feedbackMessage", () => {
         referenced_documents: [],
       },
     };
-    const message: MessageProps = feedbackMessage(feedback);
+    const message: MessageProps = feedbackMessage(feedback, CONVERSATION_ID);
 
     expect(message.role).toBe("bot");
     expect(message.content).toBe("Thank you for your feedback!");
@@ -50,7 +52,7 @@ describe("feedbackMessage", () => {
         referenced_documents: [],
       },
     };
-    const message: MessageProps = feedbackMessage(feedback);
+    const message: MessageProps = feedbackMessage(feedback, CONVERSATION_ID);
 
     expect(message.role).toBe("bot");
     expect(message.content).toMatch(

@@ -278,6 +278,7 @@ export const useChatbot = () => {
       content: typeof response === "object" ? response.response : response,
       name: botName,
       avatar: logo,
+      hasRoundAvatar: false,
       timestamp: getTimestamp(),
       referenced_documents: [],
     };
