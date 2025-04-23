@@ -392,6 +392,17 @@ export const useChatbot = () => {
     setAbortController(new AbortController());
   };
 
+  const show429Message = async () => {
+    // Insert a 3-sec delay before showing the "Too Many Request" message
+    // for reducing the number of chat requests when the server is busy.
+    await delay(3000);
+    const newBotMessage = {
+      referenced_documents: [],
+      ...tooManyRequestsMessage(),
+    };
+    addMessage(newBotMessage);
+  };
+
   const handleSend = async (query: string | number) => {
     const userMessage: ExtendedMessage = {
       role: "user",
@@ -442,11 +453,9 @@ export const useChatbot = () => {
             },
             body: JSON.stringify(chatRequest),
             async onopen(resp: any) {
-              if (
-                resp.status >= 400 &&
-                resp.status < 500 &&
-                resp.status !== 429
-              ) {
+              if (resp.status === 429) {
+                await show429Message();
+              } else if (resp.status >= 400 && resp.status < 500) {
                 setAlertMessage({
                   title: "Error",
                   message: `Bot returned status_code ${resp.status}`,
@@ -554,14 +563,7 @@ export const useChatbot = () => {
         };
         addMessage(newBotMessage);
       } else if (isTooManyRequestsError(e)) {
-        // Insert a 3-sec delay before showing the "Too Many Request" message
-        // for reducing the number of chat requests when the server is busy.
-        await delay(3000);
-        const newBotMessage = {
-          referenced_documents: [],
-          ...tooManyRequestsMessage(),
-        };
-        addMessage(newBotMessage);
+        await show429Message();
       } else {
         setAlertMessage({
           title: "Error",
