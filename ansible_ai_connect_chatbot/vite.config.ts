@@ -35,6 +35,7 @@ export default defineConfig({
       exclude: [
         ...configDefaults.exclude,
         "**/*.d.ts",
+        "**/*.test.ts",
         "**/*.test.tsx",
         "src/index.tsx",
         "src/reportWebVitals.ts",

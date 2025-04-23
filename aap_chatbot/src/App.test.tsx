@@ -363,6 +363,30 @@ test("Basic chatbot interaction", async () => {
     .toBeVisible();
   await expect.element(view.getByText("Create variables")).toBeVisible();
 
+  // Verify avatar CSS class
+  let foundUserAvatar = false;
+  let foundBotAvatar = false;
+  for (const section of document.getElementsByTagName("section")) {
+    const aria_label = section.getAttribute("aria-label");
+    if (aria_label?.startsWith("Message from user")) {
+      const avatar = section.getElementsByTagName("img")[0];
+      assert(avatar);
+      const cls = avatar.getAttribute("class");
+      assert(cls);
+      assert(cls.includes("pf-chatbot__message-avatar--round "));
+      foundUserAvatar = true;
+    } else if (aria_label?.startsWith("Message from bot")) {
+      const avatar = section.getElementsByTagName("img")[0];
+      assert(avatar);
+      const cls = avatar.getAttribute("class");
+      assert(cls);
+      assert(!cls.includes("pf-chatbot__message-avatar--round "));
+      foundBotAvatar = true;
+    }
+  }
+  assert(foundUserAvatar);
+  assert(foundBotAvatar);
+
   const copyIcon = await screen.findByRole("button", {
     name: "Copy",
   });
