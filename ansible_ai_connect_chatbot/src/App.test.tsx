@@ -58,7 +58,8 @@ async function renderApp(debug = false, stream = false) {
 
 async function sendMessage(message: string) {
   const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
+  await textArea.fill(message);
+  await textArea.click();
   await userEvent.keyboard("{Enter}");
 }
 
@@ -290,11 +291,8 @@ beforeEach(() => {
 test("Basic chatbot interaction", async () => {
   const spy = mockAxios(200);
   const view = await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
 
-  await userEvent.keyboard("{Enter}");
-
+  await sendMessage("Hello");
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
@@ -356,8 +354,7 @@ test("Basic chatbot interaction", async () => {
     .element(page.getByText("While Lightspeed strives for accuracy,"))
     .not.toBeVisible();
 
-  await textArea.fill("Tell me about Ansible.");
-  await userEvent.keyboard("{Enter}");
+  await sendMessage("Tell me about Ansible.");
   await expect
     .element(
       view.getByText(
@@ -385,15 +382,15 @@ test("Basic chatbot interaction", async () => {
 
 test("ThumbsDown icon test", async () => {
   let ghIssueLinkSpy = 0;
-  vi.stubGlobal("open", () => {
+  let ghIssueUrl = "";
+  vi.stubGlobal("open", (url: string) => {
+    ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
   mockAxios(200);
   const view = await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
 
-  await userEvent.keyboard("{Enter}");
+  await sendMessage("Hello");
   await expect
     .element(
       view.getByText(
@@ -414,6 +411,9 @@ test("ThumbsDown icon test", async () => {
   await sureButton.click();
 
   expect(ghIssueLinkSpy).toEqual(1);
+  expect(ghIssueUrl).toContain(
+    "conversation_id=123e4567-e89b-12d3-a456-426614174000",
+  );
 });
 
 const REF_DOCUMENT_EXAMPLE_REGEXP = new RegExp(
@@ -436,11 +436,8 @@ test("Too many reference documents for the GU issue creation query param.", asyn
   }
   mockAxios(200, false, false, lotsOfRefDocs);
   const view = await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
 
-  await userEvent.keyboard("{Enter}");
-
+  await sendMessage("Hello");
   await expect
     .element(
       page.getByText(
@@ -474,10 +471,8 @@ test("Too many reference documents for the GU issue creation query param.", asyn
 test("Chat service returns 500", async () => {
   mockAxios(500);
   const view = await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
 
-  await userEvent.keyboard("{Enter}");
+  await sendMessage("Hello");
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual("Bot returned status_code 500");
@@ -486,10 +481,8 @@ test("Chat service returns 500", async () => {
 test("Chat service returns a timeout error", async () => {
   mockAxios(-1, true, true);
   await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
-  await userEvent.keyboard("{Enter}");
 
+  await sendMessage("Hello");
   await expect
     .element(
       page.getByText(
@@ -504,9 +497,8 @@ test("Chat service returns a timeout error", async () => {
 test("Chat service returns 429 Too Many Requests error", async () => {
   mockAxios(429, true);
   await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
-  await userEvent.keyboard("{Enter}");
+
+  await sendMessage("Hello");
 
   // Insert an artificial 3s delay, which is inserted in useChatbot.ts.
   await delay(3000);
@@ -524,10 +516,8 @@ test("Chat service returns 429 Too Many Requests error", async () => {
 test("Chat service returns an unexpected error", async () => {
   mockAxios(-1, true);
   const view = await renderApp();
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
-  await userEvent.keyboard("{Enter}");
 
+  await sendMessage("Hello");
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual(
@@ -643,10 +633,7 @@ test("Test system prompt override", async () => {
   const systemPromptButton = page.getByLabelText("system-prompt-form-button");
   await systemPromptButton.click();
 
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello with system prompt override");
-
-  await userEvent.keyboard("{Enter}");
+  await sendMessage("Hello with system prompt override");
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
@@ -660,17 +647,16 @@ test("Test system prompt override", async () => {
 
 test("Chat streaming test", async () => {
   let ghIssueLinkSpy = 0;
-  vi.stubGlobal("open", () => {
+  let ghIssueUrl = "";
+  vi.stubGlobal("open", (url: string) => {
+    ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
   mockAxios(200);
 
   const view = await renderApp(false, true);
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("Hello");
 
-  await userEvent.keyboard("{Enter}");
-
+  await sendMessage("Hello");
   await expect
     .element(
       view.getByText(
@@ -698,6 +684,9 @@ test("Chat streaming test", async () => {
   await sureButton.click();
 
   expect(ghIssueLinkSpy).toEqual(1);
+  expect(ghIssueUrl).toContain(
+    "conversation_id=1ec5ba5b-c12d-465b-a722-0b95fee55e8c",
+  );
 });
 
 test("Agent chat streaming test", async () => {
@@ -708,10 +697,8 @@ test("Agent chat streaming test", async () => {
   mockAxios(200, false, false, referencedDocumentExample);
 
   const view = await renderApp(false, true);
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("agent test");
 
-  await userEvent.keyboard("{Enter}");
+  await sendMessage("agent test");
 
   await expect.element(view.getByText("Turn complete")).toBeVisible();
 
@@ -738,11 +725,8 @@ test("Agent chat streaming test", async () => {
 
 test("Chat streaming error at API call", async () => {
   const view = await renderApp(false, true);
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("status=400");
 
-  await userEvent.keyboard("{Enter}");
-
+  await sendMessage("status=400");
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual("Bot returned status_code 400");
@@ -750,11 +734,8 @@ test("Chat streaming error at API call", async () => {
 
 test("Chat streaming error in streaming data", async () => {
   const view = await renderApp(false, true);
-  const textArea = page.getByLabelText("Send a message...");
-  await textArea.fill("error in stream");
 
-  await userEvent.keyboard("{Enter}");
-
+  await sendMessage("error in stream");
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual(
