@@ -84,7 +84,7 @@ export const feedbackMessage = (
     f.sentiment === Sentiment.THUMBS_UP
       ? "Thank you for your feedback!"
       : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_). " +
-        "\\n\\n Do not include any personal information or other sensitive information in your feedback. " +
+        "\n\n Do not include any personal information or other sensitive information in your feedback. " +
         "Feedback may be used to improve Red Hat's products or services.",
   name: botName,
   avatar: logo,
