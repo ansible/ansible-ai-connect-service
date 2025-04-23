@@ -83,7 +83,10 @@ export const fixedMessage = (content: string): MessageProps => ({
   timestamp: getTimestamp(),
 });
 
-export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
+export const feedbackMessage = (
+  f: ChatFeedback,
+  conversation_id: string,
+): MessageProps => ({
   role: "bot",
   content:
     f.sentiment === Sentiment.THUMBS_UP
@@ -100,7 +103,9 @@ export const feedbackMessage = (f: ChatFeedback): MessageProps => ({
             content: "Sure!",
             id: "response",
             onClick: () =>
-              window.open(createGitHubIssueURL(f), "_blank")?.focus(),
+              window
+                .open(createGitHubIssueURL(f, conversation_id), "_blank")
+                ?.focus(),
           },
         ],
 });
@@ -111,13 +116,16 @@ export const tooManyRequestsMessage = (): MessageProps =>
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-const createGitHubIssueURL = (f: ChatFeedback): string => {
+const createGitHubIssueURL = (
+  f: ChatFeedback,
+  conversation_id: string,
+): string => {
   const searchParams: URLSearchParams = new URLSearchParams();
   searchParams.append("assignees", "korenaren");
   searchParams.append("labels", "bug,triage");
   searchParams.append("projects", "");
   searchParams.append("template", "chatbot_feedback.yml");
-  searchParams.append("conversation_id", f.response.conversation_id);
+  searchParams.append("conversation_id", conversation_id);
   searchParams.append("prompt", f.query);
   searchParams.append("response", f.response.response);
   // Referenced documents may increase as more source documents being ingested,
@@ -146,6 +154,20 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
+
+  // Workaround for the lag issue of the conversation_id state value.
+  const getConversationId = () => {
+    let id;
+    setConversationId((value) => {
+      id = value;
+      return value;
+    });
+    if (!id) {
+      id = "00000000-0000-0000-0000-000000000000";
+    }
+    return id;
+  };
+
   const [selectedModel, setSelectedModel] = useState("granite3-1-8b");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
@@ -231,9 +253,7 @@ export const useChatbot = () => {
     ) => {
       if (typeof response === "string") {
         const resp = {
-          conversation_id: conversationId
-            ? conversationId
-            : "00000000-0000-0000-0000-000000000000",
+          conversation_id: getConversationId(),
           response: content,
           referenced_documents,
           truncated: false,
@@ -312,7 +332,7 @@ export const useChatbot = () => {
       if (resp.status === 200) {
         const newBotMessage = {
           referenced_documents: [],
-          ...feedbackMessage(feedbackRequest),
+          ...feedbackMessage(feedbackRequest, getConversationId()),
         };
         addMessage(newBotMessage, feedbackRequest.message);
       } else {

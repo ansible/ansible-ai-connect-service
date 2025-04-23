@@ -422,7 +422,9 @@ test("Basic chatbot interaction", async () => {
 
 test("ThumbsDown icon test", async () => {
   let ghIssueLinkSpy = 0;
-  vi.stubGlobal("open", () => {
+  let ghIssueUrl = "";
+  vi.stubGlobal("open", (url: string) => {
+    ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
   mockAxios(200);
@@ -449,6 +451,9 @@ test("ThumbsDown icon test", async () => {
   await sureButton.click();
 
   expect(ghIssueLinkSpy).toEqual(1);
+  expect(ghIssueUrl).toContain(
+    "conversation_id=123e4567-e89b-12d3-a456-426614174000",
+  );
 });
 
 const REF_DOCUMENT_EXAMPLE_REGEXP = new RegExp(
@@ -683,7 +688,9 @@ test("Test system prompt override", async () => {
 
 test("Chat streaming test", async () => {
   let ghIssueLinkSpy = 0;
-  vi.stubGlobal("open", () => {
+  let ghIssueUrl = "";
+  vi.stubGlobal("open", (url: string) => {
+    ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
   mockAxios(200, false, false, referencedDocumentExample, true);
@@ -717,6 +724,9 @@ test("Chat streaming test", async () => {
   await sureButton.click();
 
   expect(ghIssueLinkSpy).toEqual(1);
+  expect(ghIssueUrl).toContain(
+    "conversation_id=1ec5ba5b-c12d-465b-a722-0b95fee55e8c",
+  );
 });
 
 test("Agent chat streaming test", async () => {
