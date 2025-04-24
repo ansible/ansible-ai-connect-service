@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 BASE_DIR: Path = files("ansible_ai_connect")
 ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Connect"
 ANSIBLE_AI_CHATBOT_NAME = (
-    os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible Lightspeed intelligent assistant"
+    os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible Lightspeed Intelligent Assistant"
 )
 
 # Quick-start development settings - unsuitable for production

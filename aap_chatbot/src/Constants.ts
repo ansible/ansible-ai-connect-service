@@ -26,7 +26,7 @@ export enum Sentiment {
 }
 
 export const ANSIBLE_LIGHTSPEED_PRODUCT_NAME =
-  "Ansible Lightspeed intelligent assistant";
+  "Ansible Lightspeed Intelligent Assistant";
 
 export const GITHUB_NEW_ISSUE_BASE_URL =
   "https://github.com/ansible/ansible-lightspeed-va-feedback/issues/new";
