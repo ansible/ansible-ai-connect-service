@@ -768,3 +768,21 @@ test("Chat streaming error in streaming data", async () => {
       "cause=\"Error code: 404 - {'detail': 'Not Found'}\"",
   );
 });
+
+test("Chat service returns 429 Too Many Requests error in streaming", async () => {
+  const view = await renderApp(false, true);
+
+  await sendMessage("status=429");
+
+  // Insert an artificial 3s delay, which is inserted in useChatbot.ts.
+  await delay(3000);
+
+  await expect
+    .element(
+      page.getByText("Chatbot service is busy with too many requests. ", {
+        exact: false,
+      }),
+      { timeout: 15000 },
+    )
+    .toBeVisible();
+});
