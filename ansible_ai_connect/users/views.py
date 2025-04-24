@@ -59,8 +59,7 @@ class HomeView(TemplateView):
         except WcaSecretManagerMissingCredentialsError:
             pass
 
-        # Check authentication has bene configured
-        self.is_auth_configured = True
+        # Check authentication has been configured
         match settings.DEPLOYMENT_MODE:
             case "saas":
                 self.is_auth_configured = (
@@ -78,6 +77,8 @@ class HomeView(TemplateView):
                 self.is_auth_configured = (
                     settings.SOCIAL_AUTH_GITHUB_KEY or settings.SOCIAL_AUTH_GITHUB_TEAM_KEY
                 )
+            case _:
+                self.is_auth_configured = True
 
     def dispatch(self, request, *args, **kwargs):
         self.org_has_api_key = None
