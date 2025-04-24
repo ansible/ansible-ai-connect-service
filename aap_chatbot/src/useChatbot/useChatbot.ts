@@ -345,7 +345,30 @@ export const useChatbot = () => {
         },
       },
     };
+
+    // Hide action icons while streaming
+    if (isStreamingSupported()) {
+      message.actions.positive.className =
+        message.actions.negative.className =
+        message.actions.copy.className =
+          "action-button-hidden";
+    }
+
     return message;
+  };
+
+  // Show action icons when the end of
+  const showActionIcons = () => {
+    setMessages((msgs: ExtendedMessage[]) => {
+      const message = msgs[msgs.length - 1];
+      if (message?.actions && message?.role === "bot") {
+        message.actions.positive.className =
+          message.actions.negative.className =
+          message.actions.copy.className =
+            "";
+      }
+      return msgs;
+    });
   };
 
   const handleFeedback = async (feedbackRequest: ChatFeedback) => {
@@ -517,9 +540,11 @@ export const useChatbot = () => {
             },
             onclose() {
               console.log("Connection closed by the server");
+              showActionIcons();
             },
             onerror(err) {
               console.log("There was an error from server", err);
+              showActionIcons();
             },
             signal: abortController.signal,
           },

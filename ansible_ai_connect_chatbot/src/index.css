@@ -18,3 +18,7 @@
 .action-button-clicked {
   background-color: #80808040 !important;
 }
+
+.action-button-hidden {
+  display: none !important;
+}

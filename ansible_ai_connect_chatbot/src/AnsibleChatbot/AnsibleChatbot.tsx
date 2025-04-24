@@ -374,7 +374,11 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                           </div>
                         ) : (
                           <div key={`m_div_${index}`}>
-                            <Message key={`m_msg_${index}`} {...message} />
+                            <Message
+                              key={`m_msg_${index}`}
+                              {...message}
+                              isLoading={isLoading && !message.content}
+                            />
                             <ReferencedDocuments
                               key={`m_docs_${index}`}
                               caption={REFERENCED_DOCUMENTS_CAPTION}
@@ -385,7 +389,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       </div>
                     ),
                   )}
-                  {isLoading ? (
+                  {messages.at(-1)?.role === "user" && isLoading ? (
                     <Message
                       key="9999"
                       isLoading={true}
