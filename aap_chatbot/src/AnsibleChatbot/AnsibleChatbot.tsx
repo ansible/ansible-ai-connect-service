@@ -6,7 +6,7 @@ import ChatbotFooter, {
   ChatbotFootnote,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotFooter";
 import MessageBar from "@patternfly/chatbot/dist/dynamic/MessageBar";
-import CustomMessageBox from "./CustomMessageBox";
+import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
 import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
   ChatbotHeaderActions,
@@ -220,12 +220,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                 </ChatbotHeaderMain>
               </ChatbotHeader>
               <ChatbotContent>
-                <CustomMessageBox
-                  tooltipProps={{
-                    appendTo: () =>
-                      window[0].document.getElementsByTagName("body")[0],
-                  }}
-                >
+                <MessageBox>
                   <ChatbotWelcomePrompt
                     title={"Hello " + context?.username}
                     description="How may I help you today?"
@@ -296,7 +291,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                   {isStreamingSupported() && (
                     <div key={`scroll_div_9999`} ref={messagesEndRef} />
                   )}
-                </CustomMessageBox>
+                </MessageBox>
               </ChatbotContent>
               <ChatbotFooter>
                 <MessageBar
