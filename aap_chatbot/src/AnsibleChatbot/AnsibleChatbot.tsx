@@ -205,10 +205,8 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                     onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
                     tooltipProps={{
                       content: "Menu",
-                      position: "bottom",
                       appendTo: () =>
                         window[0].document.getElementsByTagName("body")[0],
-                      aria: "none",
                     }}
                   />
                   <ChatbotHeaderActions>
