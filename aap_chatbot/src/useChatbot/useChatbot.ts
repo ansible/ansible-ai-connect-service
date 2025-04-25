@@ -139,6 +139,9 @@ const createGitHubIssueURL = (
   return url.toString();
 };
 
+// For fixing tooltips that pops up from an iframe
+export let bodyElement = document.body;
+
 export const useChatbot = () => {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -169,6 +172,10 @@ export const useChatbot = () => {
 
   const [stream, setStream] = useState(false);
   useEffect(() => {
+    const frameWindow = window[0];
+    if (frameWindow) {
+      bodyElement = frameWindow.document.getElementsByTagName("body")[0];
+    }
     const checkStatus = async () => {
       const csrfToken = readCookie("csrftoken");
       try {
@@ -314,6 +321,7 @@ export const useChatbot = () => {
             message.actions.positive.className = "action-button-clicked";
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Good response" },
       },
       negative: {
         onClick: () => {
@@ -328,6 +336,7 @@ export const useChatbot = () => {
             message.actions.negative.className = "action-button-clicked";
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Bad response" },
       },
       copy: {
         onClick: () => {
@@ -343,6 +352,7 @@ export const useChatbot = () => {
             setClipboard(contents.join("\n"));
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Copy" },
       },
     };
 

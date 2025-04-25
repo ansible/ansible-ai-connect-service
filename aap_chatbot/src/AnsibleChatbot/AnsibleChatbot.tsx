@@ -13,7 +13,7 @@ import ChatbotHeader, {
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
 import "./AnsibleChatbot.scss";
-import { inDebugMode, useChatbot } from "../useChatbot/useChatbot";
+import { bodyElement, inDebugMode, useChatbot } from "../useChatbot/useChatbot";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
@@ -219,11 +219,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                     ref={historyRef}
                     aria-expanded={isDrawerOpen}
                     onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
-                    tooltipProps={{
-                      content: "Menu",
-                      appendTo: () =>
-                        window[0].document.getElementsByTagName("body")[0],
-                    }}
+                    tooltipProps={{ appendTo: bodyElement, content: "Menu" }}
                   />
                   <ChatbotHeaderActions>
                     {inDebugMode() && (
@@ -319,6 +315,16 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                   hasAttachButton={false}
                   hasStopButton={hasStopButton}
                   handleStopButton={handleStopButton}
+                  buttonProps={{
+                    //@ts-ignore
+                    send: {
+                      props: { tooltipProps: { appendTo: bodyElement } },
+                    },
+                    //@ts-ignore
+                    stop: {
+                      props: { tooltipProps: { appendTo: bodyElement } },
+                    },
+                  }}
                 />
                 <ChatbotFootnote {...footnoteProps} />
               </ChatbotFooter>
