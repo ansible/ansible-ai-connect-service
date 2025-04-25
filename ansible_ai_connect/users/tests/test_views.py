@@ -46,17 +46,68 @@ class UserHomeTestAsAnonymous(WisdomAppsBackendMocking, TestCase):
         super().setUp()
         self.client = Client()
 
-    def test_unauthorized(self):
+    @override_settings(SOCIAL_AUTH_OIDC_KEY="oidc-key")
+    @override_settings(SOCIAL_AUTH_OIDC_SECRET="oidc-secret")
+    @override_settings(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="oidc-endpoint")
+    @override_settings(DEPLOYMENT_MODE="saas")
+    def test_unauthorized_saas(self):
+        self._assert_login_prompt()
+
+    @override_settings(AAP_API_URL="aap-url")
+    @override_settings(SOCIAL_AUTH_AAP_KEY="aap-secret")
+    @override_settings(SOCIAL_AUTH_AAP_SECRET="aap-secret")
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_unauthorized_onprem(self):
+        self._assert_login_prompt()
+
+    @override_settings(SOCIAL_AUTH_GITHUB_KEY="github-key")
+    @override_settings(DEPLOYMENT_MODE="upstream")
+    def test_unauthorized_upstream_github(self):
+        self._assert_login_prompt()
+
+    @override_settings(SOCIAL_AUTH_GITHUB_TEAM_KEY="github-team-key")
+    @override_settings(DEPLOYMENT_MODE="upstream")
+    def test_unauthorized_upstream_github_team(self):
+        self._assert_login_prompt()
+
+    @override_settings(SOCIAL_AUTH_OIDC_KEY=None)
+    @override_settings(SOCIAL_AUTH_OIDC_SECRET=None)
+    @override_settings(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT=None)
+    @override_settings(DEPLOYMENT_MODE="saas")
+    def test_unauthorized_saas_missing_config(self):
+        self._assert_login_prompt_missing_config()
+
+    @override_settings(AAP_API_URL=None)
+    @override_settings(SOCIAL_AUTH_AAP_KEY=None)
+    @override_settings(SOCIAL_AUTH_AAP_SECRET=None)
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_unauthorized_onprem_missing_config(self):
+        self._assert_login_prompt_missing_config()
+
+    @override_settings(SOCIAL_AUTH_GITHUB_KEY=None)
+    @override_settings(SOCIAL_AUTH_GITHUB_TEAM_KEY=None)
+    @override_settings(DEPLOYMENT_MODE="upstream")
+    def test_unauthorized_upstream_github_missing_config(self):
+        self._assert_login_prompt_missing_config()
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    def test_unauthorized_without_tech_preview(self):
+        response = self.client.get(reverse("login"))
+        self.assertNotContains(response, "Log in to Tech Preview")
+
+    def _assert_login_prompt(self):
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please log in using the button below.", count=1)
         self.assertNotContains(response, "Role:")
         self.assertNotContains(response, "Admin Portal")
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
-    def test_unauthorized_without_tech_preview(self):
-        response = self.client.get(reverse("login"))
-        self.assertNotContains(response, "Log in to Tech Preview")
+    def _assert_login_prompt_missing_config(self):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Please log in using the button below.")
+        self.assertNotContains(response, "Role:")
+        self.assertNotContains(response, "Admin Portal")
 
 
 @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=False)

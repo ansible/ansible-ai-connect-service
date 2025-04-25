@@ -59,6 +59,27 @@ class HomeView(TemplateView):
         except WcaSecretManagerMissingCredentialsError:
             pass
 
+        # Check authentication has been configured
+        match settings.DEPLOYMENT_MODE:
+            case "saas":
+                self.is_auth_configured = (
+                    settings.SOCIAL_AUTH_OIDC_OIDC_ENDPOINT
+                    and settings.SOCIAL_AUTH_OIDC_KEY
+                    and settings.SOCIAL_AUTH_OIDC_SECRET
+                )
+            case "onprem":
+                self.is_auth_configured = (
+                    settings.AAP_API_URL
+                    and settings.SOCIAL_AUTH_AAP_KEY
+                    and settings.SOCIAL_AUTH_AAP_SECRET
+                )
+            case "upstream":
+                self.is_auth_configured = (
+                    settings.SOCIAL_AUTH_GITHUB_KEY or settings.SOCIAL_AUTH_GITHUB_TEAM_KEY
+                )
+            case _:
+                self.is_auth_configured = True
+
     def dispatch(self, request, *args, **kwargs):
         self.org_has_api_key = None
         if (
@@ -87,6 +108,7 @@ class HomeView(TemplateView):
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         context["org_has_api_key"] = self.org_has_api_key
+        context["is_auth_configured"] = self.is_auth_configured
 
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
