@@ -296,6 +296,7 @@ function mockFetchEventSource() {
     let status = 200;
     let errorCase = false;
     let agent = false;
+    let skipClose = false;
     const o = JSON.parse(init.body);
     if (o.query.startsWith("status=")) {
       status = parseInt(o.query.substring(7));
@@ -303,6 +304,8 @@ function mockFetchEventSource() {
       errorCase = true;
     } else if (o.query.startsWith("agent")) {
       agent = true;
+    } else if (o.query.startsWith("skip close")) {
+      skipClose = true;
     }
     console.log(`status ${status}`);
 
@@ -319,7 +322,9 @@ function mockFetchEventSource() {
         init.onmessage({ data: JSON.stringify(data) });
       }
     }
-    init.onclose();
+    if (!skipClose) {
+      init.onclose();
+    }
   });
 }
 
@@ -733,6 +738,10 @@ test("Chat streaming test", async () => {
   const copyIcon = await screen.findByRole("button", {
     name: "Copy",
   });
+
+  // Make sure the copy button does not contain the "action-button-hidden" CSS class.
+  assert(!copyIcon.getAttribute("class")?.includes("action-button-hidden"));
+
   await copyIcon.click();
   assert(copiedString.startsWith("The Full Support Phase for AAP 2.4"));
   assert(copiedString.includes("Refer to the following for more information:"));
@@ -752,6 +761,33 @@ test("Chat streaming test", async () => {
   expect(ghIssueUrl).toContain(
     "conversation_id=1ec5ba5b-c12d-465b-a722-0b95fee55e8c",
   );
+});
+
+test("Chat streaming test when streaming is not closed.", async () => {
+  let ghIssueLinkSpy = 0;
+  let ghIssueUrl = "";
+  vi.stubGlobal("open", (url: string) => {
+    ghIssueUrl = url;
+    ghIssueLinkSpy++;
+  });
+  mockAxios(200, false, false, referencedDocumentExample, true);
+  const view = await renderApp(false, true);
+
+  await sendMessage("skip close");
+  await expect
+    .element(
+      view.getByText(
+        "The Full Support Phase for AAP 2.4 ends on October 1, 2024.",
+      ),
+    )
+    .toBeVisible();
+
+  const copyIcon = await screen.findByRole("button", {
+    name: "Copy",
+  });
+
+  // Make sure the copy button contains the "action-button-hidden" CSS class.
+  assert(copyIcon.getAttribute("class")?.includes("action-button-hidden"));
 });
 
 test("Agent chat streaming test", async () => {
