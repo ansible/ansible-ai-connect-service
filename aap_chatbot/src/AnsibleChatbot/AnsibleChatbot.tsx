@@ -316,12 +316,12 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                   hasStopButton={hasStopButton}
                   handleStopButton={handleStopButton}
                   buttonProps={{
-                    //@ts-ignore
                     send: {
+                      // @ts-ignore
                       props: { tooltipProps: { appendTo: bodyElement } },
                     },
-                    //@ts-ignore
                     stop: {
+                      // @ts-ignore
                       props: { tooltipProps: { appendTo: bodyElement } },
                     },
                   }}
