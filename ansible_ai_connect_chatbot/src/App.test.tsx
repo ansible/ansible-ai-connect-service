@@ -18,6 +18,7 @@ import { userEvent, page } from "@vitest/browser/context";
 import axios, { AxiosError, AxiosHeaders } from "axios";
 // See: https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
+import { conversationStore } from "./AnsibleChatbot/AnsibleChatbot";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -785,4 +786,11 @@ test("Chat service returns 429 Too Many Requests error in streaming", async () =
       { timeout: 15000 },
     )
     .toBeVisible();
+});
+
+test("Test reset conversation state once unmounting the component.", async () => {
+  const view = await renderApp();
+  conversationStore.set("1", []);
+  view.unmount();
+  assert(conversationStore.size === 0);
 });

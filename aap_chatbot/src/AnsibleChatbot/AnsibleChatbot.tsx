@@ -42,7 +42,12 @@ const footnoteProps: ChatbotFootnoteProps = {
 const conversationList: { [key: string]: Conversation[] } = {};
 conversationList[CHAT_HISTORY_HEADER] = [];
 
-const conversationStore: Map<string, ExtendedMessage[]> = new Map();
+export const conversationStore: Map<string, ExtendedMessage[]> = new Map();
+
+const resetConversationState = () => {
+  conversationList[CHAT_HISTORY_HEADER] = [];
+  conversationStore.clear();
+};
 
 const findMatchingItems = (targetValue: string) => {
   let filteredConversations = Object.entries(conversationList).reduce(
@@ -119,6 +124,17 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(
+    () =>
+      // Fired on component mount (componentDidMount)
+      () => {
+        // Anything in here is fired on component unmount (componentWillUnmount)
+        resetConversationState();
+      },
+    [],
+  );
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
