@@ -219,6 +219,11 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                     ref={historyRef}
                     aria-expanded={isDrawerOpen}
                     onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+                    tooltipProps={{
+                      content: "Menu",
+                      appendTo: () =>
+                        window[0].document.getElementsByTagName("body")[0],
+                    }}
                   />
                   <ChatbotHeaderActions>
                     {inDebugMode() && (
