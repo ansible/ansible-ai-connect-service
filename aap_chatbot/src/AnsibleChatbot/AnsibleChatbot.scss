@@ -70,3 +70,9 @@
 .pf-chatbot__header__divider {
   display: none;
 }
+
+.pf-chatbot__message-avatar.pf-chatbot__message-avatar--round.pf-v6-c-avatar {
+  --pf-v6-c-avatar--Width: 3rem;
+  --pf-v6-c-avatar--Height: 3rem;
+  --pf-v6-c-avatar--BorderRadius: 0rem;
+}
