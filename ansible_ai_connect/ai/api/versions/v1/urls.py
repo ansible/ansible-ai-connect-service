@@ -15,6 +15,7 @@
 from django.urls import include, path
 
 from ansible_ai_connect.healthcheck.views import (
+    WisdomServiceHealthChatbotView,
     WisdomServiceHealthView,
     WisdomServiceLivenessProbeView,
 )
@@ -31,4 +32,9 @@ urlpatterns = [
     path("wca/", include(wca_urls)),
     path("health/", WisdomServiceLivenessProbeView.as_view(), name="health"),
     path("health/status/", WisdomServiceHealthView.as_view(), name="health_status"),
+    path(
+        "health/status/chatbot/",
+        WisdomServiceHealthChatbotView.as_view(),
+        name="health_status_chatbot",
+    ),
 ]

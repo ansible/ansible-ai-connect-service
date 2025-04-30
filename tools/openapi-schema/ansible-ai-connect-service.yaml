@@ -442,6 +442,19 @@ paths:
           description: ''
         '500':
           description: One or more backend services are unavailable.
+  /api/v1/health/status/chatbot/:
+    get:
+      operationId: health_status_chatbot_retrieve
+      description: Chatbot health check
+      summary: Chatbot health check
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: OK
   /api/v1/me/:
     get:
       operationId: me_retrieve

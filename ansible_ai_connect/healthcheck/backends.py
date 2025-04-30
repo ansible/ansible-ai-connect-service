@@ -19,9 +19,7 @@ from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import HealthCheckException, ServiceUnavailable
 
 from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
-    PIPELINE_CONFIGURATION,
-)
+from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 
 ERROR_MESSAGE = "An error occurred"
 MODEL_MESH_HEALTH_CHECK_MODELS = "models"
@@ -118,11 +116,9 @@ class ModelPipelineHealthCheck(BaseLightspeedHealthCheck):
     # status code even if the check errors.
     critical_service = True
 
-    def __init__(self, pipeline_type: Type[PIPELINE_CONFIGURATION]):
+    def __init__(self, pipeline_type: Type[PIPELINE_TYPE]):
         super().__init__()
-        pipeline_config: PIPELINE_CONFIGURATION = apps.get_app_config("ai").get_model_pipeline(
-            pipeline_type
-        )
+        pipeline_config: PIPELINE_TYPE = apps.get_app_config("ai").get_model_pipeline(pipeline_type)
         self.pipeline_type = pipeline_type
         self.enabled = pipeline_config.config.enable_health_check
 

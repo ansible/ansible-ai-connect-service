@@ -22,8 +22,8 @@ from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.config_providers import Configuration
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import NopMetaData
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY, REGISTRY_ENTRY
+from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 
 logger = logging.getLogger(__name__)
 

@@ -30,7 +30,14 @@ from health_check.views import MainView
 from rest_framework import permissions
 from rest_framework.views import APIView
 
-from ansible_ai_connect.healthcheck.backends import BaseLightspeedHealthCheck
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ModelPipelineChatBot,
+    ModelPipelineStreamingChatBot,
+)
+from ansible_ai_connect.healthcheck.backends import (
+    BaseLightspeedHealthCheck,
+    ModelPipelineHealthCheck,
+)
 
 from .version_info import VersionInfo
 
@@ -156,5 +163,46 @@ class WisdomServiceLivenessProbeView(APIView):
     def get(self, request, *args, **kwargs):
         data = common_data()
         data["status"] = "ok"
+        data_json = json.dumps(data)
+        return HttpResponse(data_json, content_type="application/json")
+
+
+class WisdomServiceHealthChatbotView(APIView):
+    """
+    Chatbot health check
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    @staticmethod
+    def normalise_status(status: str | dict[str, str]) -> str:
+        if isinstance(status, str):
+            return status
+        if "models" in status:
+            return status["models"]
+        return "unknown"
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="OK"),
+        },
+        summary="Chatbot health check",
+    )
+    @method_decorator(cache_page(CACHE_TIMEOUT))
+    def get(self, request, *args, **kwargs):
+        cb: ModelPipelineHealthCheck = ModelPipelineHealthCheck(pipeline_type=ModelPipelineChatBot)
+        cb_streaming: ModelPipelineHealthCheck = ModelPipelineHealthCheck(
+            pipeline_type=ModelPipelineStreamingChatBot
+        )
+        cb.check_status()
+        cb_streaming.check_status()
+        data = {
+            ModelPipelineChatBot.alias(): WisdomServiceHealthChatbotView.normalise_status(
+                cb.pretty_status()
+            ),
+            ModelPipelineStreamingChatBot.alias(): WisdomServiceHealthChatbotView.normalise_status(
+                cb_streaming.pretty_status()
+            ),
+        }
         data_json = json.dumps(data)
         return HttpResponse(data_json, content_type="application/json")

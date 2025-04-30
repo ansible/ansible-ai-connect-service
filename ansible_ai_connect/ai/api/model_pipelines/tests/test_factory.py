@@ -19,8 +19,9 @@ from django.test import override_settings
 from ansible_ai_connect.ai.api.exceptions import FeatureNotAvailable
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
 from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import NopMetaData
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE, MetaData
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
+from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
