@@ -15,10 +15,8 @@
 from typing import Type
 
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    PIPELINE_TYPE,
-    ModelPipeline,
-)
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipeline
+from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC

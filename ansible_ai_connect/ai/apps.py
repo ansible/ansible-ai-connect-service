@@ -20,7 +20,8 @@ from django.apps import AppConfig
 from django.conf import settings
 
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import PIPELINE_TYPE, MetaData
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
+from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 from ansible_ai_connect.ansible_lint import lintpostprocessing
 from ansible_ai_connect.ari import postprocessing
 from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck

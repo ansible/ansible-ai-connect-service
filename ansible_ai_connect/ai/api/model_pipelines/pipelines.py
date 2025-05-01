@@ -14,7 +14,7 @@
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional
 
 from attrs import define
 from django.conf import settings
@@ -25,13 +25,13 @@ from rest_framework.response import Response
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     PIPELINE_CONFIGURATION,
 )
+from ansible_ai_connect.ai.api.model_pipelines.types import (
+    PIPELINE_PARAMETERS,
+    PIPELINE_RETURN,
+)
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 
 logger = logging.getLogger(__name__)
-
-PIPELINE_PARAMETERS = TypeVar("PIPELINE_PARAMETERS")
-PIPELINE_RETURN = TypeVar("PIPELINE_RETURN")
-PIPELINE_TYPE = TypeVar("PIPELINE_TYPE")
 
 
 @define
