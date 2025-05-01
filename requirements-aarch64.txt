@@ -185,7 +185,7 @@ googleapis-common-protos==1.63.2
     # via google-api-core
 greenlet==3.0.3
     # via sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via httpcore
 httpcore==1.0.9
     # via httpx
