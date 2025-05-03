@@ -32,7 +32,7 @@ dependencies = [
   'launchdarkly-server-sdk~=8.3.0',
   'llama-stack-client>=0.1.8',
   'protobuf~=5.28.2',
-  'psycopg~=3.1.8',
+  'psycopg~=3.2.7',
   'PyDrive2~=1.20.0',
   'pydantic==2.*',
   'pytz',
