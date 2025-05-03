@@ -518,7 +518,7 @@ tenacity==8.2.3
     # via
     #   langchain
     #   langchain-core
-termcolor==2.5.0
+termcolor==3.1.0
     # via llama-stack-client
 tqdm==4.67.1
     # via llama-stack-client
