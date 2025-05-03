@@ -60,8 +60,8 @@ def load_from_env_vars():
 
     # Model API Timeout (in seconds). Default is None.
     model_service_timeout = (
-        int(os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT"))
-        if os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT")
+        int(cast(int, os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT")))
+        if os.getenv("ANSIBLE_AI_MODEL_MESH_API_TIMEOUT", "").isnumeric()
         else None
     )
     model_service_retry_count = int(os.getenv("ANSIBLE_WCA_RETRY_COUNT") or "4")

@@ -89,7 +89,8 @@ include = [
   "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_dummy.py",
   "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_saas.py",
   "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_onprem.py",
-  "ansible_ai_connect/users/authz_checker.py"
+  "ansible_ai_connect/users/authz_checker.py",
+  "ansible_ai_connect/main/settings/legacy.py"
 ]
 exclude = ["**/test_*.py", "ansible_ai_connect/*/migrations/*.py"]
 
