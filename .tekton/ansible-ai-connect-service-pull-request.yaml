@@ -7,7 +7,8 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
+      == "main"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: ansible-ai-connect-service
@@ -16,10 +17,6 @@ metadata:
   name: ansible-ai-connect-service-on-pr-{{pull_request_number}}
   namespace: ansible-lightspeed-tenant
 spec:
-  timeouts:
-    pipeline: "0"
-    tasks: "0"
-    finally: "0"
   params:
   - name: dockerfile
     value: ./wisdom-service.Containerfile
@@ -33,15 +30,6 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
-  taskRunSpecs:
-  - pipelineTaskName: ecosystem-cert-preflight-checks
-    stepSpecs:
-    - name: check-container
-      computeResources:
-        requests:
-          memory: 4Gi
-        limits:
-          memory: 4Gi
   pipelineSpec:
     finally:
     - name: show-sbom
@@ -91,11 +79,13 @@ spec:
       name: output-image
       type: string
     - default: .
-      description: Path to the source code of an application's component from where to build image.
+      description: Path to the source code of an application's component from where
+        to build image.
       name: path-context
       type: string
     - default: Dockerfile
-      description: Path to the Dockerfile inside the context specified by parameter path-context
+      description: Path to the Dockerfile inside the context specified by parameter
+        path-context
       name: dockerfile
       type: string
     - default: "false"
@@ -123,14 +113,16 @@ spec:
       name: java
       type: string
     - default: ""
-      description: Image tag expiration time, time values could be something like 1h, 2d, 3w for hours, days, and weeks, respectively.
+      description: Image tag expiration time, time values could be something like
+        1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
     - default: "false"
       description: Build a source image.
       name: build-source-image
       type: string
     - default: ""
-      description: Path to a file with build arguments which will be passed to podman during build
+      description: Path to a file with build arguments which will be passed to podman
+        during build
       name: build-args-file
       type: string
     results:
@@ -240,7 +232,8 @@ spec:
       - name: TARGET_STAGE
         value: production
       - name: BUILD_ARGS
-        value: ["GIT_COMMIT=$(tasks.clone-repository.results.commit)"]
+        value:
+        - GIT_COMMIT=$(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
       taskRef:
@@ -265,7 +258,9 @@ spec:
       - name: IMAGE
         value: $(tasks.build-container.results.IMAGE_URL)
       - name: ADDITIONAL_TAGS
-        value: ["pr-{{pull_request_number}}", "pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)"]
+        value:
+        - pr-{{pull_request_number}}
+        - pr-{{pull_request_number}}.$(tasks.git-metadata.results.commit-timestamp)
       runAfter:
       - sast-snyk-check
       taskRef:
@@ -280,22 +275,25 @@ spec:
     - name: git-metadata
       runAfter:
       - clone-repository
-      workspaces:
-      - name: source
-        workspace: workspace
       taskSpec:
-        workspaces:
-        - name: source
+        metadata: {}
+        results:
+        - name: commit-timestamp
+        spec: null
         steps:
-        - name: get-commit-timestamp
+        - computeResources: {}
           image: alpine/git
+          name: get-commit-timestamp
           script: |
             #!/bin/sh
             set -euo pipefail
             cd "$(workspaces.source.path)/source"
             echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
-        results:
-        - name: commit-timestamp
+        workspaces:
+        - name: source
+      workspaces:
+      - name: source
+        workspace: workspace
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -389,53 +387,58 @@ spec:
         - "false"
     - name: sast-shell-check
       params:
-        - name: image-digest
-          value: $(tasks.build-container.results.IMAGE_DIGEST)
-        - name: image-url
-          value: $(tasks.build-container.results.IMAGE_URL)
+      - name: image-digest
+        value: $(tasks.build-container.results.IMAGE_DIGEST)
+      - name: image-url
+        value: $(tasks.build-container.results.IMAGE_URL)
       runAfter:
-        - build-container
+      - build-container
       taskRef:
         params:
-          - name: name
-            value: sast-shell-check
-          - name: bundle
-            value: quay.io/konflux-ci/tekton-catalog/task-sast-shell-check:0.1@sha256:1b3d68c33a92dfc3da3975581cae80c99c8d1995cab519ae98c6331b5677ded0
-          - name: kind
-            value: task
+        - name: name
+          value: sast-shell-check
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-sast-shell-check:0.1@sha256:1b3d68c33a92dfc3da3975581cae80c99c8d1995cab519ae98c6331b5677ded0
+        - name: kind
+          value: task
         resolver: bundles
       when:
-        - input: $(params.skip-checks)
-          operator: in
-          values:
-            - "false"
+      - input: $(params.skip-checks)
+        operator: in
+        values:
+        - "false"
       workspaces:
-        - name: workspace
-          workspace: workspace
+      - name: workspace
+        workspace: workspace
     - name: sast-unicode-check
       params:
-        - name: image-url
-          value: $(tasks.build-container.results.IMAGE_URL)
+      - name: image-url
+        value: $(tasks.build-container.results.IMAGE_URL)
       runAfter:
-        - build-container
+      - build-container
       taskRef:
         params:
-          - name: name
-            value: sast-unicode-check
-          - name: bundle
-            value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check:0.1@sha256:b1a9af196a79baa75632ef494eb6db987f57e870d882d47f5b495e1441c01e3b
-          - name: kind
-            value: task
+        - name: name
+          value: sast-unicode-check
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check:0.1@sha256:b1a9af196a79baa75632ef494eb6db987f57e870d882d47f5b495e1441c01e3b
+        - name: kind
+          value: task
         resolver: bundles
       when:
-        - input: $(params.skip-checks)
-          operator: in
-          values:
-            - "false"
+      - input: $(params.skip-checks)
+        operator: in
+        values:
+        - "false"
       workspaces:
-        - name: workspace
-          workspace: workspace
+      - name: workspace
+        workspace: workspace
     - name: sast-snyk-check
+      params:
+      - name: image-digest
+        value: $(tasks.build-container.results.IMAGE_DIGEST)
+      - name: image-url
+        value: $(tasks.build-container.results.IMAGE_URL)
       runAfter:
       - build-container
       taskRef:
@@ -455,11 +458,6 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
-      params:
-      - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
-      - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
     - name: clamav-scan
       params:
       - name: image-digest
@@ -486,7 +484,21 @@ spec:
     - name: workspace
     - name: git-auth
       optional: true
-  taskRunTemplate: {}
+  taskRunSpecs:
+  - pipelineTaskName: ecosystem-cert-preflight-checks
+    stepSpecs:
+    - computeResources:
+        limits:
+          memory: 4Gi
+        requests:
+          memory: 4Gi
+      name: check-container
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-ansible-ai-connect-service
+  timeouts:
+    finally: 0s
+    pipeline: 0s
+    tasks: 0s
   workspaces:
   - name: workspace
     volumeClaimTemplate:
