@@ -32,8 +32,8 @@ import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
 import "./AnsibleChatbot.scss";
 import {
+  bodyElement,
   inDebugMode,
-  isStreamingSupported,
   modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
@@ -54,31 +54,13 @@ import {
 } from "@patternfly/chatbot";
 import {
   CHAT_HISTORY_HEADER,
-  FOOTNOTE_DESCRIPTION,
   FOOTNOTE_LABEL,
-  FOOTNOTE_TITLE,
   REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
-  popover: {
-    title: FOOTNOTE_TITLE,
-    description: FOOTNOTE_DESCRIPTION,
-    bannerImage: {
-      src: lightspeedLogo,
-      alt: "Lightspeed logo",
-    },
-    cta: {
-      label: "Got it",
-      onClick: () => {},
-    },
-    link: {
-      label: "Learn more",
-      url: "https://www.redhat.com/",
-    },
-  },
 };
 
 const conversationList: { [key: string]: Conversation[] } = {};
@@ -145,6 +127,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     setSystemPrompt,
     hasStopButton,
     handleStopButton,
+    isStreamingSupported,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
@@ -270,6 +253,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     ref={historyRef}
                     aria-expanded={isDrawerOpen}
                     onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+                    tooltipProps={{ appendTo: bodyElement, content: "Menu" }}
                   />
                   <ChatbotHeaderActions>
                     {inDebugMode() && (
@@ -380,7 +364,11 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                         {collapse ? (
                           <div key={`m_div_${index}`}>
                             <ExpandableSection toggleText="Show more">
-                              <Message key={`m_msg_${index}`} {...message} />
+                              <Message
+                                key={`m_msg_${index}`}
+                                {...message}
+                                isLoading={isLoading && !message.content}
+                              />
                               <ReferencedDocuments
                                 key={`m_docs_${index}`}
                                 caption={REFERENCED_DOCUMENTS_CAPTION}
@@ -390,11 +378,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                           </div>
                         ) : (
                           <div key={`m_div_${index}`}>
-                            <Message
-                              key={`m_msg_${index}`}
-                              {...message}
-                              isLoading={isLoading && !message.content}
-                            />
+                            <Message key={`m_msg_${index}`} {...message} />
                             <ReferencedDocuments
                               key={`m_docs_${index}`}
                               caption={REFERENCED_DOCUMENTS_CAPTION}
@@ -425,6 +409,16 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   hasAttachButton={false}
                   hasStopButton={hasStopButton}
                   handleStopButton={handleStopButton}
+                  buttonProps={{
+                    send: {
+                      // @ts-ignore
+                      props: { tooltipProps: { appendTo: bodyElement } },
+                    },
+                    stop: {
+                      // @ts-ignore
+                      props: { tooltipProps: { appendTo: bodyElement } },
+                    },
+                  }}
                 />
                 <ChatbotFootnote {...footnoteProps} />
               </ChatbotFooter>
