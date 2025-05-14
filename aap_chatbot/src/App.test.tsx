@@ -80,19 +80,8 @@ function mockAxiosGet(stream = false, reject = false) {
     if (stream) {
       spyGet.mockResolvedValue({
         data: {
-          status: "ok",
-          dependencies: [
-            {
-              name: "chatbot-service",
-              status: { provider: "http", models: "ok" },
-              time_taken: 709.4,
-            },
-            {
-              name: "streaming-chatbot-service",
-              status: { provider: "http", models: "ok" },
-              time_taken: 709.491,
-            },
-          ],
+          "chatbot-service": "ok",
+          "streaming-chatbot-service": "ok",
         },
         status,
       });
