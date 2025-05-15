@@ -80,6 +80,7 @@ from ansible_ai_connect.healthcheck.backends import (
     HealthCheckSummary,
     HealthCheckSummaryException,
 )
+import ansible_ai_connect.users.wca_auth
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -143,33 +144,8 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
         if self.config.api_key:
             return self.config.api_key
 
-        if organization_id is None:
-            logger.error(
-                "User does not have an organization and WCASaaSConfiguration.api_key is not set"
-            )
-            raise WcaKeyNotFound
+        return ansible_ai_connect.user.wca_auth.get_api_key(user, "wca")
 
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
-        if (
-            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
-            and any(up.is_active for up in user.userplan_set.all())
-            and user.organization
-            and not user.organization.has_api_key
-        ):
-            return self.config.one_click_default_api_key
-
-        try:
-            api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
-            if api_key is not None:
-                return api_key["SecretString"]
-
-        except (WcaSecretManagerError, KeyError):
-            # if retrieving the API Key from AWS fails, we log an error
-            logger.error(f"error retrieving WCA API Key for org_id '{organization_id}'")
-            raise
-
-        logger.error("Seated user's organization doesn't have default API Key set")
-        raise WcaKeyNotFound
 
     def get_model_id(
         self,
