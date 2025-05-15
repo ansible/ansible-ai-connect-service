@@ -27,7 +27,6 @@ from requests.exceptions import HTTPError
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 from ansible_ai_connect.users.authz_checker import (
     AMSCheck,
-    CIAMCheck,
     DummyCheck,
     Token,
     authz_ams_get_metrics_hist,
@@ -149,31 +148,6 @@ class TestToken(WisdomServiceLogAwareTestCase):
         exc.response = response
         b = fatal_exception(exc)
         self.assertTrue(b)
-
-    def test_ciam_self_test_success(self):
-        m_r = Mock()
-        m_r.status_code = 200
-
-        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.post.return_value = m_r
-        try:
-            checker.self_test()
-        except HTTPError:
-            self.fail("self_test() should not have raised an exception.")
-
-    def test_ciam_self_test_failure(self):
-        r = requests.models.Response()
-        r.status_code = 500
-
-        checker = CIAMCheck("foo", "bar", "https://sso.redhat.com", "https://some-api.server.host")
-        checker._token = Mock()
-        checker._session = Mock()
-        checker._session.post.return_value = r
-
-        with self.assertRaises(HTTPError):
-            checker.self_test()
 
     @assert_call_count_metrics(metric=authz_ams_org_cache_hit_counter)
     @assert_call_count_metrics(metric=authz_ams_get_organization_hist)

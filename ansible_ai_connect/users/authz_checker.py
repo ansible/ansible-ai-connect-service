@@ -202,21 +202,6 @@ class Token:
         return self.access_token
 
 
-class CIAMCheck(BaseCheck):  # TODO: To be removed
-    def __init__(self, client_id, client_secret, sso_server, api_server):
-        self._session = requests.Session()
-        self._token = Token(client_id, client_secret, sso_server)
-        self._api_server = api_server
-
-    def self_test(self):
-        self._session.headers.update({"Authorization": f"Bearer {self._token.get()}"})
-        r = self._session.post(
-            self._api_server + "/v1alpha/healthcheck",
-            timeout=0.8,
-        )
-        r.raise_for_status()
-
-
 # NOTE: we should probably rename the class to reflect it's current purpose
 class AMSCheck(BaseCheck):
     # An AMS Organization ID that should never match anything

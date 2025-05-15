@@ -24,7 +24,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
 from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 from ansible_ai_connect.ansible_lint import lintpostprocessing
 from ansible_ai_connect.ari import postprocessing
-from ansible_ai_connect.users.authz_checker import AMSCheck, CIAMCheck, DummyCheck
+from ansible_ai_connect.users.authz_checker import AMSCheck, DummyCheck
 from ansible_ai_connect.users.reports.postman import (
     BasePostman,
     GoogleDrivePostman,
@@ -88,7 +88,6 @@ class AiConfig(AppConfig):
     def get_seat_checker(self):
         backends = {
             "ams": AMSCheck,
-            "ciam": CIAMCheck,
             "dummy": DummyCheck,
         }
         if not settings.AUTHZ_BACKEND_TYPE:
