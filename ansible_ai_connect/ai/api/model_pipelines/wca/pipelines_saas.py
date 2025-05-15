@@ -138,84 +138,17 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
         return response.json()
 
     def get_api_key(self, user) -> str:
-        organization_id = user.organization and user.organization.id
-        # use the environment API key override if it's set
-        if self.config.api_key:
-            return self.config.api_key
+        import ansible_ai_connect.users.wca_auth
+        return ansible_ai_connect.users.wca_auth.get_api_key(user, "wca")
 
-        if organization_id is None:
-            logger.error(
-                "User does not have an organization and WCASaaSConfiguration.api_key is not set"
-            )
-            raise WcaKeyNotFound
-
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
-        if (
-            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
-            and any(up.is_active for up in user.userplan_set.all())
-            and user.organization
-            and not user.organization.has_api_key
-        ):
-            return self.config.one_click_default_api_key
-
-        try:
-            api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
-            if api_key is not None:
-                return api_key["SecretString"]
-
-        except (WcaSecretManagerError, KeyError):
-            # if retrieving the API Key from AWS fails, we log an error
-            logger.error(f"error retrieving WCA API Key for org_id '{organization_id}'")
-            raise
-
-        logger.error("Seated user's organization doesn't have default API Key set")
-        raise WcaKeyNotFound
 
     def get_model_id(
         self,
         user,
         requested_model_id: Optional[str] = None,
     ) -> str:
-        logger.debug(f"requested_model_id={requested_model_id}")
-        organization_id = (
-            hasattr(user, "organization") and user.organization and user.organization.id
-        )
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
-        if (
-            settings.ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL
-            and any(
-                up.is_active
-                for up in user.userplan_set.all()  # noqa: E501 # pyright: ignore[reportAttributeAccessIssue]
-            )
-            and user.organization
-            and not secret_manager.secret_exists(organization_id, Suffixes.API_KEY)
-        ):
-            return self.config.one_click_default_model_id
-
-        if requested_model_id:
-            # requested_model_id defined: i.e. not None, not "", not {} etc.
-            # let them use what they ask for
-            return requested_model_id
-        elif self.config.model_id:
-            return self.config.model_id
-        elif organization_id is None:
-            logger.error(
-                "User is not linked to an organization and no default WCA model ID is found"
-            )
-            raise WcaNoDefaultModelId
-
-        try:
-            model_id = secret_manager.get_secret(organization_id, Suffixes.MODEL_ID)
-            if model_id is not None:
-                return model_id["SecretString"]
-
-        except (WcaSecretManagerError, KeyError):
-            # if retrieving the Model ID from AWS fails, we log an error
-            logger.error(f"error retrieving WCA Model ID for org_id '{organization_id}'")
-            raise
-
-        logger.error("Seated user's organization doesn't have default model ID set")
-        raise WcaModelIdNotFound(model_id=requested_model_id if requested_model_id else "none")
+        import ansible_ai_connect.users.wca_auth
+        return ansible_ai_connect.users.wca_auth.get_model_id(user, "wca")
 
 
 class WCASaaSPipeline(
