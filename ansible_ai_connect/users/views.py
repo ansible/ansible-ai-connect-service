@@ -13,7 +13,10 @@
 #  limitations under the License.
 
 import logging
+import token
+from typing import cast
 
+from ansible_ai_connect.ai.api.views import WcaKeyNotFound
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -41,8 +44,15 @@ from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import WCASaaSMetaData
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
+from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
 
-from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
+from .serializers import (
+    UserBearerTokenResponseSerializer,
+    UserMarkdownResponseSerializer,
+    UserResponseSerializer,
+)
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
@@ -135,7 +145,7 @@ class UnauthorizedView(TemplateView):
 
 class CurrentUserView(RetrieveAPIView):
     class MeRateThrottle(UserRateThrottle):
-        scope = "me"
+        scope = "user/me"
 
     permission_classes = [IsAuthenticated]
     serializer_class = UserResponseSerializer
@@ -165,10 +175,10 @@ class CurrentUserView(RetrieveAPIView):
 
 class MarkdownCurrentUserView(RetrieveAPIView):
     class MeRateThrottle(UserRateThrottle):
-        scope = "me"
+        scope = "user/me"
 
     permission_classes = [IsAuthenticated]
-    serializer_class = MarkdownUserResponseSerializer
+    serializer_class = UserMarkdownResponseSerializer
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
@@ -185,6 +195,28 @@ class MarkdownCurrentUserView(RetrieveAPIView):
 
         response = serializer.data
 
+        return Response(response, content_type="application/json")
+
+
+class Token(RetrieveAPIView):
+    class TokenRateThrottle(UserRateThrottle):
+        scope = "user/token"
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserBearerTokenResponseSerializer
+    throttle_classes = [TokenRateThrottle]
+
+    def get_object(self):
+        return self.request.user
+
+    @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        config = apps.get_app_config("ai").get_model_pipeline(MetaData)
+        api_key = config.get_api_key(instance)
+        bearer_token = config.get_token(api_key)
+        response = {"bearer_token": bearer_token, "inference_url": config.config.inference_url}
         return Response(response, content_type="application/json")
 
 

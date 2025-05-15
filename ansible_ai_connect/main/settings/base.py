@@ -251,6 +251,7 @@ if sys.argv[1:2] not in [["migrate"], ["test"]]:
 COMPLETION_USER_RATE_THROTTLE = os.environ.get("COMPLETION_USER_RATE_THROTTLE") or "10/minute"
 ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get("ME_USER_CACHE_TIMEOUT_SEC", 30))
 ME_USER_RATE_THROTTLE = os.environ.get("ME_USER_RATE_THROTTLE") or "50/minute"
+USER_TOKEN_RATE_THROTTLE = os.environ.get("USER_TOKEN_RATE_THROTTLE") or "2/minute"
 SPECIAL_THROTTLING_GROUPS = ["test"]
 CHAT_RATE_THROTTLE = os.environ.get("CHAT_RATE_THROTTLE") or "10/minute"
 
@@ -267,8 +268,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "user": COMPLETION_USER_RATE_THROTTLE,
         "test": "100000/minute",
-        "me": ME_USER_RATE_THROTTLE,
+        "user/me": ME_USER_RATE_THROTTLE,
         "chat": CHAT_RATE_THROTTLE,
+        "user/token": USER_TOKEN_RATE_THROTTLE,
     },
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [

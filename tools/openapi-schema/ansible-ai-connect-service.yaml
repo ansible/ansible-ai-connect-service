@@ -481,7 +481,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MarkdownUserResponse'
+                $ref: '#/components/schemas/UserMarkdownResponse'
+          description: ''
+  /api/v1/me/token/:
+    get:
+      operationId: me_token_retrieve
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBearerTokenResponse'
           description: ''
   /api/v1/telemetry/:
     get:
@@ -1350,14 +1364,6 @@ components:
       - description
       - title
       - type
-    MarkdownUserResponse:
-      type: object
-      properties:
-        content:
-          type: string
-          readOnly: true
-      required:
-      - content
     Metadata:
       type: object
       properties:
@@ -1573,6 +1579,24 @@ components:
       description: |-
         * `bug-report` - Bug Report
         * `feature-request` - Feature Request
+    UserBearerTokenResponse:
+      type: object
+      properties:
+        bearer_token:
+          type: string
+        inference_url:
+          type: string
+      required:
+      - bearer_token
+      - inference_url
+    UserMarkdownResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          readOnly: true
+      required:
+      - content
     UserPlan:
       type: object
       properties:
