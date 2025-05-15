@@ -1,6 +1,6 @@
 import axios from "axios";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   AlertMessage,
@@ -15,6 +15,7 @@ import type { LLMModel } from "../types/Model";
 import logo from "../assets/lightspeed.svg";
 import userLogo from "../assets/user_logo.png";
 import {
+  ANSIBLE_LIGHTSPEED_PRODUCT_NAME,
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
   INITIAL_NOTICE,
@@ -28,7 +29,8 @@ import { setClipboard } from "../Clipboard";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
-  document.getElementById("bot_name")?.innerText ?? "Ansible Lightspeed";
+  document.getElementById("bot_name")?.innerText ??
+  ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite3-1-8b", provider: "my_rhoai_g31" },
@@ -60,15 +62,6 @@ export const inDebugMode = () => {
   return import.meta.env.PROD ? debug === "true" : debug !== "false";
 };
 
-export const isStreamingSupported = () => {
-  // For making streaming mode debug easier.
-  if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
-    return true;
-  }
-  const stream = document.getElementById("stream")?.innerText ?? "false";
-  return stream === "true";
-};
-
 const isTimeoutError = (e: any) =>
   axios.isAxiosError(e) && e.message === `timeout of ${API_TIMEOUT}ms exceeded`;
 
@@ -91,7 +84,9 @@ export const feedbackMessage = (
   content:
     f.sentiment === Sentiment.THUMBS_UP
       ? "Thank you for your feedback!"
-      : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_).",
+      : "Thank you for your feedback. If you have more to share, please click the button below (_requires GitHub login_). " +
+        "\n\n Do not include any personal information or other sensitive information in your feedback. " +
+        "Feedback may be used to improve Red Hat's products or services.",
   name: botName,
   avatar: logo,
   timestamp: getTimestamp(),
@@ -145,6 +140,9 @@ const createGitHubIssueURL = (
   return url.toString();
 };
 
+// For fixing tooltips that pops up from an iframe
+export let bodyElement = document.body;
+
 export const useChatbot = () => {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -172,6 +170,46 @@ export const useChatbot = () => {
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
+
+  const [stream, setStream] = useState(false);
+  useEffect(() => {
+    const frameWindow = window[0];
+    if (frameWindow) {
+      bodyElement = frameWindow.document.getElementsByTagName("body")[0];
+    }
+    const checkStatus = async () => {
+      const csrfToken = readCookie("csrftoken");
+      try {
+        const resp = await axios.get("/api/v1/health/status/chatbot/", {
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+        });
+        if (resp.status === 200) {
+          const data = resp.data || {};
+          if ("streaming-chatbot-service" in data) {
+            if (data["streaming-chatbot-service"] === "ok") {
+              // If streaming is enabled on the service side, use it.
+              setStream(true);
+            }
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        // Ignore errors thrown and use non-streaming chat.
+      }
+    };
+    checkStatus();
+  }, []);
+
+  const isStreamingSupported = () => {
+    // For making streaming mode debug easier.
+    if (!import.meta.env.PROD && import.meta.env.MODE.includes("stream")) {
+      return true;
+    }
+    return stream;
+  };
 
   const addMessage = (
     newMessage: ExtendedMessage,
@@ -278,6 +316,7 @@ export const useChatbot = () => {
             message.actions.positive.className = "action-button-clicked";
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Good response" },
       },
       negative: {
         onClick: () => {
@@ -292,6 +331,7 @@ export const useChatbot = () => {
             message.actions.negative.className = "action-button-clicked";
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Bad response" },
       },
       copy: {
         onClick: () => {
@@ -307,6 +347,7 @@ export const useChatbot = () => {
             setClipboard(contents.join("\n"));
           }
         },
+        tooltipProps: { appendTo: bodyElement, content: "Copy" },
       },
     };
 
@@ -584,5 +625,6 @@ export const useChatbot = () => {
     setSystemPrompt,
     hasStopButton,
     handleStopButton,
+    isStreamingSupported,
   };
 };

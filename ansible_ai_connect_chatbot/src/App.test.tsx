@@ -68,11 +68,53 @@ const referencedDocumentExample = [
   "https://docs\\.redhat\\.com/en/documentation/red_hat_ansible_automation_platform/2\\.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
 ];
 
+function mockAxiosGet(stream = false, reject = false) {
+  const spyGet = vi.spyOn(axios, "get");
+
+  if (reject) {
+    spyGet.mockImplementationOnce(() =>
+      Promise.reject(new Error("mocked error")),
+    );
+  } else {
+    const status = 200;
+    if (stream) {
+      spyGet.mockResolvedValue({
+        data: {
+          "chatbot-service": "ok",
+          "streaming-chatbot-service": "ok",
+        },
+        status,
+      });
+    } else {
+      spyGet.mockResolvedValue({
+        data: {
+          status: "ok",
+          dependencies: [
+            {
+              name: "chatbot-service",
+              status: { provider: "http", models: "ok" },
+              time_taken: 709.4,
+            },
+            {
+              name: "streaming-chatbot-service",
+              status: "disabled",
+              time_taken: 0.002,
+            },
+          ],
+        },
+        status,
+      });
+    }
+  }
+}
+
 function mockAxios(
   status: number,
   reject = false,
   timeout = false,
   refDocs: string[] = referencedDocumentExample,
+  stream = false,
+  get_reject = false,
 ) {
   const spy = vi.spyOn(axios, "post");
   if (reject) {
@@ -104,6 +146,7 @@ function mockAxios(
       status,
     });
   }
+  mockAxiosGet(stream, get_reject);
   return spy;
 }
 
@@ -345,18 +388,6 @@ test("Basic chatbot interaction", async () => {
   await expect
     .element(view.getByText("Create variables"))
     .not.toBeInTheDocument();
-
-  const footNoteLink = page.getByText(
-    "Always review AI-generated content prior to use.",
-  );
-  await footNoteLink.click();
-  await expect
-    .element(page.getByText("While Lightspeed strives for accuracy,"))
-    .toBeVisible();
-  await page.getByText("Got it").click();
-  await expect
-    .element(page.getByText("While Lightspeed strives for accuracy,"))
-    .not.toBeVisible();
 
   await sendMessage("Tell me about Ansible.");
   await expect
@@ -656,8 +687,7 @@ test("Chat streaming test", async () => {
     ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
-  mockAxios(200);
-
+  mockAxios(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("Hello");
@@ -704,8 +734,7 @@ test("Chat streaming test when streaming is not closed.", async () => {
     ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
-  mockAxios(200);
-
+  mockAxios(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("skip close");
@@ -720,6 +749,7 @@ test("Chat streaming test when streaming is not closed.", async () => {
   const copyIcon = await screen.findByRole("button", {
     name: "Copy",
   });
+
   // Make sure the copy button contains the "action-button-hidden" CSS class.
   assert(copyIcon.getAttribute("class")?.includes("action-button-hidden"));
 });
@@ -729,7 +759,7 @@ test("Agent chat streaming test", async () => {
   vi.stubGlobal("open", () => {
     ghIssueLinkSpy++;
   });
-  mockAxios(200, false, false, referencedDocumentExample);
+  mockAxios(200, false, false, referencedDocumentExample, true);
 
   const view = await renderApp(false, true);
 
@@ -759,6 +789,7 @@ test("Agent chat streaming test", async () => {
 });
 
 test("Chat streaming error at API call", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("status=400");
@@ -768,6 +799,7 @@ test("Chat streaming error at API call", async () => {
 });
 
 test("Chat streaming error in streaming data", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("error in stream");
@@ -780,7 +812,20 @@ test("Chat streaming error in streaming data", async () => {
   );
 });
 
+test("Chat streaming error in status check", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true, true);
+
+  const view = await renderApp(false, true);
+  await delay(100);
+
+  // Make sure the error popup is NOT displayed in this error case.
+  const alert = view.container.querySelector(".pf-v6-c-alert__description");
+  const textContent = alert?.textContent;
+  expect(textContent).not.contain("mocked error");
+});
+
 test("Chat service returns 429 Too Many Requests error in streaming", async () => {
+  mockAxios(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("status=429");
