@@ -52,7 +52,7 @@ class UserResponseSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(required=True)
 
 
-class MarkdownUserResponseSerializer(serializers.Serializer):
+class UserMarkdownResponseSerializer(serializers.Serializer):
     content = serializers.SerializerMethodField()
 
     def get_content(self, user):
@@ -70,3 +70,17 @@ class MarkdownUserResponseSerializer(serializers.Serializer):
             return one_click_trial_markdown
 
         return dedent(markdown_value).strip()
+
+
+class BearerTokenSerializer(serializers.Serializer):
+    class Meta:
+        fields = ["access_token", "expires_in", "expiration"]
+
+    access_token = serializers.CharField(required=False)
+    expires_in = serializers.IntegerField(required=False)
+    expiration = serializers.IntegerField(required=False)
+
+
+class UserBearerTokenResponseSerializer(serializers.Serializer):
+    bearer_token = BearerTokenSerializer()
+    inference_url = serializers.CharField(required=True)

@@ -284,6 +284,12 @@ class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
     def get_model_id(self, user, requested_model_id: Optional[str] = None) -> str:
         return requested_model_id or self.config.model_id
 
+    def get_token(self, api_key) -> dict[str, str | int]:
+        raise NotImplementedError
+
+    def get_api_key(self, user) -> str:
+        raise NotImplementedError
+
     def supports_ari_postprocessing(self):
         return settings.ENABLE_ARI_POSTPROCESS
 
