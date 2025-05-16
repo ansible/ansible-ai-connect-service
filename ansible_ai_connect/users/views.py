@@ -211,6 +211,7 @@ class Token(RetrieveAPIView):
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
     def get(self, request, *args, **kwargs):
         print("zzzzzz")
+        import ansible_ai_connect.users.wca_auth
         secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         wca_key = secret_manager.get_secret(self.request.user.organization.id, Suffixes.API_KEY)
 
@@ -219,7 +220,8 @@ class Token(RetrieveAPIView):
         model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         token = model_meta_data.get_token(wca_key)
 
-        print(f"{wca_key=} {token=}")
+        api_key = ansible_ai_connect.users.wca_auth.get_api_key(self.request.user, "wca")
+        print(f"{wca_key=} {token=} {api_key=}")
 
         response = {"a": 1}
         return Response(response, content_type="application/json")
