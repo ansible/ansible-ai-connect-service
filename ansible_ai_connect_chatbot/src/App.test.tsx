@@ -638,9 +638,9 @@ test("Debug mode test", async () => {
   await expect.element(page.getByText("granite3-1-8b")).toBeVisible();
   await page.getByText("granite3-1-8b").click();
   await expect
-    .element(page.getByRole("menuitem", { name: "granite3-2-8b" }))
+    .element(page.getByRole("menuitem", { name: "granite-3.3-8b-instruct" }))
     .toBeVisible();
-  await page.getByRole("menuitem", { name: "granite3-2-8b" }).click();
+  await page.getByRole("menuitem", { name: "granite-3.3-8b-instruct" }).click();
 
   await sendMessage("Hello");
   await expect
