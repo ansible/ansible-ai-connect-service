@@ -783,6 +783,7 @@ test("Agent chat streaming test", async () => {
     .not.toBeVisible();
   const showMoreLink = await screen.findByRole("button", { name: "Show more" });
   await showMoreLink.click();
+  await expect.element(view.getByText("Show less")).toBeVisible();
   await expect
     .element(view.getByText("EDA stands for Event Driven Ansible."))
     .toBeVisible();

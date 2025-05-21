@@ -269,7 +269,10 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                         )}
                         {collapse ? (
                           <div key={`m_div_${index}`}>
-                            <ExpandableSection toggleText="Show more">
+                            <ExpandableSection
+                              toggleTextCollapsed="Show more"
+                              toggleTextExpanded="Show less"
+                            >
                               <Message
                                 key={`m_msg_${index}`}
                                 {...message}
