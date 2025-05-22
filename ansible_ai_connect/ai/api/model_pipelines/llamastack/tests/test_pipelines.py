@@ -17,7 +17,13 @@ from datetime import datetime
 from unittest import IsolatedAsyncioTestCase, skip
 from unittest.mock import patch
 
-from llama_stack_client.types import CompletionMessage, InferenceStep, ToolCall
+from llama_stack_client.types import (
+    CompletionMessage,
+    InferenceStep,
+    ToolCall,
+    ToolExecutionStep,
+    ToolResponse,
+)
 from llama_stack_client.types.agents import (
     AgentTurnResponseStreamChunk,
     Turn,
@@ -85,6 +91,45 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                     },
                     "tool_name": "knowledge_search",
                 },
+            },
+        },
+        {
+            "event": "tool_call",
+            "data": {
+                "id": 28,
+                "tool_calls": [
+                    {
+                        "arguments": {
+                            "query": "What is EDA?",
+                        },
+                        "tool_name": "knowledge_search",
+                    },
+                ],
+                "tool_responses": [
+                    {
+                        "tool_name": "knowledge_search",
+                        "content": [
+                            {
+                                "text": """knowledge_search tool found 2 chunks:
+BEGIN of knowledge_search tool results.
+"""
+                            },
+                            {
+                                "text": """Result 1"
+Content: ABC
+Metadata: {'docs_url': 'https://docs.example.com/1', 'title': 'ref-1', 'document_id': 'doc-1'}
+"""
+                            },
+                            {
+                                "text": """Result 2"
+Content: XYZ
+Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document_id': 'doc-2'}
+"""
+                            },
+                            {"text": "END of knowledge_search tool results.\n"},
+                        ],
+                    },
+                ],
             },
         },
         {
@@ -192,19 +237,20 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                         )
                     case "tool_call":
                         payload = data["data"]
-                        _tool_call = payload["tool_call"]
+                        _tool_call = payload.get("tool_call")
+                        _tool_calls = payload.get("tool_calls")
                         if isinstance(_tool_call, str):
                             return AgentTurnResponseStepProgressPayload(
                                 event_type="step_progress",
                                 step_id=f"step-{payload['id']}",
-                                step_type="inference",
+                                step_type="tool_execution",
                                 delta=ToolCallDelta(
                                     parse_status="in_progress",
                                     tool_call=_tool_call,
                                     type="tool_call",
                                 ),
                             )
-                        else:
+                        elif not _tool_calls:
                             tool_call = ToolCall(
                                 arguments=_tool_call["arguments"],
                                 call_id=f"call_id-{payload['id']}",
@@ -213,12 +259,48 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                             return AgentTurnResponseStepProgressPayload(
                                 event_type="step_progress",
                                 step_id=f"step-{payload['id']}",
-                                step_type="inference",
+                                step_type="tool_execution",
                                 delta=ToolCallDelta(
                                     parse_status="in_progress",
                                     tool_call=tool_call,
                                     type="tool_call",
                                 ),
+                            )
+                        else:
+                            tool_call = ToolCall(
+                                arguments=_tool_calls[0]["arguments"],
+                                call_id=f"call_id-{payload['id']}",
+                                tool_name=_tool_calls[0]["tool_name"],
+                            )
+                            tool_responses = []
+                            for r in payload["tool_responses"]:
+                                content = []
+                                for c in r["content"]:
+                                    content.append(
+                                        {
+                                            "text": c["text"],
+                                            "type": "text",
+                                        }
+                                    )
+                                tool_responses.append(
+                                    ToolResponse(
+                                        call_id="call_id",
+                                        tool_name=_tool_calls[0]["tool_name"],
+                                        content=content,
+                                    )
+                                )
+                            step_details = ToolExecutionStep(
+                                step_id=f"step-{payload['id']}",
+                                step_type="tool_execution",
+                                tool_calls=[tool_call],
+                                tool_responses=tool_responses,
+                                turn_id="turn-in-progress",
+                            )
+                            return AgentTurnResponseStepCompletePayload(
+                                event_type="step_complete",
+                                step_id=f"step-{payload['id']}",
+                                step_type="tool_execution",
+                                step_details=step_details,
                             )
                     case "turn_complete":
                         payload = data["data"]
