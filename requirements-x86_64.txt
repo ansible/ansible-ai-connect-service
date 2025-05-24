@@ -18,7 +18,7 @@ ansible-anonymizer==1.5.0
     # via -r requirements.in
 ansible-compat==4.1.11
     # via ansible-lint
-ansible-core==2.15.11
+ansible-core==2.18.6
     # via
     #   ansible-compat
     #   ansible-lint
