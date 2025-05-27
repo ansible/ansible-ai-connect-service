@@ -14,18 +14,21 @@
 
 import json
 import logging
+import re
 import uuid
-from typing import AsyncGenerator, AsyncIterator
+from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from llama_stack_client import AsyncLlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
+from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
 from llama_stack_client.types.agents.turn_create_params import (
     ToolgroupAgentToolGroupWithArgs,
 )
 from llama_stack_client.types.shared import UserMessage
+from llama_stack_client.types.shared.interleaved_content_item import TextContentItem
 
 from ansible_ai_connect.ai.api.exceptions import AgentInternalServerException
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
@@ -78,6 +81,17 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
 )
 
 
+class TurnStreamPrintableEventEx(TurnStreamPrintableEvent):
+    def __str__(self) -> str:
+        if self.role is not None:
+            if self.role == "tool_execution":
+                return f"\n\n```json\n{self.role}> {self.content}\n```"
+            else:
+                return f"\n\n`{self.role}>` {self.content}"
+        else:
+            return f"{self.content}"
+
+
 @Register(api_type="llama-stack")
 class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
 
@@ -93,6 +107,7 @@ class LlamaStackStreamingChatBotPipeline(
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
         self.client = AsyncLlamaStackClient(base_url=config.inference_url)
+        self.metadata_pattern = re.compile(r"\nMetadata: (\{.+\})\n")
 
         # Register a vector database
         self.client.vector_dbs.register(
@@ -140,6 +155,22 @@ class LlamaStackStreamingChatBotPipeline(
         self.id += 1
         return f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
 
+    def stream_end_event(self, ref_docs_metadata: Mapping[str, dict]):
+        ref_docs = []
+        for k, v in ref_docs_metadata.items():
+            ref_docs.append(
+                {
+                    "doc_url": v["docs_url"],
+                    "doc_title": v["title"],  # todo
+                }
+            )
+        return self.format_record(
+            {
+                "referenced_documents": ref_docs,
+            },
+            event_name="end",
+        )
+
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
         query = params.query
 
@@ -162,56 +193,130 @@ class LlamaStackStreamingChatBotPipeline(
             toolgroups=[RAG_TOOL_GROUP, lightspeed_tool_group],
         )
         self.id = 0
-        self.last_delta_type = "text"
-        async for chunk in response:  # TODO
-            # async for o in generate_dummy_data(): # TODO FOR DEBUG
-            # if hasattr(chunk, "event"):
-            #     print(chunk.event)
-            # if (
-            #     hasattr(chunk, "event")
-            #     and hasattr(chunk.event, "payload")
-            #     and hasattr(chunk.event.payload, "event_type")
-            #     and chunk.event.payload.event_type == "turn_complete"
-            # ):
-            #     print(" *** ")
-            #     print(chunk.event.payload.turn.output_message)
-            # yield chunk
-            j = chunk.model_dump_json()  # TODO
-            print(j)
-            o = json.loads(j)  # dump to python dict # TODO
-            event = o.get("event")
-            if event:
-                payload = event.get("payload")
-                if payload:
-                    event_type = payload.get("event_type")
-                    if event_type == "step_start":
-                        d = {"event": "start", "data": {"conversation_id": session_id}}
-                        yield self.format_record(d)
-                    elif event_type == "step_progress":
-                        delta = payload.get("delta", [])
-                        if delta:
-                            delta_type = delta.get("type", "")
-                            if delta_type == "text":
-                                yield self.format_token(delta.get("text", ""))
-                            elif delta_type == "tool_call":
-                                if self.last_delta_type != "tool_call":
-                                    yield self.format_token("\n")
-                                tool_call = delta.get("tool_call", "")
-                                if not isinstance(tool_call, str):
-                                    tool_call = json.dumps(tool_call, indent=2)
-                                    yield self.format_token(tool_call, "tool_call")
-                                else:
-                                    yield self.format_token(tool_call)
-                            self.last_delta_type = delta_type
-                    elif event_type == "step_complete":
-                        step_details = payload.get("step_details")
-                        yield self.format_token(json.dumps(step_details, indent=2), "step_complete")
-                        self.id = 0
-                    elif event_type == "turn_complete":
-                        output_message = payload.get("turn").get("output_message").get("content")
-                        yield self.format_token(output_message, "turn_complete")
-                        d = {"event": "end", "data": {"referenced_documents": []}}
-                        yield self.format_record(d)
+        self.metadata_map = {}
+
+        try:
+            yield self.format_record({"conversation_id": session_id}, event_name="start")
+            async for chunk in response:
+                for printable_event in self._yield_printable_events(chunk):
+                    if printable_event.role == "turn_complete":
+                        token = self.format_token(
+                            printable_event.content, event_name="turn_complete"
+                        )
+                    else:
+                        token = self.format_token(str(printable_event))
+                    yield token
+        finally:
+            yield self.stream_end_event(
+                self.metadata_map,
+            )
+
+    def _yield_printable_events(
+        self,
+        chunk: Any,
+    ) -> Iterator[TurnStreamPrintableEventEx]:
+        if hasattr(chunk, "error"):
+            yield TurnStreamPrintableEventEx(role=None, content=chunk.error["message"], color="red")
+            return
+
+        event = chunk.event
+        event_type = event.payload.event_type
+
+        if event_type in {"turn_start", "turn_awaiting_input"}:
+            # Not logging for these turn-related info
+            yield TurnStreamPrintableEventEx(role=None, content="", end="", color="grey")
+            return
+
+        if event_type == "turn_complete":
+            output_message = event.payload.turn.output_message.content
+            yield TurnStreamPrintableEventEx(role="turn_complete", content=output_message)
+            return
+
+        step_type = event.payload.step_type
+        # handle safety
+        if step_type == "shield_call" and event_type == "step_complete":
+            violation = event.payload.step_details.violation
+            if not violation:
+                yield TurnStreamPrintableEventEx(
+                    role=step_type, content="No Violation", color="magenta"
+                )
+            else:
+                yield TurnStreamPrintableEventEx(
+                    role=step_type,
+                    content=f"{violation.metadata} {violation.user_message}",
+                    color="red",
+                )
+
+        # handle inference
+        if step_type == "inference":
+            if event_type == "step_start":
+                yield TurnStreamPrintableEventEx(role=step_type, content="", end="", color="yellow")
+            elif event_type == "step_progress":
+                if event.payload.delta.type == "tool_call":
+                    if isinstance(event.payload.delta.tool_call, str):
+                        yield TurnStreamPrintableEventEx(
+                            role=None,
+                            content=event.payload.delta.tool_call,
+                            end="",
+                            color="cyan",
+                        )
+                elif event.payload.delta.type == "text":
+                    yield TurnStreamPrintableEventEx(
+                        role=None,
+                        content=event.payload.delta.text,
+                        end="",
+                        color="yellow",
+                    )
+            else:
+                # step complete
+                yield TurnStreamPrintableEventEx(role=None, content="")
+
+        # handle tool_execution
+        if step_type == "tool_execution" and event_type == "step_complete":
+            # Only print tool calls and responses at the step_complete event
+            details = event.payload.step_details
+            for t in details.tool_calls:
+                yield TurnStreamPrintableEventEx(
+                    role=step_type,
+                    content=f"Tool:{t.tool_name} Args:{t.arguments}",
+                    color="green",
+                )
+
+            for r in details.tool_responses:
+                if r.tool_name == "query_from_memory":
+                    inserted_context = super().interleaved_content_as_str(r.content)
+                    content = f"fetched {len(inserted_context)} bytes from memory"
+
+                    yield TurnStreamPrintableEventEx(
+                        role=step_type,
+                        content=content,
+                        color="cyan",
+                    )
+                else:
+                    # Referenced documents support
+                    if r.tool_name == "knowledge_search" and r.content:
+                        summary = ""
+                        for i, text_content_item in enumerate(r.content):
+                            if isinstance(text_content_item, TextContentItem):
+                                if i == 0:
+                                    summary = text_content_item.text
+                                    summary = summary[: summary.find("\n")]
+                                matches = self.metadata_pattern.findall(text_content_item.text)
+                                if matches:
+                                    for match in matches:
+                                        meta = json.loads(match.replace("'", '"'))
+                                        self.metadata_map[meta["document_id"]] = meta
+                        yield TurnStreamPrintableEventEx(
+                            role=step_type,
+                            content=f"\nTool:{r.tool_name} Summary:{summary}\n",
+                            color="green",
+                        )
+                    else:
+                        yield TurnStreamPrintableEventEx(
+                            role=step_type,
+                            content=f"Tool:{r.tool_name} Response:{r.content}",
+                            color="green",
+                        )
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
