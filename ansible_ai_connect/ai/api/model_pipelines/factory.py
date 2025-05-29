@@ -16,6 +16,8 @@ import logging
 from copy import deepcopy
 from typing import Type
 
+from django.conf import settings
+
 from ansible_ai_connect.ai.api.model_pipelines.config_loader import load_config
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
     PipelineConfiguration,
@@ -34,9 +36,12 @@ class ModelPipelineFactory:
 
     def __init__(self):
         self.cache = deepcopy(REGISTRY_ENTRY)
-        self.pipelines_config: Configuration = load_config()
+        if not settings.DEBUG_FORCE_PIPELINE_RELOAD:
+            self.pipelines_config: Configuration = load_config()
 
     def get_pipeline(self, pipeline_type: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
+        if settings.DEBUG_FORCE_PIPELINE_RELOAD:
+            self.pipelines_config: Configuration = load_config()
         # We currently cache the pipeline implementation as we don't support
         # the use of different providers for different requests and each resides
         # in the same process space as ansible-ai-connect-service. This could

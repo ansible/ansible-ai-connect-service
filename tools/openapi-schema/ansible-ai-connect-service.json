@@ -764,7 +764,32 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/MarkdownUserResponse"
+                                    "$ref": "#/components/schemas/UserMarkdownResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/me/token/": {
+            "get": {
+                "operationId": "me_token_retrieve",
+                "tags": [
+                    "me"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserBearerTokenResponse"
                                 }
                             }
                         },
@@ -1338,6 +1363,20 @@
                 ],
                 "type": "string",
                 "description": "* `0` - OPEN\n* `1` - CLOSE_CANCEL\n* `2` - TRANSITION\n* `3` - CLOSE_ACCEPT"
+            },
+            "BearerToken": {
+                "type": "object",
+                "properties": {
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "expires_in": {
+                        "type": "integer"
+                    },
+                    "expiration": {
+                        "type": "integer"
+                    }
+                }
             },
             "ChatFeedback": {
                 "type": "object",
@@ -2013,18 +2052,6 @@
                     "type"
                 ]
             },
-            "MarkdownUserResponse": {
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "type": "string",
-                        "readOnly": true
-                    }
-                },
-                "required": [
-                    "content"
-                ]
-            },
             "Metadata": {
                 "type": "object",
                 "properties": {
@@ -2301,6 +2328,33 @@
                 ],
                 "type": "string",
                 "description": "* `bug-report` - Bug Report\n* `feature-request` - Feature Request"
+            },
+            "UserBearerTokenResponse": {
+                "type": "object",
+                "properties": {
+                    "bearer_token": {
+                        "$ref": "#/components/schemas/BearerToken"
+                    },
+                    "inference_url": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "bearer_token",
+                    "inference_url"
+                ]
+            },
+            "UserMarkdownResponse": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "content"
+                ]
             },
             "UserPlan": {
                 "type": "object",

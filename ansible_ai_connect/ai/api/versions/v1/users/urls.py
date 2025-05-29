@@ -19,4 +19,5 @@ from . import views
 urlpatterns = [
     path("", views.CurrentUserView.as_view(), name="me"),
     path("summary/", views.MarkdownCurrentUserView.as_view(), name="me_summary"),
+    path("token/", views.Token.as_view(), name="user_token"),
 ]

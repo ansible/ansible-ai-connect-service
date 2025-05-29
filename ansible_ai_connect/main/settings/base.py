@@ -251,6 +251,7 @@ if sys.argv[1:2] not in [["migrate"], ["test"]]:
 COMPLETION_USER_RATE_THROTTLE = os.environ.get("COMPLETION_USER_RATE_THROTTLE") or "10/minute"
 ME_USER_CACHE_TIMEOUT_SEC = int(os.environ.get("ME_USER_CACHE_TIMEOUT_SEC", 30))
 ME_USER_RATE_THROTTLE = os.environ.get("ME_USER_RATE_THROTTLE") or "50/minute"
+USER_TOKEN_RATE_THROTTLE = os.environ.get("USER_TOKEN_RATE_THROTTLE") or "10/minute"
 SPECIAL_THROTTLING_GROUPS = ["test"]
 CHAT_RATE_THROTTLE = os.environ.get("CHAT_RATE_THROTTLE") or "10/minute"
 
@@ -267,8 +268,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "user": COMPLETION_USER_RATE_THROTTLE,
         "test": "100000/minute",
-        "me": ME_USER_RATE_THROTTLE,
+        "user/me": ME_USER_RATE_THROTTLE,
         "chat": CHAT_RATE_THROTTLE,
+        "user/token": USER_TOKEN_RATE_THROTTLE,
     },
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -622,3 +624,17 @@ ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT = (
     os.getenv("ANSIBLE_AI_ENABLE_ROLE_GEN_ENDPOINT", "False").lower() == "true"
 ) or False
 # ==========================================
+
+
+# ==========================================
+# Ability to generate Bearer token for users
+# ------------------------------------------
+ANSIBLE_AI_ENABLE_USER_TOKEN_GEN = (
+    os.getenv("ANSIBLE_AI_ENABLE_USER_TOKEN_GEN", "False").lower() == "true"
+) or False
+# ==========================================
+
+# When set to True, likely with override_settings(), the pipeline configuration
+# won't be cached, which allow us to modify ANSIBLE_AI_MODEL_MESH_CONFIG
+# in the tests (otherwise it's initialized during the loading)
+DEBUG_FORCE_PIPELINE_RELOAD = False
