@@ -52,8 +52,8 @@ class AnsibleLintCaller:
         tmp_root: str,
     ) -> str:
         """Runs the Runner to populate a LintResult for a given snippet."""
+        transformed_completion = inline_completion
         try:
-            transformed_completion = inline_completion
             # Since the suggestions are tasks, for ansible-lint to run in write mode correctly it
             # needs to identity the temporary file as tasks file, and for that to happen the
             # temporary file needs to be be under tasks folder. Thus, creating a temporary file
