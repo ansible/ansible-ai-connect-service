@@ -15,10 +15,15 @@
 #  limitations under the License.
 import json
 import unittest
+import uuid
 from http import HTTPStatus
+from unittest.mock import patch
 
 from django.test import override_settings
 
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    RoleExplanationParameters,
+)
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
@@ -45,10 +50,43 @@ class TestRoleExplanationViewDummy(
         }
         self.start_user_plan()
         self.client.force_authenticate(user=self.user)
-        r = self.client.post(self.api_version_reverse("explanations/role"), payload, format="json")
+
+        original_init = RoleExplanationParameters.init
+        captured_request_object = None
+
+        def init_wrapper(*args, **kwargs):
+            nonlocal captured_request_object
+            if "request" in kwargs:
+                captured_request_object = kwargs["request"]
+            return original_init(*args, **kwargs)
+
+        init_path = (
+            "ansible_ai_connect.ai.api.model_pipelines.pipelines.RoleExplanationParameters.init"
+        )
+        with patch(init_path, side_effect=init_wrapper) as mocked_init:
+            r = self.client.post(
+                self.api_version_reverse("explanations/role"), payload, format="json"
+            )
+
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
         self.assertEqual(r.data["format"], "markdown")
+
+        mocked_init.assert_called_once()
+        self.assertIsNotNone(captured_request_object, "Request object was not captured")
+
+        # Check for the header in the captured request's META
+        self.assertIn("X-Request-Lightspeed-User", captured_request_object.headers)
+        header_value = captured_request_object.headers["X-Request-Lightspeed-User"]
+
+        # Verify the header value is the user's UUID
+        self.assertEqual(header_value, str(self.user.uuid))
+
+        # Verify the header value is a valid UUID
+        try:
+            uuid.UUID(header_value)
+        except ValueError:
+            self.fail("HTTP_X_REQUEST_LIGHTSPEED_USER header does not contain a valid UUID.")
 
     def test_unauthorized(self):
         payload = {}
@@ -96,9 +134,25 @@ class TestRoleExplanationViewWCA(
         def MockedSession():
             return mocked_session
 
-        with unittest.mock.patch(
-            "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.requests.Session",
-            MockedSession,
+        original_init = RoleExplanationParameters.init
+        captured_request_object = None
+
+        def init_wrapper(*args, **kwargs):
+            nonlocal captured_request_object
+            if "request" in kwargs:
+                captured_request_object = kwargs["request"]
+            return original_init(*args, **kwargs)
+
+        init_path = (
+            "ansible_ai_connect.ai.api.model_pipelines.pipelines.RoleExplanationParameters.init"
+        )
+
+        with (
+            unittest.mock.patch(
+                "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.requests.Session",
+                MockedSession,
+            ),
+            patch(init_path, side_effect=init_wrapper) as mocked_init,
         ):
             r = self.client.post(
                 self.api_version_reverse("explanations/role"), payload, format="json"
@@ -107,3 +161,16 @@ class TestRoleExplanationViewWCA(
         self.assertIsNotNone(r.data)
         self.assertEqual(r.data["format"], "markdown")
         self.assertIn("emacs", r.data["content"])
+
+        mocked_init.assert_called_once()
+        self.assertIsNotNone(captured_request_object, "Request object was not captured")
+
+        self.assertIn("HTTP_X_REQUEST_LIGHTSPEED_USER", captured_request_object.META)
+        header_value = captured_request_object.META["HTTP_X_REQUEST_LIGHTSPEED_USER"]
+
+        self.assertEqual(header_value, str(self.user.uuid))
+
+        try:
+            uuid.UUID(header_value)
+        except ValueError:
+            self.fail("HTTP_X_REQUEST_LIGHTSPEED_USER header does not contain a valid UUID.")
