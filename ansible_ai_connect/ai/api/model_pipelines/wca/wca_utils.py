@@ -15,7 +15,9 @@
 import logging
 import re
 from abc import abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Protocol, TypeVar
+
+from requests import Response
 
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
@@ -30,7 +32,12 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaValidationFailure,
 )
 
-T = TypeVar("T")
+
+class HasResult(Protocol):
+    result: Response
+
+
+T = TypeVar("T", bound=HasResult)
 
 logger = logging.getLogger(__name__)
 
@@ -42,26 +49,29 @@ class Check(Generic[T]):
 
 
 class Checks(Generic[T]):
-    checks: []
+    checks: list[Check[T]]
 
-    def __init__(self, checks: []):
+    def __init__(self, checks: list[Check[T]]):
         self.checks = checks
 
-    def run_checks(self, context: T):
+    def run_checks(self, context: T) -> None:
         for check in self.checks:
             try:
                 check.check(context)
             except Exception:
-                logger.error(
-                    f"WCA request failed with {context.result.status_code}. "
-                    f"Content-Type:{context.result.headers.get('Content-Type')}, "
-                    f"Content:{context.result.content}"
-                )
+                if hasattr(context, "result"):
+                    logger.error(
+                        f"WCA request failed with {context.result.status_code}. "
+                        f"Content-Type:{context.result.headers.get('Content-Type')}, "
+                        f"Content:{context.result.content}"
+                    )
+                else:
+                    logger.error("WCA request failed with unknown error")
                 raise
 
 
 class TokenContext:
-    def __init__(self, result):
+    def __init__(self, result: Response):
         self.result = result
 
 
@@ -91,7 +101,7 @@ class TokenResponseChecks(Checks[TokenContext]):
 
 
 class Context:
-    def __init__(self, model_id, result, is_multi_task_prompt):
+    def __init__(self, model_id: str, result: Response, is_multi_task_prompt: bool):
         self.model_id = model_id
         self.result = result
         self.is_multi_task_prompt = is_multi_task_prompt
