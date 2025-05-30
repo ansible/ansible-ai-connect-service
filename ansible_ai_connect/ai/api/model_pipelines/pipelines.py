@@ -156,7 +156,16 @@ class RoleGenerationParameters:
         )
 
 
-RoleGenerationResponse = tuple[str, list, str, list]
+from rest_framework import serializers
+
+from ansible_ai_connect.ai.api.serializers import (
+    GenerationRoleFileEntrySerializer,
+    GenerationRoleResponseSerializer,
+)
+
+RoleGenerationResponse = tuple[
+    str, serializers.ListField(child=GenerationRoleResponseSerializer()), str, list[str]
+]
 
 
 @define
@@ -433,3 +442,76 @@ class ModelPipelineStreamingChatBot(
     @staticmethod
     def alias():
         return "streaming-chatbot-service"
+
+
+DUMMY_PLAYBOOK = """---
+- hosts: rhel9
+  become: yes
+  tasks:
+    - name: Install EPEL repository
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+
+    - name: Update package list
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Install nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Start and enable nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+"""
+
+DUMMY_ROLE_FILES = [
+    {
+        "path": "tasks/main.yml",
+        "file_type": "task",
+        "content": "- name: Install the Nginx packages\n"
+        "  ansible.builtin.package:\n"
+        '    name: "{{ install_nginx_packages }}"\n'
+        "    state: present\n"
+        "  become: true\n"
+        "- name: Start the service\n"
+        "  ansible.builtin.service:\n"
+        "    name: nginx\n"
+        "    enabled: true\n"
+        "    state: started\n"
+        "    become: true",
+    },
+    {
+        "path": "defaults/main.yml",
+        "file_type": "default",
+        "content": "install_nginx_packages:\n  - nginx",
+    },
+]
+
+DUMMY_ROLE_OUTLINE = """
+1. Install the Nginx packages
+2. Start the service
+"""
+
+DUMMY_PLAYBOOK_OUTLINE = """
+1. First, ensure that your RHEL 9 system is up-to-date.
+2. Next, you install the Nginx package using the package manager.
+3. After installation, start the ginx service.
+4. Ensure that Nginx starts automatically.
+5. Check if Nginx is running successfully.
+6. Visit your system's IP address followed by the default Nginx port number (80 or 443).
+"""
+
+DUMMY_EXPLANATION = """# Information
+This playbook installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux (RHEL) 9.
+"""
+
+DUMMY_ROLE_EXPLANATION = """# Information
+This role installs the Nginx web server on all hosts
+that are running Red Hat Enterprise Linux (RHEL) 9.
+"""
