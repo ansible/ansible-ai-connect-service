@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from django.apps import apps
 
@@ -119,9 +119,25 @@ class WCADummyRoleGenerationPipeline(
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         create_outline = params.create_outline
+
+        files = DUMMY_ROLE_FILES
+
+        from ansible_ai_connect.ai.apps import AiConfig
+
+        ai_config = cast(AiConfig, apps.get_app_config("ai"))
+        if ansible_lint_caller := ai_config.get_ansible_lint_caller():
+            print(ansible_lint_caller)
+            print(ansible_lint_caller.run_linter("test"))
+            print(files)
+            for file in files:
+                if file["file_type"] != "task":
+                    continue
+                file["content"] = ansible_lint_caller.run_linter(file["content"])
+            print(files)
+
         return (
             "install_nginx",
-            DUMMY_ROLE_FILES,
+            files,
             DUMMY_ROLE_OUTLINE.strip() if create_outline else "",
             [],
         )
