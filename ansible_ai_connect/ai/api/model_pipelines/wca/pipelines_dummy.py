@@ -23,6 +23,8 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaTokenFailure,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    DUMMY_ROLE_FILES,
+    DUMMY_ROLE_OUTLINE,
     CompletionsParameters,
     CompletionsResponse,
     MetaData,
@@ -116,7 +118,13 @@ class WCADummyRoleGenerationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
-        return "wca_dummy_role", [], "wca_dummy_outline", []
+        create_outline = params.create_outline
+        return (
+            "install_nginx",
+            DUMMY_ROLE_FILES,
+            DUMMY_ROLE_OUTLINE.strip() if create_outline else "",
+            [],
+        )
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(

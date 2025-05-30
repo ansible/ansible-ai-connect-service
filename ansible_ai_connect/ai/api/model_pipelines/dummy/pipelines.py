@@ -23,6 +23,12 @@ from ansible_ai_connect.ai.api.model_pipelines.dummy.configuration import (
     DummyConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    DUMMY_EXPLANATION,
+    DUMMY_PLAYBOOK,
+    DUMMY_PLAYBOOK_OUTLINE,
+    DUMMY_ROLE_EXPLANATION,
+    DUMMY_ROLE_FILES,
+    DUMMY_ROLE_OUTLINE,
     CompletionsParameters,
     CompletionsResponse,
     MetaData,
@@ -48,78 +54,6 @@ from ansible_ai_connect.healthcheck.backends import (
 )
 
 logger = logging.getLogger(__name__)
-
-PLAYBOOK = """---
-- hosts: rhel9
-  become: yes
-  tasks:
-    - name: Install EPEL repository
-      ansible.builtin.dnf:
-        name: epel-release
-        state: present
-
-    - name: Update package list
-      ansible.builtin.dnf:
-        update_cache: yes
-
-    - name: Install nginx
-      ansible.builtin.dnf:
-        name: nginx
-        state: present
-
-    - name: Start and enable nginx service
-      ansible.builtin.systemd:
-        name: nginx
-        state: started
-        enabled: yes
-"""
-
-ROLE_FILES = [
-    {
-        "path": "tasks/main.yml",
-        "file_type": "task",
-        "content": "- name: Install the Nginx packages\n"
-        "  ansible.builtin.package:\n"
-        '    name: "{{ install_nginx_packages }}"\n'
-        "    state: present\n"
-        "  become: true\n"
-        "- name: Start the service\n"
-        "  ansible.builtin.service:\n"
-        "    name: nginx\n"
-        "    enabled: true\n"
-        "    state: started\n"
-        "    become: true",
-    },
-    {
-        "path": "defaults/main.yml",
-        "file_type": "default",
-        "content": "install_nginx_packages:\n  - nginx",
-    },
-]
-
-ROLE_OUTLINE = """
-1. Install the Nginx packages
-2. Start the service
-"""
-
-PLAYBOOK_OUTLINE = """
-1. First, ensure that your RHEL 9 system is up-to-date.
-2. Next, you install the Nginx package using the package manager.
-3. After installation, start the ginx service.
-4. Ensure that Nginx starts automatically.
-5. Check if Nginx is running successfully.
-6. Visit your system's IP address followed by the default Nginx port number (80 or 443).
-"""
-
-EXPLANATION = """# Information
-This playbook installs the Nginx web server on all hosts
-that are running Red Hat Enterprise Linux (RHEL) 9.
-"""
-
-ROLE_EXPLANATION = """# Information
-This role installs the Nginx web server on all hosts
-that are running Red Hat Enterprise Linux (RHEL) 9.
-"""
 
 
 @Register(api_type="dummy")
@@ -171,7 +105,7 @@ class DummyPlaybookGenerationPipeline(
 
     def invoke(self, params: PlaybookGenerationParameters) -> PlaybookGenerationResponse:
         create_outline = params.create_outline
-        return PLAYBOOK, PLAYBOOK_OUTLINE.strip() if create_outline else "", []
+        return DUMMY_PLAYBOOK, DUMMY_PLAYBOOK_OUTLINE.strip() if create_outline else "", []
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
@@ -190,7 +124,12 @@ class DummyRoleGenerationPipeline(DummyMetaData, ModelPipelineRoleGeneration[Dum
 
     def invoke(self, params: RoleGenerationParameters) -> RoleGenerationResponse:
         create_outline = params.create_outline
-        return "install_nginx", ROLE_FILES, ROLE_OUTLINE.strip() if create_outline else "", []
+        return (
+            "install_nginx",
+            DUMMY_ROLE_FILES,
+            DUMMY_ROLE_OUTLINE.strip() if create_outline else "",
+            [],
+        )
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
@@ -210,7 +149,7 @@ class DummyPlaybookExplanationPipeline(
         super().__init__(config=config)
 
     def invoke(self, params: PlaybookExplanationParameters) -> PlaybookExplanationResponse:
-        return EXPLANATION
+        return DUMMY_EXPLANATION
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
@@ -228,7 +167,7 @@ class DummyRoleExplanationPipeline(DummyMetaData, ModelPipelineRoleExplanation[D
         super().__init__(config=config)
 
     def invoke(self, params: RoleExplanationParameters) -> RoleExplanationResponse:
-        return ROLE_EXPLANATION
+        return DUMMY_ROLE_EXPLANATION
 
     def self_test(self) -> HealthCheckSummary:
         return HealthCheckSummary(
