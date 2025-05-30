@@ -81,6 +81,8 @@ MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
+WCA_REQUEST_USER_UUID_HEADER = "X-Request-LightspeedUser"
+
 # from django_prometheus.middleware.DEFAULT_LATENCY_BUCKETS
 DEFAULT_LATENCY_BUCKETS = (
     0.01,
@@ -284,7 +286,7 @@ class WCABasePipeline(
 
     @abstractmethod
     def get_request_headers(
-        self, api_key: str, identifier: Optional[str]
+        self, api_key: str, identifier: Optional[str], lightspeed_user_uuid: Optional[str] = None
     ) -> dict[str, Optional[str]]:
         raise NotImplementedError
 
@@ -318,7 +320,19 @@ class WCABaseCompletionsPipeline(
         try:
             api_key = self.get_api_key(request.user)
             model_id = self.get_model_id(request.user, model_id)
-            result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
+
+            lightspeed_user_uuid_str: Optional[str] = None
+
+            if request.user and hasattr(request.user, "uuid"):
+                lightspeed_user_uuid_str = str(request.user.uuid)
+
+            headers = self.get_request_headers(
+                api_key, suggestion_id, lightspeed_user_uuid=lightspeed_user_uuid_str
+            )
+
+            result = self.infer_from_parameters(
+                api_key, model_id, context, prompt, suggestion_id, headers
+            )
 
             response = result.json()
             response["model_id"] = model_id
@@ -328,14 +342,15 @@ class WCABaseCompletionsPipeline(
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+    def infer_from_parameters(
+        self, api_key, model_id, context, prompt, suggestion_id=None, headers=None
+    ):
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
-        headers = self.get_request_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
         prediction_url = f"{self.config.inference_url}/v1/wca/codegen/ansible"
 
