@@ -23,8 +23,8 @@ from django.apps import apps
 from django.test import override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import BaseConfig
-from ansible_ai_connect.ai.api.model_pipelines.dummy.pipelines import ROLE_FILES
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    DUMMY_ROLE_FILES,
     ModelPipelineRoleGeneration,
     RoleGenerationParameters,
     RoleGenerationResponse,
@@ -94,7 +94,7 @@ class TestRoleGenerationView(
             roleGenEvent = segment_events[0]
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data)
-        self.assertEqual(r.data["files"], ROLE_FILES)
+        self.assertEqual(r.data["files"], DUMMY_ROLE_FILES)
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
         self.assertEqual(r.data["outline"], "")
