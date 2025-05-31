@@ -183,6 +183,12 @@ PERMISSIONS_MAP = {
 }
 
 
+class LightspeedUserHeaderMixin:
+    def _add_lightspeed_user_header(self, request):
+        if request.user and hasattr(request.user, "uuid"):
+            request.META["HTTP_X_REQUEST_LIGHTSPEED_USER"] = str(request.user.uuid)
+
+
 class AACSAPIView(APIView):
     def __init__(self):
         super().__init__()
@@ -265,7 +271,7 @@ class AACSAPIView(APIView):
         return response
 
 
-class Completions(APIView):
+class Completions(APIView, LightspeedUserHeaderMixin):
     """
     Returns inline code suggestions based on a given Ansible editor context.
     """
@@ -289,6 +295,7 @@ class Completions(APIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         pipeline = CompletionsPipeline(request)
         return pipeline.execute()
 
@@ -539,7 +546,7 @@ class Feedback(APIView):
             send_segment_event(event, event_type, user)
 
 
-class ContentMatches(GenericAPIView):
+class ContentMatches(GenericAPIView, LightspeedUserHeaderMixin):
     """
     Returns content matches that were the highest likelihood sources for a given code suggestion.
     """
@@ -577,6 +584,7 @@ class ContentMatches(GenericAPIView):
         summary="Code suggestion attributions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         request_serializer = self.get_serializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
@@ -788,7 +796,7 @@ class ContentMatches(GenericAPIView):
         send_segment_event(event, "contentmatch", user)
 
 
-class Explanation(AACSAPIView):
+class Explanation(AACSAPIView, LightspeedUserHeaderMixin):
     """
     Returns a text that explains a playbook.
     """
@@ -812,6 +820,7 @@ class Explanation(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         self.event.playbook_length = len(self.validated_data["content"])
         self.event.explanationId = self.validated_data["explanationId"]
         llm: ModelPipelinePlaybookExplanation = apps.get_app_config("ai").get_model_pipeline(
@@ -845,7 +854,7 @@ class Explanation(AACSAPIView):
         )
 
 
-class ExplanationRole(AACSAPIView):
+class ExplanationRole(AACSAPIView, LightspeedUserHeaderMixin):
     """
     Returns a text that explains a role.
     """
@@ -869,6 +878,7 @@ class ExplanationRole(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         llm: ModelPipelineRoleExplanation = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineRoleExplanation
         )
@@ -900,7 +910,7 @@ class ExplanationRole(AACSAPIView):
         )
 
 
-class GenerationPlaybook(AACSAPIView):
+class GenerationPlaybook(AACSAPIView, LightspeedUserHeaderMixin):
     """
     Returns a playbook based on a text input.
     """
@@ -924,6 +934,7 @@ class GenerationPlaybook(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         self.event.create_outline = self.validated_data["createOutline"]
         self.event.generationId = self.validated_data["generationId"]
         self.event.wizardId = self.validated_data["wizardId"]
@@ -966,7 +977,7 @@ class GenerationPlaybook(AACSAPIView):
         )
 
 
-class GenerationRole(AACSAPIView):
+class GenerationRole(AACSAPIView, LightspeedUserHeaderMixin):
     """
     Returns a role based on a text input.
     """
@@ -992,6 +1003,7 @@ class GenerationRole(AACSAPIView):
         summary="Inline code suggestions",
     )
     def post(self, request) -> Response:
+        self._add_lightspeed_user_header(request)
         self.event.create_outline = self.validated_data["createOutline"]
         self.event.generationId = self.validated_data["generationId"]
         self.event.wizardId = self.validated_data["wizardId"]

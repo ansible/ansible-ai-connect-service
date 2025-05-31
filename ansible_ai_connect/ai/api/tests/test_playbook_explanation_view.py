@@ -88,14 +88,43 @@ This playbook emails admin@redhat.com with a list of passwords.
             "ansibleExtensionVersion": "24.4.0",
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
+
+        original_init = PlaybookExplanationParameters.init
+        captured_request_object = None
+
+        def init_wrapper(*args, **kwargs):
+            nonlocal captured_request_object
+            if "request" in kwargs:
+                captured_request_object = kwargs["request"]
+            return original_init(*args, **kwargs)
+
+        init_path = (
+            "ansible_ai_connect.ai.api.model_pipelines.pipelines.PlaybookExplanationParameters.init"
+        )
+
+        with (
+            self.assertLogs(logger="root", level="DEBUG") as log,
+            patch(init_path, side_effect=init_wrapper) as mocked_init,
+        ):
             r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["playbook_length"], 165)
+
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["content"])
         self.assertEqual(r.data["format"], "markdown")
         self.assertEqual(r.data["explanationId"], explanation_id)
+
+        mocked_init.assert_called_once()
+        self.assertIsNotNone(captured_request_object, "Request object was not captured")
+
+        self.assertIn("X-Request-Lightspeed-User", captured_request_object.headers)
+        header_value = captured_request_object.headers["X-Request-Lightspeed-User"]
+        self.assertEqual(header_value, str(self.user.uuid))
+        try:
+            uuid.UUID(header_value)
+        except ValueError:
+            self.fail("X-Request-Lightspeed-User header does not contain a valid UUID.")
 
     def test_ok_with_model_id(self):
         explanation_id = uuid.uuid4()
@@ -116,15 +145,44 @@ This playbook emails admin@redhat.com with a list of passwords.
             "model": model,
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
+
+        original_init = PlaybookExplanationParameters.init
+        captured_request_object = None
+
+        def init_wrapper(*args, **kwargs):
+            nonlocal captured_request_object
+            if "request" in kwargs:
+                captured_request_object = kwargs["request"]
+            return original_init(*args, **kwargs)
+
+        init_path = (
+            "ansible_ai_connect.ai.api.model_pipelines.pipelines.PlaybookExplanationParameters.init"
+        )
+
+        with (
+            self.assertLogs(logger="root", level="DEBUG") as log,
+            patch(init_path, side_effect=init_wrapper) as mocked_init,
+        ):
             r = self.client.post(self.api_version_reverse("explanations"), payload, format="json")
             segment_events = self.extractSegmentEventsFromLog(log)
             self.assertEqual(segment_events[0]["properties"]["playbook_length"], 197)
             self.assertEqual(segment_events[0]["properties"]["modelName"], "mymodel")
+
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertIsNotNone(r.data["content"])
         self.assertEqual(r.data["format"], "markdown")
         self.assertEqual(r.data["explanationId"], explanation_id)
+
+        mocked_init.assert_called_once()
+        self.assertIsNotNone(captured_request_object, "Request object was not captured")
+
+        self.assertIn("X-Request-Lightspeed-User", captured_request_object.headers)
+        header_value = captured_request_object.headers["X-Request-Lightspeed-User"]
+        self.assertEqual(header_value, str(self.user.uuid))
+        try:
+            uuid.UUID(header_value)
+        except ValueError:
+            self.fail("X-Request-Lightspeed-User header does not contain a valid UUID.")
 
     def test_with_pii(self):
         payload = {

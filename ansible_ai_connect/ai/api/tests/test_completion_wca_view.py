@@ -43,6 +43,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaNoDefaultModelId,
     WcaUserTrialExpired,
 )
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import CompletionsParameters
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
     WCA_REQUEST_ID_HEADER,
@@ -103,21 +104,52 @@ class TestCompletionWCAView(
             200,
         )
         model_client, model_input = stub
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=model_client),
+
+        original_params_init = CompletionsParameters.init
+        captured_request_object = None
+
+        def params_init_wrapper(*args, **kwargs):
+            nonlocal captured_request_object
+            if "request" in kwargs:
+                captured_request_object = kwargs["request"]
+            return original_params_init(*args, **kwargs)
+
+        params_init_path = (
+            "ansible_ai_connect.ai.api.model_pipelines.pipelines.CompletionsParameters.init"
+        )
+
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=model_client),
+            ),
+            patch(params_init_path, side_effect=params_init_wrapper) as mocked_init_params,
         ):
             r = self.client.post(self.api_version_reverse("completions"), model_input)
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            model_client.get_token.assert_called_once()
-            self.assertEqual(
-                model_client.session.post.call_args.args[0],
-                "http://localhost/v1/wca/codegen/ansible",
-            )
-            self.assertEqual(
-                model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
-            )
+
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        model_client.get_token.assert_called_once()
+        self.assertEqual(
+            model_client.session.post.call_args.args[0],
+            "http://localhost/v1/wca/codegen/ansible",
+        )
+        self.assertEqual(
+            model_client.session.post.call_args.kwargs["json"]["model_id"], "org-model-id"
+        )
+
+        # Assertions for X-Request-Lightspeed-User header
+        mocked_init_params.assert_called_once()
+        self.assertIsNotNone(
+            captured_request_object, "Request object was not captured by params init"
+        )
+        self.assertIn("X-Request-Lightspeed-User", captured_request_object.headers)
+        header_value = captured_request_object.headers["X-Request-Lightspeed-User"]
+        self.assertEqual(header_value, str(self.user.uuid))
+        try:
+            uuid.UUID(header_value)
+        except ValueError:
+            self.fail("X-Request-Lightspeed-User header does not contain a valid UUID.")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
