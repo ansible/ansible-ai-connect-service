@@ -525,19 +525,20 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
         response = Mock
         response.text = (
             '{"name": "foo_bar", "outline": "Ahh!", "files": [{"path": '
-            '"roles/foo_bar/tasks/main.yml", "content": "some content", '
+            '"roles/foo_bar/tasks/main.yml", "content": "- package:\\n    name: emacs", '
             '"file_type": "task"}, {"path": "roles/foo_bar/defaults/main.yml", '
-            '"content": "some content", "file_type": "default"}], "warnings": []}'
+            '"content": "my_var: some content", "file_type": "default"}], "warnings": []}'
         )
         response.status_code = 200
         response.headers = {WCA_REQUEST_ID_HEADER: WCA_REQUEST_ID_HEADER}
         response.raise_for_status = Mock()
         wca_client.session.post.return_value = response
         self.wca_client = wca_client
+        self.mock_ansible_lint_caller_with(None)
 
     @assert_call_count_metrics(metric=wca_codegen_role_hist)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    def test_role_gen_with_lint(self):
+    def test_role_gen_with_lint_mocked(self):
         fake_linter = Mock()
         fake_linter.run_linter.return_value = "I'm super fake!"
         self.mock_ansible_lint_caller_with(fake_linter)
@@ -550,12 +551,13 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
         self.assertEqual(outline, "Ahh!")
         self.assertEqual(warnings, [])
         for file in files:
+            if file["file_type"] != "task":
+                continue
             self.assertEqual(file["content"], "I'm super fake!")
 
     @assert_call_count_metrics(metric=wca_codegen_role_hist)
-    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    def test_role_gen_when_is_not_initialized(self):
-        self.mock_ansible_lint_caller_with(None)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
+    def test_role_gen_when_is_off(self):
         name, files, outline, warnings = self.wca_client.invoke(
             RoleGenerationParameters.init(
                 request=Mock(), text="Install Wordpress", create_outline=True
@@ -565,7 +567,25 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
         self.assertEqual(outline, "Ahh!")
         self.assertEqual(warnings, [])
         for file in files:
-            self.assertEqual(file["content"], "some content")
+            if file["file_type"] != "task":
+                continue
+            self.assertEqual(file["content"], "- package:\n    name: emacs")
+
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
+    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
+    def test_role_gen_when_is_on(self):
+        name, files, outline, warnings = self.wca_client.invoke(
+            RoleGenerationParameters.init(
+                request=Mock(), text="Install Wordpress", create_outline=True
+            )
+        )
+        self.assertEqual(name, "foo_bar")
+        self.assertEqual(outline, "Ahh!")
+        self.assertEqual(warnings, [])
+        for file in files:
+            if file["file_type"] != "task":
+                continue
+            self.assertEqual(file["content"], "---\n- ansible.builtin.package:\n    name: emacs\n")
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
