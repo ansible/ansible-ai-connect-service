@@ -85,10 +85,7 @@ include = [
   "ansible_ai_connect/ai/api/model_pipelines/langchain/pipelines.py",
   "ansible_ai_connect/ai/api/model_pipelines/llamacpp/pipelines.py",
   "ansible_ai_connect/ai/api/model_pipelines/ollama/pipelines.py",
-  "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_base.py",
-  "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_dummy.py",
-  "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_saas.py",
-  "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_onprem.py",
+  "ansible_ai_connect/ai/api/model_pipelines/wca",
   "ansible_ai_connect/users/authz_checker.py",
   "ansible_ai_connect/main/settings/legacy.py",
   "ansible_ai_connect/ansible_lint"
@@ -98,5 +95,4 @@ exclude = ["**/test_*.py", "ansible_ai_connect/*/migrations/*.py"]
 reportMissingImports = true
 reportMissingTypeStubs = false
 
-pythonVersion = "3.11"
 pythonPlatform = "Linux"
