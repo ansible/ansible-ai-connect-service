@@ -605,6 +605,8 @@ class WCABaseRoleGenerationPipeline(
         ai_config = cast(AiConfig, apps.get_app_config("ai"))
         if ansible_lint_caller := ai_config.get_ansible_lint_caller():
             for file in files:
+                if file["file_type"] != "task":
+                    continue
                 file["content"] = ansible_lint_caller.run_linter(file["content"])
 
         return name, files, outline, warnings
