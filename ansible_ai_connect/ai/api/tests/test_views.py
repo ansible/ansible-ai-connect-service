@@ -1244,29 +1244,6 @@ class TestGenerationView(
         self.assertEqual(r.data["format"], "plaintext")
         self.assertEqual(r.data["generationId"], generation_id)
 
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_with_pii(self):
-        payload = {
-            "text": "Install nginx on RHEL9 jean-marc@redhat.com",
-            "generationId": str(uuid.uuid4()),
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        mocked_client = Mock()
-        mocked_client.invoke.return_value = ("foo", "bar", [])
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=mocked_client),
-        ):
-            self.client.force_authenticate(user=self.user)
-            self.client.post(
-                self.api_version_reverse("generations/playbook"), payload, format="json"
-            )
-
-        args: PlaybookGenerationParameters = mocked_client.invoke.call_args[0][0]
-        self.assertFalse(args.create_outline)
-        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
-
     def test_unauthorized(self):
         generation_id = str(uuid.uuid4())
         payload = {
@@ -1371,7 +1348,6 @@ class TestGenerationView(
         self.assertEqual(
             args.custom_prompt, "You are an Ansible expert. Explain {goal} with {outline}."
         )
-        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_with_custom_prompt_blank(self):
@@ -1480,7 +1456,6 @@ class TestGenerationView(
         self.assertFalse(args.create_outline)
         self.assertEqual(args.outline, "")
         self.assertEqual(args.custom_prompt, "You are an Ansible expert. Explain {goal}.")
-        self.assertEqual(args.text, "Install nginx on RHEL9 isabella13@example.com")
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("wca"))

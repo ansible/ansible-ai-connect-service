@@ -19,7 +19,6 @@ import uuid
 
 from ansible_anonymizer import anonymizer
 from django.conf import settings
-from django.http import QueryDict
 from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
@@ -49,16 +48,6 @@ def on_segment_analytics_error(error, _):
     logger.error(f"An error occurred in sending analytics data to Segment: {error}")
 
 
-def anonymize_request_data(data):
-    if isinstance(data, QueryDict):
-        # See: https://github.com/ansible/ansible-wisdom-service/pull/201#issuecomment-1483015431  # noqa: E501
-        new_data = data.copy()
-        new_data.update(anonymizer.anonymize_struct(data.dict()))
-    else:
-        new_data = anonymizer.anonymize_struct(data)
-    return new_data
-
-
 class SegmentMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -80,6 +69,7 @@ class SegmentMiddleware:
                 # segment_analytics_telemetry.send = False # for code development only
                 segment_analytics_telemetry.on_error = on_segment_analytics_error
 
+        request_data = None
         if settings.SEGMENT_WRITE_KEY:
             if not analytics.write_key:
                 analytics.write_key = settings.SEGMENT_WRITE_KEY
@@ -90,20 +80,13 @@ class SegmentMiddleware:
 
             if request.path in self._api_completions_paths() and request.method == "POST":
                 if request.content_type == "application/json":
-                    try:
-                        request_data = (
-                            json.loads(request.body.decode("utf-8")) if request.body else {}
-                        )
-                        request_data = anonymize_request_data(request_data)
-                    except Exception:  # when an invalid json or an invalid encoding is detected
-                        request_data = {}
-                else:
-                    request_data = anonymize_request_data(request.POST)
+                    request_data = (
+                        json.loads(request.body.decode("utf-8")) if request.body else {}
+                    )
 
         response = self.get_response(request)
 
-        if settings.SEGMENT_WRITE_KEY:
-            if request.path in self._api_completions_paths() and request.method == "POST":
+        if settings.SEGMENT_WRITE_KEY and request_data:
                 request_suggestion_id = getattr(
                     request, "_suggestion_id", request_data.get("suggestionId")
                 )
@@ -156,7 +139,7 @@ class SegmentMiddleware:
                     "taskCount": len(tasks),
                 }
 
-                send_segment_event(event, "completion", request.user)
+                send_segment_event(anonymizer.anonymize_struct(event), "completion", request.user)
 
                 # Collect analytics telemetry, when tasks exist.
                 if len(tasks) > 0:
