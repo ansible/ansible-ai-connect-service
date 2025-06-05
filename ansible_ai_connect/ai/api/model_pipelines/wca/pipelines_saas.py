@@ -57,7 +57,6 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_saas import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     MODEL_MESH_HEALTH_CHECK_TOKENS,
     WCA_REQUEST_ID_HEADER,
-    WCA_REQUEST_USER_UUID_HEADER,
     WCABaseCompletionsPipeline,
     WCABaseContentMatchPipeline,
     WCABaseMetaData,
@@ -230,13 +229,12 @@ class WCASaaSPipeline(
         super().__init__(config=config)
 
     def get_request_headers(
-        self, api_key: str, identifier: Optional[str], lightspeed_user_uuid: Optional[str] = None
+        self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
         base_headers = self._get_base_headers(api_key)
         return {
             **base_headers,
             WCA_REQUEST_ID_HEADER: str(identifier) if identifier else None,
-            WCA_REQUEST_USER_UUID_HEADER: lightspeed_user_uuid if lightspeed_user_uuid else None,
         }
 
     def _get_base_headers(self, api_key: str) -> dict[str, str]:
