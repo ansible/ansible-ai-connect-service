@@ -47,6 +47,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_onprem import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
+    WCA_REQUEST_USER_UUID_HEADER,
     WCABaseCompletionsPipeline,
     WCABaseContentMatchPipeline,
     WCABaseMetaData,
@@ -114,12 +115,13 @@ class WCAOnPremPipeline(
         # User may provide an override value if the setting is not defined.
 
     def get_request_headers(
-        self, api_key: str, identifier: Optional[str]
+        self, api_key: str, identifier: Optional[str], lightspeed_user_uuid: Optional[str] = None
     ) -> dict[str, Optional[str]]:
         base_headers = self._get_base_headers(api_key)
         return {
             **base_headers,
             WCA_REQUEST_ID_HEADER: str(identifier) if identifier else None,
+            WCA_REQUEST_USER_UUID_HEADER: lightspeed_user_uuid if lightspeed_user_uuid else None,
         }
 
     def _get_base_headers(self, api_key: str) -> dict[str, str]:
@@ -150,11 +152,14 @@ class WCAOnPremCompletionsPipeline(
             }
         )
         try:
+            headers = self.get_request_headers(wca_api_key, None)
+
             self.infer_from_parameters(
-                wca_api_key,
                 wca_model_id,
                 "",
                 "- name: install ffmpeg on Red Hat Enterprise Linux",
+                None,
+                headers,
             )
         except Exception as e:
             logger.exception(str(e))

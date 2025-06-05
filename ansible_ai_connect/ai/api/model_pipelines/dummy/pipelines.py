@@ -83,7 +83,7 @@ class DummyCompletionsPipeline(DummyMetaData, ModelPipelineCompletions[DummyConf
         response_body["model_id"] = "_"
         return response_body
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+    def infer_from_parameters(self, model_id, context, prompt, suggestion_id=None, headers=None):
         raise NotImplementedError
 
     def self_test(self) -> HealthCheckSummary:
