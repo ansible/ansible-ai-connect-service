@@ -17,6 +17,8 @@ import re
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
+import requests
+
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
     WcaCloudflareRejection,
@@ -91,7 +93,7 @@ class TokenResponseChecks(Checks[TokenContext]):
 
 
 class Context:
-    def __init__(self, model_id, result, is_multi_task_prompt):
+    def __init__(self, model_id, result: requests.Response, is_multi_task_prompt):
         self.model_id = model_id
         self.result = result
         self.is_multi_task_prompt = is_multi_task_prompt
