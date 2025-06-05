@@ -58,7 +58,6 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     WCA_REQUEST_ID_HEADER,
-    WCA_REQUEST_USER_UUID_HEADER,
     ibm_cloud_identity_token_hist,
     ibm_cloud_identity_token_retry_counter,
     wca_codegen_hist,
@@ -847,7 +846,6 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
     ):
         model_id = "zavala"
         api_key = "abc123"
-        user_uuid = str(uuid.uuid4())
         context = ""
         prompt = prompt if prompt else "- name: install ffmpeg on Red Hat Enterprise Linux"
 
@@ -876,14 +874,13 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         response = MockResponse(
             json=predictions,
             status_code=200,
-            headers={WCA_REQUEST_ID_HEADER: request_id, WCA_REQUEST_USER_UUID_HEADER: user_uuid},
+            headers={WCA_REQUEST_ID_HEADER: request_id},
         )
 
         requestHeaders = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token['access_token']}",
             WCA_REQUEST_ID_HEADER: suggestion_id,
-            WCA_REQUEST_USER_UUID_HEADER: user_uuid,
         }
 
         model_client = WCASaaSCompletionsPipeline(self.config)
@@ -892,13 +889,9 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         model_client.get_model_id = Mock(return_value=model_id)
         model_client.get_api_key = Mock(return_value=api_key)
 
-        mock_request = Mock()
-        mock_request.user = Mock()
-        mock_request.user.uuid = user_uuid
-
         result = model_client.invoke(
             CompletionsParameters.init(
-                request=mock_request,
+                request=Mock(),
                 model_input=model_input,
                 model_id=model_id,
                 suggestion_id=suggestion_id,
@@ -1492,7 +1485,6 @@ class TestWCAClientOnPrem(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCas
 class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
     prompt = "- name: install ffmpeg on Red Hat Enterprise Linux"
     suggestion_id = "suggestion_id"
-    user_uuid = str(uuid.uuid4())
     token = base64.b64encode(bytes("username:12345", "ascii")).decode("ascii")
     codegen_data = {
         "model_id": "model-name",
@@ -1501,7 +1493,6 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
     request_headers = {
         "Authorization": f"ZenApiKey {token}",
         WCA_REQUEST_ID_HEADER: suggestion_id,
-        WCA_REQUEST_USER_UUID_HEADER: user_uuid,
     }
     model_input = {
         "instances": [
@@ -1528,13 +1519,9 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
         self.model_client.session.post = Mock(return_value=MockResponse(json={}, status_code=200))
 
     def test_headers(self):
-        mock_request = Mock()
-        mock_request.user = Mock()
-        mock_request.user.uuid = self.user_uuid
-
         self.model_client.invoke(
             CompletionsParameters.init(
-                request=mock_request, model_input=self.model_input, suggestion_id=self.suggestion_id
+                request=Mock(), model_input=self.model_input, suggestion_id=self.suggestion_id
             ),
         )
         self.model_client.session.post.assert_called_once_with(
@@ -1546,13 +1533,10 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
         )
 
     def test_disabled_model_server_ssl(self):
-        mock_request = Mock()
-        mock_request.user = Mock()
-        mock_request.user.uuid = self.user_uuid
         self.config.verify_ssl = False
         self.model_client.invoke(
             CompletionsParameters.init(
-                request=mock_request, model_input=self.model_input, suggestion_id=self.suggestion_id
+                request=Mock(), model_input=self.model_input, suggestion_id=self.suggestion_id
             ),
         )
         self.model_client.session.post.assert_called_once_with(

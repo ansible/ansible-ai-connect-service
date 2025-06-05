@@ -81,8 +81,6 @@ MODEL_MESH_HEALTH_CHECK_TOKENS = "tokens"
 
 WCA_REQUEST_ID_HEADER = "X-Request-ID"
 
-WCA_REQUEST_USER_UUID_HEADER = "X-Request-LightspeedUser"
-
 # from django_prometheus.middleware.DEFAULT_LATENCY_BUCKETS
 DEFAULT_LATENCY_BUCKETS = (
     0.01,
@@ -245,20 +243,6 @@ class WCABasePipeline(
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
-    def _prepare_request_headers(
-        self, request_user: Optional[User], api_key: str, identifier: Optional[str]
-    ) -> dict[str, Optional[str]]:
-        """
-        Helper method to extract user UUID and get request headers.
-        """
-        lightspeed_user_uuid_str: Optional[str] = None
-        if request_user and hasattr(request_user, "uuid"):
-            lightspeed_user_uuid_str = str(request_user.uuid)
-
-        return self.get_request_headers(
-            api_key, identifier, lightspeed_user_uuid=lightspeed_user_uuid_str
-        )
-
     @staticmethod
     def log_backoff_exception(details):
         _, exc, _ = sys.exc_info()
@@ -300,7 +284,7 @@ class WCABasePipeline(
 
     @abstractmethod
     def get_request_headers(
-        self, api_key: str, identifier: Optional[str], lightspeed_user_uuid: Optional[str] = None
+        self, api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
         raise NotImplementedError
 
@@ -334,12 +318,7 @@ class WCABaseCompletionsPipeline(
         try:
             api_key = self.get_api_key(request.user)
             model_id = self.get_model_id(request.user, model_id)
-
-            headers = self._prepare_request_headers(request.user, api_key, suggestion_id)
-
-            result = self.infer_from_parameters(
-                api_key, model_id, context, prompt, suggestion_id, headers
-            )
+            result = self.infer_from_parameters(api_key, model_id, context, prompt, suggestion_id)
 
             response = result.json()
             response["model_id"] = model_id
@@ -349,15 +328,14 @@ class WCABaseCompletionsPipeline(
         except requests.exceptions.Timeout:
             raise ModelTimeoutError(model_id=model_id)
 
-    def infer_from_parameters(
-        self, api_key, model_id, context, prompt, suggestion_id=None, headers=None
-    ):
+    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
         }
         logger.debug(f"Inference API request payload: {json.dumps(data)}")
 
+        headers = self.get_request_headers(api_key, suggestion_id)
         task_count = len(get_task_names_from_prompt(prompt))
         prediction_url = f"{self.config.inference_url}/v1/wca/codegen/ansible"
 
@@ -493,8 +471,7 @@ class WCABasePlaybookGenerationPipeline(
         api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
-        headers = self._prepare_request_headers(request.user, api_key, generation_id)
-
+        headers = self.get_request_headers(api_key, generation_id)
         data = {
             "model_id": model_id,
             "text": text,
@@ -576,8 +553,7 @@ class WCABaseRoleGenerationPipeline(
         api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
-        headers = self._prepare_request_headers(request.user, api_key, generation_id)
-
+        headers = self.get_request_headers(api_key, generation_id)
         data = {
             "model_id": model_id,
             "text": text,
@@ -658,8 +634,7 @@ class WCABasePlaybookExplanationPipeline(
         api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
-        headers = self._prepare_request_headers(request.user, api_key, explanation_id)
-
+        headers = self.get_request_headers(api_key, explanation_id)
         data = {
             "model_id": model_id,
             "playbook": content,
@@ -721,8 +696,7 @@ class WCABaseRoleExplanationPipeline(
         api_key = self.get_api_key(request.user)
         model_id = self.get_model_id(request.user, model_id)
 
-        headers = self._prepare_request_headers(request.user, api_key, explanation_id)
-
+        headers = self.get_request_headers(api_key, explanation_id)
         data = {
             "role_name": params.role_name,
             "model_id": model_id,
