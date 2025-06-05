@@ -164,6 +164,8 @@ filelock==3.13.4
     # via
     #   ansible-lint
     #   ansible-risk-insight
+fire==0.7.0
+    # via -r requirements.in
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -268,7 +270,7 @@ langsmith==0.1.138
     #   langchain-core
 launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
-llama-stack-client==0.2.7
+llama-stack-client==0.2.9
     # via -r requirements.in
 markdown-it-py==3.0.0
     # via rich
@@ -519,7 +521,9 @@ tenacity==8.2.3
     #   langchain
     #   langchain-core
 termcolor==2.5.0
-    # via llama-stack-client
+    # via
+    #   fire
+    #   llama-stack-client
 tqdm==4.67.1
     # via llama-stack-client
 traitlets==5.14.3
