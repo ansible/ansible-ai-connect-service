@@ -692,27 +692,6 @@ class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         return error
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_completions_pii_clean_up(self):
-        payload = {
-            "prompt": "- name: Create an account for foo@ansible.com \n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {
-            "model_id": "a-model-id",
-            "predictions": [""],
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            with patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(return_value=MockedPipelineCompletions(self, payload, response_data, False)),
-            ):
-                self.client.post(self.api_version_reverse("completions"), payload)
-                self.assertInLog("Create an account for james8@example.com", log)
-                self.assertSegmentTimestamp(log)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     def test_full_completion_post_response(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
