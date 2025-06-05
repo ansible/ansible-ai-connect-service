@@ -126,24 +126,6 @@ This playbook emails admin@redhat.com with a list of passwords.
         self.assertEqual(r.data["format"], "markdown")
         self.assertEqual(r.data["explanationId"], explanation_id)
 
-    def test_with_pii(self):
-        payload = {
-            "content": "marc-anthony@bar.foo",
-            "ansibleExtensionVersion": "24.4.0",
-        }
-        mocked_client = Mock()
-        mocked_client.invoke.return_value = "foo"
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=mocked_client),
-        ):
-            self.client.force_authenticate(user=self.user)
-            self.client.post(self.api_version_reverse("explanations"), payload, format="json")
-
-        args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
-        self.assertEqual(args.content, "william10@example.com")
-
     def test_unauthorized(self):
         explanation_id = str(uuid.uuid4())
         payload = {
@@ -261,7 +243,6 @@ This playbook emails admin@redhat.com with a list of passwords.
             self.client.post(self.api_version_reverse("explanations"), payload, format="json")
 
         args: PlaybookExplanationParameters = mocked_client.invoke.call_args[0][0]
-        self.assertEqual(args.content, "william10@example.com")
         self.assertEqual(args.custom_prompt, "Please explain this {playbook}")
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)

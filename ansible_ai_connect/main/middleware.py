@@ -19,7 +19,6 @@ import uuid
 
 from ansible_anonymizer import anonymizer
 from django.conf import settings
-from django.http import QueryDict
 from rest_framework.exceptions import ErrorDetail
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
@@ -49,16 +48,6 @@ def on_segment_analytics_error(error, _):
     logger.error(f"An error occurred in sending analytics data to Segment: {error}")
 
 
-def anonymize_request_data(data):
-    if isinstance(data, QueryDict):
-        # See: https://github.com/ansible/ansible-wisdom-service/pull/201#issuecomment-1483015431  # noqa: E501
-        new_data = data.copy()
-        new_data.update(anonymizer.anonymize_struct(data.dict()))
-    else:
-        new_data = anonymizer.anonymize_struct(data)
-    return new_data
-
-
 class SegmentMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -80,6 +69,7 @@ class SegmentMiddleware:
                 # segment_analytics_telemetry.send = False # for code development only
                 segment_analytics_telemetry.on_error = on_segment_analytics_error
 
+        request_data = {}
         if settings.SEGMENT_WRITE_KEY:
             if not analytics.write_key:
                 analytics.write_key = settings.SEGMENT_WRITE_KEY
@@ -91,14 +81,12 @@ class SegmentMiddleware:
             if request.path in self._api_completions_paths() and request.method == "POST":
                 if request.content_type == "application/json":
                     try:
-                        request_data = (
-                            json.loads(request.body.decode("utf-8")) if request.body else {}
-                        )
-                        request_data = anonymize_request_data(request_data)
-                    except Exception:  # when an invalid json or an invalid encoding is detected
+                        request_data = json.loads(request.body) if request.body else {}
+                    except json.decoder.JSONDecodeError:
+                        logger.error(f"Cannot parse: {request.body=}")
                         request_data = {}
                 else:
-                    request_data = anonymize_request_data(request.POST)
+                    request_data = request.POST
 
         response = self.get_response(request)
 
@@ -135,23 +123,25 @@ class SegmentMiddleware:
                 tasks = getattr(response, "tasks", [])
                 event = {
                     "duration": duration,
-                    "request": {"context": context, "prompt": prompt},
-                    "response": {
-                        "exception": getattr(response, "exception", None),
-                        # See main.exception_handler.exception_handler_with_error_type
-                        # That extracts 'default_code' from Exceptions and stores it
-                        # in the Response.
-                        "error_type": getattr(response, "error_type", None),
-                        "message": message,
-                        "predictions": predictions,
-                        "status_code": response.status_code,
-                        "status_text": getattr(response, "status_text", None),
-                    },
+                    "request": anonymizer.anonymize_struct({"context": context, "prompt": prompt}),
+                    "response": anonymizer.anonymize_struct(
+                        {
+                            "exception": getattr(response, "exception", None),
+                            # See main.exception_handler.exception_handler_with_error_type
+                            # That extracts 'default_code' from Exceptions and stores it
+                            # in the Response.
+                            "error_type": getattr(response, "error_type", None),
+                            "message": message,
+                            "predictions": predictions,
+                            "status_code": response.status_code,
+                            "status_text": getattr(response, "status_text", None),
+                        }
+                    ),
                     "suggestionId": request_suggestion_id,
-                    "metadata": metadata,
+                    "metadata": anonymizer.anonymize_struct(metadata),
                     "modelName": model_name,
                     "imageTags": version_info.image_tags,
-                    "tasks": tasks,
+                    "tasks": anonymizer.anonymize_struct(tasks),
                     "promptType": promptType,
                     "taskCount": len(tasks),
                 }

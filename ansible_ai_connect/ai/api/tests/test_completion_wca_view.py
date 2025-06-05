@@ -120,48 +120,6 @@ class TestCompletionWCAView(
             )
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ADDITIONAL_CONTEXT=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_wca_completion_anonymized_additional_context(self):
-        self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
-        self.client.force_authenticate(user=self.user)
-
-        stub = self.stub_wca_client(
-            200,
-        )
-        model_client, model_input = stub
-        model_input["metadata"] = {
-            "additionalContext": {
-                "playbookContext": {
-                    "varInfiles": {
-                        "vars.yml": "external_var_1: value1\n"
-                        "external_var_2: value2\n"
-                        "password: magic\n"
-                    },
-                    "roles": {},
-                    "includeVars": {},
-                },
-                "roleContext": {},
-                "standaloneTaskContext": {},
-            },
-        }
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(return_value=model_client),
-        ):
-            r = self.client.post(
-                self.api_version_reverse("completions"), model_input, format="json"
-            )
-            self.assertEqual(r.status_code, HTTPStatus.OK)
-            prompt = model_client.session.post.call_args.kwargs["json"]["prompt"]
-            self.assertTrue("external_var_1: value1" in prompt)
-            self.assertTrue("external_var_2: value2" in prompt)
-            self.assertTrue("password:" in prompt)
-            self.assertFalse("magic" in prompt)
-
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_seated_user_missing_api_key(self):
