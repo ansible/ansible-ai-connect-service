@@ -352,6 +352,10 @@ class WCABaseCompletionsPipeline(
     def infer_from_parameters(
         self, api_key, model_id, context, prompt, suggestion_id=None, headers=None
     ):
+        if not headers:
+            headers = self._prepare_request_headers(
+                request_user=None, api_key=api_key, identifier=suggestion_id
+            )
         data = {
             "model_id": model_id,
             "prompt": f"{context}{prompt}",
