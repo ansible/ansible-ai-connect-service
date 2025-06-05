@@ -218,7 +218,7 @@ def validate(api_key, model_id):
         ModelPipelineCompletions
     )
     model_mesh_client.infer_from_parameters(
-        api_key, model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
+        model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
     )
 
 

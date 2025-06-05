@@ -49,6 +49,10 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import REGISTRY_ENTRY
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
+    WCA_REQUEST_ID_HEADER,
+    WCA_REQUEST_USER_UUID_HEADER,
+)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremCompletionsPipeline,
 )
@@ -60,6 +64,8 @@ from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
     WisdomServiceLogAwareTestCase,
 )
+
+SELF_TEST_PROMPT = "- name: install ffmpeg on Red Hat Enterprise Linux"
 
 logger = logging.getLogger(__name__)
 
@@ -802,6 +808,21 @@ class TestHealthCheckWCAClient(BaseTestHealthCheckWCAClient):
                 else:
                     self.assertTrue(self.is_status_ok(dependency["status"], "wca"))
 
+            call_args = mock_wca_client.infer_from_parameters.call_args
+            self.assertIsNotNone(call_args)
+            args, kwargs = call_args
+            self.assertEqual(args[0], mock_wca_client.config.health_check_model_id)
+            self.assertEqual(args[1], "")
+            self.assertEqual(args[2], SELF_TEST_PROMPT)
+            self.assertIsNone(args[3])
+            self.assertIn("headers", kwargs)
+            self.assertIsInstance(kwargs["headers"], dict)
+            self.assertTrue(kwargs["headers"].get("Authorization", "").startswith("Bearer "))
+            self.assertIn(WCA_REQUEST_ID_HEADER, kwargs["headers"])
+            self.assertIsNone(kwargs["headers"][WCA_REQUEST_ID_HEADER])
+            self.assertIn(WCA_REQUEST_USER_UUID_HEADER, kwargs["headers"])
+            self.assertIsNone(kwargs["headers"][WCA_REQUEST_USER_UUID_HEADER])
+
     def test_health_check_wca_disabled(self):
         self._do_test_health_check_wca_disabled("wca")
 
@@ -898,6 +919,21 @@ class TestHealthCheckWCAOnPremClient(BaseTestHealthCheckWCAClient):
                     self.assertEqual(dependency["status"]["models"], "ok")
                 else:
                     self.assertTrue(self.is_status_ok(dependency["status"], "wca-onprem"))
+
+            call_args = mock_wca_client.infer_from_parameters.call_args
+            self.assertIsNotNone(call_args)
+            args, kwargs = call_args
+            self.assertEqual(args[0], mock_wca_client.config.health_check_model_id)
+            self.assertEqual(args[1], "")
+            self.assertEqual(args[2], SELF_TEST_PROMPT)
+            self.assertIsNone(args[3])
+            self.assertIsInstance(args[4], dict)
+            self.assertTrue(args[4].get("Authorization", "").startswith("ZenApiKey "))
+            self.assertIn(WCA_REQUEST_ID_HEADER, args[4])
+            self.assertIsNone(args[4][WCA_REQUEST_ID_HEADER])
+            self.assertIn(WCA_REQUEST_USER_UUID_HEADER, args[4])
+            self.assertIsNone(args[4][WCA_REQUEST_USER_UUID_HEADER])
+            self.assertEqual(kwargs, {})
 
     def test_health_check_wca_on_prem_disabled(self):
         self._do_test_health_check_wca_disabled("wca-onprem")

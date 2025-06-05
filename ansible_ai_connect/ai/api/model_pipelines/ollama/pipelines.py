@@ -53,7 +53,7 @@ class OllamaCompletionsPipeline(LangchainCompletionsPipeline[OllamaConfiguration
     def __init__(self, config: OllamaConfiguration):
         super().__init__(config=config)
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+    def infer_from_parameters(self, model_id, context, prompt, suggestion_id=None, headers=None):
         raise NotImplementedError
 
     def self_test(self) -> HealthCheckSummary:

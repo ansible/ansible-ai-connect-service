@@ -64,7 +64,7 @@ class NopCompletionsPipeline(NopMetaData, ModelPipelineCompletions[NopConfigurat
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
         raise FeatureNotAvailable
 
-    def infer_from_parameters(self, api_key, model_id, context, prompt, suggestion_id=None):
+    def infer_from_parameters(self, model_id, context, prompt, suggestion_id=None, headers=None):
         raise NotImplementedError
 
     def self_test(self) -> HealthCheckSummary:
