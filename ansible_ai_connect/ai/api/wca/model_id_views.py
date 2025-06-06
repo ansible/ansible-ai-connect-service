@@ -217,8 +217,15 @@ def validate(api_key, model_id):
     model_mesh_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
         ModelPipelineCompletions
     )
+    headers = model_mesh_client.get_request_headers(
+        api_key=api_key, identifier=None, lightspeed_user_uuid=None
+    )
     model_mesh_client.infer_from_parameters(
-        model_id, "", "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
+        model_id,
+        "",
+        "---\n- hosts: all\n  tasks:\n  - name: install ssh\n",
+        user=None,
+        headers=headers,
     )
 
 

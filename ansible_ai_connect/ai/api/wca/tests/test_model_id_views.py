@@ -47,6 +47,8 @@ from ansible_ai_connect.test_utils import (
     WisdomLogAwareMixin,
 )
 
+VALIDATE_PROMPT = "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
+
 
 @override_settings(DEPLOYMENT_MODE="saas")
 @override_settings(WCA_SECRET_BACKEND_TYPE="aws_sm")
@@ -183,6 +185,9 @@ class TestWCAModelIdView(
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
 
         # ModelId should initially not exist
@@ -192,7 +197,15 @@ class TestWCAModelIdView(
         mock_secret_manager.get_secret.assert_called_with(123, Suffixes.MODEL_ID)
 
         # Set ModelId
-        mock_secret_manager.get_secret.return_value = {"SecretString": "someAPIKey"}
+        api_key_value = "someAPIKey"
+        model_id_value = "secret_model_id"
+        mock_secret_manager.get_secret.return_value = {"SecretString": api_key_value}
+
+        expected_headers = {"Authorization": f"Bearer {api_key_value}", "X-Test-Header-Set": "true"}
+        mock_wca_client.get_request_headers.return_value = expected_headers
+        mock_wca_client.infer_from_parameters.reset_mock(side_effect=True)
+        mock_wca_client.infer_from_parameters.side_effect = None
+
         with self.assertLogs(logger="ansible_ai_connect.users.signals", level="DEBUG") as signals:
             with self.assertLogs(logger="root", level="DEBUG") as log:
                 r = self.client.post(
@@ -202,8 +215,19 @@ class TestWCAModelIdView(
                 )
 
                 self.assertEqual(r.status_code, HTTPStatus.NO_CONTENT)
+
+                mock_wca_client.get_request_headers.assert_called_once_with(
+                    api_key=api_key_value, identifier=None, lightspeed_user_uuid=None
+                )
+                mock_wca_client.infer_from_parameters.assert_called_once_with(
+                    model_id_value,
+                    "",
+                    VALIDATE_PROMPT,
+                    user=None,
+                    headers=expected_headers,
+                )
                 mock_secret_manager.save_secret.assert_called_with(
-                    123, Suffixes.MODEL_ID, "secret_model_id"
+                    123, Suffixes.MODEL_ID, model_id_value
                 )
                 self.assert_segment_log(log, "modelIdSet", None)
 
@@ -432,18 +456,45 @@ class TestWCAModelIdValidatorView(
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
+        mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+            ModelPipelineCompletions
+        )
         self.client.force_authenticate(user=self.user)
 
-        def mock_get_secret_model_id(*args, **kwargs):
-            if args[1] == Suffixes.API_KEY:
-                return {"SecretString": "some_api_key"}
-            return {"SecretString": "model_id"}
+        api_key_value = "some_api_key_for_validate"
+        model_id_value = "model_id_for_validate"
 
-        mock_secret_manager.get_secret.side_effect = mock_get_secret_model_id
+        def mock_get_secret_side_effect(*args, **kwargs):
+            if args[1] == Suffixes.API_KEY:
+                return {"SecretString": api_key_value}
+            if args[1] == Suffixes.MODEL_ID:
+                return {"SecretString": model_id_value}
+            return None
+
+        mock_secret_manager.get_secret.side_effect = mock_get_secret_side_effect
+
+        expected_headers = {
+            "Authorization": f"Bearer {api_key_value}",
+            "X-Test-Header-Validate": "true",
+        }
+        mock_wca_client.get_request_headers.return_value = expected_headers
+        mock_wca_client.infer_from_parameters.reset_mock(side_effect=True)
+        mock_wca_client.infer_from_parameters.side_effect = None
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
             self.assertEqual(r.status_code, HTTPStatus.OK)
+
+            mock_wca_client.get_request_headers.assert_called_once_with(
+                api_key=api_key_value, identifier=None, lightspeed_user_uuid=None
+            )
+            mock_wca_client.infer_from_parameters.assert_called_once_with(
+                model_id_value,
+                "",
+                VALIDATE_PROMPT,
+                user=None,
+                headers=expected_headers,
+            )
             self.assert_segment_log(log, "modelIdValidate", None)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
