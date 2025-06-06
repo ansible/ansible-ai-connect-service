@@ -67,10 +67,10 @@ class TestMiddleware(
         }
         expected = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n"
-            "    - name: Install Apache for james8@example.com\n",
+            "    - name: Install Apache for foo@ansible.com\n",
             "suggestionId": suggestionId,
             "metadata": {
-                "documentUri": "file:///Users/ano-user/ansible/roles/apache/tasks/main.yml",
+                "documentUri": "file:///Users/username/ansible/roles/apache/tasks/main.yml",
                 "activityId": activityId,
             },
         }
@@ -95,8 +95,6 @@ class TestMiddleware(
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
-                self.assertInLog("james8@example.com", log)
-                self.assertInLog("ano-user", log)
 
                 segment_events = self.extractSegmentEventsFromLog(log)
                 self.assertTrue(len(segment_events) > 0)
@@ -137,8 +135,6 @@ class TestMiddleware(
                 self.assertInLog("'event': 'prediction',", log)
                 self.assertInLog("'event': 'postprocess',", log)
                 self.assertInLog("'event': 'completion',", log)
-                self.assertInLog("james8@example.com", log)
-                self.assertInLog("ano-user", log)
                 self.assertSegmentTimestamp(log)
 
             with self.assertLogs(logger="root", level="DEBUG") as log:

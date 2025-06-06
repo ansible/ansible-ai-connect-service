@@ -30,11 +30,6 @@ from drf_spectacular.utils import (
 from rest_framework import serializers
 
 from . import formatter as fmtr
-from .fields import (
-    AnonymizedAdditionalContextField,
-    AnonymizedCharField,
-    AnonymizedPromptCharField,
-)
 
 
 class Metadata(serializers.Serializer):
@@ -59,7 +54,7 @@ class CompletionMetadata(Metadata):
             "ansibleExtensionVersion",
         ]
 
-    documentUri = AnonymizedCharField(required=False)
+    documentUri = serializers.CharField(required=False)
     activityId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
@@ -71,7 +66,7 @@ class CompletionMetadata(Metadata):
         label="Ansible File Type",
         help_text="Ansible file type (playbook/tasks_in_role/tasks)",
     )
-    additionalContext = AnonymizedAdditionalContextField(
+    additionalContext = serializers.DictField(
         required=False,
         label="Additional Context",
         help_text="Additional context for completion API",
@@ -94,7 +89,7 @@ class CompletionMetadata(Metadata):
 )
 class CompletionRequestSerializer(Metadata):
 
-    prompt = AnonymizedPromptCharField(
+    prompt = serializers.CharField(
         trim_whitespace=False,
         required=True,
         label="Prompt",
@@ -194,9 +189,9 @@ class InlineSuggestionFeedback(serializers.Serializer):
     USER_ACTION_CHOICES = (("0", "ACCEPTED"), ("1", "REJECTED"), ("2", "IGNORED"))
 
     userActionTime = serializers.FloatField(required=False)
-    documentUri = AnonymizedCharField(required=False)
+    documentUri = serializers.CharField(required=False)
     action = serializers.ChoiceField(choices=USER_ACTION_CHOICES)
-    error = AnonymizedCharField(required=False)
+    error = serializers.CharField(required=False)
     suggestionId = serializers.UUIDField(
         format="hex_verbose",
         required=True,
@@ -439,7 +434,7 @@ class FeedbackRequestSerializer(Metadata):
 
 class ExplanationRequestSerializer(Metadata):
 
-    content = AnonymizedCharField(
+    content = serializers.CharField(
         required=True,
         label="Playbook content",
         help_text=("The playbook that needs to be explained."),
@@ -489,7 +484,7 @@ class ExplanationResponseSerializer(serializers.Serializer):
 
 
 class GenerationPlaybookRequestSerializer(serializers.Serializer):
-    text = AnonymizedCharField(
+    text = serializers.CharField(
         required=True,
         label="Description content",
         help_text=("The description that needs to be converted to a playbook."),
@@ -517,7 +512,7 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
             "of the Ansible Playbook."
         ),
     )
-    outline = AnonymizedCharField(
+    outline = serializers.CharField(
         required=False,
         label="outline",
         help_text="A long step by step outline of the expected Ansible Playbook.",
@@ -553,14 +548,14 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
 
 
 class GenerationRoleRequestSerializer(serializers.Serializer):
-    name = AnonymizedCharField(
+    name = serializers.CharField(
         required=False,
         allow_blank=True,
         default="",
         label="the name of the role",
         help_text=("You can force a specific role name for the role with this key."),
     )
-    text = AnonymizedCharField(
+    text = serializers.CharField(
         required=True,
         label="the goal of the role",
         help_text=(
@@ -568,7 +563,7 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
             "as appropriate, and reject input above a certain HAP threshold."
         ),
     )
-    outline = AnonymizedCharField(
+    outline = serializers.CharField(
         required=False,
         label="an outline of the role",
         help_text="An outline of the role should be a numbered list.",
@@ -690,7 +685,7 @@ class ExplanationRoleRequestSerializer(Metadata):
 
 
 class ContentMatchRequestSerializer(Metadata):
-    suggestions = serializers.ListField(child=AnonymizedCharField(trim_whitespace=False))
+    suggestions = serializers.ListField(child=serializers.CharField(trim_whitespace=False))
     suggestionId = serializers.UUIDField(
         format="hex_verbose",
         required=False,

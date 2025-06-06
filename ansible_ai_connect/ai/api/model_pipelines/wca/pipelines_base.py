@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import copy
 import json
 import logging
 import sys
@@ -20,6 +21,7 @@ from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
 
 import backoff
 import requests
+from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
@@ -234,6 +236,14 @@ class WCABaseMetaData(
     def supports_ari_postprocessing(self) -> bool:
         return settings.ENABLE_ARI_POSTPROCESS and self.config.enable_ari_postprocessing
 
+    def post(self, *args, **kwargs) -> requests.Response:
+        if "data" in kwargs:
+            data = anonymizer.anonymize_struct(kwargs["data"])
+            kwargs = copy.deepcopy(kwargs)
+            kwargs["data"] = data
+
+        return self.session.post(*args, **kwargs)
+
 
 class WCABasePipeline(
     WCABaseMetaData,
@@ -366,7 +376,7 @@ class WCABaseCompletionsPipeline(
         )
         @wca_codegen_hist.time()
         def post_request():
-            return self.session.post(
+            return self.post(
                 prediction_url,
                 headers=headers,
                 json=data,
@@ -439,8 +449,8 @@ class WCABaseContentMatchPipeline(
                 on_backoff=self.on_backoff_codematch,
             )
             @wca_codematch_hist.time()
-            def post_request():
-                return self.session.post(
+            def post_request() -> requests.Response:
+                return self.post(
                     self._search_url,
                     headers=headers,
                     json=data,
@@ -448,7 +458,7 @@ class WCABaseContentMatchPipeline(
                     verify=self.config.verify_ssl,
                 )
 
-            result = post_request()
+            result: requests.Response = post_request()
             context = Context(model_id, result, suggestion_count > 1)
             ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
@@ -512,7 +522,7 @@ class WCABasePlaybookGenerationPipeline(
         )
         @wca_codegen_playbook_hist.time()
         def post_request():
-            return self.session.post(
+            return self.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=headers,
                 json=data,
@@ -593,7 +603,7 @@ class WCABaseRoleGenerationPipeline(
         )
         @wca_codegen_role_hist.time()
         def post_request():
-            return self.session.post(
+            return self.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
                 headers=headers,
                 json=data,
@@ -674,7 +684,7 @@ class WCABasePlaybookExplanationPipeline(
         )
         @wca_explain_playbook_hist.time()
         def post_request():
-            return self.session.post(
+            return self.post(
                 f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
                 headers=headers,
                 json=data,
@@ -734,7 +744,7 @@ class WCABaseRoleExplanationPipeline(
         )
         @wca_explain_role_hist.time()
         def post_request():
-            return self.session.post(
+            return self.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
                 headers=headers,
                 json=data,
