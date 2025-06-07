@@ -32,7 +32,7 @@ dependencies = [
   'langchain-ollama~=0.2.1',
   'launchdarkly-server-sdk~=8.3.0',
   'llama-stack-client>=0.2.9',
-  'protobuf~=5.28.2',
+  'protobuf~=5.29.5',
   'psycopg~=3.1.8',
   'PyDrive2~=1.20.0',
   'pydantic==2.*',
