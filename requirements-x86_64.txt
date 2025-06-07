@@ -205,7 +205,7 @@ hyperlink==21.0.0
     # via
     #   autobahn
     #   twisted
-idna==3.7
+idna==3.10
     # via
     #   -r requirements.in
     #   anyio
