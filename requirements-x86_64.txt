@@ -332,7 +332,7 @@ platformdirs==4.2.1
     # via black
 prometheus-client==0.20.0
     # via django-prometheus
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.51
     # via
     #   ipython
     #   llama-stack-client
