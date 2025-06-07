@@ -455,7 +455,7 @@ rich==13.7.1
     # via
     #   ansible-lint
     #   llama-stack-client
-rpds-py==0.18.0
+rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
