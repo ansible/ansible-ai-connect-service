@@ -14,9 +14,25 @@
 
 import json
 import logging
+import os
 import re
+import requests
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
+
+# Import ServiceUnavailable from Django's health_check package
+try:
+    from health_check.exceptions import ServiceUnavailable
+except ImportError:
+    # Fallback definition if import fails
+    class ServiceUnavailable(Exception):
+        pass
+from ansible_ai_connect.healthcheck.backends import (
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+)
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -41,11 +57,6 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     StreamingChatBotResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
-from ansible_ai_connect.healthcheck.backends import (
-    MODEL_MESH_HEALTH_CHECK_MODELS,
-    MODEL_MESH_HEALTH_CHECK_PROVIDER,
-    HealthCheckSummary,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +90,8 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
         "vector_db_ids": [VECTOR_DB_ID],
     },
 )
+LLAMA_STACK_PROVIDER_HEALTH = "provider_id"
+LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "vllm-inference")
 
 
 class TurnStreamPrintableEventEx(TurnStreamPrintableEvent):
@@ -97,6 +110,58 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
 
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
+
+@Register(api_type="llama-stack")
+class LlamaStackHealthCheckMetaData(MetaData[LlamaStackConfiguration]):
+
+    def __init__(self, config: LlamaStackConfiguration):
+        super().__init__(config=config)
+        self.health_check_provider = MODEL_MESH_HEALTH_CHECK_PROVIDER
+        self.health_check_models = MODEL_MESH_HEALTH_CHECK_MODELS
+        self.health_check_models_skipped = True
+
+    def self_test(self) -> HealthCheckSummary:
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            headers = {"Content-Type": "application/json"}
+            r = requests.get(self.config.inference_url + "/v1/providers", headers=headers, timeout=5)
+            r.raise_for_status()
+
+            data = r.json()
+            providers_data = data.get("data", [])
+            # Look for the vllm-inference provider
+            provider_found = False
+            for provider in providers_data:
+                if provider.get(LLAMA_STACK_PROVIDER_HEALTH) == LLAMA_STACK_PROVIDER_ID:
+                    provider_found = True
+                    health_status = provider.get("health", {}).get("status")
+                    if health_status != "OK":
+                        reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+                        summary.add_exception(
+                            MODEL_MESH_HEALTH_CHECK_MODELS,
+                            HealthCheckSummaryException(ServiceUnavailable(reason)),
+                        )
+                    break
+            if not provider_found:
+                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} not found"
+                summary.add_exception(
+                    MODEL_MESH_HEALTH_CHECK_MODELS,
+                    HealthCheckSummaryException(ServiceUnavailable(reason)),
+                )
+
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+            )
+
+        return summary
 
 
 @Register(api_type="llama-stack")
