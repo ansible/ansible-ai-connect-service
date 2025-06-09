@@ -16,7 +16,7 @@ import json
 import logging
 import os
 from copy import deepcopy
-from typing import cast
+from typing import cast, Any
 
 from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 
@@ -29,7 +29,7 @@ def is_ssl_enabled(value: str) -> bool:
     return not disabled
 
 
-def load_from_env_vars():
+def load_from_env_vars() -> Any:
     # ==========================================
     # Model Provider
     # ------------------------------------------
