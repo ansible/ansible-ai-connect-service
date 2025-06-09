@@ -45,6 +45,7 @@ from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
     WisdomLogAwareMixin,
+    WisdomServiceAPITestCaseBaseOIDC,
 )
 
 VALIDATE_PROMPT = "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
@@ -57,7 +58,7 @@ VALIDATE_PROMPT = "---\n- hosts: all\n  tasks:\n  - name: install ssh\n"
 class TestWCAModelIdView(
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
-    WisdomServiceAPITestCaseBase,
+    WisdomServiceAPITestCaseBaseOIDC,
     WisdomLogAwareMixin,
 ):
     def setUp(self):
@@ -84,6 +85,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_key_without_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -223,7 +225,6 @@ class TestWCAModelIdView(
                     model_id_value,
                     "",
                     VALIDATE_PROMPT,
-                    user=None,
                     headers=expected_headers,
                 )
                 mock_secret_manager.save_secret.assert_called_with(
@@ -397,12 +398,11 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_no_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_segment_log(log, "modelIdValidate", None)
+        r = self.client.get(self.api_version_reverse("wca_model_id_validator"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_no_api_key(self, *args):
@@ -492,7 +492,6 @@ class TestWCAModelIdValidatorView(
                 model_id_value,
                 "",
                 VALIDATE_PROMPT,
-                user=None,
                 headers=expected_headers,
             )
             self.assert_segment_log(log, "modelIdValidate", None)

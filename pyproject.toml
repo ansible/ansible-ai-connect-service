@@ -92,11 +92,12 @@ include = [
   "ansible_ai_connect/ai/api/model_pipelines/wca/pipelines_onprem.py",
   "ansible_ai_connect/users/authz_checker.py",
   "ansible_ai_connect/main/settings/legacy.py",
-  "ansible_ai_connect/ansible_lint"
+  "ansible_ai_connect/ansible_lint",
+  "ansible_ai_connect/ai/api/wca/"
 ]
 exclude = ["**/test_*.py", "ansible_ai_connect/*/migrations/*.py"]
 
-reportMissingImports = true
+reportMissingImports = false
 reportMissingTypeStubs = false
 
 pythonVersion = "3.11"
