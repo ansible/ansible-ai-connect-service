@@ -45,6 +45,7 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.views import ServiceUnavailable
+from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.users.signals import (
     user_delete_wca_api_key,
     user_delete_wca_model_id,
@@ -130,20 +131,22 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
     def post(self, request, *args, **kwargs):
         logger.debug("WCA API Key:: POST handler")
 
-        organization = None
         exception = None
         start_time = time.time()
-        try:
-            # An OrgId must be present
-            # See https://issues.redhat.com/browse/AAP-16009
-            organization = request._request.user.organization
-            if not organization:
-                return Response(status=HTTP_400_BAD_REQUEST)
 
+        # An OrgId must be present
+        # See https://issues.redhat.com/browse/AAP-16009
+        if not request._request.user.organization:
+            return Response(status=HTTP_400_BAD_REQUEST)
+        organization: Organization = request._request.user.organization
+
+        try:
             # Extract API Key from request
             key_serializer = WcaKeyRequestSerializer(data=request.data)
             key_serializer.is_valid(raise_exception=True)
-            wca_key = key_serializer.validated_data["key"]
+            wca_key = key_serializer.validated_data[
+                "key"
+            ]  # pyright: ignore [reportIndexIssue, reportOptionalSubscript]
 
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
@@ -283,17 +286,15 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
     )
     def get(self, request, *args, **kwargs):
         logger.debug("WCA API Key Validator:: GET handler")
-
-        organization = None
         exception = None
         start_time = time.time()
-        try:
-            # An OrgId must be present
-            # See https://issues.redhat.com/browse/AAP-16009
-            organization = request._request.user.organization
-            if not organization:
-                return Response(status=HTTP_400_BAD_REQUEST)
 
+        # An OrgId must be present
+        # See https://issues.redhat.com/browse/AAP-16009
+        if not request._request.user.organization:
+            return Response(status=HTTP_400_BAD_REQUEST)
+        organization: Organization = request._request.user.organization
+        try:
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
             model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
