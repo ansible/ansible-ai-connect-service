@@ -45,6 +45,9 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaUserTrialExpired,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import ModelPipelineCompletions
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
+    WCABaseCompletionsPipeline,
+)
 from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
@@ -52,6 +55,7 @@ from ansible_ai_connect.ai.api.permissions import (
 )
 from ansible_ai_connect.ai.api.serializers import WcaModelIdRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
+from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.users.signals import user_set_wca_model_id
 
 UNKNOWN_MODEL_ID = "Unknown"
@@ -147,8 +151,12 @@ class WCAModelIdView(RetrieveAPIView, CreateAPIView):
 
         def get_model_id(*_):
             model_id_serializer = WcaModelIdRequestSerializer(data=request.data)
+            if not model_id_serializer:
+                return
             model_id_serializer.is_valid(raise_exception=True)
-            return model_id_serializer.validated_data["model_id"]
+            return model_id_serializer.validated_data[
+                "model_id"
+            ]  # pyright: ignore [reportIndexIssue, reportOptionalSubscript]
 
         def on_success(org_id, model_id):
             secret_name = secret_manager.save_secret(org_id, Suffixes.MODEL_ID, model_id)
@@ -214,7 +222,7 @@ def validate(api_key, model_id):
 
     # If no validation issues, let's infer (given an api_key and model_id)
     # and expect some prediction (result), otherwise an exception will be raised.
-    model_mesh_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
+    model_mesh_client: WCABaseCompletionsPipeline = apps.get_app_config("ai").get_model_pipeline(
         ModelPipelineCompletions
     )
     headers = model_mesh_client.get_request_headers(
@@ -224,7 +232,6 @@ def validate(api_key, model_id):
         model_id,
         "",
         "---\n- hosts: all\n  tasks:\n  - name: install ssh\n",
-        user=None,
         headers=headers,
     )
 
@@ -234,14 +241,13 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
     event = None
     start_time = time.time()
     model_id = UNKNOWN_MODEL_ID
-    organization = None
-    try:
-        # An OrgId must be present
-        # See https://issues.redhat.com/browse/AAP-16009
-        organization = request._request.user.organization
-        if not organization:
-            return Response(status=HTTP_400_BAD_REQUEST)
 
+    # An OrgId must be present
+    # See https://issues.redhat.com/browse/AAP-16009
+    if not request._request.user.organization:
+        return Response(status=HTTP_400_BAD_REQUEST)
+    organization: Organization = request._request.user.organization
+    try:
         api_key = api_key_provider(organization.id)
         model_id = model_id_provider(organization.id)
 

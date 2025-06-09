@@ -38,11 +38,11 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
     IsWCASaaSModelPipeline,
 )
-from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
+    WisdomServiceAPITestCaseBaseOIDC,
 )
 
 
@@ -51,7 +51,7 @@ from ansible_ai_connect.test_utils import (
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
 class TestWCAApiKeyView(
-    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC
 ):
     def setUp(self):
         super().setUp()
@@ -77,12 +77,11 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_key_without_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(self.api_version_reverse("wca_api_key"))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_segment_log(log, "modelApiKeyGet", None)
+        r = self.client.get(self.api_version_reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_permission_classes(self, *args):
         url = self.api_version_reverse("wca_api_key")
@@ -154,12 +153,11 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_without_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.post(self.api_version_reverse("wca_api_key"))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_segment_log(log, "modelApiKeySet", None)
+        r = self.client.post(self.api_version_reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_with_valid_value(self, *args):
@@ -291,12 +289,11 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key_without_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.delete(self.api_version_reverse("wca_api_key"))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_segment_log(log, "modelApiKeyDelete", None)
+        r = self.client.delete(self.api_version_reverse("wca_api_key"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key(self, *args):
@@ -544,7 +541,7 @@ class TestWCAApiKeyView(
 
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
-class TestWCAApiKeyViewAsNonSubscriber(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
+class TestWCAApiKeyViewAsNonSubscriber(APIVersionTestCaseBase, WisdomServiceAPITestCaseBaseOIDC):
     def test_get_api_key_as_non_subscriber(self, *args):
         self.user.organization = Organization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
@@ -557,7 +554,7 @@ class TestWCAApiKeyViewAsNonSubscriber(APIVersionTestCaseBase, WisdomServiceAPIT
 @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
 class TestWCAApiKeyValidatorView(
-    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
+    APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC
 ):
     def setUp(self):
         super().setUp()
@@ -583,12 +580,11 @@ class TestWCAApiKeyValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_key_without_org_id(self, *args):
+        self.user.organization = None
         self.client.force_authenticate(user=self.user)
 
-        with self.assertLogs(logger="root", level="DEBUG") as log:
-            r = self.client.get(self.api_version_reverse("wca_api_key_validator"))
-            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
-            self.assert_segment_log(log, "modelApiKeyValidate", None)
+        r = self.client.get(self.api_version_reverse("wca_api_key_validator"))
+        self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_key_with_valid_value(self, *args):
