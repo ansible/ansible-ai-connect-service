@@ -16,16 +16,16 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
+from django.test import override_settings
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 
-from django.test import override_settings
-
-from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import LlamaStackConfiguration
+from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
+    LlamaStackConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines import (
     LlamaStackChatBotPipeline,
     LlamaStackStreamingChatBotPipeline,
 )
-from ansible_ai_connect.healthcheck.backends import HealthCheckSummaryException
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
     ModelPipelineCompletions,
@@ -40,6 +40,7 @@ from ansible_ai_connect.ai.api.model_pipelines.tests import mock_config
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
     TestModelPipelineHealthCheck,
 )
+from ansible_ai_connect.healthcheck.backends import HealthCheckSummaryException
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("llama-stack"))
@@ -83,47 +84,49 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         )
 
         # Sample successful health check response
-        self.success_response = json.dumps({
-            "data": [
-                {
-                    "api": "inference",
-                    "provider_id": "vllm-inference",
-                    "provider_type": "remote::vllm",
-                    "config": {
-                        "url": "https://llm-dev-wisdom-model-staging.apps.stage2-west.v2dz.p1.openshiftapps.com/v1",
-                        "max_tokens": "4096",
-                        "api_token": "********",
-                        "tls_verify": "true"
-                    },
-                    "health": {
-                        "status": "OK"
+        self.success_response = json.dumps(
+            {
+                "data": [
+                    {
+                        "api": "inference",
+                        "provider_id": "vllm-inference",
+                        "provider_type": "remote::vllm",
+                        "config": {
+                            "url": "https://llama-stack-api.example.com/v1",
+                            "max_tokens": "4096",
+                            "api_token": "********",
+                            "tls_verify": "true",
+                        },
+                        "health": {"status": "OK"},
                     }
-                }
-            ]
-        })
+                ]
+            }
+        )
 
         # Sample failed health check response
-        self.failed_response = json.dumps({
-            "data": [
-                {
-                    "api": "inference",
-                    "provider_id": "vllm-inference",
-                    "provider_type": "remote::vllm",
-                    "config": {
-                        "url": "https://llm-dev-wisdom-model-staging.apps.stage2-west.v2dz.p1.openshiftapps.com/v1",
-                        "max_tokens": "4096",
-                        "api_token": "********",
-                        "tls_verify": "true"
-                    },
-                    "health": {
-                        "status": "Not Implemented",
-                        "message": "Provider does not implement health check"
+        self.failed_response = json.dumps(
+            {
+                "data": [
+                    {
+                        "api": "inference",
+                        "provider_id": "vllm-inference",
+                        "provider_type": "remote::vllm",
+                        "config": {
+                            "url": "https://llama-stack-api.example.com/v1",
+                            "max_tokens": "4096",
+                            "api_token": "********",
+                            "tls_verify": "true",
+                        },
+                        "health": {
+                            "status": "Not Implemented",
+                            "message": "Provider does not implement health check",
+                        },
                     }
-                }
-            ]
-        })
+                ]
+            }
+        )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_health_check_success(self, mock_get):
         """Test successful health check for LlamaStackChatBotPipeline."""
         # Setup mock response
@@ -140,16 +143,18 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         self.assertEqual(summary.items["provider"], "llama-stack")
         self.assertEqual(summary.items["models"], "ok")
         # Check that no exceptions are in the summary items
-        self.assertFalse(any(isinstance(item, HealthCheckSummaryException) for item in summary.items.values()))
+        self.assertFalse(
+            any(isinstance(item, HealthCheckSummaryException) for item in summary.items.values())
+        )
 
         # Verify the correct URL was called
         mock_get.assert_called_once_with(
             self.config.inference_url + "/v1/providers",
             headers={"Content-Type": "application/json"},
-            timeout=30
+            timeout=30,
         )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_health_check_failure(self, mock_get):
         """Test failed health check for LlamaStackChatBotPipeline."""
         # Setup mock response
@@ -172,10 +177,10 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         mock_get.assert_called_once_with(
             self.config.inference_url + "/v1/providers",
             headers={"Content-Type": "application/json"},
-            timeout=30
+            timeout=30,
         )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_provider_not_found(self, mock_get):
         """Test health check when provider is not found."""
         # Setup mock response with no matching provider
@@ -187,7 +192,7 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
                     "api": "inference",
                     "provider_id": "different-provider",
                     "provider_type": "remote::other",
-                    "health": {"status": "OK"}
+                    "health": {"status": "OK"},
                 }
             ]
         }
@@ -203,7 +208,7 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         self.assertIn("models", summary.items)
         self.assertIsInstance(summary.items["models"], HealthCheckSummaryException)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_connection_error(self, mock_get):
         """Test health check with connection error."""
         # Setup mock to raise exception
@@ -219,7 +224,7 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         self.assertIn("models", summary.items)
         self.assertIsInstance(summary.items["models"], HealthCheckSummaryException)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_timeout_error(self, mock_get):
         """Test health check with timeout error."""
         # Setup mock to raise exception
@@ -235,7 +240,7 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         self.assertIn("models", summary.items)
         self.assertIsInstance(summary.items["models"], HealthCheckSummaryException)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_chatbot_pipeline_http_error(self, mock_get):
         """Test health check with HTTP error."""
         # Setup mock to raise exception
@@ -253,7 +258,7 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         self.assertIn("models", summary.items)
         self.assertIsInstance(summary.items["models"], HealthCheckSummaryException)
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_streaming_chatbot_pipeline_health_check_success(self, mock_get):
         """Test successful health check for LlamaStackStreamingChatBotPipeline."""
         # Setup mock response
@@ -263,8 +268,13 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Create pipeline with mocked AsyncLlamaStackClient and AsyncAgent
-        with patch('ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncLlamaStackClient'), \
-             patch('ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncAgent'):
+        with (
+            patch(
+                "ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.\
+                    AsyncLlamaStackClient"
+            ),
+            patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncAgent"),
+        ):
             pipeline = LlamaStackStreamingChatBotPipeline(self.config)
             summary = pipeline.self_test()
 
@@ -272,16 +282,20 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
             self.assertEqual(summary.items["provider"], "llama-stack")
             self.assertEqual(summary.items["models"], "ok")
             # Check that no exceptions are in the summary items
-            self.assertFalse(any(isinstance(item, HealthCheckSummaryException) for item in summary.items.values()))
+            self.assertFalse(
+                any(
+                    isinstance(item, HealthCheckSummaryException) for item in summary.items.values()
+                )
+            )
 
             # Verify the correct URL was called
             mock_get.assert_called_once_with(
                 self.config.inference_url + "/v1/providers",
                 headers={"Content-Type": "application/json"},
-                timeout=30
+                timeout=30,
             )
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_llamastack_streaming_chatbot_pipeline_health_check_failure(self, mock_get):
         """Test failed health check for LlamaStackStreamingChatBotPipeline."""
         # Setup mock response
@@ -291,8 +305,13 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Create pipeline with mocked AsyncLlamaStackClient and AsyncAgent
-        with patch('ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncLlamaStackClient'), \
-             patch('ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncAgent'):
+        with (
+            patch(
+                "ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.\
+                    AsyncLlamaStackClient"
+            ),
+            patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.AsyncAgent"),
+        ):
             pipeline = LlamaStackStreamingChatBotPipeline(self.config)
             summary = pipeline.self_test()
 
@@ -306,5 +325,5 @@ class TestLlamaStackHealthCheck(unittest.TestCase):
             mock_get.assert_called_once_with(
                 self.config.inference_url + "/v1/providers",
                 headers={"Content-Type": "application/json"},
-                timeout=30
+                timeout=30,
             )

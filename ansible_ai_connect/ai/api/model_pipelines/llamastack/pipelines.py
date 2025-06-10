@@ -136,7 +136,7 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             r = requests.get(
                 self.config.inference_url + "/v1/providers",
                 headers=self.headers,
-                timeout=self._timeout
+                timeout=self._timeout,
             )
             # Check if the request was successful
             r.raise_for_status()
@@ -150,7 +150,9 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
                     provider_found = True
                     health_status = provider.get("health", {}).get("status")
                     if health_status != "OK":
-                        reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+                        reason = (
+                            f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+                        )
                         summary.add_exception(
                             MODEL_MESH_HEALTH_CHECK_MODELS,
                             HealthCheckSummaryException(ServiceUnavailable(reason)),
@@ -171,6 +173,7 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             )
 
         return summary
+
 
 @Register(api_type="llama-stack")
 class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaStackConfiguration]):
@@ -198,7 +201,7 @@ class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaSt
             self.config.inference_url + "/v1/query",
             headers=self.headers,
             json=data,
-            timeout=self.timeout(1)
+            timeout=self.timeout(1),
         )
 
         if response.status_code == 200:
@@ -220,6 +223,7 @@ class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaSt
         else:
             detail = json.loads(response.text).get("detail", "")
             raise ChatbotInternalServerException(detail=detail)
+
 
 @Register(api_type="llama-stack")
 class LlamaStackStreamingChatBotPipeline(
