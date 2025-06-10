@@ -19,11 +19,12 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 
-import requests
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
 from llama_stack_client import AsyncLlamaStackClient
+from llama_stack_client import LlamaStackClient
+from llama_stack_client import BadRequestError
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
@@ -113,12 +114,6 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
 
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
-        self.headers = {"Content-Type": "application/json"}
-        i = self.config.timeout
-        self._timeout = int(i) if i is not None else None
-
-    def timeout(self, task_count=1):
-        return self._timeout * task_count if self._timeout else None
 
     def self_test(self) -> HealthCheckSummary:
         """
@@ -133,38 +128,23 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             }
         )
         try:
-            r = requests.get(
-                self.config.inference_url + "/v1/providers",
-                headers=self.headers,
-                timeout=self._timeout,
-            )
-            # Check if the request was successful
-            r.raise_for_status()
-
-            data = r.json()
-            providers_data = data.get("data", [])
-            # Look for the vllm-inference provider
-            provider_found = False
-            for provider in providers_data:
-                if provider.get(LLAMA_STACK_PROVIDER_HEALTH) == LLAMA_STACK_PROVIDER_ID:
-                    provider_found = True
-                    health_status = provider.get("health", {}).get("status")
-                    if health_status != "OK":
-                        reason = (
-                            f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
-                        )
-                        summary.add_exception(
-                            MODEL_MESH_HEALTH_CHECK_MODELS,
-                            HealthCheckSummaryException(ServiceUnavailable(reason)),
-                        )
-                    break
-            if not provider_found:
-                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} not found"
+            client = LlamaStackClient(base_url=self.config.inference_url)
+            response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
+            health_status = response.health.get("status")
+            if health_status != "OK":
+                reason = (
+                    f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+                )
                 summary.add_exception(
                     MODEL_MESH_HEALTH_CHECK_MODELS,
                     HealthCheckSummaryException(ServiceUnavailable(reason)),
                 )
-
+        except BadRequestError as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+            )
         except Exception as e:
             logger.exception(str(e))
             summary.add_exception(
@@ -187,42 +167,39 @@ class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaSt
         model_id = params.model_id
         system_prompt = params.system_prompt
 
-        data = {
-            "query": query,
-            "model": model_id,
-            "provider": provider,
-        }
-        if conversation_id:
-            data["conversation_id"] = str(conversation_id)
-        if system_prompt:
-            data["system_prompt"] = str(system_prompt)
+        # Initialize the LlamaStackClient with the base URL from config
+        client = LlamaStackClient(base_url=self.config.inference_url)
+        try:
+            if system_prompt:
+                # Prepend the system prompt to the user query
+                prompt_text = f"System: {system_prompt}\nUser: {query}"
+            else:
+                prompt_text = query
+            if provider:
+                model_name = f"{provider}/{model_id}"
+            else:
+                model_name = model_id
+            # For conversation_id, we can't pass it directly to completions.create
+            if conversation_id:
+                logger.info("Using conversation ID: %s", conversation_id)
 
-        response = requests.post(
-            self.config.inference_url + "/v1/query",
-            headers=self.headers,
-            json=data,
-            timeout=self.timeout(1),
-        )
-
-        if response.status_code == 200:
-            data = json.loads(response.text)
-            return data
-
-        elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotUnauthorizedException(detail=detail)
-        elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotForbiddenException(detail=detail)
-        elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotPromptTooLongException(detail=detail)
-        elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotValidationException(detail=detail)
-        else:
-            detail = json.loads(response.text).get("detail", "")
-            raise ChatbotInternalServerException(detail=detail)
+            response = client.completions.create(
+                model=model_name,
+                prompt=prompt_text
+            )
+            return response
+        except BadRequestError as e:
+            # Handle specific errors based on the error code or message
+            if "401" in str(e):
+                raise ChatbotUnauthorizedException(detail=str(e))
+            elif "403" in str(e):
+                raise ChatbotForbiddenException(detail=str(e))
+            elif "413" in str(e):
+                raise ChatbotPromptTooLongException(detail=str(e))
+            elif "422" in str(e):
+                raise ChatbotValidationException(detail=str(e))
+            else:
+                raise ChatbotInternalServerException(detail=str(e))
 
 
 @Register(api_type="llama-stack")
