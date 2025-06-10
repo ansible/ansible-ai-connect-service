@@ -59,3 +59,5 @@ jobs:
             # To remove once we can install cryptography 44.0.1
             # See: https://github.com/ansible/ansible-ai-connect-service/pull/1530
             GHSA-79v4-65xg-pq4g
+            # See don't use any .netrc
+            GHSA-9hjg-9r4m-mvj7
