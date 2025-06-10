@@ -16,26 +16,13 @@ import json
 import logging
 import os
 import re
-import requests
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 
-# Import ServiceUnavailable from Django's health_check package
-try:
-    from health_check.exceptions import ServiceUnavailable
-except ImportError:
-    # Fallback definition if import fails
-    class ServiceUnavailable(Exception):
-        pass
-from ansible_ai_connect.healthcheck.backends import (
-    HealthCheckSummary,
-    HealthCheckSummaryException,
-    MODEL_MESH_HEALTH_CHECK_MODELS,
-    MODEL_MESH_HEALTH_CHECK_PROVIDER,
-)
-
+import requests
 from django.conf import settings
 from django.http import StreamingHttpResponse
+from health_check.exceptions import ServiceUnavailable
 from llama_stack_client import AsyncLlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
@@ -46,17 +33,33 @@ from llama_stack_client.types.agents.turn_create_params import (
 from llama_stack_client.types.shared import UserMessage
 from llama_stack_client.types.shared.interleaved_content_item import TextContentItem
 
-from ansible_ai_connect.ai.api.exceptions import AgentInternalServerException
+from ansible_ai_connect.ai.api.exceptions import (
+    AgentInternalServerException,
+    ChatbotForbiddenException,
+    ChatbotInternalServerException,
+    ChatbotPromptTooLongException,
+    ChatbotUnauthorizedException,
+    ChatbotValidationException,
+)
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
     LlamaStackConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
+    ChatBotParameters,
+    ChatBotResponse,
     MetaData,
+    ModelPipelineChatBot,
     ModelPipelineStreamingChatBot,
     StreamingChatBotParameters,
     StreamingChatBotResponse,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_MODELS,
+    MODEL_MESH_HEALTH_CHECK_PROVIDER,
+    HealthCheckSummary,
+    HealthCheckSummaryException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,17 +113,19 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
 
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
+        self.headers = {"Content-Type": "application/json"}
+        i = self.config.timeout
+        self._timeout = int(i) if i is not None else None
 
-@Register(api_type="llama-stack")
-class LlamaStackHealthCheckMetaData(MetaData[LlamaStackConfiguration]):
-
-    def __init__(self, config: LlamaStackConfiguration):
-        super().__init__(config=config)
-        self.health_check_provider = MODEL_MESH_HEALTH_CHECK_PROVIDER
-        self.health_check_models = MODEL_MESH_HEALTH_CHECK_MODELS
-        self.health_check_models_skipped = True
+    def timeout(self, task_count=1):
+        return self._timeout * task_count if self._timeout else None
 
     def self_test(self) -> HealthCheckSummary:
+        """
+        Perform a self-test to check the health of the LlamaStack provider.
+        Returns:
+            HealthCheckSummary: A summary of the health check results.
+        """
         summary: HealthCheckSummary = HealthCheckSummary(
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
@@ -128,8 +133,12 @@ class LlamaStackHealthCheckMetaData(MetaData[LlamaStackConfiguration]):
             }
         )
         try:
-            headers = {"Content-Type": "application/json"}
-            r = requests.get(self.config.inference_url + "/v1/providers", headers=headers, timeout=5)
+            r = requests.get(
+                self.config.inference_url + "/v1/providers",
+                headers=self.headers,
+                timeout=self._timeout
+            )
+            # Check if the request was successful
             r.raise_for_status()
 
             data = r.json()
@@ -163,6 +172,54 @@ class LlamaStackHealthCheckMetaData(MetaData[LlamaStackConfiguration]):
 
         return summary
 
+@Register(api_type="llama-stack")
+class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaStackConfiguration]):
+    def __init__(self, config: LlamaStackConfiguration):
+        super().__init__(config=config)
+
+    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
+        query = params.query
+        conversation_id = params.conversation_id
+        provider = params.provider
+        model_id = params.model_id
+        system_prompt = params.system_prompt
+
+        data = {
+            "query": query,
+            "model": model_id,
+            "provider": provider,
+        }
+        if conversation_id:
+            data["conversation_id"] = str(conversation_id)
+        if system_prompt:
+            data["system_prompt"] = str(system_prompt)
+
+        response = requests.post(
+            self.config.inference_url + "/v1/query",
+            headers=self.headers,
+            json=data,
+            timeout=self.timeout(1)
+        )
+
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            return data
+
+        elif response.status_code == 401:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotUnauthorizedException(detail=detail)
+        elif response.status_code == 403:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotForbiddenException(detail=detail)
+        elif response.status_code == 413:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotPromptTooLongException(detail=detail)
+        elif response.status_code == 422:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotValidationException(detail=detail)
+        else:
+            detail = json.loads(response.text).get("detail", "")
+            raise ChatbotInternalServerException(detail=detail)
 
 @Register(api_type="llama-stack")
 class LlamaStackStreamingChatBotPipeline(
@@ -200,12 +257,22 @@ class LlamaStackStreamingChatBotPipeline(
     def get_streaming_http_response(
         self, params: StreamingChatBotParameters
     ) -> StreamingHttpResponse:
+        """
+        Returns a StreamingHttpResponse for the given parameters.
+        :param params: StreamingChatBotParameters containing the query and conversation_id.
+        :return: StreamingHttpResponse that streams the response from the agent."""
         return StreamingHttpResponse(
             self.async_invoke(params),
             content_type="text/event-stream",
         )
 
     def format_record(self, d, event_name=None):
+        """
+        Formats a record as a string for streaming.
+        :param d: The data to format.
+        :param event_name: The name of the event, if any.
+        :return: A formatted string for the record.
+        """
         return (
             f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
             if event_name
@@ -213,6 +280,12 @@ class LlamaStackStreamingChatBotPipeline(
         )
 
     def format_token(self, token, event_name="token"):
+        """
+        Formats a token for streaming.
+        :param token: The token to format.
+        :param event_name: The name of the event, defaults to "token".
+        :return: A formatted string for the token.
+        """
         d = {
             "id": self.id,
             "token": token,
@@ -221,6 +294,11 @@ class LlamaStackStreamingChatBotPipeline(
         return f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
 
     def stream_end_event(self, ref_docs_metadata: Mapping[str, dict]):
+        """
+        Formats the end event for the stream, including referenced documents.
+        :param ref_docs_metadata: A mapping of document IDs to their metadata.
+        :return: A formatted string for the end event.
+        """
         ref_docs = []
         for k, v in ref_docs_metadata.items():
             ref_docs.append(
@@ -237,6 +315,11 @@ class LlamaStackStreamingChatBotPipeline(
         )
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
+        """
+        Asynchronously invokes the agent with the given parameters and yields the response.
+        :param params: StreamingChatBotParameters containing the query and conversation_id.
+        :return: An AsyncGenerator that yields formatted tokens or events.
+        """
         query = params.query
 
         session_id: str = (
@@ -382,11 +465,3 @@ class LlamaStackStreamingChatBotPipeline(
                             content=f"Tool:{r.tool_name} Response:{r.content}",
                             color="green",
                         )
-
-    def self_test(self) -> HealthCheckSummary:
-        return HealthCheckSummary(
-            {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
-                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
-            }
-        )
