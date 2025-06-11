@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import unittest
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 from django.test import override_settings
@@ -64,11 +65,23 @@ class TestModelPipelineFactory(TestModelPipelineHealthCheck):
     def test_chatbot_healthcheck(self):
         self.assert_skipped(ModelPipelineChatBot, "nop")
 
-    def test_streaming_chatbot_healthcheck(self):
-        self.assert_skipped(ModelPipelineStreamingChatBot, "llama-stack")
+    @mock.patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.LlamaStackClient")
+    def test_streaming_chatbot_healthcheck(self, mock_client_class):
+        """Test the health check for the streaming chatbot pipeline."""
+        # Set up the mock client instance and its methods
+        mock_client_instance = mock.MagicMock()
+        mock_client_class.return_value = mock_client_instance
+        # Mock the response from providers.retrieve
+        mock_response = mock.MagicMock()
+        mock_response.health = {"status": "OK"}
+        mock_client_instance.providers.retrieve.return_value = mock_response
+
+        self.assert_ok(ModelPipelineStreamingChatBot, "llama-stack")
 
 
 class TestLlamaStackSelfTest(unittest.TestCase):
+    """Unit tests for the LlamaStackMetaData self_test method."""
+
     def setUp(self):
         # Set up the configuration
         self.config = LlamaStackConfiguration(
