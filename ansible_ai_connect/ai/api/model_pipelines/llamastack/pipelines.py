@@ -22,9 +22,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
-from llama_stack_client import AsyncLlamaStackClient
-from llama_stack_client import LlamaStackClient
-from llama_stack_client import BadRequestError
+from llama_stack_client import AsyncLlamaStackClient, BadRequestError, LlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
@@ -132,9 +130,7 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
             health_status = response.health.get("status")
             if health_status != "OK":
-                reason = (
-                    f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
-                )
+                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
                 summary.add_exception(
                     MODEL_MESH_HEALTH_CHECK_MODELS,
                     HealthCheckSummaryException(ServiceUnavailable(reason)),
@@ -183,10 +179,7 @@ class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaSt
             if conversation_id:
                 logger.info("Using conversation ID: %s", conversation_id)
 
-            response = client.completions.create(
-                model=model_name,
-                prompt=prompt_text
-            )
+            response = client.completions.create(model=model_name, prompt=prompt_text)
             return response
         except BadRequestError as e:
             # Handle specific errors based on the error code or message
