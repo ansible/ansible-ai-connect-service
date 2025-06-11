@@ -14,13 +14,15 @@
 
 import json
 import logging
+import os
 import re
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
-from llama_stack_client import AsyncLlamaStackClient
+from health_check.exceptions import ServiceUnavailable
+from llama_stack_client import AsyncLlamaStackClient, BadRequestError, LlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
@@ -45,6 +47,7 @@ from ansible_ai_connect.healthcheck.backends import (
     MODEL_MESH_HEALTH_CHECK_MODELS,
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
+    HealthCheckSummaryException,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,6 +82,8 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
         "vector_db_ids": [VECTOR_DB_ID],
     },
 )
+LLAMA_STACK_PROVIDER_HEALTH = "provider_id"
+LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "vllm-inference")
 
 
 class TurnStreamPrintableEventEx(TurnStreamPrintableEvent):
@@ -97,6 +102,43 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
 
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
+
+    def self_test(self) -> HealthCheckSummary:
+        """
+        Perform a self-test to check the health of the LlamaStack provider.
+        Returns:
+            HealthCheckSummary: A summary of the health check results.
+        """
+        summary: HealthCheckSummary = HealthCheckSummary(
+            {
+                MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
+                MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+            }
+        )
+        try:
+            client = LlamaStackClient(base_url=self.config.inference_url)
+            response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
+            health_status = response.health.get("status")
+            if health_status != "OK":
+                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+                summary.add_exception(
+                    MODEL_MESH_HEALTH_CHECK_MODELS,
+                    HealthCheckSummaryException(ServiceUnavailable(reason)),
+                )
+        except BadRequestError as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+            )
+        except Exception as e:
+            logger.exception(str(e))
+            summary.add_exception(
+                MODEL_MESH_HEALTH_CHECK_MODELS,
+                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+            )
+
+        return summary
 
 
 @Register(api_type="llama-stack")
@@ -135,12 +177,22 @@ class LlamaStackStreamingChatBotPipeline(
     def get_streaming_http_response(
         self, params: StreamingChatBotParameters
     ) -> StreamingHttpResponse:
+        """
+        Returns a StreamingHttpResponse for the given parameters.
+        :param params: StreamingChatBotParameters containing the query and conversation_id.
+        :return: StreamingHttpResponse that streams the response from the agent."""
         return StreamingHttpResponse(
             self.async_invoke(params),
             content_type="text/event-stream",
         )
 
     def format_record(self, d, event_name=None):
+        """
+        Formats a record as a string for streaming.
+        :param d: The data to format.
+        :param event_name: The name of the event, if any.
+        :return: A formatted string for the record.
+        """
         return (
             f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
             if event_name
@@ -148,6 +200,12 @@ class LlamaStackStreamingChatBotPipeline(
         )
 
     def format_token(self, token, event_name="token"):
+        """
+        Formats a token for streaming.
+        :param token: The token to format.
+        :param event_name: The name of the event, defaults to "token".
+        :return: A formatted string for the token.
+        """
         d = {
             "id": self.id,
             "token": token,
@@ -156,6 +214,11 @@ class LlamaStackStreamingChatBotPipeline(
         return f"event: {event_name}\ndata: {json.dumps(d)}\n\n"
 
     def stream_end_event(self, ref_docs_metadata: Mapping[str, dict]):
+        """
+        Formats the end event for the stream, including referenced documents.
+        :param ref_docs_metadata: A mapping of document IDs to their metadata.
+        :return: A formatted string for the end event.
+        """
         ref_docs = []
         for k, v in ref_docs_metadata.items():
             ref_docs.append(
@@ -172,6 +235,11 @@ class LlamaStackStreamingChatBotPipeline(
         )
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
+        """
+        Asynchronously invokes the agent with the given parameters and yields the response.
+        :param params: StreamingChatBotParameters containing the query and conversation_id.
+        :return: An AsyncGenerator that yields formatted tokens or events.
+        """
         query = params.query
 
         session_id: str = (
@@ -317,11 +385,3 @@ class LlamaStackStreamingChatBotPipeline(
                             content=f"Tool:{r.tool_name} Response:{r.content}",
                             color="green",
                         )
-
-    def self_test(self) -> HealthCheckSummary:
-        return HealthCheckSummary(
-            {
-                MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
-                MODEL_MESH_HEALTH_CHECK_MODELS: "skipped",
-            }
-        )
