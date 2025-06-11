@@ -32,22 +32,12 @@ from llama_stack_client.types.agents.turn_create_params import (
 from llama_stack_client.types.shared import UserMessage
 from llama_stack_client.types.shared.interleaved_content_item import TextContentItem
 
-from ansible_ai_connect.ai.api.exceptions import (
-    AgentInternalServerException,
-    ChatbotForbiddenException,
-    ChatbotInternalServerException,
-    ChatbotPromptTooLongException,
-    ChatbotUnauthorizedException,
-    ChatbotValidationException,
-)
+from ansible_ai_connect.ai.api.exceptions import AgentInternalServerException
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
     LlamaStackConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    ChatBotParameters,
-    ChatBotResponse,
     MetaData,
-    ModelPipelineChatBot,
     ModelPipelineStreamingChatBot,
     StreamingChatBotParameters,
     StreamingChatBotResponse,
@@ -149,50 +139,6 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             )
 
         return summary
-
-
-@Register(api_type="llama-stack")
-class LlamaStackChatBotPipeline(LlamaStackMetaData, ModelPipelineChatBot[LlamaStackConfiguration]):
-    def __init__(self, config: LlamaStackConfiguration):
-        super().__init__(config=config)
-
-    def invoke(self, params: ChatBotParameters) -> ChatBotResponse:
-        query = params.query
-        conversation_id = params.conversation_id
-        provider = params.provider
-        model_id = params.model_id
-        system_prompt = params.system_prompt
-
-        # Initialize the LlamaStackClient with the base URL from config
-        client = LlamaStackClient(base_url=self.config.inference_url)
-        try:
-            if system_prompt:
-                # Prepend the system prompt to the user query
-                prompt_text = f"System: {system_prompt}\nUser: {query}"
-            else:
-                prompt_text = query
-            if provider:
-                model_name = f"{provider}/{model_id}"
-            else:
-                model_name = model_id
-            # For conversation_id, we can't pass it directly to completions.create
-            if conversation_id:
-                logger.info("Using conversation ID: %s", conversation_id)
-
-            response = client.completions.create(model=model_name, prompt=prompt_text)
-            return response
-        except BadRequestError as e:
-            # Handle specific errors based on the error code or message
-            if "401" in str(e):
-                raise ChatbotUnauthorizedException(detail=str(e))
-            elif "403" in str(e):
-                raise ChatbotForbiddenException(detail=str(e))
-            elif "413" in str(e):
-                raise ChatbotPromptTooLongException(detail=str(e))
-            elif "422" in str(e):
-                raise ChatbotValidationException(detail=str(e))
-            else:
-                raise ChatbotInternalServerException(detail=str(e))
 
 
 @Register(api_type="llama-stack")
