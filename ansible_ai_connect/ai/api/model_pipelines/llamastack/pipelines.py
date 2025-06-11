@@ -83,7 +83,8 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
     },
 )
 LLAMA_STACK_PROVIDER_HEALTH = "provider_id"
-LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "vllm-inference")
+# Default provider ID for Llama Stack is rhosai_vllm_dev, from ansible-chatbot-stack
+LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "rhosai_vllm_dev")
 
 
 class TurnStreamPrintableEventEx(TurnStreamPrintableEvent):
