@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
 
 import backoff
 import requests
+from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
 from django_prometheus.conf import NAMESPACE
@@ -337,6 +338,11 @@ class WCABaseCompletionsPipeline(
 
             headers = self._prepare_request_headers(request.user, api_key, suggestion_id)
 
+            if request.user.organization and request.user.organization.enable_anonymization is True:
+                logger.debug("Anonymizing prompt and context")
+                context = anonymizer.anonymize_struct(context)
+                prompt = "#".join(anonymizer.anonymize_struct(prompt.split("#")))
+
             result = self.infer_from_parameters(model_id, context, prompt, suggestion_id, headers)
 
             response = result.json()
@@ -439,7 +445,7 @@ class WCABaseContentMatchPipeline(
                 on_backoff=self.on_backoff_codematch,
             )
             @wca_codematch_hist.time()
-            def post_request():
+            def post_request() -> requests.Response:
                 return self.session.post(
                     self._search_url,
                     headers=headers,
@@ -448,7 +454,7 @@ class WCABaseContentMatchPipeline(
                     verify=self.config.verify_ssl,
                 )
 
-            result = post_request()
+            result: requests.Response = post_request()
             context = Context(model_id, result, suggestion_count > 1)
             ContentMatchResponseChecks().run_checks(context)
             result.raise_for_status()
@@ -496,12 +502,20 @@ class WCABasePlaybookGenerationPipeline(
             "text": text,
             "create_outline": create_outline,
         }
+
         if outline:
             data["outline"] = outline
         if custom_prompt:
             if not custom_prompt.endswith("\n"):
                 custom_prompt = f"{custom_prompt}\n"
             data["custom_prompt"] = custom_prompt
+
+        # Apply anonymization if enabled for the organization
+        if request.user.organization and request.user.organization.enable_anonymization is True:
+            logger.debug("Anonymizing text and custom prompt")
+            data["text"] = anonymizer.anonymize_struct(data["text"])
+            if custom_prompt:
+                data["custom_prompt"] = anonymizer.anonymize_struct(data["custom_prompt"])
 
         @backoff.on_exception(
             backoff.expo,
@@ -584,6 +598,13 @@ class WCABaseRoleGenerationPipeline(
         if outline:
             data["outline"] = outline
 
+        # Apply anonymization if enabled for the organization
+        if request.user.organization and request.user.organization.enable_anonymization is True:
+            logger.debug("Anonymizing text and name")
+            data["text"] = anonymizer.anonymize_struct(data["text"])
+            if name:
+                data["name"] = anonymizer.anonymize_struct(data["name"])
+
         @backoff.on_exception(
             backoff.expo,
             Exception,
@@ -665,6 +686,13 @@ class WCABasePlaybookExplanationPipeline(
                 custom_prompt = f"{custom_prompt}\n"
             data["custom_prompt"] = custom_prompt
 
+        # Apply anonymization if enabled for the organization
+        if request.user.organization and request.user.organization.enable_anonymization is True:
+            logger.debug("Anonymizing playbook content and custom prompt")
+            data["playbook"] = anonymizer.anonymize_struct(data["playbook"])
+            if custom_prompt:
+                data["custom_prompt"] = anonymizer.anonymize_struct(data["custom_prompt"])
+
         @backoff.on_exception(
             backoff.expo,
             Exception,
@@ -724,6 +752,12 @@ class WCABaseRoleExplanationPipeline(
             "model_id": model_id,
             "files": files,
         }
+
+        # Apply anonymization if enabled for the organization
+        if request.user.organization and request.user.organization.enable_anonymization is True:
+            logger.debug("Anonymizing role name and files content")
+            data["role_name"] = anonymizer.anonymize_struct(data["role_name"])
+            data["files"] = anonymizer.anonymize_struct(data["files"])
 
         @backoff.on_exception(
             backoff.expo,
