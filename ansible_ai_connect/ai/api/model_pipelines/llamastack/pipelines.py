@@ -152,14 +152,6 @@ class LlamaStackStreamingChatBotPipeline(
         self.client = AsyncLlamaStackClient(base_url=config.inference_url)
         self.metadata_pattern = re.compile(r"\nMetadata: (\{.+\})\n")
 
-        # Register a vector database
-        self.client.vector_dbs.register(
-            vector_db_id=VECTOR_DB_ID,
-            provider_id="faiss",
-            embedding_model="all-MiniLM-L6-v2",
-            embedding_dimension=384,
-        )
-
         self.agent = AsyncAgent(
             self.client,
             model=self.config.model_id,
