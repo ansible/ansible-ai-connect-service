@@ -18,7 +18,6 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
 
-from django.conf import settings
 from django.http import StreamingHttpResponse
 from llama_stack_client import AsyncLlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
@@ -68,8 +67,6 @@ INSTRUCTIONS = """
     - The latest version of Ansible Automation Platform is 2.5, and it's services are available
     through paid subscription.
 """
-
-LIGHTSPEED_TOOL_GROUP_NAME = "mcp::lightspeed"
 
 VECTOR_DB_ID = "aap-product-docs-2_5"
 RAG_TOOL_GROUP_NAME = "builtin::rag/knowledge_search"
@@ -180,17 +177,13 @@ class LlamaStackStreamingChatBotPipeline(
             else await self.agent.create_session(f"lightspeed-session-{uuid.uuid4()}")
         )
 
-        lightspeed_tool_group = ToolgroupAgentToolGroupWithArgs(
-            name=LIGHTSPEED_TOOL_GROUP_NAME, args={"__token": settings.LIGHTSPEED_TOOL_GROUP_TOKEN}
-        )
-
         response: AsyncIterator[AgentTurnResponseStreamChunk] = await self.agent.create_turn(
             messages=[
                 UserMessage(role="user", content=query),
             ],
             stream=True,
             session_id=session_id,
-            toolgroups=[RAG_TOOL_GROUP, lightspeed_tool_group],
+            toolgroups=[RAG_TOOL_GROUP],
         )
         self.id = 0
         self.metadata_map = {}
