@@ -21,8 +21,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Iterator, List, Mapping
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
-from health_check.exceptions import ServiceUnavailable
-from llama_stack_client import AsyncLlamaStackClient, BadRequestError, LlamaStackClient
+from llama_stack_client import AsyncLlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.lib.agents.tool_parser import ToolParser
@@ -49,7 +48,6 @@ from ansible_ai_connect.healthcheck.backends import (
     MODEL_MESH_HEALTH_CHECK_MODELS,
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
-    HealthCheckSummaryException,
 )
 
 logger = logging.getLogger(__name__)
@@ -146,28 +144,33 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
             }
         )
-        try:
-            client = LlamaStackClient(base_url=self.config.inference_url)
-            response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
-            health_status = response.health.get("status")
-            if health_status != "OK":
-                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
-                summary.add_exception(
-                    MODEL_MESH_HEALTH_CHECK_MODELS,
-                    HealthCheckSummaryException(ServiceUnavailable(reason)),
-                )
-        except BadRequestError as e:
-            logger.exception(str(e))
-            summary.add_exception(
-                MODEL_MESH_HEALTH_CHECK_MODELS,
-                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
-            )
-        except Exception as e:
-            logger.exception(str(e))
-            summary.add_exception(
-                MODEL_MESH_HEALTH_CHECK_MODELS,
-                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
-            )
+        # ===========================================================================
+        # Commented out until a llama-stack version (2.11?) containing
+        # https://github.com/meta-llama/llama-stack/pull/2303 is released
+        # ---------------------------------------------------------------------------
+        # try:
+        #     client = LlamaStackClient(base_url=self.config.inference_url)
+        #     response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
+        #     health_status = response.health.get("status")
+        #     if health_status != "OK":
+        #         reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
+        #         summary.add_exception(
+        #             MODEL_MESH_HEALTH_CHECK_MODELS,
+        #             HealthCheckSummaryException(ServiceUnavailable(reason)),
+        #         )
+        # except BadRequestError as e:
+        #     logger.exception(str(e))
+        #     summary.add_exception(
+        #         MODEL_MESH_HEALTH_CHECK_MODELS,
+        #         HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+        #     )
+        # except Exception as e:
+        #     logger.exception(str(e))
+        #     summary.add_exception(
+        #         MODEL_MESH_HEALTH_CHECK_MODELS,
+        #         HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+        #     )
+        # ===========================================================================
 
         return summary
 
