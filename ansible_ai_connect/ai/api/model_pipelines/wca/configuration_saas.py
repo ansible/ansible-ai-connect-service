@@ -63,6 +63,7 @@ class WCASaaSConfiguration(WCABaseConfiguration):
         idp_password: str,
         one_click_default_api_key: str,
         one_click_default_model_id: str,
+        enable_anonymization: bool,
     ):
         super().__init__(
             inference_url,
@@ -75,6 +76,7 @@ class WCASaaSConfiguration(WCABaseConfiguration):
             enable_ari_postprocessing,
             health_check_api_key,
             health_check_model_id,
+            enable_anonymization,
         )
         self.idp_url = idp_url
         self.idp_login = idp_login
@@ -89,6 +91,7 @@ class WCASaaSConfiguration(WCABaseConfiguration):
     inference_url: str
     one_click_default_api_key: str
     one_click_default_model_id: str
+    enable_anonymization: bool
 
 
 @Register(api_type="wca")
@@ -113,6 +116,7 @@ class WCASaaSPipelineConfiguration(WCABasePipelineConfiguration):
                 idp_password=kwargs["idp_password"],
                 one_click_default_api_key=kwargs["one_click_default_api_key"],
                 one_click_default_model_id=kwargs["one_click_default_model_id"],
+                enable_anonymization=kwargs["enable_anonymization"],
             ),
         )
 

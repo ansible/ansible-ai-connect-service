@@ -52,6 +52,7 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
         enable_ari_postprocessing: bool,
         health_check_api_key: str,
         health_check_model_id: str,
+        enable_anonymization: bool,
     ):
         super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.api_key = api_key
@@ -60,6 +61,7 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
         self.enable_ari_postprocessing = enable_ari_postprocessing
         self.health_check_api_key = health_check_api_key
         self.health_check_model_id = health_check_model_id
+        self.enable_anonymization = enable_anonymization
 
     api_key: str
     verify_ssl: bool
@@ -82,3 +84,4 @@ class WCABaseConfigurationSerializer(BaseConfigSerializer):
     enable_ari_postprocessing = serializers.BooleanField(required=False, default=False)
     health_check_api_key = serializers.CharField(required=True)
     health_check_model_id = serializers.CharField(required=True)
+    enable_anonymization = serializers.BooleanField(required=False, default=True)

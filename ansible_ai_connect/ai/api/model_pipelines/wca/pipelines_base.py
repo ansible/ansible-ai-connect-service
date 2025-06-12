@@ -246,6 +246,25 @@ class WCABasePipeline(
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
 
+    def should_anonymize(self, request) -> bool:
+        """Helper method to determine if anonymization should be applied.
+
+        Args:
+            request: The request object containing user and organization information
+
+        Returns:
+            bool: True if anonymization should be applied, False otherwise
+        """
+        if not self.config.enable_anonymization:
+            return False
+
+        # If user has no organization, apply anonymization by default
+        if not request.user.organization:
+            return True
+
+        # Otherwise check organization's setting
+        return request.user.organization.enable_anonymization is True
+
     def _prepare_request_headers(
         self, request_user: Optional[User], api_key: str, identifier: Optional[str]
     ) -> dict[str, Optional[str]]:
@@ -338,7 +357,7 @@ class WCABaseCompletionsPipeline(
 
             headers = self._prepare_request_headers(request.user, api_key, suggestion_id)
 
-            if request.user.organization and request.user.organization.enable_anonymization is True:
+            if self.should_anonymize(request):
                 logger.debug("Anonymizing prompt and context")
                 context = anonymizer.anonymize_struct(context)
                 prompt = "#".join(anonymizer.anonymize_struct(prompt.split("#")))
@@ -511,7 +530,7 @@ class WCABasePlaybookGenerationPipeline(
             data["custom_prompt"] = custom_prompt
 
         # Apply anonymization if enabled for the organization
-        if request.user.organization and request.user.organization.enable_anonymization is True:
+        if self.should_anonymize(request):
             logger.debug("Anonymizing text and custom prompt")
             data["text"] = anonymizer.anonymize_struct(data["text"])
             if custom_prompt:
@@ -599,7 +618,7 @@ class WCABaseRoleGenerationPipeline(
             data["outline"] = outline
 
         # Apply anonymization if enabled for the organization
-        if request.user.organization and request.user.organization.enable_anonymization is True:
+        if self.should_anonymize(request):
             logger.debug("Anonymizing text and name")
             data["text"] = anonymizer.anonymize_struct(data["text"])
             if name:
@@ -687,7 +706,7 @@ class WCABasePlaybookExplanationPipeline(
             data["custom_prompt"] = custom_prompt
 
         # Apply anonymization if enabled for the organization
-        if request.user.organization and request.user.organization.enable_anonymization is True:
+        if self.should_anonymize(request):
             logger.debug("Anonymizing playbook content and custom prompt")
             data["playbook"] = anonymizer.anonymize_struct(data["playbook"])
             if custom_prompt:
@@ -754,7 +773,7 @@ class WCABaseRoleExplanationPipeline(
         }
 
         # Apply anonymization if enabled for the organization
-        if request.user.organization and request.user.organization.enable_anonymization is True:
+        if self.should_anonymize(request):
             logger.debug("Anonymizing role name and files content")
             data["role_name"] = anonymizer.anonymize_struct(data["role_name"])
             data["files"] = anonymizer.anonymize_struct(data["files"])

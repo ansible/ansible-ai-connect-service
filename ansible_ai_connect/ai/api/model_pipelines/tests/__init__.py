@@ -131,6 +131,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 one_click_default_model_id=extract(
                     "one_click_default_model_id", "one-click-default-model-id", **kwargs
                 ),
+                enable_anonymization=extract("enable_anonymization", True, **kwargs),
             )
         case "wca-onprem":
             return WCAOnPremConfiguration(
@@ -149,6 +150,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                     "health_check_model_id", "a-healthcheck-model-id", **kwargs
                 ),
                 username=extract("username", "a-username", **kwargs),
+                enable_anonymization=extract("enable_anonymization", True, **kwargs),
             )
         case "wca-dummy":
             return WCADummyConfiguration(

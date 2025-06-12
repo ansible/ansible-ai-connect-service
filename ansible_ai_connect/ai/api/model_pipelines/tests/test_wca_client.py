@@ -17,12 +17,10 @@ import json as JSON
 import uuid
 from datetime import datetime
 from functools import wraps
-from http import HTTPStatus
 from typing import Optional, Type, Union
 from unittest.mock import ANY, Mock, patch
 
 import django.utils.timezone
-import requests
 from django.test import TestCase, override_settings
 from prometheus_client import Counter, Histogram
 from requests.auth import HTTPBasicAuth
@@ -163,120 +161,81 @@ def assert_call_count_metrics(metric):
 
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
-class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
+class TestWCAClient(WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC):
     def setUp(self):
         super().setUp()
-        self.user = Mock()
-        self.user.organization.id = 123
-        self.user.userplan_set.all.return_value = []
-        config = mock_pipeline_config("wca", api_key=None, model_id=None)
-        self.config = config
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>my-optimized-model")
+        # Create mock configuration
+        self.config = mock_pipeline_config("wca")
+        self.config.api_key = None
+        self.config.model_id = None
+        self.model_client = WCASaaSCompletionsPipeline(self.config)
+
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:my-key<sep>my-optimized-model")
     def test_mock_wca_get_api_key(self):
-        model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user)
+        api_key = self.model_client.get_api_key(self.user)
         self.assertEqual(api_key, "my-key")
 
     def test_get_api_key_without_org_id(self):
-        model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaKeyNotFound):
-            model_client.get_api_key(self.user)
+            self.model_client.get_api_key(self.user)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:12345<sep>my-model")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:12345<sep>my-model")
     def test_get_api_key_from_aws(self):
         secret_value = "12345"
-        model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user)
+        api_key = self.model_client.get_api_key(self.user)
         self.assertEqual(api_key, secret_value)
 
     def test_get_api_key_from_aws_error(self):
         m = Mock()
         m.get_secret.side_effect = WcaSecretManagerError
         self.mock_wca_secret_manager_with(m)
-        model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaSecretManagerError):
-            model_client.get_api_key(self.user)
+            self.model_client.get_api_key(self.user)
 
     def test_get_api_key_with_environment_override(self):
         self.config.api_key = "key"
-        model_client = WCASaaSCompletionsPipeline(self.config)
-        api_key = model_client.get_api_key(self.user)
+        api_key = self.model_client.get_api_key(self.user)
         self.assertEqual(api_key, "key")
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>my-great-model")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:my-key<sep>my-great-model")
     def test_get_model_id_with_empty_model(self):
-        wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, requested_model_id="")
+        model_id = self.model_client.get_model_id(self.user, requested_model_id="")
         self.assertEqual(model_id, "my-great-model")
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-key<sep>org-model")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:my-key<sep>org-model")
     def test_get_model_id_get_org_default_model(self):
-        wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, None)
+        model_id = self.model_client.get_model_id(self.user, None)
         self.assertEqual(model_id, "org-model")
 
     def test_get_model_id_with_model_override(self):
-        wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, "model-i-pick")
+        model_id = self.model_client.get_model_id(self.user, "model-i-pick")
         self.assertEqual(model_id, "model-i-pick")
 
     def test_get_model_id_without_org_id(self):
         self.user.organization = None
-        model_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaNoDefaultModelId):
-            model_client.get_model_id(self.user, None)
+            self.model_client.get_model_id(self.user, None)
 
-    @override_settings(WCA_SECRET_DUMMY_SECRETS="123:")
+    @override_settings(WCA_SECRET_DUMMY_SECRETS="1981:")
     def test_get_api_key_org_cannot_have_no_key(self):
-        wca_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaKeyNotFound):
-            wca_client.get_api_key(self.user)
+            self.model_client.get_api_key(self.user)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="")
     def test_get_model_id_org_cannot_have_no_model(self):
-        wca_client = WCASaaSCompletionsPipeline(self.config)
         with self.assertRaises(WcaModelIdNotFound):
-            wca_client.get_model_id(self.user, None)
+            self.model_client.get_model_id(self.user, None)
 
     def test_model_id_with_override(self):
         self.config.model_id = "gemini"
-        wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, None)
+        model_id = self.model_client.get_model_id(self.user, None)
         self.assertEqual(model_id, "gemini")
 
     def test_model_id_with_environment_and_user_override(self):
         self.config.model_id = "gemini"
-        wca_client = WCASaaSCompletionsPipeline(self.config)
-        model_id = wca_client.get_model_id(self.user, "bard")
+        model_id = self.model_client.get_model_id(self.user, "bard")
         self.assertEqual(model_id, "bard")
-
-    def test_fatal_exception(self):
-        """Test the logic to determine if an exception is fatal or not"""
-        exc = Exception()
-        b = WCASaaSCompletionsPipeline.fatal_exception(exc)
-        self.assertFalse(b)
-
-        exc = requests.RequestException()
-        response = requests.Response()
-        response.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
-        exc.response = response
-        b = WCASaaSCompletionsPipeline.fatal_exception(exc)
-        self.assertFalse(b)
-
-        exc = requests.RequestException()
-        response = requests.Response()
-        response.status_code = HTTPStatus.TOO_MANY_REQUESTS
-        exc.response = response
-        b = WCASaaSCompletionsPipeline.fatal_exception(exc)
-        self.assertFalse(b)
-
-        exc = requests.RequestException()
-        response = requests.Response()
-        response.status_code = HTTPStatus.BAD_REQUEST
-        exc.response = response
-        b = WCASaaSCompletionsPipeline.fatal_exception(exc)
-        self.assertTrue(b)
 
 
 @override_settings(ANSIBLE_AI_ENABLE_ONE_CLICK_TRIAL=True)
@@ -1563,100 +1522,67 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
         )
 
 
-class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
+def mock_anonymize(x):
+    if isinstance(x, str):
+        return f"anonymized_{x}"
+    elif isinstance(x, dict):
+        return {k: mock_anonymize(v) for k, v in x.items()}
+    elif isinstance(x, list):
+        return [mock_anonymize(item) for item in x]
+    return x
+
+
+class TestWCAAnonymization(WisdomServiceAPITestCaseBaseOIDC, WisdomServiceLogAwareTestCase):
     def setUp(self):
         super().setUp()
-        # Create a WCASaaS configuration for testing
-        from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_saas import (
-            WCASaaSConfiguration,
-        )
+        self.config = mock_pipeline_config("wca")
 
-        self.config = WCASaaSConfiguration(
-            api_key="12345",
-            model_id="model-name",
-            retry_count=1,
-            timeout=None,
-            verify_ssl=True,
-            inference_url="https://test.example.com",
-            enable_health_check=False,
-            enable_ari_postprocessing=False,
-            health_check_api_key="test-key",
-            health_check_model_id="test-model",
-            idp_url="https://test.idp.com",
-            idp_login="test-login",
-            idp_password="test-pass",
-            one_click_default_api_key="test-key",
-            one_click_default_model_id="test-model",
-        )
-
-        # Mock token response
-        self.mock_token_response = MockResponse(
-            json={"access_token": "test-token", "token_type": "Bearer", "expires_in": 3600},
-            status_code=200,
-            text=JSON.dumps(
-                {"access_token": "test-token", "token_type": "Bearer", "expires_in": 3600}
-            ),
-        )
-        # Mock the request and user
         self.mock_request = Mock()
-        self.mock_request.user = Mock()
-        self.mock_request.user.uuid = str(uuid.uuid4())
-        self.mock_request.user.organization = Mock()
-        self.mock_request.user.organization.enable_anonymization = False
-        self.mock_request.user.organization.wca_api_key = "test-key"
-        self.mock_request.user.organization.wca_model_id = "test-model"
-        self.mock_request.user.organization.wca_api_keys = []
-        self.mock_request.user.organization.wca_model_ids = []
-        self.mock_request.user.organization.id = 1
-        self.mock_request.user.wca_api_key = None
-        self.mock_request.user.wca_model_id = None
-
-        # Mock userplan_set
-        mock_userplan = Mock()
-        mock_userplan.is_active = False
-        self.mock_request.user.userplan_set = Mock()
-        self.mock_request.user.userplan_set.all = Mock(return_value=[mock_userplan])
-
-        # Mock secret manager
-        self.mock_secret_manager = Mock()
-        self.mock_secret_manager.secret_exists = Mock(return_value=True)
-        self.mock_secret_manager.get_secret = Mock(return_value={"SecretString": "test-model"})
-        self.mock_ai_config = Mock()
-        self.mock_ai_config.get_wca_secret_manager = Mock(return_value=self.mock_secret_manager)
-
-        # Set up patches
-        self.app_config_patcher = patch(
-            "django.apps.apps.get_app_config", return_value=self.mock_ai_config
-        )
-        self.app_config_patcher.start()
+        self.mock_request.user = self.user
 
         # Mock anonymizer for testing
         self.anonymizer_patcher = patch(
             "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.anonymizer"
         )
         self.mock_anonymizer = self.anonymizer_patcher.start()
-
-        def mock_anonymize(x):
-            if isinstance(x, str):
-                return f"anonymized_{x}"
-            elif isinstance(x, dict):
-                return {k: mock_anonymize(v) for k, v in x.items()}
-            elif isinstance(x, list):
-                return [mock_anonymize(item) for item in x]
-            return x
-
         self.mock_anonymizer.anonymize_struct = mock_anonymize
 
     def tearDown(self):
         self.anonymizer_patcher.stop()
-        self.app_config_patcher.stop()
         super().tearDown()
+
+    def test_should_anonymize_no_organization(self):
+        """Test that anonymization is enabled by default if user has no organization"""
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
+        self.mock_request.user.organization = None
+        self.assertTrue(self.model_client.should_anonymize(self.mock_request))
+
+    def test_should_anonymize_with_organization_enabled(self):
+        """Test that anonymization follows organization setting when enabled"""
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
+        self.mock_request.user.organization.enable_anonymization = True
+        self.assertTrue(self.model_client.should_anonymize(self.mock_request))
+
+    def test_should_anonymize_with_organization_disabled(self):
+        """Test that anonymization follows organization setting when disabled"""
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
+        self.mock_request.user.organization.enable_anonymization = False
+        self.assertFalse(self.model_client.should_anonymize(self.mock_request))
+
+    def test_should_anonymize_global_override(self):
+        """Test that global setting overrides organization settings"""
+        # Test with no organization
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
+        self.mock_request.user.organization = None
+        self.config.enable_anonymization = False
+        self.assertFalse(self.model_client.should_anonymize(self.mock_request))
 
     def test_playbook_generation_no_anonymization(self):
         """Test that playbook generation doesn't anonymize when disabled"""
-        client = WCASaaSPlaybookGenerationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
+        self.user.organization.enable_anonymization = False
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(
                 json={"playbook": "test", "outline": "", "warnings": []}, status_code=200
             )
@@ -1664,22 +1590,23 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
 
         test_text = "Install nginx on RHEL"
         test_prompt = "Custom prompt"
-        client.invoke(
+        self.model_client.invoke(
             PlaybookGenerationParameters.init(
                 request=self.mock_request, text=test_text, custom_prompt=test_prompt
             )
         )
 
         # Verify the data sent to the API wasn't anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["text"], test_text)
         self.assertEqual(call_args[1]["json"]["custom_prompt"], test_prompt + "\n")
 
     def test_role_generation_no_anonymization(self):
         """Test that role generation doesn't anonymize when disabled"""
-        client = WCASaaSRoleGenerationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client = WCASaaSRoleGenerationPipeline(self.config)
+        self.user.organization.enable_anonymization = False
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(
                 json={"name": "test", "files": [], "outline": "", "warnings": []}, status_code=200
             )
@@ -1687,41 +1614,43 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
 
         test_text = "Create a role to install nginx"
         test_name = "nginx_installer"
-        client.invoke(
+        self.model_client.invoke(
             RoleGenerationParameters.init(request=self.mock_request, text=test_text, name=test_name)
         )
 
         # Verify the data sent to the API wasn't anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["text"], test_text)
         self.assertEqual(call_args[1]["json"]["name"], test_name)
 
     def test_playbook_explanation_no_anonymization(self):
         """Test that playbook explanation doesn't anonymize when disabled"""
-        client = WCASaaSPlaybookExplanationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client = WCASaaSPlaybookExplanationPipeline(self.config)
+        self.user.organization.enable_anonymization = False
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(json={"explanation": "test explanation"}, status_code=200)
         )
 
         test_content = "- name: Install nginx\n  apt: name=nginx state=present"
         test_prompt = "Explain this playbook"
-        client.invoke(
+        self.model_client.invoke(
             PlaybookExplanationParameters.init(
                 request=self.mock_request, content=test_content, custom_prompt=test_prompt
             )
         )
 
         # Verify the data sent to the API wasn't anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["playbook"], test_content)
         self.assertEqual(call_args[1]["json"]["custom_prompt"], test_prompt + "\n")
 
     def test_role_explanation_no_anonymization(self):
         """Test that role explanation doesn't anonymize when disabled"""
-        client = WCASaaSRoleExplanationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client = WCASaaSRoleExplanationPipeline(self.config)
+        self.user.organization.enable_anonymization = False
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(json={"explanation": "test explanation"}, status_code=200)
         )
 
@@ -1732,23 +1661,23 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
             }
         ]
         test_role_name = "nginx_installer"
-        client.invoke(
+        self.model_client.invoke(
             RoleExplanationParameters.init(
                 request=self.mock_request, files=test_files, role_name=test_role_name
             )
         )
 
         # Verify the data sent to the API wasn't anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["files"], test_files)
         self.assertEqual(call_args[1]["json"]["role_name"], test_role_name)
 
     def test_playbook_generation_with_anonymization(self):
         """Test that playbook generation anonymizes when enabled"""
+        self.model_client = WCASaaSPlaybookGenerationPipeline(self.config)
         self.mock_request.user.organization.enable_anonymization = True
-        client = WCASaaSPlaybookGenerationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(
                 json={"playbook": "test", "outline": "", "warnings": []}, status_code=200
             )
@@ -1756,23 +1685,23 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
 
         test_text = "Install nginx on RHEL"
         test_prompt = "Custom prompt"
-        client.invoke(
+        self.model_client.invoke(
             PlaybookGenerationParameters.init(
                 request=self.mock_request, text=test_text, custom_prompt=test_prompt
             )
         )
 
         # Verify the data sent to the API was anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["text"], "anonymized_Install nginx on RHEL")
         self.assertEqual(call_args[1]["json"]["custom_prompt"], "anonymized_Custom prompt\n")
 
     def test_role_generation_with_anonymization(self):
         """Test that role generation anonymizes when enabled"""
+        self.model_client = WCASaaSRoleGenerationPipeline(self.config)
         self.mock_request.user.organization.enable_anonymization = True
-        client = WCASaaSRoleGenerationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(
                 json={"name": "test", "files": [], "outline": "", "warnings": []}, status_code=200
             )
@@ -1780,34 +1709,34 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
 
         test_text = "Create a role to install nginx"
         test_name = "nginx_installer"
-        client.invoke(
+        self.model_client.invoke(
             RoleGenerationParameters.init(request=self.mock_request, text=test_text, name=test_name)
         )
 
         # Verify the data sent to the API was anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(call_args[1]["json"]["text"], "anonymized_Create a role to install nginx")
         self.assertEqual(call_args[1]["json"]["name"], "anonymized_nginx_installer")
 
     def test_playbook_explanation_with_anonymization(self):
         """Test that playbook explanation anonymizes when enabled"""
+        self.model_client = WCASaaSPlaybookExplanationPipeline(self.config)
         self.mock_request.user.organization.enable_anonymization = True
-        client = WCASaaSPlaybookExplanationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(json={"explanation": "test explanation"}, status_code=200)
         )
 
         test_content = "- name: Install nginx\n  apt: name=nginx state=present"
         test_prompt = "Explain this playbook"
-        client.invoke(
+        self.model_client.invoke(
             PlaybookExplanationParameters.init(
                 request=self.mock_request, content=test_content, custom_prompt=test_prompt
             )
         )
 
         # Verify the data sent to the API was anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(
             call_args[1]["json"]["playbook"],
             "anonymized_- name: Install nginx\n  apt: name=nginx state=present",
@@ -1818,10 +1747,10 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
 
     def test_role_explanation_with_anonymization(self):
         """Test that role explanation anonymizes when enabled"""
+        self.model_client = WCASaaSRoleExplanationPipeline(self.config)
         self.mock_request.user.organization.enable_anonymization = True
-        client = WCASaaSRoleExplanationPipeline(self.config)
-        client.get_token = Mock(return_value={"access_token": "test-token"})
-        client.session.post = Mock(
+        self.model_client.get_token = Mock(return_value={"access_token": "test-token"})
+        self.model_client.session.post = Mock(
             return_value=MockResponse(json={"explanation": "test explanation"}, status_code=200)
         )
 
@@ -1832,14 +1761,14 @@ class TestWCAAnonymization(WisdomServiceLogAwareTestCase):
             }
         ]
         test_role_name = "nginx_installer"
-        client.invoke(
+        self.model_client.invoke(
             RoleExplanationParameters.init(
                 request=self.mock_request, files=test_files, role_name=test_role_name
             )
         )
 
         # Verify the data sent to the API was anonymized
-        call_args = client.session.post.call_args
+        call_args = self.model_client.session.post.call_args
         self.assertEqual(
             call_args[1]["json"]["files"][0]["content"],
             "anonymized_- name: Install nginx\n  apt: name=nginx state=present",
