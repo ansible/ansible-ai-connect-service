@@ -14,7 +14,7 @@
 #  limitations under the License.
 import logging
 from datetime import datetime
-from unittest import IsolatedAsyncioTestCase, skip
+from unittest import IsolatedAsyncioTestCase, TestCase, skip
 from unittest.mock import patch
 
 from llama_stack_client.types import (
@@ -38,6 +38,7 @@ from llama_stack_client.types.agents.turn_response_event_payload import (
 from llama_stack_client.types.shared.content_delta import TextDelta, ToolCallDelta
 
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines import (
+    GraniteToolParser,
     LlamaStackStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
@@ -404,3 +405,36 @@ Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document
             async for _ in self.pipeline.async_invoke(self.get_params()):
                 pass
             self.assertInLog("(not provided)", log)
+
+
+class TestGraniteToolParser(TestCase):
+
+    def test_get_parser(self):
+        parser = GraniteToolParser.get_parser("somemodel")
+        self.assertIsNone(parser)
+        parser = GraniteToolParser.get_parser("granite-8b")
+        self.assertIsInstance(parser, GraniteToolParser)
+
+    def test_get_tool_calls(self):
+        tool_call = ToolCall(
+            call_id="ABC",
+            tool_name="knowledge_search",
+            arguments={"query": "EDA in Ansible"},
+        )
+        output_message_with_tool_call = CompletionMessage(
+            content="done", role="assistant", stop_reason="end_of_turn", tool_calls=[tool_call]
+        )
+        output_message_without_tool_call = CompletionMessage(
+            content="done", role="assistant", stop_reason="end_of_turn", tool_calls=[]
+        )
+        parser = GraniteToolParser.get_parser("granite-8b")
+
+        tool_calls = parser.get_tool_calls(None)
+        self.assertEqual(len(tool_calls), 0)
+
+        tool_calls = parser.get_tool_calls(output_message_without_tool_call)
+        self.assertEqual(len(tool_calls), 0)
+
+        tool_calls = parser.get_tool_calls(output_message_with_tool_call)
+        self.assertEqual(len(tool_calls), 1)
+        self.assertEqual(tool_calls[0], tool_call)
