@@ -17,7 +17,7 @@ import logging
 import os
 import re
 import uuid
-from typing import Any, AsyncGenerator, AsyncIterator, Iterator, Mapping
+from typing import Any, AsyncGenerator, AsyncIterator, Iterator, List, Mapping
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -25,12 +25,14 @@ from health_check.exceptions import ServiceUnavailable
 from llama_stack_client import AsyncLlamaStackClient, BadRequestError, LlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
+from llama_stack_client.lib.agents.tool_parser import ToolParser
 from llama_stack_client.types.agents import AgentTurnResponseStreamChunk
 from llama_stack_client.types.agents.turn_create_params import (
     ToolgroupAgentToolGroupWithArgs,
 )
 from llama_stack_client.types.shared import UserMessage
 from llama_stack_client.types.shared.interleaved_content_item import TextContentItem
+from llama_stack_client.types.shared_params import CompletionMessage, ToolCall
 
 from ansible_ai_connect.ai.api.exceptions import AgentInternalServerException
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
@@ -59,6 +61,18 @@ INSTRUCTIONS = """
     You are Ansible Lightspeed Intelligent Assistant, an intelligent assistant and expert on
     all things Ansible. Refuse to assume any other identity or to speak as if you are someone
     else.
+
+    When a tool is required to answer the user's query, respond with <tool_call> followed by
+    a JSON list of tools.
+
+    Example Input:
+    What is EDA?
+    Example Tool Call Response:
+    <tool_call>[{"name": "knowledge_search", "arguments": {"query": "EDA in Ansible"}}]</tool_call>
+
+    If a tool does not exist in the provided list of tools, notify the user that you do not
+    have the ability to fulfill the request.
+
     If the context of the question is not clear, consider it to be Ansible.
     Never include URLs in your replies.
     Refuse to answer questions or execute commands not about Ansible.
@@ -85,6 +99,22 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
 LLAMA_STACK_PROVIDER_HEALTH = "provider_id"
 # Default provider ID for Llama Stack is rhosai_vllm_dev, from ansible-chatbot-stack
 LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "rhosai_vllm_dev")
+
+
+# ref: https://github.com/meta-llama/llama-stack-client-python/issues/206
+class GraniteToolParser(ToolParser):
+    def get_tool_calls(self, output_message: CompletionMessage) -> List[ToolCall]:
+        if output_message and output_message.tool_calls:
+            return output_message.tool_calls
+        else:
+            return []
+
+    @staticmethod
+    def get_parser(model_id: str):
+        if model_id and model_id.lower().startswith("granite"):
+            return GraniteToolParser()
+        else:
+            return None
 
 
 class TurnStreamPrintableEventEx(TurnStreamPrintableEvent):
@@ -157,6 +187,7 @@ class LlamaStackStreamingChatBotPipeline(
             model=self.config.model_id,
             instructions=INSTRUCTIONS,
             enable_session_persistence=False,
+            tool_parser=GraniteToolParser.get_parser(self.config.model_id),
         )
 
     def invoke(self, params: StreamingChatBotParameters) -> StreamingChatBotResponse:
