@@ -7,6 +7,7 @@ import React from "react";
 // NOTE: ignoring because we non-use of "screen" is conistent with the
 // vitest-browser-react documentation
 /* eslint-disable testing-library/prefer-screen-queries */
+/* eslint-disable no-nested-ternary */
 
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
@@ -327,7 +328,6 @@ function mockFetchEventSource() {
     const ok = status === 200;
     await init.onopen({ status, ok });
     if (status === 200) {
-      // eslint-disable-next-line no-nested-ternary
       const streamData = agent_greeting
         ? streamAgentGreetingData
         : agent
