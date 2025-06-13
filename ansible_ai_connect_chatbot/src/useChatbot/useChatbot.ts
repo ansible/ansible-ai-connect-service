@@ -69,7 +69,10 @@ const isTooManyRequestsError = (e: any) =>
   axios.isAxiosError(e) && e.response?.status === 429;
 
 const INFERENCE_MESSAGE_PROMPT = "\n\n`inference>`";
-const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(INFERENCE_MESSAGE_PROMPT, "mg");
+const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(
+  INFERENCE_MESSAGE_PROMPT,
+  "mg",
+);
 
 const countInferenceMessagePrompts = (content: string | undefined): number => {
   if (!content) {
@@ -549,14 +552,21 @@ export const useChatbot = () => {
                   const lastMessage = msgs[msgs.length - 1];
                   const n = countInferenceMessagePrompts(lastMessage.content);
                   if (n === 1) {
-                    lastMessage.content = lastMessage.content?.replace(INFERENCE_MESSAGE_PROMPT, "").replace("<noinput>", "");
+                    lastMessage.content = lastMessage.content
+                      ?.replace(INFERENCE_MESSAGE_PROMPT, "")
+                      .replace("<noinput>", "");
                     return [...msgs];
                   } else if (n > 1) {
-                    const i = lastMessage.content?.lastIndexOf(INFERENCE_MESSAGE_PROMPT);
+                    const i = lastMessage.content?.lastIndexOf(
+                      INFERENCE_MESSAGE_PROMPT,
+                    );
                     lastMessage.content = lastMessage.content?.substring(0, i);
                   }
                   lastMessage.collapse = true;
-                  const newMessage  = botMessage(message.data.token, query.toString());
+                  const newMessage = botMessage(
+                    message.data.token,
+                    query.toString(),
+                  );
                   return [...msgs, newMessage];
                 });
               }

@@ -292,7 +292,11 @@ function mockFetchEventSource() {
     },
     {
       event: "token",
-      data: { id: 0, token: "\n\n`inference>` Hello! How can I assist you with Ansible today?" },
+      data: {
+        id: 0,
+        token:
+          "\n\n`inference>` Hello! How can I assist you with Ansible today?",
+      },
     },
     {
       event: "turn_complete",
@@ -803,17 +807,12 @@ test("Agent chat streaming test", async () => {
 
   expect(ghIssueLinkSpy).toEqual(1);
 
-  await expect
-    .element(view.getByText("Some output"))
-    .not.toBeVisible();
+  await expect.element(view.getByText("Some output")).not.toBeVisible();
   const showMoreLink = await screen.findByRole("button", { name: "Show more" });
   await showMoreLink.click();
   await expect.element(view.getByText("Show less")).toBeVisible();
-  await expect
-    .element(view.getByText("Some output"))
-    .toBeVisible();
-  await expect
-    .element(view.getByText("EDA stands for Event Driven Ansible."))
+  await expect.element(view.getByText("Some output")).toBeVisible();
+  await expect.element(view.getByText("EDA stands for Event Driven Ansible."))
     .not.exist;
 });
 
@@ -831,8 +830,7 @@ test("Agent chat streaming test with a general greeting", async () => {
   await expect
     .element(view.getByText("Hello! How can I assist you with Ansible today?"))
     .toBeVisible();
-  await expect
-    .element(view.getByText("Show more")).not.exist;
+  await expect.element(view.getByText("Show more")).not.exist;
 });
 
 test("Chat streaming error at API call", async () => {
