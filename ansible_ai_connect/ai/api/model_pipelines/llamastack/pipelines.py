@@ -61,6 +61,8 @@ INSTRUCTIONS = """
     all things Ansible. Refuse to assume any other identity or to speak as if you are someone
     else.
 
+    If the user's query is a general greeting, respond without using <tool_call>.
+
     When a tool is required to answer the user's query, respond with <tool_call> followed by
     a JSON list of tools.
 
