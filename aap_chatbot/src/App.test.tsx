@@ -249,7 +249,7 @@ function mockFetchEventSource() {
     },
     {
       event: "token",
-      data: { id: 0, token: "Let me search for " },
+      data: { id: 0, token: "\n\n`inference>`Let me search for " },
     },
     {
       event: "token",
@@ -265,15 +265,34 @@ function mockFetchEventSource() {
     },
     {
       event: "token",
-      data: { id: 4, token: "EDA stands for " },
+      data: { id: 5, token: "Some output" },
     },
     {
       event: "token",
-      data: { id: 5, token: "Event Driven Ansible." },
+      data: { id: 6, token: "\n\n`inference>`EDA stands for " },
+    },
+    {
+      event: "token",
+      data: { id: 7, token: "Event Driven Ansible." },
     },
     {
       event: "step_complete",
-      data: { id: 6, token: '{ "key":"value"}' },
+      data: { id: 8, token: '{ "key":"value"}' },
+    },
+    {
+      event: "turn_complete",
+      data: { id: 0, token: "Turn complete." },
+    },
+  ];
+
+  const streamAgentGreetingData: object[] = [
+    {
+      event: "start",
+      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
+    },
+    {
+      event: "token",
+      data: { id: 0, token: "\n\n`inference>` Hello! How can I assist you with Ansible today?" },
     },
     {
       event: "turn_complete",
@@ -285,12 +304,15 @@ function mockFetchEventSource() {
     let status = 200;
     let errorCase = false;
     let agent = false;
+    let agent_greeting = false;
     let skipClose = false;
     const o = JSON.parse(init.body);
     if (o.query.startsWith("status=")) {
       status = parseInt(o.query.substring(7));
     } else if (o.query.startsWith("error in stream")) {
       errorCase = true;
+    } else if (o.query.startsWith("agent_greeting")) {
+      agent_greeting = true;
     } else if (o.query.startsWith("agent")) {
       agent = true;
     } else if (o.query.startsWith("skip close")) {
@@ -302,11 +324,13 @@ function mockFetchEventSource() {
     await init.onopen({ status, ok });
     if (status === 200) {
       // eslint-disable-next-line no-nested-ternary
-      const streamData = agent
-        ? streamAgentNormalData
-        : errorCase
-          ? streamErrorData
-          : streamNormalData;
+      const streamData = agent_greeting
+        ? streamAgentGreetingData
+        : agent
+          ? streamAgentNormalData
+          : errorCase
+            ? streamErrorData
+            : streamNormalData;
       for (const data of streamData) {
         init.onmessage({ data: JSON.stringify(data) });
       }
@@ -780,14 +804,35 @@ test("Agent chat streaming test", async () => {
   expect(ghIssueLinkSpy).toEqual(1);
 
   await expect
-    .element(view.getByText("EDA stands for Event Driven Ansible."))
+    .element(view.getByText("Some output"))
     .not.toBeVisible();
   const showMoreLink = await screen.findByRole("button", { name: "Show more" });
   await showMoreLink.click();
   await expect.element(view.getByText("Show less")).toBeVisible();
   await expect
-    .element(view.getByText("EDA stands for Event Driven Ansible."))
+    .element(view.getByText("Some output"))
     .toBeVisible();
+  await expect
+    .element(view.getByText("EDA stands for Event Driven Ansible."))
+    .not.exist;
+});
+
+test("Agent chat streaming test with a general greeting", async () => {
+  let ghIssueLinkSpy = 0;
+  vi.stubGlobal("open", () => {
+    ghIssueLinkSpy++;
+  });
+  mockAxios(200, false, false, referencedDocumentExample, true);
+
+  const view = await renderApp(false, true);
+
+  await sendMessage("agent_greeting test");
+
+  await expect
+    .element(view.getByText("Hello! How can I assist you with Ansible today?"))
+    .toBeVisible();
+  await expect
+    .element(view.getByText("Show more")).not.exist;
 });
 
 test("Chat streaming error at API call", async () => {
