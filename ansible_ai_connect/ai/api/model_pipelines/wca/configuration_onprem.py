@@ -55,6 +55,7 @@ class WCAOnPremConfiguration(WCABaseConfiguration):
         health_check_api_key: str,
         health_check_model_id: str,
         username: str,
+        enable_anonymization: bool,
     ):
         super().__init__(
             inference_url,
@@ -67,10 +68,12 @@ class WCAOnPremConfiguration(WCABaseConfiguration):
             enable_ari_postprocessing,
             health_check_api_key,
             health_check_model_id,
+            enable_anonymization,
         )
         self.username = username
 
     username: str
+    enable_anonymization: bool
 
 
 @Register(api_type="wca-onprem")
@@ -91,6 +94,7 @@ class WCAOnPremPipelineConfiguration(WCABasePipelineConfiguration):
                 health_check_api_key=kwargs["health_check_api_key"],
                 health_check_model_id=kwargs["health_check_model_id"],
                 username=kwargs["username"],
+                enable_anonymization=kwargs["enable_anonymization"],
             ),
         )
 
