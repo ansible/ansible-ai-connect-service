@@ -463,7 +463,7 @@ rsa==4.9
     # via
     #   google-auth
     #   oauth2client
-ruamel-yaml==0.18.6
+ruamel-yaml==0.18.14
     # via
     #   ansible-lint
     #   ansible-risk-insight
