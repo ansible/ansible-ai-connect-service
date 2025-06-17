@@ -67,6 +67,19 @@ const isTimeoutError = (e: any) =>
 const isTooManyRequestsError = (e: any) =>
   axios.isAxiosError(e) && e.response?.status === 429;
 
+const INFERENCE_MESSAGE_PROMPT = "\n\n`inference>`";
+const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(
+  INFERENCE_MESSAGE_PROMPT,
+  "mg", // 'm' for 'multiline' and 'g' for 'global'
+);
+
+const countInferenceMessagePrompts = (content: string | undefined): number => {
+  if (!content) {
+    return 0;
+  }
+  return (content.match(INFERENCE_MESSAGE_PROMPT_REGEX) || []).length;
+};
+
 export const fixedMessage = (content: string): MessageProps => ({
   role: "bot",
   content,
@@ -539,9 +552,24 @@ export const useChatbot = () => {
               } else if (message.event === "turn_complete") {
                 setMessages((msgs: ExtendedMessage[]) => {
                   const lastMessage = msgs[msgs.length - 1];
+                  const n = countInferenceMessagePrompts(lastMessage.content);
+                  if (n === 1) {
+                    lastMessage.content = lastMessage.content
+                      ?.replace(INFERENCE_MESSAGE_PROMPT, "")
+                      .replace("<noinput>", "");
+                    return [...msgs];
+                  } else if (n > 1) {
+                    const i = lastMessage.content?.lastIndexOf(
+                      INFERENCE_MESSAGE_PROMPT,
+                    );
+                    lastMessage.content = lastMessage.content?.substring(0, i);
+                  }
                   lastMessage.collapse = true;
-                  msgs.push(botMessage(message.data.token, query.toString()));
-                  return msgs;
+                  const newMessage = botMessage(
+                    message.data.token,
+                    query.toString(),
+                  );
+                  return [...msgs, newMessage];
                 });
               }
             },
