@@ -70,7 +70,7 @@ const isTooManyRequestsError = (e: any) =>
 const INFERENCE_MESSAGE_PROMPT = "\n\n`inference>`";
 const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(
   INFERENCE_MESSAGE_PROMPT,
-  "mg",
+  "mg", // 'm' for 'multiline' and 'g' for 'global'
 );
 
 const countInferenceMessagePrompts = (content: string | undefined): number => {
