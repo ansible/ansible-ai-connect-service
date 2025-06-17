@@ -186,7 +186,7 @@ propcache==0.2.0
     # via
     #   -c requirements-x86_64.txt
     #   yarl
-protobuf==5.28.2
+protobuf==5.29.5
     # via
     #   -c requirements-x86_64.txt
     #   grpcio-tools
