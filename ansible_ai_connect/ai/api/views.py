@@ -29,6 +29,7 @@ from prometheus_client import Histogram
 from rest_framework import permissions, serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -103,7 +104,6 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
-from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
@@ -1048,11 +1048,7 @@ class Chat(AACSAPIView):
     class ChatEndpointThrottle(EndpointRateThrottle):
         scope = "chat"
 
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
-    ]
+    permission_classes = [AllowAny]
     required_scopes = ["read", "write"]
     schema1_event = schema1.ChatBotOperationalEvent
     request_serializer_class = ChatRequestSerializer
@@ -1146,11 +1142,7 @@ class StreamingChat(AACSAPIView):
     class StreamingChatEndpointThrottle(EndpointRateThrottle):
         scope = "chat"
 
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
-    ]
+    permission_classes = [AllowAny]
     required_scopes = ["read", "write"]
     schema1_event = schema1.StreamingChatBotOperationalEvent
     request_serializer_class = StreamingChatRequestSerializer

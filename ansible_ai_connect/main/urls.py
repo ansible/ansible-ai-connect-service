@@ -79,8 +79,11 @@ if settings.DEBUG or settings.DEPLOYMENT_MODE == "saas":
         path("console/", ConsoleView.as_view(), name="console"),
         path("console/<slug:slug1>/", ConsoleView.as_view(), name="console"),
         path("console/<slug:slug1>/<slug:slug2>/", ConsoleView.as_view(), name="console"),
-        path("chatbot/", ChatbotView.as_view(), name="chatbot"),
     ]
+
+urlpatterns += [
+    path("chatbot/", ChatbotView.as_view(), name="chatbot"),
+]
 
 if settings.DEBUG:
     urlpatterns += [
