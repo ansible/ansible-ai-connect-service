@@ -21,6 +21,7 @@ from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
+from django.views.generic import TemplateView
 from django_prometheus.exports import ExportToDjangoView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import PermissionDenied
@@ -41,7 +42,6 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.main.base_views import ProtectedTemplateView
-from ansible_ai_connect.main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 
 logger = logging.getLogger(__name__)
@@ -121,12 +121,8 @@ class ConsoleView(ProtectedTemplateView):
         return context
 
 
-class ChatbotView(ProtectedTemplateView):
+class ChatbotView(TemplateView):
     template_name = "chatbot/index.html"
-
-    permission_classes = [
-        IsRHInternalUser | IsTestUser | IsAAPUser,
-    ]
 
     chatbot_enabled: bool
     streaming_chatbot_enabled: bool
