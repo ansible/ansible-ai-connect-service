@@ -23,7 +23,7 @@ from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
     LlamaStackConfiguration,
 )
 from ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines import (
-    LLAMA_STACK_DB_PROVIDER,
+    LLAMA_STACK_DB_PROVIDER_ID,
     LLAMA_STACK_PROVIDER_ID,
     LlamaStackMetaData,
 )
@@ -42,6 +42,7 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
     TestModelPipelineHealthCheck,
 )
 from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_INDEX,
     MODEL_MESH_HEALTH_CHECK_MODELS,
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummaryException,
@@ -116,6 +117,7 @@ class TestLlamaStackSelfTest(unittest.TestCase):
         # Verify the result has expected items and no exceptions
         self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
         self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_MODELS], "ok")
+        self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_INDEX], "ok")
         # Check that no exceptions were added to items
         exception_items = [
             k for k, v in result.items.items() if isinstance(v, HealthCheckSummaryException)
@@ -124,7 +126,7 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
         # Verify both providers were checked
         self.assertEqual(mock_client_instance.providers.retrieve.call_count, 2)
-        mock_client_instance.providers.retrieve.assert_any_call(LLAMA_STACK_DB_PROVIDER)
+        mock_client_instance.providers.retrieve.assert_any_call(LLAMA_STACK_DB_PROVIDER_ID)
         mock_client_instance.providers.retrieve.assert_any_call(LLAMA_STACK_PROVIDER_ID)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.LlamaStackClient")
@@ -136,7 +138,7 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
         def mock_provider_retrieve(provider_id):
             mock_provider = MagicMock()
-            if provider_id == LLAMA_STACK_DB_PROVIDER:
+            if provider_id == LLAMA_STACK_DB_PROVIDER_ID:
                 # Index provider fails
                 mock_provider.health = {"status": "Not Ready"}
             else:
@@ -150,16 +152,17 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
         # Verify the result has expected items and one exception for index health
         self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-        # The initial value is "ok" but gets overwritten by the exception
-        self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
+        self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_MODELS], "ok")
+        # The index health check should have an exception
+        self.assertIn(MODEL_MESH_HEALTH_CHECK_INDEX, result.items)
 
-        # Check that an exception was added for the models health check
-        models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
-        self.assertIsInstance(models_item, HealthCheckSummaryException)
-        self.assertIsInstance(models_item.exception, ServiceUnavailable)
+        # Check that an exception was added for the index health check
+        index_item = result.items[MODEL_MESH_HEALTH_CHECK_INDEX]
+        self.assertIsInstance(index_item, HealthCheckSummaryException)
+        self.assertIsInstance(index_item.exception, ServiceUnavailable)
         self.assertIn(
-            f"Provider {LLAMA_STACK_DB_PROVIDER} health status: Not ready",
-            str(models_item.exception),
+            f"Provider {LLAMA_STACK_DB_PROVIDER_ID} health status: Not ready",
+            str(index_item.exception),
         )
 
     def test_self_test_llm_health_fails(self):
@@ -173,7 +176,8 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
             # Verify the result has expected items and one exception for llm health
             self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-            # The initial value is "ok" but gets overwritten by the exception
+            self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_INDEX], "ok")
+            # The models health check should have an exception
             self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
 
             # Check that an exception was added for the models health check
@@ -199,14 +203,18 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
         result = self.metadata.self_test()
 
-        # Verify the result has expected items and exception (second overwrites first)
+        # Verify the result has expected items and exceptions for both health checks
         self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-        # The initial value is "ok" but gets overwritten by the exception
+        # Both health checks should have exceptions
+        self.assertIn(MODEL_MESH_HEALTH_CHECK_INDEX, result.items)
         self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
-        # Check that an exception was added for the models health check
-        # Note: The second exception overwrites the first one due to the same key
+
+        # Check that exceptions were added for both health checks
+        index_item = result.items[MODEL_MESH_HEALTH_CHECK_INDEX]
         models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
+        self.assertIsInstance(index_item, HealthCheckSummaryException)
         self.assertIsInstance(models_item, HealthCheckSummaryException)
+        self.assertIsInstance(index_item.exception, ServiceUnavailable)
         self.assertIsInstance(models_item.exception, ServiceUnavailable)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.LlamaStackClient")
@@ -218,7 +226,7 @@ class TestLlamaStackSelfTest(unittest.TestCase):
         mock_client_class.return_value = mock_client_instance
 
         def mock_provider_retrieve(provider_id):
-            if provider_id == LLAMA_STACK_DB_PROVIDER:
+            if provider_id == LLAMA_STACK_DB_PROVIDER_ID:
                 # Index provider raises exception
                 raise Exception("Connection error")
             else:
@@ -233,12 +241,13 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
         # Verify the result has expected items and one exception for index health
         self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-        # The initial value is "ok" but gets overwritten by the exception
-        self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
+        self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_MODELS], "ok")
+        # The index health check should have an exception
+        self.assertIn(MODEL_MESH_HEALTH_CHECK_INDEX, result.items)
 
-        # Check that an exception was added for the models health check
-        models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
-        self.assertIsInstance(models_item, HealthCheckSummaryException)
+        # Check that an exception was added for the index health check
+        index_item = result.items[MODEL_MESH_HEALTH_CHECK_INDEX]
+        self.assertIsInstance(index_item, HealthCheckSummaryException)
 
         # Verify that the exception was logged
         mock_logger.exception.assert_called_with("Connection error")
@@ -254,11 +263,33 @@ class TestLlamaStackSelfTest(unittest.TestCase):
 
             # Verify the result has expected items and one exception for llm health
             self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-            # The initial value is "ok" but gets overwritten by the exception
+            self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_INDEX], "ok")
+            # The models health check should have an exception
             self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
 
             # Check that an exception was added for the models health check
             models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
+            self.assertIsInstance(models_item, HealthCheckSummaryException)
+
+    def test_self_test_both_health_checks_exception(self):
+        """Test self_test when both index_health and llm_health raise exceptions."""
+        # Directly patch the health methods for precise control
+        with (
+            patch.object(self.metadata, "index_health", return_value=False),
+            patch.object(self.metadata, "llm_health", return_value=False),
+        ):
+            result = self.metadata.self_test()
+
+            # Verify the result has expected items and exceptions for both health checks
+            self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
+            # Both health checks should have exceptions
+            self.assertIn(MODEL_MESH_HEALTH_CHECK_INDEX, result.items)
+            self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
+
+            # Check that exceptions were added for both health checks
+            index_item = result.items[MODEL_MESH_HEALTH_CHECK_INDEX]
+            models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
+            self.assertIsInstance(index_item, HealthCheckSummaryException)
             self.assertIsInstance(models_item, HealthCheckSummaryException)
 
 

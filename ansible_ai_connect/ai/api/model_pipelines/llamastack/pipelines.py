@@ -45,6 +45,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_INDEX,
     MODEL_MESH_HEALTH_CHECK_MODELS,
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
@@ -98,8 +99,8 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
 )
 
 # Default provider ID for Llama Stack is rhosai_vllm_dev, from ansible-chatbot-stack
-LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "ollama")
-LLAMA_STACK_DB_PROVIDER = os.getenv("LLAMA_STACK_DB_PROVIDER", "faiss")
+LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "rhosai_vllm_dev")
+LLAMA_STACK_DB_PROVIDER_ID = os.getenv("LLAMA_STACK_DB_PROVIDER_ID", "aap_faiss")
 HEALTH_STATUS_OK = "OK"
 
 
@@ -139,7 +140,7 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
     def index_health(self) -> bool:
         try:
             client = LlamaStackClient(base_url=self.config.inference_url)
-            response = client.providers.retrieve(LLAMA_STACK_DB_PROVIDER)
+            response = client.providers.retrieve(LLAMA_STACK_DB_PROVIDER_ID)
             health_status = response.health.get("status")
             if health_status == HEALTH_STATUS_OK:
                 return True
@@ -170,15 +171,15 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+                MODEL_MESH_HEALTH_CHECK_INDEX: "ok",
             }
         )
         if not self.index_health():
-            reason = f"Provider {LLAMA_STACK_DB_PROVIDER} health status: Not ready"
+            reason = f"Provider {LLAMA_STACK_DB_PROVIDER_ID} health status: Not ready"
             summary.add_exception(
-                MODEL_MESH_HEALTH_CHECK_MODELS,
+                MODEL_MESH_HEALTH_CHECK_INDEX,
                 HealthCheckSummaryException(ServiceUnavailable(reason)),
             )
-            return summary
         if not self.llm_health():
             reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: Not ready"
             summary.add_exception(
