@@ -24,6 +24,7 @@ from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 ERROR_MESSAGE = "An error occurred"
 MODEL_MESH_HEALTH_CHECK_MODELS = "models"
 MODEL_MESH_HEALTH_CHECK_PROVIDER = "provider"
+MODEL_MESH_HEALTH_CHECK_INDEX = "index"
 
 
 class HealthCheckSummaryException:

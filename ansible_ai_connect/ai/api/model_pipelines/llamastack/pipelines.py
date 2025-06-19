@@ -21,7 +21,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Iterator, List, Mapping
 
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
-from llama_stack_client import AsyncLlamaStackClient, BadRequestError, LlamaStackClient
+from llama_stack_client import AsyncLlamaStackClient, LlamaStackClient
 from llama_stack_client.lib.agents.agent import AsyncAgent
 from llama_stack_client.lib.agents.event_logger import TurnStreamPrintableEvent
 from llama_stack_client.lib.agents.tool_parser import ToolParser
@@ -45,6 +45,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 from ansible_ai_connect.healthcheck.backends import (
+    MODEL_MESH_HEALTH_CHECK_INDEX,
     MODEL_MESH_HEALTH_CHECK_MODELS,
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
@@ -96,9 +97,11 @@ RAG_TOOL_GROUP = ToolgroupAgentToolGroupWithArgs(
         "vector_db_ids": [VECTOR_DB_ID],
     },
 )
-LLAMA_STACK_PROVIDER_HEALTH = "provider_id"
+
 # Default provider ID for Llama Stack is rhosai_vllm_dev, from ansible-chatbot-stack
 LLAMA_STACK_PROVIDER_ID = os.getenv("LLAMA_STACK_PROVIDER_ID", "rhosai_vllm_dev")
+LLAMA_STACK_DB_PROVIDER_ID = os.getenv("LLAMA_STACK_DB_PROVIDER_ID", "aap_faiss")
+HEALTH_STATUS_OK = "OK"
 
 
 # ref: https://github.com/meta-llama/llama-stack-client-python/issues/206
@@ -134,6 +137,30 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
     def __init__(self, config: LlamaStackConfiguration):
         super().__init__(config=config)
 
+    def index_health(self) -> bool:
+        try:
+            client = LlamaStackClient(base_url=self.config.inference_url)
+            response = client.providers.retrieve(LLAMA_STACK_DB_PROVIDER_ID)
+            health_status = response.health.get("status")
+            if health_status == HEALTH_STATUS_OK:
+                return True
+        except Exception as e:
+            logger.exception(str(e))
+            return False
+        return False
+
+    def llm_health(self) -> bool:
+        try:
+            client = LlamaStackClient(base_url=self.config.inference_url)
+            response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
+            health_status = response.health.get("status")
+            if health_status == HEALTH_STATUS_OK:
+                return True
+        except Exception as e:
+            logger.exception(str(e))
+            return False
+        return False
+
     def self_test(self) -> HealthCheckSummary:
         """
         Perform a self-test to check the health of the LlamaStack provider.
@@ -144,29 +171,20 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
             {
                 MODEL_MESH_HEALTH_CHECK_PROVIDER: "llama-stack",
                 MODEL_MESH_HEALTH_CHECK_MODELS: "ok",
+                MODEL_MESH_HEALTH_CHECK_INDEX: "ok",
             }
         )
-        try:
-            client = LlamaStackClient(base_url=self.config.inference_url)
-            response = client.providers.retrieve(LLAMA_STACK_PROVIDER_ID)
-            health_status = response.health.get("status")
-            if health_status != "OK":
-                reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: {health_status}"
-                summary.add_exception(
-                    MODEL_MESH_HEALTH_CHECK_MODELS,
-                    HealthCheckSummaryException(ServiceUnavailable(reason)),
-                )
-        except BadRequestError as e:
-            logger.exception(str(e))
+        if not self.index_health():
+            reason = f"Provider {LLAMA_STACK_DB_PROVIDER_ID} health status: Not ready"
             summary.add_exception(
-                MODEL_MESH_HEALTH_CHECK_MODELS,
-                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+                MODEL_MESH_HEALTH_CHECK_INDEX,
+                HealthCheckSummaryException(ServiceUnavailable(reason)),
             )
-        except Exception as e:
-            logger.exception(str(e))
+        if not self.llm_health():
+            reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: Not ready"
             summary.add_exception(
                 MODEL_MESH_HEALTH_CHECK_MODELS,
-                HealthCheckSummaryException(ServiceUnavailable(str(e)), e),
+                HealthCheckSummaryException(ServiceUnavailable(reason)),
             )
 
         return summary
