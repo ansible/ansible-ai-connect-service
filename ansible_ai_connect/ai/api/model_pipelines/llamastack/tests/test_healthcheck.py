@@ -261,33 +261,6 @@ class TestLlamaStackSelfTest(unittest.TestCase):
             models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
             self.assertIsInstance(models_item, HealthCheckSummaryException)
 
-    @patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.LlamaStackClient")
-    @patch("ansible_ai_connect.ai.api.model_pipelines.llamastack.pipelines.logger")
-    def test_self_test_both_health_checks_exception(self, mock_logger, mock_client_class):
-        """Test self_test when both index_health and llm_health raise exceptions."""
-        # Set up the mock
-        mock_client_instance = MagicMock()
-        mock_client_class.return_value = mock_client_instance
-
-        # Both providers raise exceptions
-        mock_client_instance.providers.retrieve.side_effect = Exception("Service unavailable")
-
-        result = self.metadata.self_test()
-
-        # Verify the result has expected items and one exception (second overwrites first)
-        self.assertEqual(result.items[MODEL_MESH_HEALTH_CHECK_PROVIDER], "llama-stack")
-        # The initial value is "ok" but gets overwritten by the exception
-        self.assertIn(MODEL_MESH_HEALTH_CHECK_MODELS, result.items)
-
-        # Check that an exception was added for the models health check
-        models_item = result.items[MODEL_MESH_HEALTH_CHECK_MODELS]
-        self.assertIsInstance(models_item, HealthCheckSummaryException)
-
-        # Verify both calls were made and exceptions logged
-        self.assertEqual(mock_client_instance.providers.retrieve.call_count, 2)
-        self.assertEqual(mock_logger.exception.call_count, 2)
-        mock_logger.exception.assert_called_with("Service unavailable")
-
 
 if __name__ == "__main__":
     unittest.main()

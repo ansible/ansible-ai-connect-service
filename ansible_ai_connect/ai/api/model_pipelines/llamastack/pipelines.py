@@ -178,6 +178,7 @@ class LlamaStackMetaData(MetaData[LlamaStackConfiguration]):
                 MODEL_MESH_HEALTH_CHECK_MODELS,
                 HealthCheckSummaryException(ServiceUnavailable(reason)),
             )
+            return summary
         if not self.llm_health():
             reason = f"Provider {LLAMA_STACK_PROVIDER_ID} health status: Not ready"
             summary.add_exception(
