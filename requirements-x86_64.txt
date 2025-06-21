@@ -253,7 +253,7 @@ jwcrypto==1.5.6
     # via
     #   -r requirements.in
     #   django-oauth-toolkit
-langchain==0.3.10
+langchain==0.3.26
     # via -r requirements.in
 langchain-core==0.3.22
     # via
