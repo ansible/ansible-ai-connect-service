@@ -48,7 +48,7 @@ jsonpickle==3.3.0
 langchain==0.3.10
 langchain-ollama==0.2.1
 launchdarkly-server-sdk==8.3.0
-llama-stack-client>=0.2.9
+llama-stack-client>=0.2.12
 protobuf==5.29.5
 psycopg[binary]==3.1.8
 pydantic==2.9.2
