@@ -61,3 +61,7 @@ jobs:
             GHSA-79v4-65xg-pq4g
             # See don't use any .netrc
             GHSA-9hjg-9r4m-mvj7
+            # We don't use urllib3 from Node.js
+            GHSA-pq67-6m6q-mj2v
+            # We don't use urllib3 from Node.js
+            GHSA-48p4-8xcf-vxj5
