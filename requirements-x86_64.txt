@@ -222,7 +222,7 @@ inflection==0.5.1
     #   drf-spectacular
 ipython==8.10.0
     # via -r requirements.in
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 jinja2==3.1.6
     # via
