@@ -282,7 +282,7 @@ mdurl==0.1.2
     # via markdown-it-py
 monotonic==1.6
     # via segment-analytics-python
-multidict==6.0.5
+multidict==6.6.2
     # via
     #   aiohttp
     #   yarl
