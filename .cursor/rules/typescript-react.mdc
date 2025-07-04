@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: aap_chatbot/src/*,ansible_ai_connect_admin_portal/src/*,ansible_ai_connect_chatbot/src/*
 alwaysApply: false
 ---
