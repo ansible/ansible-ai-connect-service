@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: ansible_ai_connect/*.py
 alwaysApply: false
 ---
@@ -97,4 +97,3 @@ alwaysApply: false
   - Structured Logging: Implement structured logging for API monitoring and debugging
   - Request/Response Logging: Log API calls with execution time, user info, and response status
   - Performance Monitoring: Log slow queries and performance bottlenecks
-  

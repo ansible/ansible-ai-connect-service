@@ -140,7 +140,11 @@ class HttpChatBotMetaData(HttpMetaData):
         )
         try:
             headers = {"Content-Type": "application/json"}
-            r = requests.get(self.config.inference_url + "/readiness", headers=headers, timeout=5)
+            r = requests.get(
+                self.config.inference_url + "/readiness",
+                headers=headers,
+                timeout=self.timeout(1),
+            )
             r.raise_for_status()
 
             data = r.json()
@@ -194,6 +198,12 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
 
         if response.status_code == 200:
             data = json.loads(response.text)
+            # ChatResponseSerializer requires these fields.
+            # lightspeed-stack does not currently return them.
+            if "truncated" not in data:
+                data["truncated"] = False
+            if "referenced_documents" not in data:
+                data["referenced_documents"] = []
             return data
 
         elif response.status_code == 401:
@@ -330,7 +340,7 @@ class HttpStreamingChatBotPipeline(
                                         }
                                         data = o.get("data", default_data)
                                         referenced_documents = []
-                                        for doc in data.get("referenced_documents"):
+                                        for doc in data.get("referenced_documents", []):
                                             # Current version of ansible-chatbot-service
                                             # uses incompatible document data structure
                                             # between streaming and non-streaming chats.
@@ -345,7 +355,7 @@ class HttpStreamingChatBotPipeline(
                                                 )
                                             else:
                                                 referenced_documents.append(doc)
-                                        truncated = data.get("truncated")
+                                        truncated = data.get("truncated", False)
                                         ev.conversation_id = conversation_id
                                         ev.chat_referenced_documents = referenced_documents
                                         ev.chat_truncated = truncated
