@@ -119,8 +119,10 @@ class HomeView(TemplateView):
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
 
         user = self.request.user
-        context["rh_internal_user_or_test_user"] = user.is_authenticated and (
-            user.rh_internal or user.groups.filter(name="test").exists()
+        context["can_access_chatbot"] = user.is_authenticated and (
+            user.rh_internal
+            or user.groups.filter(name="test").exists()
+            or user.rh_org_has_subscription
         )
 
         # Show chatbot link when the chatbot service is configured.

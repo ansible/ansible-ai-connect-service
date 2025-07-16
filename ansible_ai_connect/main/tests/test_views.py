@@ -33,6 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
 )
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
+from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     create_user_with_provider,
@@ -249,6 +250,7 @@ class TestMarkdownMe(APIVersionTestCaseBase, TestCase):
 @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
 @override_settings(ANSIBLE_AI_CHATBOT_NAME="Awesome Chatbot")
 @override_settings(CHATBOT_DEBUG_UI=False)
+@override_settings(AUTHZ_DUMMY_ORGS_WITH_SUBSCRIPTION="12345")
 class TestChatbotView(TestCase):
     CHATBOT_PAGE_TITLE = "<title>Awesome Chatbot</title>"
     DOCUMENT_URL = (
@@ -279,18 +281,35 @@ class TestChatbotView(TestCase):
             rh_internal=False,
         )
         self.non_rh_test_user.groups.add(self.test_group)
+        self.non_rh_user_with_subscription = create_user_with_provider(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            username="non-rh-user-with-subscription",
+            password="non-rh-password",
+            email="non-rh-user-with-subscription@email.com",
+            rh_internal=False,
+            rh_org_id=12345,
+        )
 
     def tearDown(self):
         self.non_rh_user.delete()
         self.rh_user.delete()
         self.non_rh_test_user.delete()
         self.test_group.delete()
+        self.non_rh_user_with_subscription.delete()
+        Organization.objects.filter(id=12345).delete()
 
     def test_chatbot_link_with_anonymous_user(self):
         r = self.client.get(reverse("home"))
         self.assertEqual(r.status_code, HTTPStatus.OK)
         self.assertContains(r, TestChatbotView.DOCUMENT_URL)
         self.assertNotContains(r, "Chatbot")
+
+    def test_chatbot_link_with_non_rh_user_and_subscription(self):
+        self.client.force_login(user=self.non_rh_user_with_subscription)
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
+        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
+        self.assertContains(r, "Chatbot")
 
     def test_chatbot_link_with_non_rh_user(self):
         self.client.force_login(user=self.non_rh_user)
@@ -330,6 +349,11 @@ class TestChatbotView(TestCase):
         self.client.force_login(user=self.non_rh_user)
         r = self.client.get(reverse("chatbot"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_chatbot_view_with_non_rh_user_and_subscription(self):
+        self.client.force_login(user=self.non_rh_user_with_subscription)
+        r = self.client.get(reverse("chatbot"))
+        self.assertEqual(r.status_code, HTTPStatus.OK)
 
     @override_settings(CHATBOT_DEFAULT_PROVIDER="")
     def test_chatbot_view_with_rh_user_but_chatbot_disabled(self):

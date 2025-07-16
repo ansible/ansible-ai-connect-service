@@ -114,6 +114,7 @@ from .permissions import (
     BlockUserWithSeatButWCANotReady,
     BlockWCANotReadyButTrialAvailable,
     IsAAPLicensed,
+    IsOrganisationLightspeedSubscriber,
 )
 from .serializers import (
     ChatFeedback,
@@ -1051,7 +1052,7 @@ class Chat(AACSAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        IsRHInternalUser | IsTestUser | IsAAPUser | IsOrganisationLightspeedSubscriber,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.ChatBotOperationalEvent
@@ -1149,7 +1150,7 @@ class StreamingChat(AACSAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        IsRHInternalUser | IsTestUser | IsAAPUser | IsOrganisationLightspeedSubscriber,
     ]
     required_scopes = ["read", "write"]
     schema1_event = schema1.StreamingChatBotOperationalEvent
