@@ -96,7 +96,7 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
     def __init__(self, config: WCASaaSConfiguration):
         super().__init__(config=config)
 
-    def get_token(self, api_key) -> dict[str, str | int]:
+    def get_token(self, api_key):
         basic = None
         if self.config.idp_login:
             basic = HTTPBasicAuth(self.config.idp_login, self.config.idp_password)
