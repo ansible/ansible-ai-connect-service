@@ -45,6 +45,7 @@ def create_user(
     provider: str = None,
     social_auth_extra_data: any = {},
     rh_user_is_org_admin: Optional[bool] = None,
+    rh_org_has_subscription: Optional[bool] = None,
     rh_user_id: str = None,
     rh_org_id: int = 1234567,
     org_opt_out: bool = False,
@@ -65,6 +66,8 @@ def create_user(
         social_auth.set_extra_data(social_auth_extra_data)
         if rh_user_is_org_admin:
             user.rh_user_is_org_admin = rh_user_is_org_admin
+        if rh_org_has_subscription:
+            user.rh_org_has_subscription = rh_org_has_subscription
     user.save()
     return user
 

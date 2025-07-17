@@ -125,7 +125,8 @@ class ChatbotView(ProtectedTemplateView):
     template_name = "chatbot/index.html"
 
     permission_classes = [
-        IsRHInternalUser | IsTestUser | IsAAPUser,
+        IsAuthenticated,
+        IsRHInternalUser | IsTestUser | IsAAPUser | IsOrganisationLightspeedSubscriber,
     ]
 
     chatbot_enabled: bool
