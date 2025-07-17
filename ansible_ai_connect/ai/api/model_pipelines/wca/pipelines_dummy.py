@@ -17,11 +17,7 @@ from typing import TYPE_CHECKING, Optional, cast
 
 from django.apps import apps
 
-from ansible_ai_connect.ai.api.aws.wca_secret_manager import Suffixes
-from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
-    WcaKeyNotFound,
-    WcaTokenFailure,
-)
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import WcaTokenFailure
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     DUMMY_ROLE_FILES,
     DUMMY_ROLE_OUTLINE,
@@ -64,23 +60,10 @@ class WCADummyMetaData(MetaData[WCADummyConfiguration]):
     ) -> str:
         return requested_model_id or ""
 
-    def get_token(self, api_key) -> dict[str, str | int]:
+    def get_token(self, api_key) -> str:
         if api_key != "valid":
             raise WcaTokenFailure("I'm a fake WCA client and the only api_key I accept is 'valid'")
-        return {
-            "access_token": "a_dummy_token_for_your_test",
-            "expires_in": 600,
-            "expiration": 123154,
-        }
-
-    def get_api_key(self, user) -> str:
-        organization_id = user.organization and user.organization.id
-        secret_manager = apps.get_app_config("ai").get_wca_secret_manager()  # type: ignore
-        api_key = secret_manager.get_secret(organization_id, Suffixes.API_KEY)
-        try:
-            return api_key["SecretString"]
-        except KeyError:
-            raise WcaKeyNotFound
+        return ""
 
 
 @Register(api_type="wca-dummy")

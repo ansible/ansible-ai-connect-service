@@ -32,7 +32,6 @@ from ansible_ai_connect.ai.api.aws.exceptions import (
     WcaSecretManagerMissingCredentialsError,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    MetaData,
     ModelPipelineStreamingChatBot,
 )
 from ansible_ai_connect.ai.api.telemetry import schema1
@@ -43,12 +42,7 @@ from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
 
-from .serializers import (
-    BearerTokenSerializer,
-    UserBearerTokenResponseSerializer,
-    UserMarkdownResponseSerializer,
-    UserResponseSerializer,
-)
+from .serializers import MarkdownUserResponseSerializer, UserResponseSerializer
 
 ME_USER_CACHE_TIMEOUT_SEC = settings.ME_USER_CACHE_TIMEOUT_SEC
 logger = logging.getLogger(__name__)
@@ -141,7 +135,7 @@ class UnauthorizedView(TemplateView):
 
 class CurrentUserView(RetrieveAPIView):
     class MeRateThrottle(UserRateThrottle):
-        scope = "user/me"
+        scope = "me"
 
     permission_classes = [IsAuthenticated]
     serializer_class = UserResponseSerializer
@@ -171,10 +165,10 @@ class CurrentUserView(RetrieveAPIView):
 
 class MarkdownCurrentUserView(RetrieveAPIView):
     class MeRateThrottle(UserRateThrottle):
-        scope = "user/me"
+        scope = "me"
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserMarkdownResponseSerializer
+    serializer_class = MarkdownUserResponseSerializer
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
@@ -191,39 +185,6 @@ class MarkdownCurrentUserView(RetrieveAPIView):
 
         response = serializer.data
 
-        return Response(response, content_type="application/json")
-
-
-class Token(RetrieveAPIView):
-    class TokenRateThrottle(UserRateThrottle):
-        scope = "user/token"
-
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserBearerTokenResponseSerializer
-    throttle_classes = [TokenRateThrottle]
-
-    def dispatch(self, request, *args, **kwargs):
-        if not settings.ANSIBLE_AI_ENABLE_USER_TOKEN_GEN:
-            return HttpResponseForbidden()
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_object(self):
-        return self.request.user
-
-    @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
-    def get(self, request, *args, **kwargs):
-        instance = self.get_object()
-
-        config = apps.get_app_config("ai").get_model_pipeline(MetaData)
-        api_key = config.get_api_key(instance)
-        bearer_token = config.get_token(api_key)
-        response = {
-            "bearer_token": {
-                k: v for k, v in bearer_token.items() if k in BearerTokenSerializer().fields
-            },
-            "inference_url": config.config.inference_url,
-        }
         return Response(response, content_type="application/json")
 
 

@@ -481,21 +481,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserMarkdownResponse'
-          description: ''
-  /api/v1/me/token/:
-    get:
-      operationId: me_token_retrieve
-      tags:
-      - me
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserBearerTokenResponse'
+                $ref: '#/components/schemas/MarkdownUserResponse'
           description: ''
   /api/v1/telemetry/:
     get:
@@ -855,15 +841,6 @@ components:
         * `1` - CLOSE_CANCEL
         * `2` - TRANSITION
         * `3` - CLOSE_ACCEPT
-    BearerToken:
-      type: object
-      properties:
-        access_token:
-          type: string
-        expires_in:
-          type: integer
-        expiration:
-          type: integer
     ChatFeedback:
       type: object
       properties:
@@ -1373,6 +1350,14 @@ components:
       - description
       - title
       - type
+    MarkdownUserResponse:
+      type: object
+      properties:
+        content:
+          type: string
+          readOnly: true
+      required:
+      - content
     Metadata:
       type: object
       properties:
@@ -1588,24 +1573,6 @@ components:
       description: |-
         * `bug-report` - Bug Report
         * `feature-request` - Feature Request
-    UserBearerTokenResponse:
-      type: object
-      properties:
-        bearer_token:
-          $ref: '#/components/schemas/BearerToken'
-        inference_url:
-          type: string
-      required:
-      - bearer_token
-      - inference_url
-    UserMarkdownResponse:
-      type: object
-      properties:
-        content:
-          type: string
-          readOnly: true
-      required:
-      - content
     UserPlan:
       type: object
       properties:

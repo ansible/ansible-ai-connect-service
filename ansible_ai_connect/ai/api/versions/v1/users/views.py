@@ -12,10 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from ansible_ai_connect.users.views import (
-    CurrentUserView,
-    MarkdownCurrentUserView,
-    Token,
-)
+from ansible_ai_connect.users.views import CurrentUserView, MarkdownCurrentUserView
 
-__all__ = ["CurrentUserView", "MarkdownCurrentUserView", "Token"]
+__all__ = ["CurrentUserView", "MarkdownCurrentUserView"]
