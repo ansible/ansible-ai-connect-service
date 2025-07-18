@@ -130,6 +130,16 @@ class AlreadyAuth(TestCase):
         self.assertTrue(isinstance(response, HttpResponseRedirect))
         self.assertEqual(response.url, "/")
 
+    def test_no_login_for_auth_user_with_next(self):
+        class MockUser:
+            is_authenticated = True
+
+        request = RequestFactory().get("/login?next=/chatbot")
+        request.user = MockUser()
+        response = LoginView.as_view()(request)
+        self.assertTrue(isinstance(response, HttpResponseRedirect))
+        self.assertEqual(response.url, "/chatbot")
+
 
 @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=False)
 class TestMetricsView(APITransactionTestCase):
@@ -343,7 +353,7 @@ class TestChatbotView(TestCase):
     def test_chatbot_view_with_anonymous_user(self):
         r = self.client.get(reverse("chatbot"))
         self.assertEqual(r.status_code, HTTPStatus.FOUND)
-        self.assertEqual(r.url, "/login")
+        self.assertEqual(r.url, "/login?next=/chatbot/")
 
     def test_chatbot_view_with_non_rh_user(self):
         self.client.force_login(user=self.non_rh_user)

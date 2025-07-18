@@ -58,7 +58,7 @@ class ProtectedTemplateView(TemplateView):
             return handler(request, *args, **kwargs)
 
         except exceptions.NotAuthenticated:
-            return HttpResponseRedirect("/login")
+            return HttpResponseRedirect(f"/login?next={request.path}")
 
         except Exception as exc:
             # Map _internal_ errors to a generic PermissionDenied error

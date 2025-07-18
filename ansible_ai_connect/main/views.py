@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 class LoginView(auth_views.LoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["next"] = self.request.GET.get("next")
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
         context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
@@ -58,7 +59,7 @@ class LoginView(auth_views.LoginView):
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:
-            return HttpResponseRedirect("/")
+            return HttpResponseRedirect(self.request.GET.get("next", "/"))
         return super().dispatch(request, *args, **kwargs)
 
 
