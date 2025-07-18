@@ -134,11 +134,21 @@ class AlreadyAuth(TestCase):
         class MockUser:
             is_authenticated = True
 
-        request = RequestFactory().get("/login?next=/chatbot")
+        request = RequestFactory().get("/login?next=/chatbot", SERVER_NAME="testserver")
         request.user = MockUser()
         response = LoginView.as_view()(request)
         self.assertTrue(isinstance(response, HttpResponseRedirect))
         self.assertEqual(response.url, "/chatbot")
+
+    def test_no_login_for_auth_user_with_unsafe_next(self):
+        class MockUser:
+            is_authenticated = True
+
+        request = RequestFactory().get("/login?next=http://malicious-site.com")
+        request.user = MockUser()
+        response = LoginView.as_view()(request)
+        self.assertTrue(isinstance(response, HttpResponseRedirect))
+        self.assertEqual(response.url, "/")
 
 
 @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=False)

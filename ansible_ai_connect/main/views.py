@@ -21,6 +21,7 @@ from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponseRedirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django_prometheus.exports import ExportToDjangoView
 from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework.exceptions import PermissionDenied
@@ -59,7 +60,12 @@ class LoginView(auth_views.LoginView):
 
     def dispatch(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:
-            return HttpResponseRedirect(self.request.GET.get("next", "/"))
+            next_url = self.request.GET.get("next", "/")
+            if url_has_allowed_host_and_scheme(
+                next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+            ):
+                return HttpResponseRedirect(next_url)
+            return HttpResponseRedirect("/")
         return super().dispatch(request, *args, **kwargs)
 
 
