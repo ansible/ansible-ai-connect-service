@@ -131,7 +131,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
-    ChatbotDisplayMode.default,
+    ChatbotDisplayMode.fullscreen,
   );
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [conversations, setConversations] = React.useState<
