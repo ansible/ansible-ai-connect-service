@@ -6,7 +6,6 @@ grpcio-tools==1.68.1
 # pin idna until responses -> requests is updated
 idna==3.7
 isort==5.10.1
-langchain_community
 pip-tools
 pre-commit
 responses==0.24.1
