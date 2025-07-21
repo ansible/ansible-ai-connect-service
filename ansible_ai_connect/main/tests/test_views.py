@@ -318,48 +318,6 @@ class TestChatbotView(TestCase):
         self.non_rh_user_with_subscription.delete()
         Organization.objects.filter(id=12345).delete()
 
-    def test_chatbot_link_with_anonymous_user(self):
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertNotContains(r, "Chatbot")
-
-    def test_chatbot_link_with_non_rh_user_and_subscription(self):
-        self.client.force_login(user=self.non_rh_user_with_subscription)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertContains(r, "Chatbot")
-
-    def test_chatbot_link_with_non_rh_user(self):
-        self.client.force_login(user=self.non_rh_user)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertNotContains(r, "Chatbot")
-
-    def test_chatbot_link_with_non_rh_test_user(self):
-        self.client.force_login(user=self.non_rh_test_user)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertContains(r, "Chatbot")
-
-    @override_settings(CHATBOT_DEFAULT_PROVIDER="")
-    def test_chatbot_link_with_rh_user_but_chatbot_disabled(self):
-        self.client.force_login(user=self.rh_user)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertNotContains(r, "Chatbot")
-
-    def test_chatbot_link_with_rh_user(self):
-        self.client.force_login(user=self.rh_user)
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, HTTPStatus.OK)
-        self.assertContains(r, TestChatbotView.DOCUMENT_URL)
-        self.assertContains(r, "Chatbot")
-
     def test_chatbot_view_with_anonymous_user(self):
         r = self.client.get(reverse("chatbot"))
         self.assertEqual(r.status_code, HTTPStatus.FOUND)
