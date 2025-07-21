@@ -19,6 +19,7 @@ from typing import AsyncGenerator
 
 import aiohttp
 import requests
+from django.conf import settings
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
 
@@ -176,7 +177,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         conversation_id = params.conversation_id
         provider = params.provider
         model_id = params.model_id
-        system_prompt = params.system_prompt
+        system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
 
         data = {
             "query": query,
@@ -187,6 +188,10 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             data["conversation_id"] = str(conversation_id)
         if system_prompt:
             data["system_prompt"] = str(system_prompt)
+
+        headers = self.headers or {}
+        if params.mcp_headers:
+            headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
 
         response = requests.post(
             self.config.inference_url + "/v1/query",
@@ -262,11 +267,14 @@ class HttpStreamingChatBotPipeline(
                 "Accept": "application/json,text/event-stream",
             }
 
+            if params.mcp_headers:
+                headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
+
             query = params.query
             conversation_id = params.conversation_id
             provider = params.provider
             model_id = params.model_id
-            system_prompt = params.system_prompt
+            system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
             media_type = params.media_type
 
             data = {

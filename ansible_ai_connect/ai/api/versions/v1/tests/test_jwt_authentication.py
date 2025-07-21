@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from unittest import mock
+from unittest.mock import Mock, patch
 
 import jwt
 import requests
@@ -12,9 +13,12 @@ from ansible_base.resource_registry.models.service_identifier import service_id
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from django.apps import apps
 from django.test import override_settings
 from rest_framework.test import APITransactionTestCase
 
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
+from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
 from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 from ansible_ai_connect.users.models import User
@@ -40,8 +44,35 @@ test_encryption_public_key = (
 ISSUER = "ansible-issuer"
 AUDIENCE = "ansible-services"
 
+ANSIBLE_AI_MODEL_MESH_CONFIG = {
+    "ModelPipelineChatBot": {
+        "provider": "http",
+        "config": {
+            "inference_url": "http://localhost:8080",
+            "model_id": "granite-3.3-8b-instruct",
+            "enable_health_check": True,
+            "mcp_servers": [
+                {"name": "mcp::aap-controller", "type": "controller"},
+                {"name": "mcp::aap-gateway", "type": "gateway"},
+                {"name": "mcp::aap-lightspeed", "type": "lightspeed"},
+            ],
+        },
+    },
+}
+
 
 @override_settings(ANSIBLE_BASE_JWT_KEY=test_encryption_public_key)
+@patch.object(
+    apps.get_app_config("ai"),
+    "get_model_pipeline",
+    Mock(
+        return_value=HttpChatBotPipeline(
+            mock_pipeline_config(
+                "http", **ANSIBLE_AI_MODEL_MESH_CONFIG["ModelPipelineChatBot"]["config"]
+            ),
+        )
+    ),
+)
 class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
     api_version = API_VERSION
 
@@ -113,5 +144,23 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
         response = self.jwt_client.post(
             self.api_version_reverse("chat"), {"query": "Hello"}, format="json"
         )
+
+        mock_requests_post.assert_called_once()
+        _, kwargs = mock_requests_post.call_args
+
+        headers = kwargs.get("headers", None)
+        self.assertIsNotNone(headers)
+
+        mcp_headers_string = headers.get("MCP-HEADERS", None)
+        self.assertIsNotNone(headers)
+
+        expected_mcp_headers = {
+            "mcp::aap-controller": {"X-DAB-JW-TOKEN": self.encrypted_token},
+            "mcp::aap-lightspeed": {"X-DAB-JW-TOKEN": self.encrypted_token},
+        }
+        mcp_headers = json.loads(mcp_headers_string)
+
+        self.assertDictEqual(mcp_headers, expected_mcp_headers)
+
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertDictEqual(response.data, expected_response)

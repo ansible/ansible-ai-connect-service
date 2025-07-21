@@ -31,6 +31,11 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # ENABLE_HEALTHCHECK_XXX
 
 
+class MCPServersSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True)
+    type = serializers.CharField(required=True)
+
+
 @dataclass
 class HttpConfiguration(BaseConfig):
 
@@ -42,13 +47,16 @@ class HttpConfiguration(BaseConfig):
         enable_health_check: Optional[bool],
         verify_ssl: bool,
         stream: bool = False,
+        mcp_servers: Optional[list[dict[str, str]]] = None,
     ):
         super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.verify_ssl = verify_ssl
         self.stream = stream
+        self.mcp_servers = mcp_servers or []
 
     verify_ssl: bool
     stream: bool
+    mcp_servers: Optional[list[dict[str, str]]] = None
 
 
 @Register(api_type="http")
@@ -64,6 +72,7 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
                 enable_health_check=kwargs["enable_health_check"],
                 verify_ssl=kwargs["verify_ssl"],
                 stream=kwargs["stream"],
+                mcp_servers=kwargs["mcp_servers"],
             ),
         )
 
@@ -72,3 +81,6 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
 class HttpConfigurationSerializer(BaseConfigSerializer):
     verify_ssl = serializers.BooleanField(required=False, default=True)
     stream = serializers.BooleanField(required=False, default=False)
+    mcp_servers = serializers.ListSerializer(
+        child=MCPServersSerializer(), allow_empty=True, required=False, default=None
+    )

@@ -29,6 +29,7 @@ from prometheus_client import Histogram
 from rest_framework import permissions, serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.generics import GenericAPIView
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -108,6 +109,7 @@ from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
 from .data.data_model import ContentMatchPayloadData, ContentMatchResponseDto
 from .model_pipelines.exceptions import ModelTimeoutError
+from .model_pipelines.http.configuration import HttpConfiguration
 from .permissions import (
     BlockUserWithoutSeat,
     BlockUserWithoutSeatAndWCAReadyOrg,
@@ -264,6 +266,27 @@ class AACSAPIView(APIView):
         self.event.set_response(response)
         send_schema1_event(self.event)
         return response
+
+    @staticmethod
+    def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
+        mcp_headers = {}
+        jwt_header_name = "X-DAB-JW-TOKEN"
+        token = request.headers.get(jwt_header_name, None)
+        user = request.user
+        if token and user.is_authenticated and user.aap_user:
+            for mcp_server in config.mcp_servers:
+                if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
+                    mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
+                # This functionality seems experimental for gateway and does not allow the user to
+                # access wide range of api endpoints, we need to find a solution for gateway,
+                # but for the moment comment this code.
+                # elif mcp_server["type"] == "gateway":
+                #     from ansible_base.resource_registry.resource_server import get_service_token
+                #     user_ansible_id = str(user.ansible_id_for_filter)
+                #     token = get_service_token(user_id=user_ansible_id, expiration=3600)
+                #     mcp_headers[mcp_server["name"]] = {"X-ANSIBLE-SERVICE-AUTH": token}
+
+        return mcp_headers
 
 
 class Completions(APIView):
@@ -1106,6 +1129,8 @@ class Chat(AACSAPIView):
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
 
+        mcp_headers = self.get_mcp_headers(request, self.llm.config)
+
         data = self.llm.invoke(
             ChatBotParameters.init(
                 query=req_query,
@@ -1113,6 +1138,7 @@ class Chat(AACSAPIView):
                 model_id=self.req_model_id or self.llm.config.model_id,
                 provider=req_provider,
                 conversation_id=conversation_id,
+                mcp_headers=mcp_headers,
             )
         )
 
@@ -1122,10 +1148,10 @@ class Chat(AACSAPIView):
             raise ChatbotInvalidResponseException()
 
         # Finalise Segment Event with response details
-        self.event.chat_truncated = bool(data["truncated"])
+        self.event.chat_truncated = bool(data.get("truncated", False))
         self.event.chat_referenced_documents = [
             ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
-            for rd in data["referenced_documents"]
+            for rd in data.get("referenced_documents", [])
         ]
         self.event.chat_response = anonymize_struct(data["response"])
         self.event.chat_response = (
@@ -1203,6 +1229,8 @@ class StreamingChat(AACSAPIView):
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
 
+        mcp_headers = self.get_mcp_headers(request, self.llm.config)
+
         return self.llm.invoke(
             StreamingChatBotParameters.init(
                 query=req_query,
@@ -1211,5 +1239,6 @@ class StreamingChat(AACSAPIView):
                 provider=req_provider,
                 conversation_id=conversation_id,
                 media_type=media_type,
+                mcp_headers=mcp_headers,
             )
         )
