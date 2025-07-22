@@ -16,7 +16,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, Generic, Optional
 
-from attrs import define
+from attrs import define, field
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from rest_framework import serializers
@@ -231,6 +231,7 @@ class ChatBotParameters:
     model_id: str
     conversation_id: Optional[str]
     system_prompt: str
+    mcp_headers: Optional[dict[str, dict[str, str]]] = field(kw_only=True, default=None)
 
     @classmethod
     def init(
@@ -240,6 +241,7 @@ class ChatBotParameters:
         model_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        mcp_headers: Optional[dict[str, dict[str, str]]] = None,
     ):
         return cls(
             query=query,
@@ -247,6 +249,7 @@ class ChatBotParameters:
             model_id=model_id,
             conversation_id=conversation_id,
             system_prompt=system_prompt,
+            mcp_headers=mcp_headers,
         )
 
 
@@ -266,6 +269,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         conversation_id: Optional[str] = None,
         system_prompt: Optional[str] = None,
         media_type: Optional[str] = None,
+        mcp_headers: Optional[dict[str, dict[str, str]]] = None,
     ):
         return cls(
             query=query,
@@ -274,6 +278,7 @@ class StreamingChatBotParameters(ChatBotParameters):
             conversation_id=conversation_id,
             system_prompt=system_prompt,
             media_type=media_type,
+            mcp_headers=mcp_headers,
         )
 
 
