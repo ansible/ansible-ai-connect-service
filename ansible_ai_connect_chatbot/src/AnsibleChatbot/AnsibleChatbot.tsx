@@ -129,6 +129,26 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     handleStopButton,
     isStreamingSupported,
   } = useChatbot();
+
+  const welcomePrompts = [
+    {
+      title: "Using Ansible Automation Platform",
+      message: "I have a question about Ansible Automation Platform",
+    },
+    {
+      title: "Containerized Installation",
+      message: "I want to install AAP using the containerized installer",
+    },
+    {
+      title: "RPM Installation",
+      message: "I want to install AAP using the RPM installer",
+    },
+  ].map((prompt) => ({
+    title: prompt.title,
+    message: prompt.message,
+    onClick: () => handleSend(prompt.message),
+  }));
+
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.fullscreen,
@@ -330,6 +350,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   <ChatbotWelcomePrompt
                     title="Hello, Ansible User"
                     description="How may I help you today?"
+                    prompts={welcomePrompts}
                   />
                   {alertMessage && (
                     <ChatbotAlert

@@ -892,3 +892,35 @@ test("Test reset conversation state once unmounting the component.", async () =>
   view.unmount();
   assert(conversationStore.size === 0);
 });
+
+test("Clicking a welcome prompt sends the correct message", async () => {
+  const spy = mockAxios(200);
+  const view = await renderApp();
+
+  const promptButton = view.getByRole("button", {
+    name: "Using Ansible Automation Platform",
+  });
+  expect(promptButton).toBeVisible();
+
+  await userEvent.click(promptButton);
+
+  expect(spy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      conversation_id: undefined,
+      query: "I have a question about Ansible Automation Platform",
+    }),
+    expect.anything(),
+  );
+});
+
+test("All welcome prompts are rendered", async () => {
+  const view = await renderApp();
+  await expect
+    .element(view.getByText("Using Ansible Automation Platform"))
+    .toBeVisible();
+  await expect
+    .element(view.getByText("Containerized Installation"))
+    .toBeVisible();
+  await expect(view.getByText("RPM Installation")).toBeVisible();
+});
