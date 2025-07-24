@@ -292,6 +292,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         self.assertIn(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"], r.data["response"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
     def test_operational_telemetry(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -381,6 +382,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
     def test_operational_telemetry_anonymizer(self):
         self.client.force_authenticate(user=self.user)
         with (
@@ -405,6 +407,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
     def test_operational_telemetry_with_system_prompt_override(self):
         self.client.force_authenticate(user=self.user)
         with (
@@ -465,6 +468,70 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         finally:
             if self.user2:
                 self.user2.delete()
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
+    def test_operational_telemetry_includes_chat_prompt_when_disabled(self):
+        """Test that chat_prompt is included in telemetry when SEGMENT_EXCLUDE_CHAT_PROMPTS is False"""
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            # Verify that chat_prompt is included when setting is explicitly disabled
+            self.assertIn("chat_prompt", segment_events[0]["properties"])
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_prompt"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["query"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=True)
+    def test_operational_telemetry_excludes_chat_prompt_when_enabled(self):
+        """Test that chat_prompt is excluded from telemetry when SEGMENT_EXCLUDE_CHAT_PROMPTS is True (default)"""
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            # Verify that chat_prompt is excluded when setting is enabled (default behavior)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
 
     def test_not_rh_internal_user(self):
         try:
@@ -595,6 +662,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
         )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=True)
     def test_operational_telemetry(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -657,6 +725,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
     def test_operational_telemetry_anonymizer(self):
         self.client.force_authenticate(user=self.user)
         with (
@@ -681,6 +750,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             )
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=True)
     def test_operational_telemetry_with_system_prompt_override(self):
         self.client.force_authenticate(user=self.user)
         with (

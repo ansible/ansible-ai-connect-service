@@ -213,6 +213,9 @@ ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION = os.environ.get(
     "ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION", "v2.12.143"
 )
 
+# Control what data is sent to telemetry, by default we exclude chat_prompt
+SEGMENT_EXCLUDE_CHAT_PROMPTS = os.environ.get("SEGMENT_EXCLUDE_CHAT_PROMPTS", "true")
+
 OAUTH2_PROVIDER = {
     "SCOPES": {
         "read": "Read basic user information",

@@ -217,6 +217,13 @@ class ChatBotBaseEvent(Schema1Event):
         self.chat_prompt = anonymize_struct(self.chat_prompt)
         self.chat_response = anonymize_struct(self.chat_response)
 
+    def as_dict(self):
+        result = super().as_dict()
+        # Exclude chat_prompt if setting is enabled
+        if getattr(settings, 'SEGMENT_EXCLUDE_CHAT_PROMPTS', True):
+            result.pop('chat_prompt', None)
+        return result
+
 
 @define
 class ChatBotFeedbackEvent(ChatBotBaseEvent):
