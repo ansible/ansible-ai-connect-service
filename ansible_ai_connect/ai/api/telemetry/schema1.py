@@ -220,8 +220,8 @@ class ChatBotBaseEvent(Schema1Event):
     def as_dict(self):
         result = super().as_dict()
         # Exclude chat_prompt if setting is enabled
-        if getattr(settings, 'SEGMENT_EXCLUDE_CHAT_PROMPTS', True):
-            result.pop('chat_prompt', None)
+        if getattr(settings, "SEGMENT_EXCLUDE_CHAT_PROMPTS", True):
+            result.pop("chat_prompt", None)
         return result
 
 

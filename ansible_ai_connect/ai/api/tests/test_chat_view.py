@@ -472,7 +472,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=False)
     def test_operational_telemetry_includes_chat_prompt_when_disabled(self):
-        """Test that chat_prompt is included in telemetry when SEGMENT_EXCLUDE_CHAT_PROMPTS is False"""
+        """Test that chat_prompt is included in telemetry when
+        SEGMENT_EXCLUDE_CHAT_PROMPTS is False"""
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -506,7 +507,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(SEGMENT_EXCLUDE_CHAT_PROMPTS=True)
     def test_operational_telemetry_excludes_chat_prompt_when_enabled(self):
-        """Test that chat_prompt is excluded from telemetry when SEGMENT_EXCLUDE_CHAT_PROMPTS is True (default)"""
+        """Test that chat_prompt is excluded from telemetry when
+        SEGMENT_EXCLUDE_CHAT_PROMPTS is True (default)"""
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
