@@ -285,7 +285,8 @@ class TestSegment(TestCase):
             "modelName": "org-model-id",
             "rh_user_has_seat": True,
             "rh_user_org_id": 101,
-            # Note: "type", "anything", and "chat_prompt" are filtered out since they're not in the allow list
+            # Note: "type", "anything", and "chat_prompt" are filtered out
+            # since they're not in the allow list
         }
 
         self.assertEqual(
