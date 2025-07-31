@@ -217,12 +217,6 @@ class ChatBotBaseEvent(Schema1Event):
         self.chat_prompt = anonymize_struct(self.chat_prompt)
         self.chat_response = anonymize_struct(self.chat_response)
 
-    def as_dict(self):
-        result = super().as_dict()
-        # Always exclude chat_prompt to prevent user queries from being sent to telemetry
-        result.pop('chat_prompt', None)
-        return result
-
 
 @define
 class ChatBotFeedbackEvent(ChatBotBaseEvent):
