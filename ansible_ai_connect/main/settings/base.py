@@ -292,6 +292,7 @@ API_VERSION = "1.0.0"
 # ==========================================
 # Django Ansible Base configuration
 # ------------------------------------------
+ANSIBLE_BASE_TEAM_MODEL = None
 ANSIBLE_BASE_ORGANIZATION_MODEL = "ansible_ai_connect.organizations.models.Organization"
 ANSIBLE_BASE_RESOURCE_CONFIG_MODULE = "ansible_ai_connect.ai.resource_api"
 ANSIBLE_BASE_REST_FILTERS_RESERVED_NAMES = (
