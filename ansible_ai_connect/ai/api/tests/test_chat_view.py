@@ -311,10 +311,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["query"],
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["conversation_id"],
                 TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
@@ -382,6 +380,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -399,13 +399,13 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertNotEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                "Hello ansible@ansible.com",
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_system_prompt_override(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -422,10 +422,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertIn(
                 TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
@@ -465,6 +463,35 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         finally:
             if self.user2:
                 self.user2.delete()
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_excludes_chat_prompt_by_default(self):
+        """Test that chat_prompt is excluded from telemetry by default (via allow list)"""
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            # Verify that chat_prompt is excluded by default (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
+            self.assertEqual(
+                segment_events[0]["properties"]["conversation_id"],
+                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
+            )
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
 
     def test_not_rh_internal_user(self):
         try:
@@ -614,10 +641,8 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["query"],
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["conversation_id"],
                 TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
@@ -658,6 +683,8 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -675,13 +702,13 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertNotEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                "Hello ansible@ansible.com",
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_system_prompt_override(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -698,10 +725,8 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
-            )
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],

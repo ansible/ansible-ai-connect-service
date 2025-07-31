@@ -277,14 +277,16 @@ class TestSegment(TestCase):
             "rh_user_has_seat": True,
             "rh_user_org_id": 101,
             "anything": "whatever",
+            "chat_prompt": "user_query_should_be_filtered",  # This should be filtered out
         }
 
         expected_result = {
-            "type": "chatOperationalEvent",
+            # Only fields in the explicit allow list should be preserved
             "modelName": "org-model-id",
             "rh_user_has_seat": True,
             "rh_user_org_id": 101,
-            "anything": "whatever",  # Any properties won't be redacted for chatOperationalEvent
+            # Note: "type", "anything", and "chat_prompt" are filtered out
+            # since they're not in the allow list
         }
 
         self.assertEqual(
