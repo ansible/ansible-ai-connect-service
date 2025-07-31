@@ -493,8 +493,6 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
 
-
-
     def test_not_rh_internal_user(self):
         try:
             username = "u" + "".join(random.choices(string.digits, k=5))

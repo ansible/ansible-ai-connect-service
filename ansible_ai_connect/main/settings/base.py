@@ -214,7 +214,6 @@ ANALYTICS_MIN_ANSIBLE_EXTENSION_VERSION = os.environ.get(
 )
 
 
-
 OAUTH2_PROVIDER = {
     "SCOPES": {
         "read": "Read basic user information",
