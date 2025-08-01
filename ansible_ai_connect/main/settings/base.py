@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "ansible_ai_connect.healthcheck",
     "oauth2_provider",
     "import_export",
+    "ansible_base.rbac",
     "ansible_base.resource_registry",
     "ansible_base.jwt_consumer",
 ]
@@ -292,8 +293,9 @@ API_VERSION = "1.0.0"
 # ==========================================
 # Django Ansible Base configuration
 # ------------------------------------------
-ANSIBLE_BASE_TEAM_MODEL = None
-ANSIBLE_BASE_ORGANIZATION_MODEL = "ansible_ai_connect.organizations.models.Organization"
+ANSIBLE_BASE_TEAM_MODEL = "users.Team"
+ANSIBLE_BASE_ORGANIZATION_MODEL = "organizations.Organization"
+ANSIBLE_BASE_RBAC_MODEL_REGISTRY = {}
 ANSIBLE_BASE_RESOURCE_CONFIG_MODULE = "ansible_ai_connect.ai.resource_api"
 ANSIBLE_BASE_REST_FILTERS_RESERVED_NAMES = (
     "page",
