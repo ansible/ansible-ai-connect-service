@@ -15,6 +15,8 @@
 import logging
 import uuid
 
+from ansible_base.lib.abstract_models import AbstractTeam
+from ansible_base.resource_registry.fields import AnsibleResourceField
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -69,6 +71,9 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     email = models.CharField(default=None, null=True, max_length=150)
     email_verified = models.BooleanField(default=False, null=True)
     aap_user = models.BooleanField(default=False)
+
+    class Meta:
+        app_label = "users"
 
     @property
     def org_id(self) -> int | None:
@@ -147,7 +152,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
 
     plans = models.ManyToManyField(
         Plan,
-        through="UserPlan",
+        through="users.UserPlan",
         through_fields=("user", "plan"),
     )
 
@@ -171,3 +176,31 @@ class UserPlan(models.Model):
         if not self.expired_at:
             return True
         return self.expired_at > timezone.now()
+
+
+class Team(AbstractTeam):
+    """A Team compatible with Django Ansible Base Teams"""
+
+    resource = AnsibleResourceField(primary_key_field="id")
+    team_parents = models.ManyToManyField("Team", related_name="team_children", blank=True)
+
+    ignore_relations = []
+
+    class Meta:
+        app_label = "users"
+        ordering = ["id"]
+        abstract = False
+
+    users = models.ManyToManyField(
+        User,
+        related_name="teams",
+        blank=True,
+        help_text="The list of users on this team",
+    )
+
+    admins = models.ManyToManyField(
+        User,
+        related_name="teams_administered",
+        blank=True,
+        help_text="The list of admins for this team",
+    )
