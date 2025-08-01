@@ -2,7 +2,6 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS production
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
-ARG TARGETARCH
 
 ARG DJANGO_SETTINGS_MODULE=ansible_ai_connect.main.settings.production
 
@@ -32,8 +31,8 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
 
 # Copy the ansible_wisdom package files
 COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/
-COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/requirements-amd64.txt
 COPY requirements-aarch64.txt /var/www/ansible-ai-connect-service/
+COPY requirements.txt /var/www/ansible-ai-connect-service/
 COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
 COPY README.md /var/www/ansible-ai-connect-service/README.md
@@ -49,7 +48,7 @@ ENV PATH="/var/www/venv/bin:${PATH}"
 RUN dnf install -y openssl-devel
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements-${TARGETARCH}.txt
+RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi /var/run/daphne
 
