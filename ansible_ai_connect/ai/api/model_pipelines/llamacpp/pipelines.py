@@ -46,7 +46,7 @@ class LlamaCppMetaData(MetaData[LlamaCppConfiguration]):
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
-    def timeout(self, task_count=1):
+    def task_gen_timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
 
 
@@ -110,7 +110,7 @@ class LlamaCppCompletionsPipeline(
                 self._prediction_url,
                 headers=self.headers,
                 json=llm_params,
-                timeout=self.timeout(task_count),
+                timeout=self.task_gen_timeout(task_count),
                 verify=self.config.verify_ssl,
             )
             result.raise_for_status()

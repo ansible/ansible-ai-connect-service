@@ -69,7 +69,7 @@ class HttpMetaData(MetaData[HttpConfiguration]):
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
-    def timeout(self, task_count=1):
+    def task_gen_timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
 
 
@@ -94,7 +94,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 self._prediction_url,
                 headers=self.headers,
                 json=model_input,
-                timeout=self.timeout(task_count),
+                timeout=self.task_gen_timeout(task_count),
                 verify=self.config.verify_ssl,
             )
             result.raise_for_status()
@@ -113,7 +113,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(url, verify=True)
+            res = requests.get(url, verify=True, timeout=1)
             res.raise_for_status()
         except Exception as e:
             logger.exception(str(e))
@@ -144,7 +144,7 @@ class HttpChatBotMetaData(HttpMetaData):
             r = requests.get(
                 self.config.inference_url + "/readiness",
                 headers=headers,
-                timeout=self.timeout(1),
+                timeout=1,
             )
             r.raise_for_status()
 
@@ -197,7 +197,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             self.config.inference_url + "/v1/query",
             headers=self.headers,
             json=data,
-            timeout=self.timeout(1),
+            timeout=self.task_gen_timeout(1),
             verify=self.config.verify_ssl,
         )
 

@@ -207,7 +207,7 @@ class WCABaseMetaData(
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
-    def timeout(self, task_count=1):
+    def task_gen_timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
 
     @staticmethod
@@ -395,7 +395,7 @@ class WCABaseCompletionsPipeline(
                 prediction_url,
                 headers=headers,
                 json=data,
-                timeout=self.timeout(task_count),
+                timeout=self.task_gen_timeout(task_count),
                 verify=self.config.verify_ssl,
             )
 
@@ -469,7 +469,7 @@ class WCABaseContentMatchPipeline(
                     self._search_url,
                     headers=headers,
                     json=data,
-                    timeout=self.timeout(suggestion_count),
+                    timeout=self.task_gen_timeout(suggestion_count),
                     verify=self.config.verify_ssl,
                 )
 
