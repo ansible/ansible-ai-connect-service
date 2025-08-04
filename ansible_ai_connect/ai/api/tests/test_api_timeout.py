@@ -38,27 +38,27 @@ class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def test_timeout_settings_is_none(self):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=None))
-        self.assertIsNone(model_client.timeout(1))
+        self.assertIsNone(model_client.task_gen_timeout(1))
 
     def test_timeout_settings_is_not_none(self):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
-        self.assertEqual(123, model_client.timeout(1))
+        self.assertEqual(123, model_client.task_gen_timeout(1))
 
     def test_timeout_settings_is_not_none_multi_task(self):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
-        self.assertEqual(123 * 2, model_client.timeout(2))
+        self.assertEqual(123 * 2, model_client.task_gen_timeout(2))
 
     def test_timeout_settings_is_none_wca(self):
         model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=None))
-        self.assertIsNone(model_client.timeout(1))
+        self.assertIsNone(model_client.task_gen_timeout(1))
 
     def test_timeout_settings_is_not_none_wca(self):
         model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=123))
-        self.assertEqual(123, model_client.timeout(1))
+        self.assertEqual(123, model_client.task_gen_timeout(1))
 
     def test_timeout_settings_is_not_none_wca_multitask(self):
         model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=123))
-        self.assertEqual(123 * 2, model_client.timeout(2))
+        self.assertEqual(123 * 2, model_client.task_gen_timeout(2))
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
     @patch("requests.Session.post", side_effect=ReadTimeout())
