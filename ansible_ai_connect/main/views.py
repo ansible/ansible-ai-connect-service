@@ -54,11 +54,11 @@ class LoginView(auth_views.LoginView):
         next_url = self.request.GET.get("next") or "/"
         context["next"] = next_url
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
-        
+
         project_name = settings.ANSIBLE_AI_PROJECT_NAME
         if next_url and next_url.startswith("/chatbot"):
             project_name = project_name.replace(" with IBM watsonx Code Assistant", "")
-        
+
         context["project_name"] = project_name
         context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
