@@ -151,6 +151,55 @@ class AlreadyAuth(TestCase):
         self.assertEqual(response.url, "/")
 
 
+class LoginViewProjectNameTest(TestCase):
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed with IBM watsonx Code Assistant")
+    def test_project_name_unchanged_without_next(self):
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed with IBM watsonx Code Assistant")
+    def test_project_name_unchanged_with_different_next(self):
+        request = RequestFactory().get("/login?next=/home")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed with IBM watsonx Code Assistant")
+    def test_project_name_modified_with_chatbot_next(self):
+        request = RequestFactory().get("/login?next=/chatbot")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible Lightspeed", contents)
+        self.assertNotIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed with IBM watsonx Code Assistant")
+    def test_project_name_modified_with_chatbot_slash_next(self):
+        request = RequestFactory().get("/login?next=/chatbot/")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible Lightspeed", contents)
+        self.assertNotIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible AI Connect")
+    def test_project_name_no_change_if_no_watsonx_text(self):
+        request = RequestFactory().get("/login?next=/chatbot")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible AI Connect", contents)
+
+
 @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=False)
 class TestMetricsView(APITransactionTestCase):
 
