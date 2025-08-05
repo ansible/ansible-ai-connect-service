@@ -544,7 +544,7 @@ export const useChatbot = () => {
                   "\n\n`[" +
                     message.event +
                     "]`\n```json\n" +
-                    message.data.token +
+                    JSON.stringify(message.data.token) +
                     "\n```\n",
                 );
               } else if (message.event === "turn_complete") {
