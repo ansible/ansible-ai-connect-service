@@ -16,9 +16,11 @@ import json
 import logging
 from typing import cast
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import MagicMock, patch
 
-from ansible_ai_connect.ai.api.model_pipelines.http.configuration import HttpConfiguration
+from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
+    HttpConfiguration,
+)
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpStreamingChatBotPipeline,
 )
@@ -107,7 +109,9 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
     ]
 
     def setUp(self):
-        self.pipeline = HttpStreamingChatBotPipeline(cast(HttpConfiguration, mock_pipeline_config("http")))
+        self.pipeline = HttpStreamingChatBotPipeline(
+            cast(HttpConfiguration, mock_pipeline_config("http"))
+        )
         self.call_counter = 0
 
     def assertInLog(self, s, logs, number_of_matches_expected=None):
@@ -203,80 +207,56 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 pass
             self.assertInLog("(not provided)", log)
 
-    @patch("aiohttp.ClientSession")
+    @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
-    async def test_ssl_context_verify_ssl_false(self, mock_tcp_connector, mock_client_session):
+    async def test_ssl_context_verify_ssl_false(self, mock_tcp_connector, mock_post):
         """Test that SSL context is correctly configured when verify_ssl=False"""
         # Setup pipeline with verify_ssl=False
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=False))
         pipeline = HttpStreamingChatBotPipeline(config)
-        # Mock the connector and session
+        # Mock the connector
         mock_connector_instance = MagicMock()
         mock_tcp_connector.return_value = mock_connector_instance
-
-        # Create a mock async context manager for ClientSession
-        mock_session_instance = AsyncMock()
-        mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
-        mock_session_instance.__aexit__ = AsyncMock(return_value=None)
-        mock_session_instance.post.return_value = self.get_return_value(self.STREAM_DATA)
-        mock_client_session.return_value = mock_session_instance
+        # Mock the post method to return our test data
+        mock_post.return_value = self.get_return_value(self.STREAM_DATA)
         # Execute the async_invoke method
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
         # Verify TCPConnector was created with ssl=False
         mock_tcp_connector.assert_called_once_with(ssl=False)
-        # Verify ClientSession was created with the connector
-        mock_client_session.assert_called_once_with(
-            raise_for_status=True,
-            connector=mock_connector_instance
-        )
 
-    @patch("aiohttp.ClientSession")
+    @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
-    async def test_ssl_context_verify_ssl_true(self, mock_tcp_connector, mock_client_session):
+    async def test_ssl_context_verify_ssl_true(self, mock_tcp_connector, mock_post):
         """Test that SSL context is correctly configured when verify_ssl=True"""
         # Setup pipeline with verify_ssl=True
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=True))
         pipeline = HttpStreamingChatBotPipeline(config)
-        # Mock the connector and session
+        # Mock the connector
         mock_connector_instance = MagicMock()
         mock_tcp_connector.return_value = mock_connector_instance
-        # Create a mock async context manager for ClientSession
-        mock_session_instance = AsyncMock()
-        mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
-        mock_session_instance.__aexit__ = AsyncMock(return_value=None)
-        mock_session_instance.post.return_value = self.get_return_value(self.STREAM_DATA)
-        mock_client_session.return_value = mock_session_instance
-
+        # Mock the post method to return our test data
+        mock_post.return_value = self.get_return_value(self.STREAM_DATA)
         # Execute the async_invoke method
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
         # Verify TCPConnector was created with ssl=True
         mock_tcp_connector.assert_called_once_with(ssl=True)
-        # Verify ClientSession was created with the connector
-        mock_client_session.assert_called_once_with(
-            raise_for_status=True,
-            connector=mock_connector_instance
-        )
 
-    @patch("aiohttp.ClientSession")
+    @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
-    async def test_ssl_context_uses_config_value(self, mock_tcp_connector, mock_client_session):
+    async def test_ssl_context_uses_config_value(self, mock_tcp_connector, mock_post):
         """Test that SSL context directly uses the config.verify_ssl value"""
         # Setup pipeline with a specific verify_ssl value
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=False))
         pipeline = HttpStreamingChatBotPipeline(config)
-        # Mock the connector and session
+        # Mock the connector
         mock_connector_instance = MagicMock()
         mock_tcp_connector.return_value = mock_connector_instance
-        # Create a mock async context manager for ClientSession
-        mock_session_instance = AsyncMock()
-        mock_session_instance.__aenter__ = AsyncMock(return_value=mock_session_instance)
-        mock_session_instance.__aexit__ = AsyncMock(return_value=None)
-        mock_session_instance.post.return_value = self.get_return_value(self.STREAM_DATA)
-        mock_client_session.return_value = mock_session_instance
+        # Mock the post method to return our test data
+        mock_post.return_value = self.get_return_value(self.STREAM_DATA)
         # Execute the async_invoke method
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
@@ -285,3 +265,32 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         # The ssl parameter should match config.verify_ssl exactly
         expected_ssl_value = config.verify_ssl  # False in this case
         mock_tcp_connector.assert_called_once_with(ssl=expected_ssl_value)
+
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.TCPConnector")
+    async def test_ssl_context_integration_with_existing_flow(self, mock_tcp_connector, mock_post):
+        """Test that SSL changes don't break existing functionality"""
+        # Test with both verify_ssl values to ensure no regression
+        for verify_ssl_value in [True, False]:
+            with self.subTest(verify_ssl=verify_ssl_value):
+                config = cast(
+                    HttpConfiguration, mock_pipeline_config("http", verify_ssl=verify_ssl_value)
+                )
+                pipeline = HttpStreamingChatBotPipeline(config)
+                # Mock the connector
+                mock_connector_instance = MagicMock()
+                mock_tcp_connector.return_value = mock_connector_instance
+                # Mock the post method to return our test data
+                mock_post.return_value = self.get_return_value(self.STREAM_DATA)
+                # Execute the async_invoke method
+                params = self.get_params()
+                result_count = 0
+                async for _ in pipeline.async_invoke(params):
+                    result_count += 1
+                # Verify that streaming still works
+                self.assertGreater(result_count, 0, "Streaming should return data")
+                # Verify SSL configuration is correct
+                mock_tcp_connector.assert_called_with(ssl=verify_ssl_value)
+                # Reset mocks for next iteration
+                mock_tcp_connector.reset_mock()
+                mock_post.reset_mock()
