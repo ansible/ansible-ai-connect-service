@@ -262,7 +262,11 @@ class HttpStreamingChatBotPipeline(
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
+        # Configure SSL context based on verify_ssl setting
+        ssl_context = self.config.verify_ssl
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
+
+        async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json,text/event-stream",
