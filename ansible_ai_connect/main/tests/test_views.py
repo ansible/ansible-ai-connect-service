@@ -151,6 +151,91 @@ class AlreadyAuth(TestCase):
         self.assertEqual(response.url, "/")
 
 
+class LoginViewProjectNameTest(TestCase):
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_with_wca_provider(self):
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=True):
+            request = RequestFactory().get("/login")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_with_wca_onprem_provider(self):
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=True):
+            request = RequestFactory().get("/login")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_without_wca_provider(self):
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=False):
+            request = RequestFactory().get("/login")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed", contents)
+            self.assertNotIn(
+                "Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents
+            )
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG="{}")
+    def test_project_name_with_empty_config(self):
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn("Log in to Ansible Lightspeed", contents)
+        self.assertNotIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_no_suffix_for_chatbot_redirect(self):
+        """Test that WCA suffix is not added when redirecting to chatbot route."""
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=True):
+            request = RequestFactory().get("/login?next=/chatbot")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed", contents)
+            self.assertNotIn(
+                "Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents
+            )
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_no_suffix_for_chatbot_subpath_redirect(self):
+        """Test that WCA suffix is not added when redirecting to chatbot subpath."""
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=True):
+            request = RequestFactory().get("/login?next=/chatbot/")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed", contents)
+            self.assertNotIn(
+                "Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents
+            )
+
+    @override_settings(ANSIBLE_AI_PROJECT_NAME="Ansible Lightspeed")
+    def test_project_name_with_suffix_for_non_chatbot_redirect(self):
+        """Test that WCA suffix is added when redirecting to non-chatbot route."""
+        with patch("ansible_ai_connect.main.utils.has_wca_providers", return_value=True):
+            request = RequestFactory().get("/login?next=/home")
+            request.user = AnonymousUser()
+            response = LoginView.as_view()(request)
+            response.render()
+            contents = response.content.decode()
+            self.assertIn("Log in to Ansible Lightspeed with IBM watsonx Code Assistant", contents)
+
+
 @override_settings(ALLOW_METRICS_FOR_ANONYMOUS_USERS=False)
 class TestMetricsView(APITransactionTestCase):
 
