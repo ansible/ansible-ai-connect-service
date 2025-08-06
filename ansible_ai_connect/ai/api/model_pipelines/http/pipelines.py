@@ -113,7 +113,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(url, verify=True, timeout=1)
+            res = requests.get(url, verify=self.config.verify_ssl, timeout=1)
             res.raise_for_status()
         except Exception as e:
             logger.exception(str(e))
