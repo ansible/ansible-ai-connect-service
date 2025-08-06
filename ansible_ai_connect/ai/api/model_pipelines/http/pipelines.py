@@ -145,6 +145,7 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
+                verify=self.config.verify_ssl,
             )
             r.raise_for_status()
 
