@@ -67,7 +67,7 @@ CHATBOT_DEFAULT_PROVIDER=wisdom
   "ModelPipelineChatBot": {
     "config": {
       "inference_url": "http://127.0.0.1:8080",
-      "model_id": "granite3-8b"
+      "model_id": "granite-3.3-8b-instruct"
     }
   }
 }

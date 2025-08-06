@@ -33,7 +33,7 @@ const botName =
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite3-1-8b", provider: "my_rhoai_g31" },
+  { model: "granite-3.3-8b-instruct", provider: "rhoai" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -178,7 +178,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("granite3-1-8b");
+  const [selectedModel, setSelectedModel] = useState("granite-3.3-8b-instruct");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
