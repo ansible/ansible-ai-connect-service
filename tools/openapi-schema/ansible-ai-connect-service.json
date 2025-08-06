@@ -234,7 +234,7 @@
             "post": {
                 "operationId": "ai_explanations_create",
                 "description": "Returns a text that explains a playbook.",
-                "summary": "Inline code suggestions",
+                "summary": "Playbook explanation",
                 "tags": [
                     "ai"
                 ],
@@ -302,7 +302,7 @@
             "post": {
                 "operationId": "ai_explanations_role_create",
                 "description": "Returns a text that explains a role.",
-                "summary": "Inline code suggestions",
+                "summary": "Role explanation",
                 "tags": [
                     "ai"
                 ],
@@ -434,7 +434,7 @@
             "post": {
                 "operationId": "ai_generations_playbook_create",
                 "description": "Returns a playbook based on a text input.",
-                "summary": "Inline code suggestions",
+                "summary": "Playbook generation",
                 "tags": [
                     "ai"
                 ],
@@ -502,7 +502,7 @@
             "post": {
                 "operationId": "ai_generations_role_create",
                 "description": "Returns a role based on a text input.",
-                "summary": "Inline code suggestions",
+                "summary": "Role generation",
                 "tags": [
                     "ai"
                 ],
