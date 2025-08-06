@@ -46,6 +46,9 @@ ANSIBLE_AI_PROJECT_NAME = os.getenv("ANSIBLE_AI_PROJECT_NAME") or "Ansible AI Co
 ANSIBLE_AI_CHATBOT_NAME = (
     os.getenv("ANSIBLE_AI_CHATBOT_NAME") or "Ansible Lightspeed Intelligent Assistant"
 )
+ANSIBLE_AI_PROJECT_WCA_SUFFIX = (
+    os.getenv("ANSIBLE_AI_PROJECT_WCA_SUFFIX") or " with IBM watsonx Code Assistant"
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
