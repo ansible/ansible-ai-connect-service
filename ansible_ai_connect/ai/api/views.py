@@ -833,7 +833,7 @@ class Explanation(AACSAPIView):
             429: OpenApiResponse(description="Request was throttled"),
             503: OpenApiResponse(description="Service Unavailable"),
         },
-        summary="Inline code suggestions",
+        summary="Playbook explanation",
     )
     def post(self, request) -> Response:
         self.event.playbook_length = len(self.validated_data["content"])
@@ -890,7 +890,7 @@ class ExplanationRole(AACSAPIView):
             429: OpenApiResponse(description="Request was throttled"),
             503: OpenApiResponse(description="Service Unavailable"),
         },
-        summary="Inline code suggestions",
+        summary="Role explanation",
     )
     def post(self, request) -> Response:
         llm: ModelPipelineRoleExplanation = apps.get_app_config("ai").get_model_pipeline(
@@ -945,7 +945,7 @@ class GenerationPlaybook(AACSAPIView):
             429: OpenApiResponse(description="Request was throttled"),
             503: OpenApiResponse(description="Service Unavailable"),
         },
-        summary="Inline code suggestions",
+        summary="Playbook generation",
     )
     def post(self, request) -> Response:
         self.event.create_outline = self.validated_data["createOutline"]
@@ -1013,7 +1013,7 @@ class GenerationRole(AACSAPIView):
             200: GenerationRoleResponseSerializer,
             401: OpenApiResponse(description="Unauthorized"),
         },
-        summary="Inline code suggestions",
+        summary="Role generation",
     )
     def post(self, request) -> Response:
         self.event.create_outline = self.validated_data["createOutline"]
