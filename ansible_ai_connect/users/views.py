@@ -38,6 +38,7 @@ from ansible_ai_connect.ai.api.telemetry import schema1
 from ansible_ai_connect.ai.api.telemetry import schema2_utils as schema2
 from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.main.cache.cache_per_user import cache_per_user
+from ansible_ai_connect.main.utils import get_project_name_with_wca_suffix
 from ansible_ai_connect.users.constants import TRIAL_PLAN_NAME
 from ansible_ai_connect.users.models import Plan
 from ansible_ai_connect.users.one_click_trial import OneClickTrial
@@ -106,7 +107,9 @@ class HomeView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["use_tech_preview"] = settings.ANSIBLE_AI_ENABLE_TECH_PREVIEW
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
-        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["project_name"] = get_project_name_with_wca_suffix(
+            settings.ANSIBLE_AI_PROJECT_NAME, self.request
+        )
         context["org_has_api_key"] = self.org_has_api_key
         context["is_auth_configured"] = self.is_auth_configured
 
@@ -222,7 +225,9 @@ class TrialView(TemplateView):
         has_active_plan, has_expired_plan, days_left = one_click_trial.get_plans()
 
         context["one_click_trial_available"] = one_click_trial.is_available()
-        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["project_name"] = get_project_name_with_wca_suffix(
+            settings.ANSIBLE_AI_PROJECT_NAME, self.request
+        )
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
         context["has_active_plan"] = has_active_plan
         context["days_left"] = days_left
