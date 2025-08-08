@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Button,
+  Checkbox,
   Form,
   FormGroup,
   Modal,
@@ -15,13 +16,15 @@ import WrenchIcon from "@patternfly/react-icons/dist/esm/icons/wrench-icon";
 interface SystemPromptModalProps {
   systemPrompt: string;
   setSystemPrompt: (s: string) => void;
+  bypassTools: boolean;
+  setBypassTools: (b: boolean) => void;
 }
 
 export const SystemPromptModal: React.FunctionComponent<
   SystemPromptModalProps
 > = (props) => {
   const [isModalOpen, setModalOpen] = React.useState(false);
-  const { systemPrompt, setSystemPrompt } = props;
+  const { systemPrompt, setSystemPrompt, bypassTools, setBypassTools } = props;
 
   const handleModalToggle = (_event: KeyboardEvent | React.MouseEvent) => {
     setModalOpen(!isModalOpen);
@@ -29,6 +32,10 @@ export const SystemPromptModal: React.FunctionComponent<
 
   const handleSystemPromptInputChange = (_event: any, value: string) => {
     setSystemPrompt(value);
+  };
+
+  const handleBypassToolsChange = (_event: any, value: boolean) => {
+    setBypassTools(value);
   };
 
   return (
@@ -64,6 +71,13 @@ export const SystemPromptModal: React.FunctionComponent<
                 aria-label="system-prompt-form-text-area"
                 rows={15}
               />
+              <Checkbox
+                id="bypass-tools"
+                label="Bypass Tools"
+                isChecked={bypassTools}
+                aria-label="bypass-tools-checkbox"
+                onChange={handleBypassToolsChange}
+              ></Checkbox>
             </FormGroup>
           </Form>
         </ModalBody>

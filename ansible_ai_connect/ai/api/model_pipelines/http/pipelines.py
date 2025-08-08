@@ -179,6 +179,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         provider = params.provider
         model_id = params.model_id
         system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
+        no_tools = params.no_tools
 
         data = {
             "query": query,
@@ -189,6 +190,8 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             data["conversation_id"] = str(conversation_id)
         if system_prompt:
             data["system_prompt"] = str(system_prompt)
+        if no_tools:
+            data["no_tools"] = bool(no_tools)
 
         headers = self.headers or {}
         if params.mcp_headers:
@@ -281,6 +284,7 @@ class HttpStreamingChatBotPipeline(
             model_id = params.model_id
             system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
             media_type = params.media_type
+            no_tools = params.no_tools
 
             data = {
                 "query": query,
@@ -293,6 +297,8 @@ class HttpStreamingChatBotPipeline(
                 data["system_prompt"] = str(system_prompt)
             if media_type:
                 data["media_type"] = str(media_type)
+            if no_tools:
+                data["no_tools"] = bool(no_tools)
 
             async with session.post(
                 self.config.inference_url + "/v1/streaming_query",
@@ -315,6 +321,7 @@ class HttpStreamingChatBotPipeline(
                     ev.provider_id = params.provider
                     ev.conversation_id = params.conversation_id
                     ev.modelName = params.model_id
+                    ev.no_tools = params.no_tools
 
                     async for chunk in response.content:
                         try:

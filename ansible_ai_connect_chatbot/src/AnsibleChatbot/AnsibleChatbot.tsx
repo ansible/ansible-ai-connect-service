@@ -128,6 +128,8 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     hasStopButton,
     handleStopButton,
     isStreamingSupported,
+    bypassTools,
+    setBypassTools,
   } = useChatbot();
 
   const welcomePrompts = [
@@ -280,6 +282,8 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       <SystemPromptModal
                         systemPrompt={systemPrompt}
                         setSystemPrompt={setSystemPrompt}
+                        bypassTools={bypassTools}
+                        setBypassTools={setBypassTools}
                       />
                     )}
                   </ChatbotHeaderActions>

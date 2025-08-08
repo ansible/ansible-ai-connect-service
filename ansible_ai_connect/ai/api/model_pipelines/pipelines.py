@@ -232,6 +232,7 @@ class ChatBotParameters:
     conversation_id: Optional[str]
     system_prompt: str
     mcp_headers: Optional[dict[str, dict[str, str]]] = field(kw_only=True, default=None)
+    no_tools: bool
 
     @classmethod
     def init(
@@ -242,6 +243,7 @@ class ChatBotParameters:
         conversation_id: Optional[str] = None,
         system_prompt: Optional[str] = None,
         mcp_headers: Optional[dict[str, dict[str, str]]] = None,
+        no_tools: Optional[bool] = False,
     ):
         return cls(
             query=query,
@@ -250,6 +252,7 @@ class ChatBotParameters:
             conversation_id=conversation_id,
             system_prompt=system_prompt,
             mcp_headers=mcp_headers,
+            no_tools=no_tools,
         )
 
 
@@ -270,6 +273,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         system_prompt: Optional[str] = None,
         media_type: Optional[str] = None,
         mcp_headers: Optional[dict[str, dict[str, str]]] = None,
+        no_tools: Optional[bool] = False,
     ):
         return cls(
             query=query,
@@ -279,6 +283,7 @@ class StreamingChatBotParameters(ChatBotParameters):
             system_prompt=system_prompt,
             media_type=media_type,
             mcp_headers=mcp_headers,
+            no_tools=no_tools,
         )
 
 
