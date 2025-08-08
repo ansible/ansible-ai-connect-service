@@ -10,6 +10,7 @@ type LLMRequest = {
   attachments?: object[] | null;
   system_prompt?: string | null;
   media_type?: "text/plain" | "application/json";
+  no_tools?: boolean | null;
 };
 
 type LLMResponse = {

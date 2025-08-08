@@ -410,6 +410,7 @@ ALLOW_LIST = {
         "chat_referenced_documents": None,
         "conversation_id": None,
         "provider_id": None,
+        "no_tools": None,
     },
     "streamingChatOperationalEvent": {
         # Declaring following Schema1Event as ChatBotBaseEvent inherits from Schema1Event
@@ -434,6 +435,7 @@ ALLOW_LIST = {
         "chat_referenced_documents": None,
         "conversation_id": None,
         "provider_id": None,
+        "no_tools": None,
     },
     "explainRole": {
         "duration": None,

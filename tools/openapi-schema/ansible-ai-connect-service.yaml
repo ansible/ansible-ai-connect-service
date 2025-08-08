@@ -880,6 +880,10 @@ components:
           type: string
           description: An optional non-default system prompt to be used on LLM (debug
             mode only).
+        no_tools:
+          type: boolean
+          title: Bypass tools
+          description: Whether to bypass all tools and MCP servers
       required:
       - query
     ChatResponse:
@@ -1526,6 +1530,10 @@ components:
           type: string
           description: An optional non-default system prompt to be used on LLM (debug
             mode only).
+        no_tools:
+          type: boolean
+          title: Bypass tools
+          description: Whether to bypass all tools and MCP servers
         media_type:
           type: string
           description: A media type to be used in the output from LLM.

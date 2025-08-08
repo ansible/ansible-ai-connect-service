@@ -15,7 +15,7 @@
 import json
 import logging
 from json import JSONDecodeError
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 import aiohttp
 import requests
@@ -179,8 +179,9 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         provider = params.provider
         model_id = params.model_id
         system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
+        no_tools = params.no_tools
 
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "model": model_id,
             "provider": provider,
@@ -189,6 +190,8 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             data["conversation_id"] = str(conversation_id)
         if system_prompt:
             data["system_prompt"] = str(system_prompt)
+        if no_tools:
+            data["no_tools"] = bool(no_tools)
 
         headers = self.headers or {}
         if params.mcp_headers:
@@ -281,8 +284,9 @@ class HttpStreamingChatBotPipeline(
             model_id = params.model_id
             system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
             media_type = params.media_type
+            no_tools = params.no_tools
 
-            data = {
+            data: dict[str, Any] = {
                 "query": query,
                 "model": model_id,
                 "provider": provider,
@@ -293,6 +297,8 @@ class HttpStreamingChatBotPipeline(
                 data["system_prompt"] = str(system_prompt)
             if media_type:
                 data["media_type"] = str(media_type)
+            if no_tools:
+                data["no_tools"] = bool(no_tools)
 
             async with session.post(
                 self.config.inference_url + "/v1/streaming_query",
@@ -315,6 +321,7 @@ class HttpStreamingChatBotPipeline(
                     ev.provider_id = params.provider
                     ev.conversation_id = params.conversation_id
                     ev.modelName = params.model_id
+                    ev.no_tools = params.no_tools
 
                     async for chunk in response.content:
                         try:
@@ -332,9 +339,9 @@ class HttpStreamingChatBotPipeline(
                                         logger.error(
                                             "An error received in chat streaming content:"
                                             + " response="
-                                            + data.get("response")
+                                            + str(data.get("response"))
                                             + ", cause="
-                                            + data.get("cause")
+                                            + str(data.get("cause"))
                                         )
                                     elif event == "start":
                                         ev.phase = event
