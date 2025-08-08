@@ -275,6 +275,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "rest_framework.authentication.SessionAuthentication",
+        "ansible_ai_connect.users.auth.RHSSOAuthentication",
         "ansible_ai_connect.users.authentication.LightspeedJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
@@ -324,12 +325,6 @@ RESOURCE_SERVER__URL = os.getenv("RESOURCE_SERVER__URL")
 RESOURCE_SERVER__SECRET_KEY = os.getenv("RESOURCE_SERVER__SECRET_KEY")
 RESOURCE_SERVER__VALIDATE_HTTPS = os.getenv("RESOURCE_SERVER__VALIDATE_HTTPS")
 # ==========================================
-
-# Current RHSSOAuthentication implementation is incompatible with tech preview terms partial
-if not ANSIBLE_AI_ENABLE_TECH_PREVIEW:
-    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"].insert(
-        -1, "ansible_ai_connect.users.auth.RHSSOAuthentication"
-    )
 
 ROOT_URLCONF = "ansible_ai_connect.main.urls"
 
