@@ -99,6 +99,11 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         "system_prompt": "System prompt override",
     }
 
+    PAYLOAD_WITH_NO_TOOLS_OPTION = {
+        "query": "Payload with no tools option",
+        "no_tools": True,
+    }
+
     JSON_RESPONSE = {
         "response": "AAP 2.5 introduces an updated, unified UI.",
         "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
@@ -169,6 +174,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         elif (
             kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_MODEL_AND_PROVIDER["query"]
             or kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"]
+            or kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION["query"]
         ):
             status_code = 200
             json_response["response"] = input
@@ -438,6 +444,40 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 segment_events[0]["properties"]["chat_system_prompt"],
                 TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["system_prompt"],
             )
+            self.assertFalse(segment_events[0]["properties"]["no_tools"])
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_with_no_tools_option(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
+            self.assertIn(
+                TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION["query"],
+                segment_events[0]["properties"]["chat_response"],
+            )
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                TestChatView.JSON_RESPONSE["truncated"],
+            )
+            self.assertTrue(segment_events[0]["properties"]["no_tools"])
 
     def test_chat_rate_limit(self):
         # Call chat API five times using self.user
@@ -737,6 +777,37 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
                 segment_events[0]["properties"]["chat_system_prompt"],
                 TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["system_prompt"],
             )
+            self.assertFalse(segment_events[0]["properties"]["no_tools"])
+
+    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
+    def test_operational_telemetry_with_no_tools_option(self):
+        self.user.rh_user_has_seat = True
+        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.client.force_authenticate(user=self.user)
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(
+                    return_value=HttpStreamingChatBotPipeline(
+                        mock_pipeline_config("http", model_id="granite-8b")
+                    )
+                ),
+            ),
+            self.assertLogs(logger="root", level="DEBUG") as log,
+        ):
+            r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION)
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            segment_events = self.extractSegmentEventsFromLog(log)
+            # Verify that chat_prompt is excluded (not in allow list)
+            self.assertNotIn("chat_prompt", segment_events[0]["properties"])
+            self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
+            self.assertEqual(
+                segment_events[0]["properties"]["chat_truncated"],
+                TestChatView.JSON_RESPONSE["truncated"],
+            )
+            self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
+            self.assertTrue(segment_events[0]["properties"]["no_tools"])
 
     def test_chat_rate_limit(self):
         # Call chat API five times using self.user

@@ -707,6 +707,40 @@ test("Test system prompt override", async () => {
   );
 });
 
+test("Test system prompt override with no_tools option", async () => {
+  const spy = mockAxios(200);
+  await renderApp(true);
+
+  await expect.element(page.getByLabelText("SystemPrompt")).toBeVisible();
+  const systemPromptIcon = page.getByLabelText("SystemPrompt");
+  await systemPromptIcon.click();
+
+  const systemPromptTextArea = page.getByLabelText(
+    "system-prompt-form-text-area",
+  );
+  await systemPromptTextArea.fill("MY SYSTEM PROMPT WITH NO_TOOLS OPTION");
+
+  const bypassToolsCheckbox = page.getByRole("checkbox");
+  expect(bypassToolsCheckbox).not.toBeChecked();
+  await bypassToolsCheckbox.click();
+  expect(bypassToolsCheckbox).toBeChecked();
+
+  const systemPromptButton = page.getByLabelText("system-prompt-form-button");
+  await systemPromptButton.click();
+
+  await sendMessage("Hello with system prompt override with no_tools option");
+  expect(spy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      conversation_id: undefined,
+      no_tools: true,
+      query: "Hello with system prompt override with no_tools option",
+      system_prompt: "MY SYSTEM PROMPT WITH NO_TOOLS OPTION",
+    }),
+    expect.anything(),
+  );
+});
+
 test("Chat streaming test", async () => {
   let ghIssueLinkSpy = 0;
   let ghIssueUrl = "";
