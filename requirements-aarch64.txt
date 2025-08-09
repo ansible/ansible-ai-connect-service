@@ -10,7 +10,7 @@ aiohttp==3.12.14
     # via -r requirements.in
 aiosignal==1.4.0
     # via aiohttp
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
 ansible-anonymizer==1.5.0
     # via -r requirements.in
