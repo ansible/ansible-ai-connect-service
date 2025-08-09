@@ -284,7 +284,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via black
 numpy==1.26.4
     # via pandas
