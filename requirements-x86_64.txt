@@ -238,7 +238,7 @@ jsonpickle==3.3.0
     # via
     #   -r requirements.in
     #   ansible-risk-insight
-jsonpointer==2.4
+jsonpointer==3.0.0
     # via jsonpatch
 jsonschema==4.21.1
     # via
