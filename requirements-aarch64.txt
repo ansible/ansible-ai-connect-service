@@ -303,7 +303,7 @@ openpyxl==3.1.2
     # via tablib
 orjson==3.10.1
     # via langsmith
-packaging==23.2
+packaging==25.0
     # via
     #   ansible-compat
     #   ansible-core
