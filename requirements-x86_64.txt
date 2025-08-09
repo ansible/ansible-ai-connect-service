@@ -218,7 +218,7 @@ inflection==0.5.1
     # via
     #   django-ansible-base
     #   drf-spectacular
-ipython==8.10.0
+ipython==8.37.0
     # via -r requirements.in
 jedi==0.19.1
     # via ipython
