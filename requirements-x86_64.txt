@@ -351,7 +351,7 @@ psycopg-binary==3.1.8
     # via psycopg
 ptyprocess==0.7.0
     # via pexpect
-pure-eval==0.2.2
+pure-eval==0.2.3
     # via stack-data
 pyaml==25.1.0
     # via llama-stack-client
