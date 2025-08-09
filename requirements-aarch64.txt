@@ -355,7 +355,7 @@ pure-eval==0.2.2
     # via stack-data
 pyaml==25.1.0
     # via llama-stack-client
-pyasn1==0.6.0
+pyasn1==0.6.1
     # via
     #   oauth2client
     #   pyasn1-modules
