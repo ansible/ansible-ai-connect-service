@@ -483,7 +483,7 @@ six==1.16.0
     #   python-dateutil
 slack-sdk==3.31.0
     # via -r requirements.in
-smmap==5.0.1
+smmap==5.0.2
     # via
     #   ansible-risk-insight
     #   gitdb
