@@ -507,7 +507,7 @@ sqlparse==0.5.2
     #   django-ansible-base
 stack-data==0.6.3
     # via ipython
-subprocess-tee==0.4.1
+subprocess-tee==0.4.2
     # via
     #   ansible-compat
     #   ansible-lint
