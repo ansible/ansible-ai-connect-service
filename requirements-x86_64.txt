@@ -450,7 +450,7 @@ requests-toolbelt==1.0.0
     # via langsmith
 resolvelib==1.0.1
     # via ansible-core
-rich==13.7.1
+rich==13.9.4
     # via
     #   ansible-lint
     #   llama-stack-client
