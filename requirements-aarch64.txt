@@ -472,7 +472,7 @@ s3transfer==0.6.2
     # via boto3
 segment-analytics-python==2.2.2
     # via -r requirements.in
-semver==3.0.2
+semver==3.0.4
     # via launchdarkly-server-sdk
 service-identity==24.2.0
     # via twisted
