@@ -102,7 +102,7 @@ defusedxml==0.8.0rc2
     #   odfpy
     #   python3-openid
     #   social-auth-core
-diff-match-patch==20230430
+diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
