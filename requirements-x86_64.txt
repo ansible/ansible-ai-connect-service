@@ -476,7 +476,7 @@ semver==3.0.2
     # via launchdarkly-server-sdk
 service-identity==24.2.0
     # via twisted
-six==1.16.0
+six==1.17.0
     # via
     #   asttokens
     #   oauth2client
