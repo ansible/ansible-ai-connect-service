@@ -52,7 +52,7 @@ backcall==0.2.0
     # via ipython
 backoff==2.2.1
     # via segment-analytics-python
-black==24.3.0
+black==24.10.0
     # via
     #   -r requirements.in
     #   ansible-lint
