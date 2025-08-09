@@ -560,7 +560,7 @@ uwsgi==2.0.22
     # via -r requirements.in
 uwsgi-readiness-check==0.2.0
     # via -r requirements.in
-wcmatch==8.5.1
+wcmatch==10.1
     # via ansible-lint
 wcwidth==0.2.13
     # via prompt-toolkit
