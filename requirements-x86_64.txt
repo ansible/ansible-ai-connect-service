@@ -384,7 +384,7 @@ pygments==2.17.2
     # via
     #   ipython
     #   rich
-pyjwt==2.8.0
+pyjwt==2.10.1
     # via
     #   -r requirements.in
     #   django-ansible-base
