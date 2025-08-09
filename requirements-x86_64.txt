@@ -353,7 +353,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyaml==25.1.0
+pyaml==25.7.0
     # via llama-stack-client
 pyasn1==0.6.0
     # via
