@@ -361,7 +361,7 @@ pyasn1==0.6.0
     #   pyasn1-modules
     #   rsa
     #   service-identity
-pyasn1-modules==0.4.0
+pyasn1-modules==0.4.2
     # via
     #   google-auth
     #   oauth2client
