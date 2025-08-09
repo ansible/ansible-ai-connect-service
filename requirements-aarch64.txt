@@ -183,7 +183,7 @@ google-auth-httplib2==0.2.0
     # via google-api-python-client
 googleapis-common-protos==1.63.2
     # via google-api-core
-greenlet==3.0.3
+greenlet==3.2.4
     # via sqlalchemy
 h11==0.16.0
     # via httpcore
