@@ -234,7 +234,7 @@ joblib==1.4.0
     # via ansible-risk-insight
 jsonpatch==1.33
     # via langchain-core
-jsonpickle==3.3.0
+jsonpickle==4.1.1
     # via
     #   -r requirements.in
     #   ansible-risk-insight
