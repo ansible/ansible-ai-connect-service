@@ -33,9 +33,7 @@ const botName =
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite-3.3-8b-instruct", provider: "my_rhoai_dev" },
-  { model: "gemini/gemini-2.5-flash", provider: "gemini" },
-  { model: "gemini/gemini-2.5-pro", provider: "gemini" },
+  { model: "granite-3.3-8b-instruct", provider: "rhoai" },
 ];
 
 export const readCookie = (name: string): string | null => {
