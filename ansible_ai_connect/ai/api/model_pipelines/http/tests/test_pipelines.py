@@ -147,7 +147,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             conversation_id=None,
             system_prompt="You are a helpful assistant",
             media_type="application/json",
-            no_tools=False,
+            no_tools=False,  # Do not bypass tool callings
         )
 
     def send_event(self, ev):
