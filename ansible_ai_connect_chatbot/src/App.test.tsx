@@ -908,7 +908,7 @@ test("Clicking a welcome prompt sends the correct message", async () => {
     expect.anything(),
     expect.objectContaining({
       conversation_id: undefined,
-      query: "I have a question about Ansible Automation Platform",
+      query: "I have a question about using Ansible Automation Platform",
     }),
     expect.anything(),
   );
@@ -916,11 +916,25 @@ test("Clicking a welcome prompt sends the correct message", async () => {
 
 test("All welcome prompts are rendered", async () => {
   const view = await renderApp();
+
+  // Use getByRole to find the welcome prompt buttons by their accessible names
   await expect
-    .element(view.getByText("Using Ansible Automation Platform"))
+    .element(
+      view.getByRole("button", { name: "Using Ansible Automation Platform" }),
+    )
     .toBeVisible();
   await expect
-    .element(view.getByText("Containerized Installation"))
+    .element(
+      view.getByRole("button", {
+        name: "Installing Ansible Automation Platform",
+      }),
+    )
     .toBeVisible();
-  await expect(view.getByText("RPM Installation")).toBeVisible();
+  await expect
+    .element(
+      view.getByRole("button", {
+        name: "Operating Ansible Automation Platform",
+      }),
+    )
+    .toBeVisible();
 });

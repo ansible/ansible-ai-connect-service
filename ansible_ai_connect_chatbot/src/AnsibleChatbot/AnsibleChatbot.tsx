@@ -133,15 +133,17 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   const welcomePrompts = [
     {
       title: "Using Ansible Automation Platform",
-      message: "I have a question about Ansible Automation Platform",
+      message: "I have a question about using Ansible Automation Platform",
     },
     {
-      title: "Containerized Installation",
-      message: "I want to install AAP using the containerized installer",
+      title: "Installing Ansible Automation Platform",
+      message:
+        "I want to learn more about installing Ansible Automation Platform",
     },
     {
-      title: "RPM Installation",
-      message: "I want to install AAP using the RPM installer",
+      title: "Operating Ansible Automation Platform",
+      message:
+        "I want to learn how to operate and monitor Ansible Automation Platform",
     },
   ].map((prompt) => ({
     title: prompt.title,
