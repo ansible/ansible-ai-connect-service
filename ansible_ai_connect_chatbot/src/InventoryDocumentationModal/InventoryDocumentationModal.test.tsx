@@ -85,7 +85,6 @@ describe("InventoryDocumentationModal", () => {
     // Verify close button exists and is accessible
     const closeButton = screen.getByRole("button", {
       name: "Close",
-      exact: true,
     });
     expect(closeButton).toBeInTheDocument();
 

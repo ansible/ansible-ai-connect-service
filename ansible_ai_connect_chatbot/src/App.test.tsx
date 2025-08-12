@@ -1017,10 +1017,9 @@ test("Documentation modal can be closed and reopened", async () => {
   );
   await expect.element(modalTitle).toBeVisible();
 
-  // Verify close button exists
+  // Verify close button exists (footer close button)
   const closeButton = page.getByRole("button", {
-    name: "Close",
-    exact: true,
+    name: "Close inventory documentation modal",
   });
   await expect.element(closeButton).toBeInTheDocument();
 
