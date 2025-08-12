@@ -58,6 +58,7 @@ import {
   REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
+import { InventoryDocumentationModal } from "../InventoryDocumentationModal/InventoryDocumentationModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
@@ -301,6 +302,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   </ChatbotHeaderTitle>
                 </ChatbotHeaderMain>
                 <ChatbotHeaderActions>
+                  <InventoryDocumentationModal />
                   {inDebugMode() && (
                     <ChatbotHeaderSelectorDropdown
                       value={selectedModel}
