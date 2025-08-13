@@ -34,6 +34,7 @@ const botName =
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite-3.3-8b-instruct", provider: "my_rhoai_dev" },
+  { model: "gemini/gemini-2.5-flash", provider: "gemini" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -182,6 +183,7 @@ export const useChatbot = () => {
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
+  const [bypassTools, setBypassTools] = useState<boolean>(false);
 
   const [stream, setStream] = useState(false);
   useEffect(() => {
@@ -462,6 +464,9 @@ export const useChatbot = () => {
     if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
       chatRequest.system_prompt = systemPrompt;
     }
+    if (bypassTools) {
+      chatRequest.no_tools = true;
+    }
 
     if (inDebugMode()) {
       for (const m of modelsSupported) {
@@ -653,5 +658,7 @@ export const useChatbot = () => {
     hasStopButton,
     handleStopButton,
     isStreamingSupported,
+    bypassTools,
+    setBypassTools,
   };
 };

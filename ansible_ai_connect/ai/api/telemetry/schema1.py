@@ -212,6 +212,7 @@ class ChatBotBaseEvent(Schema1Event):
         converter=str,
         default=settings.CHATBOT_DEFAULT_PROVIDER,
     )
+    no_tools: bool = field(validator=validators.instance_of(bool), converter=bool, default=False)
 
     def __attrs_post_init__(self):
         self.chat_prompt = anonymize_struct(self.chat_prompt)

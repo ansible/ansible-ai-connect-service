@@ -1121,6 +1121,7 @@ class Chat(AACSAPIView):
         req_system_prompt = self.validated_data.get("system_prompt")
         req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
         conversation_id = self.validated_data.get("conversation_id")
+        no_tools = self.validated_data.get("no_tools", False)
 
         # Initialise Segment Event early, in case of exceptions
         self.event.chat_prompt = anonymize_struct(req_query)
@@ -1128,6 +1129,7 @@ class Chat(AACSAPIView):
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
+        self.event.no_tools = no_tools
 
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
 
@@ -1139,6 +1141,7 @@ class Chat(AACSAPIView):
                 provider=req_provider,
                 conversation_id=conversation_id,
                 mcp_headers=mcp_headers,
+                no_tools=no_tools,
             )
         )
 
@@ -1221,6 +1224,7 @@ class StreamingChat(AACSAPIView):
         req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
         conversation_id = self.validated_data.get("conversation_id")
         media_type = self.validated_data.get("media_type")
+        no_tools = self.validated_data.get("no_tools", False)
 
         # Initialise Segment Event early, in case of exceptions
         self.event.chat_prompt = anonymize_struct(req_query)
@@ -1228,6 +1232,7 @@ class StreamingChat(AACSAPIView):
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
         self.event.modelName = self.req_model_id or self.llm.config.model_id
+        self.event.no_tools = no_tools
 
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
 
@@ -1240,5 +1245,6 @@ class StreamingChat(AACSAPIView):
                 conversation_id=conversation_id,
                 media_type=media_type,
                 mcp_headers=mcp_headers,
+                no_tools=no_tools,
             )
         )

@@ -345,6 +345,11 @@ class ChatRequestSerializer(serializers.Serializer):
         label="System prompt",
         help_text=("An optional non-default system prompt to be used on LLM (debug mode only)."),
     )
+    no_tools = serializers.BooleanField(
+        required=False,
+        label="Bypass tools",
+        help_text=("Whether to bypass all tools and MCP servers"),
+    )
 
 
 class StreamingChatRequestSerializer(ChatRequestSerializer):

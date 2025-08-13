@@ -8,7 +8,6 @@ import React from "react";
 // vitest-browser-react documentation
 /* eslint-disable testing-library/prefer-screen-queries */
 /* eslint-disable no-nested-ternary */
-
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
@@ -704,6 +703,40 @@ test("Test system prompt override", async () => {
       conversation_id: undefined,
       query: "Hello with system prompt override",
       system_prompt: "MY SYSTEM PROMPT",
+    }),
+    expect.anything(),
+  );
+});
+
+test("Test system prompt override with no_tools option", async () => {
+  const spy = mockAxios(200);
+  await renderApp(true);
+
+  await expect.element(page.getByLabelText("SystemPrompt")).toBeVisible();
+  const systemPromptIcon = page.getByLabelText("SystemPrompt");
+  await systemPromptIcon.click();
+
+  const systemPromptTextArea = page.getByLabelText(
+    "system-prompt-form-text-area",
+  );
+  await systemPromptTextArea.fill("MY SYSTEM PROMPT WITH NO_TOOLS OPTION");
+
+  const bypassToolsCheckbox = page.getByRole("checkbox");
+  expect(bypassToolsCheckbox).not.toBeChecked();
+  await bypassToolsCheckbox.click();
+  expect(bypassToolsCheckbox).toBeChecked();
+
+  const systemPromptButton = page.getByLabelText("system-prompt-form-button");
+  await systemPromptButton.click();
+
+  await sendMessage("Hello with system prompt override with no_tools option");
+  expect(spy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      conversation_id: undefined,
+      no_tools: true,
+      query: "Hello with system prompt override with no_tools option",
+      system_prompt: "MY SYSTEM PROMPT WITH NO_TOOLS OPTION",
     }),
     expect.anything(),
   );
