@@ -44,6 +44,7 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.main.base_views import ProtectedTemplateView
 from ansible_ai_connect.main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
+from ansible_ai_connect.main.utils import get_project_name_with_wca_suffix
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,9 @@ class LoginView(auth_views.LoginView):
         context = super().get_context_data(**kwargs)
         context["next"] = self.request.GET.get("next") or "/"
         context["deployment_mode"] = settings.DEPLOYMENT_MODE
-        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["project_name"] = get_project_name_with_wca_suffix(
+            settings.ANSIBLE_AI_PROJECT_NAME, self.request
+        )
         context["aap_api_provider_name"] = settings.AAP_API_PROVIDER_NAME
         context["documentation_url"] = settings.COMMERCIAL_DOCUMENTATION_URL
         return context
@@ -114,7 +117,9 @@ class ConsoleView(ProtectedTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project_name"] = settings.ANSIBLE_AI_PROJECT_NAME
+        context["project_name"] = get_project_name_with_wca_suffix(
+            settings.ANSIBLE_AI_PROJECT_NAME, self.request
+        )
         user = self.request.user
         if user:
             context["user_name"] = user.username
