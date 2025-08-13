@@ -62,3 +62,13 @@
   --pf-v6-c-avatar--Height: 3rem;
   --pf-v6-c-avatar--BorderRadius: 0rem;
 }
+
+.ansible-chatbot-alert-outer {
+  padding: var(--pf-t--global--spacer--lg);
+  display: flex;
+  justify-content: center;
+}
+
+.ansible-chatbot-alert-inner {
+  max-width: 60rem;
+}

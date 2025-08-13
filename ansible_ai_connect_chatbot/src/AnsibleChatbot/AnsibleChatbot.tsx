@@ -353,14 +353,9 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   </ChatbotHeaderOptionsDropdown>
                 </ChatbotHeaderActions>
               </ChatbotHeader>
-              <ChatbotContent>
-                <MessageBox>
-                  <ChatbotWelcomePrompt
-                    title="Hello, Ansible User"
-                    description="How may I help you today?"
-                    prompts={welcomePrompts}
-                  />
-                  {alertMessage && (
+              {alertMessage && (
+                <div className="ansible-chatbot-alert-outer">
+                  <div className="ansible-chatbot-alert-inner">
                     <ChatbotAlert
                       variant={alertMessage.variant}
                       onClose={() => {
@@ -370,7 +365,16 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     >
                       {alertMessage.message}
                     </ChatbotAlert>
-                  )}
+                  </div>
+                </div>
+              )}
+              <ChatbotContent>
+                <MessageBox>
+                  <ChatbotWelcomePrompt
+                    title="Hello, Ansible User"
+                    description="How may I help you today?"
+                    prompts={welcomePrompts}
+                  />
                   {(conversationId &&
                     setCurrentConversation(conversationId, messages)) || <></>}
                   {messages.map(
