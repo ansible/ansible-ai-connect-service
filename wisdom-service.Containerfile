@@ -124,7 +124,9 @@ CMD /usr/bin/launch-wisdom.sh
 
 FROM production AS devel
 USER 0
-RUN microdnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+RUN  curl -o epel.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    rpm -i epel.rpm && \
+    rm epel.rpm && \
     microdnf install -y inotify-tools && \
     microdnf remove -y epel-release && \
     microdnf clean all
