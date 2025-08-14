@@ -8,28 +8,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  pr_testing:
-    if: ${{ github.event.label.name == 'pr-deployment' }}
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    needs: deployment_ready
-    steps:
-    - uses: actions/checkout@v4
-    - name: Trigger tests on PR deployment
-      id: test_pr
-      run: |
-        TEST_RESULTS=$(bash ./.github/workflows/scripts/pr_deployment_test.sh invoke_pr_test 81148901 ${{ secrets.TESTING_TRIGGER_PAT }} ${{ github.event.number }})
-        echo "TEST_RESULTS=${TEST_RESULTS}" >> $GITHUB_OUTPUT
-      shell: bash
-    - name: report test results
-      uses: mshick/add-pr-comment@v2
-      with:
-        message: |
-          ${{ steps.test_pr.outputs.TEST_RESULTS }}
-
-
-  deployment_ready:
+  pr_deplolyment_test:
     if: ${{ github.event.label.name == 'pr-deployment' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -38,3 +17,21 @@ jobs:
       - name: Wait for PR deployment completion
         run: bash ./.github/workflows/scripts/pr_deployment_test.sh wait_for_pr_deployment ${{ github.event.number }} ${{ secrets.PR_DEPLOY_CLUSTER_HOSTNAME }}
         shell: bash
+  pr_testing:
+    if: ${{ github.event.label.name == 'pr-deployment' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    needs: pr_deplolyment_test
+    steps:
+    - uses: actions/checkout@v4
+    - name: Trigger tests on PR deployment
+      id: test_pr
+      run: |
+        bash ./.github/workflows/scripts/pr_deployment_test.sh invoke_pr_test 81148901 ${{ secrets.TESTING_TRIGGER_PAT }} ${{ github.event.number }}
+      shell: bash
+#    - name: report test results
+#      uses: mshick/add-pr-comment@v2
+#      with:
+#        message: |
+#          ${{ steps.test_pr.outputs.TEST_RESULTS }}

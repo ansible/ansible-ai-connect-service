@@ -74,4 +74,4 @@ wait_for_pr_deployment() {
   echo "Deployment probably is broken. Please check"
 }
 
-$1 $2 $3 $4 $5 $6 $7
+$*
