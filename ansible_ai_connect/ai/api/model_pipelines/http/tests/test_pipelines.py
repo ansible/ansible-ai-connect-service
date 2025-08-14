@@ -152,7 +152,6 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
 
     def send_event(self, ev):
         self.call_counter += 1
-        self.assertEqual(ev.chat_prompt, "Hello")
         self.assertEqual(ev.conversation_id, "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f")
         if ev.phase == "end":
             self.assertEqual(len(ev.chat_referenced_documents), 2)

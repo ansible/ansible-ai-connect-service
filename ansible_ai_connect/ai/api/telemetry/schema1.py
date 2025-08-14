@@ -197,11 +197,9 @@ class ChatBotResponseDocsReferences:
 
 @define
 class ChatBotBaseEvent(Schema1Event):
-    chat_prompt: str = field(validator=validators.instance_of(str), converter=str, default="")
     chat_system_prompt: str = field(
         validator=validators.instance_of(str), converter=str, default=""
     )
-    chat_response: str = field(validator=validators.instance_of(str), converter=str, default="")
     chat_truncated: bool = field(
         validator=validators.instance_of(bool), converter=bool, default=False
     )
@@ -213,10 +211,6 @@ class ChatBotBaseEvent(Schema1Event):
         default=settings.CHATBOT_DEFAULT_PROVIDER,
     )
     no_tools: bool = field(validator=validators.instance_of(bool), converter=bool, default=False)
-
-    def __attrs_post_init__(self):
-        self.chat_prompt = anonymize_struct(self.chat_prompt)
-        self.chat_response = anonymize_struct(self.chat_response)
 
 
 @define

@@ -403,9 +403,7 @@ ALLOW_LIST = {
         "duration": None,
         "exception": None,
         "timestamp": None,
-        # ChatBotBaseEvent fields (excluding chat_prompt)
         "chat_system_prompt": None,
-        "chat_response": None,
         "chat_truncated": None,
         "chat_referenced_documents": None,
         "conversation_id": None,
@@ -428,13 +426,12 @@ ALLOW_LIST = {
         "duration": None,
         "exception": None,
         "timestamp": None,
-        # ChatBotBaseEvent fields (excluding chat_prompt)
         "chat_system_prompt": None,
-        "chat_response": None,
         "chat_truncated": None,
         "chat_referenced_documents": None,
         "conversation_id": None,
         "provider_id": None,
+        "phase": None,
         "no_tools": None,
     },
     "explainRole": {
