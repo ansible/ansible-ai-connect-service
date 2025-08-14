@@ -11,7 +11,7 @@ import React from "react";
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import { userEvent, page } from "@vitest/browser/context";
@@ -971,4 +971,75 @@ test("All welcome prompts are rendered", async () => {
       }),
     )
     .toBeVisible();
+});
+
+test("Documentation link appears in chatbot header", async () => {
+  mockAxios(200);
+  const view = await renderApp();
+
+  // Check that the documentation link is visible in the header
+  const docButton = view.getByRole("button", {
+    name: "Generate Inventory File User Documentation",
+  });
+  expect(docButton).toBeVisible();
+});
+
+test("Documentation modal opens from chatbot header", async () => {
+  mockAxios(200);
+  const view = await renderApp();
+
+  // Click the documentation button in the header
+  const docButton = view.getByRole("button", {
+    name: "Generate Inventory File User Documentation",
+  });
+  await docButton.click();
+
+  // Check that the modal opens with the correct title
+  const modalTitle = view.getByText(
+    "Red Hat AI-assisted Ansible Installer Inventory File Builder Documentation",
+  );
+  await expect.element(modalTitle).toBeVisible();
+});
+
+test("Documentation modal can be closed and reopened", async () => {
+  mockAxios(200);
+  const view = await renderApp();
+
+  // Open the modal
+  const docButton = view.getByRole("button", {
+    name: "Generate Inventory File User Documentation",
+  });
+  await docButton.click();
+
+  // Verify modal is open
+  const modalTitle = view.getByText(
+    "Red Hat AI-assisted Ansible Installer Inventory File Builder Documentation",
+  );
+  await expect.element(modalTitle).toBeVisible();
+
+  // Verify close button exists (footer close button)
+  const closeButton = page.getByRole("button", {
+    name: "Close inventory documentation modal",
+  });
+  await expect.element(closeButton).toBeInTheDocument();
+
+  // Close modal with ESC key (tests close functionality)
+  await userEvent.keyboard("{Escape}");
+
+  // Verify modal is closed - check that it's no longer in the document
+  await waitFor(
+    () => {
+      const closedModalTitle = screen.queryByText(
+        "Red Hat AI-assisted Ansible Installer Inventory File Builder Documentation",
+      );
+      expect(closedModalTitle).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+
+  // Reopen the modal
+  await docButton.click();
+
+  // Verify modal is open again
+  await expect.element(modalTitle).toBeVisible();
 });
