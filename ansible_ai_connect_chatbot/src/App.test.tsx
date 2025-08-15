@@ -662,12 +662,12 @@ test("Debug mode test", async () => {
   mockAxios(200);
 
   await renderApp(true);
-  await expect.element(page.getByText("granite-3.3-8b-instruct")).toBeVisible();
-  await page.getByText("granite-3.3-8b-instruct").click();
+  await expect.element(page.getByText("gemini/gemini-2.5-flash")).toBeVisible();
+  await page.getByText("gemini/gemini-2.5-flash").click();
   await expect
-    .element(page.getByRole("menuitem", { name: "granite-3.3-8b-instruct" }))
+    .element(page.getByRole("menuitem", { name: "gemini/gemini-2.5-flash" }))
     .toBeVisible();
-  await page.getByRole("menuitem", { name: "granite-3.3-8b-instruct" }).click();
+  await page.getByRole("menuitem", { name: "gemini/gemini-2.5-flash" }).click();
 
   await sendMessage("Hello");
   await expect
