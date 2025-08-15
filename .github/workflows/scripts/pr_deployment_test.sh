@@ -34,7 +34,7 @@ invoke_pr_test() {
     run_status=$(echo "$run_info" | jq -r '.status')
     if [[ $run_status == "completed" ]]; then
       conclusion=$(echo "$run_info" | jq -r '.conclusion')
-      echo "Tests execution https://api.github.com/repos/ansible/ansible-wisdom-testing/actions/runs/$RUN_ID completed with conclusion: $conclusion"
+      echo "Tests execution https://github.com/ansible/ansible-wisdom-testing/actions/runs/$RUN_ID completed with conclusion: $conclusion"
       if [[ $conclusion == "success" ]]; then
         exit 0
       else
@@ -74,4 +74,4 @@ wait_for_pr_deployment() {
   echo "Deployment probably is broken. Please check"
 }
 
-$1 $2 $3 $4 $5 $6 $7
+$*
