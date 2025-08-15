@@ -33,7 +33,6 @@ const botName =
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
-  { model: "granite-3.3-8b-instruct", provider: "my_rhoai_dev" },
   { model: "gemini/gemini-2.5-flash", provider: "gemini" },
 ];
 
@@ -179,7 +178,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("granite-3.3-8b-instruct");
+  const [selectedModel, setSelectedModel] = useState("gemini/gemini-2.5-flash");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
