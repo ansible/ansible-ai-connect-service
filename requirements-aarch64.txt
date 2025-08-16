@@ -270,7 +270,7 @@ launchdarkly-server-sdk==8.3.0
     # via -r requirements.in
 llama-stack-client==0.2.12
     # via -r requirements.in
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
