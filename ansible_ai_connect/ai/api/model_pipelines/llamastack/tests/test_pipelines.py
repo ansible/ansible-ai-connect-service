@@ -348,7 +348,7 @@ Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document
             system_prompt="",
             media_type="application/json",
             no_tools=False,
-            event=event
+            event=event,
         )
 
     @patch("llama_stack_client.lib.agents.agent.AsyncAgent.create_session")
