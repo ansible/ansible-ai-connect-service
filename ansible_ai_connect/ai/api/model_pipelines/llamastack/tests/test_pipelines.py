@@ -45,6 +45,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     StreamingChatBotParameters,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
+from ansible_ai_connect.ai.api.telemetry.schema1 import StreamingChatBotOperationalEvent
 from ansible_ai_connect.test_utils import WisdomLogAwareMixin
 
 logger = logging.getLogger(__name__)
@@ -337,6 +338,8 @@ Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document
         return MyAsyncContextManager(stream_data, status)
 
     def get_params(self) -> StreamingChatBotParameters:
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
         return StreamingChatBotParameters(
             query="Hello",
             provider="",
@@ -345,6 +348,7 @@ Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document
             system_prompt="",
             media_type="application/json",
             no_tools=False,
+            event=event,
         )
 
     @patch("llama_stack_client.lib.agents.agent.AsyncAgent.create_session")

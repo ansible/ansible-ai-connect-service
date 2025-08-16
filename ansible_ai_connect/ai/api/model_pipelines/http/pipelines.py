@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import copy
 import json
 import logging
 from json import JSONDecodeError
@@ -311,12 +312,10 @@ class HttpStreamingChatBotPipeline(
                     # the AppRegistryNotReady exception
                     from ansible_ai_connect.ai.api.telemetry.schema1 import (
                         StreamingChatBotOperationalEvent,
-                        anonymize_struct,
                     )
 
                     # Initialise Segment Event
-                    ev = StreamingChatBotOperationalEvent()
-                    ev.chat_prompt = anonymize_struct(params.query)
+                    ev: StreamingChatBotOperationalEvent = copy.copy(params.event)
                     ev.chat_system_prompt = params.system_prompt
                     ev.provider_id = params.provider
                     ev.conversation_id = params.conversation_id

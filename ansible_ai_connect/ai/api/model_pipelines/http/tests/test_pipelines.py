@@ -28,6 +28,7 @@ from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     StreamingChatBotParameters,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
+from ansible_ai_connect.ai.api.telemetry.schema1 import StreamingChatBotOperationalEvent
 from ansible_ai_connect.test_utils import WisdomLogAwareMixin
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,8 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         return MyAsyncContextManager(stream_data, status)
 
     def get_params(self) -> StreamingChatBotParameters:
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
         return StreamingChatBotParameters(
             query="Hello",
             provider="",
@@ -148,11 +151,11 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             system_prompt="You are a helpful assistant",
             media_type="application/json",
             no_tools=False,  # Do not bypass tool callings
+            event=event,
         )
 
     def send_event(self, ev):
         self.call_counter += 1
-        self.assertEqual(ev.chat_prompt, "Hello")
         self.assertEqual(ev.conversation_id, "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f")
         if ev.phase == "end":
             self.assertEqual(len(ev.chat_referenced_documents), 2)

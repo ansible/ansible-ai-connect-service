@@ -436,14 +436,6 @@ class TestFeedbackView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 self.user.organization.id,
             )
             self.assertEqual(
-                segment_events[0]["properties"]["chat_prompt"],
-                "Hello chatbot",
-            )
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_response"],
-                "Hello to you",
-            )
-            self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 False,
             )
