@@ -133,8 +133,6 @@ const createGitHubIssueURL = (
   searchParams.append("projects", "");
   searchParams.append("template", "chatbot_feedback.yml");
   searchParams.append("conversation_id", conversation_id);
-  searchParams.append("prompt", f.query);
-  searchParams.append("response", f.response.response);
   // Referenced documents may increase as more source documents being ingested,
   // so let's be try not to generate long length for query parameter "ref_docs",
   // otherwise GH returns 414 URI Too Long error page. Assuming max of 30 docs.
