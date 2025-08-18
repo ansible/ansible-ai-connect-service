@@ -18,7 +18,7 @@ import logging
 import random
 import string
 from http import HTTPStatus
-from unittest import mock
+from unittest import mock, skip
 from unittest.mock import Mock, patch
 
 from django.apps import apps
@@ -317,17 +317,15 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["conversation_id"],
                 TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID["conversation_id"],
             )
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_response"],
-                TestChatView.JSON_RESPONSE["response"],
-            )
+            # Verify that chat_response is not found
+            self.assertNotIn("chat_response", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 TestChatView.JSON_RESPONSE["truncated"],
@@ -379,10 +377,8 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 segment_events[0]["properties"]["rh_user_org_id"],
                 123,
             )
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_response"],
-                "",
-            )
+            # Verify that chat_response is not found
+            self.assertNotIn("chat_response", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
@@ -405,7 +401,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -428,13 +424,11 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
-            self.assertIn(
-                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"],
-                segment_events[0]["properties"]["chat_response"],
-            )
+            # Verify that chat_response is not found
+            self.assertNotIn("chat_response", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 TestChatView.JSON_RESPONSE["truncated"],
@@ -466,13 +460,11 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
-            self.assertIn(
-                TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION["query"],
-                segment_events[0]["properties"]["chat_response"],
-            )
+            # Verify that chat_response is not found
+            self.assertNotIn("chat_response", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 TestChatView.JSON_RESPONSE["truncated"],
@@ -525,7 +517,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded by default (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["conversation_id"],
@@ -681,7 +673,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["conversation_id"],
@@ -694,6 +686,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             )
             self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
 
+    @skip("We no longer include prompt/response in telemetry events")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_limit_exceeded(self):
         q = "".join("hello " for i in range(6500))
@@ -716,11 +709,10 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
                 segment_events[0]["properties"]["rh_user_org_id"],
                 123,
             )
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_response"],
-                "",
-            )
+            # Verify that chat_response is not found
+            self.assertNotIn("chat_response", segment_events[0]["properties"])
 
+    @skip("We no longer include prompt/response in telemetry events")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
         self.user.rh_user_has_seat = True
@@ -742,7 +734,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             )
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -765,7 +757,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertEqual(
@@ -799,7 +791,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is excluded (not in allow list)
+            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertEqual(

@@ -262,6 +262,7 @@ ChatBotResponse = Any
 @define
 class StreamingChatBotParameters(ChatBotParameters):
     media_type: str
+    event: Any
 
     @classmethod
     def init(
@@ -272,6 +273,7 @@ class StreamingChatBotParameters(ChatBotParameters):
         conversation_id: Optional[str] = None,
         system_prompt: Optional[str] = None,
         media_type: Optional[str] = None,
+        event: Optional[Any] = None,
         mcp_headers: Optional[dict[str, dict[str, str]]] = None,
         no_tools: Optional[bool] = False,
     ):
@@ -282,6 +284,7 @@ class StreamingChatBotParameters(ChatBotParameters):
             conversation_id=conversation_id,
             system_prompt=system_prompt,
             media_type=media_type,
+            event=event,
             mcp_headers=mcp_headers,
             no_tools=no_tools,
         )

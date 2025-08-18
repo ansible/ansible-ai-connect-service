@@ -12,13 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import copy
 import logging
 import time
 import traceback
 from string import Template
 
 from ansible_anonymizer import anonymizer
-from attr import asdict
 from django.apps import apps
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -95,10 +95,7 @@ from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsRoleGenerationWizard,
     AnalyticsTelemetryEvents,
 )
-from ansible_ai_connect.ai.api.utils.segment import (
-    send_chatbot_event,
-    send_schema1_event,
-)
+from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
@@ -143,12 +140,8 @@ from .serializers import (
     StreamingChatRequestSerializer,
     SuggestionQualityFeedback,
 )
-from .telemetry.schema1 import (
-    ChatBotFeedbackEvent,
-    ChatBotResponseDocsReferences,
-    anonymize_struct,
-)
-from .utils.segment import is_segment_message_exceeds_limit, send_segment_event
+from .telemetry.schema1 import ChatBotFeedbackEvent, ChatBotResponseDocsReferences
+from .utils.segment import send_segment_event
 
 logger = logging.getLogger(__name__)
 
@@ -519,8 +512,6 @@ class Feedback(APIView):
         if chatbot_feedback_data:
             response_data = chatbot_feedback_data.get("response")
             chatbot_feedback_payload = ChatBotFeedbackEvent(
-                chat_prompt=chatbot_feedback_data.get("query"),
-                chat_response=response_data["response"],
                 chat_truncated=response_data["truncated"],
                 chat_referenced_documents=[
                     ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
@@ -530,7 +521,7 @@ class Feedback(APIView):
                 rh_user_org_id=getattr(user, "org_id", None),
                 sentiment=chatbot_feedback_data.get("sentiment"),
             )
-            send_chatbot_event(chatbot_feedback_payload, "chatFeedbackEvent", user)
+            send_schema1_event(chatbot_feedback_payload)
 
         feedback_events = [
             inline_suggestion_data,
@@ -1124,7 +1115,6 @@ class Chat(AACSAPIView):
         no_tools = self.validated_data.get("no_tools", False)
 
         # Initialise Segment Event early, in case of exceptions
-        self.event.chat_prompt = anonymize_struct(req_query)
         self.event.chat_system_prompt = req_system_prompt
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
@@ -1156,10 +1146,6 @@ class Chat(AACSAPIView):
             ChatBotResponseDocsReferences(docs_url=rd["docs_url"], title=rd["title"])
             for rd in data.get("referenced_documents", [])
         ]
-        self.event.chat_response = anonymize_struct(data["response"])
-        self.event.chat_response = (
-            "" if is_segment_message_exceeds_limit(asdict(self.event)) else self.event.chat_response
-        )
 
         return Response(
             data,
@@ -1227,7 +1213,6 @@ class StreamingChat(AACSAPIView):
         no_tools = self.validated_data.get("no_tools", False)
 
         # Initialise Segment Event early, in case of exceptions
-        self.event.chat_prompt = anonymize_struct(req_query)
         self.event.chat_system_prompt = req_system_prompt
         self.event.provider_id = req_provider
         self.event.conversation_id = conversation_id
@@ -1244,6 +1229,7 @@ class StreamingChat(AACSAPIView):
                 provider=req_provider,
                 conversation_id=conversation_id,
                 media_type=media_type,
+                event=copy.copy(self.event),
                 mcp_headers=mcp_headers,
                 no_tools=no_tools,
             )
