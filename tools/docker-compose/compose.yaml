@@ -89,8 +89,6 @@ services:
     networks:
       - dbnet
       - service-mesh
-    extra_hosts:
-      - "aap.foo.redhat.com:10.17.161.129"
   db:
     image: docker.io/library/postgres:15-alpine
     environment:
