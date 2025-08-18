@@ -10,8 +10,6 @@
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
-#  limitations under the License.
-import json
 import logging
 import platform
 from typing import Any, Dict
@@ -21,11 +19,8 @@ from django.conf import settings
 from django.utils import timezone
 from segment import analytics
 from segment.analytics import Client
-from segment.analytics.consumer import MAX_MSG_SIZE
-from segment.analytics.request import DatetimeSerializer
-from segment.analytics.utils import clean
 
-from ansible_ai_connect.ai.api.telemetry.schema1 import ChatBotBaseEvent, PlanEntry
+from ansible_ai_connect.ai.api.telemetry.schema1 import PlanEntry
 from ansible_ai_connect.healthcheck.version_info import VersionInfo
 from ansible_ai_connect.users.models import User
 
@@ -94,24 +89,6 @@ def send_segment_event(event: Dict[str, Any], event_name: str, user: User) -> No
             return
 
     base_send_segment_event(event, event_name, user, analytics)
-
-
-def send_chatbot_event(event: ChatBotBaseEvent, event_name: str, user: User) -> None:
-    if not settings.SEGMENT_WRITE_KEY:
-        logger.info("segment write key not set, skipping event")
-        return
-    if is_segment_message_exceeds_limit(asdict(event)):
-        # Prioritize the prompt and referenced documents.
-        event.chat_response = ""
-    base_send_segment_event(asdict(event), event_name, user, analytics)
-
-
-def is_segment_message_exceeds_limit(msg_dict):
-    msg_dict = clean(msg_dict)
-    msg_size = len(json.dumps(msg_dict, cls=DatetimeSerializer).encode())
-    if msg_size > MAX_MSG_SIZE:
-        return True
-    return False
 
 
 def base_send_segment_event(

@@ -95,10 +95,7 @@ from ansible_ai_connect.ai.api.telemetry.schema2 import (
     AnalyticsRoleGenerationWizard,
     AnalyticsTelemetryEvents,
 )
-from ansible_ai_connect.ai.api.utils.segment import (
-    send_chatbot_event,
-    send_schema1_event,
-)
+from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
@@ -524,7 +521,7 @@ class Feedback(APIView):
                 rh_user_org_id=getattr(user, "org_id", None),
                 sentiment=chatbot_feedback_data.get("sentiment"),
             )
-            send_chatbot_event(chatbot_feedback_payload, "chatFeedbackEvent", user)
+            send_schema1_event(chatbot_feedback_payload)
 
         feedback_events = [
             inline_suggestion_data,
