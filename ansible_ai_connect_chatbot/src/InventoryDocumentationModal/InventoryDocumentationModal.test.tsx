@@ -59,7 +59,7 @@ describe("InventoryDocumentationModal", () => {
 
     const mainHeading = screen.getByRole("heading", {
       level: 3,
-      name: "How to Use This AI Assistant for Inventory File Generation",
+      name: "Overview",
     });
 
     expect(mainHeading).toBeVisible();
