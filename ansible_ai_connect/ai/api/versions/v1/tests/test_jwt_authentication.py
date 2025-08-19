@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 
 import jwt
 import requests
+from ansible_base.rbac.claims import get_claims_hash
 from ansible_base.resource_registry.models.service_identifier import service_id
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -95,6 +96,7 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
                 "email": self.email,
                 "is_superuser": False,
             },
+            "claims_hash": get_claims_hash({"id": self.user_id, "username": self.username}),
             "objects": {},
             "object_roles": {},
             "global_roles": [],
