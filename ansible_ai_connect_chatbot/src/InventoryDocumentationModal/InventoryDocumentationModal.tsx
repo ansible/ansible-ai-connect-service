@@ -239,6 +239,10 @@ export const InventoryDocumentationModal: React.FunctionComponent = () => {
                 Consider starting with a simple setup and gradually adding
                 complexity as you become more comfortable with the process.
               </ListItem>
+              <ListItem>
+                Start a fresh conversation by accessing the History window via
+                the top-left icon and then clicking the 'New chat' button.
+              </ListItem>
             </List>
           </div>
         </ModalBody>
