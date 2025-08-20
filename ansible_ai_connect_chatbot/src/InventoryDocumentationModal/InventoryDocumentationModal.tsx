@@ -8,6 +8,8 @@ import {
   ModalVariant,
   Brand,
   Title,
+  List,
+  ListItem,
 } from "@patternfly/react-core";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/esm/icons/external-link-alt-icon";
 import lightspeedLogo from "../assets/lightspeed.svg";
@@ -66,126 +68,182 @@ export const InventoryDocumentationModal: React.FunctionComponent = () => {
         <ModalBody>
           <div>
             <Title headingLevel="h3" size="lg">
-              How to Use This AI Assistant for Inventory File Generation
+              Overview
             </Title>
             <p>
-              This AI-powered chatbot helps you create accurate inventory files
-              for your Ansible Automation Platform (AAP) installation. The
-              assistant is designed to guide you through the entire process,
-              from initial setup questions to generating a complete,
-              ready-to-use inventory file tailored to your specific environment
-              and requirements.
+              This chat assistant helps you create an inventory file for Ansible
+              Automation Platform installation. It uses generative AI to build
+              an accurate, ready-to-use file from your conversations quickly. It
+              walks you through the initial setup questions and then creates a
+              complete, custom inventory file that you can use right away for
+              your installation.
             </p>
             <br />
-            <Title headingLevel="h4" size="md">
-              Getting Started
-            </Title>
             <p>
-              Begin your interaction by clearly stating your installation type
-              and basic requirements. The chatbot responds best to specific
-              statements such as "I want to install AAP using the containerized
-              installer," "I need help with an RPM installation of Ansible
-              Automation Platform," or "Help me create an inventory file for my
-              AAP setup." Being explicit about whether you're planning a
-              containerized or RPM-based installation helps the assistant
-              provide more targeted guidance from the start.
+              <strong>Important:</strong> The chat assistant generates an
+              inventory file tailored to your environment; it does not perform
+              the installation itself. You must use the generated inventory file
+              to then install the Ansible Automation Platform (RPM or
+              containerized).
             </p>
             <br />
-            <Title headingLevel="h4" size="md">
-              Providing Infrastructure Information
+            <Title headingLevel="h3" size="lg">
+              Procedure
             </Title>
-            <p>
-              The chatbot will systematically gather details about your
-              environment to ensure the generated inventory matches your
-              infrastructure. Be prepared to share the number of servers you're
-              installing on, the specific roles each server will play (such as
-              controllers, execution nodes, or database servers), and the IP
-              addresses or hostnames for each machine. Additionally, provide
-              information about your network configuration, any external
-              database details if you're not using the built-in database, and
-              any special networking requirements your environment may have.
-            </p>
-            <br />
-            <Title headingLevel="h4" size="md">
-              Specifying Advanced Requirements
-            </Title>
-            <p>
-              For production deployments, you'll likely have additional
-              requirements beyond basic installation. Tell the chatbot about any
-              needs for High Availability (HA) configurations, load balancing
-              setups for multiple controller nodes, SSL/TLS certificate
-              requirements, or any custom variables specific to your
-              organization's standards. The assistant can incorporate these
-              requirements into the inventory file and explain the implications
-              of each configuration choice.
-            </p>
-            <br />
-            <Title headingLevel="h4" size="md">
-              Reviewing and Refining Your Configuration
-            </Title>
-            <p>
-              Once the chatbot generates an initial inventory file, you can work
-              collaboratively to refine it. Ask for modifications like "Can you
-              add another execution node?" or request explanations about
-              specific variables with questions like "What does this variable
-              do?" You can also validate your setup by asking "Is this
-              configuration correct for production?" The assistant can explain
-              the reasoning behind configuration choices and suggest
-              improvements based on best practices.
-            </p>
-            <br />
-            <Title headingLevel="h4" size="md">
-              Finalizing Your Inventory
-            </Title>
-            <p>
-              When you're satisfied with the configuration, ask the chatbot to
-              provide the complete inventory file in a format you can copy and
-              use immediately. The assistant can also explain the next steps in
-              your installation process and help troubleshoot potential issues
-              you might encounter. Questions like "What do I do after creating
-              this inventory?" and "What if I encounter errors during
-              installation?" can provide valuable guidance for the
-              implementation phase.
-            </p>
-            <br />
-            <Title headingLevel="h4" size="md">
-              Example Conversation Approaches
-            </Title>
-            <div
-              style={{
-                backgroundColor: "#f6f8fa",
-                padding: "16px",
-                borderRadius: "6px",
-                marginTop: "16px",
-              }}
-            >
+            <ol style={{ paddingLeft: "20px" }}>
+              <li style={{ marginBottom: "16px" }}>
+                Click <strong>Installing Ansible Automation Platform.</strong>
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Specify your installation type and basic requirements.
+                <br />
+                To get more focused guidance from the chat assistant from the
+                start, provide clear and direct statements.
+                <br />
+                <br />
+                Here are some example prompts:
+                <List>
+                  <ListItem>
+                    I want to install AAP using the containerized installer
+                  </ListItem>
+                  <ListItem>
+                    I need help with an RPM installation of Ansible Automation
+                    Platform
+                  </ListItem>
+                  <ListItem>
+                    Help me create an inventory file for my AAP setup
+                  </ListItem>
+                </List>
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Specify your infrastructure requirements.
+                <br />
+                The chatbot will then systemically gather details about your
+                environment and create an inventory file that aligns with those
+                requirements.
+                <br />
+                <br />
+                Examples of infrastructure requirements include:
+                <List>
+                  <ListItem>Number of servers you're installing</ListItem>
+                  <ListItem>
+                    Specific roles each server will play (such as controllers,
+                    execution nodes, or database servers)
+                  </ListItem>
+                  <ListItem>
+                    IP addresses or hostnames for each machine
+                  </ListItem>
+                  <ListItem>Network configuration</ListItem>
+                  <ListItem>
+                    External database details, if you're not using the built-in
+                    database
+                  </ListItem>
+                  <ListItem>
+                    Any special networking requirements for your environment
+                  </ListItem>
+                </List>
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Specify advanced requirements.
+                <br />
+                Specify any further production environment requirements that
+                extend beyond the basic installation needs. The chatbot
+                incorporates these requirements into the inventory file and
+                explains the implications of each configuration choice.
+                <br />
+                <br />
+                Examples of advanced requirements include:
+                <List>
+                  <ListItem>High Availability (HA) configurations</ListItem>
+                  <ListItem>
+                    Load balancing setups for multiple controller nodes
+                  </ListItem>
+                  <ListItem>SSL/TLS certificate requirements</ListItem>
+                  <ListItem>
+                    Any custom variables specific to your organization's
+                    standards
+                  </ListItem>
+                </List>
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Review and refine your inventory file.
+                <br />
+                After the chatbot generates an inventory file, you can refine it
+                further by asking for changes. You can ask for changes like "Can
+                you add another execution node?" You can also request
+                explanations about specific variables by asking questions like
+                "What does this variable do?"
+                <br />
+                <br />
+                If your inventory file contains all your infrastructure
+                requirements, you can ask the chatbot to validate it by asking
+                questions like "Is this configuration correct for production?".
+                The chatbot will then explain the reasoning behind configuration
+                choices and suggest improvements based on best practices.
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Save your inventory file.
+                <br />
+                After you are satisfied with the inventory file configuration,
+                ask the chatbot to provide the complete inventory file in a
+                format that you can copy and save in your environment as
+                inventory.ini or with any other name (but with an .ini extension
+                only).
+              </li>
+              <li style={{ marginBottom: "16px" }}>
+                Know the next steps in the installation process.
+                <br />
+                You can ask the chatbot to explain the next steps in your
+                installation process and help troubleshoot potential issues you
+                might encounter. Questions like "What do I do after creating
+                this inventory?" or "What if I encounter errors during
+                installation?" can provide valuable guidance for the
+                implementation phase.
+              </li>
+            </ol>
+            <div>
+              <p>Here are some example conversation prompts:</p>
               <p>
-                <strong>For Containerized Installation:</strong> "I want to
-                install AAP 2.4 using containers on 3 RHEL 9 servers. I need one
-                controller and two execution nodes."
+                <strong>For Containerized installation:</strong> I want to
+                install AAP 2.5 using containers on 3 RHEL 9 servers. I need one
+                controller and two execution nodes.
               </p>
               <p>
-                <strong>For RPM Installation:</strong> "Help me create an
+                <strong>For RPM installation:</strong> Help me create an
                 inventory for RPM installation with HA controllers and an
-                external PostgreSQL database."
+                external PostgreSQL database.
               </p>
             </div>
             <br />
-            <Title headingLevel="h4" size="md">
+            <Title headingLevel="h3" size="lg">
               Best Practices for Optimal Results
             </Title>
-            <p>
-              To get the most accurate and useful inventory files, be as
-              specific as possible when describing your infrastructure. Provide
-              exact server details, IP addresses, and hostnames rather than
-              vague descriptions. Don't hesitate to ask follow-up questions if
-              something isn't clear—the assistant can clarify configuration
-              options and explain the reasoning behind recommendations. Always
-              ask the chatbot to validate your setup and explain why certain
-              configurations are recommended for your specific use case.
-              Consider starting with a simple setup and gradually adding
-              complexity as you become more comfortable with the process.
-            </p>
+            <p>To get the most accurate and useful inventory files:</p>
+            <List>
+              <ListItem>
+                Be as specific as possible when describing your infrastructure.
+                Provide exact server details, IP addresses, and hostnames rather
+                than vague descriptions.
+              </ListItem>
+              <ListItem>
+                Ask follow-up questions if something isn't clear. The assistant
+                can clarify configuration options and explain the reasoning
+                behind recommendations.
+              </ListItem>
+              <ListItem>
+                Always ask the chatbot to validate your setup and explain why
+                certain configurations are recommended for your specific use
+                case.
+              </ListItem>
+              <ListItem>
+                Consider starting with a simple setup and gradually adding
+                complexity as you become more comfortable with the process.
+              </ListItem>
+              <ListItem>
+                Start a fresh conversation by accessing the History window via
+                the top-left icon and then clicking the 'New chat' button.
+              </ListItem>
+            </List>
           </div>
         </ModalBody>
         <ModalFooter>
