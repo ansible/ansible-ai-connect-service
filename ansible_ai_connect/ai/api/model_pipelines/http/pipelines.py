@@ -96,7 +96,9 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -114,7 +116,13 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(url, verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl, timeout=1)
+            res = requests.get(
+                url,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
+                timeout=1,
+            )
             res.raise_for_status()
         except Exception as e:
             logger.exception(str(e))
@@ -146,7 +154,9 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
             )
             r.raise_for_status()
 

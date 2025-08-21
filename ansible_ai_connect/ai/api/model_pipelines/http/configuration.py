@@ -85,7 +85,9 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
 class HttpConfigurationSerializer(BaseConfigSerializer):
     verify_ssl = serializers.BooleanField(required=False, default=True)
     stream = serializers.BooleanField(required=False, default=False)
-    ca_cert_file = serializers.CharField(required=False, default=None)
+    ca_cert_file = serializers.CharField(
+        required=False, default=None, allow_blank=True, allow_null=True
+    )
     mcp_servers = serializers.ListSerializer(
         child=MCPServersSerializer(), allow_empty=True, required=False, default=None
     )

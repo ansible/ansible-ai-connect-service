@@ -82,6 +82,7 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 verify_ssl=extract("verify_ssl", False, **kwargs),
                 stream=extract("stream", False, **kwargs),
                 mcp_servers=extract("mcp_servers", [], **kwargs),
+                ca_cert_file=extract("ca_cert_file", None, **kwargs),
             )
         case "llamacpp":
             return LlamaCppConfiguration(
