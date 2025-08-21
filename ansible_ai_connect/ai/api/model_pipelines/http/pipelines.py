@@ -15,6 +15,7 @@
 import copy
 import json
 import logging
+import ssl
 from json import JSONDecodeError
 from typing import Any, AsyncGenerator
 
@@ -277,10 +278,11 @@ class HttpStreamingChatBotPipeline(
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
         # Configure SSL context based on verify_ssl setting
-        ssl_context = (
-            self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-        )
-        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        if self.config.ca_cert_file:
+            ssl_context = ssl.create_default_context(cafile=self.config.ca_cert_file)
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+        else:
+            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {

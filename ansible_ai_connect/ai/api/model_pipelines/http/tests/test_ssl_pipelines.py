@@ -16,6 +16,7 @@
 import json
 import logging
 import os
+import ssl
 import tempfile
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import MagicMock, patch
@@ -430,10 +431,17 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
 
         return MockAsyncContextManager(stream_data, status)
 
+    @patch("ssl.create_default_context")
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
-    async def test_async_invoke_ssl_context_with_ca_cert_file(self, mock_tcp_connector, mock_post):
-        """Test that async_invoke uses ca_cert_file in SSL context"""
+    async def test_async_invoke_ssl_context_with_ca_cert_file(
+        self, mock_tcp_connector, mock_post, mock_ssl_context
+    ):
+        """Test that async_invoke creates SSL context when ca_cert_file is provided"""
+        # Mock SSL context creation
+        mock_ssl_context_instance = MagicMock()
+        mock_ssl_context.return_value = mock_ssl_context_instance
+
         # Create config with ca_cert_file
         config = HttpConfiguration(
             inference_url=self.inference_url,
@@ -466,10 +474,11 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
         result_count = 0
         async for _ in pipeline.async_invoke(params):
             result_count += 1
-        # The streaming pipeline doesn't directly use the verify parameter in requests
-        # Instead, it uses TCPConnector with SSL context
-        # For ca_cert_file, we expect the SSL context to be properly configured
-        # This may require custom SSL context creation with the CA file
+
+        # Verify SSL context was created with ca_cert_file
+        mock_ssl_context.assert_called_once_with(cafile=self.ca_cert_path)
+        # Verify TCPConnector was created with the SSL context
+        mock_tcp_connector.assert_called_once_with(ssl=mock_ssl_context_instance)
         self.assertGreater(result_count, 0, "Should have received streaming data")
 
     @patch("aiohttp.ClientSession.post")
@@ -511,6 +520,133 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
         # Verify TCPConnector was created with ssl=False
         mock_tcp_connector.assert_called_once_with(ssl=False)
         self.assertGreater(result_count, 0, "Should have received streaming data")
+
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.TCPConnector")
+    async def test_async_invoke_ssl_context_verify_ssl_true_no_ca_cert(
+        self, mock_tcp_connector, mock_post
+    ):
+        """Test that async_invoke uses ssl=True when verify_ssl=True and no ca_cert_file"""
+        # Create config with verify_ssl=True, no ca_cert_file
+        config = HttpConfiguration(
+            inference_url=self.inference_url,
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=False,
+            verify_ssl=True,
+            ca_cert_file=None,
+        )
+        pipeline = HttpStreamingChatBotPipeline(config)
+        # Mock the connector
+        mock_connector_instance = MagicMock()
+        mock_tcp_connector.return_value = mock_connector_instance
+        # Mock the post method
+        mock_post.return_value = self.get_mock_context_manager(self.get_stream_data())
+        # Create parameters
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
+        params = StreamingChatBotParameters(
+            query="Hello",
+            provider="http",
+            model_id="test-model",
+            conversation_id=None,
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+            media_type="application/json",
+            event=event,
+        )
+        # Execute
+        result_count = 0
+        async for _ in pipeline.async_invoke(params):
+            result_count += 1
+        # Verify TCPConnector was created with ssl=True (default SSL context)
+        mock_tcp_connector.assert_called_once_with(ssl=True)
+        self.assertGreater(result_count, 0, "Should have received streaming data")
+
+    @patch("ssl.create_default_context")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.TCPConnector")
+    async def test_async_invoke_ssl_context_with_empty_ca_cert_file(
+        self, mock_tcp_connector, mock_post, mock_ssl_context
+    ):
+        """Test that async_invoke falls back to verify_ssl when ca_cert_file is empty string"""
+        # Create config with empty ca_cert_file (should fall back to verify_ssl)
+        config = HttpConfiguration(
+            inference_url=self.inference_url,
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=False,
+            verify_ssl=True,
+            ca_cert_file="",  # Empty string is falsy
+        )
+        pipeline = HttpStreamingChatBotPipeline(config)
+        # Mock the connector
+        mock_connector_instance = MagicMock()
+        mock_tcp_connector.return_value = mock_connector_instance
+        # Mock the post method
+        mock_post.return_value = self.get_mock_context_manager(self.get_stream_data())
+        # Create parameters
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
+        params = StreamingChatBotParameters(
+            query="Hello",
+            provider="http",
+            model_id="test-model",
+            conversation_id=None,
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+            media_type="application/json",
+            event=event,
+        )
+        # Execute
+        result_count = 0
+        async for _ in pipeline.async_invoke(params):
+            result_count += 1
+
+        # Verify SSL context was NOT created (empty string is falsy)
+        mock_ssl_context.assert_not_called()
+        # Verify TCPConnector was created with ssl=True (falls back to verify_ssl)
+        mock_tcp_connector.assert_called_once_with(ssl=True)
+        self.assertGreater(result_count, 0, "Should have received streaming data")
+
+    @patch("ssl.create_default_context")
+    async def test_ssl_context_creation_failure_handling(self, mock_ssl_context):
+        """Test handling of SSL context creation failures"""
+        # Mock SSL context creation to raise an exception
+        mock_ssl_context.side_effect = ssl.SSLError("Invalid certificate file")
+
+        # Create config with ca_cert_file
+        config = HttpConfiguration(
+            inference_url=self.inference_url,
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=False,
+            verify_ssl=True,
+            ca_cert_file=self.ca_cert_path,
+        )
+        pipeline = HttpStreamingChatBotPipeline(config)
+
+        # Create parameters
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
+        params = StreamingChatBotParameters(
+            query="Hello",
+            provider="http",
+            model_id="test-model",
+            conversation_id=None,
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+            media_type="application/json",
+            event=event,
+        )
+
+        # Execute and expect SSL error to be propagated
+        with self.assertRaises(ssl.SSLError):
+            async for _ in pipeline.async_invoke(params):
+                pass
+
+        # Verify SSL context creation was attempted
+        mock_ssl_context.assert_called_once_with(cafile=self.ca_cert_path)
 
 
 class TestSSLErrorScenarios(TestCase, WisdomLogAwareMixin):
