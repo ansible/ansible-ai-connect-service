@@ -20,10 +20,13 @@ from django.test import SimpleTestCase, override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
+    HttpConfigurationSerializer,
     HttpPipelineConfiguration,
-    HttpConfigurationSerializer
 )
-from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config, mock_config
+from ansible_ai_connect.ai.api.model_pipelines.tests import (
+    mock_config,
+    mock_pipeline_config,
+)
 
 
 class TestHttpConfigurationSSL(SimpleTestCase):
@@ -39,7 +42,7 @@ class TestHttpConfigurationSSL(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=True,
             stream=False,
-            ca_cert_file=ca_cert_path
+            ca_cert_file=ca_cert_path,
         )
         self.assertEqual(config.ca_cert_file, ca_cert_path)
         self.assertTrue(config.verify_ssl)
@@ -53,7 +56,7 @@ class TestHttpConfigurationSSL(SimpleTestCase):
             timeout=5000,
             enable_health_check=True,
             verify_ssl=True,
-            stream=False
+            stream=False,
         )
         self.assertIsNone(config.ca_cert_file)
         self.assertTrue(config.verify_ssl)
@@ -67,7 +70,7 @@ class TestHttpConfigurationSSL(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=False,
             stream=False,
-            ca_cert_file=None
+            ca_cert_file=None,
         )
         self.assertIsNone(config.ca_cert_file)
         self.assertFalse(config.verify_ssl)
@@ -75,23 +78,27 @@ class TestHttpConfigurationSSL(SimpleTestCase):
     def test_mock_pipeline_config_with_ca_cert_file(self):
         """Test that mock_pipeline_config properly handles ca_cert_file parameter"""
         ca_cert_path = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-        config = cast(HttpConfiguration, mock_pipeline_config(
-            "http",
-            ca_cert_file=ca_cert_path,
-            verify_ssl=True,
-            inference_url="https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443"
-        ))
+        config = cast(
+            HttpConfiguration,
+            mock_pipeline_config(
+                "http",
+                ca_cert_file=ca_cert_path,
+                verify_ssl=True,
+                inference_url="https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443",
+            ),
+        )
         self.assertEqual(config.ca_cert_file, ca_cert_path)
         self.assertTrue(config.verify_ssl)
-        self.assertEqual(config.inference_url, "https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443")
+        self.assertEqual(
+            config.inference_url, "https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443"
+        )
 
     def test_mock_pipeline_config_without_ca_cert_file(self):
         """Test that mock_pipeline_config works without ca_cert_file"""
-        config = cast(HttpConfiguration, mock_pipeline_config(
-            "http",
-            verify_ssl=False,
-            inference_url="http://localhost:8080"
-        ))
+        config = cast(
+            HttpConfiguration,
+            mock_pipeline_config("http", verify_ssl=False, inference_url="http://localhost:8080"),
+        )
         self.assertIsNone(config.ca_cert_file)
         self.assertFalse(config.verify_ssl)
 
@@ -110,7 +117,7 @@ class TestHttpPipelineConfiguration(SimpleTestCase):
             verify_ssl=True,
             stream=False,
             mcp_servers=[],
-            ca_cert_file=ca_cert_path
+            ca_cert_file=ca_cert_path,
         )
         self.assertEqual(pipeline_config.config.ca_cert_file, ca_cert_path)
         self.assertTrue(pipeline_config.config.verify_ssl)
@@ -124,7 +131,7 @@ class TestHttpPipelineConfiguration(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=True,
             stream=False,
-            mcp_servers=[]
+            mcp_servers=[],
         )
         self.assertIsNone(pipeline_config.config.ca_cert_file)
         self.assertTrue(pipeline_config.config.verify_ssl)
@@ -142,12 +149,15 @@ class TestHttpConfigurationSerializer(SimpleTestCase):
             "enable_health_check": True,
             "verify_ssl": True,
             "stream": False,
-            "ca_cert_file": "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+            "ca_cert_file": "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
         }
         serializer = HttpConfigurationSerializer(data=data)
         self.assertTrue(serializer.is_valid(), f"Serializer errors: {serializer.errors}")
         validated_data = serializer.validated_data
-        self.assertEqual(validated_data["ca_cert_file"], "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt")
+        self.assertEqual(
+            validated_data["ca_cert_file"],
+            "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+        )
         self.assertTrue(validated_data["verify_ssl"])
 
     def test_serializer_without_ca_cert_file(self):
@@ -158,7 +168,7 @@ class TestHttpConfigurationSerializer(SimpleTestCase):
             "timeout": 5000,
             "enable_health_check": True,
             "verify_ssl": True,
-            "stream": False
+            "stream": False,
         }
         serializer = HttpConfigurationSerializer(data=data)
         self.assertTrue(serializer.is_valid(), f"Serializer errors: {serializer.errors}")
@@ -175,7 +185,7 @@ class TestHttpConfigurationSerializer(SimpleTestCase):
             "enable_health_check": True,
             "verify_ssl": False,
             "stream": False,
-            "ca_cert_file": None
+            "ca_cert_file": None,
         }
         serializer = HttpConfigurationSerializer(data=data)
         self.assertTrue(serializer.is_valid(), f"Serializer errors: {serializer.errors}")
@@ -192,7 +202,7 @@ class TestHttpConfigurationSerializer(SimpleTestCase):
             "enable_health_check": True,
             "verify_ssl": True,
             "stream": False,
-            "ca_cert_file": ""
+            "ca_cert_file": "",
         }
         serializer = HttpConfigurationSerializer(data=data)
         self.assertTrue(serializer.is_valid(), f"Serializer errors: {serializer.errors}")
@@ -213,14 +223,15 @@ class TestHttpConfigurationIntegration(SimpleTestCase):
             "ModelPipelineChatBot": {
                 "provider": "http",
                 "config": {
-                    "inference_url": "https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443",
+                    "inference_url": "https://ls-stack-service.wisdom-ls-stack"
+                    + ".svc.cluster.local:8443",
                     "model_id": "granite-3.3-8b-instruct",
                     "timeout": 10000,
                     "enable_health_check": True,
                     "verify_ssl": True,
                     "stream": False,
-                    "ca_cert_file": ca_cert_path
-                }
+                    "ca_cert_file": ca_cert_path,
+                },
             }
         }
         with override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=json.dumps(config_dict)):
@@ -234,13 +245,14 @@ class TestHttpConfigurationIntegration(SimpleTestCase):
             "ModelPipelineChatBot": {
                 "provider": "http",
                 "config": {
-                    "inference_url": "http://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8080",
+                    "inference_url": "http://ls-stack-service.wisdom-ls-stack"
+                    + ".svc.cluster.local:8080",
                     "model_id": "granite-3.3-8b-instruct",
                     "timeout": 10000,
                     "enable_health_check": True,
                     "verify_ssl": False,
-                    "stream": False
-                }
+                    "stream": False,
+                },
             }
         }
         with override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=json.dumps(config_dict)):
@@ -261,7 +273,7 @@ class TestHttpConfigurationEdgeCases(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=True,
             stream=False,
-            ca_cert_file="./certs/ca.crt"
+            ca_cert_file="./certs/ca.crt",
         )
         self.assertEqual(config.ca_cert_file, "./certs/ca.crt")
         self.assertTrue(config.verify_ssl)
@@ -275,7 +287,7 @@ class TestHttpConfigurationEdgeCases(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=True,
             stream=False,
-            ca_cert_file="/etc/ssl/certs/ca-certificates.crt"
+            ca_cert_file="/etc/ssl/certs/ca-certificates.crt",
         )
         self.assertEqual(config.ca_cert_file, "/etc/ssl/certs/ca-certificates.crt")
         self.assertTrue(config.verify_ssl)
@@ -289,7 +301,7 @@ class TestHttpConfigurationEdgeCases(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=False,
             stream=False,
-            ca_cert_file="/path/to/ca-cert.crt"
+            ca_cert_file="/path/to/ca-cert.crt",
         )
         self.assertEqual(config.ca_cert_file, "/path/to/ca-cert.crt")
         self.assertFalse(config.verify_ssl)
@@ -304,11 +316,15 @@ class TestHttpConfigurationEdgeCases(SimpleTestCase):
             enable_health_check=True,
             verify_ssl=True,
             stream=False,
-            ca_cert_file="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+            ca_cert_file="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
         )
-        self.assertEqual(config.ca_cert_file, "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt")
+        self.assertEqual(
+            config.ca_cert_file, "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+        )
         self.assertTrue(config.verify_ssl)
-        self.assertEqual(config.inference_url, "https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443")
+        self.assertEqual(
+            config.inference_url, "https://ls-stack-service.wisdom-ls-stack.svc.cluster.local:8443"
+        )
         self.assertEqual(config.model_id, "granite-3.3-8b-instruct")
         self.assertEqual(config.timeout, 10000)
         self.assertTrue(config.enable_health_check)
