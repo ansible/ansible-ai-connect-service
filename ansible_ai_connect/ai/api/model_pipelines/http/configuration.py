@@ -48,15 +48,18 @@ class HttpConfiguration(BaseConfig):
         verify_ssl: bool,
         stream: bool = False,
         mcp_servers: Optional[list[dict[str, str]]] = None,
+        ca_cert_file: Optional[str] = None,
     ):
         super().__init__(inference_url, model_id, timeout, enable_health_check)
         self.verify_ssl = verify_ssl
         self.stream = stream
         self.mcp_servers = mcp_servers or []
+        self.ca_cert_file = ca_cert_file
 
     verify_ssl: bool
     stream: bool
     mcp_servers: Optional[list[dict[str, str]]] = None
+    ca_cert_file: Optional[str] = None
 
 
 @Register(api_type="http")
@@ -73,6 +76,7 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
                 verify_ssl=kwargs["verify_ssl"],
                 stream=kwargs["stream"],
                 mcp_servers=kwargs["mcp_servers"],
+                ca_cert_file=kwargs.get("ca_cert_file"),
             ),
         )
 
@@ -81,6 +85,7 @@ class HttpPipelineConfiguration(PipelineConfiguration[HttpConfiguration]):
 class HttpConfigurationSerializer(BaseConfigSerializer):
     verify_ssl = serializers.BooleanField(required=False, default=True)
     stream = serializers.BooleanField(required=False, default=False)
+    ca_cert_file = serializers.CharField(required=False, default=None)
     mcp_servers = serializers.ListSerializer(
         child=MCPServersSerializer(), allow_empty=True, required=False, default=None
     )
