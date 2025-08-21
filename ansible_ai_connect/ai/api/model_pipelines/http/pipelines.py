@@ -277,7 +277,9 @@ class HttpStreamingChatBotPipeline(
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
         # Configure SSL context based on verify_ssl setting
-        ssl_context = self.config.verify_ssl
+        ssl_context = (
+            self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+        )
         connector = aiohttp.TCPConnector(ssl=ssl_context)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
