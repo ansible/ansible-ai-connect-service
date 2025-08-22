@@ -15,6 +15,7 @@
 import copy
 import json
 import logging
+import ssl
 from json import JSONDecodeError
 from typing import Any, AsyncGenerator
 
@@ -96,7 +97,9 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.verify_ssl,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -114,7 +117,13 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(url, verify=self.config.verify_ssl, timeout=1)
+            res = requests.get(
+                url,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
+                timeout=1,
+            )
             res.raise_for_status()
         except Exception as e:
             logger.exception(str(e))
@@ -146,7 +155,9 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=self.config.verify_ssl,
+                verify=(
+                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
+                ),
             )
             r.raise_for_status()
 
@@ -203,7 +214,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             headers=self.headers,
             json=data,
             timeout=self.task_gen_timeout(1),
-            verify=self.config.verify_ssl,
+            verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
         )
 
         if response.status_code == 200:
@@ -267,8 +278,11 @@ class HttpStreamingChatBotPipeline(
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
         # Configure SSL context based on verify_ssl setting
-        ssl_context = self.config.verify_ssl
-        connector = aiohttp.TCPConnector(ssl=ssl_context)
+        if self.config.ca_cert_file:
+            ssl_context = ssl.create_default_context(cafile=self.config.ca_cert_file)
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+        else:
+            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {
