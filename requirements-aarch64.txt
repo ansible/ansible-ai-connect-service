@@ -314,7 +314,7 @@ packaging==23.2
     #   langsmith
 pandas==2.2.3
     # via llama-stack-client
-parso==0.8.4
+parso==0.8.5
     # via jedi
 pathspec==0.12.1
     # via
