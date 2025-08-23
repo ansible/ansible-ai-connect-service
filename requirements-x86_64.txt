@@ -240,7 +240,7 @@ jsonpickle==3.3.0
     #   ansible-risk-insight
 jsonpointer==2.4
     # via jsonpatch
-jsonschema==4.21.1
+jsonschema==4.25.1
     # via
     #   ansible-compat
     #   ansible-lint
