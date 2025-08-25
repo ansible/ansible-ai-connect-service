@@ -84,7 +84,7 @@ def set_defaults():
             defaults = REGISTRY["nop"]
             if v is None:
                 logger.debug(
-                    f"'{k.alias()}' is not available for provider '{pipeline_provider}',"
+                    f"'{k}' is not available for provider '{pipeline_provider}',"
                     " failing back to 'nop'"
                 )
                 return defaults[k]
