@@ -33,6 +33,7 @@ const botName =
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
+  { model: "gemini-2.5-flash", provider: "gemini" },
   { model: "gemini/gemini-2.5-flash", provider: "gemini" },
 ];
 
