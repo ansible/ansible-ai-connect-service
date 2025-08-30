@@ -396,7 +396,7 @@ pyopenssl==24.2.1
     #   twisted
 pyparsing==3.1.2
     # via httplib2
-pyrfc3339==1.1
+pyrfc3339==2.1.0
     # via launchdarkly-server-sdk
 python-dateutil==2.9.0.post0
     # via
