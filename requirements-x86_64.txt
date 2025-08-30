@@ -531,7 +531,7 @@ twisted[tls]==24.11.0
     # via daphne
 txaio==23.1.1
     # via autobahn
-typing-extensions==4.11.0
+typing-extensions==4.15.0
     # via
     #   aiosignal
     #   django-test-migrations
