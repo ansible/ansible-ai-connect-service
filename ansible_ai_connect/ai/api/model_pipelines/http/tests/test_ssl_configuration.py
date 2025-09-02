@@ -143,7 +143,9 @@ class TestEnvironmentVariableSSLApproach(SimpleTestCase):
             HttpMetaData,
         )
 
-        # Create a temporary certificate file
+        # Create a temporary certificate file for testing
+        # SECURITY NOTE: This is Amazon's PUBLIC Root CA certificate, not a private key
+        # Source: https://www.amazontrust.com/repository/ (publicly available)
         with tempfile.NamedTemporaryFile(mode="w", suffix=".crt", delete=False) as temp_cert:
             temp_cert.write(
                 """-----BEGIN CERTIFICATE-----
