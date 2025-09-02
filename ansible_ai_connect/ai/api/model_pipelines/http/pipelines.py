@@ -15,6 +15,7 @@
 import copy
 import json
 import logging
+import os
 import ssl
 from json import JSONDecodeError
 from typing import Any, AsyncGenerator
@@ -59,6 +60,7 @@ from ansible_ai_connect.healthcheck.backends import (
 )
 
 logger = logging.getLogger(__name__)
+SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 
 
 @Register(api_type="http")
@@ -70,9 +72,34 @@ class HttpMetaData(MetaData[HttpConfiguration]):
         self.headers = {"Content-Type": "application/json"}
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
+        # Help ssl.create_default_context() find mounted certificates
+        self._setup_ssl_context()
 
     def task_gen_timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
+
+    def _setup_ssl_context(self):
+        """Let ssl.create_default_context() discover certs.
+        Following container best practices - use environment variables to help
+        Python's default SSL context find mounted certificates automatically.
+        This avoids explicit certificate path management in application code.
+        """
+        if self.config.verify_ssl:
+            # Check for mounted service-ca certificate (container/K8s pattern)
+            service_ca = SERVICE_CA_PATH
+            if os.path.exists(service_ca):
+                # Help ssl.create_default_context() find certificates via standard env vars
+                os.environ.setdefault("REQUESTS_CA_BUNDLE", service_ca)
+                os.environ.setdefault("SSL_CERT_FILE", service_ca)
+                logger.info("Configured SSL context to use mounted service-ca certificate")
+
+    def get_ssl_verification(self):
+        """Just return verify_ssl boolean.
+        ssl.create_default_context() will automatically discover certificates
+        via environment variables set in _setup_ssl_context().
+        No explicit certificate path management needed.
+        """
+        return self.config.verify_ssl
 
 
 @Register(api_type="http")
@@ -97,9 +124,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.get_ssl_verification(),
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -119,9 +144,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
         try:
             res = requests.get(
                 url,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.get_ssl_verification(),
                 timeout=1,
             )
             res.raise_for_status()
@@ -155,9 +178,7 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.get_ssl_verification(),
             )
             r.raise_for_status()
 
@@ -214,7 +235,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             headers=self.headers,
             json=data,
             timeout=self.task_gen_timeout(1),
-            verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
+            verify=self.get_ssl_verification(),
         )
 
         if response.status_code == 200:
@@ -277,12 +298,14 @@ class HttpStreamingChatBotPipeline(
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        # Configure SSL context based on verify_ssl setting
-        if self.config.ca_cert_file:
-            ssl_context = ssl.create_default_context(cafile=self.config.ca_cert_file)
+        # Let ssl.create_default_context() discover certificates automatically
+        if self.config.verify_ssl:
+            # Create default SSL context -
+            # will use environment variables set in _setup_ssl_context()
+            ssl_context = ssl.create_default_context()
             connector = aiohttp.TCPConnector(ssl=ssl_context)
         else:
-            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
+            connector = aiohttp.TCPConnector(ssl=False)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {

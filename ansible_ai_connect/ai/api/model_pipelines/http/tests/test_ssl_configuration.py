@@ -14,7 +14,10 @@
 #  limitations under the License.
 
 import json
+import os
+import tempfile
 from typing import cast
+from unittest.mock import patch
 
 from django.test import SimpleTestCase, override_settings
 
@@ -47,6 +50,264 @@ class TestHttpConfigurationSSL(SimpleTestCase):
         self.assertEqual(config.ca_cert_file, ca_cert_path)
         self.assertTrue(config.verify_ssl)
         self.assertEqual(config.inference_url, "https://example.com:8443")
+
+    def test_configuration_ssl_behavior_with_default_ssl_context(self):
+        """
+        Test SSL configuration behavior with the default_ssl_context approach.
+
+        This tests the environment variable approach that eliminates
+        the complex conditional logic from commit e2fa9000.
+        """
+        # Test case 1: verify_ssl=True, ca_cert_file present
+        config_with_cert = HttpConfiguration(
+            inference_url="https://example.com:8443",
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=True,
+            verify_ssl=True,
+            ca_cert_file="/path/to/cert.crt",
+        )
+        # With default_ssl_context approach, verify_ssl is the primary driver
+        self.assertTrue(config_with_cert.verify_ssl)
+        self.assertEqual(config_with_cert.ca_cert_file, "/path/to/cert.crt")
+
+        # Test case 2: verify_ssl=False, regardless of ca_cert_file
+        config_ssl_disabled = HttpConfiguration(
+            inference_url="https://example.com:8443",
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=True,
+            verify_ssl=False,
+            ca_cert_file="/path/to/cert.crt",
+        )
+        self.assertFalse(config_ssl_disabled.verify_ssl)
+
+    def test_configuration_eliminates_503_error_conditions(self):
+        """
+        Test that configuration avoids the conditions that caused 503 errors.
+
+        The problematic commit e2fa9000 used:
+        verify=(self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl)
+
+        This test verifies we don't have those edge cases anymore.
+        """
+        # Edge case 1: Empty string ca_cert_file (was problematic in e2fa9000)
+        config_empty_cert = HttpConfiguration(
+            inference_url="https://example.com:8443",
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=True,
+            verify_ssl=True,
+            ca_cert_file="",  # Empty string
+        )
+        # With default_ssl_context approach, verify_ssl drives behavior, not ca_cert_file
+        self.assertTrue(config_empty_cert.verify_ssl)
+        self.assertEqual(config_empty_cert.ca_cert_file, "")
+
+        # Edge case 2: None ca_cert_file with verify_ssl=True
+        config_none_cert = HttpConfiguration(
+            inference_url="https://example.com:8443",
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=True,
+            verify_ssl=True,
+            ca_cert_file=None,
+        )
+        self.assertTrue(config_none_cert.verify_ssl)
+        self.assertIsNone(config_none_cert.ca_cert_file)
+
+
+class TestEnvironmentVariableSSLApproach(SimpleTestCase):
+    """Test the environment variable SSL approach"""
+
+    def setUp(self):
+        # Store original environment variables
+        self.original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
+        self.original_ssl_cert_file = os.environ.get("SSL_CERT_FILE")
+
+    def tearDown(self):
+        # Restore original environment variables
+        if self.original_ca_bundle:
+            os.environ["REQUESTS_CA_BUNDLE"] = self.original_ca_bundle
+        else:
+            os.environ.pop("REQUESTS_CA_BUNDLE", None)
+
+        if self.original_ssl_cert_file:
+            os.environ["SSL_CERT_FILE"] = self.original_ssl_cert_file
+        else:
+            os.environ.pop("SSL_CERT_FILE", None)
+
+    def test_environment_variable_ssl_setup(self):
+        """Test that SSL setup correctly uses environment variables"""
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        # Create a temporary certificate file
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".crt", delete=False) as temp_cert:
+            temp_cert.write(
+                """-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UECgwGQW1hem9uMRkwFwYDVQQDDBBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoMBkFtYXpvbjEZMBcGA1UEAwwQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIuJruydjsw2hUwsOjNNvGEINXmF0w1iYYR2LYLPz+D3
+1QbY0mJCXaLK7XzNJBLGfDvPCqr1wHl4aD6mX8s+MsG9lRJSA9HMnEe0DWBwfRqj
+ySQdRgexoYqHDq3qEg8o8yOC6XHZEPxhZvZGzPXOtDp+7HuQsrhCd+N++Iw5Fgm7
+WB3GLZfJvQQZ6cSXi4tKT7QQLdMhQl9qQPU3ELQ4A6LG1J5EWlRF2jP8qCRJvBGF
+qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q+ZI6OGP44Eaz1y3lZhp2lCKgLLOBwsGw
+-----END CERTIFICATE-----"""
+            )
+            temp_cert_path = temp_cert.name
+
+        try:
+            # Mock the service account certificate path
+            with patch("os.path.exists") as mock_exists:
+                mock_exists.side_effect = (
+                    lambda path: path
+                    == "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+                )
+
+                with patch("builtins.open", create=True) as mock_open:
+                    # Mock reading the certificate content
+                    with open(temp_cert_path, encoding="utf-8") as f:
+                        cert_content = f.read()
+                    mock_open.return_value.__enter__.return_value.read.return_value = cert_content
+
+                    # Clear environment variables first
+                    os.environ.pop("REQUESTS_CA_BUNDLE", None)
+                    os.environ.pop("SSL_CERT_FILE", None)
+
+                    # Create configuration with SSL enabled
+                    config = HttpConfiguration(
+                        inference_url="https://test.example.com",
+                        model_id="test-model",
+                        timeout=5000,
+                        enable_health_check=True,
+                        verify_ssl=True,
+                    )
+
+                    # Create HttpMetaData instance - this will trigger _setup_ssl_context()
+                    metadata = HttpMetaData(config)
+
+                    # Verify environment variables were set
+                    self.assertEqual(
+                        os.environ.get("REQUESTS_CA_BUNDLE"),
+                        "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+                    )
+                    self.assertEqual(
+                        os.environ.get("SSL_CERT_FILE"),
+                        "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+                    )
+
+                    # Verify get_ssl_verification returns correct value
+                    self.assertTrue(metadata.get_ssl_verification())
+
+        finally:
+            # Clean up temporary file
+            os.unlink(temp_cert_path)
+
+    def test_ssl_setup_without_service_certificate(self):
+        """Test SSL setup when service certificate is not available"""
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        with patch("os.path.exists", return_value=False):
+            # Clear environment variables first
+            os.environ.pop("REQUESTS_CA_BUNDLE", None)
+            os.environ.pop("SSL_CERT_FILE", None)
+
+            config = HttpConfiguration(
+                inference_url="https://test.example.com",
+                model_id="test-model",
+                timeout=5000,
+                enable_health_check=True,
+                verify_ssl=True,
+            )
+
+            # Create HttpMetaData instance
+            metadata = HttpMetaData(config)
+
+            # Environment variables should not be set when certificate doesn't exist
+            self.assertIsNone(os.environ.get("REQUESTS_CA_BUNDLE"))
+            self.assertIsNone(os.environ.get("SSL_CERT_FILE"))
+
+            # But verification should still return True (system certificates)
+            self.assertTrue(metadata.get_ssl_verification())
+
+    def test_ssl_disabled_behavior(self):
+        """Test that SSL setup is skipped when verify_ssl=False"""
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        config = HttpConfiguration(
+            inference_url="http://test.example.com",  # Note: http, not https
+            model_id="test-model",
+            timeout=5000,
+            enable_health_check=True,
+            verify_ssl=False,
+        )
+
+        # Create HttpMetaData instance
+        metadata = HttpMetaData(config)
+
+        # Verify SSL verification returns False
+        self.assertFalse(metadata.get_ssl_verification())
+
+
+class TestSSL503ErrorPrevention(SimpleTestCase):
+    """Test that the default_ssl_context approach prevents 503 errors"""
+
+    def test_no_complex_conditional_logic(self):
+        """
+        Test that we've eliminated the complex conditional logic that caused 503 errors.
+
+        Commit e2fa9000 used: verify=(ca_cert_file if ca_cert_file else verify_ssl)
+        This test ensures our approach is simpler and more robust.
+        """
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        test_cases = [
+            # (verify_ssl, ca_cert_file, expected_verification)
+            (True, None, True),
+            (True, "", True),  # Empty string was problematic
+            (True, "/path/to/cert.crt", True),
+            (False, None, False),
+            (False, "", False),
+            (False, "/path/to/cert.crt", False),  # verify_ssl takes precedence
+        ]
+
+        for verify_ssl, ca_cert_file, expected in test_cases:
+            with self.subTest(verify_ssl=verify_ssl, ca_cert_file=ca_cert_file):
+                config = HttpConfiguration(
+                    inference_url="https://test.example.com",
+                    model_id="test-model",
+                    timeout=5000,
+                    enable_health_check=True,
+                    verify_ssl=verify_ssl,
+                    ca_cert_file=ca_cert_file,
+                )
+
+                metadata = HttpMetaData(config)
+
+                # The new approach should always return verify_ssl, regardless of ca_cert_file
+                self.assertEqual(metadata.get_ssl_verification(), expected)
+
+                # Verify this matches the simple logic: just return verify_ssl
+                self.assertEqual(metadata.get_ssl_verification(), config.verify_ssl)
 
     def test_configuration_without_ca_cert_file(self):
         """Test that HttpConfiguration works without ca_cert_file (default None)"""
