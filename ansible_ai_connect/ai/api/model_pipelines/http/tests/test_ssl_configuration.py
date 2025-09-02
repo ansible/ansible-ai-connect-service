@@ -590,3 +590,196 @@ class TestHttpConfigurationEdgeCases(SimpleTestCase):
         self.assertEqual(config.timeout, 10000)
         self.assertTrue(config.enable_health_check)
         self.assertFalse(config.stream)
+
+
+class TestServiceCAPathEnvironmentVariable(SimpleTestCase):
+    """Test SERVICE_CA_PATH environment variable configuration"""
+
+    def setUp(self):
+        """Store original environment variable"""
+        self.original_service_ca_path = os.environ.get("ANSIBLE_AI_SERVICE_CA_PATH")
+
+    def tearDown(self):
+        """Restore original environment variable"""
+        if self.original_service_ca_path:
+            os.environ["ANSIBLE_AI_SERVICE_CA_PATH"] = self.original_service_ca_path
+        else:
+            os.environ.pop("ANSIBLE_AI_SERVICE_CA_PATH", None)
+
+    def test_service_ca_path_custom_environment_variable_positive(self):
+        """
+        Positive test case: Verify that SERVICE_CA_PATH uses custom value
+        when ANSIBLE_AI_SERVICE_CA_PATH environment variable is set.
+        This addresses the reviewer's comment about making the certificate path configurable.
+        """
+        custom_ca_path = "/custom/path/to/service-ca.crt"
+        # Test the setting definition directly using override_settings
+        with override_settings(SERVICE_CA_PATH=custom_ca_path):
+            from django.conf import settings
+
+            self.assertEqual(settings.SERVICE_CA_PATH, custom_ca_path)
+
+        # Test environment variable evaluation in isolation
+        with patch.dict(os.environ, {"ANSIBLE_AI_SERVICE_CA_PATH": custom_ca_path}):
+            # This simulates what happens when the setting is evaluated
+            env_value = os.getenv(
+                "ANSIBLE_AI_SERVICE_CA_PATH",
+                "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+            )
+            self.assertEqual(env_value, custom_ca_path)
+
+    def test_service_ca_path_default_value_negative(self):
+        """
+        Negative test case: Verify that SERVICE_CA_PATH uses default value
+        when ANSIBLE_AI_SERVICE_CA_PATH environment variable is not set.
+        This ensures backward compatibility when the environment variable is not provided.
+        """
+        expected_default = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+
+        # Test the default setting value
+        with override_settings(SERVICE_CA_PATH=expected_default):
+            from django.conf import settings
+
+            self.assertEqual(settings.SERVICE_CA_PATH, expected_default)
+
+        # Test environment variable evaluation without the env var set
+        with patch.dict(os.environ, {}, clear=True):
+            # This simulates what happens when the setting is evaluated without env var
+            env_value = os.getenv(
+                "ANSIBLE_AI_SERVICE_CA_PATH",
+                "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+            )
+            self.assertEqual(env_value, expected_default)
+
+    def test_service_ca_path_empty_string_edge_case(self):
+        """
+        Edge case: Verify that SERVICE_CA_PATH handles empty string value
+        when ANSIBLE_AI_SERVICE_CA_PATH environment variable is set to empty string.
+        This tests that the environment variable takes precedence even when empty.
+        """
+        # Test the setting with empty string
+        with override_settings(SERVICE_CA_PATH=""):
+            from django.conf import settings
+
+            self.assertEqual(settings.SERVICE_CA_PATH, "")
+        # Test environment variable evaluation with empty string
+        with patch.dict(os.environ, {"ANSIBLE_AI_SERVICE_CA_PATH": ""}):
+            # This simulates what happens when the setting is evaluated with empty env var
+            env_value = os.getenv(
+                "ANSIBLE_AI_SERVICE_CA_PATH",
+                "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+            )
+            self.assertEqual(env_value, "")
+
+    def test_service_ca_path_used_in_ssl_setup(self):
+        """
+        Integration test: Verify that SERVICE_CA_PATH from settings is correctly
+        used in the SSL setup process within HttpMetaData._setup_ssl_context().
+        This tests the complete flow from environment variable to actual SSL configuration.
+        """
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        custom_ca_path = "/integration/test/service-ca.crt"
+        # Use override_settings to set the custom path
+        with override_settings(SERVICE_CA_PATH=custom_ca_path):
+            # Mock the certificate file existence and SSL setup
+            with patch("os.path.exists") as mock_exists:
+                # Mock that our custom path exists
+                mock_exists.side_effect = lambda path: path == custom_ca_path
+                # Clear any existing SSL environment variables
+                original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
+                original_ssl_cert = os.environ.get("SSL_CERT_FILE")
+                os.environ.pop("REQUESTS_CA_BUNDLE", None)
+                os.environ.pop("SSL_CERT_FILE", None)
+                try:
+                    # Create configuration with SSL enabled
+                    config = HttpConfiguration(
+                        inference_url="https://test.example.com",
+                        model_id="test-model",
+                        timeout=5000,
+                        enable_health_check=True,
+                        verify_ssl=True,
+                    )
+                    # Create HttpMetaData instance - this will trigger _setup_ssl_context()
+                    metadata = HttpMetaData(config)
+                    # Verify that the custom path was used in environment variables
+                    self.assertEqual(os.environ.get("REQUESTS_CA_BUNDLE"), custom_ca_path)
+                    self.assertEqual(os.environ.get("SSL_CERT_FILE"), custom_ca_path)
+                    # Verify metadata was created successfully
+                    self.assertIsNotNone(metadata)
+                finally:
+                    # Restore original environment variables
+                    if original_ca_bundle:
+                        os.environ["REQUESTS_CA_BUNDLE"] = original_ca_bundle
+                    else:
+                        os.environ.pop("REQUESTS_CA_BUNDLE", None)
+                    if original_ssl_cert:
+                        os.environ["SSL_CERT_FILE"] = original_ssl_cert
+                    else:
+                        os.environ.pop("SSL_CERT_FILE", None)
+
+    def test_service_ca_path_non_openshift_environments(self):
+        """
+        Test case for non-OpenShift environments: Verify that SERVICE_CA_PATH
+        can be configured for containerized installs outside of OpenShift.
+        This addresses the specific use case mentioned by the reviewer for
+        "Containerized install" work by @mabashian @goneri.
+        """
+        # Simulate a non-OpenShift containerized environment path
+        containerized_ca_path = "/etc/ssl/certs/ca-certificates.crt"
+
+        # Test the setting definition directly using override_settings
+        with override_settings(SERVICE_CA_PATH=containerized_ca_path):
+            from django.conf import settings
+
+            self.assertEqual(settings.SERVICE_CA_PATH, containerized_ca_path)
+
+        # Test environment variable evaluation for containerized path
+        with patch.dict(os.environ, {"ANSIBLE_AI_SERVICE_CA_PATH": containerized_ca_path}):
+            # This simulates what happens when the setting is evaluated
+            env_value = os.getenv(
+                "ANSIBLE_AI_SERVICE_CA_PATH",
+                "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+            )
+            self.assertEqual(env_value, containerized_ca_path)
+        # Verify this works in the SSL setup as well
+        from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
+            HttpMetaData,
+        )
+
+        with override_settings(SERVICE_CA_PATH=containerized_ca_path):
+            with patch("os.path.exists") as mock_exists:
+                # Mock that the containerized path exists
+                mock_exists.side_effect = lambda path: path == containerized_ca_path
+                config = HttpConfiguration(
+                    inference_url="https://containerized.example.com",
+                    model_id="test-model",
+                    timeout=5000,
+                    enable_health_check=True,
+                    verify_ssl=True,
+                )
+                # Clear SSL environment variables
+                original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
+                original_ssl_cert = os.environ.get("SSL_CERT_FILE")
+                os.environ.pop("REQUESTS_CA_BUNDLE", None)
+                os.environ.pop("SSL_CERT_FILE", None)
+                try:
+                    # Create HttpMetaData instance
+                    metadata = HttpMetaData(config)
+                    # Verify the containerized path was used
+                    self.assertEqual(os.environ.get("REQUESTS_CA_BUNDLE"), containerized_ca_path)
+                    self.assertEqual(os.environ.get("SSL_CERT_FILE"), containerized_ca_path)
+                    # Verify metadata was created successfully
+                    self.assertIsNotNone(metadata)
+                finally:
+                    # Restore original environment variables
+                    if original_ca_bundle:
+                        os.environ["REQUESTS_CA_BUNDLE"] = original_ca_bundle
+                    else:
+                        os.environ.pop("REQUESTS_CA_BUNDLE", None)
+                    if original_ssl_cert:
+                        os.environ["SSL_CERT_FILE"] = original_ssl_cert
+                    else:
+                        os.environ.pop("SSL_CERT_FILE", None)

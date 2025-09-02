@@ -60,7 +60,6 @@ from ansible_ai_connect.healthcheck.backends import (
 )
 
 logger = logging.getLogger(__name__)
-SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 
 
 @Register(api_type="http")
@@ -86,9 +85,8 @@ class HttpMetaData(MetaData[HttpConfiguration]):
         """
         if self.config.verify_ssl:
             # Check for mounted service-ca certificate (container/K8s pattern)
-            service_ca = SERVICE_CA_PATH
+            service_ca = settings.SERVICE_CA_PATH
             if os.path.exists(service_ca):
-                # Help ssl.create_default_context() find certificates via standard env vars
                 os.environ.setdefault("REQUESTS_CA_BUNDLE", service_ca)
                 os.environ.setdefault("SSL_CERT_FILE", service_ca)
                 logger.info("Configured SSL context to use mounted service-ca certificate")
@@ -298,14 +296,11 @@ class HttpStreamingChatBotPipeline(
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        # Let ssl.create_default_context() discover certificates automatically
         if self.config.verify_ssl:
-            # Create default SSL context -
-            # will use environment variables set in _setup_ssl_context()
             ssl_context = ssl.create_default_context()
             connector = aiohttp.TCPConnector(ssl=ssl_context)
         else:
-            connector = aiohttp.TCPConnector(ssl=False)
+            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {

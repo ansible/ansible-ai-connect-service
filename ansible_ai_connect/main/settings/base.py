@@ -473,6 +473,13 @@ APPEND_SLASH = True
 
 ENABLE_ARI_POSTPROCESS = os.getenv("ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
 ARI_BASE_DIR = os.getenv("ARI_KB_PATH") or "/etc/ari/kb/"
+
+# Certificate path for SSL verification
+# This is the default path for OpenShift/Kubernetes service account certificates
+# Can be overridden via ANSIBLE_AI_SERVICE_CA_PATH environment variable
+SERVICE_CA_PATH = os.getenv(
+    "ANSIBLE_AI_SERVICE_CA_PATH", "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+)
 ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, "rules")
 ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, "data")
 ARI_RULES = [
