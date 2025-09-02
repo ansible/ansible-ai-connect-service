@@ -27,6 +27,8 @@ ENABLE_ARI_POSTPROCESS="False"
 WCA_SECRET_BACKEND_TYPE="dummy"
 # configure model server
 ANSIBLE_AI_MODEL_MESH_CONFIG="..."
+# configure SSL certificate path (optional)
+# ANSIBLE_AI_SERVICE_CA_PATH="/etc/ssl/certs/ca-certificates.crt"
 ```
 See the example [ANSIBLE_AI_MODEL_MESH_CONFIG](./docs/config/examples/README-ANSIBLE_AI_MODEL_MESH_CONFIG.md).
 
@@ -60,6 +62,29 @@ podman compose -f tools/docker-compose/compose.yaml down
 | ansible_ai_connect_chatbot      | Chatbot application         |
 
 ### Service configuration
+
+### SSL/TLS Certificate Configuration
+
+For SSL communication with model servers and external services, you can configure the certificate authority (CA) certificate path:
+
+```bash
+# Default: Uses OpenShift/Kubernetes service account certificate
+# Path: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+
+# Custom certificate path (for containerized installations outside OpenShift)
+export ANSIBLE_AI_SERVICE_CA_PATH="/etc/ssl/certs/ca-certificates.crt"
+
+# Disable service CA certificate discovery (rely on system certificates only)
+export ANSIBLE_AI_SERVICE_CA_PATH=""
+```
+
+**ANSIBLE_AI_SERVICE_CA_PATH**
+- **Default**: `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift/Kubernetes)
+- **Purpose**: Specifies the path to the CA certificate file for SSL verification
+- **Use Cases**:
+  - **OpenShift/Kubernetes**: Default path works automatically
+  - **Containerized deployments**: Set to `/etc/ssl/certs/ca-certificates.crt` or your custom path
+  - **Development/Testing**: Set to empty string to disable custom CA and use system certificates
 
 ### Secret storage
 For most development usages, you can skip the call to AWS Secrets Manager
