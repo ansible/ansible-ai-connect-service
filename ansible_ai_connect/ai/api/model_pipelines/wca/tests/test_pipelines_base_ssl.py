@@ -146,18 +146,23 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
 
             # Verify service CA detection was logged
             self.assertIn(
-                "Service CA detected, using system CAs for external endpoints", str(log.output)
+                "Service CA detected, using explicit system CAs for external endpoints",
+                str(log.output),
             )
 
     @override_settings(SERVICE_CA_PATH="/nonexistent/service-ca.crt")
-    def test_setup_ssl_context_with_nonexistent_service_ca(self):
-        """Test SSL context setup when service CA file doesn't exist."""
+    def test_setup_ssl_context_with_nonexistent_custom_service_ca(self):
+        """Test SSL context setup when custom service CA file
+        doesn't exist - should continue gracefully."""
         config = self._create_mock_config(verify_ssl=True)
 
         with (
             patch("os.path.exists", return_value=False),
             patch("ssl.create_default_context") as mock_ssl_context,
             patch("requests.adapters.HTTPAdapter") as mock_adapter,
+            self.assertLogs(
+                "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
         ):
 
             mock_context = Mock()
@@ -165,13 +170,52 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
             mock_adapter_instance = Mock()
             mock_adapter.return_value = mock_adapter_instance
 
-            # Create metadata instance - should still work
+            # Create metadata instance - should work fine even with missing custom path
             metadata = WCAOnPremMetaData(config)
 
-            # Verify SSL context was created even when service CA doesn't exist
+            # Verify SSL context was created and metadata instance is successful
+            mock_ssl_context.assert_called_once()
+            self.assertIsNotNone(metadata)
+
+            # Verify appropriate log message for missing certificate
+            self.assertIn(
+                "WCA SSL: Using explicit system CAs for external endpoints", str(log.output)
+            )
+
+    @override_settings(
+        SERVICE_CA_PATH="/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+    )
+    def test_setup_ssl_context_with_nonexistent_default_service_ca(self):
+        """Test SSL context setup when default service CA file
+        doesn't exist - should continue gracefully."""
+        config = self._create_mock_config(verify_ssl=True)
+
+        with (
+            patch("os.path.exists", return_value=False),
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+            self.assertLogs(
+                "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+
+            mock_context = Mock()
+            mock_ssl_context.return_value = mock_context
+            mock_adapter_instance = Mock()
+            mock_adapter.return_value = mock_adapter_instance
+
+            # Create metadata instance - should work fine with default path missing
+            metadata = WCAOnPremMetaData(config)
+
+            # Verify SSL context was created even when default service CA doesn't exist
             mock_ssl_context.assert_called_once()
             # Verify metadata instance was created successfully
             self.assertIsNotNone(metadata)
+
+            # Verify appropriate log message for missing certificate
+            self.assertIn(
+                "WCA SSL: Using explicit system CAs for external endpoints", str(log.output)
+            )
 
     def test_setup_ssl_context_session_mount(self):
         """Test that SSL adapter is properly mounted to session."""
