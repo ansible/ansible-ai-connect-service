@@ -162,7 +162,10 @@ class WisdomServiceLivenessProbeView(APIView):
     @method_decorator(never_cache)
     def get(self, request, *args, **kwargs):
         data = common_data()
-        data["status"] = "ok"
+        if settings.DEPLOYMENT_MODE == "onprem":
+            data["status"] = "good"
+        else:
+            data["status"] = "ok"
         data_json = json.dumps(data)
         return HttpResponse(data_json, content_type="application/json")
 

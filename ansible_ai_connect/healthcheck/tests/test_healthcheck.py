@@ -186,6 +186,18 @@ class TestHealthCheck(BaseTestHealthCheck):
             data = json.loads(r.content)
             self.assert_common_data(data, "ok", settings.DEPLOYED_REGION)
 
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_liveness_probe_onprem(self):
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=DummyCompletionsPipeline(mock_pipeline_config("dummy"))),
+        ):
+            r = self.client.get(reverse("liveness_probe"), format="json")
+            self.assertEqual(r.status_code, HTTPStatus.OK)
+            data = json.loads(r.content)
+            self.assert_common_data(data, "good", settings.DEPLOYED_REGION)
+
     def test_health_check_all_healthy(self):
         cache.clear()
         with patch.object(
