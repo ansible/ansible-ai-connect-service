@@ -22,6 +22,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
 
 import backoff
+import certifi
 import requests
 import requests.adapters
 from ansible_anonymizer import anonymizer
@@ -215,55 +216,39 @@ class WCABaseMetaData(
     def _setup_ssl_context(self):
         """Configure SSL context for WCA requests.
 
-        Completely isolates WCA SSL configuration from global environment variables
-        that may point to service CA certificates which don't contain public root CAs
-        needed for external WCA endpoints.
+        Uses explicit system CA bundle via certifi to completely isolate WCA SSL
+        configuration from global environment variables that may point to service CA
+        certificates which don't contain public root CAs needed for external WCA endpoints.
         """
         if self.config.verify_ssl:
-            # Store original environment variables that might interfere
-            original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
-            original_ssl_cert = os.environ.get("SSL_CERT_FILE")
+            # Use explicit system CA bundle - immune to environment variable pollution
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
 
-            # Temporarily clear SSL environment variables during initialization
-            # Ensuring that system default CAs are used for external WCA endpoints
-            if "REQUESTS_CA_BUNDLE" in os.environ:
-                del os.environ["REQUESTS_CA_BUNDLE"]
-            if "SSL_CERT_FILE" in os.environ:
-                del os.environ["SSL_CERT_FILE"]
+            # Create custom adapter with clean SSL context
+            adapter = requests.adapters.HTTPAdapter()
+            adapter.init_poolmanager(connections=10, maxsize=10, ssl_context=ssl_context)
+            self.session.mount("https://", adapter)
 
-            try:
-                ssl_context = ssl.create_default_context()
-
-                # Create custom adapter with clean SSL context
-                adapter = requests.adapters.HTTPAdapter()
-                adapter.init_poolmanager(connections=10, maxsize=10, ssl_context=ssl_context)
-                self.session.mount("https://", adapter)
-
-                service_ca = getattr(settings, "SERVICE_CA_PATH", None)
-                if service_ca and os.path.exists(service_ca):
-                    logger.info(
-                        "WCA SSL: Service CA detected, using system CAs for external endpoints"
-                    )
-                else:
-                    logger.info("WCA SSL: Using system default CAs for external endpoints")
-
-            finally:
-                if original_ca_bundle is not None:
-                    os.environ["REQUESTS_CA_BUNDLE"] = original_ca_bundle
-                if original_ssl_cert is not None:
-                    os.environ["SSL_CERT_FILE"] = original_ssl_cert
+            service_ca = getattr(settings, "SERVICE_CA_PATH", None)
+            if service_ca and os.path.exists(service_ca):
+                logger.info(
+                    "WCA SSL: Service CA detected, using explicit system CAs for external endpoints"
+                )
+            else:
+                logger.info("WCA SSL: Using explicit system CAs for external endpoints")
 
     @contextmanager
     def _clean_ssl_environment(self):
         """Context manager to temporarily clear SSL environment variables during requests.
 
-        Ensuring that individual WCA requests are completely isolated from
-        service CA environment variables that might interfere with external SSL connections.
+        Even with explicit SSL context, urllib3 still consults environment variables
+        during connection setup. This ensures complete isolation from service CA
+        environment variables for external WCA requests.
         """
         original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
         original_ssl_cert = os.environ.get("SSL_CERT_FILE")
 
-        # Temporarily clear SSL environment variables /request
+        # Temporarily clear SSL environment variables for this request
         if "REQUESTS_CA_BUNDLE" in os.environ:
             del os.environ["REQUESTS_CA_BUNDLE"]
         if "SSL_CERT_FILE" in os.environ:
@@ -272,6 +257,7 @@ class WCABaseMetaData(
         try:
             yield
         finally:
+            # Restore environment variables for other application components
             if original_ca_bundle is not None:
                 os.environ["REQUESTS_CA_BUNDLE"] = original_ca_bundle
             if original_ssl_cert is not None:
