@@ -32,9 +32,6 @@ from django.test import SimpleTestCase, override_settings
 from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_onprem import (
     WCAOnPremConfiguration,
 )
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
-    WCABaseMetaData,
-)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremMetaData,
 )
@@ -56,7 +53,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
             os.environ["REQUESTS_CA_BUNDLE"] = self.original_ca_bundle
         else:
             os.environ.pop("REQUESTS_CA_BUNDLE", None)
-        
+
         if self.original_ssl_cert:
             os.environ["SSL_CERT_FILE"] = self.original_ssl_cert
         else:
@@ -77,21 +74,25 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
     def test_setup_ssl_context_with_verify_ssl_enabled(self):
         """Test SSL context setup when verify_ssl is enabled."""
         config = self._create_mock_config(verify_ssl=True)
-        
-        with patch('ssl.create_default_context') as mock_ssl_context, \
-             patch('requests.adapters.HTTPAdapter') as mock_adapter:
-            
+
+        with (
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+        ):
+
             mock_context = Mock()
             mock_ssl_context.return_value = mock_context
             mock_adapter_instance = Mock()
             mock_adapter.return_value = mock_adapter_instance
-            
+
             # Create metadata instance
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify SSL context was created
             mock_ssl_context.assert_called_once()
-            
+            # Verify metadata instance was created successfully
+            self.assertIsNotNone(metadata)
+
             # Verify HTTPAdapter was created and configured
             mock_adapter.assert_called_once()
             mock_adapter_instance.init_poolmanager.assert_called_once_with(
@@ -101,79 +102,99 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
     def test_setup_ssl_context_with_verify_ssl_disabled(self):
         """Test SSL context setup is skipped when verify_ssl is disabled."""
         config = self._create_mock_config(verify_ssl=False)
-        
-        with patch('ssl.create_default_context') as mock_ssl_context, \
-             patch('requests.adapters.HTTPAdapter') as mock_adapter:
-            
+
+        with (
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+        ):
+
             # Create metadata instance
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify SSL context was NOT created when verify_ssl is False
             mock_ssl_context.assert_not_called()
             mock_adapter.assert_not_called()
+            # Verify metadata instance was created successfully
+            self.assertIsNotNone(metadata)
 
     @override_settings(SERVICE_CA_PATH="/test/service-ca.crt")
     def test_setup_ssl_context_with_service_ca_detection(self):
         """Test SSL context setup with service CA detection."""
         config = self._create_mock_config(verify_ssl=True)
-        
-        with patch('os.path.exists', return_value=True), \
-             patch('ssl.create_default_context') as mock_ssl_context, \
-             patch('requests.adapters.HTTPAdapter') as mock_adapter, \
-             self.assertLogs('ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base', level='INFO') as log:
-            
+
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+            self.assertLogs(
+                "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+
             mock_context = Mock()
             mock_ssl_context.return_value = mock_context
             mock_adapter_instance = Mock()
             mock_adapter.return_value = mock_adapter_instance
-            
+
             # Create metadata instance
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify SSL context was created
             mock_ssl_context.assert_called_once()
-            
+            # Verify metadata instance was created successfully
+            self.assertIsNotNone(metadata)
+
             # Verify service CA detection was logged
-            self.assertIn("Service CA detected, using system CAs for external endpoints", str(log.output))
+            self.assertIn(
+                "Service CA detected, using system CAs for external endpoints", str(log.output)
+            )
 
     @override_settings(SERVICE_CA_PATH="/nonexistent/service-ca.crt")
     def test_setup_ssl_context_with_nonexistent_service_ca(self):
         """Test SSL context setup when service CA file doesn't exist."""
         config = self._create_mock_config(verify_ssl=True)
-        
-        with patch('os.path.exists', return_value=False), \
-             patch('ssl.create_default_context') as mock_ssl_context, \
-             patch('requests.adapters.HTTPAdapter') as mock_adapter:
-            
+
+        with (
+            patch("os.path.exists", return_value=False),
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+        ):
+
             mock_context = Mock()
             mock_ssl_context.return_value = mock_context
             mock_adapter_instance = Mock()
             mock_adapter.return_value = mock_adapter_instance
-            
+
             # Create metadata instance - should still work
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify SSL context was created even when service CA doesn't exist
             mock_ssl_context.assert_called_once()
+            # Verify metadata instance was created successfully
+            self.assertIsNotNone(metadata)
 
     def test_setup_ssl_context_session_mount(self):
         """Test that SSL adapter is properly mounted to session."""
         config = self._create_mock_config(verify_ssl=True)
-        
-        with patch('ssl.create_default_context') as mock_ssl_context, \
-             patch('requests.adapters.HTTPAdapter') as mock_adapter:
-            
+
+        with (
+            patch("ssl.create_default_context") as mock_ssl_context,
+            patch("requests.adapters.HTTPAdapter") as mock_adapter,
+        ):
+
             mock_context = Mock()
             mock_ssl_context.return_value = mock_context
             mock_adapter_instance = Mock()
             mock_adapter.return_value = mock_adapter_instance
-            
+
             # Create metadata instance
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify SSL context was created
             mock_ssl_context.assert_called_once()
-            
+            # Verify metadata instance was created successfully
+            self.assertIsNotNone(metadata)
+
             # Verify HTTPAdapter was created and configured
             mock_adapter.assert_called_once()
             mock_adapter_instance.init_poolmanager.assert_called_once_with(
@@ -183,7 +204,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
     def test_ssl_context_resilience_against_environment_pollution(self):
         """Test that WCA SSL context is resilient against environment variable pollution."""
         # Create temporary invalid certificate file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.crt') as temp_ca:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".crt") as temp_ca:
             temp_ca.write("-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----")
             temp_ca_path = temp_ca.name
 
@@ -191,20 +212,20 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
             # Pollute environment with invalid SSL settings
             os.environ["REQUESTS_CA_BUNDLE"] = temp_ca_path
             os.environ["SSL_CERT_FILE"] = temp_ca_path
-            
+
             config = self._create_mock_config(verify_ssl=True)
-            
-            with patch('ssl.create_default_context') as mock_ssl_context:
+
+            with patch("ssl.create_default_context") as mock_ssl_context:
                 mock_context = Mock()
                 mock_ssl_context.return_value = mock_context
-                
+
                 # Should succeed despite environment pollution
                 metadata = WCAOnPremMetaData(config)
-                
+
                 # Verify SSL context was created using proper system defaults
                 mock_ssl_context.assert_called_once()
                 self.assertIsInstance(metadata.session, requests.Session)
-                
+
         finally:
             # Clean up temporary file
             os.unlink(temp_ca_path)
@@ -212,42 +233,42 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
     def test_session_https_adapter_configuration(self):
         """Test that session has proper HTTPS adapter configuration."""
         config = self._create_mock_config(verify_ssl=True)
-        
+
         # Create metadata instance
         metadata = WCAOnPremMetaData(config)
-        
+
         # Verify session was created
         self.assertIsInstance(metadata.session, requests.Session)
-        
+
         # Verify session has HTTPS adapter
-        https_adapter = metadata.session.get_adapter('https://example.com')
+        https_adapter = metadata.session.get_adapter("https://example.com")
         self.assertIsInstance(https_adapter, requests.adapters.HTTPAdapter)
 
     def test_multiple_wca_instances_ssl_independence(self):
         """Test that multiple WCA instances have independent SSL configurations."""
         config1 = self._create_mock_config(verify_ssl=True)
         config2 = self._create_mock_config(verify_ssl=False)
-        
-        with patch('ssl.create_default_context') as mock_ssl_context:
+
+        with patch("ssl.create_default_context") as mock_ssl_context:
             mock_ssl_context.return_value = Mock()
-            
+
             # Create two metadata instances
             metadata1 = WCAOnPremMetaData(config1)
             metadata2 = WCAOnPremMetaData(config2)
-            
+
             # Verify they have independent sessions
             self.assertIsNot(metadata1.session, metadata2.session)
             self.assertIsInstance(metadata1.session, requests.Session)
             self.assertIsInstance(metadata2.session, requests.Session)
-            
+
             # Verify SSL was only set up for the first instance (verify_ssl=True)
             self.assertEqual(mock_ssl_context.call_count, 1)
 
     def test_ssl_context_error_handling(self):
         """Test error handling in SSL context setup."""
         config = self._create_mock_config(verify_ssl=True)
-        
-        with patch('ssl.create_default_context', side_effect=ssl.SSLError("SSL error")):
+
+        with patch("ssl.create_default_context", side_effect=ssl.SSLError("SSL error")):
             # Should still create the metadata instance even if SSL setup fails
             with self.assertRaises(ssl.SSLError):
                 WCAOnPremMetaData(config)
@@ -266,24 +287,24 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         config.api_key = "test_api_key"
         config.health_check_api_key = "test_health_key"
         config.health_check_model_id = "test_model"
-        
+
         # Create metadata instance with real session
         metadata = WCAOnPremMetaData(config)
-        
+
         # Verify session configuration
         self.assertIsInstance(metadata.session, requests.Session)
-        
+
         # Verify HTTPS adapter is configured
-        https_adapter = metadata.session.get_adapter('https://example.com')
+        https_adapter = metadata.session.get_adapter("https://example.com")
         self.assertIsInstance(https_adapter, requests.adapters.HTTPAdapter)
 
     def test_ssl_verification_configuration(self):
         """Test SSL verification configuration for different settings."""
         test_cases = [
             (True, "SSL verification should be enabled"),
-            (False, "SSL verification should be disabled")
+            (False, "SSL verification should be disabled"),
         ]
-        
+
         for verify_ssl, description in test_cases:
             with self.subTest(verify_ssl=verify_ssl, msg=description):
                 config = Mock(spec=WCAOnPremConfiguration)
@@ -294,9 +315,9 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
                 config.api_key = "test_api_key"
                 config.health_check_api_key = "test_health_key"
                 config.health_check_model_id = "test_model"
-                
+
                 metadata = WCAOnPremMetaData(config)
-                
+
                 # Verify metadata was created successfully
                 self.assertIsInstance(metadata.session, requests.Session)
                 self.assertEqual(metadata.retries, 3)
@@ -312,9 +333,9 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         config.api_key = "test_api_key"
         config.health_check_api_key = "test_health_key"
         config.health_check_model_id = "test_model"
-        
+
         metadata = WCAOnPremMetaData(config)
-        
+
         # Test timeout calculations
         self.assertEqual(metadata.task_gen_timeout(1), 10)
         self.assertEqual(metadata.task_gen_timeout(3), 30)
@@ -330,9 +351,9 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         config.api_key = "test_api_key"
         config.health_check_api_key = "test_health_key"
         config.health_check_model_id = "test_model"
-        
+
         metadata = WCAOnPremMetaData(config)
-        
+
         # Test timeout calculations with None
         self.assertIsNone(metadata.task_gen_timeout(1))
         self.assertIsNone(metadata.task_gen_timeout(5))
@@ -340,7 +361,7 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
     def test_clean_ssl_environment_context_manager(self):
         """Test the SSL environment context manager functionality."""
         # Create temporary certificate files
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.crt') as temp_ca:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".crt") as temp_ca:
             temp_ca.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----")
             temp_ca_path = temp_ca.name
 
@@ -348,7 +369,7 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
             # Set up SSL environment pollution
             os.environ["REQUESTS_CA_BUNDLE"] = temp_ca_path
             os.environ["SSL_CERT_FILE"] = temp_ca_path
-            
+
             config = Mock(spec=WCAOnPremConfiguration)
             config.verify_ssl = True
             config.retry_count = 3
@@ -357,22 +378,22 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
             config.api_key = "test_api_key"
             config.health_check_api_key = "test_health_key"
             config.health_check_model_id = "test_model"
-            
+
             metadata = WCAOnPremMetaData(config)
-            
+
             # Verify environment variables are set before context
             self.assertEqual(os.environ.get("REQUESTS_CA_BUNDLE"), temp_ca_path)
             self.assertEqual(os.environ.get("SSL_CERT_FILE"), temp_ca_path)
-            
+
             # Test context manager clears variables
             with metadata._clean_ssl_environment():
                 self.assertIsNone(os.environ.get("REQUESTS_CA_BUNDLE"))
                 self.assertIsNone(os.environ.get("SSL_CERT_FILE"))
-            
+
             # Verify environment variables are restored after context
             self.assertEqual(os.environ.get("REQUESTS_CA_BUNDLE"), temp_ca_path)
             self.assertEqual(os.environ.get("SSL_CERT_FILE"), temp_ca_path)
-            
+
         finally:
             # Clean up
             os.unlink(temp_ca_path)
