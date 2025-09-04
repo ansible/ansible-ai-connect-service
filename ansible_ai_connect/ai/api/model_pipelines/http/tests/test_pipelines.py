@@ -14,7 +14,6 @@
 #  limitations under the License.
 import json
 import logging
-import ssl
 from typing import cast
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
@@ -247,11 +246,8 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # Verify TCPConnector was created with SSL context when verify_ssl=True
-        mock_tcp_connector.assert_called_once()
-        call_args = mock_tcp_connector.call_args[1]["ssl"]
-        # Should be an SSLContext object when verify_ssl=True
-        self.assertIsInstance(call_args, ssl.SSLContext)
+        # Verify TCPConnector was created with ssl=True
+        mock_tcp_connector.assert_called_once_with(ssl=True)
 
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
@@ -298,13 +294,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 # Verify that streaming still works
                 self.assertGreater(result_count, 0, "Streaming should return data")
                 # Verify SSL configuration is correct
-                call_args = mock_tcp_connector.call_args[1]["ssl"]
-                if verify_ssl_value:
-                    # When verify_ssl=True, should get an SSLContext object
-                    self.assertIsInstance(call_args, ssl.SSLContext)
-                else:
-                    # When verify_ssl=False, should get False
-                    self.assertEqual(call_args, False)
+                mock_tcp_connector.assert_called_with(ssl=verify_ssl_value)
                 # Reset mocks for next iteration
                 mock_tcp_connector.reset_mock()
                 mock_post.reset_mock()
