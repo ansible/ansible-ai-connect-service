@@ -19,9 +19,7 @@ import os
 import ssl
 import tempfile
 from unittest import IsolatedAsyncioTestCase, TestCase
-from unittest.mock import MagicMock, Mock, patch
-
-import requests
+from unittest.mock import MagicMock, patch
 
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
@@ -29,7 +27,6 @@ from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpChatBotPipeline,
     HttpCompletionsPipeline,
-    HttpMetaData,
     HttpStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
@@ -167,10 +164,10 @@ class TestHttpChatBotPipelineSSL(TestCase, WisdomLogAwareMixin):
         )
         # Execute
         result = pipeline.invoke(params)
-        # Verify the requests.post was called with boolean SSL verification
+        # Verify the requests.post was called with ca_cert_file
         mock_post.assert_called_once()
         call_kwargs = mock_post.call_args[1]
-        self.assertEqual(call_kwargs["verify"], True)
+        self.assertEqual(call_kwargs["verify"], self.ca_cert_path)
         # Verify result
         self.assertIsNotNone(result)
 
@@ -293,6 +290,8 @@ class TestHttpCompletionsPipelineSSL(TestCase, WisdomLogAwareMixin):
         # Mock the pipeline's session post method
         with patch.object(pipeline.session, "post", return_value=mock_response) as mock_post:
             # Create parameters
+            from unittest.mock import Mock
+
             params = CompletionsParameters.init(
                 request=Mock(),
                 model_input={"context": "---\n- name: Example task", "prompt": ""},
@@ -300,10 +299,10 @@ class TestHttpCompletionsPipelineSSL(TestCase, WisdomLogAwareMixin):
             )
             # Execute
             result = pipeline.invoke(params)
-            # Verify the session.post was called with boolean SSL verification
+            # Verify the session.post was called with ca_cert_file
             mock_post.assert_called_once()
             call_kwargs = mock_post.call_args[1]
-            self.assertEqual(call_kwargs["verify"], True)
+            self.assertEqual(call_kwargs["verify"], self.ca_cert_path)
             # Verify result
             self.assertIsNotNone(result)
 
@@ -347,10 +346,10 @@ class TestHttpHealthCheckSSL(TestCase, WisdomLogAwareMixin):
         pipeline = HttpChatBotPipeline(config)
         # Execute health check
         result = pipeline.self_test()
-        # Verify the requests.get was called with boolean SSL verification
+        # Verify the requests.get was called with ca_cert_file
         mock_get.assert_called_once()
         call_kwargs = mock_get.call_args[1]
-        self.assertEqual(call_kwargs["verify"], True)
+        self.assertEqual(call_kwargs["verify"], self.ca_cert_path)
         # Verify result
         self.assertTrue(result)
 
@@ -476,8 +475,8 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
         async for _ in pipeline.async_invoke(params):
             result_count += 1
 
-        # Verify SSL context was created
-        mock_ssl_context.assert_called_once_with()
+        # Verify SSL context was created with ca_cert_file
+        mock_ssl_context.assert_called_once_with(cafile=self.ca_cert_path)
         # Verify TCPConnector was created with the SSL context
         mock_tcp_connector.assert_called_once_with(ssl=mock_ssl_context_instance)
         self.assertGreater(result_count, 0, "Should have received streaming data")
@@ -560,13 +559,8 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
         result_count = 0
         async for _ in pipeline.async_invoke(params):
             result_count += 1
-        # Verify TCPConnector was created with SSL context
-        mock_tcp_connector.assert_called_once()
-        # Check that ssl parameter is an SSL context, not a boolean
-        call_args = mock_tcp_connector.call_args[1]
-        self.assertIn("ssl", call_args)
-        # ssl.create_default_context() is always used when verify_ssl=True
-        self.assertIsNotNone(call_args["ssl"])
+        # Verify TCPConnector was created with ssl=True (default SSL context)
+        mock_tcp_connector.assert_called_once_with(ssl=True)
         self.assertGreater(result_count, 0, "Should have received streaming data")
 
     @patch("ssl.create_default_context")
@@ -609,12 +603,10 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
         async for _ in pipeline.async_invoke(params):
             result_count += 1
 
-        # Verify SSL context was created
-        mock_ssl_context.assert_called_once_with()
-        # Verify TCPConnector was created with the SSL context
-        mock_tcp_connector.assert_called_once()
-        call_args = mock_tcp_connector.call_args[1]
-        self.assertIn("ssl", call_args)
+        # Verify SSL context was NOT created (empty string is falsy)
+        mock_ssl_context.assert_not_called()
+        # Verify TCPConnector was created with ssl=True (falls back to verify_ssl)
+        mock_tcp_connector.assert_called_once_with(ssl=True)
         self.assertGreater(result_count, 0, "Should have received streaming data")
 
     @patch("ssl.create_default_context")
@@ -654,7 +646,7 @@ class TestHttpStreamingChatBotPipelineSSL(IsolatedAsyncioTestCase, WisdomLogAwar
                 pass
 
         # Verify SSL context creation was attempted
-        mock_ssl_context.assert_called_once_with()
+        mock_ssl_context.assert_called_once_with(cafile=self.ca_cert_path)
 
 
 class TestSSLErrorScenarios(TestCase, WisdomLogAwareMixin):
@@ -705,10 +697,10 @@ class TestSSLErrorScenarios(TestCase, WisdomLogAwareMixin):
         # Execute and expect SSL error
         with self.assertRaises(SSLError):
             pipeline.invoke(params)
-        # Verify the requests.post was called with boolean SSL verification
+        # Verify the requests.post was called with invalid ca_cert_file
         mock_post.assert_called_once()
         call_kwargs = mock_post.call_args[1]
-        self.assertEqual(call_kwargs["verify"], True)
+        self.assertEqual(call_kwargs["verify"], self.invalid_ca_cert_path)
 
     @patch("requests.get")
     def test_health_check_ssl_error_with_ca_cert_file(self, mock_get):
@@ -729,10 +721,10 @@ class TestSSLErrorScenarios(TestCase, WisdomLogAwareMixin):
         pipeline = HttpChatBotPipeline(config)
         # Execute health check and expect False result due to SSL error
         result = pipeline.self_test()
-        # Verify the requests.get was called with boolean SSL verification
+        # Verify the requests.get was called with ca_cert_file
         mock_get.assert_called_once()
         call_kwargs = mock_get.call_args[1]
-        self.assertEqual(call_kwargs["verify"], True)
+        self.assertEqual(call_kwargs["verify"], self.ca_cert_path)
         # Health check should return a summary with exceptions on SSL error
         self.assertIsNotNone(result)
         # Check that the health check failed (has exceptions)
@@ -743,330 +735,49 @@ class TestSSLErrorScenarios(TestCase, WisdomLogAwareMixin):
         )
         self.assertTrue(has_exceptions, "Health check should have exceptions when SSL fails")
 
-
-class TestDefaultSSLContextApproach(TestCase, WisdomLogAwareMixin):
-    """Test the default SSL context approach"""
-
-    def setUp(self):
-        # Store original environment variables
-        self.original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
-        self.original_ssl_cert_file = os.environ.get("SSL_CERT_FILE")
-
-    def tearDown(self):
-        # Restore original environment variables
-        if self.original_ca_bundle:
-            os.environ["REQUESTS_CA_BUNDLE"] = self.original_ca_bundle
-        else:
-            os.environ.pop("REQUESTS_CA_BUNDLE", None)
-
-        if self.original_ssl_cert_file:
-            os.environ["SSL_CERT_FILE"] = self.original_ssl_cert_file
-        else:
-            os.environ.pop("SSL_CERT_FILE", None)
-
-    @patch("os.path.exists")
-    def test_ssl_context_setup_with_service_certificate(self, mock_exists):
-        """Test that _setup_ssl_context() correctly configures environment variables"""
-        # Mock service certificate exists
-        mock_exists.side_effect = (
-            lambda path: path == "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
-        )
-        # Clear environment variables
-        os.environ.pop("REQUESTS_CA_BUNDLE", None)
-        os.environ.pop("SSL_CERT_FILE", None)
-        config = HttpConfiguration(
-            inference_url="https://test.example.com",
+    def test_ssl_configuration_precedence_logic(self):
+        """Test the exact logic used in the application for SSL verification parameter"""
+        # Test Case 1: ca_cert_file provided (should take precedence)
+        config1 = HttpConfiguration(
+            inference_url=self.inference_url,
             model_id="test-model",
             timeout=5000,
             enable_health_check=True,
             verify_ssl=True,
+            ca_cert_file=self.ca_cert_path,
         )
-        # Create HttpMetaData - this triggers _setup_ssl_context()
-        metadata = HttpMetaData(config)
-
-        # Verify environment variables were set
-        self.assertEqual(
-            os.environ.get("REQUESTS_CA_BUNDLE"),
-            "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
-        )
-        self.assertEqual(
-            os.environ.get("SSL_CERT_FILE"),
-            "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
-        )
-        # Verify get_ssl_verification returns verify_ssl value
-        self.assertTrue(metadata.get_ssl_verification())
-
-    @patch("os.path.exists")
-    def test_ssl_context_setup_without_service_certificate(self, mock_exists):
-        """Test SSL setup when service certificate doesn't exist"""
-        # Mock service certificate doesn't exist
-        mock_exists.return_value = False
-        # Clear environment variables
-        os.environ.pop("REQUESTS_CA_BUNDLE", None)
-        os.environ.pop("SSL_CERT_FILE", None)
-        config = HttpConfiguration(
-            inference_url="https://test.example.com",
+        verify_param_1 = config1.ca_cert_file if config1.ca_cert_file else config1.verify_ssl
+        self.assertEqual(verify_param_1, self.ca_cert_path)
+        # Test Case 2: ca_cert_file is None, verify_ssl=True
+        config2 = HttpConfiguration(
+            inference_url=self.inference_url,
             model_id="test-model",
             timeout=5000,
             enable_health_check=True,
             verify_ssl=True,
+            ca_cert_file=None,
         )
-        metadata = HttpMetaData(config)
-
-        # Environment variables should not be set
-        self.assertIsNone(os.environ.get("REQUESTS_CA_BUNDLE"))
-        self.assertIsNone(os.environ.get("SSL_CERT_FILE"))
-        # But get_ssl_verification should still return True (system certs)
-        self.assertTrue(metadata.get_ssl_verification())
-
-    def test_ssl_verification_disabled(self):
-        """Test behavior when SSL verification is disabled"""
-        config = HttpConfiguration(
-            inference_url="http://test.example.com",  # http, not https
+        verify_param_2 = config2.ca_cert_file if config2.ca_cert_file else config2.verify_ssl
+        self.assertTrue(verify_param_2)
+        # Test Case 3: ca_cert_file is None, verify_ssl=False
+        config3 = HttpConfiguration(
+            inference_url=self.inference_url,
             model_id="test-model",
             timeout=5000,
             enable_health_check=True,
             verify_ssl=False,
+            ca_cert_file=None,
         )
-        metadata = HttpMetaData(config)
-        # get_ssl_verification should return False
-        self.assertFalse(metadata.get_ssl_verification())
-
-    def test_eliminates_conditional_logic_issues(self):
-        """
-        Test that the approach that eliminates the conditional logic
-        issues that caused 503 errors.
-        """
-        test_scenarios = [
-            # (verify_ssl, ca_cert_file)
-            (True, None),
-            (True, ""),  # Empty string was problematic
-            (True, "/some/path/cert.crt"),
-            (False, None),
-            (False, ""),
-            (False, "/some/path/cert.crt"),
-        ]
-        for verify_ssl, ca_cert_file in test_scenarios:
-            with self.subTest(verify_ssl=verify_ssl, ca_cert_file=ca_cert_file):
-                config = HttpConfiguration(
-                    inference_url="https://test.example.com",
-                    model_id="test-model",
-                    timeout=5000,
-                    enable_health_check=True,
-                    verify_ssl=verify_ssl,
-                    ca_cert_file=ca_cert_file,
-                )
-                metadata = HttpMetaData(config)
-                # The default SSL context approach should ALWAYS return verify_ssl value,
-                # regardless of ca_cert_file content
-                self.assertEqual(metadata.get_ssl_verification(), verify_ssl)
-
-
-class TestHTTPPipeline503ErrorPrevention(TestCase, WisdomLogAwareMixin):
-    """Test that HTTP pipelines prevent 503 errors"""
-
-    def setUp(self):
-        self.config = HttpConfiguration(
-            inference_url="https://test.example.com:8443",
+        verify_param_3 = config3.ca_cert_file if config3.ca_cert_file else config3.verify_ssl
+        self.assertFalse(verify_param_3)
+        # Test Case 4: ca_cert_file is empty string (falsy), verify_ssl=True
+        config4 = HttpConfiguration(
+            inference_url=self.inference_url,
             model_id="test-model",
             timeout=5000,
             enable_health_check=True,
             verify_ssl=True,
+            ca_cert_file="",
         )
-
-    @patch("requests.Session.post")
-    def test_completions_pipeline_uses_simple_ssl_verification(self, mock_post):
-        """Test that HttpCompletionsPipeline uses the simplified SSL verification"""
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = '{"predictions": [{"output": "test output"}]}'
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
-        pipeline = HttpCompletionsPipeline(self.config)
-        # Create mock parameters
-        mock_request = MagicMock()
-        mock_request.user = MagicMock()
-        mock_request.user.uuid = "test-user-id"
-        params = CompletionsParameters(
-            request=mock_request,
-            model_id="test-model",
-            model_input={"instances": [{"prompt": "test prompt"}]},
-        )
-        # Execute
-        result = pipeline.invoke(params)
-        # Verify that requests.post was called with verify=True (not complex conditional)
-        mock_post.assert_called_once()
-
-        # In default SSL context approach, verify should be simple boolean True
-        # The session should handle SSL configuration, not individual requests
-        self.assertIsInstance(result, dict)
-
-    @patch("requests.post")
-    def test_chatbot_pipeline_uses_simple_ssl_verification(self, mock_post):
-        """Test that HttpChatBotPipeline uses the simplified SSL verification"""
-        # Setup mock response
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = (
-            '{"response": "Test response", "referenced_documents": [], "truncated": false}'
-        )
-        mock_response.json.return_value = {
-            "response": "Test response",
-            "referenced_documents": [],
-            "truncated": False,
-        }
-        mock_post.return_value = mock_response
-        pipeline = HttpChatBotPipeline(self.config)
-        params = ChatBotParameters(
-            query="test query",
-            conversation_id="test-conv-id",
-            model_id="test-model",
-            provider="test-provider",
-            system_prompt="You are a helpful assistant",
-            no_tools=False,
-        )
-        # Execute
-        result = pipeline.invoke(params)
-
-        # Verify call was made and returned expected structure
-        mock_post.assert_called_once()
-        self.assertIsNotNone(result)
-
-    @patch("aiohttp.ClientSession")
-    def test_streaming_chatbot_ssl_context_creation(self, mock_session_class):
-        """Test that HttpStreamingChatBotPipeline creates proper SSL context"""
-        # Setup mock session
-        mock_session = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.status = 200
-        mock_response.status_code = 200
-        mock_response.content = AsyncIteratorMock([b'data: {"event": "start"}\n\n'])
-        mock_session.post.return_value.__aenter__.return_value = mock_response
-        pipeline = HttpStreamingChatBotPipeline(self.config)
-        # Create mock parameters
-        mock_event = StreamingChatBotOperationalEvent()
-        params = StreamingChatBotParameters(
-            query="test query",
-            conversation_id="test-conv-id",
-            model_id="test-model",
-            provider="test-provider",
-            system_prompt="You are a helpful assistant",
-            no_tools=False,
-            media_type="application/json",
-            event=mock_event,
-        )
-
-        # Execute async invoke (we need to consume the async generator)
-        async def consume_generator():
-            chunks = []
-            async for chunk in pipeline.async_invoke(params):
-                chunks.append(chunk)
-            return chunks
-
-        # Run the async function
-        import asyncio
-
-        try:
-            asyncio.run(consume_generator())
-        except Exception:
-            # We expect this might fail due to mocking, but we want to verify
-            # that ClientSession was called with proper SSL configuration
-            pass
-
-        # Verify that ClientSession was created
-        # The important thing is that SSL context creation doesn't fail
-        mock_session_class.assert_called()
-        # Verify the call included raise_for_status and connector
-        call_kwargs = mock_session_class.call_args[1]
-        self.assertTrue(call_kwargs.get("raise_for_status"))
-        self.assertIn("connector", call_kwargs)
-
-
-class TestSSLErrorHandling(TestCase, WisdomLogAwareMixin):
-    """Test default SSL context error handling"""
-
-    def test_ssl_setup_with_invalid_certificate_path(self):
-        """Test that invalid certificate paths don't cause 503 errors"""
-        # This scenario could have caused issues in the old approach
-        config = HttpConfiguration(
-            inference_url="https://test.example.com",
-            model_id="test-model",
-            timeout=5000,
-            enable_health_check=True,
-            verify_ssl=True,
-            ca_cert_file="/nonexistent/path/cert.crt",  # Invalid path
-        )
-        # With default SSL context approach it
-        # should not cause initialization failure
-        # because ca_cert_file is not used for conditional logic
-        metadata = HttpMetaData(config)
-
-        # Should still return True because verify_ssl=True
-        self.assertTrue(metadata.get_ssl_verification())
-
-    @patch("requests.Session.get")
-    def test_health_check_ssl_error_handling(self, mock_get):
-        """Test that SSL errors in health checks are properly handled"""
-        # Simulate SSL error
-        mock_get.side_effect = requests.exceptions.SSLError("SSL handshake failed")
-        config = HttpConfiguration(
-            inference_url="https://test.example.com",
-            model_id="test-model",
-            timeout=5000,
-            enable_health_check=True,
-            verify_ssl=True,
-        )
-        pipeline = HttpCompletionsPipeline(config)
-        # Health check should handle SSL error gracefully
-        summary = pipeline.self_test()
-        # Should have items (indicating health check was executed) but not crash
-        self.assertIsNotNone(summary)
-        # Check that summary has been populated (either with exceptions or messages)
-        self.assertIsInstance(summary.items, dict)
-
-    def test_environment_variable_precedence(self):
-        """Test that environment variables work correctly with existing values"""
-        # Set initial environment variables
-        os.environ["REQUESTS_CA_BUNDLE"] = "/existing/bundle"
-        os.environ["SSL_CERT_FILE"] = "/existing/cert"
-
-        try:
-            with patch("os.path.exists", return_value=True):
-                config = HttpConfiguration(
-                    inference_url="https://test.example.com",
-                    model_id="test-model",
-                    timeout=5000,
-                    enable_health_check=True,
-                    verify_ssl=True,
-                )
-                # Create metadata - should not overwrite existing env vars
-                HttpMetaData(config)
-                # Should preserve existing values (setdefault behavior)
-                self.assertEqual(os.environ.get("REQUESTS_CA_BUNDLE"), "/existing/bundle")
-                self.assertEqual(os.environ.get("SSL_CERT_FILE"), "/existing/cert")
-        finally:
-            # Clean up
-            os.environ.pop("REQUESTS_CA_BUNDLE", None)
-            os.environ.pop("SSL_CERT_FILE", None)
-
-
-class AsyncIteratorMock:
-    """Helper class for mocking async iterators"""
-
-    def __init__(self, items):
-        self.items = items
-        self.index = 0
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self.index >= len(self.items):
-            raise StopAsyncIteration
-        item = self.items[self.index]
-        self.index += 1
-        return item
+        verify_param_4 = config4.ca_cert_file if config4.ca_cert_file else config4.verify_ssl
+        self.assertTrue(verify_param_4)  # Falls back to verify_ssl=True
