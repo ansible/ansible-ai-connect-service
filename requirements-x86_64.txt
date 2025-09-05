@@ -258,7 +258,6 @@ langchain-core==0.3.69
     #   langchain
     #   langchain-ollama
     #   langchain-text-splitters
-langchain-ollama==0.3.5
     # via -r requirements.in
 langchain-text-splitters==0.3.8
     # via langchain
@@ -297,8 +296,6 @@ oauthlib==3.2.2
     #   social-auth-core
 odfpy==1.4.1
     # via tablib
-ollama==0.5.1
-    # via langchain-ollama
 openpyxl==3.1.2
     # via tablib
 orjson==3.10.1
