@@ -154,7 +154,7 @@ dynaconf==3.2.10
     # via django-ansible-base
 et-xmlfile==1.1.0
     # via openpyxl
-executing==2.0.1
+executing==2.2.1
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
