@@ -7,6 +7,8 @@ import {
   DropdownItem,
   DropdownGroup,
   ExpandableSection,
+  Label,
+  Tooltip,
 } from "@patternfly/react-core";
 
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
@@ -26,6 +28,7 @@ import ChatbotHeader, {
 import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
 import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
 import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
+import InfoCircleIcon from "@patternfly/react-icons/dist/esm/icons/info-circle-icon";
 
 import lightspeedLogo from "../assets/lightspeed.svg";
 import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
@@ -302,6 +305,16 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   </ChatbotHeaderTitle>
                 </ChatbotHeaderMain>
                 <ChatbotHeaderActions>
+                  <Tooltip
+                    content="This is a Developer Preview feature containing functionality that Red Hat is considering for possible inclusion into supported versions. Developer Preview versions are not fully tested and are not intended for production use. Features may change or be removed at any time."
+                    position="left"
+                    maxWidth="25rem"
+                    isContentLeftAligned
+                  >
+                    <Label color="orange" icon={<InfoCircleIcon />}>
+                      Preview
+                    </Label>
+                  </Tooltip>
                   <InventoryDocumentationModal />
                   {inDebugMode() && (
                     <ChatbotHeaderSelectorDropdown
