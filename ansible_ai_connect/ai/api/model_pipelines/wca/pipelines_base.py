@@ -14,17 +14,12 @@
 
 import json
 import logging
-import os
-import ssl
 import sys
 from abc import ABCMeta, abstractmethod
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
 
 import backoff
-import certifi
 import requests
-import requests.adapters
 from ansible_anonymizer import anonymizer
 from django.apps import apps
 from django.conf import settings
@@ -77,6 +72,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     Context,
     InferenceResponseChecks,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -207,61 +203,17 @@ class WCABaseMetaData(
 
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
-        self.session = requests.Session()
-        self._setup_ssl_context()
+        # Use centralized SSL manager for all WCA requests
+        try:
+            self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"WCA Pipeline: Failed to initialize SSL session: {e}")
+            # Fallback to basic session without SSL customization
+            self.session = requests.Session()
+
         self.retries = self.config.retry_count
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
-
-    def _setup_ssl_context(self):
-        """Configure SSL context for WCA requests.
-
-        Uses explicit system CA bundle via certifi to completely isolate WCA SSL
-        configuration from global environment variables that may point to service CA
-        certificates which don't contain public root CAs needed for external WCA endpoints.
-        """
-        if self.config.verify_ssl:
-            # Use explicit system CA bundle - immune to environment variable pollution
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
-
-            # Create custom adapter with clean SSL context
-            adapter = requests.adapters.HTTPAdapter()
-            adapter.init_poolmanager(connections=10, maxsize=10, ssl_context=ssl_context)
-            self.session.mount("https://", adapter)
-
-            service_ca = getattr(settings, "SERVICE_CA_PATH", None)
-            if service_ca and os.path.exists(service_ca):
-                logger.info(
-                    "WCA SSL: Service CA detected, using explicit system CAs for external endpoints"
-                )
-            else:
-                logger.info("WCA SSL: Using explicit system CAs for external endpoints")
-
-    @contextmanager
-    def _clean_ssl_environment(self):
-        """Context manager to temporarily clear SSL environment variables during requests.
-
-        Even with explicit SSL context, urllib3 still consults environment variables
-        during connection setup. This ensures complete isolation from service CA
-        environment variables for external WCA requests.
-        """
-        original_ca_bundle = os.environ.get("REQUESTS_CA_BUNDLE")
-        original_ssl_cert = os.environ.get("SSL_CERT_FILE")
-
-        # Temporarily clear SSL environment variables for this request
-        if "REQUESTS_CA_BUNDLE" in os.environ:
-            del os.environ["REQUESTS_CA_BUNDLE"]
-        if "SSL_CERT_FILE" in os.environ:
-            del os.environ["SSL_CERT_FILE"]
-
-        try:
-            yield
-        finally:
-            # Restore environment variables for other application components
-            if original_ca_bundle is not None:
-                os.environ["REQUESTS_CA_BUNDLE"] = original_ca_bundle
-            if original_ssl_cert is not None:
-                os.environ["SSL_CERT_FILE"] = original_ssl_cert
 
     def task_gen_timeout(self, task_count=1):
         return self._timeout * task_count if self._timeout else None
@@ -447,14 +399,13 @@ class WCABaseCompletionsPipeline(
         )
         @wca_codegen_hist.time()
         def post_request():
-            with self._clean_ssl_environment():
-                return self.session.post(
-                    prediction_url,
-                    headers=headers,
-                    json=data,
-                    timeout=self.task_gen_timeout(task_count),
-                    verify=self.config.verify_ssl,
-                )
+            return self.session.post(
+                prediction_url,
+                headers=headers,
+                json=data,
+                timeout=self.task_gen_timeout(task_count),
+                verify=self.config.verify_ssl,
+            )
 
         try:
             response = post_request()
@@ -522,14 +473,13 @@ class WCABaseContentMatchPipeline(
             )
             @wca_codematch_hist.time()
             def post_request() -> requests.Response:
-                with self._clean_ssl_environment():
-                    return self.session.post(
-                        self._search_url,
-                        headers=headers,
-                        json=data,
-                        timeout=self.task_gen_timeout(suggestion_count),
-                        verify=self.config.verify_ssl,
-                    )
+                return self.session.post(
+                    self._search_url,
+                    headers=headers,
+                    json=data,
+                    timeout=self.task_gen_timeout(suggestion_count),
+                    verify=self.config.verify_ssl,
+                )
 
             result: requests.Response = post_request()
             context = Context(model_id, result, suggestion_count > 1)
@@ -603,13 +553,12 @@ class WCABasePlaybookGenerationPipeline(
         )
         @wca_codegen_playbook_hist.time()
         def post_request():
-            with self._clean_ssl_environment():
-                return self.session.post(
-                    f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
-                    headers=headers,
-                    json=data,
-                    verify=self.config.verify_ssl,
-                )
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
 
         result = post_request()
 
@@ -692,13 +641,12 @@ class WCABaseRoleGenerationPipeline(
         )
         @wca_codegen_role_hist.time()
         def post_request():
-            with self._clean_ssl_environment():
-                return self.session.post(
-                    f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
-                    headers=headers,
-                    json=data,
-                    verify=self.config.verify_ssl,
-                )
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
 
         result = post_request()
 
@@ -781,13 +729,12 @@ class WCABasePlaybookExplanationPipeline(
         )
         @wca_explain_playbook_hist.time()
         def post_request():
-            with self._clean_ssl_environment():
-                return self.session.post(
-                    f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
-                    headers=headers,
-                    json=data,
-                    verify=self.config.verify_ssl,
-                )
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
 
         result = post_request()
 
@@ -848,13 +795,12 @@ class WCABaseRoleExplanationPipeline(
         )
         @wca_explain_role_hist.time()
         def post_request():
-            with self._clean_ssl_environment():
-                return self.session.post(
-                    f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
-                    headers=headers,
-                    json=data,
-                    verify=self.config.verify_ssl,
-                )
+            return self.session.post(
+                f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
+                headers=headers,
+                json=data,
+                verify=self.config.verify_ssl,
+            )
 
         result = post_request()
 
