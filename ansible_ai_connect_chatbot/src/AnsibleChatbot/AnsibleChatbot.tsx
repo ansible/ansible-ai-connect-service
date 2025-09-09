@@ -5,7 +5,6 @@ import {
   Brand,
   DropdownList,
   DropdownItem,
-  DropdownGroup,
   ExpandableSection,
 } from "@patternfly/react-core";
 
@@ -20,12 +19,7 @@ import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
   ChatbotHeaderTitle,
   ChatbotHeaderActions,
-  ChatbotHeaderOptionsDropdown,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
-
-import ExpandIcon from "@patternfly/react-icons/dist/esm/icons/expand-icon";
-import OpenDrawerRightIcon from "@patternfly/react-icons/dist/esm/icons/open-drawer-right-icon";
-import OutlinedWindowRestoreIcon from "@patternfly/react-icons/dist/esm/icons/outlined-window-restore-icon";
 
 import lightspeedLogo from "../assets/lightspeed.svg";
 import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
@@ -155,7 +149,7 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   }));
 
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
-  const [displayMode, setDisplayMode] = useState<ChatbotDisplayMode>(
+  const [displayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.fullscreen,
   );
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
@@ -189,13 +183,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     value: string | number | undefined,
   ) => {
     setSelectedModel(value as string);
-  };
-
-  const onSelectDisplayMode = (
-    _event: React.MouseEvent<Element, MouseEvent> | undefined,
-    value: string | number | undefined,
-  ) => {
-    setDisplayMode(value as ChatbotDisplayMode);
   };
 
   const setCurrentConversation = (
@@ -317,40 +304,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       </DropdownList>
                     </ChatbotHeaderSelectorDropdown>
                   )}
-                  <ChatbotHeaderOptionsDropdown onSelect={onSelectDisplayMode}>
-                    <DropdownGroup label="Display mode">
-                      <DropdownList>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.default}
-                          key="switchDisplayOverlay"
-                          icon={<OutlinedWindowRestoreIcon aria-hidden />}
-                          isSelected={
-                            displayMode === ChatbotDisplayMode.default
-                          }
-                        >
-                          <span>Overlay</span>
-                        </DropdownItem>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.docked}
-                          key="switchDisplayDock"
-                          icon={<OpenDrawerRightIcon aria-hidden />}
-                          isSelected={displayMode === ChatbotDisplayMode.docked}
-                        >
-                          <span>Dock to window</span>
-                        </DropdownItem>
-                        <DropdownItem
-                          value={ChatbotDisplayMode.fullscreen}
-                          key="switchDisplayFullscreen"
-                          icon={<ExpandIcon aria-hidden />}
-                          isSelected={
-                            displayMode === ChatbotDisplayMode.fullscreen
-                          }
-                        >
-                          <span>Fullscreen</span>
-                        </DropdownItem>
-                      </DropdownList>
-                    </DropdownGroup>
-                  </ChatbotHeaderOptionsDropdown>
                 </ChatbotHeaderActions>
               </ChatbotHeader>
               {alertMessage && (
