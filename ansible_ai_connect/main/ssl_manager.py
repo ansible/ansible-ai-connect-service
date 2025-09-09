@@ -23,23 +23,16 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-class InfrastructureSSLManager:
+class SSLManager:
     """Infrastructure-aware SSL manager that leverages Kubernetes/OpenShift SSL configuration.
-
     This manager delegates SSL configuration to the infrastructure layer, using
     environment variables and mounted CA bundles provided by the operator.
     This approach eliminates application-level SSL complexity and follows
     cloud-native best practices.
-
     Features:
     - Infrastructure-first approach using operator-provided CA bundles
-    - No temporary file management (handled by infrastructure)
-    - No complex singleton patterns (stateless design)
+    - No temporary file management
     - Environment variable driven configuration
-    - Graceful fallback to defaults
-
-    Addresses PR #1756 reviewer concerns about fragmented SSL configuration
-    by providing a single, centralized SSL configuration at the service level.
     """
 
     def __init__(self):
@@ -59,14 +52,12 @@ class InfrastructureSSLManager:
 
     def _get_ca_bundle_path(self) -> Optional[str]:
         """Get the best available CA bundle path with prioritized fallback.
-
         Priority order:
         1. Infrastructure-provided combined bundle (operator creates this)
         2. REQUESTS_CA_BUNDLE environment variable
         3. Service CA from environment
         4. Legacy service CA from settings
         5. None (use system defaults)
-
         Returns:
             Path to CA bundle file or None for system defaults
         """
@@ -98,13 +89,10 @@ class InfrastructureSSLManager:
 
     def get_requests_session(self, verify_ssl: bool = True) -> requests.Session:
         """Get requests session with infrastructure-managed SSL configuration.
-
         Args:
             verify_ssl: Whether SSL verification should be enabled
-
         Returns:
             Configured requests session with proper SSL settings
-
         Raises:
             requests.exceptions.RequestException: If session configuration fails
         """
@@ -133,13 +121,10 @@ class InfrastructureSSLManager:
 
     def get_ssl_context(self, verify_ssl: bool = True) -> Optional[ssl.SSLContext]:
         """Get SSL context for aiohttp with infrastructure-managed certificates.
-
         Args:
             verify_ssl: Whether SSL verification should be enabled
-
         Returns:
             SSLContext configured with CA bundle, or None if verification disabled
-
         Raises:
             ssl.SSLError: If SSL context creation fails
         """
@@ -164,7 +149,6 @@ class InfrastructureSSLManager:
 
     def get_ca_info(self) -> dict:
         """Get information about the current CA configuration.
-
         Returns:
             Dictionary with CA configuration details for debugging
         """
@@ -182,5 +166,5 @@ class InfrastructureSSLManager:
         }
 
 
-# Global instance - simpler than singleton, stateless design
-ssl_manager = InfrastructureSSLManager()
+# Global instance
+ssl_manager = SSLManager()
