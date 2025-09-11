@@ -48,6 +48,7 @@ The text version of the report is shown on the console,
 while the HTML version and the `lcov.info` file are saved
 in the `coverage` sub-directory.
 
+
 ## Test Chatbot in Local environment
 
 **Chatbot is enabled when all of

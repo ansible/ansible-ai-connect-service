@@ -10,6 +10,7 @@ import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
 import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
   ChatbotHeaderActions,
+  ChatbotHeaderNewChatButton,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
 import "./AnsibleChatbot.scss";
@@ -233,6 +234,10 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                       />
                     )}
                   </ChatbotHeaderActions>
+                  <ChatbotHeaderNewChatButton
+                    data-testid="header-new-chat-button"
+                    onClick={() => setCurrentConversation(undefined, [])}
+                  />
                 </ChatbotHeaderMain>
               </ChatbotHeader>
               {alertMessage && (
