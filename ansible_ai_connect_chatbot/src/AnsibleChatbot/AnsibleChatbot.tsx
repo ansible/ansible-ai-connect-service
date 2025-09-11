@@ -17,8 +17,9 @@ import MessageBar from "@patternfly/chatbot/dist/dynamic/MessageBar";
 import MessageBox from "@patternfly/chatbot/dist/dynamic/MessageBox";
 import Message from "@patternfly/chatbot/dist/dynamic/Message";
 import ChatbotHeader, {
-  ChatbotHeaderTitle,
   ChatbotHeaderActions,
+  ChatbotHeaderNewChatButton,
+  ChatbotHeaderTitle,
 } from "@patternfly/chatbot/dist/dynamic/ChatbotHeader";
 
 import lightspeedLogo from "../assets/lightspeed.svg";
@@ -277,6 +278,10 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       />
                     )}
                   </ChatbotHeaderActions>
+                  <ChatbotHeaderNewChatButton
+                    data-testid="header-new-chat-button"
+                    onClick={() => setCurrentConversation(undefined, [])}
+                  />
                   <ChatbotHeaderTitle>
                     <Bullseye>
                       <div className="show-light">

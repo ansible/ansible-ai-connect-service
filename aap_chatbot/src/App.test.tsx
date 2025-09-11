@@ -398,7 +398,7 @@ test("Basic chatbot interaction", async () => {
   assert(copiedString.includes("Create variables"));
   assert(copiedString.includes("https://"));
 
-  await page.getByLabelText("Toggle menu").click();
+  await page.getByLabelText("Chat history menu").click();
   const newChatButton = page
     .getByText("New chat")
     .element() as HTMLButtonElement;
@@ -426,9 +426,33 @@ test("Basic chatbot interaction", async () => {
     .toBeVisible();
   await expect.element(view.getByText("Create variables")).toBeVisible();
 
-  await page.getByLabelText("Toggle menu").click();
+  const newChatIcon = page.getByTestId("header-new-chat-button");
+  await newChatIcon.click();
 
-  const filterHistory = page.getByLabelText("Filter menu items");
+  await expect
+    .element(
+      page.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    )
+    .not.toBeInTheDocument();
+  await expect
+    .element(view.getByText("Create variables"))
+    .not.toBeInTheDocument();
+
+  await sendMessage("Tell me about Ansible.");
+  await expect
+    .element(
+      view.getByText(
+        "In Ansible, the precedence of variables is determined by the order...",
+      ),
+    )
+    .toBeVisible();
+  await expect.element(view.getByText("Create variables")).toBeVisible();
+
+  await page.getByLabelText("Chat history menu").click();
+
+  const filterHistory = page.getByLabelText("Search previous conversations");
   await expect.element(filterHistory).toBeVisible();
 
   await filterHistory.fill("Some non-existent string");
