@@ -28,6 +28,8 @@ anyio==4.6.2.post1
     # via
     #   httpx
     #   llama-stack-client
+appnope==0.1.4
+    # via ipython
 argparse==1.4.0
     # via uwsgi-readiness-check
 asgiref==3.8.1
@@ -183,8 +185,6 @@ google-auth-httplib2==0.2.0
     # via google-api-python-client
 googleapis-common-protos==1.63.2
     # via google-api-core
-greenlet==3.0.3
-    # via sqlalchemy
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9
@@ -577,8 +577,5 @@ zope-interface==7.2
 zstandard==0.23.0
     # via langsmith
 
-setuptools==78.1.1
-    # via -r requirements.in
-
-# The following packages are considered to be unsafe in a requirements file:
+ # The following packages are considered to be unsafe in a requirements file:
 # setuptools
