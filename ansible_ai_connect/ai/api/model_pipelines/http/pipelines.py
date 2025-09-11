@@ -180,6 +180,20 @@ class HttpChatBotMetaData(HttpMetaData):
             )
         return summary
 
+    def _safe_parse_error_detail(self, response_text: str) -> str:
+        """
+        Safely parse error detail from response text.
+        If JSON parsing fails, return the raw text or a default message.
+        """
+        if not response_text:
+            return "No error details available"
+        try:
+            parsed = json.loads(response_text)
+            return parsed.get("detail", response_text)
+        except (json.JSONDecodeError, TypeError):
+            # Return raw text if JSON parsing fails, but limit length for safety
+            return response_text[:500] if len(response_text) <= 500 else response_text[:500] + "..."
+
 
 @Register(api_type="http")
 class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfiguration]):
@@ -230,19 +244,19 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             return data
 
         elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotUnauthorizedException(detail=detail)
         elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotForbiddenException(detail=detail)
         elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotPromptTooLongException(detail=detail)
         elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotValidationException(detail=detail)
         else:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotInternalServerException(detail=detail)
 
 
