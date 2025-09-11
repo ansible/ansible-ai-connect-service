@@ -106,7 +106,7 @@ diff-match-patch==20230430
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
-django==4.2.22
+django==4.2.24
     # via
     #   -r requirements.in
     #   django-allow-cidr
@@ -576,6 +576,9 @@ zope-interface==7.2
     # via twisted
 zstandard==0.23.0
     # via langsmith
+
+setuptools==78.1.1
+    # via -r requirements.in
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
