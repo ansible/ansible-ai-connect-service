@@ -26,6 +26,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_dummy import (
 
 class TestWCADummy(TestCase):
     def test_role_generation(self):
+        self.maxDiff = None
         config = mock_pipeline_config("wca-dummy")
         model_client = WCADummyRoleGenerationPipeline(config)
         response = model_client.invoke(
@@ -35,13 +36,17 @@ class TestWCADummy(TestCase):
             {
                 "path": "tasks/main.yml",
                 "file_type": "task",
-                "content": "---\n- name: Install the Nginx packages\n"
-                "  ansible.builtin.package:\n"
-                '    name: "{{ install_nginx_packages }}"\n    state: present\n'
-                "  become: true\n- name: Start the service\n"
-                "  ansible.builtin.service:\n"
-                "    name: nginx\n    enabled: true\n"
-                "    state: started\n    become: true\n",
+                "content": "- name: Install the Nginx packages\n"
+                "  package:\n"
+                '    name: "{{ install_nginx_packages }}"\n'
+                "    state: present\n"
+                "  become: true\n"
+                "- name: Start the service\n"
+                "  service:\n"
+                "    name: nginx\n"
+                "    enabled: true\n"
+                "    state: started\n"
+                "    become: true",
             },
             {
                 "path": "defaults/main.yml",

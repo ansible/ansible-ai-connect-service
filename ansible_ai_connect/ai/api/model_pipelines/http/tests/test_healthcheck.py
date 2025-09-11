@@ -36,7 +36,7 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import Mock
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("http"))
 class TestModelPipelineFactory(TestModelPipelineHealthCheck):
 
-    @mock.patch("requests.get", return_value=MockResponse(None, 200))
+    @mock.patch("requests.Session.get", return_value=MockResponse(None, 200))
     def test_completions_healthcheck(self, *args, **kwargs):
         self.assert_ok(ModelPipelineCompletions, "http")
 
