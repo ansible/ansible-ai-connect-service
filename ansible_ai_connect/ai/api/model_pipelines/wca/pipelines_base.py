@@ -72,6 +72,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     Context,
     InferenceResponseChecks,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -202,7 +203,14 @@ class WCABaseMetaData(
 
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
-        self.session = requests.Session()
+        # Use centralized SSL manager for all WCA requests
+        try:
+            self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"WCA Pipeline: Failed to initialize SSL session: {e}")
+            # Fallback to basic session without SSL customization
+            self.session = requests.Session()
+
         self.retries = self.config.retry_count
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None

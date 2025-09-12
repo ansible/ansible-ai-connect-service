@@ -57,6 +57,7 @@ from ansible_ai_connect.healthcheck.backends import (
     HealthCheckSummary,
     HealthCheckSummaryException,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,14 @@ class HttpMetaData(MetaData[HttpConfiguration]):
 
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
-        self.session = requests.Session()
+        # Use centralized SSL manager for all HTTP requests
+        try:
+            self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HTTP Pipeline: Failed to initialize SSL session: {e}")
+            # Fallback to basic session without SSL customization
+            self.session = requests.Session()
+
         self.headers = {"Content-Type": "application/json"}
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
@@ -97,9 +105,7 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.config.verify_ssl,
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -117,11 +123,9 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(
+            res = self.session.get(
                 url,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.config.verify_ssl,
                 timeout=1,
             )
             res.raise_for_status()
@@ -155,9 +159,7 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
+                verify=self.config.verify_ssl,
             )
             r.raise_for_status()
 
@@ -177,6 +179,20 @@ class HttpChatBotMetaData(HttpMetaData):
                 HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
             )
         return summary
+
+    def _safe_parse_error_detail(self, response_text: str) -> str:
+        """
+        Safely parse error detail from response text.
+        If JSON parsing fails, return the raw text or a default message.
+        """
+        if not response_text:
+            return "No error details available"
+        try:
+            parsed = json.loads(response_text)
+            return parsed.get("detail", response_text)
+        except (json.JSONDecodeError, TypeError):
+            # Return raw text if JSON parsing fails, but limit length for safety
+            return response_text[:500] if len(response_text) <= 500 else response_text[:500] + "..."
 
 
 @Register(api_type="http")
@@ -209,12 +225,12 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         if params.mcp_headers:
             headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
 
-        response = requests.post(
+        response = self.session.post(
             self.config.inference_url + "/v1/query",
             headers=self.headers,
             json=data,
             timeout=self.task_gen_timeout(1),
-            verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
+            verify=self.config.verify_ssl,
         )
 
         if response.status_code == 200:
@@ -228,19 +244,19 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             return data
 
         elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotUnauthorizedException(detail=detail)
         elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotForbiddenException(detail=detail)
         elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotPromptTooLongException(detail=detail)
         elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotValidationException(detail=detail)
         else:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotInternalServerException(detail=detail)
 
 
@@ -277,12 +293,18 @@ class HttpStreamingChatBotPipeline(
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        # Configure SSL context based on verify_ssl setting
-        if self.config.ca_cert_file:
-            ssl_context = ssl.create_default_context(cafile=self.config.ca_cert_file)
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-        else:
-            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
+        # Use centralized SSL manager for async requests - consistent with sync sessions
+        try:
+            ssl_context = ssl_manager.get_ssl_context(verify_ssl=self.config.verify_ssl)
+            if ssl_context is not None:
+                connector = aiohttp.TCPConnector(ssl=ssl_context)
+            else:
+                # When SSL verification is disabled, use ssl=False
+                connector = aiohttp.TCPConnector(ssl=False)
+        except ssl.SSLError as e:
+            logger.error(f"HTTP Streaming Pipeline: Failed to create SSL context: {e}")
+            # Fallback to no SSL verification for this request
+            connector = aiohttp.TCPConnector(ssl=False)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {
