@@ -16,6 +16,8 @@ from unittest import mock
 
 from django.test import override_settings
 
+from ansible_ai_connect.main import ssl_manager
+
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
     ModelPipelineCompletions,
@@ -55,10 +57,16 @@ class TestModelPipelineFactory(TestModelPipelineHealthCheck):
     def test_role_explanation_healthcheck(self):
         self.assert_skipped(ModelPipelineRoleExplanation, "nop")
 
-    @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
-    def test_chatbot_healthcheck(self, *args, **kwargs):
+    @mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+    def test_chatbot_healthcheck(self, mock_session_factory):
+        mock_session = mock.Mock()
+        mock_session.get.return_value = MockResponse({"ready": True}, 200)
+        mock_session_factory.return_value = mock_session
         self.assert_ok(ModelPipelineChatBot, "http")
 
-    @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
-    def test_streaming_chatbot_healthcheck(self, *args, **kwargs):
+    @mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+    def test_streaming_chatbot_healthcheck(self, mock_session_factory):
+        mock_session = mock.Mock()
+        mock_session.get.return_value = MockResponse({"ready": True}, 200)
+        mock_session_factory.return_value = mock_session
         self.assert_ok(ModelPipelineStreamingChatBot, "http")
