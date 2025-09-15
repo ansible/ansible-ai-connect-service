@@ -26,8 +26,6 @@ from django.contrib.auth import get_user_model
 from django.http import StreamingHttpResponse
 from django.test import override_settings
 
-from ansible_ai_connect.main import ssl_manager
-
 from ansible_ai_connect.ai.api.exceptions import (
     ChatbotForbiddenException,
     ChatbotInternalServerException,
@@ -42,6 +40,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
+from ansible_ai_connect.main import ssl_manager
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,

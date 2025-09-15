@@ -16,8 +16,6 @@ from unittest import mock
 
 from django.test import override_settings
 
-from ansible_ai_connect.main import ssl_manager
-
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     ModelPipelineChatBot,
     ModelPipelineCompletions,
@@ -33,6 +31,7 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
     TestModelPipelineHealthCheck,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import MockResponse
+from ansible_ai_connect.main import ssl_manager
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("http"))
