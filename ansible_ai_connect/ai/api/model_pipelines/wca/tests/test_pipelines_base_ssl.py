@@ -85,28 +85,21 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         self.assertIsNotNone(metadata)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
-    def test_ssl_manager_session_fallback_on_error(self, mock_ssl_manager):
-        """Test that WCAOnPremMetaData falls back to basic session on SSL manager error."""
+    def test_ssl_manager_session_graceful_handling(self, mock_ssl_manager):
+        """Test that WCAOnPremMetaData uses SSL manager session
+        (SSL manager handles errors internally)."""
         config = self._create_mock_config(verify_ssl=True)
 
-        # Mock SSL manager to raise an exception
-        mock_ssl_manager.get_requests_session.side_effect = requests.exceptions.RequestException(
-            "SSL configuration failed"
-        )
-
-        with patch(
-            "ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.requests.Session"
-        ) as mock_session_class:
-            mock_basic_session = Mock()
-            mock_session_class.return_value = mock_basic_session
-            # Create metadata instance
-            metadata = WCAOnPremMetaData(config)
-            # Verify SSL manager was called
-            mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=True)
-            # Verify fallback session was created and used
-            mock_session_class.assert_called_once()
-            self.assertEqual(metadata.session, mock_basic_session)
-            self.assertIsNotNone(metadata)
+        # Mock SSL manager to return a session even when encountering internal errors
+        mock_session = Mock(spec=requests.Session)
+        mock_ssl_manager.get_requests_session.return_value = mock_session
+        # Create metadata instance
+        metadata = WCAOnPremMetaData(config)
+        # Verify SSL manager was called
+        mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=True)
+        # Verify the session from SSL manager is used
+        self.assertEqual(metadata.session, mock_session)
+        self.assertIsNotNone(metadata)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
     def test_ssl_manager_preserves_config_attributes(self, mock_ssl_manager):

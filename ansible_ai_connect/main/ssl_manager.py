@@ -92,9 +92,8 @@ class SSLManager:
         Args:
             verify_ssl: Whether SSL verification should be enabled
         Returns:
-            Configured requests session with proper SSL settings
-        Raises:
-            requests.exceptions.RequestException: If session configuration fails
+            Configured requests session with proper SSL settings.
+            Falls back to system defaults if custom CA bundles are not accessible.
         """
         session = requests.Session()
 
@@ -102,17 +101,29 @@ class SSLManager:
             try:
                 ca_bundle_path = self._get_ca_bundle_path()
                 if ca_bundle_path:
-                    session.verify = ca_bundle_path
-                    logger.debug(
-                        "SSL Manager: Session configured with CA bundle: %s", ca_bundle_path
-                    )
+                    # Verify the CA bundle file is readable before using it
+                    if os.path.exists(ca_bundle_path) and os.access(ca_bundle_path, os.R_OK):
+                        session.verify = ca_bundle_path
+                        logger.debug(
+                            "SSL Manager: Session configured with CA bundle: %s", ca_bundle_path
+                        )
+                    else:
+                        logger.warning(
+                            "SSL Manager: CA bundle not accessible: %s,"
+                            + " falling back to system defaults",
+                            ca_bundle_path,
+                        )
+                        # session.verify defaults to True, which uses system CAs
                 else:
                     logger.debug("SSL Manager: Session using system default CA verification")
                     # session.verify defaults to True, which uses system CAs
 
-            except Exception as e:
-                logger.error("SSL Manager: Failed to configure SSL for requests session: %s", e)
-                raise requests.exceptions.RequestException(f"SSL configuration failed: {e}")
+            except (OSError, AttributeError) as e:
+                logger.warning(
+                    "SSL Manager: SSL configuration issue (non-fatal): %s, using system defaults", e
+                )
+                # Don't raise exception, just fall back to system defaults
+                # session.verify defaults to True
         else:
             session.verify = False
             logger.debug("SSL Manager: SSL verification disabled")

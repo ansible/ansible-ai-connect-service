@@ -59,6 +59,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
+from ansible_ai_connect.main import ssl_manager
 from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 from ansible_ai_connect.test_utils import (
     WisdomAppsBackendMocking,
@@ -174,6 +175,22 @@ class BaseTestHealthCheck(WisdomAppsBackendMocking, APITestCase, WisdomServiceLo
 
 
 class TestHealthCheck(BaseTestHealthCheck):
+
+    def setUp(self):
+        super().setUp()
+        self.session_patcher = patch.object(ssl_manager.ssl_manager, "get_requests_session")
+        self.mock_session_factory = self.session_patcher.start()
+
+        # Create a mock session that behaves like requests
+        self.mock_session = Mock()
+        self.mock_session_factory.return_value = self.mock_session
+
+        # Maintain backward compatibility with existing test methods
+        self.mock_requests = self.mock_session
+
+    def tearDown(self):
+        super().tearDown()
+        self.session_patcher.stop()
 
     def test_liveness_probe(self):
         with patch.object(
@@ -426,14 +443,14 @@ class TestHealthCheck(BaseTestHealthCheck):
             for dependency in dependencies:
                 self.assertTrue(self.is_status_ok(dependency["status"], "http"))
 
-    @mock.patch(
-        "requests.get",
-        side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
-            content=b'{ "ready": false, "reason": "index is not ready" }'
-        ),
-    )
-    def test_health_check_chatbot_service_index_not_ready(self, mock_get):
+    def test_health_check_chatbot_service_index_not_ready(self):
         cache.clear()
+        self.mock_session.get.side_effect = (
+            lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
+                content=b'{ "ready": false, "reason": "index is not ready" }'
+            )
+        )
+
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -460,14 +477,14 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: index is not ready"},
                 )
 
-    @mock.patch(
-        "requests.get",
-        side_effect=lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
-            content=b'{ "ready": false, "reason": "llm is not ready" }'
-        ),
-    )
-    def test_health_check_chatbot_service_llm_not_ready(self, mock_get):
+    def test_health_check_chatbot_service_llm_not_ready(self):
         cache.clear()
+        self.mock_session.get.side_effect = (
+            lambda *args, **kwargs: BaseTestHealthCheck.mocked_requests_succeed(
+                content=b'{ "ready": false, "reason": "llm is not ready" }'
+            )
+        )
+
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -494,12 +511,10 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: llm is not ready"},
                 )
 
-    @mock.patch(
-        "requests.get",
-        side_effect=HTTPError,
-    )
-    def test_health_check_chatbot_service_error(self, mock_get):
+    def test_health_check_chatbot_service_error(self):
         cache.clear()
+        self.mock_session.get.side_effect = HTTPError
+
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -526,12 +541,10 @@ class TestHealthCheck(BaseTestHealthCheck):
                     {"provider": "http", "models": "unavailable: An error occurred"},
                 )
 
-    @mock.patch(
-        "requests.get",
-        side_effect=BaseTestHealthCheck.mocked_requests_failed,
-    )
-    def test_health_check_chatbot_service_non_200_response(self, mock_get):
+    def test_health_check_chatbot_service_non_200_response(self):
         cache.clear()
+        self.mock_session.get.side_effect = BaseTestHealthCheck.mocked_requests_failed
+
         with patch.object(
             apps.get_app_config("ai"),
             "get_model_pipeline",
@@ -594,12 +607,19 @@ class TestHealthCheckHttpClient(BaseTestHealthCheck):
 
     def setUp(self):
         super().setUp()
-        self.requests_patcher = patch("requests.get")
-        self.mock_requests = self.requests_patcher.start()
+        self.session_patcher = patch.object(ssl_manager.ssl_manager, "get_requests_session")
+        self.mock_session_factory = self.session_patcher.start()
+
+        # Create a mock session that behaves like requests
+        self.mock_session = Mock()
+        self.mock_session_factory.return_value = self.mock_session
+
+        # Maintain backward compatibility with existing test methods
+        self.mock_requests = self.mock_session
 
     def tearDown(self):
         super().tearDown()
-        self.requests_patcher.stop()
+        self.session_patcher.stop()
 
     def test_health_check_model_mesh_http(self):
         cache.clear()
@@ -622,7 +642,7 @@ class TestHealthCheckHttpClient(BaseTestHealthCheck):
 
     def test_health_check_model_mesh_http_error(self):
         cache.clear()
-        self.mock_requests.side_effect = TestHealthCheckHttpClient.mocked_requests_http_fail
+        self.mock_requests.get.side_effect = TestHealthCheckHttpClient.mocked_requests_http_fail
 
         with self.assertLogs(logger="root", level="ERROR") as log:
             with patch.object(

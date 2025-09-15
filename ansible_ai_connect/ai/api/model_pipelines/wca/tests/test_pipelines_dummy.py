@@ -36,17 +36,18 @@ class TestWCADummy(TestCase):
             {
                 "path": "tasks/main.yml",
                 "file_type": "task",
-                "content": "- name: Install the Nginx packages\n"
-                "  package:\n"
+                "content": "---\n"
+                "- name: Install the Nginx packages\n"
+                "  ansible.builtin.package:\n"
                 '    name: "{{ install_nginx_packages }}"\n'
                 "    state: present\n"
                 "  become: true\n"
                 "- name: Start the service\n"
-                "  service:\n"
+                "  ansible.builtin.service:\n"
                 "    name: nginx\n"
                 "    enabled: true\n"
                 "    state: started\n"
-                "    become: true",
+                "    become: true\n",
             },
             {
                 "path": "defaults/main.yml",

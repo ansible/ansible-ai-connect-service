@@ -68,12 +68,7 @@ class HttpMetaData(MetaData[HttpConfiguration]):
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
         # Use centralized SSL manager for all HTTP requests
-        try:
-            self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"HTTP Pipeline: Failed to initialize SSL session: {e}")
-            # Fallback to basic session without SSL customization
-            self.session = requests.Session()
+        self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
 
         self.headers = {"Content-Type": "application/json"}
         i = self.config.timeout
@@ -155,7 +150,7 @@ class HttpChatBotMetaData(HttpMetaData):
         )
         try:
             headers = {"Content-Type": "application/json"}
-            r = requests.get(
+            r = self.session.get(
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
