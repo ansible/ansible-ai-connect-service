@@ -123,7 +123,6 @@ class WCASaaSMetaData(WCABaseMetaData[WCASaaSConfiguration]):
                 headers=headers,
                 data=data,
                 auth=basic,
-                verify=self.config.verify_ssl,
             )
 
         try:

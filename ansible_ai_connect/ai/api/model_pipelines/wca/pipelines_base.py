@@ -399,7 +399,6 @@ class WCABaseCompletionsPipeline(
                 headers=headers,
                 json=data,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.verify_ssl,
             )
 
         try:
@@ -473,7 +472,6 @@ class WCABaseContentMatchPipeline(
                     headers=headers,
                     json=data,
                     timeout=self.task_gen_timeout(suggestion_count),
-                    verify=self.config.verify_ssl,
                 )
 
             result: requests.Response = post_request()
@@ -552,7 +550,6 @@ class WCABasePlaybookGenerationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -640,7 +637,6 @@ class WCABaseRoleGenerationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -728,7 +724,6 @@ class WCABasePlaybookExplanationPipeline(
                 f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -794,7 +789,6 @@ class WCABaseRoleExplanationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()

@@ -100,7 +100,6 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.verify_ssl,
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -120,7 +119,6 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
         try:
             res = self.session.get(
                 url,
-                verify=self.config.verify_ssl,
                 timeout=1,
             )
             res.raise_for_status()
@@ -154,7 +152,6 @@ class HttpChatBotMetaData(HttpMetaData):
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=self.config.verify_ssl,
             )
             r.raise_for_status()
 
@@ -222,10 +219,9 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
 
         response = self.session.post(
             self.config.inference_url + "/v1/query",
-            headers=self.headers,
+            headers=headers,
             json=data,
             timeout=self.task_gen_timeout(1),
-            verify=self.config.verify_ssl,
         )
 
         if response.status_code == 200:

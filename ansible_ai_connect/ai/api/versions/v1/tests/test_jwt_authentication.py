@@ -8,7 +8,6 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import jwt
-import requests
 from ansible_base.rbac.claims import get_claims_hash
 from ansible_base.resource_registry.models.service_identifier import service_id
 from cryptography.hazmat.backends import default_backend
@@ -21,8 +20,15 @@ from rest_framework.test import APITransactionTestCase
 from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.ai.api.versions.v1.test_base import API_VERSION
+from ansible_ai_connect.main import ssl_manager
 from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 from ansible_ai_connect.users.models import User
+
+_mock_session = mock.Mock()
+_ssl_manager_patcher = mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+_mock_session_factory = _ssl_manager_patcher.start()
+_mock_session_factory.return_value = _mock_session
+
 
 # Generate public and private keys for testing
 private_key = rsa.generate_private_key(
@@ -79,6 +85,7 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
 
     def setUp(self):
         super().setUp()
+        self.mock_session = _mock_session
         self.username = "u" + "".join(random.choices(string.digits, k=5))
         self.email = "user@example.com"
         self.user_id = str(uuid.uuid4())
@@ -120,8 +127,7 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
         self.assertTrue(response.wsgi_request.user.aap_user)
 
     @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
-    @mock.patch.object(requests, "post")
-    def test_chat_authentication(self, mock_requests_post):
+    def test_chat_authentication(self):
 
         class MockRequestsResponse:
             def __init__(self, json_data, status_code):
@@ -138,7 +144,8 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
             "truncated": False,
             "referenced_documents": [],
         }
-        mock_requests_post.return_value = MockRequestsResponse(
+
+        self.mock_session.post.return_value = MockRequestsResponse(
             expected_response,
             HTTPStatus.OK,
         )
@@ -147,8 +154,8 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
             self.api_version_reverse("chat"), {"query": "Hello"}, format="json"
         )
 
-        mock_requests_post.assert_called_once()
-        _, kwargs = mock_requests_post.call_args
+        self.mock_session.post.assert_called_once()
+        _, kwargs = self.mock_session.post.call_args
 
         headers = kwargs.get("headers", None)
         self.assertIsNotNone(headers)

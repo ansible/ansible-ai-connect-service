@@ -343,7 +343,6 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
                 "create_outline": True,
                 "custom_prompt": "You are an Ansible expert\n",
             },
-            verify=ANY,
         )
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
@@ -366,7 +365,6 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
                 "create_outline": True,
                 "custom_prompt": "You are an Ansible expert\n",
             },
-            verify=ANY,
         )
 
     @assert_call_count_metrics(metric=wca_codegen_playbook_hist)
@@ -591,7 +589,6 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
                 "playbook": "Some playbook",
                 "custom_prompt": "Explain this\n",
             },
-            verify=ANY,
         )
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
@@ -610,7 +607,6 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
                 "playbook": "Some playbook",
                 "custom_prompt": "Explain this\n",
             },
-            verify=ANY,
         )
 
     @assert_call_count_metrics(metric=wca_explain_playbook_hist)
@@ -737,7 +733,6 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=headers,
             data=data,
             auth=None,
-            verify=True,
         )
 
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
@@ -756,7 +751,6 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=ANY,
             data=ANY,
             auth=basic,
-            verify=True,
         )
 
     @assert_call_count_metrics(metric=ibm_cloud_identity_token_hist)
@@ -869,7 +863,6 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             headers=requestHeaders,
             json=codegen_data,
             timeout=None,
-            verify=True,
         )
         self.assertEqual(result, predictions)
 
@@ -1252,7 +1245,6 @@ class TestWCACodematch(WisdomServiceLogAwareTestCase):
             headers=headers,
             json=data,
             timeout=None,
-            verify=True,
         )
         self.assertEqual(result, client_response)
 
@@ -1500,7 +1492,6 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
             headers=self.request_headers,
             json=self.codegen_data,
             timeout=None,
-            verify=True,
         )
 
     def test_disabled_model_server_ssl(self):
@@ -1518,7 +1509,6 @@ class TestWCAOnPremCodegen(WisdomServiceLogAwareTestCase):
             headers=self.request_headers,
             json=self.codegen_data,
             timeout=None,
-            verify=False,
         )
 
 
@@ -1818,5 +1808,4 @@ class TestWCAOnPremCodematch(WisdomServiceLogAwareTestCase):
             headers=request_headers,
             json=data,
             timeout=None,
-            verify=True,
         )
