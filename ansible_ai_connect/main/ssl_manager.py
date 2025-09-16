@@ -108,7 +108,8 @@ class SSLManager:
         if not verify_ssl:
             session.verify = False
             logger.warning(
-                "SSL Manager: SSL verification disabled - not recommended for production"
+                "SSL Manager: SSL verification DISABLED for requests session - "
+                "SECURITY RISK in production environments. Only use in development/testing."
             )
             return session
 

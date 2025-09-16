@@ -283,24 +283,35 @@ class HttpStreamingChatBotPipeline(
 
     def _get_aiohttp_connector(self, verify_ssl: bool = True) -> aiohttp.TCPConnector:
         """Create aiohttp connector with proper SSL configuration.
-        - verify_ssl=True: SSL manager returns SSLContext or raises ssl.SSLError
-        - verify_ssl=False: SSL manager returns None by design
-        - ssl=None is valid for aiohttp.TCPConnector (uses default SSL behavior)
-        - ssl=False would disable SSL completely (security vulnerability)
-        - SSL manager return type is Optional[ssl.SSLContext] (None is expected)
-        - Raising ValueError for documented None return would break API contract
+        - aiohttp.TCPConnector does NOT accept ssl=None
+        - ssl=True: Uses system default SSL verification (SECURE)
+        - ssl=False: Disables SSL verification completely (INSECURE needed for dev/test)
+        - ssl=SSLContext: Uses custom SSL context (SECURE with custom CAs)
         Args:
             verify_ssl: Whether SSL verification should be enabled
         Returns:
-            TCPConnector with proper SSL settings:
-            - ssl=SSLContext: Uses provided context (verify_ssl=True)
-            - ssl=None: Uses default SSL behavior (verify_ssl=False)
+            TCPConnector with consistent SSL behavior:
+            - verify_ssl=True + custom context: ssl=SSLContext (infrastructure CA bundle)
+            - verify_ssl=True + no context: ssl=True (system default CAs)
+            - verify_ssl=False: ssl=False (DISABLED - consistent with requests.Session)
         Raises:
             ssl.SSLError: If SSL context creation fails when verify_ssl=True
         """
-        ssl_context = ssl_manager.get_ssl_context(verify_ssl=verify_ssl)
+        if not verify_ssl:
+            # SECURITY NOTE: This disables SSL verification
+            # should only be used in development/testing
+            # This matches requests.Session.verify=False behavior for consistency
+            return aiohttp.TCPConnector(ssl=False)
 
-        return aiohttp.TCPConnector(ssl=ssl_context)
+        # Get SSL context from centralized SSL manager
+        ssl_context = ssl_manager.get_ssl_context(verify_ssl=True)
+
+        if ssl_context is not None:
+            # Use custom SSL context from SSL manager (infrastructure CA bundle)
+            return aiohttp.TCPConnector(ssl=ssl_context)
+        else:
+            # Use system default SSL verification (fallback when no custom CA bundle)
+            return aiohttp.TCPConnector(ssl=True)
 
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 

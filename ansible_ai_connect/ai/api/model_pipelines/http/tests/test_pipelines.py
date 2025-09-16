@@ -215,7 +215,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
     async def test_ssl_context_verify_ssl_false(self, mock_tcp_connector, mock_post):
-        """Test that SSL context uses secure default behavior when verify_ssl=False"""
+        """Test that SSL verification is consistently disabled (ssl=False) when verify_ssl=False"""
         # Setup pipeline with verify_ssl=False
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=False))
         pipeline = HttpStreamingChatBotPipeline(config)
@@ -228,8 +228,8 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # ssl=None uses default SSL behavior, ssl=False would disable SSL completely (security risk)
-        mock_tcp_connector.assert_called_once_with(ssl=None)
+        # This provides consistent behavior with requests.Session.verify=False
+        mock_tcp_connector.assert_called_once_with(ssl=False)
 
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
@@ -281,7 +281,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         self.assertIsNotNone(call_args)
 
         ssl_param = call_args.kwargs.get("ssl")
-        # When verify_ssl=False, should get ssl=False
+        # This provides consistent behavior with requests.Session.verify=False
         self.assertFalse(ssl_param, "When verify_ssl=False, should get ssl=False")
 
     @patch("aiohttp.ClientSession.post")
@@ -321,9 +321,11 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                         f"When verify_ssl={verify_ssl_value}, should get SSL context",
                     )
                 else:
-                    # When SSL is disabled, we should get False
+                    # verify_ssl=False should disable SSL verification
+                    # This provides consistent behavior with requests.Session.verify=False
                     self.assertFalse(
-                        ssl_param, f"When verify_ssl={verify_ssl_value}, should get ssl=False"
+                        ssl_param,
+                        f"When verify_ssl={verify_ssl_value}, should get ssl=False",
                     )
                 # Reset mocks for next iteration
                 mock_tcp_connector.reset_mock()
