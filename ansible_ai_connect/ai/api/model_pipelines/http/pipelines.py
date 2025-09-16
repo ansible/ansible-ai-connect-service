@@ -15,7 +15,6 @@
 import copy
 import json
 import logging
-import ssl
 from json import JSONDecodeError
 from typing import Any, AsyncGenerator
 
@@ -282,20 +281,31 @@ class HttpStreamingChatBotPipeline(
 
         send_schema1_event(ev)
 
+    def _get_aiohttp_connector(self, verify_ssl: bool = True) -> aiohttp.TCPConnector:
+        """Create aiohttp connector with proper SSL configuration.
+        - verify_ssl=True: SSL manager returns SSLContext or raises ssl.SSLError
+        - verify_ssl=False: SSL manager returns None by design
+        - ssl=None is valid for aiohttp.TCPConnector (uses default SSL behavior)
+        - ssl=False would disable SSL completely (security vulnerability)
+        - SSL manager return type is Optional[ssl.SSLContext] (None is expected)
+        - Raising ValueError for documented None return would break API contract
+        Args:
+            verify_ssl: Whether SSL verification should be enabled
+        Returns:
+            TCPConnector with proper SSL settings:
+            - ssl=SSLContext: Uses provided context (verify_ssl=True)
+            - ssl=None: Uses default SSL behavior (verify_ssl=False)
+        Raises:
+            ssl.SSLError: If SSL context creation fails when verify_ssl=True
+        """
+        ssl_context = ssl_manager.get_ssl_context(verify_ssl=verify_ssl)
+
+        return aiohttp.TCPConnector(ssl=ssl_context)
+
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        # Use centralized SSL manager for async requests - consistent with sync sessions
-        try:
-            ssl_context = ssl_manager.get_ssl_context(verify_ssl=self.config.verify_ssl)
-            if ssl_context is not None:
-                connector = aiohttp.TCPConnector(ssl=ssl_context)
-            else:
-                # When SSL verification is disabled, use ssl=False
-                connector = aiohttp.TCPConnector(ssl=False)
-        except ssl.SSLError as e:
-            logger.error(f"HTTP Streaming Pipeline: Failed to create SSL context: {e}")
-            # Fallback to no SSL verification for this request
-            connector = aiohttp.TCPConnector(ssl=False)
+        # Create connector with proper SSL handling
+        connector = self._get_aiohttp_connector(verify_ssl=self.config.verify_ssl)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {

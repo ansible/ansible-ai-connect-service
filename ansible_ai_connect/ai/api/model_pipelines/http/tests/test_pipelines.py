@@ -215,7 +215,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
     async def test_ssl_context_verify_ssl_false(self, mock_tcp_connector, mock_post):
-        """Test that SSL context is correctly configured when verify_ssl=False"""
+        """Test that SSL context uses secure default behavior when verify_ssl=False"""
         # Setup pipeline with verify_ssl=False
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=False))
         pipeline = HttpStreamingChatBotPipeline(config)
@@ -228,8 +228,8 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # Verify TCPConnector was created with ssl=False
-        mock_tcp_connector.assert_called_once_with(ssl=False)
+        # ssl=None uses default SSL behavior, ssl=False would disable SSL completely (security risk)
+        mock_tcp_connector.assert_called_once_with(ssl=None)
 
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")

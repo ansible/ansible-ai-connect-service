@@ -20,12 +20,8 @@ from django.test import override_settings
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
 )
-from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
-    HttpChatBotPipeline,
-)
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
-    ChatBotParameters,
-)
+from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import HttpChatBotPipeline
+from ansible_ai_connect.ai.api.model_pipelines.pipelines import ChatBotParameters
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.test_utils import WisdomServiceLogAwareTestCase
 
@@ -39,6 +35,7 @@ class MockResponse:
     def raise_for_status(self):
         if self.status_code >= 400:
             from requests.exceptions import HTTPError
+
             raise HTTPError(f"HTTP {self.status_code}")
 
 
@@ -52,10 +49,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         super().setUp()
         # Use HTTPS configuration consistent with SSL/TLS enablement PR
         config = mock_pipeline_config(
-            "http",
-            inference_url="https://example.com:8443",
-            verify_ssl=True,
-            ca_cert_file=None
+            "http", inference_url="https://example.com:8443", verify_ssl=True, ca_cert_file=None
         )
         assert isinstance(config, HttpConfiguration)
         self.config = config
@@ -81,7 +75,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         response_data = {
             "response": "Hello! I'm doing well, thank you.",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
 
         self.pipeline.session.post.return_value = MockResponse(response_data, 200)
@@ -119,21 +113,14 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
     def test_invoke_with_mcp_headers(self):
         """Test that invoke correctly includes MCP headers in the HTTP request"""
         mcp_headers = {
-            "server1": {
-                "type": "stdio",
-                "command": "node",
-                "args": ["server.js"]
-            },
-            "server2": {
-                "type": "http",
-                "url": "http://localhost:3000"
-            }
+            "server1": {"type": "stdio", "command": "node", "args": ["server.js"]},
+            "server2": {"type": "http", "url": "http://localhost:3000"},
         }
 
         response_data = {
             "response": "Hello with MCP!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
 
         self.pipeline.session.post.return_value = MockResponse(response_data, 200)
@@ -162,7 +149,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         response_data = {
             "response": "Hello with empty MCP!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
 
         self.pipeline.session.post.return_value = MockResponse(response_data, 200)
@@ -188,7 +175,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         response_data = {
             "response": "Hello without MCP!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
 
         self.pipeline.session.post.return_value = MockResponse(response_data, 200)
@@ -208,6 +195,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
     def test_invoke_error_response_401(self):
         """Test that invoke handles 401 error responses correctly"""
         from ansible_ai_connect.ai.api.exceptions import ChatbotUnauthorizedException
+
         error_response = {"detail": "Unauthorized access"}
         self.pipeline.session.post.return_value = MockResponse(error_response, 401)
         params = self.get_params()
@@ -229,6 +217,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
     def test_invoke_error_response_422(self):
         """Test that invoke handles 422 validation error responses correctly"""
         from ansible_ai_connect.ai.api.exceptions import ChatbotValidationException
+
         error_response = {"detail": "Validation failed"}
         self.pipeline.session.post.return_value = MockResponse(error_response, 422)
         params = self.get_params()
@@ -252,7 +241,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         # Restore original headers
         self.pipeline.headers = original_headers
 
-    @patch('ansible_ai_connect.main.ssl_manager.ssl_manager.get_requests_session')
+    @patch("ansible_ai_connect.main.ssl_manager.ssl_manager.get_requests_session")
     def test_ssl_manager_integration(self, mock_get_session):
         """Test that the pipeline properly uses SSL manager for session creation"""
         mock_session = Mock()
@@ -278,23 +267,17 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             "http",
             inference_url="https://example.com:8443",
             verify_ssl=False,  # SSL verification disabled
-            ca_cert_file=None
+            ca_cert_file=None,
         )
         assert isinstance(config, HttpConfiguration)
         pipeline = HttpChatBotPipeline(config)
         pipeline.session = Mock()
 
-        mcp_headers = {
-            "server1": {
-                "type": "stdio",
-                "command": "node",
-                "args": ["server.js"]
-            }
-        }
+        mcp_headers = {"server1": {"type": "stdio", "command": "node", "args": ["server.js"]}}
         response_data = {
             "response": "Hello with MCP (SSL disabled)!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
 
         pipeline.session.post.return_value = MockResponse(response_data, 200)
@@ -331,22 +314,19 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             "http",
             inference_url="https://example.com:8443",
             verify_ssl=True,
-            ca_cert_file="/path/to/custom/ca.crt"
+            ca_cert_file="/path/to/custom/ca.crt",
         )
         assert isinstance(config, HttpConfiguration)
         pipeline = HttpChatBotPipeline(config)
         pipeline.session = Mock()
 
         mcp_headers = {
-            "secure_server": {
-                "type": "https",
-                "url": "https://secure-mcp-server.com:8443"
-            }
+            "secure_server": {"type": "https", "url": "https://secure-mcp-server.com:8443"}
         }
         response_data = {
             "response": "Hello with MCP (custom CA)!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
         pipeline.session.post.return_value = MockResponse(response_data, 200)
         params = ChatBotParameters(
@@ -379,11 +359,11 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         response_data = {
             "response": "Hello with no tools!",
             "truncated": False,
-            "referenced_documents": []
+            "referenced_documents": [],
         }
-        
+
         self.pipeline.session.post.return_value = MockResponse(response_data, 200)
-        
+
         params = ChatBotParameters(
             query="Hello, how are you?",
             conversation_id="test-conversation-123",
@@ -393,16 +373,16 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             no_tools=True,  # Set to True
             mcp_headers=None,
         )
-        
+
         result = self.pipeline.invoke(params)
-        
+
         # Verify the response
         self.assertEqual(result["response"], "Hello with no tools!")
-        
+
         # Verify the HTTP call was made with correct parameters
         self.pipeline.session.post.assert_called_once()
         call_args = self.pipeline.session.post.call_args
-        
+
         # Check JSON data - no_tools should be included when True
         json_data = call_args[1]["json"]
         self.assertIn("no_tools", json_data)
