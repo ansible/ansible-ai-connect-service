@@ -27,16 +27,16 @@ the SSL manager requires rigorous testing to ensure security and reliability
 in production environments.
 """
 
+import logging
 import os
 import ssl
 import tempfile
 import unittest
 from unittest.mock import patch
-import logging
 
 import requests
-from django.test import SimpleTestCase
 from django.core.exceptions import ImproperlyConfigured
+from django.test import SimpleTestCase
 
 from ansible_ai_connect.main.ssl_manager import SSLManager, ssl_manager
 
@@ -49,7 +49,7 @@ class TestSSLManagerInitialization(SimpleTestCase):
         # Store original environment
         self.original_env = {
             key: os.environ.get(key)
-            for key in ['COMBINED_CA_BUNDLE_PATH', 'SERVICE_CA_PATH', 'REQUESTS_CA_BUNDLE']
+            for key in ["COMBINED_CA_BUNDLE_PATH", "SERVICE_CA_PATH", "REQUESTS_CA_BUNDLE"]
         }
 
     def tearDown(self):
@@ -70,45 +70,51 @@ class TestSSLManagerInitialization(SimpleTestCase):
         self.assertIsNone(manager.service_ca_path)
         self.assertIsNone(manager.requests_ca_bundle)
 
-    @patch.dict(os.environ, {
-        'COMBINED_CA_BUNDLE_PATH': '/test/combined.pem',
-        'SERVICE_CA_PATH': '/test/service.pem',
-        'REQUESTS_CA_BUNDLE': '/test/requests.pem'
-    }, clear=True)
+    @patch.dict(
+        os.environ,
+        {
+            "COMBINED_CA_BUNDLE_PATH": "/test/combined.pem",
+            "SERVICE_CA_PATH": "/test/service.pem",
+            "REQUESTS_CA_BUNDLE": "/test/requests.pem",
+        },
+        clear=True,
+    )
     def test_initialization_with_all_environment_variables(self):
         """Test SSL manager initialization with all environment variables set."""
         manager = SSLManager()
 
         # Verify all environment variables are correctly loaded
-        self.assertEqual(manager.combined_ca_bundle, '/test/combined.pem')
-        self.assertEqual(manager.service_ca_path, '/test/service.pem')
-        self.assertEqual(manager.requests_ca_bundle, '/test/requests.pem')
+        self.assertEqual(manager.combined_ca_bundle, "/test/combined.pem")
+        self.assertEqual(manager.service_ca_path, "/test/service.pem")
+        self.assertEqual(manager.requests_ca_bundle, "/test/requests.pem")
 
-    @patch.dict(os.environ, {
-        'COMBINED_CA_BUNDLE_PATH': '/kubernetes/combined-ca.pem'
-    }, clear=True)
+    @patch.dict(os.environ, {"COMBINED_CA_BUNDLE_PATH": "/kubernetes/combined-ca.pem"}, clear=True)
     def test_kubernetes_deployment_scenario(self):
         """Test SSL manager in typical Kubernetes deployment scenario."""
         manager = SSLManager()
 
         # Verify Kubernetes-style configuration
-        self.assertEqual(manager.combined_ca_bundle, '/kubernetes/combined-ca.pem')
+        self.assertEqual(manager.combined_ca_bundle, "/kubernetes/combined-ca.pem")
         self.assertIsNone(manager.service_ca_path)
         self.assertIsNone(manager.requests_ca_bundle)
 
-    @patch.dict(os.environ, {
-        'SERVICE_CA_PATH': '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt'
-    }, clear=True)
+    @patch.dict(
+        os.environ,
+        {"SERVICE_CA_PATH": "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"},
+        clear=True,
+    )
     def test_openshift_deployment_scenario(self):
         """Test SSL manager in typical OpenShift deployment scenario."""
         manager = SSLManager()
 
         # Verify OpenShift-style configuration
         self.assertIsNone(manager.combined_ca_bundle)
-        self.assertEqual(manager.service_ca_path, '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt')
+        self.assertEqual(
+            manager.service_ca_path, "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+        )
         self.assertIsNone(manager.requests_ca_bundle)
 
-    @patch('ansible_ai_connect.main.ssl_manager.logger')
+    @patch("ansible_ai_connect.main.ssl_manager.logger")
     def test_initialization_logging(self, mock_logger):
         """Test that SSL manager logs initialization information."""
         SSLManager()
@@ -120,7 +126,7 @@ class TestSSLManagerInitialization(SimpleTestCase):
         expected_debug_calls = [
             unittest.mock.call("SSL Manager: Combined CA bundle: %s", None),
             unittest.mock.call("SSL Manager: Service CA: %s", None),
-            unittest.mock.call("SSL Manager: Requests CA bundle: %s", None)
+            unittest.mock.call("SSL Manager: Requests CA bundle: %s", None),
         ]
         mock_logger.debug.assert_has_calls(expected_debug_calls, any_order=True)
 
@@ -132,7 +138,7 @@ class TestSSLManagerLegacyServiceCAPath(SimpleTestCase):
         """Test legacy service CA path retrieval with Django properly configured."""
         manager = SSLManager()
 
-        # Since Django is already configured in test environment, 
+        # Since Django is already configured in test environment,
         # we can test the actual method behavior
         result = manager._get_legacy_service_ca_path()
         # Should return None or the actual SERVICE_CA_PATH if configured
@@ -143,7 +149,7 @@ class TestSSLManagerLegacyServiceCAPath(SimpleTestCase):
         manager = SSLManager()
 
         # Mock Django import to raise ImproperlyConfigured
-        with patch('ansible_ai_connect.main.ssl_manager.getattr') as mock_getattr:
+        with patch("ansible_ai_connect.main.ssl_manager.getattr") as mock_getattr:
             mock_getattr.side_effect = ImproperlyConfigured("Django not configured")
 
             result = manager._get_legacy_service_ca_path()
@@ -154,7 +160,7 @@ class TestSSLManagerLegacyServiceCAPath(SimpleTestCase):
         manager = SSLManager()
 
         # Mock getattr to return None (attribute missing)
-        with patch('ansible_ai_connect.main.ssl_manager.getattr') as mock_getattr:
+        with patch("ansible_ai_connect.main.ssl_manager.getattr") as mock_getattr:
             mock_getattr.return_value = None
 
             result = manager._get_legacy_service_ca_path()
@@ -165,14 +171,14 @@ class TestSSLManagerLegacyServiceCAPath(SimpleTestCase):
         manager = SSLManager()
 
         # Test with AttributeError
-        with patch('ansible_ai_connect.main.ssl_manager.getattr') as mock_getattr:
+        with patch("ansible_ai_connect.main.ssl_manager.getattr") as mock_getattr:
             mock_getattr.side_effect = AttributeError("Settings not available")
 
             result = manager._get_legacy_service_ca_path()
             self.assertIsNone(result)
 
         # Test with generic Exception
-        with patch('ansible_ai_connect.main.ssl_manager.getattr') as mock_getattr:
+        with patch("ansible_ai_connect.main.ssl_manager.getattr") as mock_getattr:
             mock_getattr.side_effect = Exception("Unexpected error")
 
             result = manager._get_legacy_service_ca_path()
@@ -188,17 +194,19 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
 
     def test_ca_bundle_priority_combined_bundle_first(self):
         """Test CA bundle priority: combined bundle takes precedence."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
             # Set combined bundle path and mock other paths
             self.manager.combined_ca_bundle = temp_file_path
-            self.manager.requests_ca_bundle = '/nonexistent/requests.pem'
-            self.manager.service_ca_path = '/nonexistent/service.pem'
+            self.manager.requests_ca_bundle = "/nonexistent/requests.pem"
+            self.manager.service_ca_path = "/nonexistent/service.pem"
 
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value='/nonexistent/legacy.pem'):
+            with patch.object(
+                self.manager, "_get_legacy_service_ca_path", return_value="/nonexistent/legacy.pem"
+            ):
                 result = self.manager._get_ca_bundle_path()
                 self.assertEqual(result, temp_file_path)
         finally:
@@ -206,7 +214,7 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
 
     def test_ca_bundle_priority_requests_ca_bundle_second(self):
         """Test CA bundle priority: REQUESTS_CA_BUNDLE is second priority."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -214,9 +222,11 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
             # Set requests CA bundle, no combined bundle
             self.manager.combined_ca_bundle = None
             self.manager.requests_ca_bundle = temp_file_path
-            self.manager.service_ca_path = '/nonexistent/service.pem'
+            self.manager.service_ca_path = "/nonexistent/service.pem"
 
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value='/nonexistent/legacy.pem'):
+            with patch.object(
+                self.manager, "_get_legacy_service_ca_path", return_value="/nonexistent/legacy.pem"
+            ):
                 result = self.manager._get_ca_bundle_path()
                 self.assertEqual(result, temp_file_path)
         finally:
@@ -224,7 +234,7 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
 
     def test_ca_bundle_priority_service_ca_third(self):
         """Test CA bundle priority: SERVICE_CA_PATH is third priority."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -234,7 +244,9 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
             self.manager.requests_ca_bundle = None
             self.manager.service_ca_path = temp_file_path
 
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value='/nonexistent/legacy.pem'):
+            with patch.object(
+                self.manager, "_get_legacy_service_ca_path", return_value="/nonexistent/legacy.pem"
+            ):
                 result = self.manager._get_ca_bundle_path()
                 self.assertEqual(result, temp_file_path)
         finally:
@@ -242,7 +254,7 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
 
     def test_ca_bundle_priority_legacy_service_ca_fourth(self):
         """Test CA bundle priority: legacy service CA is fourth priority."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -252,7 +264,9 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
             self.manager.requests_ca_bundle = None
             self.manager.service_ca_path = None
 
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value=temp_file_path):
+            with patch.object(
+                self.manager, "_get_legacy_service_ca_path", return_value=temp_file_path
+            ):
                 result = self.manager._get_ca_bundle_path()
                 self.assertEqual(result, temp_file_path)
         finally:
@@ -265,25 +279,27 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
         self.manager.requests_ca_bundle = None
         self.manager.service_ca_path = None
 
-        with patch.object(self.manager, '_get_legacy_service_ca_path', return_value=None):
+        with patch.object(self.manager, "_get_legacy_service_ca_path", return_value=None):
             result = self.manager._get_ca_bundle_path()
             self.assertIsNone(result)
 
     def test_ca_bundle_nonexistent_files_skipped(self):
         """Test that non-existent CA bundle files are skipped in priority order."""
         # All paths point to non-existent files
-        self.manager.combined_ca_bundle = '/nonexistent/combined.pem'
-        self.manager.requests_ca_bundle = '/nonexistent/requests.pem'
-        self.manager.service_ca_path = '/nonexistent/service.pem'
+        self.manager.combined_ca_bundle = "/nonexistent/combined.pem"
+        self.manager.requests_ca_bundle = "/nonexistent/requests.pem"
+        self.manager.service_ca_path = "/nonexistent/service.pem"
 
-        with patch.object(self.manager, '_get_legacy_service_ca_path', return_value='/nonexistent/legacy.pem'):
+        with patch.object(
+            self.manager, "_get_legacy_service_ca_path", return_value="/nonexistent/legacy.pem"
+        ):
             result = self.manager._get_ca_bundle_path()
             self.assertIsNone(result)
 
-    @patch('ansible_ai_connect.main.ssl_manager.logger')
+    @patch("ansible_ai_connect.main.ssl_manager.logger")
     def test_ca_bundle_logging_combined_bundle(self, mock_logger):
         """Test logging when combined CA bundle is used."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -297,14 +313,14 @@ class TestSSLManagerCABundlePath(SimpleTestCase):
         finally:
             os.unlink(temp_file_path)
 
-    @patch('ansible_ai_connect.main.ssl_manager.logger')
+    @patch("ansible_ai_connect.main.ssl_manager.logger")
     def test_ca_bundle_logging_system_defaults(self, mock_logger):
         """Test logging when falling back to system defaults."""
         self.manager.combined_ca_bundle = None
         self.manager.requests_ca_bundle = None
         self.manager.service_ca_path = None
 
-        with patch.object(self.manager, '_get_legacy_service_ca_path', return_value=None):
+        with patch.object(self.manager, "_get_legacy_service_ca_path", return_value=None):
             self.manager._get_ca_bundle_path()
 
             mock_logger.debug.assert_called_with(
@@ -329,12 +345,12 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
     def test_requests_session_with_custom_ca_bundle(self):
         """Test requests session with custom CA bundle configuration."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 session = self.manager.get_requests_session(verify_ssl=True)
 
                 self.assertIsInstance(session, requests.Session)
@@ -344,7 +360,7 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
     def test_requests_session_ca_bundle_not_accessible(self):
         """Test requests session when CA bundle exists but is not accessible."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -352,8 +368,8 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
             # Make file unreadable
             os.chmod(temp_file_path, 0o000)
 
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
-                with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                     session = self.manager.get_requests_session(verify_ssl=True)
 
                     self.assertIsInstance(session, requests.Session)
@@ -374,8 +390,8 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
     def test_requests_session_no_ca_bundle_system_defaults(self):
         """Test requests session with no CA bundle (system defaults)."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=None):
-            with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=None):
+            with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                 session = self.manager.get_requests_session(verify_ssl=True)
 
                 self.assertIsInstance(session, requests.Session)
@@ -387,10 +403,10 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
     def test_requests_session_os_error_handling(self):
         """Test requests session handling of OS errors during CA bundle access."""
-        with patch.object(self.manager, '_get_ca_bundle_path') as mock_get_path:
+        with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = OSError("File system error")
 
-            with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+            with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                 session = self.manager.get_requests_session(verify_ssl=True)
 
                 self.assertIsInstance(session, requests.Session)
@@ -402,10 +418,10 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
     def test_requests_session_attribute_error_handling(self):
         """Test requests session handling of attribute errors."""
-        with patch.object(self.manager, '_get_ca_bundle_path') as mock_get_path:
+        with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = AttributeError("Attribute not found")
 
-            with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+            with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                 session = self.manager.get_requests_session(verify_ssl=True)
 
                 self.assertIsInstance(session, requests.Session)
@@ -413,15 +429,15 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
 
                 mock_logger.warning.assert_called()
 
-    @patch('ansible_ai_connect.main.ssl_manager.logger')
+    @patch("ansible_ai_connect.main.ssl_manager.logger")
     def test_requests_session_logging_ca_bundle_configured(self, mock_logger):
         """Test logging when CA bundle is successfully configured."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 self.manager.get_requests_session(verify_ssl=True)
 
                 mock_logger.debug.assert_called_with(
@@ -440,7 +456,7 @@ class TestSSLManagerSSLContext(SimpleTestCase):
 
     def test_ssl_context_verify_ssl_disabled(self):
         """Test SSL context creation with SSL verification disabled."""
-        with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+        with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
             context = self.manager.get_ssl_context(verify_ssl=False)
 
             self.assertIsNone(context)
@@ -450,8 +466,9 @@ class TestSSLManagerSSLContext(SimpleTestCase):
 
     def test_ssl_context_with_custom_ca_bundle(self):
         """Test SSL context creation with custom CA bundle."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
-            temp_file.write("""-----BEGIN CERTIFICATE-----
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
+            temp_file.write(
+                """-----BEGIN CERTIFICATE-----
 MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
 ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UECgwGQW1hem9uMRkwFwYDVQQDDBBBbWF6
 b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
@@ -470,12 +487,13 @@ U5PMCCjjmCXPI6T53iHTfIuJruydjsw2hUwsOjNNvGEINXmF0w1iYYR2LYLPz+D3
 ySQdRgexoYqHDq3qEg8o8yOC6XHZEPxhZvZGzPXOtDp+7HuQsrhCd+N++Iw5Fgm7
 WB3GLZfJvQQZ6cSXi4tKT7QQLdMhQl9qQPU3ELQ4A6LG1J5EWlRF2jP8qCRJvBGF
 qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
------END CERTIFICATE-----""")
+-----END CERTIFICATE-----"""
+            )
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
-                with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                     context = self.manager.get_ssl_context(verify_ssl=True)
 
                     self.assertIsInstance(context, ssl.SSLContext)
@@ -488,8 +506,8 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
 
     def test_ssl_context_system_defaults(self):
         """Test SSL context creation with system defaults."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=None):
-            with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=None):
+            with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                 context = self.manager.get_ssl_context(verify_ssl=True)
 
                 self.assertIsInstance(context, ssl.SSLContext)
@@ -500,13 +518,13 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
 
     def test_ssl_context_defensive_programming_ca_bundle_none_check(self):
         """Test defensive programming: SSL context creation None check for CA bundle."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
-                with patch('ssl.create_default_context', return_value=None) as mock_create:
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                with patch("ssl.create_default_context", return_value=None):
                     with self.assertRaises(ssl.SSLError) as context_manager:
                         self.manager.get_ssl_context(verify_ssl=True)
 
@@ -516,8 +534,8 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
 
     def test_ssl_context_defensive_programming_system_defaults_none_check(self):
         """Test defensive programming: SSL context creation None check for system defaults."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=None):
-            with patch('ssl.create_default_context', return_value=None) as mock_create:
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=None):
+            with patch("ssl.create_default_context", return_value=None):
                 with self.assertRaises(ssl.SSLError) as context_manager:
                     self.manager.get_ssl_context(verify_ssl=True)
 
@@ -525,12 +543,12 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
 
     def test_ssl_context_ssl_error_propagation(self):
         """Test that SSL errors are properly propagated."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value='/invalid/ca.pem'):
-            with patch('ssl.create_default_context') as mock_create:
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value="/invalid/ca.pem"):
+            with patch("ssl.create_default_context") as mock_create:
                 test_ssl_error = ssl.SSLError("Invalid certificate format")
                 mock_create.side_effect = test_ssl_error
 
-                with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+                with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                     with self.assertRaises(ssl.SSLError) as context_manager:
                         self.manager.get_ssl_context(verify_ssl=True)
 
@@ -543,12 +561,12 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
     def test_ssl_context_invalid_ca_file_error(self):
         """Test SSL context creation with invalid CA file."""
         # Create invalid CA file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("INVALID CERTIFICATE CONTENT")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 with self.assertRaises(ssl.SSLError):
                     self.manager.get_ssl_context(verify_ssl=True)
         finally:
@@ -575,7 +593,7 @@ class TestSSLManagerCAInfo(SimpleTestCase):
             "requests_ca_bundle",
             "legacy_service_ca",
             "ca_bundle_exists",
-            "using_system_defaults"
+            "using_system_defaults",
         ]
 
         for key in expected_keys:
@@ -583,12 +601,12 @@ class TestSSLManagerCAInfo(SimpleTestCase):
 
     def test_ca_info_with_active_ca_bundle(self):
         """Test CA info when active CA bundle is present."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 ca_info = self.manager.get_ca_info()
 
                 self.assertEqual(ca_info["active_ca_bundle"], temp_file_path)
@@ -599,8 +617,8 @@ class TestSSLManagerCAInfo(SimpleTestCase):
 
     def test_ca_info_using_system_defaults(self):
         """Test CA info when using system defaults."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=None):
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value=None):
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=None):
+            with patch.object(self.manager, "_get_legacy_service_ca_path", return_value=None):
                 ca_info = self.manager.get_ca_info()
 
                 self.assertIsNone(ca_info["active_ca_bundle"])
@@ -610,25 +628,27 @@ class TestSSLManagerCAInfo(SimpleTestCase):
     def test_ca_info_environment_variables_reflection(self):
         """Test CA info reflects environment variable configuration."""
         # Set environment variables
-        self.manager.combined_ca_bundle = '/test/combined.pem'
-        self.manager.service_ca_path = '/test/service.pem'
-        self.manager.requests_ca_bundle = '/test/requests.pem'
+        self.manager.combined_ca_bundle = "/test/combined.pem"
+        self.manager.service_ca_path = "/test/service.pem"
+        self.manager.requests_ca_bundle = "/test/requests.pem"
 
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=None):
-            with patch.object(self.manager, '_get_legacy_service_ca_path', return_value='/test/legacy.pem'):
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=None):
+            with patch.object(
+                self.manager, "_get_legacy_service_ca_path", return_value="/test/legacy.pem"
+            ):
                 ca_info = self.manager.get_ca_info()
 
-                self.assertEqual(ca_info["combined_ca_bundle"], '/test/combined.pem')
-                self.assertEqual(ca_info["service_ca_path"], '/test/service.pem')
-                self.assertEqual(ca_info["requests_ca_bundle"], '/test/requests.pem')
-                self.assertEqual(ca_info["legacy_service_ca"], '/test/legacy.pem')
+                self.assertEqual(ca_info["combined_ca_bundle"], "/test/combined.pem")
+                self.assertEqual(ca_info["service_ca_path"], "/test/service.pem")
+                self.assertEqual(ca_info["requests_ca_bundle"], "/test/requests.pem")
+                self.assertEqual(ca_info["legacy_service_ca"], "/test/legacy.pem")
 
     def test_ca_info_ca_bundle_exists_nonexistent_file(self):
         """Test CA info ca_bundle_exists with non-existent file."""
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value='/nonexistent/ca.pem'):
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value="/nonexistent/ca.pem"):
             ca_info = self.manager.get_ca_info()
 
-            self.assertEqual(ca_info["active_ca_bundle"], '/nonexistent/ca.pem')
+            self.assertEqual(ca_info["active_ca_bundle"], "/nonexistent/ca.pem")
             self.assertFalse(ca_info["ca_bundle_exists"])
             self.assertFalse(ca_info["using_system_defaults"])
 
@@ -653,11 +673,11 @@ class TestSSLManagerGlobalInstance(SimpleTestCase):
     def test_global_ssl_manager_methods_available(self):
         """Test that all expected methods are available on global instance."""
         expected_methods = [
-            'get_requests_session',
-            'get_ssl_context',
-            'get_ca_info',
-            '_get_ca_bundle_path',
-            '_get_legacy_service_ca_path'
+            "get_requests_session",
+            "get_ssl_context",
+            "get_ca_info",
+            "_get_ca_bundle_path",
+            "_get_legacy_service_ca_path",
         ]
 
         for method_name in expected_methods:
@@ -682,36 +702,42 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
         """Test SSL manager in Kubernetes production deployment scenario."""
         # Simulate Kubernetes environment
         os.environ.clear()
-        os.environ.update({
-            'COMBINED_CA_BUNDLE_PATH': '/etc/ssl/certs/ca-certificates.crt',
-            'SERVICE_CA_PATH': '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt'
-        })
+        os.environ.update(
+            {
+                "COMBINED_CA_BUNDLE_PATH": "/etc/ssl/certs/ca-certificates.crt",
+                "SERVICE_CA_PATH": "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt",
+            }
+        )
 
         manager = SSLManager()
 
         # Mock file existence for the combined bundle
-        with patch('os.path.exists') as mock_exists:
-            mock_exists.side_effect = lambda path: path == '/etc/ssl/certs/ca-certificates.crt'
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.side_effect = lambda path: path == "/etc/ssl/certs/ca-certificates.crt"
 
             ca_bundle_path = manager._get_ca_bundle_path()
-            self.assertEqual(ca_bundle_path, '/etc/ssl/certs/ca-certificates.crt')
+            self.assertEqual(ca_bundle_path, "/etc/ssl/certs/ca-certificates.crt")
 
     def test_openshift_deployment_with_service_ca(self):
         """Test SSL manager in OpenShift deployment with service CA."""
         # Simulate OpenShift environment
         os.environ.clear()
-        os.environ.update({
-            'SERVICE_CA_PATH': '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt'
-        })
+        os.environ.update(
+            {"SERVICE_CA_PATH": "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"}
+        )
 
         manager = SSLManager()
 
         # Mock file existence for service CA only
-        with patch('os.path.exists') as mock_exists:
-            mock_exists.side_effect = lambda path: path == '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt'
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.side_effect = (
+                lambda path: path == "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+            )
 
             ca_bundle_path = manager._get_ca_bundle_path()
-            self.assertEqual(ca_bundle_path, '/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt')
+            self.assertEqual(
+                ca_bundle_path, "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+            )
 
     def test_development_environment_no_custom_ca(self):
         """Test SSL manager in development environment without custom CA."""
@@ -721,7 +747,7 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
         manager = SSLManager()
 
         # No custom CA bundles available
-        with patch.object(manager, '_get_legacy_service_ca_path', return_value=None):
+        with patch.object(manager, "_get_legacy_service_ca_path", return_value=None):
             ca_bundle_path = manager._get_ca_bundle_path()
             self.assertIsNone(ca_bundle_path)
 
@@ -737,12 +763,12 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
         manager = SSLManager()
 
         # Mock Django settings with legacy SERVICE_CA_PATH
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\nlegacy\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(manager, '_get_legacy_service_ca_path', return_value=temp_file_path):
+            with patch.object(manager, "_get_legacy_service_ca_path", return_value=temp_file_path):
                 ca_bundle_path = manager._get_ca_bundle_path()
                 self.assertEqual(ca_bundle_path, temp_file_path)
         finally:
@@ -752,15 +778,17 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
         """Test SSL manager fallback chain in high-availability deployment."""
         # Simulate scenario where primary CA bundle fails but fallback succeeds
         os.environ.clear()
-        os.environ.update({
-            'COMBINED_CA_BUNDLE_PATH': '/primary/ca-bundle.pem',  # Will be inaccessible
-            'REQUESTS_CA_BUNDLE': '/fallback/ca-bundle.pem'  # Will be accessible
-        })
+        os.environ.update(
+            {
+                "COMBINED_CA_BUNDLE_PATH": "/primary/ca-bundle.pem",  # Will be inaccessible
+                "REQUESTS_CA_BUNDLE": "/fallback/ca-bundle.pem",  # Will be accessible
+            }
+        )
 
         manager = SSLManager()
 
         # Create accessible fallback CA bundle
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\nfallback\n-----END CERTIFICATE-----\n")
             fallback_path = temp_file.name
 
@@ -771,7 +799,7 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
 
             manager.requests_ca_bundle = fallback_path  # Override for test
 
-            with patch('os.path.exists', side_effect=mock_exists):
+            with patch("os.path.exists", side_effect=mock_exists):
                 ca_bundle_path = manager._get_ca_bundle_path()
                 self.assertEqual(ca_bundle_path, fallback_path)
         finally:
@@ -780,7 +808,7 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
     def test_security_scenario_file_permission_issues(self):
         """Test SSL manager security scenario with file permission issues."""
         # Create CA bundle with restricted permissions
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
@@ -790,7 +818,7 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
 
             manager = SSLManager()
 
-            with patch.object(manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 # Should handle gracefully and fall back to system defaults
                 session = manager.get_requests_session(verify_ssl=True)
                 self.assertIsInstance(session, requests.Session)
@@ -806,7 +834,6 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
     def test_performance_scenario_concurrent_access(self):
         """Test SSL manager performance with concurrent access patterns."""
         import threading
-        import time
 
         manager = SSLManager()
         results = []
@@ -819,11 +846,13 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
                 ssl_context = manager.get_ssl_context(verify_ssl=True)
                 ca_info = manager.get_ca_info()
 
-                results.append({
-                    'session': isinstance(session, requests.Session),
-                    'ssl_context': isinstance(ssl_context, ssl.SSLContext),
-                    'ca_info': isinstance(ca_info, dict)
-                })
+                results.append(
+                    {
+                        "session": isinstance(session, requests.Session),
+                        "ssl_context": isinstance(ssl_context, ssl.SSLContext),
+                        "ca_info": isinstance(ca_info, dict),
+                    }
+                )
             except Exception as e:
                 errors.append(e)
 
@@ -844,9 +873,9 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
         # Verify all threads succeeded
         self.assertEqual(len(results), 10)
         for result in results:
-            self.assertTrue(result['session'])
-            self.assertTrue(result['ssl_context']) 
-            self.assertTrue(result['ca_info'])
+            self.assertTrue(result["session"])
+            self.assertTrue(result["ssl_context"])
+            self.assertTrue(result["ca_info"])
 
 
 class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
@@ -859,12 +888,12 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_corrupted_ca_bundle_file(self):
         """Test SSL manager with corrupted CA bundle file."""
         # Create corrupted CA bundle
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("CORRUPTED CERTIFICATE DATA\x00\xFF\x00")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 # SSL context creation should fail with SSL error
                 with self.assertRaises(ssl.SSLError):
                     self.manager.get_ssl_context(verify_ssl=True)
@@ -874,13 +903,13 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_empty_ca_bundle_file(self):
         """Test SSL manager with empty CA bundle file."""
         # Create empty CA bundle
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("")  # Empty file
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
-                # SSL context creation should fail with SSL error  
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                # SSL context creation should fail with SSL error
                 with self.assertRaises(ssl.SSLError):
                     self.manager.get_ssl_context(verify_ssl=True)
         finally:
@@ -889,11 +918,11 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_unicode_handling_in_paths(self):
         """Test SSL manager with Unicode characters in file paths."""
         # Create CA bundle with Unicode in path
-        unicode_dir = '/tmp/test_ñömé_你好'
-        unicode_path = f'{unicode_dir}/ca-bundle.pem'
+        unicode_dir = "/tmp/test_ñömé_你好"
+        unicode_path = f"{unicode_dir}/ca-bundle.pem"
 
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=unicode_path):
-            with patch('os.path.exists', return_value=False):
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=unicode_path):
+            with patch("os.path.exists", return_value=False):
                 # Should handle Unicode paths gracefully
                 ca_bundle_path = self.manager._get_ca_bundle_path()
                 self.assertEqual(ca_bundle_path, unicode_path)
@@ -901,10 +930,10 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_extremely_long_file_paths(self):
         """Test SSL manager with extremely long file paths."""
         # Create extremely long path
-        long_path = '/tmp/' + 'a' * 1000 + '.pem'
+        long_path = "/tmp/" + "a" * 1000 + ".pem"
 
-        with patch.object(self.manager, '_get_ca_bundle_path', return_value=long_path):
-            with patch('os.path.exists', return_value=False):
+        with patch.object(self.manager, "_get_ca_bundle_path", return_value=long_path):
+            with patch("os.path.exists", return_value=False):
                 # Should handle long paths gracefully
                 ca_bundle_path = self.manager._get_ca_bundle_path()
                 self.assertEqual(ca_bundle_path, long_path)
@@ -912,12 +941,12 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_file_system_race_conditions(self):
         """Test SSL manager handling of file system race conditions."""
         # Create CA bundle that exists during path check but disappears during access
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
             temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
             temp_file_path = temp_file.name
 
         try:
-            with patch.object(self.manager, '_get_ca_bundle_path', return_value=temp_file_path):
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
                 # Remove file between path check and access
                 os.unlink(temp_file_path)
 
@@ -952,11 +981,11 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
     def test_disk_space_exhaustion_simulation(self):
         """Test SSL manager behavior when disk space is exhausted."""
         # Mock _get_ca_bundle_path to raise OSError simulating disk space issues
-        with patch.object(self.manager, '_get_ca_bundle_path') as mock_get_path:
+        with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = OSError("No space left on device")
 
             # Should handle disk space errors gracefully
-            with patch('ansible_ai_connect.main.ssl_manager.logger') as mock_logger:
+            with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
                 session = self.manager.get_requests_session(verify_ssl=True)
                 self.assertIsInstance(session, requests.Session)
 
@@ -964,7 +993,7 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
                 mock_logger.warning.assert_called()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Configure logging for test output
     logging.basicConfig(level=logging.WARNING)
 

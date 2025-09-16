@@ -105,14 +105,6 @@ class SSLManager:
         """
         session = requests.Session()
 
-        if not verify_ssl:
-            session.verify = False
-            logger.warning(
-                "SSL Manager: SSL verification DISABLED for requests session - "
-                "SECURITY RISK in production environments. Only use in development/testing."
-            )
-            return session
-
         # SSL verification enabled - configure with custom or system CA bundle
         try:
             ca_bundle_path = self._get_ca_bundle_path()
