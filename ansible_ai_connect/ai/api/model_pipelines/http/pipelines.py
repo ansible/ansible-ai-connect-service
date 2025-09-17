@@ -67,7 +67,7 @@ class HttpMetaData(MetaData[HttpConfiguration]):
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
         # Use centralized SSL manager for all HTTP requests
-        self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        self.session = ssl_manager.get_requests_session()
 
         self.headers = {"Content-Type": "application/json"}
         i = self.config.timeout
@@ -304,7 +304,7 @@ class HttpStreamingChatBotPipeline(
             return aiohttp.TCPConnector(ssl=False)
 
         # Get SSL context from centralized SSL manager
-        ssl_context = ssl_manager.get_ssl_context(verify_ssl=True)
+        ssl_context = ssl_manager.get_ssl_context()
 
         if ssl_context is not None:
             # Use custom SSL context from SSL manager (infrastructure CA bundle)

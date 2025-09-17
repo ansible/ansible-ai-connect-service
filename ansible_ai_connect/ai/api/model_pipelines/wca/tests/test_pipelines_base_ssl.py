@@ -61,7 +61,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         metadata = WCAOnPremMetaData(config)
 
         # Verify SSL manager was called with correct parameters
-        mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=True)
+        mock_ssl_manager.get_requests_session.assert_called_once_with()
 
         # Verify the session was assigned correctly
         self.assertEqual(metadata.session, mock_session)
@@ -78,7 +78,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         metadata = WCAOnPremMetaData(config)
 
         # Verify SSL manager was called with correct parameters
-        mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=False)
+        mock_ssl_manager.get_requests_session.assert_called_once_with()
 
         # Verify the session was assigned correctly
         self.assertEqual(metadata.session, mock_session)
@@ -96,7 +96,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         # Create metadata instance
         metadata = WCAOnPremMetaData(config)
         # Verify SSL manager was called
-        mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=True)
+        mock_ssl_manager.get_requests_session.assert_called_once_with()
         # Verify the session from SSL manager is used
         self.assertEqual(metadata.session, mock_session)
         self.assertIsNotNone(metadata)
@@ -184,8 +184,6 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         # Verify SSL manager was called with correct parameters for both cases
         calls = mock_ssl_manager.get_requests_session.call_args_list
         self.assertEqual(len(calls), 2)
-        self.assertEqual(calls[0].kwargs["verify_ssl"], True)
-        self.assertEqual(calls[1].kwargs["verify_ssl"], False)
 
         # Verify both instances were created successfully
         self.assertIsNotNone(metadata_ssl_enabled)
@@ -237,4 +235,4 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         self.assertIsInstance(metadata.session, requests.Session)
 
         # Verify SSL manager was called correctly
-        mock_ssl_manager.get_requests_session.assert_called_once_with(verify_ssl=True)
+        mock_ssl_manager.get_requests_session.assert_called_once_with()

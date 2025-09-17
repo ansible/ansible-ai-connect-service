@@ -59,7 +59,7 @@ class LlamaCppCompletionsPipeline(
     def __init__(self, config: LlamaCppConfiguration):
         super().__init__(config=config)
         # Use centralized SSL manager for all HTTP requests
-        self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        self.session = ssl_manager.get_requests_session()
         self.headers = {"Content-Type": "application/json"}
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:

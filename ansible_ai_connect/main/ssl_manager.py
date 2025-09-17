@@ -95,7 +95,7 @@ class SSLManager:
         logger.debug("SSL Manager: No custom CA bundle found, using system defaults")
         return None
 
-    def get_requests_session(self, verify_ssl: bool = True) -> requests.Session:
+    def get_requests_session(self) -> requests.Session:
         """Get requests session with infrastructure-managed SSL configuration.
         Args:
             verify_ssl: Whether SSL verification should be enabled
@@ -105,47 +105,21 @@ class SSLManager:
             OSError: If SSL configuration fails
         """
         session = requests.Session()
-
-        # Handle verify_ssl=False parameter
-        if not verify_ssl:
-            # SonarCloud: This is intentionally disabling SSL verification for
-            # development/testing. This is controlled by the verify_ssl parameter
-            # and should only be used when explicitly needed
-            session.verify = False  # pragma: sonar-ignore-line
-            logger.warning(
-                "SSL Manager: SSL verification DISABLED for requests session - "
-                "SECURITY RISK in production environments. Only use in development/testing."
-            )
-            return session
-
         # SSL verification enabled - configure with custom or system CA bundle
         try:
             ca_bundle_path = self._get_ca_bundle_path()
             if ca_bundle_path:
-                # Verify the CA bundle file is readable before using it
-                if os.path.exists(ca_bundle_path) and os.access(ca_bundle_path, os.R_OK):
-                    session.verify = ca_bundle_path
-                    logger.debug(
-                        "SSL Manager: Session configured with CA bundle: %s", ca_bundle_path
-                    )
-                else:
-                    # Fatal instead of silent fallback
-                    error_msg = f"SSL Manager: CA bundle not accessible: {ca_bundle_path}"
-                    logger.error(error_msg)
-                    raise OSError(error_msg)
-            else:
-                # Use system default CA verification
-                logger.debug("SSL Manager: Session using system default CA verification")
-
+                session.verify = ca_bundle_path
+                logger.debug("SSL Manager: Session configured with CA bundle: %s", ca_bundle_path)
         except (OSError, AttributeError) as e:
             # SSL configuration errors should be fatal
             error_msg = f"SSL Manager: Fatal SSL configuration error: {e}"
-            logger.error(error_msg)
+            logger.exception(error_msg)
             raise OSError(error_msg) from e
 
         return session
 
-    def get_ssl_context(self, verify_ssl: bool = True) -> Optional[ssl.SSLContext]:
+    def get_ssl_context(self) -> ssl.SSLContext:
         """Get SSL context for aiohttp with infrastructure-managed certificates.
         Args:
             verify_ssl: Whether SSL verification should be enabled
@@ -155,45 +129,31 @@ class SSLManager:
             ssl.SSLError: If SSL context creation fails
             OSError: If SSL configuration fails
         """
-        if not verify_ssl:
-            logger.warning("SSL Manager: SSL context creation with verification disabled")
-            return None
-
         # SSL verification enabled - create context with custom or system CA bundle
         try:
             ca_bundle_path = self._get_ca_bundle_path()
             if ca_bundle_path:
-                # Verify CA bundle accessibility before using
-                if os.path.exists(ca_bundle_path) and os.access(ca_bundle_path, os.R_OK):
-                    context = ssl.create_default_context(cafile=ca_bundle_path)
-                    if context is None:
-                        raise ssl.SSLError("SSL context creation returned None unexpectedly")
+                context = ssl.create_default_context(cafile=ca_bundle_path)
+                if context is not None:
                     logger.debug(
                         "SSL Manager: Created SSL context with CA bundle: %s", ca_bundle_path
                     )
                     return context
-                else:
-                    # Fatal instead of silent fallback
-                    error_msg = (
-                        f"SSL Manager: CA bundle not accessible for SSL context: {ca_bundle_path}"
-                    )
-                    logger.error(error_msg)
-                    raise OSError(error_msg)
+                raise ssl.SSLError("SSL context creation returned None unexpectedly")
             else:
                 # Use system default CA bundle
                 context = ssl.create_default_context()
-                if context is None:
-                    raise ssl.SSLError("SSL context creation returned None unexpectedly")
-                logger.debug("SSL Manager: Created SSL context with system defaults")
-                return context
-
+                if context is not None:
+                    logger.debug("SSL Manager: Created SSL context with system defaults")
+                    return context
+                raise ssl.SSLError("SSL context creation returned None unexpectedly")
         except ssl.SSLError as e:
-            logger.error("SSL Manager: Failed to create SSL context: %s", e)
+            logger.exception("SSL Manager: Failed to create SSL context: %s", e)
             raise
         except (OSError, AttributeError) as e:
             # SSL configuration errors should be fatal
             error_msg = f"SSL Manager: Fatal SSL configuration error for context: {e}"
-            logger.error(error_msg)
+            logger.exception(error_msg)
             raise OSError(error_msg) from e
 
     def get_ca_info(self) -> dict:

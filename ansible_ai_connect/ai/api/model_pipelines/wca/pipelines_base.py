@@ -204,7 +204,7 @@ class WCABaseMetaData(
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
         # Use centralized SSL manager for all WCA requests
-        self.session = ssl_manager.get_requests_session(verify_ssl=self.config.verify_ssl)
+        self.session = ssl_manager.get_requests_session()
 
         self.retries = self.config.retry_count
         i = self.config.timeout

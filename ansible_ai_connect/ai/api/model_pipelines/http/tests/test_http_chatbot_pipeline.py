@@ -256,7 +256,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         )
         pipeline = HttpChatBotPipeline(config)
         # Verify SSL manager was called with correct parameters
-        mock_get_session.assert_called_once_with(verify_ssl=True)
+        mock_get_session.assert_called_once_with()
         # Verify the session is properly set
         self.assertEqual(pipeline.session, mock_session)
 

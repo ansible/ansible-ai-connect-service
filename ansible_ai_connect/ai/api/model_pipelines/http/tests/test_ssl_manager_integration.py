@@ -56,7 +56,7 @@ class TestHttpPipelineSSLManagerIntegration(TestCase):
 
             metadata = HttpMetaData(config=self.config)
             # Verify SSL manager was called with correct verify_ssl parameter
-            mock_get_session.assert_called_once_with(verify_ssl=True)
+            mock_get_session.assert_called_once_with()
             # Verify the returned session is used
             self.assertEqual(metadata.session, mock_session)
 
@@ -75,8 +75,7 @@ class TestHttpPipelineSSLManagerIntegration(TestCase):
             mock_session = Mock(spec=requests.Session)
             mock_get_session.return_value = mock_session
             metadata = HttpMetaData(config=config_ssl_disabled)
-            # Verify SSL manager was called with verify_ssl=False
-            mock_get_session.assert_called_once_with(verify_ssl=False)
+            mock_get_session.assert_called_once_with()
             # Verify the returned session is used
             self.assertEqual(metadata.session, mock_session)
 
@@ -109,7 +108,7 @@ class TestWCAPipelineSSLManagerIntegration(TestCase):
             mock_get_session.return_value = mock_session
             pipeline = WCAOnPremMetaData(config=self.config)
             # Verify SSL manager was called with correct verify_ssl parameter
-            mock_get_session.assert_called_once_with(verify_ssl=True)
+            mock_get_session.assert_called_once_with()
             # Verify the returned session is used
             self.assertEqual(pipeline.session, mock_session)
 
@@ -135,8 +134,7 @@ class TestWCAPipelineSSLManagerIntegration(TestCase):
             mock_session = Mock(spec=requests.Session)
             mock_get_session.return_value = mock_session
             pipeline = WCAOnPremMetaData(config=config_ssl_disabled)
-            # Verify SSL manager was called with verify_ssl=False
-            mock_get_session.assert_called_once_with(verify_ssl=False)
+            mock_get_session.assert_called_once_with()
             # Verify the returned session is used
             self.assertEqual(pipeline.session, mock_session)
 
@@ -185,22 +183,17 @@ class TestSSLManagerBehavior(TestCase):
 
     def test_ssl_manager_provides_requests_session(self):
         """Test that SSL manager provides configured requests session"""
-        session = ssl_manager.get_requests_session(verify_ssl=True)
+        session = ssl_manager.get_requests_session()
         self.assertIsInstance(session, requests.Session)
 
     def test_ssl_manager_provides_ssl_context(self):
         """Test that SSL manager provides SSL context for async operations"""
-        ssl_context = ssl_manager.get_ssl_context(verify_ssl=True)
+        ssl_context = ssl_manager.get_ssl_context()
         self.assertIsInstance(ssl_context, ssl.SSLContext)
-
-    def test_ssl_manager_handles_ssl_disabled(self):
-        """Test that SSL manager handles SSL disabled case"""
-        ssl_context = ssl_manager.get_ssl_context(verify_ssl=False)
-        self.assertIsNone(ssl_context)
 
     def test_ssl_manager_session_ssl_disabled(self):
         """Test that SSL manager provides session with SSL disabled"""
-        session = ssl_manager.get_requests_session(verify_ssl=False)
+        session = ssl_manager.get_requests_session()
         self.assertIsInstance(session, requests.Session)
 
     def test_ssl_manager_ca_info_available(self):
