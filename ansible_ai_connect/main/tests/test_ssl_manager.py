@@ -369,17 +369,16 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
             os.chmod(temp_file_path, 0o000)
 
             with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                # SSL configuration errors should be fatal
                 with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
-                    session = self.manager.get_requests_session(verify_ssl=True)
+                    with self.assertRaises(OSError) as cm:
+                        self.manager.get_requests_session(verify_ssl=True)
 
-                    self.assertIsInstance(session, requests.Session)
-                    # Should fall back to system defaults (True)
-                    self.assertTrue(session.verify)
+                    # Should contain error about bundle not being accessible
+                    self.assertIn("not accessible", str(cm.exception))
 
-                    # Should log warning about inaccessible bundle
-                    mock_logger.warning.assert_called()
-                    warning_call = mock_logger.warning.call_args[0]
-                    self.assertIn("not accessible", warning_call[0])
+                    # Should log error as fatal
+                    mock_logger.error.assert_called()
         finally:
             # Restore permissions and clean up
             try:
@@ -406,28 +405,32 @@ class TestSSLManagerRequestsSession(SimpleTestCase):
         with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = OSError("File system error")
 
+            # SSL configuration errors should be fatal
             with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
-                session = self.manager.get_requests_session(verify_ssl=True)
+                with self.assertRaises(OSError) as cm:
+                    self.manager.get_requests_session(verify_ssl=True)
 
-                self.assertIsInstance(session, requests.Session)
-                self.assertTrue(session.verify)
+                # Should contain the original error message
+                self.assertIn("File system error", str(cm.exception))
 
-                mock_logger.warning.assert_called()
-                warning_call = mock_logger.warning.call_args[0]
-                self.assertIn("SSL configuration issue", warning_call[0])
+                # Should log the error as fatal
+                mock_logger.error.assert_called()
 
     def test_requests_session_attribute_error_handling(self):
         """Test requests session handling of attribute errors."""
         with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = AttributeError("Attribute not found")
 
+            # SSL configuration errors should be fatal
             with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
-                session = self.manager.get_requests_session(verify_ssl=True)
+                with self.assertRaises(OSError) as cm:
+                    self.manager.get_requests_session(verify_ssl=True)
 
-                self.assertIsInstance(session, requests.Session)
-                self.assertTrue(session.verify)
+                # Should contain the original error message
+                self.assertIn("Attribute not found", str(cm.exception))
 
-                mock_logger.warning.assert_called()
+                # Should log the error as fatal
+                mock_logger.error.assert_called()
 
     @patch("ansible_ai_connect.main.ssl_manager.logger")
     def test_requests_session_logging_ca_bundle_configured(self, mock_logger):
@@ -543,20 +546,28 @@ qLG8VpQ2W0XYLUgHRwcUdE+lGt7Q
 
     def test_ssl_context_ssl_error_propagation(self):
         """Test that SSL errors are properly propagated."""
-        with patch.object(self.manager, "_get_ca_bundle_path", return_value="/invalid/ca.pem"):
-            with patch("ssl.create_default_context") as mock_create:
-                test_ssl_error = ssl.SSLError("Invalid certificate format")
-                mock_create.side_effect = test_ssl_error
+        # Create a real temporary file so file accessibility check passes
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
+            temp_file.write("-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----\n")
+            temp_file_path = temp_file.name
 
-                with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
-                    with self.assertRaises(ssl.SSLError) as context_manager:
-                        self.manager.get_ssl_context(verify_ssl=True)
+        try:
+            with patch.object(self.manager, "_get_ca_bundle_path", return_value=temp_file_path):
+                with patch("ssl.create_default_context") as mock_create:
+                    test_ssl_error = ssl.SSLError("Invalid certificate format")
+                    mock_create.side_effect = test_ssl_error
 
-                    self.assertEqual(context_manager.exception, test_ssl_error)
+                    with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
+                        with self.assertRaises(ssl.SSLError) as context_manager:
+                            self.manager.get_ssl_context(verify_ssl=True)
 
-                    mock_logger.error.assert_called_with(
-                        "SSL Manager: Failed to create SSL context: %s", test_ssl_error
-                    )
+                        self.assertEqual(context_manager.exception, test_ssl_error)
+
+                        mock_logger.error.assert_called_with(
+                            "SSL Manager: Failed to create SSL context: %s", test_ssl_error
+                        )
+        finally:
+            os.unlink(temp_file_path)
 
     def test_ssl_context_invalid_ca_file_error(self):
         """Test SSL context creation with invalid CA file."""
@@ -819,10 +830,12 @@ class TestSSLManagerRealWorldScenarios(SimpleTestCase):
             manager = SSLManager()
 
             with patch.object(manager, "_get_ca_bundle_path", return_value=temp_file_path):
-                # Should handle gracefully and fall back to system defaults
-                session = manager.get_requests_session(verify_ssl=True)
-                self.assertIsInstance(session, requests.Session)
-                self.assertTrue(session.verify)  # Should fall back to system defaults
+                # SSL configuration errors should be fatal
+                with self.assertRaises(OSError) as cm:
+                    manager.get_requests_session(verify_ssl=True)
+
+                # Should contain error about bundle not being accessible
+                self.assertIn("not accessible", str(cm.exception))
         finally:
             # Restore permissions and clean up
             try:
@@ -984,13 +997,16 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
         with patch.object(self.manager, "_get_ca_bundle_path") as mock_get_path:
             mock_get_path.side_effect = OSError("No space left on device")
 
-            # Should handle disk space errors gracefully
+            # SSL configuration errors should be fatal
             with patch("ansible_ai_connect.main.ssl_manager.logger") as mock_logger:
-                session = self.manager.get_requests_session(verify_ssl=True)
-                self.assertIsInstance(session, requests.Session)
+                with self.assertRaises(OSError) as cm:
+                    self.manager.get_requests_session(verify_ssl=True)
 
-                # Should log the error
-                mock_logger.warning.assert_called()
+                # Should contain the original error message
+                self.assertIn("No space left on device", str(cm.exception))
+
+                # Should log the error as fatal
+                mock_logger.error.assert_called()
 
 
 if __name__ == "__main__":
