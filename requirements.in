@@ -46,7 +46,6 @@ jinja2==3.1.6
 # remove this once ansible-risk-insight is updated
 jsonpickle==3.3.0
 langchain==0.3.26
-langchain-ollama==0.3.5
 launchdarkly-server-sdk==8.3.0
 llama-stack-client>=0.2.12
 protobuf==5.29.5
