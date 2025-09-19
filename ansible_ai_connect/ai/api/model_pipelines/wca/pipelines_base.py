@@ -72,6 +72,7 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     Context,
     InferenceResponseChecks,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -202,7 +203,9 @@ class WCABaseMetaData(
 
     def __init__(self, config: WCA_PIPELINE_CONFIGURATION):
         super().__init__(config=config)
-        self.session = requests.Session()
+        # Use centralized SSL manager for all WCA requests
+        self.session = ssl_manager.get_requests_session()
+
         self.retries = self.config.retry_count
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
@@ -396,7 +399,6 @@ class WCABaseCompletionsPipeline(
                 headers=headers,
                 json=data,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.verify_ssl,
             )
 
         try:
@@ -470,7 +472,6 @@ class WCABaseContentMatchPipeline(
                     headers=headers,
                     json=data,
                     timeout=self.task_gen_timeout(suggestion_count),
-                    verify=self.config.verify_ssl,
                 )
 
             result: requests.Response = post_request()
@@ -549,7 +550,6 @@ class WCABasePlaybookGenerationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -637,7 +637,6 @@ class WCABaseRoleGenerationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -725,7 +724,6 @@ class WCABasePlaybookExplanationPipeline(
                 f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()
@@ -791,7 +789,6 @@ class WCABaseRoleExplanationPipeline(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
                 headers=headers,
                 json=data,
-                verify=self.config.verify_ssl,
             )
 
         result = post_request()

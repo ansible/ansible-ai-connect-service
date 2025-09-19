@@ -15,7 +15,6 @@
 import copy
 import json
 import logging
-import ssl
 from json import JSONDecodeError
 from typing import Any, AsyncGenerator
 
@@ -57,6 +56,7 @@ from ansible_ai_connect.healthcheck.backends import (
     HealthCheckSummary,
     HealthCheckSummaryException,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,9 @@ class HttpMetaData(MetaData[HttpConfiguration]):
 
     def __init__(self, config: HttpConfiguration):
         super().__init__(config=config)
-        self.session = requests.Session()
+        # Use centralized SSL manager for all HTTP requests
+        self.session = ssl_manager.get_requests_session()
+
         self.headers = {"Content-Type": "application/json"}
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
@@ -97,9 +99,6 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
                 headers=self.headers,
                 json=model_input,
                 timeout=self.task_gen_timeout(task_count),
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
             )
             result.raise_for_status()
             response = json.loads(result.text)
@@ -117,11 +116,8 @@ class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfigu
             }
         )
         try:
-            res = requests.get(
+            res = self.session.get(
                 url,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
                 timeout=1,
             )
             res.raise_for_status()
@@ -151,13 +147,10 @@ class HttpChatBotMetaData(HttpMetaData):
         )
         try:
             headers = {"Content-Type": "application/json"}
-            r = requests.get(
+            r = self.session.get(
                 self.config.inference_url + "/readiness",
                 headers=headers,
                 timeout=1,
-                verify=(
-                    self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl
-                ),
             )
             r.raise_for_status()
 
@@ -177,6 +170,20 @@ class HttpChatBotMetaData(HttpMetaData):
                 HealthCheckSummaryException(ServiceUnavailable(ERROR_MESSAGE), e),
             )
         return summary
+
+    def _safe_parse_error_detail(self, response_text: str) -> str:
+        """
+        Safely parse error detail from response text.
+        If JSON parsing fails, return the raw text or a default message.
+        """
+        if not response_text:
+            return "No error details available"
+        try:
+            parsed = json.loads(response_text)
+            return parsed.get("detail", response_text)
+        except (json.JSONDecodeError, TypeError):
+            # Return raw text if JSON parsing fails, but limit length for safety
+            return response_text[:500] if len(response_text) <= 500 else response_text[:500] + "..."
 
 
 @Register(api_type="http")
@@ -209,12 +216,11 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         if params.mcp_headers:
             headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
 
-        response = requests.post(
+        response = self.session.post(
             self.config.inference_url + "/v1/query",
-            headers=self.headers,
+            headers=headers,
             json=data,
             timeout=self.task_gen_timeout(1),
-            verify=self.config.ca_cert_file if self.config.ca_cert_file else self.config.verify_ssl,
         )
 
         if response.status_code == 200:
@@ -228,19 +234,19 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             return data
 
         elif response.status_code == 401:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotUnauthorizedException(detail=detail)
         elif response.status_code == 403:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotForbiddenException(detail=detail)
         elif response.status_code == 413:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotPromptTooLongException(detail=detail)
         elif response.status_code == 422:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotValidationException(detail=detail)
         else:
-            detail = json.loads(response.text).get("detail", "")
+            detail = self._safe_parse_error_detail(response.text)
             raise ChatbotInternalServerException(detail=detail)
 
 
@@ -275,14 +281,42 @@ class HttpStreamingChatBotPipeline(
 
         send_schema1_event(ev)
 
+    def _get_aiohttp_connector(self, verify_ssl: bool = True) -> aiohttp.TCPConnector:
+        """Create aiohttp connector with proper SSL configuration.
+        - aiohttp.TCPConnector does NOT accept ssl=None
+        - ssl=True: Uses system default SSL verification (SECURE)
+        - ssl=False: Disables SSL verification completely (INSECURE needed for dev/test)
+        - ssl=SSLContext: Uses custom SSL context (SECURE with custom CAs)
+        Args:
+            verify_ssl: Whether SSL verification should be enabled
+        Returns:
+            TCPConnector with consistent SSL behavior:
+            - verify_ssl=True + custom context: ssl=SSLContext (infrastructure CA bundle)
+            - verify_ssl=True + no context: ssl=True (system default CAs)
+            - verify_ssl=False: ssl=False (DISABLED - consistent with requests.Session)
+        Raises:
+            ssl.SSLError: If SSL context creation fails when verify_ssl=True
+        """
+        if not verify_ssl:
+            # SECURITY NOTE: This disables SSL verification
+            # should only be used in development/testing
+            # This matches requests.Session.verify=False behavior for consistency
+            return aiohttp.TCPConnector(ssl=False)
+
+        # Get SSL context from centralized SSL manager
+        ssl_context = ssl_manager.get_ssl_context()
+
+        if ssl_context is not None:
+            # Use custom SSL context from SSL manager (infrastructure CA bundle)
+            return aiohttp.TCPConnector(ssl=ssl_context)
+        else:
+            # Use system default SSL verification (fallback when no custom CA bundle)
+            return aiohttp.TCPConnector(ssl=True)
+
     async def async_invoke(self, params: StreamingChatBotParameters) -> AsyncGenerator:
 
-        # Configure SSL context based on verify_ssl setting
-        if self.config.ca_cert_file:
-            ssl_context = ssl.create_default_context(cafile=self.config.ca_cert_file)
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-        else:
-            connector = aiohttp.TCPConnector(ssl=self.config.verify_ssl)
+        # Create connector with proper SSL handling
+        connector = self._get_aiohttp_connector(verify_ssl=self.config.verify_ssl)
 
         async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
             headers = {

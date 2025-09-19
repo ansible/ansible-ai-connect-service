@@ -14,6 +14,7 @@
 #  limitations under the License.
 import json
 import logging
+import ssl
 from typing import cast
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
@@ -214,7 +215,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
     async def test_ssl_context_verify_ssl_false(self, mock_tcp_connector, mock_post):
-        """Test that SSL context is correctly configured when verify_ssl=False"""
+        """Test that SSL verification is consistently disabled (ssl=False) when verify_ssl=False"""
         # Setup pipeline with verify_ssl=False
         config = cast(HttpConfiguration, mock_pipeline_config("http", verify_ssl=False))
         pipeline = HttpStreamingChatBotPipeline(config)
@@ -227,7 +228,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # Verify TCPConnector was created with ssl=False
+        # This provides consistent behavior with requests.Session.verify=False
         mock_tcp_connector.assert_called_once_with(ssl=False)
 
     @patch("aiohttp.ClientSession.post")
@@ -246,8 +247,17 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # Verify TCPConnector was created with ssl=True
-        mock_tcp_connector.assert_called_once_with(ssl=True)
+        # Verify TCPConnector was created with an SSL context object (improved behavior)
+        mock_tcp_connector.assert_called_once()
+        call_args = mock_tcp_connector.call_args
+        self.assertIsNotNone(call_args)
+
+        # Check that ssl parameter was passed and is an SSL context object
+        ssl_param = call_args.kwargs.get("ssl")
+        self.assertIsNotNone(ssl_param, "SSL parameter should be provided")
+        self.assertIsInstance(
+            ssl_param, ssl.SSLContext, "SSL parameter should be an SSLContext object, not just True"
+        )
 
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
@@ -265,10 +275,14 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         params = self.get_params()
         async for _ in pipeline.async_invoke(params):
             pass
-        # Verify that ssl_context was set to the exact config value
-        # The ssl parameter should match config.verify_ssl exactly
-        expected_ssl_value = config.verify_ssl  # False in this case
-        mock_tcp_connector.assert_called_once_with(ssl=expected_ssl_value)
+        # Verify that ssl_context was set correctly for verify_ssl=False
+        mock_tcp_connector.assert_called_once()
+        call_args = mock_tcp_connector.call_args
+        self.assertIsNotNone(call_args)
+
+        ssl_param = call_args.kwargs.get("ssl")
+        # This provides consistent behavior with requests.Session.verify=False
+        self.assertFalse(ssl_param, "When verify_ssl=False, should get ssl=False")
 
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.TCPConnector")
@@ -293,8 +307,26 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                     result_count += 1
                 # Verify that streaming still works
                 self.assertGreater(result_count, 0, "Streaming should return data")
-                # Verify SSL configuration is correct
-                mock_tcp_connector.assert_called_with(ssl=verify_ssl_value)
+                # Verify SSL configuration is correct (improved behavior with SSL manager)
+                mock_tcp_connector.assert_called_once()
+                call_args = mock_tcp_connector.call_args
+                self.assertIsNotNone(call_args)
+
+                ssl_param = call_args.kwargs.get("ssl")
+                if verify_ssl_value:
+                    # When SSL is enabled, we should get an SSL context object
+                    self.assertIsInstance(
+                        ssl_param,
+                        ssl.SSLContext,
+                        f"When verify_ssl={verify_ssl_value}, should get SSL context",
+                    )
+                else:
+                    # verify_ssl=False should disable SSL verification
+                    # This provides consistent behavior with requests.Session.verify=False
+                    self.assertFalse(
+                        ssl_param,
+                        f"When verify_ssl={verify_ssl_value}, should get ssl=False",
+                    )
                 # Reset mocks for next iteration
                 mock_tcp_connector.reset_mock()
                 mock_post.reset_mock()

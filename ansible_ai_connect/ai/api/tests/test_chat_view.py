@@ -40,6 +40,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
     HttpStreamingChatBotPipeline,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
+from ansible_ai_connect.main import ssl_manager
 from ansible_ai_connect.organizations.models import Organization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
@@ -117,6 +118,18 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         self.user.organization = org
         self.user.rh_internal = True
 
+        self.ssl_patcher = mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+        self.mock_session_factory = self.ssl_patcher.start()
+
+        # Create mock session that will be used by all pipelines
+        self.mock_session = mock.Mock()
+        self.mock_session.post.side_effect = TestChatView.mocked_requests_post
+        self.mock_session_factory.return_value = self.mock_session
+
+    def tearDown(self):
+        super().tearDown()
+        self.ssl_patcher.stop()
+
     @staticmethod
     def mocked_requests_post(*args, **kwargs):
         class MockResponse:
@@ -181,19 +194,13 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         return MockResponse(json_response, status_code)
 
     @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
-    @mock.patch(
-        "requests.post",
-        side_effect=mocked_requests_post,
-    )
-    def query_with_no_error(self, payload, mock_post):
+    def query_with_no_error(self, payload):
+        # SSL manager mocking is now handled globally in setUp()
         return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
     @override_settings(CHATBOT_DEFAULT_PROVIDER="")
-    @mock.patch(
-        "requests.post",
-        side_effect=mocked_requests_post,
-    )
-    def query_without_chat_config(self, payload, mock_post):
+    def query_without_chat_config(self, payload):
+        # SSL manager mocking is now handled globally in setUp()
         return self.client.post(self.api_version_reverse("chat"), payload, format="json")
 
     def assert_test(

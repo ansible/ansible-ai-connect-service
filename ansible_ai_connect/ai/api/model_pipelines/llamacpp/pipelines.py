@@ -34,6 +34,7 @@ from ansible_ai_connect.healthcheck.backends import (
     MODEL_MESH_HEALTH_CHECK_PROVIDER,
     HealthCheckSummary,
 )
+from ansible_ai_connect.main.ssl_manager import ssl_manager
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,8 @@ class LlamaCppCompletionsPipeline(
 
     def __init__(self, config: LlamaCppConfiguration):
         super().__init__(config=config)
-        self.session = requests.Session()
+        # Use centralized SSL manager for all HTTP requests
+        self.session = ssl_manager.get_requests_session()
         self.headers = {"Content-Type": "application/json"}
 
     def invoke(self, params: CompletionsParameters) -> CompletionsResponse:
@@ -111,7 +113,6 @@ class LlamaCppCompletionsPipeline(
                 headers=self.headers,
                 json=llm_params,
                 timeout=self.task_gen_timeout(task_count),
-                verify=self.config.verify_ssl,
             )
             result.raise_for_status()
             body = json.loads(result.text)

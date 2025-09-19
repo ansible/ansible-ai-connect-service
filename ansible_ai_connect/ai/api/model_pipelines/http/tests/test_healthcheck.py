@@ -31,12 +31,13 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_healthcheck import (
     TestModelPipelineHealthCheck,
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import MockResponse
+from ansible_ai_connect.main import ssl_manager
 
 
 @override_settings(ANSIBLE_AI_MODEL_MESH_CONFIG=mock_config("http"))
 class TestModelPipelineFactory(TestModelPipelineHealthCheck):
 
-    @mock.patch("requests.get", return_value=MockResponse(None, 200))
+    @mock.patch("requests.Session.get", return_value=MockResponse(None, 200))
     def test_completions_healthcheck(self, *args, **kwargs):
         self.assert_ok(ModelPipelineCompletions, "http")
 
@@ -55,10 +56,16 @@ class TestModelPipelineFactory(TestModelPipelineHealthCheck):
     def test_role_explanation_healthcheck(self):
         self.assert_skipped(ModelPipelineRoleExplanation, "nop")
 
-    @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
-    def test_chatbot_healthcheck(self, *args, **kwargs):
+    @mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+    def test_chatbot_healthcheck(self, mock_session_factory):
+        mock_session = mock.Mock()
+        mock_session.get.return_value = MockResponse({"ready": True}, 200)
+        mock_session_factory.return_value = mock_session
         self.assert_ok(ModelPipelineChatBot, "http")
 
-    @mock.patch("requests.get", return_value=MockResponse({"ready": True}, 200))
-    def test_streaming_chatbot_healthcheck(self, *args, **kwargs):
+    @mock.patch.object(ssl_manager.ssl_manager, "get_requests_session")
+    def test_streaming_chatbot_healthcheck(self, mock_session_factory):
+        mock_session = mock.Mock()
+        mock_session.get.return_value = MockResponse({"ready": True}, 200)
+        mock_session_factory.return_value = mock_session
         self.assert_ok(ModelPipelineStreamingChatBot, "http")
