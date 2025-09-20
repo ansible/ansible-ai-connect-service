@@ -389,7 +389,7 @@ pyjwt==2.8.0
     #   -r requirements.in
     #   django-ansible-base
     #   social-auth-core
-pyopenssl==24.2.1
+pyopenssl==25.3.0
     # via
     #   -r requirements.in
     #   pydrive2
