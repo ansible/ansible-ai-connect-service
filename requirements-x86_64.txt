@@ -574,7 +574,7 @@ yarl==1.17.2
     # via aiohttp
 zope-interface==7.2
     # via twisted
-zstandard==0.23.0
+zstandard==0.25.0
     # via langsmith
 
 # The following packages are considered to be unsafe in a requirements file:
