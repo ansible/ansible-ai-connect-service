@@ -327,7 +327,7 @@ pickleshare==0.7.5
     # via ipython
 platformdirs==4.2.1
     # via black
-prometheus-client==0.20.0
+prometheus-client==0.23.1
     # via django-prometheus
 prompt-toolkit==3.0.43
     # via
