@@ -77,7 +77,6 @@ INSTALLED_APPS = [
     "ansible_ai_connect.healthcheck",
     "oauth2_provider",
     "import_export",
-    "ansible_base.rbac",
     "ansible_base.resource_registry",
     "ansible_base.jwt_consumer",
 ]
