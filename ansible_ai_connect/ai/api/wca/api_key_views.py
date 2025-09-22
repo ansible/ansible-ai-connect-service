@@ -138,7 +138,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         # See https://issues.redhat.com/browse/AAP-16009
         if not request._request.user.organization:
             return Response(status=HTTP_400_BAD_REQUEST)
-        organization: Organization = request._request.user.organization
+        organization: ExternalOrganization = request._request.user.organization
 
         try:
             # Extract API Key from request
@@ -293,7 +293,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         # See https://issues.redhat.com/browse/AAP-16009
         if not request._request.user.organization:
             return Response(status=HTTP_400_BAD_REQUEST)
-        organization: Organization = request._request.user.organization
+        organization: ExternalOrganization = request._request.user.organization
         try:
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
