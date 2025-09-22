@@ -46,15 +46,6 @@ class Migration(migrations.Migration):
                     models.TextField(blank=True, default="", help_text="The team description."),
                 ),
                 (
-                    "admins",
-                    models.ManyToManyField(
-                        blank=True,
-                        help_text="The list of admins for this team",
-                        related_name="teams_administered",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
                     "created_by",
                     models.ForeignKey(
                         default=None,
@@ -85,21 +76,6 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="teams",
                         to="organizations.organization",
-                    ),
-                ),
-                (
-                    "team_parents",
-                    models.ManyToManyField(
-                        blank=True, related_name="team_children", to="users.team"
-                    ),
-                ),
-                (
-                    "users",
-                    models.ManyToManyField(
-                        blank=True,
-                        help_text="The list of users on this team",
-                        related_name="teams",
-                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],

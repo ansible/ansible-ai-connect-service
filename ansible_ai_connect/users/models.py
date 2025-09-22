@@ -182,7 +182,6 @@ class Team(AbstractTeam):
     """A Team compatible with Django Ansible Base Teams"""
 
     resource = AnsibleResourceField(primary_key_field="id")
-    team_parents = models.ManyToManyField("Team", related_name="team_children", blank=True)
 
     ignore_relations = []
 
@@ -191,16 +190,4 @@ class Team(AbstractTeam):
         ordering = ["id"]
         abstract = False
 
-    users = models.ManyToManyField(
-        User,
-        related_name="teams",
-        blank=True,
-        help_text="The list of users on this team",
-    )
 
-    admins = models.ManyToManyField(
-        User,
-        related_name="teams_administered",
-        blank=True,
-        help_text="The list of admins for this team",
-    )
