@@ -78,7 +78,7 @@
     "tslib": "^2.6.2",
     "typescript": "^5.1.6",
     "webpack": "^5.64.4",
-    "webpack-dev-server": "^4.6.0",
+    "webpack-dev-server": "^5.2.2",
     "webpack-manifest-plugin": "^4.0.2",
     "webpack-mock-server": "^1.0.18",
     "workbox-webpack-plugin": "^6.4.1",
