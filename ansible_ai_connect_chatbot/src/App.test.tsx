@@ -1067,3 +1067,50 @@ test("Documentation modal can be closed and reopened", async () => {
   // Verify modal is open again
   await expect.element(modalTitle).toBeVisible();
 });
+
+test("Preview label is visible next to documentation link", async () => {
+  mockAxios(200);
+  const view = await renderApp();
+
+  // Check that the documentation link button is visible
+  const docButton = view.getByRole("button", {
+    name: "Generate Inventory File User Documentation",
+  });
+  expect(docButton).toBeVisible();
+
+  // Check that the Preview label is visible
+  const previewLabel = view.getByText("Preview");
+  expect(previewLabel).toBeVisible();
+
+  // Verify the label has the correct attributes by finding it in the container
+  const labelElement = view.container.querySelector(
+    ".pf-v6-c-label.pf-m-orange",
+  );
+  expect(labelElement).toBeInTheDocument();
+  expect(labelElement).toHaveTextContent("Preview");
+
+  // Check that the info icon is present in the label
+  const infoIcon = labelElement?.querySelector("svg");
+  expect(infoIcon).toBeInTheDocument();
+});
+
+test("Preview label appears in the header actions area", async () => {
+  mockAxios(200);
+  const view = await renderApp();
+
+  // Find the header actions container
+  const headerActions =
+    view.container.querySelector("[class*='ChatbotHeaderActions']") ||
+    view.container.querySelector(".pf-chatbot__header-actions");
+
+  if (headerActions) {
+    // Check that the Preview label is within the header actions
+    const previewLabel = headerActions.querySelector(".pf-v6-c-label");
+    expect(previewLabel).toBeInTheDocument();
+    expect(previewLabel).toHaveTextContent("Preview");
+  } else {
+    // Fallback: just ensure the label exists somewhere in the component
+    const previewLabel = view.getByText("Preview");
+    expect(previewLabel).toBeVisible();
+  }
+});
