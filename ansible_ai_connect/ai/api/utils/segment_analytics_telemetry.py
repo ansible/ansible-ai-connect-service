@@ -23,7 +23,7 @@ from ansible_ai_connect.ai.api.utils.segment import (
     base_send_segment_event,
     send_segment_event,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.models import User
 
 logger = logging.getLogger(__name__)

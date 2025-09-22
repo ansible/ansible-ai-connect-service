@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 default=None,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="organizations.organization",
+                to="organizations.externalorganization",
             ),
         ),
     ]

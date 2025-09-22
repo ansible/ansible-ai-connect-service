@@ -38,7 +38,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
     IsWCASaaSModelPipeline,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
@@ -100,7 +100,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_key_when_undefined(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret = Mock(return_value=None)
@@ -120,7 +120,7 @@ class TestWCAApiKeyView(
         self._test_get_key_when_defined(True)
 
     def _test_get_key_when_defined(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
@@ -136,7 +136,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_key_when_defined_throws_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret.side_effect = WcaSecretManagerError("Test")
@@ -168,7 +168,7 @@ class TestWCAApiKeyView(
         self._test_set_key_with_valid_value(True)
 
     def _test_set_key_with_valid_value(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
@@ -212,7 +212,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_with_invalid_value(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -240,7 +240,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_throws_secret_manager_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
@@ -259,7 +259,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_throws_http_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
@@ -275,7 +275,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_key_throws_validation_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -297,7 +297,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -369,7 +369,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key_with_model_id_deletion_error(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -419,7 +419,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key_with_api_key_deletion_error(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -469,7 +469,7 @@ class TestWCAApiKeyView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_delete_key_with_no_model_id(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
@@ -517,7 +517,7 @@ class TestWCAApiKeyView(
         )
 
     def test_delete_key_with_no_key_no_model_id(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -543,7 +543,7 @@ class TestWCAApiKeyView(
 @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=False)
 class TestWCAApiKeyViewAsNonSubscriber(APIVersionTestCaseBase, WisdomServiceAPITestCaseBaseOIDC):
     def test_get_api_key_as_non_subscriber(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(self.api_version_reverse("wca_api_key"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -595,7 +595,7 @@ class TestWCAApiKeyValidatorView(
         self._test_validate_key_with_valid_value(True)
 
     def _test_validate_key_with_valid_value(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
@@ -612,7 +612,7 @@ class TestWCAApiKeyValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_key_with_missing_value(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret = Mock(return_value=None)
@@ -624,7 +624,7 @@ class TestWCAApiKeyValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_key_with_invalid_value(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)
@@ -639,7 +639,7 @@ class TestWCAApiKeyValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_key_throws_http_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         _md = apps.get_app_config("ai").get_model_pipeline(MetaData)
         mock_model_meta_data: WCASaaSMetaData = cast(WCASaaSMetaData, _md)
         self.client.force_authenticate(user=self.user)

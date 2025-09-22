@@ -45,7 +45,7 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.views import ServiceUnavailable
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.signals import (
     user_delete_wca_api_key,
     user_delete_wca_model_id,

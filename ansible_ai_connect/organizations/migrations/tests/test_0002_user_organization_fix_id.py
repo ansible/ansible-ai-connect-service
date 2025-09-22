@@ -14,7 +14,7 @@ class BaseOrganizationMigrationTest(MigratorTestCase):
         self.assertIsNotNone(users[0].organization)
         self.assertEqual(123, users[0].organization.id)
 
-        organization_new = self.new_state.apps.get_model("organizations", "Organization")
+        organization_new = self.new_state.apps.get_model("organizations", "ExternalOrganization")
         organizations = organization_new.objects.all()
         self.assertEqual(1, len(organizations))
         self.assertTrue(hasattr(users[0], "organization"))

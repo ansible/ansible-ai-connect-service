@@ -26,7 +26,7 @@ from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
 
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 
 from .constants import USER_SOCIAL_AUTH_PROVIDER_AAP, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
@@ -57,7 +57,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = deprecate_field(models.IntegerField(default=None, null=True))
     organization = NonClashingForeignKey(
-        Organization,
+        ExternalOrganization,
         default=None,
         null=True,
         on_delete=models.CASCADE,

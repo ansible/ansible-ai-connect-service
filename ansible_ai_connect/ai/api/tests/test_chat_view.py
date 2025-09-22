@@ -41,7 +41,7 @@ from ansible_ai_connect.ai.api.model_pipelines.http.pipelines import (
 )
 from ansible_ai_connect.ai.api.model_pipelines.tests import mock_pipeline_config
 from ansible_ai_connect.main import ssl_manager
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomServiceAPITestCaseBase,
@@ -114,7 +114,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def setUp(self):
         super().setUp()
-        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        (org, _) = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=False)
         self.user.organization = org
         self.user.rh_internal = True
 
@@ -307,7 +307,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -390,7 +390,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -414,7 +414,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_system_prompt_override(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -450,7 +450,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_no_tools_option(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -491,7 +491,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 email=email,
                 password=password,
             )
-            (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+            (org, _) = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=False)
             self.user2.organization = org
             self.user2.rh_internal = True
             # Call chart API five times using self.user2
@@ -507,7 +507,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
     def test_operational_telemetry_excludes_chat_prompt_by_default(self):
         """Test that chat_prompt is excluded from telemetry by default (via allow list)"""
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -538,7 +538,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             self.user2 = get_user_model().objects.create_user(
                 username=username,
             )
-            self.user2.organization = Organization.objects.get_or_create(
+            self.user2.organization = ExternalOrganization.objects.get_or_create(
                 id=123, telemetry_opt_out=False
             )[0]
             self.user2.rh_internal = False
@@ -553,7 +553,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
 
     def setUp(self):
         super().setUp()
-        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        (org, _) = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=False)
         self.user.organization = org
         self.user.rh_internal = True
 
@@ -663,7 +663,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -723,7 +723,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -747,7 +747,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_system_prompt_override(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -781,7 +781,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_with_no_tools_option(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with (
             patch.object(
@@ -821,7 +821,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
                 email=email,
                 password=password,
             )
-            (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+            (org, _) = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=False)
             self.user2.organization = org
             self.user2.rh_internal = True
             # Call chart API five times using self.user2
@@ -839,7 +839,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             self.user2 = get_user_model().objects.create_user(
                 username=username,
             )
-            self.user2.organization = Organization.objects.get_or_create(
+            self.user2.organization = ExternalOrganization.objects.get_or_create(
                 id=123, telemetry_opt_out=False
             )[0]
             self.user2.rh_internal = False

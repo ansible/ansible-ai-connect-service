@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="Organization",
+            name="ExternalOrganization",
             fields=[
                 ("id", models.IntegerField(primary_key=True, serialize=False)),
                 ("telemetry_opt_out", models.BooleanField(default=False)),

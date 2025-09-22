@@ -30,7 +30,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomServiceAPITestCaseBase,
@@ -50,7 +50,7 @@ class TestFeedbackView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def setUp(self):
         super().setUp()
-        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        (org, _) = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=False)
         self.user.organization = org
 
     def test_feedback_full_payload(self):
@@ -423,7 +423,7 @@ class TestFeedbackView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             }
         }
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         with self.assertLogs(logger="root", level="DEBUG") as log:
             r = self.client.post(self.api_version_reverse("feedback"), payload, format="json")
