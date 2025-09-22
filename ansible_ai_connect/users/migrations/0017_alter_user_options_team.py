@@ -12,8 +12,6 @@ class Migration(migrations.Migration):
         ("users", "0016_user_aap_user"),
     ]
 
-    run_before = [("dab_rbac", "__first__")]
-
     operations = [
         migrations.AlterModelOptions(
             name="user",

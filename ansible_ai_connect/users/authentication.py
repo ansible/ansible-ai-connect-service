@@ -10,3 +10,7 @@ class LightspeedJWTAuthentication(JWTAuthentication):
             user.aap_user = True
             user.save()
         return userdata
+
+    def process_permissions(self):
+        # Prevent processing of RBAC permissions
+        pass
