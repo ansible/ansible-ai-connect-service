@@ -24,7 +24,7 @@ def reverse_clear_dab_rbac_data(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("organizations", "0004_organization_enable_anonymization"),
+        ("organizations", "0005_rename_organization_to_externalorganization"),
         ("dab_rbac", "0004_remote_permissions_additions"),
     ]
 

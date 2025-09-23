@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="externalorganization",
+            model_name="organization",
             name="enable_anonymization",
             field=models.BooleanField(default=True),
         ),

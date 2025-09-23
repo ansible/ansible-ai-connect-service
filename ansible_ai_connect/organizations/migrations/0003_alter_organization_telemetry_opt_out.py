@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name="externalorganization",
+            model_name="organization",
             name="telemetry_opt_out",
             field=models.BooleanField(db_column="telemetry_opt_out", default=False),
         ),

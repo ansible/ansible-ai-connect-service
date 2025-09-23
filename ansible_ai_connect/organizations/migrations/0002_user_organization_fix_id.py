@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             """
             insert into
-            organizations_externalorganization
+            organizations_organization
             select
             organization_id, false
             from
