@@ -36,6 +36,9 @@ class ExternalOrganization(models.Model):
     telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
     enable_anonymization = models.BooleanField(default=True)
 
+    class Meta:
+        db_table = "organizations_organization"
+
     @property  # NOTE: The info dict is already cache in the seat_checker
     def name(self):
         seat_checker = apps.get_app_config("ai").get_seat_checker()
