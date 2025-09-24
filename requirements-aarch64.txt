@@ -562,7 +562,7 @@ uwsgi-readiness-check==0.2.0
     # via -r requirements.in
 wcmatch==8.5.1
     # via ansible-lint
-wcwidth==0.2.13
+wcwidth==0.2.14
     # via prompt-toolkit
 xlrd==2.0.1
     # via tablib
