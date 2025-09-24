@@ -78,7 +78,9 @@ class Command(BaseCommand):
                     commercial_terms_accepted=n,
                 )
                 if organization_id:
-                    u.organization = ExternalOrganization.objects.get_or_create(id=organization_id)[0]
+                    u.organization = ExternalOrganization.objects.get_or_create(id=organization_id)[
+                        0
+                    ]
                     u.save()
             else:
                 raise CommandError(f"Cannot find user {username}")

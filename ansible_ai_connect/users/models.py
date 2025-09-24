@@ -189,5 +189,3 @@ class Team(AbstractTeam):
         app_label = "users"
         ordering = ["id"]
         abstract = False
-
-

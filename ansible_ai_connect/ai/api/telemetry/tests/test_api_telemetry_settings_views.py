@@ -85,9 +85,9 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_get_settings_when_defined(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = ExternalOrganization.objects.get_or_create(id=123, telemetry_opt_out=True)[
-            0
-        ]
+        self.user.organization = ExternalOrganization.objects.get_or_create(
+            id=123, telemetry_opt_out=True
+        )[0]
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:

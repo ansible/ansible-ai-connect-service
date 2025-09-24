@@ -73,7 +73,7 @@ def send_segment_analytics_event(
         )
         return
 
-    organization: Organization = user.organization
+    organization: ExternalOrganization = user.organization
     if not organization:
         logger.info("Analytics telemetry not active, because of no organization assigned for user.")
         return

@@ -51,7 +51,9 @@ def create_user(
     org_opt_out: bool = False,
     **kwargs,
 ):
-    (org, _) = ExternalOrganization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
+    (org, _) = ExternalOrganization.objects.get_or_create(
+        id=rh_org_id, telemetry_opt_out=org_opt_out
+    )
     kwargs.setdefault("username", "u" + "".join(random.choices(string.digits, k=5)))
     kwargs.setdefault("password", "secret")
     kwargs.setdefault("email", kwargs["username"] + "@example.com")

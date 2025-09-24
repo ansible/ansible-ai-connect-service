@@ -9,7 +9,8 @@ def clear_dab_rbac_data(apps, schema_editor):
 
     # Get all dab_rbac models
     from django.apps import apps as django_apps
-    dab_rbac_config = django_apps.get_app_config('dab_rbac')
+
+    dab_rbac_config = django_apps.get_app_config("dab_rbac")
 
     # Delete all data from dab_rbac models in reverse dependency order
     for model in reversed(dab_rbac_config.get_models()):
@@ -42,10 +43,15 @@ class Migration(migrations.Migration):
                         auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
-                ("name", models.CharField(help_text="The name of this organization.", max_length=512)),
+                (
+                    "name",
+                    models.CharField(help_text="The name of this organization.", max_length=512),
+                ),
                 (
                     "description",
-                    models.TextField(blank=True, default="", help_text="The organization description."),
+                    models.TextField(
+                        blank=True, default="", help_text="The organization description."
+                    ),
                 ),
             ],
             options={

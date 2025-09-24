@@ -83,7 +83,9 @@ class ExternalOrganization(models.Model):
 class Organization(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=512, help_text="The name of this organization.")
-    description = models.TextField(blank=True, default="", help_text="The organization description.")
+    description = models.TextField(
+        blank=True, default="", help_text="The organization description."
+    )
 
     class Meta:
         app_label = "organizations"
