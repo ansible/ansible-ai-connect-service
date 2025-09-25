@@ -26,7 +26,7 @@ from django.utils.functional import cached_property
 from django_deprecate_fields import deprecate_field
 from django_prometheus.models import ExportModelOperationsMixin
 
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 
 from .constants import USER_SOCIAL_AUTH_PROVIDER_AAP, USER_SOCIAL_AUTH_PROVIDER_OIDC
 
@@ -57,7 +57,7 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     commercial_terms_accepted = models.DateTimeField(default=None, null=True)
     organization_id = deprecate_field(models.IntegerField(default=None, null=True))
     organization = NonClashingForeignKey(
-        Organization,
+        ExternalOrganization,
         default=None,
         null=True,
         on_delete=models.CASCADE,
@@ -182,7 +182,6 @@ class Team(AbstractTeam):
     """A Team compatible with Django Ansible Base Teams"""
 
     resource = AnsibleResourceField(primary_key_field="id")
-    team_parents = models.ManyToManyField("Team", related_name="team_children", blank=True)
 
     ignore_relations = []
 
@@ -190,17 +189,3 @@ class Team(AbstractTeam):
         app_label = "users"
         ordering = ["id"]
         abstract = False
-
-    users = models.ManyToManyField(
-        User,
-        related_name="teams",
-        blank=True,
-        help_text="The list of users on this team",
-    )
-
-    admins = models.ManyToManyField(
-        User,
-        related_name="teams_administered",
-        blank=True,
-        help_text="The list of admins for this team",
-    )

@@ -23,7 +23,7 @@ from django.utils.timezone import now
 from oauth2_provider.models import AccessToken
 from oauthlib.common import generate_token
 
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 
 
 class Command(BaseCommand):
@@ -78,7 +78,9 @@ class Command(BaseCommand):
                     commercial_terms_accepted=n,
                 )
                 if organization_id:
-                    u.organization = Organization.objects.get_or_create(id=organization_id)[0]
+                    u.organization = ExternalOrganization.objects.get_or_create(id=organization_id)[
+                        0
+                    ]
                     u.save()
             else:
                 raise CommandError(f"Cannot find user {username}")

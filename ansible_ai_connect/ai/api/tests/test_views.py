@@ -87,7 +87,7 @@ from ansible_ai_connect.ai.api.pipelines.completion_stages.pre_process import (
 from ansible_ai_connect.ai.api.serializers import CompletionRequestSerializer
 from ansible_ai_connect.healthcheck.backends import HealthCheckSummary
 from ansible_ai_connect.main.tests.test_views import create_user_with_provider
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
@@ -203,7 +203,7 @@ class TestContentMatchesWCAView(
 ):
     def test_wca_contentmatch_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -295,7 +295,7 @@ class TestContentMatchesWCAView(
 
     def test_wca_contentmatch_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -395,7 +395,7 @@ class TestContentMatchesWCAView(
 
     def test_wca_contentmatch_with_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -452,7 +452,7 @@ class TestContentMatchesWCAView(
 
     def test_wca_contentmatch_without_custom_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
         payload = {
             "suggestions": [
@@ -518,7 +518,7 @@ class TestContentMatchesWCAViewErrors(
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -699,7 +699,7 @@ class TestContentMatchesWCAViewSegmentEvents(
         super().setUp()
 
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         self.payload = {
@@ -1735,7 +1735,7 @@ class TestExplanationFeatureEnableForWcaOnprem(
         self.aap_user.save()
 
     def tearDown(self):
-        Organization.objects.filter(id=1981).delete()
+        ExternalOrganization.objects.filter(id=1981).delete()
         self.aap_user.delete()
         super().tearDown()
 
@@ -1808,7 +1808,7 @@ class TestGenerationFeatureEnableForWcaOnprem(
         self.aap_user.save()
 
     def tearDown(self):
-        Organization.objects.filter(id=1981).delete()
+        ExternalOrganization.objects.filter(id=1981).delete()
         self.aap_user.delete()
         super().tearDown()
 
