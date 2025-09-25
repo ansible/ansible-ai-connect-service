@@ -876,7 +876,7 @@ class TestSSLManagerEdgeCasesAndErrorConditions(SimpleTestCase):
         """Test SSL manager with corrupted CA bundle file."""
         # Create corrupted CA bundle
         with tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False) as temp_file:
-            temp_file.write("CORRUPTED CERTIFICATE DATA\x00\xff\x00")
+            temp_file.write("CORRUPTED CERTIFICATE DATA\x00\xFF\x00")
             temp_file_path = temp_file.name
 
         try:
