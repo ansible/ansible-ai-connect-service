@@ -1,6 +1,6 @@
 # Generated manually to create new Organization model and clear dab_rbac data
 
-from django.db import migrations, models
+from django.db import migrations
 
 
 def clear_dab_rbac_data(apps, schema_editor):
@@ -34,30 +34,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name="Organization",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                (
-                    "name",
-                    models.CharField(help_text="The name of this organization.", max_length=512),
-                ),
-                (
-                    "description",
-                    models.TextField(
-                        blank=True, default="", help_text="The organization description."
-                    ),
-                ),
-            ],
-            options={
-                "ordering": ["id"],
-            },
-        ),
         migrations.RunPython(
             clear_dab_rbac_data,
             reverse_clear_dab_rbac_data,

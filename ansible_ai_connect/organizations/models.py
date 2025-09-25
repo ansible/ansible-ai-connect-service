@@ -78,15 +78,3 @@ class ExternalOrganization(models.Model):
             flag,
             {"kind": "organization", "key": str(self.id)},
         )
-
-
-class Organization(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=512, help_text="The name of this organization.")
-    description = models.TextField(
-        blank=True, default="", help_text="The organization description."
-    )
-
-    class Meta:
-        app_label = "organizations"
-        ordering = ["id"]
