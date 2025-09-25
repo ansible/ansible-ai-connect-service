@@ -297,7 +297,7 @@ oauthlib==3.2.2
     #   social-auth-core
 odfpy==1.4.1
     # via tablib
-ollama==0.5.1
+ollama==0.6.0
     # via langchain-ollama
 openpyxl==3.1.2
     # via tablib
