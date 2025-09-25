@@ -572,7 +572,7 @@ yamllint==1.35.1
     # via ansible-lint
 yarl==1.17.2
     # via aiohttp
-zope-interface==7.2
+zope-interface==8.0.1
     # via twisted
 zstandard==0.23.0
     # via langsmith
