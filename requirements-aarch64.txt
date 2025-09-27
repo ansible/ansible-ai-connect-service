@@ -272,7 +272,7 @@ llama-stack-client==0.2.12
     # via -r requirements.in
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.3
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
