@@ -312,7 +312,7 @@ packaging==23.2
     #   django-allow-cidr
     #   langchain-core
     #   langsmith
-pandas==2.2.3
+pandas==2.3.3
     # via llama-stack-client
 parso==0.8.4
     # via jedi
