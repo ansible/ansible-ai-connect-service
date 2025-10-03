@@ -137,7 +137,7 @@ django-health-check==3.17.0
     # via -r requirements.in
 django-import-export==3.2.0
     # via -r requirements.in
-django-oauth-toolkit==3.0.1
+django-oauth-toolkit==3.1.0
     # via -r requirements.in
 django-prometheus==2.2.0
     # via -r requirements.in
