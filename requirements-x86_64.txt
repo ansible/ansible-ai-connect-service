@@ -30,7 +30,7 @@ anyio==4.6.2.post1
     #   llama-stack-client
 argparse==1.4.0
     # via uwsgi-readiness-check
-asgiref==3.8.1
+asgiref==3.10.0
     # via
     #   daphne
     #   django
