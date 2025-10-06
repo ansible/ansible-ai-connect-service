@@ -33,7 +33,7 @@ from ansible_ai_connect.ai.api.model_pipelines.nop.pipelines import (
 )
 from ansible_ai_connect.main.settings.base import SOCIAL_AUTH_OIDC_KEY
 from ansible_ai_connect.main.views import LoginView
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     create_user_with_provider,
@@ -365,7 +365,7 @@ class TestChatbotView(TestCase):
         self.non_rh_test_user.delete()
         self.test_group.delete()
         self.non_rh_user_with_subscription.delete()
-        Organization.objects.filter(id=12345).delete()
+        ExternalOrganization.objects.filter(id=12345).delete()
 
     def test_chatbot_view_with_anonymous_user(self):
         r = self.client.get(reverse("chatbot"))

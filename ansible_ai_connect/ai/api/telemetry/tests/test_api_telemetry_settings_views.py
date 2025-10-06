@@ -27,7 +27,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationLightspeedSubscriber,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import APIVersionTestCaseBase
 
 
@@ -71,7 +71,7 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_get_settings_when_undefined(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -85,9 +85,9 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_get_settings_when_defined(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123, telemetry_opt_out=True)[
-            0
-        ]
+        self.user.organization = ExternalOrganization.objects.get_or_create(
+            id=123, telemetry_opt_out=True
+        )[0]
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -115,7 +115,7 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_set_settings_with_valid_value(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         # Settings should initially be False
         r = self.client.get(self.api_version_reverse("telemetry_settings"))
@@ -150,7 +150,7 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_set_settings_throws_exception(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
         with patch("django.db.models.base.Model.save", side_effect=DatabaseError()):
@@ -168,7 +168,7 @@ class TestTelemetrySettingsView(APIVersionTestCaseBase, WisdomServiceAPITestCase
     @patch.object(feature_flags, "LDClient")
     def test_set_settings_throws_validation_exception(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
 
         with self.assertLogs(logger="root", level="DEBUG") as log:
@@ -187,7 +187,7 @@ class TestTelemetrySettingsViewAsNonSubscriber(
     APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
 ):
     def test_get_settings_as_non_subscriber(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(self.api_version_reverse("telemetry_settings"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
