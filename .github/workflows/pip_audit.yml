@@ -65,3 +65,6 @@ jobs:
             GHSA-pq67-6m6q-mj2v
             # We don't use urllib3 from Node.js
             GHSA-48p4-8xcf-vxj5
+            # pip 25.3 is not released yet
+            # See: https://github.com/advisories/GHSA-4xh5-x5gv-qwph
+            GHSA-4xh5-x5gv-qwph
