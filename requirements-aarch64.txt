@@ -570,7 +570,7 @@ xlwt==1.3.0
     # via tablib
 yamllint==1.35.1
     # via ansible-lint
-yarl==1.17.2
+yarl==1.22.0
     # via aiohttp
 zope-interface==7.2
     # via twisted
