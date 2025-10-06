@@ -37,7 +37,7 @@ asgiref==3.8.1
     #   django-ansible-base
 asttokens==2.4.1
     # via stack-data
-attrs==23.2.0
+attrs==25.4.0
     # via
     #   aiohttp
     #   jsonschema
