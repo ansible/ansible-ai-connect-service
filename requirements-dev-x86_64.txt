@@ -69,7 +69,7 @@ pathspec==0.12.1
     #   -c requirements-x86_64.txt
     #   black
     #   yamllint
-pip-tools==7.4.1
+pip-tools==7.5.1
     # via -r requirements-dev.in
 platformdirs==4.2.1
     # via
