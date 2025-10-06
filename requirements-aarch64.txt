@@ -93,7 +93,7 @@ cryptography==43.0.1
     #   pyopenssl
     #   service-identity
     #   social-auth-core
-daphne==4.1.2
+daphne==4.2.1
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
