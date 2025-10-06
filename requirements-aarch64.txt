@@ -164,7 +164,7 @@ filelock==3.13.4
     #   ansible-risk-insight
 fire==0.7.0
     # via -r requirements.in
-frozenlist==1.4.1
+frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
