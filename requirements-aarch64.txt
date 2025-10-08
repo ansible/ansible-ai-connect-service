@@ -325,7 +325,7 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-platformdirs==4.2.1
+platformdirs==4.5.0
     # via black
 prometheus-client==0.20.0
     # via django-prometheus
