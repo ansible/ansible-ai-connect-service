@@ -20,7 +20,7 @@ ansible-core==2.15.11
     # via
     #   ansible-compat
     #   ansible-lint
-ansible-lint==24.2.2
+ansible-lint==25.9.2
     # via -r requirements.in
 ansible-risk-insight==0.2.7
     # via -r requirements.in
