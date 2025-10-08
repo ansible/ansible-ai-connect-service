@@ -333,7 +333,7 @@ prompt-toolkit==3.0.43
     # via
     #   ipython
     #   llama-stack-client
-propcache==0.2.0
+propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
