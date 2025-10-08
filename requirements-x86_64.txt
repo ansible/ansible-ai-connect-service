@@ -158,7 +158,7 @@ executing==2.0.1
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
-filelock==3.13.4
+filelock==3.20.0
     # via
     #   ansible-lint
     #   ansible-risk-insight
