@@ -556,7 +556,7 @@ urllib3==1.26.19
     #   django-ansible-base
     #   launchdarkly-server-sdk
     #   requests
-uwsgi==2.0.22
+uwsgi==2.0.31
     # via -r requirements.in
 uwsgi-readiness-check==0.2.0
     # via -r requirements.in
