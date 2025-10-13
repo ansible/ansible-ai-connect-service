@@ -448,7 +448,7 @@ requests-oauthlib==2.0.0
     # via social-auth-core
 requests-toolbelt==1.0.0
     # via langsmith
-resolvelib==1.0.1
+resolvelib==1.2.1
     # via ansible-core
 rich==13.7.1
     # via
