@@ -1,7 +1,7 @@
 {
   "name": "@ansible/ansible-ai-connect-chatbot",
   "type": "module",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "main": "./dist/ansible-chatbot.umd.cjs",
   "module": "./dist/ansible-chatbot.js",
   "types": "./dist/index.d.ts",
@@ -26,7 +26,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "axios": "^1.8.3",
+    "axios": "^1.12.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "uuid": "^10.0.0",
