@@ -64,7 +64,7 @@ botocore==1.29.165
     #   s3transfer
 bracex==2.4
     # via wcmatch
-cachetools==5.5.0
+cachetools==6.2.1
     # via google-auth
 certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
     # via
