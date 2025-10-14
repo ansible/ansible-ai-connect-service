@@ -131,7 +131,7 @@ django-csp==3.7
     # via -r requirements.in
 django-deprecate-fields==0.1.1
     # via -r requirements.in
-django-extensions==3.2.1
+django-extensions==4.1
     # via -r requirements.in
 django-health-check==3.17.0
     # via -r requirements.in
