@@ -127,7 +127,7 @@ django-ansible-base[jwt-consumer,resource-registry]==2025.8.18
     # via -r requirements.in
 django-crum==0.7.9
     # via django-ansible-base
-django-csp==3.7
+django-csp==4.0
     # via -r requirements.in
 django-deprecate-fields==0.1.1
     # via -r requirements.in
