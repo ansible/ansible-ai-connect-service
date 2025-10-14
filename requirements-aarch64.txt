@@ -75,7 +75,7 @@ certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5ac
     #   requests
 cffi==1.16.0
     # via cryptography
-charset-normalizer==3.3.2
+charset-normalizer==3.4.4
     # via requests
 click==8.1.7
     # via
