@@ -35,7 +35,7 @@ dependencies = [
   'llama-stack-client>=0.2.12',
   'protobuf~=5.29.5',
   'psycopg~=3.1.8',
-  'PyDrive2~=1.20.0',
+  'PyDrive2~=1.21.3',
   'pydantic==2.*',
   'pytz',
   'PyYAML~=6.0',
