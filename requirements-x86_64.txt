@@ -129,7 +129,7 @@ django-crum==0.7.9
     # via django-ansible-base
 django-csp==3.7
     # via -r requirements.in
-django-deprecate-fields==0.1.1
+django-deprecate-fields==0.2.2
     # via -r requirements.in
 django-extensions==3.2.1
     # via -r requirements.in
