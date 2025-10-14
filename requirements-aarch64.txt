@@ -133,7 +133,7 @@ django-deprecate-fields==0.1.1
     # via -r requirements.in
 django-extensions==3.2.1
     # via -r requirements.in
-django-health-check==3.17.0
+django-health-check==3.20.0
     # via -r requirements.in
 django-import-export==3.2.0
     # via -r requirements.in
