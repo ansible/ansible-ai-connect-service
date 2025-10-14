@@ -150,7 +150,7 @@ djangorestframework==3.15.2
     #   drf-spectacular
 drf-spectacular==0.27.2
     # via -r requirements.in
-dynaconf==3.2.10
+dynaconf==3.2.12
     # via django-ansible-base
 et-xmlfile==1.1.0
     # via openpyxl
