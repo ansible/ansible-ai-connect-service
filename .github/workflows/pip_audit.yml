@@ -68,3 +68,6 @@ jobs:
             # pip 25.3 is not released yet
             # See: https://github.com/advisories/GHSA-4xh5-x5gv-qwph
             GHSA-4xh5-x5gv-qwph
+            # To remove once we upgrade to Django 5+ (requires major version upgrade)
+            # social-auth-app-django vulnerability requires Django>=5.1
+            GHSA-wv4w-6qv2-qqfg
