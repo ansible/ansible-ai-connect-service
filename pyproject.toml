@@ -44,7 +44,7 @@ dependencies = [
   'slack-sdk~=3.31.0',
   'social-auth-app-django~=5.4.1',
   'social-auth-core[openidconnect]>=4.4.2',
-  'urllib3~=1.26.19',
+  'urllib3~=2.5.0',
   'uwsgi~=2.0.22',
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
