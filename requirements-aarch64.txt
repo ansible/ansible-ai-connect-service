@@ -262,6 +262,7 @@ langchain-ollama==0.3.5
     # via -r requirements.in
 langchain-text-splitters==0.3.11
     # via
+    #   -r requirements.in
     #   langchain
 langsmith==0.4.8
     # via
