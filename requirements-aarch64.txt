@@ -260,7 +260,7 @@ langchain-core==0.3.79
     #   langchain-text-splitters
 langchain-ollama==0.3.5
     # via -r requirements.in
-langchain-text-splitters==0.3.11
+langchain-text-splitters==1.0.0
     # via
     #   -r requirements.in
     #   langchain
