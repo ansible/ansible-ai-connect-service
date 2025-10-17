@@ -370,7 +370,7 @@ pyasn1-modules==0.4.0
     #   service-identity
 pycparser==2.21
     # via cffi
-pydantic==2.9.2
+pydantic==2.12.3
     # via
     #   -r requirements.in
     #   langchain
