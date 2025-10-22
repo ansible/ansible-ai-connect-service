@@ -26,6 +26,16 @@ if DEBUG:
         "DESCRIPTION": "Equip the automation developer at Lightspeed.",
         "VERSION": API_VERSION,
         "SERVE_INCLUDE_SCHEMA": False,
+        "SERVERS": [
+            {
+                "url": "https://lightspeed-instance/api/v1",
+                "description": "Direct access to a Lightspeed instance",
+            },
+            {
+                "url": "https://aap/api/lightspeed/v1",
+                "description": "Access through an Ansible Automation Platfrom gateway",
+            },
+        ],
         # OTHER SETTINGS
         "TAGS": [
             {"name": "ai", "description": "AI-related operations"},
@@ -34,6 +44,7 @@ if DEBUG:
             {"name": "wca", "description": "watsonx Code Assistant"},
         ],
         "SCHEMA_PATH_PREFIX": r"/api/v[0-9]+",
+        "SCHEMA_PATH_PREFIX_TRIM": True,
         "PREPROCESSING_HOOKS": ["ansible_ai_connect.ai.api.openapi.preprocessing_filter_spec"],
     }
 
