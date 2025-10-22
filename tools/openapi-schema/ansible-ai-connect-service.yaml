@@ -4,7 +4,7 @@ info:
   version: 1.0.0 (v1)
   description: Equip the automation developer at Lightspeed.
 paths:
-  /api/v1/ai/chat/:
+  /ai/chat/:
     post:
       operationId: ai_chat_create
       description: Send a message to the backend chatbot service and get a reply.
@@ -47,7 +47,7 @@ paths:
           description: Internal server error
         '503':
           description: Service unavailable
-  /api/v1/ai/completions/:
+  /ai/completions/:
     post:
       operationId: ai_completions_create
       description: Returns inline code suggestions based on a given Ansible editor
@@ -111,7 +111,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v1/ai/contentmatches/:
+  /ai/contentmatches/:
     post:
       operationId: ai_contentmatches_create
       description: Returns content matches that were the highest likelihood sources
@@ -151,7 +151,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v1/ai/explanations/:
+  /ai/explanations/:
     post:
       operationId: ai_explanations_create
       description: Returns a text that explains a playbook.
@@ -192,7 +192,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v1/ai/explanations/role/:
+  /ai/explanations/role/:
     post:
       operationId: ai_explanations_role_create
       description: Returns a text that explains a role.
@@ -233,7 +233,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v1/ai/feedback/:
+  /ai/feedback/:
     post:
       operationId: ai_feedback_create
       description: Feedback API for the AI service
@@ -275,7 +275,7 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
-  /api/v1/ai/generations/playbook/:
+  /ai/generations/playbook/:
     post:
       operationId: ai_generations_playbook_create
       description: Returns a playbook based on a text input.
@@ -316,7 +316,7 @@ paths:
           description: Request was throttled
         '503':
           description: Service Unavailable
-  /api/v1/ai/generations/role/:
+  /ai/generations/role/:
     post:
       operationId: ai_generations_role_create
       description: Returns a role based on a text input.
@@ -349,7 +349,7 @@ paths:
           description: ''
         '401':
           description: Unauthorized
-  /api/v1/ai/streaming_chat/:
+  /ai/streaming_chat/:
     post:
       operationId: ai_streaming_chat_create
       description: Send a message to the backend chatbot service and get a streaming
@@ -393,7 +393,7 @@ paths:
           description: Internal server error
         '503':
           description: Service unavailable
-  /api/v1/health/:
+  /health/:
     get:
       operationId: health_retrieve
       description: Service Liveness Probe View
@@ -406,7 +406,7 @@ paths:
       responses:
         '200':
           description: OK
-  /api/v1/health/status/:
+  /health/status/:
     get:
       operationId: health_status_retrieve
       description: Service Health Check
@@ -442,7 +442,7 @@ paths:
           description: ''
         '500':
           description: One or more backend services are unavailable.
-  /api/v1/health/status/chatbot/:
+  /health/status/chatbot/:
     get:
       operationId: health_status_chatbot_retrieve
       description: Chatbot health check
@@ -455,7 +455,7 @@ paths:
       responses:
         '200':
           description: OK
-  /api/v1/me/:
+  /me/:
     get:
       operationId: me_retrieve
       tags:
@@ -469,7 +469,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserResponse'
           description: ''
-  /api/v1/me/summary/:
+  /me/summary/:
     get:
       operationId: me_summary_retrieve
       tags:
@@ -483,7 +483,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MarkdownUserResponse'
           description: ''
-  /api/v1/telemetry/:
+  /telemetry/:
     get:
       operationId: telemetry_settings_get
       summary: Get the telemetry settings for an Organisation
@@ -552,7 +552,7 @@ paths:
           description: Internal service error
         '501':
           description: Not implemented
-  /api/v1/wca/apikey/:
+  /wca/apikey/:
     get:
       operationId: wca_api_key_get
       summary: Get WCA key for an Organisation
@@ -649,7 +649,7 @@ paths:
           description: Internal service error
         '501':
           description: Not implemented
-  /api/v1/wca/apikey/test/:
+  /wca/apikey/test/:
     get:
       operationId: wca_api_key_validator_get
       summary: Validate WCA key for an Organisation
@@ -674,7 +674,7 @@ paths:
           description: Internal service error
         '501':
           description: Not implemented
-  /api/v1/wca/modelid/:
+  /wca/modelid/:
     get:
       operationId: wca_model_id_get
       summary: Get WCA Model Id for an Organisation
@@ -743,7 +743,7 @@ paths:
           description: Internal service error
         '501':
           description: Not implemented
-  /api/v1/wca/modelid/test/:
+  /wca/modelid/test/:
     get:
       operationId: wca_model_id_validator_get
       summary: Validate WCA Model Id for an Organisation
@@ -1662,6 +1662,11 @@ components:
     oauth2:
       type: oauth2
       flows: {}
+servers:
+- url: https://lightspeed-instance/api/v1
+  description: Direct access to a Lightspeed instance
+- url: https://aap/api/lightspeed/v1
+  description: Access through an Ansible Automation Platfrom gateway
 tags:
 - name: ai
   description: AI-related operations
