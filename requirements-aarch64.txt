@@ -347,7 +347,7 @@ protobuf==5.29.5
     #   google-api-core
     #   googleapis-common-protos
     #   proto-plus
-psycopg[binary]==3.1.8
+psycopg[binary]==3.2.12
     # via -r requirements.in
 psycopg-binary==3.1.8
     # via psycopg
