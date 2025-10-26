@@ -349,7 +349,7 @@ protobuf==5.29.5
     #   proto-plus
 psycopg[binary]==3.1.8
     # via -r requirements.in
-psycopg-binary==3.1.8
+psycopg-binary==3.2.12
     # via psycopg
 ptyprocess==0.7.0
     # via pexpect
