@@ -31,7 +31,7 @@ def get_feature_flags():
     return FeatureFlags()
 
 
-class Organization(models.Model):
+class ExternalOrganization(models.Model):
     id = models.IntegerField(primary_key=True)
     telemetry_opt_out = models.BooleanField(default=False, db_column="telemetry_opt_out")
     enable_anonymization = models.BooleanField(default=True)

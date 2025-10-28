@@ -25,7 +25,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBaseOIDC
 
 
@@ -81,7 +81,7 @@ class TestConsoleView(WisdomServiceAPITestCaseBaseOIDC):
     @patch.object(IsOrganisationAdministrator, "has_permission", return_value=True)
     @patch.object(IsOrganisationLightspeedSubscriber, "has_permission", return_value=True)
     def test_extra_data(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         response = self.client.get(reverse("console"))
         self.assertIsInstance(response.context_data, dict)
@@ -93,7 +93,7 @@ class TestConsoleView(WisdomServiceAPITestCaseBaseOIDC):
     @patch.object(feature_flags, "LDClient")
     def test_extra_data_telemetry_feature(self, LDClient, *args):
         LDClient.return_value.variation.return_value = True
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         response = self.client.get(reverse("console"))
         self.assertIsInstance(response.context_data, dict)

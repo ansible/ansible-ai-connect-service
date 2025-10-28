@@ -14,11 +14,11 @@
 
 from rest_framework import serializers
 
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Organization
+        model = ExternalOrganization
         fields = ["id", "name", "has_api_key", "has_telemetry_opt_out"]
