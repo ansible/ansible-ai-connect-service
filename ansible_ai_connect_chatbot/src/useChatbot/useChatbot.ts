@@ -34,7 +34,6 @@ const botName =
 
 export const modelsSupported: LLMModel[] = [
   { model: "gemini-2.5-flash", provider: "gemini" },
-  { model: "gemini/gemini-2.5-flash", provider: "gemini" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -177,7 +176,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("gemini/gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
