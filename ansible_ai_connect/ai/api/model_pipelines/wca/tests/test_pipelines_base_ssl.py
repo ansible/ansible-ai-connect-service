@@ -42,7 +42,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         config = Mock(spec=WCAOnPremConfiguration)
         config.verify_ssl = verify_ssl
         config.api_key = api_key
-        config.url = "https://test-wca.example.com"
+        config.inference_url = "https://test-wca.example.com"
         config.retry_count = 3
         config.timeout = 30
         config.username = "test_user"
