@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest AS production
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS production
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -14,8 +14,8 @@ ENV BUILD_PATH=/var/www/wisdom/public/static/console
 ENV UWSGI_PROCESSES=10
 
 # Install dependencies
-RUN dnf module enable nodejs:18 nginx:1.22 -y && \
-    dnf install -y \
+RUN microdnf module enable nodejs:22 nginx:1.22 -y && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs -y \
     git \
     python3.11-devel \
     gcc \
@@ -45,7 +45,7 @@ ENV PATH="/var/www/venv/bin:${PATH}"
 
 # Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
 # Please remove once jwcrypto and cryptography can be both upgraded
-RUN dnf install -y openssl-devel
+RUN microdnf install --setopt=install_weak_deps=0 --nodocs -y openssl-devel
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
 RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
@@ -124,10 +124,12 @@ CMD /usr/bin/launch-wisdom.sh
 
 FROM production AS devel
 USER 0
-RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    dnf install -y inotify-tools && \
-    dnf remove -y epel-release && \
-    dnf clean all
+RUN  curl -o epel.rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    rpm -i epel.rpm && \
+    rm epel.rpm && \
+    microdnf install -y inotify-tools && \
+    microdnf remove -y epel-release && \
+    microdnf clean all
 COPY tools/scripts/auto-reload.sh /usr/bin/auto-reload.sh
 RUN mkdir /etc/supervisor/supervisord.d/
 COPY tools/configs/supervisord.d/auto-reload.conf /etc/supervisor/supervisord.d/auto-reload.conf
