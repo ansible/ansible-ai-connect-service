@@ -39,7 +39,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
 
     def _create_mock_config(self, verify_ssl=True, api_key="test-key"):
         """Create a mock WCA configuration for testing."""
-        config = Mock(spec=WCAOnPremConfiguration)
+        config = Mock()
         config.verify_ssl = verify_ssl
         config.api_key = api_key
         config.inference_url = "https://test-wca.example.com"
@@ -167,7 +167,7 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
 
     def _create_mock_config(self, verify_ssl=True):
         """Create a mock WCA configuration."""
-        config = Mock(spec=WCAOnPremConfiguration)
+        config = Mock()
         config.verify_ssl = verify_ssl
         config.inference_url = "https://test-wca.example.com"
         config.retry_count = 3
