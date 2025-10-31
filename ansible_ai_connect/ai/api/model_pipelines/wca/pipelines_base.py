@@ -72,7 +72,10 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.wca_utils import (
     Context,
     InferenceResponseChecks,
 )
-from ansible_ai_connect.main.ssl_manager import ssl_manager
+from ansible_ai_connect.main.ssl_manager import (
+    AllowBrokenSSLContextHTTPAdapter,
+    ssl_manager,
+)
 
 if TYPE_CHECKING:
     from ansible_ai_connect.users.models import User
@@ -205,6 +208,13 @@ class WCABaseMetaData(
         super().__init__(config=config)
         # Use centralized SSL manager for all WCA requests
         self.session = ssl_manager.get_requests_session()
+
+        # Ignore SSL errors with inference_url
+        if not self.config.verify_ssl:
+            self.session.mount(
+                self.config.inference_url,
+                AllowBrokenSSLContextHTTPAdapter(),
+            )
 
         self.retries = self.config.retry_count
         i = self.config.timeout

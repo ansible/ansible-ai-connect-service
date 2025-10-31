@@ -18,8 +18,32 @@ import ssl
 from typing import Optional
 
 import requests
+import requests.adapters
+import urllib3
+from urllib3.util import create_urllib3_context
 
 logger = logging.getLogger(__name__)
+
+
+class AllowBrokenSSLContextHTTPAdapter(requests.adapters.HTTPAdapter):
+    def __init__(self, **kwargs):
+        ssl_context = create_urllib3_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        self.ssl_context = ssl_context
+        super().__init__(**kwargs)
+
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = urllib3.poolmanager.PoolManager(
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            ssl_context=self.ssl_context,
+        )
+
+    def send(self, request, **kwargs):
+        kwargs["verify"] = self.ssl_context.check_hostname
+        return super().send(request, **kwargs)
 
 
 class SSLManager:
@@ -97,8 +121,6 @@ class SSLManager:
 
     def get_requests_session(self) -> requests.Session:
         """Get requests session with infrastructure-managed SSL configuration.
-        Args:
-            verify_ssl: Whether SSL verification should be enabled
         Returns:
             Configured requests session with proper SSL settings.
         Raises:
@@ -121,10 +143,9 @@ class SSLManager:
 
     def get_ssl_context(self) -> ssl.SSLContext:
         """Get SSL context for aiohttp with infrastructure-managed certificates.
-        Args:
-            verify_ssl: Whether SSL verification should be enabled
+        This method always returns an SSL context configured for verification.
         Returns:
-            SSLContext configured with CA bundle, or None if verification disabled
+            SSLContext configured with CA bundle or system defaults
         Raises:
             ssl.SSLError: If SSL context creation fails
             OSError: If SSL configuration fails
