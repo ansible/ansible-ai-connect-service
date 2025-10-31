@@ -67,6 +67,10 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         self.assertEqual(metadata.session, mock_session)
         self.assertIsNotNone(metadata)
 
+        # Verify that no adapter was mounted when verify_ssl is True
+        # (SSL verification should use the session's default behavior)
+        mock_session.mount.assert_not_called()
+
     @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
     def test_ssl_manager_integration_verify_ssl_disabled(self, mock_ssl_manager):
         """Test that WCAOnPremMetaData uses SSL manager when verify_ssl is disabled."""
@@ -83,6 +87,12 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         # Verify the session was assigned correctly
         self.assertEqual(metadata.session, mock_session)
         self.assertIsNotNone(metadata)
+
+        # Verify that AllowBrokenSSLContextHTTPAdapter was mounted to the inference_url
+        # when verify_ssl is False
+        mock_session.mount.assert_called_once()
+        mount_call_args = mock_session.mount.call_args
+        self.assertEqual(mount_call_args[0][0], config.inference_url)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
     def test_ssl_manager_session_graceful_handling(self, mock_ssl_manager):
@@ -159,6 +169,7 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
         """Create a mock WCA configuration."""
         config = Mock(spec=WCAOnPremConfiguration)
         config.verify_ssl = verify_ssl
+        config.inference_url = "https://test-wca.example.com"
         config.retry_count = 3
         config.timeout = 30
         config.username = "test_user"

@@ -143,10 +143,9 @@ class SSLManager:
 
     def get_ssl_context(self) -> ssl.SSLContext:
         """Get SSL context for aiohttp with infrastructure-managed certificates.
-        Args:
-            verify_ssl: Whether SSL verification should be enabled
+        This method always returns an SSL context configured for verification.
         Returns:
-            SSLContext configured with CA bundle, or None if verification disabled
+            SSLContext configured with CA bundle or system defaults
         Raises:
             ssl.SSLError: If SSL context creation fails
             OSError: If SSL configuration fails
