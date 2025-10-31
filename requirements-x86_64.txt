@@ -179,7 +179,7 @@ google-auth==2.34.0
     #   google-api-core
     #   google-api-python-client
     #   google-auth-httplib2
-google-auth-httplib2==0.2.0
+google-auth-httplib2==0.2.1
     # via google-api-python-client
 googleapis-common-protos==1.63.2
     # via google-api-core
