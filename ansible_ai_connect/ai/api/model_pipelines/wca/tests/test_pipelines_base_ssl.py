@@ -26,9 +26,6 @@ from unittest.mock import Mock, patch
 import requests
 from django.test import SimpleTestCase
 
-from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_onprem import (
-    WCAOnPremConfiguration,
-)
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremMetaData,
 )
