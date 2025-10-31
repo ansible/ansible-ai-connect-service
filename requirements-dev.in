@@ -6,6 +6,8 @@ grpcio-tools==1.68.1
 # pin idna until responses -> requests is updated
 idna==3.7
 isort==5.10.1
+# pinning pip to 25.2 see https://stackoverflow.com/questions/79802659/trying-to-solve-a-pip-compile-stack-trace-error
+pip==25.2
 pip-tools
 pre-commit
 responses==0.24.1
