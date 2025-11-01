@@ -264,7 +264,7 @@ langchain-text-splitters==0.3.11
     # via
     #   -r requirements.in
     #   langchain
-langsmith==0.4.8
+langsmith==0.4.39
     # via
     #   langchain
     #   langchain-core
