@@ -19,7 +19,8 @@ import uuid
 
 from ansible_anonymizer import anonymizer
 from django.conf import settings
-from rest_framework.exceptions import ErrorDetail
+from django.middleware.csrf import CsrfViewMiddleware
+from rest_framework.exceptions import ErrorDetail, PermissionDenied
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
 
@@ -38,6 +39,17 @@ from ansible_ai_connect.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
+
+
+def check_csrf(request):
+    django_request = getattr(request, "_request", request)
+
+    reason = CsrfViewMiddleware(get_response=lambda r: None).process_view(
+        django_request, None, (), {}
+    )
+
+    if reason:
+        raise PermissionDenied(detail="CSRF validation failed")
 
 
 def on_segment_error(error, _):
