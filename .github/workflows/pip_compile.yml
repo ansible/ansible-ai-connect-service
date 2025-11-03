@@ -46,7 +46,8 @@ jobs:
         echo "ARCH=$(uname -m)" >> "$GITHUB_ENV"
     - name: install
       run: |
-        pip install pip-tools
+        pip install --upgrade "pip<24.1"
+        pip install --upgrade "pip-tools<24.1"
         pip-compile --quiet -o requirements-${{ env.ARCH }}.txt requirements.in
         pip-compile --quiet -o requirements-dev-${{ env.ARCH }}.txt -c requirements-${{ env.ARCH }}.txt requirements-dev.in
         git diff --exit-code -- requirements-${{ env.ARCH }}.txt requirements-dev-${{ env.ARCH }}.txt
