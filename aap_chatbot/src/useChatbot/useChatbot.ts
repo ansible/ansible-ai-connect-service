@@ -233,7 +233,8 @@ export const useChatbot = () => {
   ) => {
     setMessages((msgs: ExtendedMessage[]) => {
       const newMsgs: ExtendedMessage[] = [];
-      newMessage.scrollToHere = !isStreamingSupported();
+      // Only set scrollToHere if message is added at the end (not inserted inline)
+      newMessage.scrollToHere = !isStreamingSupported() && !addAfter;
       let inserted = false;
       for (const msg of msgs) {
         msg.scrollToHere = false;

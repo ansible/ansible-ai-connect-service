@@ -179,7 +179,12 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   );
 
   useEffect(() => {
-    scrollToBottom();
+    // Only auto-scroll if the last message has scrollToHere flag set
+    // This prevents unwanted scrolling when feedback messages are added inline
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.scrollToHere) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const onSelectModel = (
