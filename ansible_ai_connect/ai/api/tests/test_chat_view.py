@@ -860,3 +860,154 @@ class TestStreamingChatViewWithAnonymousUser(APIVersionTestCaseBase, WisdomServi
             self.api_version_reverse("streaming_chat"), TestChatView.VALID_PAYLOAD, format="json"
         )
         self.assertEqual(response.status_code, 401)
+
+
+class TestStreamingChatViewCSRF(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
+    """Test CSRF validation for the streaming_chat endpoint."""
+
+    api_version = "v1"
+
+    def setUp(self):
+        super().setUp()
+        (org, _) = Organization.objects.get_or_create(id=123, telemetry_opt_out=False)
+        self.user.organization = org
+        self.user.rh_internal = True
+        self.user.save()
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def test_csrf_validation_fails_without_token(self, mock_response):
+        """Test that CSRF validation fails when no CSRF token is provided."""
+
+        mock_response.return_value = TestStreamingChatView.mocked_response(
+            json=TestChatView.VALID_PAYLOAD
+        )
+
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+        ):
+            from rest_framework.test import APIClient
+
+            csrf_client = APIClient(enforce_csrf_checks=True)
+            csrf_client.force_authenticate(user=self.user)
+
+            response = csrf_client.post(
+                self.api_version_reverse("streaming_chat"),
+                TestChatView.VALID_PAYLOAD,
+                format="json",
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("CSRF", str(response.data))
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def test_csrf_validation_succeeds_with_valid_token(self, mock_response):
+        """Test that CSRF validation succeeds when a valid CSRF token is provided."""
+        mock_response.return_value = TestStreamingChatView.mocked_response(
+            json=TestChatView.VALID_PAYLOAD
+        )
+
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+        ):
+            from django.middleware.csrf import _get_new_csrf_string
+            from rest_framework.test import APIClient
+
+            csrf_client = APIClient(enforce_csrf_checks=True)
+            csrf_client.force_authenticate(user=self.user)
+
+            token = _get_new_csrf_string()
+            csrf_client.cookies["csrftoken"] = token
+
+            response = csrf_client.post(
+                self.api_version_reverse("streaming_chat"),
+                TestChatView.VALID_PAYLOAD,
+                format="json",
+                HTTP_X_CSRFTOKEN=token,
+            )
+
+            self.assertNotEqual(response.status_code, 403)
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def test_csrf_validation_fails_with_invalid_token(self, mock_response):
+        """Test that CSRF validation fails when an invalid CSRF token is provided."""
+        mock_response.return_value = TestStreamingChatView.mocked_response(
+            json=TestChatView.VALID_PAYLOAD
+        )
+
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+        ):
+            from rest_framework.test import APIClient
+
+            csrf_client = APIClient(enforce_csrf_checks=True)
+            csrf_client.force_authenticate(user=self.user)
+
+            response = csrf_client.post(
+                self.api_version_reverse("streaming_chat"),
+                TestChatView.VALID_PAYLOAD,
+                format="json",
+                HTTP_X_CSRFTOKEN="invalid_token_12345",
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("CSRF", str(response.data))
+
+    @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")
+    @mock.patch(
+        "ansible_ai_connect.ai.api.model_pipelines.http.pipelines."
+        "HttpStreamingChatBotPipeline.get_streaming_http_response",
+    )
+    def test_csrf_validation_fails_with_valid_session_and_invalid_token(self, mock_response):
+        """Test that CSRF validation fails when a valid session present but the token is invalid.
+
+        This reproduces the real-world scenario described in the PR: sessionid is valid (user
+        has a session) but the X-CSRFToken value does not match the csrftoken cookie.
+        """
+        mock_response.return_value = TestStreamingChatView.mocked_response(
+            json=TestChatView.VALID_PAYLOAD
+        )
+
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+        ):
+            from rest_framework.test import APIClient
+
+            csrf_client = APIClient(enforce_csrf_checks=True)
+            csrf_client.force_authenticate(user=self.user)
+
+            # Simulate a valid session cookie being present
+            csrf_client.cookies["sessionid"] = "validsession123"
+
+            # Simulate a csrftoken cookie that does NOT match the header token
+            csrf_client.cookies["csrftoken"] = "expected_token_abc"
+
+            # Send a mismatched/invalid header token
+            response = csrf_client.post(
+                self.api_version_reverse("streaming_chat"),
+                TestChatView.VALID_PAYLOAD,
+                format="json",
+                HTTP_X_CSRFTOKEN="invalid_token_12345",
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("CSRF", str(response.data))
