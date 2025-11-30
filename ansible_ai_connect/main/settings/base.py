@@ -595,6 +595,7 @@ ANSIBLE_AI_ONE_CLICK_REPORTS_CONFIG: dict = (
 CHATBOT_DEFAULT_PROVIDER = os.getenv("CHATBOT_DEFAULT_PROVIDER")
 CHATBOT_DEBUG_UI = os.getenv("CHATBOT_DEBUG_UI", "False").lower() == "true"
 CHATBOT_DEFAULT_SYSTEM_PROMPT = os.getenv("CHATBOT_DEFAULT_SYSTEM_PROMPT")
+CHATBOT_API_KEY = os.getenv("CHATBOT_API_KEY")
 # ==========================================
 
 # ==========================================

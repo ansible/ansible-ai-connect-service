@@ -262,6 +262,12 @@ class AACSAPIView(APIView):
         return response
 
     @staticmethod
+    def get_auth_header() -> str | None:
+        if settings.CHATBOT_API_KEY is not None:
+            return f"Bearer {settings.CHATBOT_API_KEY}"
+        return None
+
+    @staticmethod
     def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
         mcp_headers = {}
         jwt_header_name = "X-DAB-JW-TOKEN"
@@ -1122,6 +1128,7 @@ class Chat(AACSAPIView):
         self.event.modelName = self.req_model_id or self.llm.config.model_id
         self.event.no_tools = no_tools
 
+        auth_header = self.get_auth_header()
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
 
         data = self.llm.invoke(
@@ -1131,6 +1138,7 @@ class Chat(AACSAPIView):
                 model_id=self.req_model_id or self.llm.config.model_id,
                 provider=req_provider,
                 conversation_id=conversation_id,
+                auth_header=auth_header,
                 mcp_headers=mcp_headers,
                 no_tools=no_tools,
             )
@@ -1221,6 +1229,7 @@ class StreamingChat(AACSAPIView):
         self.event.modelName = self.req_model_id or self.llm.config.model_id
         self.event.no_tools = no_tools
 
+        auth_header = self.get_auth_header()
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
 
         return self.llm.invoke(
@@ -1232,6 +1241,7 @@ class StreamingChat(AACSAPIView):
                 conversation_id=conversation_id,
                 media_type=media_type,
                 event=copy.copy(self.event),
+                auth_header=auth_header,
                 mcp_headers=mcp_headers,
                 no_tools=no_tools,
             )
