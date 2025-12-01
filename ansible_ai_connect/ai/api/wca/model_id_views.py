@@ -55,7 +55,7 @@ from ansible_ai_connect.ai.api.permissions import (
 )
 from ansible_ai_connect.ai.api.serializers import WcaModelIdRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.signals import user_set_wca_model_id
 
 UNKNOWN_MODEL_ID = "Unknown"
@@ -246,7 +246,7 @@ def do_validated_operation(request, api_key_provider, model_id_provider, on_succ
     # See https://issues.redhat.com/browse/AAP-16009
     if not request._request.user.organization:
         return Response(status=HTTP_400_BAD_REQUEST)
-    organization: Organization = request._request.user.organization
+    organization: ExternalOrganization = request._request.user.organization
     try:
         api_key = api_key_provider(organization.id)
         model_id = model_id_provider(organization.id)

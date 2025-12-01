@@ -22,7 +22,7 @@ from social_core.pipeline.user import get_username
 from social_django.models import UserSocialAuth
 
 from ansible_ai_connect.ai.api.utils.segment import send_segment_group
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,9 @@ def redhat_organization(backend, user, response, *args, **kwargs):
         else:
             logger.error("AUTHZ_DUMMY_RH_ORG_ADMINS has an invalid format.")
 
-    user.organization = Organization.objects.get_or_create(id=int(payload["organization"]["id"]))[0]
+    user.organization = ExternalOrganization.objects.get_or_create(
+        id=int(payload["organization"]["id"])
+    )[0]
     user.save()
     send_segment_group(
         f"rhsso-{user.organization.id}", "Red Hat Organization", user.organization.id, user
