@@ -377,6 +377,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         result = self.pipeline.invoke(params)
 
         # Verify the response
+        self.assertEqual(len(result["response"]), 21)
         self.assertEqual(result["response"], "Hello with no tools!")
 
         # Verify the HTTP call was made with correct parameters
