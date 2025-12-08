@@ -175,7 +175,7 @@ Pre-commit should be used before pushing a new PR.
 To use pre-commit, you need to first install the pre-commit package and its dependencies by running:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install .
 ```
 
 To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this
@@ -193,58 +193,26 @@ pre-commit autoupdate && pre-commit run -a
 
 ## Updating the Python dependencies
 
-We are now using pip-compile in order to manage our Python
-dependencies for the x86_64 and ARM64/AArch64 architectures.
+We are using pip-compile in order to manage our Python dependencies.
 
-In order to generate requirements.txt files for both architectures,
-you must use a multi-arch capable virtual machine emulator (like QEMU)
-and enable multi-arch support.
-
-To enable multi-arch support, run the instructions for your container
-engine and emulator from this table:
-
-<table>
-<tr>
-<td>Container Engine</td>
-<td>Emulator</td>
-<td>Instructions</td>
-</tr>
-<tr>
-<td>podman</td>
-<td>QEMU</td>
-<td>
-
-```bash
-podman machine ssh
-sudo rpm-ostree install qemu-user-static
-sudo systemctl reboot
-```
-
-</td>
-</tr>
-</table>
-
-The specification of what packages we need now live in the
-requirements.in and requirements-dev.in files. Use your preferred
-editor to make the needed changes in those files, then run
+The specification of what packages we need lives in the
+`requirements.in` file. Use your preferred editor to make the needed
+changes in that file, then run:
 
 ```bash
 make pip-compile
 ```
 
-This will spin up a container and run the equivalent of these commands
-to generate the updated files:
+This will spin up a container and run the equivalent of:
 
 ```bash
 pip-compile requirements.in
-pip-compile requirements-dev.in
 ```
 
-These commands will produce fully populated and pinned requirements.txt and
-requirements-dev.txt files, containing all of the dependencies of
-our dependencies involved. Due to differences in architecture and
-version of Python between developers' machines, we do not recommend
-running the pip-compile commands directly.
+This command will produce a fully populated and pinned `requirements.txt`
+file, containing all of the dependencies of our dependencies.
+Due to differences in architecture and version of Python between
+developers' machines, we do not recommend running pip-compile directly.
 
 ### Use of `pyproject.toml`
 
@@ -456,8 +424,7 @@ have backend services (Postgres, Prometheus and Grafana) running.
 is one handy way for that requirement.
 
 For getting the unit test code coverage,
-install the `coverage` module, which is included
-in `requirements-dev.txt` with the instructions in the
+install the `coverage` module with the instructions in the
 [Using pre-commit](#using-pre-commit) section.
 
 ### Use make

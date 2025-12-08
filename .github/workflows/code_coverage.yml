@@ -54,8 +54,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        pip install .
+        pip install .[dev]
 
     - name: Create CA symlink to use RH's certifi on ubuntu-latest
       run: |

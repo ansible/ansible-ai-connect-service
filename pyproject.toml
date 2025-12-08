@@ -60,6 +60,20 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 
+[project.optional-dependencies]
+dev = [
+  'black~=24.3.0',
+  'coverage~=7.2.1',
+  'flake8~=6.0.0',
+  'grpcio-tools~=1.68.1',
+  'isort~=5.10.1',
+  'pip-tools',
+  'pre-commit',
+  'responses~=0.24.1',
+  'torch-model-archiver',
+  'virtualenv>=20.28.0',
+]
+
 [project.urls]
 Homepage = "https://github.com/ansible/ansible-ai-connect-service"
 

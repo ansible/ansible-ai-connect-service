@@ -30,8 +30,6 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     rsync
 
 # Copy the ansible_wisdom package files
-COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/
-COPY requirements-aarch64.txt /var/www/ansible-ai-connect-service/
 COPY requirements.txt /var/www/ansible-ai-connect-service/
 COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
