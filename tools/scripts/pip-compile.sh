@@ -1,12 +1,11 @@
 #!/bin/bash
 set -o errexit
 
-dnf install -y python3.11
+dnf install -y python3.12-devel gcc
 dnf -y install git
 
-/usr/bin/python3.11 -m venv /var/www/venv
-/var/www/venv/bin/python3.11 -m pip --no-cache-dir install --upgrade 'pip<25.3'
-/var/www/venv/bin/python3.11 -m pip --no-cache-dir install pip-tools
+/usr/bin/python3.12 -m venv /var/www/venv
+/var/www/venv/bin/python3.12 -m pip --no-cache-dir install pip-tools
 
 TARGET=$(uname -m)
 /var/www/venv/bin/pip-compile -o requirements-${TARGET}.txt requirements.in
