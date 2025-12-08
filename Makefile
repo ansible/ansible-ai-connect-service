@@ -97,13 +97,13 @@ update-openapi-schema:
 docker-compose-clean:
 	${COMPOSE_RUNTIME} -f ${PWD}/tools/docker-compose/compose.yaml down
 
-.PHONY: pip-compile
-pip-compile:
+.PHONY: export
+export:
 	${CONTAINER_RUNTIME} run --arch amd64 --os linux \
 		--volume $(PWD):/var/www/wisdom:Z \
 		--workdir /var/www/wisdom \
 		registry.access.redhat.com/ubi9/ubi:latest \
-		/var/www/wisdom/tools/scripts/pip-compile.sh
+		/var/www/wisdom/tools/scripts/uv-export.sh
 
 # DEPRECATED: Please use create-superuser-containerized instead
 docker-create-superuser: create-superuser-containerized DEPRECATED

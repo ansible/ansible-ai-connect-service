@@ -193,30 +193,44 @@ pre-commit autoupdate && pre-commit run -a
 
 ## Updating the Python dependencies
 
-We are using pip-compile in order to manage our Python dependencies.
+We use [uv](https://github.com/astral-sh/uv) to manage Python dependencies,
+following the same approach as [ansible-chatbot-stack](https://github.com/ansible/ansible-chatbot-stack).
+All dependencies are defined in `pyproject.toml`.
 
-The specification of what packages we need lives in the
-`requirements.in` file. Use your preferred editor to make the needed
-changes in that file, then run:
+To update the pinned dependencies, run:
 
 ```bash
-make pip-compile
+make export
 ```
 
 This will spin up a container and run the equivalent of:
 
 ```bash
-pip-compile requirements.in
+uv lock --python 3.12
+uv export --format requirements-txt --no-hashes -o requirements.txt
 ```
 
-This command will produce a fully populated and pinned `requirements.txt`
-file, containing all of the dependencies of our dependencies.
-Due to differences in architecture and version of Python between
-developers' machines, we do not recommend running pip-compile directly.
+This generates:
+- `uv.lock` - The lock file with exact pinned versions (commit this file)
+- `requirements.txt` - Exported for pip compatibility
 
-### Use of `pyproject.toml`
+### Security constraints
 
-`pyproject.toml` contains the dependencies used by downstream builds. Changes to any of the top level dependencies in `requirements.in` must there also be reflected in `pyproject.toml` too. See [PEP-518](https://peps.python.org/pep-0518/) for details.
+Security-pinned transitive dependencies are defined in the `[tool.uv]`
+section of `pyproject.toml` using `constraint-dependencies`. These constraints
+are automatically applied when running `uv lock`.
+
+### Development dependencies
+
+Development dependencies (testing, linting, etc.) are defined as optional
+dependencies in `pyproject.toml` under `[project.optional-dependencies]`.
+Install them with:
+
+```bash
+pip install .[dev]
+# or with uv:
+uv pip install -e .[dev]
+```
 
 # Using the VS Code extension
 
