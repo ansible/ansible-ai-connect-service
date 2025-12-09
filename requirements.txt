@@ -22,8 +22,6 @@ ansible-core==2.15.11
     #   ansible-lint
 ansible-lint==24.2.2
     # via -r requirements.in
-ansible-risk-insight==0.2.7
-    # via -r requirements.in
 anyio==4.6.2.post1
     # via
     #   httpx
@@ -159,17 +157,13 @@ executing==2.0.1
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
 filelock==3.13.4
-    # via
-    #   ansible-lint
-    #   ansible-risk-insight
+    # via ansible-lint
 fire==0.7.0
     # via -r requirements.in
 frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-gitdb==4.0.11
-    # via ansible-risk-insight
 google-api-core==2.19.1
     # via google-api-python-client
 google-api-python-client==2.141.0
@@ -230,14 +224,8 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.4.0
-    # via ansible-risk-insight
 jsonpatch==1.33
     # via langchain-core
-jsonpickle==3.3.0
-    # via
-    #   -r requirements.in
-    #   ansible-risk-insight
 jsonpointer==2.4
     # via jsonpatch
 jsonschema==4.21.1
@@ -419,7 +407,6 @@ pyyaml==6.0
     #   ansible-compat
     #   ansible-core
     #   ansible-lint
-    #   ansible-risk-insight
     #   drf-spectacular
     #   langchain
     #   langchain-core
@@ -427,8 +414,6 @@ pyyaml==6.0
     #   pydrive2
     #   tablib
     #   yamllint
-rapidfuzz==3.8.1
-    # via ansible-risk-insight
 referencing==0.35.0
     # via
     #   jsonschema
@@ -436,7 +421,6 @@ referencing==0.35.0
 requests==2.32.0
     # via
     #   -r requirements.in
-    #   ansible-risk-insight
     #   django-ansible-base
     #   django-oauth-toolkit
     #   google-api-core
@@ -466,9 +450,7 @@ rsa==4.9
     #   google-auth
     #   oauth2client
 ruamel-yaml==0.18.6
-    # via
-    #   ansible-lint
-    #   ansible-risk-insight
+    # via ansible-lint
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.14.0
@@ -486,10 +468,6 @@ six==1.16.0
     #   python-dateutil
 slack-sdk==3.31.0
     # via -r requirements.in
-smmap==5.0.1
-    # via
-    #   ansible-risk-insight
-    #   gitdb
 sniffio==1.3.1
     # via
     #   anyio
@@ -516,8 +494,6 @@ subprocess-tee==0.4.1
     #   ansible-lint
 tablib[html,ods,xls,xlsx,yaml]==3.6.1
     # via django-import-export
-tabulate==0.9.0
-    # via ansible-risk-insight
 tenacity==8.2.3
     # via langchain-core
 termcolor==2.5.0

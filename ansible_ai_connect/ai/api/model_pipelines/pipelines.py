@@ -17,7 +17,6 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, Generic, Optional
 
 from attrs import define, field
-from django.conf import settings
 from django.http import StreamingHttpResponse
 from rest_framework import serializers
 from rest_framework.request import Request
@@ -305,9 +304,6 @@ class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
     def get_model_id(self, user, requested_model_id: Optional[str] = None) -> str:
         return requested_model_id or self.config.model_id
-
-    def supports_ari_postprocessing(self):
-        return settings.ENABLE_ARI_POSTPROCESS
 
 
 class ModelPipeline(

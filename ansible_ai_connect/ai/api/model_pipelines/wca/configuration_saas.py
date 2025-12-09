@@ -31,7 +31,6 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.configuration_base import (
 # ENABLE_HEALTHCHECK_XXX
 # ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL
 # ANSIBLE_WCA_RETRY_COUNT
-# WCA_ENABLE_ARI_POSTPROCESS
 # ANSIBLE_WCA_HEALTHCHECK_API_KEY
 # ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
 
@@ -55,7 +54,6 @@ class WCASaaSConfiguration(WCABaseConfiguration):
         enable_health_check: Optional[bool],
         verify_ssl: bool,
         retry_count: int,
-        enable_ari_postprocessing: bool,
         health_check_api_key: str,
         health_check_model_id: str,
         idp_url: str,
@@ -73,7 +71,6 @@ class WCASaaSConfiguration(WCABaseConfiguration):
             enable_health_check,
             verify_ssl,
             retry_count,
-            enable_ari_postprocessing,
             health_check_api_key,
             health_check_model_id,
             enable_anonymization,
@@ -108,7 +105,6 @@ class WCASaaSPipelineConfiguration(WCABasePipelineConfiguration):
                 enable_health_check=kwargs["enable_health_check"],
                 verify_ssl=kwargs["verify_ssl"],
                 retry_count=kwargs["retry_count"],
-                enable_ari_postprocessing=kwargs["enable_ari_postprocessing"],
                 health_check_api_key=kwargs["health_check_api_key"],
                 health_check_model_id=kwargs["health_check_model_id"],
                 idp_url=kwargs["idp_url"],

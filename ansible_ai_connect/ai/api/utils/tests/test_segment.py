@@ -155,7 +155,6 @@ class TestSegment(TestCase):
             redact_seated_users_data(test_data, ALLOW_LIST["prediction"]), expected_result
         )
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_send_segment_event_commercial_forbidden_event(self, *args):
         g = Mock()
@@ -175,7 +174,6 @@ class TestSegment(TestCase):
             )
 
     @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_send_segment_event_community_user(self, track_method):
         g = Mock()
@@ -194,7 +192,6 @@ class TestSegment(TestCase):
         self.assertEqual(argument["exception"], "SomeException")
 
     @mock.patch("ansible_ai_connect.ai.api.utils.segment.analytics.track")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_send_segment_event_seated_user(self, track_method):
         g = Mock()
@@ -326,7 +323,6 @@ class TestSegment(TestCase):
 
         self.assertEqual(traits, {"group_type": group_type, "group_value": group_value})
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_segment_client_in_use(self):
         g = Mock()

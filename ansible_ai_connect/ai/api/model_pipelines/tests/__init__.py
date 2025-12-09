@@ -117,7 +117,6 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
                 retry_count=extract("retry_count", 4, **kwargs),
-                enable_ari_postprocessing=extract("enable_ari_postprocessing", False, **kwargs),
                 health_check_api_key=extract(
                     "health_check_api_key", "a-healthcheck-api-key", **kwargs
                 ),
@@ -144,7 +143,6 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
                 retry_count=extract("retry_count", 4, **kwargs),
-                enable_ari_postprocessing=extract("enable_ari_postprocessing", False, **kwargs),
                 health_check_api_key=extract(
                     "health_check_api_key", "a-healthcheck-api-key", **kwargs
                 ),

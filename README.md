@@ -23,7 +23,6 @@ Populate the `tools/docker-compose/.env` file with the following values:
 ```bash
 DEPLOYMENT_MODE="upstream"
 SECRET_KEY="somesecretvalue"
-ENABLE_ARI_POSTPROCESS="False"
 WCA_SECRET_BACKEND_TYPE="dummy"
 # configure model server
 ANSIBLE_AI_MODEL_MESH_CONFIG="..."
@@ -350,41 +349,6 @@ To get an authentication token without logging in via GitHub, you also:
 
 To test the API with no authentication, you can empty out `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES` in base.py.
 
-## Enabling postprocess with ARI
-
-You can enable postprocess with [Ansible Risk Insight (ARI)](https://github.com/ansible/ansible-risk-insight) for
-improving the completion output just by following these 2 steps below.
-
-1. Set the environment variable `ENABLE_ARI_POSTPROCESS` to True
-
-    ```bash
-    $ export ENABLE_ARI_POSTPROCESS=True
-    ```
-
-
-2. Prepare `rules` and `data` directory inside `ari/kb` directory.
-
-   `rules` should contain mutation rules for the postprocess, you can refer
-   to [here](https://github.com/ansible/ari-metrics-for-wisdom/tree/main/rules) for some examples.
-
-   `data` should contain the backend data for ARI. We will host this data somewhere in the future, but currently this
-   file must be placed manually if you want to enable the postprocess.
-
-   Once the files are ready, the `ari/kb` directory should look like this.
-
-    ```bash
-    ari/kb/
-    ├── data
-    │   ├── collections
-    │   └── indices
-    └── rules
-        ├── W001_module_name_metrics.py
-        ├── W002_module_key_metrics.py
-        ├── ...
-    ```
-
-Then you can build the django image or just run `make docker-compose`.
-
 ## Enabling postprocess with Ansible Lint
 
 You can enable postprocess with [Ansible Lint](https://github.com/ansible/ansible-lint) for improving the completion output just by setting the environment variable `ENABLE_ANSIBLE_LINT_POSTPROCESS` to True
@@ -460,7 +424,6 @@ To connect to the Mistal 7b Instruct model running on locally on [llama.cpp](htt
 1. Set the appropriate environment variables
    ```bash
    ANSIBLE_AI_MODEL_MESH_CONFIG="..."
-   ENABLE_ARI_POSTPROCESS=False
    ```
 See the example [ANSIBLE_AI_MODEL_MESH_CONFIG](./docs/config/examples/README-ANSIBLE_AI_MODEL_MESH_CONFIG.md).
 
@@ -522,16 +485,10 @@ ANSIBLE_AI_DATABASE_HOST=localhost
 ANSIBLE_AI_DATABASE_NAME=wisdom
 ANSIBLE_AI_DATABASE_PASSWORD=wisdom
 ANSIBLE_AI_DATABASE_USER=wisdom
-ARI_KB_PATH=../ari/kb/
 DJANGO_SETTINGS_MODULE=ansible_wisdom.main.settings.development
-ENABLE_ARI_POSTPROCESS=True
 PYTHONUNBUFFERED=1
 SECRET_KEY=somesecret
 ```
-
-Note that this `.env` file assumes that the Django
-service is executed in the `ansible_wisdom` subdirectory
-as `ARI_KB_PATH` is defined as `../ari/kb`.
 
 It is recommended to use `make` to run unit tests since it helps to configure default values.
 If you want to execute only specific file/class/method you can use $WISDOM_TEST variable:
@@ -611,20 +568,12 @@ E.g:
 
 If you get a permission denied error when attempting to start the
 containers, you may need to set the permissions on the
-`ansible_wisdom/`, `prometheus/` and `ari/` directories:
+`ansible_wisdom/` and `prometheus/` directories:
 
 ```bash
 chcon -t container_file_t -R ansible_wisdom/
 chcon -t container_file_t -R prometheus/
 chcon -t container_file_t -R grafana/
-chcon -t container_file_t -R ari/
-```
-
-Also run `chmod` against the `ari/` directory so that ARI can
-write temporary data in it:
-
-```bash
-chmod -R 777 ari/
 ```
 
 If your django container build fails with the following error, you've

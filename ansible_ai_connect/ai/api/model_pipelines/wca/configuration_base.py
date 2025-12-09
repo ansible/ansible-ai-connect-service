@@ -33,7 +33,6 @@ from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 # ENABLE_HEALTHCHECK_XXX
 # ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL
 # ANSIBLE_WCA_RETRY_COUNT
-# WCA_ENABLE_ARI_POSTPROCESS
 # ANSIBLE_WCA_HEALTHCHECK_API_KEY
 # ANSIBLE_WCA_HEALTHCHECK_MODEL_ID
 
@@ -49,7 +48,6 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
         enable_health_check: Optional[bool],
         verify_ssl: bool,
         retry_count: int,
-        enable_ari_postprocessing: bool,
         health_check_api_key: str,
         health_check_model_id: str,
         enable_anonymization: bool,
@@ -58,7 +56,6 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
         self.api_key = api_key
         self.verify_ssl = verify_ssl
         self.retry_count = retry_count
-        self.enable_ari_postprocessing = enable_ari_postprocessing
         self.health_check_api_key = health_check_api_key
         self.health_check_model_id = health_check_model_id
         self.enable_anonymization = enable_anonymization
@@ -66,7 +63,6 @@ class WCABaseConfiguration(BaseConfig, metaclass=ABCMeta):
     api_key: str
     verify_ssl: bool
     retry_count: int
-    enable_ari_postprocessing: bool
     health_check_url: str
     health_check_model_id: str
 
@@ -81,7 +77,6 @@ class WCABaseConfigurationSerializer(BaseConfigSerializer):
     api_key = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     verify_ssl = serializers.BooleanField(required=False, default=True)
     retry_count = serializers.IntegerField(required=False, default=4)
-    enable_ari_postprocessing = serializers.BooleanField(required=False, default=False)
     health_check_api_key = serializers.CharField(required=True)
     health_check_model_id = serializers.CharField(required=True)
     enable_anonymization = serializers.BooleanField(required=False, default=True)

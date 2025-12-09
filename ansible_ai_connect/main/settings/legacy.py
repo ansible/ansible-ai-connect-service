@@ -74,9 +74,6 @@ def load_from_env_vars():
     )
     model_service_health_check_api_key = os.getenv("ANSIBLE_WCA_HEALTHCHECK_API_KEY")
     model_service_health_check_model_id = os.getenv("ANSIBLE_WCA_HEALTHCHECK_MODEL_ID")
-    model_service_enable_ari_postprocessing = (
-        os.getenv("WCA_ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
-    )
     # ==========================================
 
     # ==========================================
@@ -101,7 +98,6 @@ def load_from_env_vars():
                 "timeout": model_service_timeout,
                 "verify_ssl": model_service_verify_ssl,
                 "retry_count": model_service_retry_count,
-                "enable_ari_postprocessing": model_service_enable_ari_postprocessing,
                 "health_check_api_key": model_service_health_check_api_key,
                 "health_check_model_id": model_service_health_check_model_id,
                 "idp_url": wca_saas_idp_url,
@@ -122,7 +118,6 @@ def load_from_env_vars():
                 "timeout": model_service_timeout,
                 "verify_ssl": model_service_verify_ssl,
                 "retry_count": model_service_retry_count,
-                "enable_ari_postprocessing": model_service_enable_ari_postprocessing,
                 "health_check_api_key": model_service_health_check_api_key,
                 "health_check_model_id": model_service_health_check_model_id,
                 "username": wca_onprem_username,

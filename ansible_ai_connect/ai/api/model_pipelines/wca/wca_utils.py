@@ -208,7 +208,7 @@ class ResponseStatusCode422WCAValidationFailure(Check[Context]):
             payload_json = context.result.json()
             if isinstance(payload_json, dict):
                 payload_detail = payload_json.get("detail")
-                if payload_detail and "ari processing failed" in payload_detail.lower():
+                if payload_detail and "validation failed" in payload_detail.lower():
                     raise WcaValidationFailure(
                         model_id=context.model_id, json_response=context.result.json()
                     )

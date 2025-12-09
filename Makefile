@@ -21,9 +21,7 @@ ifeq ($(ENVIRONMENT),development)
 	export ANSIBLE_AI_DATABASE_NAME := wisdom
 	export ANSIBLE_AI_DATABASE_PASSWORD := wisdom
 	export ANSIBLE_AI_DATABASE_USER := wisdom
-	export ARI_KB_PATH := ../ari/kb/
 	export DJANGO_SETTINGS_MODULE := ansible_ai_connect.main.settings.development
-	export ENABLE_ARI_POSTPROCESS := False
 	export PYTHONUNBUFFERED := 1
 	export SECRET_KEY := somesecret
 	export DJANGO_SUPERUSER_PASSWORD := somesecret

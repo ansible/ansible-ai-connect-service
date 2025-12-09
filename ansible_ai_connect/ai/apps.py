@@ -15,15 +15,12 @@
 import logging
 from typing import Type, Union
 
-from ansible_risk_insight.scanner import Config
 from django.apps import AppConfig
 from django.conf import settings
 
 from ansible_ai_connect.ai.api.model_pipelines.factory import ModelPipelineFactory
-from ansible_ai_connect.ai.api.model_pipelines.pipelines import MetaData
 from ansible_ai_connect.ai.api.model_pipelines.types import PIPELINE_TYPE
 from ansible_ai_connect.ansible_lint import lintpostprocessing
-from ansible_ai_connect.ari import postprocessing
 from ansible_ai_connect.users.authz_checker import AMSCheck, DummyCheck
 from ansible_ai_connect.users.reports.postman import (
     BasePostman,
@@ -45,7 +42,6 @@ UNINITIALIZED = None
 class AiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ansible_ai_connect.ai"
-    _ari_caller = UNINITIALIZED
     _seat_checker = UNINITIALIZED
     _wca_secret_manager = UNINITIALIZED
     _ansible_lint_caller = UNINITIALIZED
@@ -58,32 +54,6 @@ class AiConfig(AppConfig):
 
     def get_model_pipeline(self, feature: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         return self._pipeline_factory.get_pipeline(feature)
-
-    def get_ari_caller(self):
-        # Django calls apps.ready() when registering INSTALLED_APPS
-        # We can therefore guarantee self.model_mesh_client is not None
-        if not self.get_model_pipeline(MetaData).supports_ari_postprocessing():
-            logger.info("Postprocessing is disabled.")
-            self._ari_caller = UNINITIALIZED
-            return None
-        if self._ari_caller is FAILED:
-            return None
-        if self._ari_caller:
-            return self._ari_caller
-        try:
-            self._ari_caller = postprocessing.ARICaller(
-                config=Config(
-                    rules_dir=settings.ARI_RULES_DIR,
-                    data_dir=settings.ARI_DATA_DIR,
-                    rules=settings.ARI_RULES,
-                ),
-                silent=True,
-            )
-            logger.info("Postprocessing is enabled.")
-        except Exception:
-            logger.exception("Failed to initialize ARI.")
-            self._ari_caller = FAILED
-        return self._ari_caller
 
     def get_seat_checker(self):
         backends = {

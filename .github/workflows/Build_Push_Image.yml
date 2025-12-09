@@ -41,16 +41,6 @@ jobs:
         echo "sha-short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo "sha-long=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Retrieve ari knowledge base from s3
-      run: |
-        aws s3 cp --only-show-errors --recursive ${KB_ARI_PATH}/data ari/kb/data
-        aws s3 cp --only-show-errors --recursive ${KB_ARI_PATH}/rules ari/kb/rules
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-1
-        KB_ARI_PATH: ${{ secrets.KB_ARI_PATH }}
-
     - name: Free space on build machine
       run: |
         rm -rf /opt/hostedtoolcache/Java*

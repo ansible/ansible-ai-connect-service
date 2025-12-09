@@ -11,7 +11,6 @@ services:
       - db
     volumes:
       - $PWD/ansible_ai_connect:/var/www/ansible-ai-connect-service/ansible_ai_connect:Z
-      - $PWD/ari/kb:/etc/ari/kb:Z
       - $PWD/tools/scripts:/etc/wisdom/scripts:Z
     ports:
       - "${LIGHTSPEED_PORT:-8000}:8000"
@@ -26,10 +25,8 @@ services:
       - ANSIBLE_AI_DATABASE_PASSWORD=wisdom
       - ANSIBLE_AI_DATABASE_HOST=db
       - ANSIBLE_HOME=/etc/ansible
-      - ENABLE_ARI_POSTPROCESS=${ENABLE_ARI_POSTPROCESS}
       - ENABLE_ANSIBLE_LINT_POSTPROCESS=${ENABLE_ANSIBLE_LINT_POSTPROCESS}
       - ANSIBLE_LINT_TRANSFORM_RULES=${ANSIBLE_LINT_TRANSFORM_RULES}
-      - ARI_KB_PATH=/etc/ari/kb
       - DEBUG=${DEBUG}
       - SOCIAL_AUTH_GITHUB_KEY=${SOCIAL_AUTH_GITHUB_KEY}
       - SOCIAL_AUTH_GITHUB_SECRET=${SOCIAL_AUTH_GITHUB_SECRET}
