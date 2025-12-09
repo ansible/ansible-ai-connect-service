@@ -387,3 +387,93 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
         json_data = call_args[1]["json"]
         self.assertIn("no_tools", json_data)
         self.assertTrue(json_data["no_tools"])
+
+
+@override_settings(CHATBOT_DEFAULT_SYSTEM_PROMPT="You are a helpful assistant")
+class TestHttpChatBotPipelineAuthorizationHeader(WisdomServiceLogAwareTestCase):
+    """
+    Test HTTP ChatBot Pipeline's Authorization header.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Use HTTPS configuration consistent with SSL/TLS enablement PR
+        config = mock_pipeline_config(
+            "http", inference_url="https://example.com:8443", verify_ssl=True, ca_cert_file=None
+        )
+        assert isinstance(config, HttpConfiguration)
+        self.config = config
+        self.pipeline = HttpChatBotPipeline(self.config)
+
+        # Mock the session to prevent actual HTTP calls
+        self.pipeline.session = Mock()
+
+    @staticmethod
+    def get_params(auth_header=None) -> ChatBotParameters:
+        """Helper to create test parameters"""
+        return ChatBotParameters(
+            query="Hello, how are you?",
+            conversation_id="test-conversation-123",
+            provider="test-provider",
+            model_id="test-model",
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+            mcp_headers=None,
+            auth_header=auth_header,
+        )
+
+    def test_invoke_with_auth_header(self):
+        """Test that invoke correctly includes Authorization header in the HTTP request"""
+        auth_header = {"Authentication": "***"}
+
+        response_data = {
+            "response": "Hello",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = self.get_params(auth_header=auth_header)
+        result = self.pipeline.invoke(params)
+
+        # Verify the response
+        self.assertEqual(result["response"], "Hello")
+
+        # Verify the HTTP call was made with correct parameters
+        self.pipeline.session.post.assert_called_once()
+        call_args = self.pipeline.session.post.call_args
+
+        # Check that Authorization header are included in the request headers
+        headers = call_args[1]["headers"]
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertIn("Authorization", headers)
+
+        # Verify the Authorization header are correctly JSON encoded
+        auth_header_in_request = headers["Authorization"]
+        self.assertEqual(auth_header_in_request, auth_header)
+
+    def test_invoke_with_no_auth_header(self):
+        """Test that invoke correctly handles no Authorization header in the HTTP request"""
+        response_data = {
+            "response": "Hello",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = self.get_params(auth_header=None)
+        result = self.pipeline.invoke(params)
+
+        # Verify the response
+        self.assertEqual(result["response"], "Hello")
+
+        # Verify the HTTP call was made with correct parameters
+        self.pipeline.session.post.assert_called_once()
+        call_args = self.pipeline.session.post.call_args
+
+        # Check that Authorization header are included in the request headers
+        headers = call_args[1]["headers"]
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertNotIn("Authorization", headers)

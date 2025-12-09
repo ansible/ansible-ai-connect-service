@@ -146,7 +146,11 @@ class HttpChatBotMetaData(HttpMetaData):
             }
         )
         try:
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/json",
+            }
+            if settings.CHATBOT_API_KEY is not None:
+                headers["Authorization"] = f"Bearer {settings.CHATBOT_API_KEY}"
             r = self.session.get(
                 self.config.inference_url + "/readiness",
                 headers=headers,
@@ -213,6 +217,8 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             data["no_tools"] = bool(no_tools)
 
         headers = self.headers or {}
+        if params.auth_header:
+            headers["Authorization"] = params.auth_header
         if params.mcp_headers:
             headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
 
@@ -323,7 +329,8 @@ class HttpStreamingChatBotPipeline(
                 "Content-Type": "application/json",
                 "Accept": "application/json,text/event-stream",
             }
-
+            if params.auth_header:
+                headers["Authorization"] = params.auth_header
             if params.mcp_headers:
                 headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
 
