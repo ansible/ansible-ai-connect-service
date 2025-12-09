@@ -99,7 +99,7 @@ docker-compose-clean:
 
 .PHONY: export
 export:
-	${CONTAINER_RUNTIME} run --arch amd64 --os linux \
+	${CONTAINER_RUNTIME} run --os linux \
 		--volume $(PWD):/var/www/wisdom:Z \
 		--workdir /var/www/wisdom \
 		registry.access.redhat.com/ubi9/ubi:latest \

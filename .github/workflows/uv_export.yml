@@ -35,6 +35,6 @@ jobs:
       uses: astral-sh/setup-uv@v4
     - name: Compile requirements
       run: |
-        uv lock --python 3.12
+        uv lock
         uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
         git diff --exit-code -- uv.lock requirements.txt

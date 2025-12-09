@@ -8,7 +8,7 @@ description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
   'aiohttp~=3.12.14',
-  'ansible-core~=2.16.5',
+  'ansible-core~=2.16.14',
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
   'boto3~=1.40',
@@ -33,7 +33,7 @@ dependencies = [
   'langchain-ollama~=0.3.5',
   'langchain-text-splitters~=0.3.11',
   'launchdarkly-server-sdk~=8.3.0',
-  'llama-stack-client>=0.2.12',
+  'llama-stack-client~=0.2.22',
   'protobuf~=5.29.5',
   'psycopg~=3.2.3',
   'PyDrive2~=1.20.0',
@@ -101,6 +101,7 @@ constraint-dependencies = [
   # Pin sqlparse to address GHSA-2m57-hf25-phgg
   'sqlparse==0.5.2',
 ]
+
 
 [tool.setuptools.packages.find]
 include = ["ansible_ai_connect*"]

@@ -206,7 +206,7 @@ make export
 This will spin up a container and run the equivalent of:
 
 ```bash
-uv lock --python 3.12
+uv lock
 uv export --format requirements-txt --no-hashes -o requirements.txt
 ```
 
