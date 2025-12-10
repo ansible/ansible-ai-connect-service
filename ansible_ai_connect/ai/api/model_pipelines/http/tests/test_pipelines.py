@@ -19,6 +19,8 @@ from typing import cast
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
 
+from django.test import override_settings
+
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
 )
@@ -174,6 +176,172 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         ):
             async for _ in self.pipeline.async_invoke(self.get_params()):
                 pass
+        self.assertEqual(self.call_counter, 2)
+
+    @patch("aiohttp.ClientSession.post")
+    @override_settings(CHATBOT_RETURN_TOOL_CALL=False)
+    async def test_async_invoke_tool_call_hidden_with_no_error(self, mock_post):
+        tool_call_event_id = 5
+        tool_result_event_id = 6
+        tool_call_event = {
+            "event": "tool_call",
+            "data": {
+                "id": tool_call_event_id,
+                "token": {
+                    "tool_name": "knowledge_search",
+                    "arguments": {"query": "Exploratory Data Analysis"},
+                },
+            },
+        }
+        tool_result_event = {
+            "event": "tool_result",
+            "data": {
+                "id": tool_result_event_id,
+                "token": {
+                    "tool_name": "knowledge_search",
+                    "summary": "knowledge_search tool found 5 chunks:",
+                },
+            },
+        }
+        stream_data = [
+            {"event": "start", "data": {"conversation_id": "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f"}},
+            {"event": "token", "data": {"id": 0, "token": ""}},
+            tool_call_event,
+            tool_result_event,
+            {"event": "token", "data": {"id": 24, "token": "some data"}},
+            {"event": "token", "data": {"id": 25, "token": ""}},
+            {
+                "event": "end",
+                "data": {
+                    "referenced_documents": [
+                        {
+                            "doc_title": "Document 1",
+                            "doc_url": "https://example.com/document1",
+                        },
+                        {
+                            "title": "Document 2",
+                            "docs_url": "https://example.com/document2",
+                        },
+                    ],
+                    "truncated": False,
+                    "input_tokens": 241,
+                    "output_tokens": 25,
+                },
+            },
+        ]
+
+        mock_post.return_value = self.get_return_value(stream_data)
+        with patch(
+            "ansible_ai_connect.ai.api.model_pipelines.http.pipelines"
+            ".HttpStreamingChatBotPipeline.send_schema1_event",
+            wraps=self.send_event,
+        ):
+            tool_calls_data_counter = 0
+            events_counter = 0
+            async for chunk in self.pipeline.async_invoke(self.get_params()):
+                chunk_string = chunk.decode("utf-8")
+                if chunk_string.startswith("data: "):
+                    chuck_data = json.loads(chunk_string.lstrip("data: "))
+                    if events_counter == 2:
+                        # ensure the event type has been changed to simple token
+                        self.assertEqual(chuck_data["event"], "token")
+                        # ensure the data token is empty
+                        self.assertEqual(chuck_data["data"]["token"], "")
+                        # ensure the event id is preserved
+                        self.assertEqual(chuck_data["data"]["id"], tool_call_event_id)
+                        # ensure the original event is in the chunk data
+                        self.assertEqual(chuck_data["original"], tool_call_event)
+                        tool_calls_data_counter += 1
+                    if events_counter == 3:
+                        # ensure the event type has been changed to simple token
+                        self.assertEqual(chuck_data["event"], "token")
+                        # ensure the data token is empty
+                        self.assertEqual(chuck_data["data"]["token"], "")
+                        # ensure the event id is preserved
+                        self.assertEqual(chuck_data["data"]["id"], tool_result_event_id)
+                        # ensure the original event is in the chunk data
+                        self.assertEqual(chuck_data["original"], tool_result_event)
+                        tool_calls_data_counter += 1
+                events_counter += 1
+        self.assertEqual(tool_calls_data_counter, 2)
+        self.assertEqual(events_counter, len(stream_data))
+        self.assertEqual(self.call_counter, 2)
+
+    @patch("aiohttp.ClientSession.post")
+    @override_settings(CHATBOT_RETURN_TOOL_CALL=True)
+    async def test_async_invoke_tool_call_preserved_with_no_error(self, mock_post):
+        tool_call_event_id = 5
+        tool_result_event_id = 6
+        tool_call_event = {
+            "event": "tool_call",
+            "data": {
+                "id": tool_call_event_id,
+                "token": {
+                    "tool_name": "knowledge_search",
+                    "arguments": {"query": "Exploratory Data Analysis"},
+                },
+            },
+        }
+        tool_result_event = {
+            "event": "tool_result",
+            "data": {
+                "id": tool_result_event_id,
+                "token": {
+                    "tool_name": "knowledge_search",
+                    "summary": "knowledge_search tool found 5 chunks:",
+                },
+            },
+        }
+        stream_data = [
+            {"event": "start", "data": {"conversation_id": "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f"}},
+            {"event": "token", "data": {"id": 0, "token": ""}},
+            tool_call_event,
+            tool_result_event,
+            {"event": "token", "data": {"id": 24, "token": "some data"}},
+            {"event": "token", "data": {"id": 25, "token": ""}},
+            {
+                "event": "end",
+                "data": {
+                    "referenced_documents": [
+                        {
+                            "doc_title": "Document 1",
+                            "doc_url": "https://example.com/document1",
+                        },
+                        {
+                            "title": "Document 2",
+                            "docs_url": "https://example.com/document2",
+                        },
+                    ],
+                    "truncated": False,
+                    "input_tokens": 241,
+                    "output_tokens": 25,
+                },
+            },
+        ]
+
+        mock_post.return_value = self.get_return_value(stream_data)
+        with patch(
+            "ansible_ai_connect.ai.api.model_pipelines.http.pipelines"
+            ".HttpStreamingChatBotPipeline.send_schema1_event",
+            wraps=self.send_event,
+        ):
+            tool_calls_data_counter = 0
+            events_counter = 0
+            async for chunk in self.pipeline.async_invoke(self.get_params()):
+                chunk_string = chunk.decode("utf-8")
+                if chunk_string.startswith("data: "):
+                    chuck_data = json.loads(chunk_string.lstrip("data: "))
+                    if events_counter == 2:
+                        # ensure the tool_call has not changed
+                        self.assertEqual(chuck_data, tool_call_event)
+                        tool_calls_data_counter += 1
+                    if events_counter == 3:
+                        # ensure the tool_result has not changed
+                        self.assertEqual(chuck_data, tool_result_event)
+                        tool_calls_data_counter += 1
+                events_counter += 1
+        self.assertEqual(tool_calls_data_counter, 2)
+        self.assertEqual(events_counter, len(stream_data))
         self.assertEqual(self.call_counter, 2)
 
     @patch("aiohttp.ClientSession.post")
