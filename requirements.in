@@ -19,7 +19,7 @@ black==24.3.0
 certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
 cryptography==43.0.1
 daphne==4.1.2
-Django==4.2.26
+Django==4.2.27
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
@@ -46,6 +46,7 @@ jinja2==3.1.6
 # remove this once ansible-risk-insight is updated
 jsonpickle==3.3.0
 langchain==0.3.26
+langchain-core==0.3.80
 langchain-ollama==0.3.5
 # CVE-2025-6985: XXE Vulnerability fixed in 0.3.9+
 langchain-text-splitters==0.3.11
@@ -67,7 +68,7 @@ sqlparse==0.5.2
 social-auth-app-django==5.4.1
 social-auth-core==4.5.4
 slack-sdk==3.31.0
-urllib3==2.5.0
+urllib3==2.6.0
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
 django-allow-cidr==0.6.0

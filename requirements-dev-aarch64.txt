@@ -104,7 +104,7 @@ responses==0.24.1
     # via -r requirements-dev.in
 torch-model-archiver==0.10.0
     # via -r requirements-dev.in
-urllib3==2.5.0
+urllib3==2.6.0
     # via
     #   -c requirements-aarch64.txt
     #   requests
