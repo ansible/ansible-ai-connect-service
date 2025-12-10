@@ -380,9 +380,9 @@ class HttpStreamingChatBotPipeline(
                     async for chunk in response.content:
                         try:
                             if chunk:
-                                s = chunk.decode("utf-8").strip()
-                                if s and s.startswith("data: "):
-                                    o = json.loads(s[len("data: ") :])
+                                chunk_string = chunk.decode("utf-8").strip()
+                                if chunk_string and chunk_string.startswith("data: "):
+                                    o = json.loads(chunk_string[len("data: ") :])
                                     event = o.get("event")
                                     if event == "error":
                                         default_data = {
@@ -406,6 +406,29 @@ class HttpStreamingChatBotPipeline(
                                         conversation_id = data.get("conversation_id")
                                         ev.conversation_id = conversation_id
                                         self.send_schema1_event(ev)
+                                    elif event in ("tool_call", "tool_result"):
+                                        if not settings.CHATBOT_RETURN_TOOL_CALL:
+                                            # do not return tool_call event to final user response
+                                            # and send an empty token data instead
+                                            # include also the original tool_call/tool_response
+                                            data = o.get("data", {"id": 0})
+                                            chunk_id = data.get("id")
+                                            logger.debug(
+                                                "hide tool_call/tool_result from final result, "
+                                                "original chunk: %s",
+                                                chunk_string,
+                                            )
+                                            new_chunk_data = {
+                                                "event": "token",
+                                                "data": {"id": chunk_id, "token": ""},
+                                                "original": o,
+                                            }
+                                            new_chunk_data_json = json.dumps(new_chunk_data)
+                                            chunk = (
+                                                b"data: "
+                                                + new_chunk_data_json.encode("utf-8")
+                                                + b"\n"
+                                            )
                                     elif event == "end":
                                         ev.phase = event
                                         default_data = {
