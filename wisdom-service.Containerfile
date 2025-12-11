@@ -17,12 +17,12 @@ ENV UWSGI_PROCESSES=10
 RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     dnf install -y \
     git \
-    python3.11-devel \
+    python3.12-devel \
     gcc \
     libpq \
     libpq-devel \
-    python3.11 \
-    python3.11-pip \
+    python3.12 \
+    python3.12-pip \
     postgresql \
     less \
     npm \
@@ -30,8 +30,6 @@ RUN dnf module enable nodejs:18 nginx:1.22 -y && \
     rsync
 
 # Copy the ansible_wisdom package files
-COPY requirements-x86_64.txt /var/www/ansible-ai-connect-service/
-COPY requirements-aarch64.txt /var/www/ansible-ai-connect-service/
 COPY requirements.txt /var/www/ansible-ai-connect-service/
 COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
@@ -39,17 +37,17 @@ COPY README.md /var/www/ansible-ai-connect-service/README.md
 COPY ansible_ai_connect /var/www/ansible-ai-connect-service/ansible_ai_connect
 
 # Compile Python/Django application
-RUN /usr/bin/python3.11 -m pip --no-cache-dir install supervisor
-RUN /usr/bin/python3.11 -m venv /var/www/venv
+RUN /usr/bin/python3.12 -m pip --no-cache-dir install supervisor
+RUN /usr/bin/python3.12 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 
 # Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
 # Please remove once jwcrypto and cryptography can be both upgraded
 RUN dnf install -y openssl-devel
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
-RUN /var/www/venv/bin/python3.11 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi /var/run/daphne
 
 RUN echo -e "\

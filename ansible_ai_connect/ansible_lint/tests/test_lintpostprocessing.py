@@ -38,7 +38,7 @@ normal_fixed_sample_yaml = """---
   tasks:
     - name: Hello Message
       debug:
-        msg: Hello World!
+        msg: "Hello World!"
 """
 
 

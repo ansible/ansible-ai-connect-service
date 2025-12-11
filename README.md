@@ -175,7 +175,7 @@ Pre-commit should be used before pushing a new PR.
 To use pre-commit, you need to first install the pre-commit package and its dependencies by running:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install .
 ```
 
 To install pre-commit into your git hooks and run the checks on every commit, run the following each time you clone this
@@ -193,62 +193,44 @@ pre-commit autoupdate && pre-commit run -a
 
 ## Updating the Python dependencies
 
-We are now using pip-compile in order to manage our Python
-dependencies for the x86_64 and ARM64/AArch64 architectures.
+We use [uv](https://github.com/astral-sh/uv) to manage Python dependencies,
+following the same approach as [ansible-chatbot-stack](https://github.com/ansible/ansible-chatbot-stack).
+All dependencies are defined in `pyproject.toml`.
 
-In order to generate requirements.txt files for both architectures,
-you must use a multi-arch capable virtual machine emulator (like QEMU)
-and enable multi-arch support.
-
-To enable multi-arch support, run the instructions for your container
-engine and emulator from this table:
-
-<table>
-<tr>
-<td>Container Engine</td>
-<td>Emulator</td>
-<td>Instructions</td>
-</tr>
-<tr>
-<td>podman</td>
-<td>QEMU</td>
-<td>
+To update the pinned dependencies, run:
 
 ```bash
-podman machine ssh
-sudo rpm-ostree install qemu-user-static
-sudo systemctl reboot
+make export
 ```
 
-</td>
-</tr>
-</table>
-
-The specification of what packages we need now live in the
-requirements.in and requirements-dev.in files. Use your preferred
-editor to make the needed changes in those files, then run
+This will spin up a container and run the equivalent of:
 
 ```bash
-make pip-compile
+uv lock
+uv export --format requirements-txt --no-hashes -o requirements.txt
 ```
 
-This will spin up a container and run the equivalent of these commands
-to generate the updated files:
+This generates:
+- `uv.lock` - The lock file with exact pinned versions (commit this file)
+- `requirements.txt` - Exported for pip compatibility
+
+### Security constraints
+
+Security-pinned transitive dependencies are defined in the `[tool.uv]`
+section of `pyproject.toml` using `constraint-dependencies`. These constraints
+are automatically applied when running `uv lock`.
+
+### Development dependencies
+
+Development dependencies (testing, linting, etc.) are defined as optional
+dependencies in `pyproject.toml` under `[project.optional-dependencies]`.
+Install them with:
 
 ```bash
-pip-compile requirements.in
-pip-compile requirements-dev.in
+pip install .[dev]
+# or with uv:
+uv pip install -e .[dev]
 ```
-
-These commands will produce fully populated and pinned requirements.txt and
-requirements-dev.txt files, containing all of the dependencies of
-our dependencies involved. Due to differences in architecture and
-version of Python between developers' machines, we do not recommend
-running the pip-compile commands directly.
-
-### Use of `pyproject.toml`
-
-`pyproject.toml` contains the dependencies used by downstream builds. Changes to any of the top level dependencies in `requirements.in` must there also be reflected in `pyproject.toml` too. See [PEP-518](https://peps.python.org/pep-0518/) for details.
 
 # Using the VS Code extension
 
@@ -456,8 +438,7 @@ have backend services (Postgres, Prometheus and Grafana) running.
 is one handy way for that requirement.
 
 For getting the unit test code coverage,
-install the `coverage` module, which is included
-in `requirements-dev.txt` with the instructions in the
+install the `coverage` module with the instructions in the
 [Using pre-commit](#using-pre-commit) section.
 
 ### Use make

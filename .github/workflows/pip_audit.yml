@@ -10,7 +10,8 @@ on:
       - .github/workflows/pip_audit.yml
       - ansible_ai_connect/**
       - pyproject.toml
-      - requirements*.txt
+      - uv.lock
+      - requirements.txt
   pull_request:
     branches:
       - main
@@ -18,7 +19,8 @@ on:
       - .github/workflows/pip_audit.yml
       - ansible_ai_connect/**
       - pyproject.toml
-      - requirements*.txt
+      - uv.lock
+      - requirements.txt
 permissions:
   contents: read
 
@@ -30,12 +32,13 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: install
         run: |
           python -m venv env/
           source env/bin/activate
-          python -m pip install . -rrequirements.txt
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
           # See: https://github.com/advisories/GHSA-r9hx-vwmv-q579
           pip install --upgrade setuptools
       - name: Create CA symlink to use RH's certifi on ubuntu-latest

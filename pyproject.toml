@@ -8,10 +8,11 @@ description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
   'aiohttp~=3.12.14',
-  'ansible-core~=2.15.9',
+  'ansible-core~=2.16.14',
   'ansible-anonymizer~=1.5.0',
-  'ansible-lint~=24.2.2',
+  'ansible-lint~=25.5.0',
   'boto3~=1.40',
+  'cython',
   'daphne~=4.1.2',
   'Django~=4.2.27',
   'django-deprecate-fields~=0.1.1',
@@ -32,20 +33,20 @@ dependencies = [
   'langchain-ollama~=0.3.5',
   'langchain-text-splitters~=0.3.11',
   'launchdarkly-server-sdk~=8.3.0',
-  'llama-stack-client>=0.2.12',
+  'llama-stack-client~=0.2.22',
   'protobuf~=5.29.5',
-  'psycopg~=3.1.8',
+  'psycopg~=3.2.3',
   'PyDrive2~=1.20.0',
   'pydantic==2.*',
   'pytz',
-  'PyYAML~=6.0',
-  'requests~=2.32.0',
+  'PyYAML>=6.0',
+  'requests~=2.32.3',
   'segment-analytics-python~=2.2.2',
   'slack-sdk~=3.31.0',
   'social-auth-app-django~=5.4.1',
   'social-auth-core[openidconnect]>=4.4.2',
   'urllib3~=2.6.0',
-  'uwsgi~=2.0.22',
+  'uwsgi~=2.0.28',
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
   'django-csp~=3.7',
@@ -53,10 +54,23 @@ dependencies = [
 ]
 readme = "README.rst"
 license = {text = "Apache-2.0"}
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Framework :: Django",
     "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+dev = [
+  'black~=24.3.0',
+  'coverage~=7.2.1',
+  'flake8~=6.0.0',
+  'grpcio-tools~=1.68.1',
+  'isort~=5.10.1',
+  'pre-commit',
+  'responses~=0.24.1',
+  'torch-model-archiver',
+  'virtualenv>=20.28.0',
 ]
 
 [project.urls]
@@ -68,6 +82,26 @@ wisdom-manage = "ansible_ai_connect.manage:main"
 
 
 [tool]
+
+[tool.uv]
+# Security-pinned transitive dependencies
+constraint-dependencies = [
+  # Use Red Hat's system-certifi for certificate handling
+  'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
+  # Pin cryptography to address security vulnerabilities
+  'cryptography==43.0.1',
+  # Pin idna to address GHSA-jjg7-2v4v-x38h
+  'idna==3.7',
+  # Pin jsonpickle to address SNYK-PYTHON-JSONPICKLE-8136229
+  'jsonpickle==3.3.0',
+  # Pin pyjwt for compatibility
+  'pyjwt==2.8.0',
+  # Pin pyOpenSSL for compatibility
+  'pyOpenSSL==24.2.1',
+  # Pin sqlparse to address GHSA-2m57-hf25-phgg
+  'sqlparse==0.5.2',
+]
+
 
 [tool.setuptools.packages.find]
 include = ["ansible_ai_connect*"]
@@ -101,5 +135,5 @@ exclude = ["**/test_*.py", "ansible_ai_connect/*/migrations/*.py"]
 reportMissingImports = false
 reportMissingTypeStubs = false
 
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 pythonPlatform = "Linux"

@@ -10,7 +10,7 @@ apply them to other environments, e.g. VSCode + MacOS with minor modifications.
 
 The instructions presented here were tested using
 - PyCharm 2024.1.4 (Community Edition),
-- Python 3.11.9,
+- Python 3.12.0,
 - Fedora Linux 40 (Workstation Edition), and
 - HP Victus Gaming Laptop 16
 

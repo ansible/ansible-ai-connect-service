@@ -45,17 +45,16 @@ jobs:
     ##############
     # Python tests
     ##############
-    - name: Setup Python 3.11
+    - name: Setup Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Install Dependencies (Python)
       run: |
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        pip install .
+        pip install .[dev]
 
     - name: Create CA symlink to use RH's certifi on ubuntu-latest
       run: |
