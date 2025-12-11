@@ -245,9 +245,6 @@ class WCABaseMetaData(
     def get_api_key(self, user) -> str:
         raise NotImplementedError
 
-    def supports_ari_postprocessing(self) -> bool:
-        return settings.ENABLE_ARI_POSTPROCESS and self.config.enable_ari_postprocessing
-
 
 class WCABasePipeline(
     WCABaseMetaData,

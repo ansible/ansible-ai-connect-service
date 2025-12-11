@@ -1128,7 +1128,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             "scope": "ibm openid",
         }
         response = MockResponse(
-            json={"detail": "ARI processing failed"},
+            json={"detail": "Validation failed"},
             status_code=422,
             headers={"Content-Type": "application/json"},
         )
@@ -1150,7 +1150,7 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         self.assertEqual(e.exception.model_id, model_id)
         self.assertInLog(
             "WCA request failed with 422. Content-Type:application/json, "
-            'Content:b\'{"detail": "ARI processing failed"}\'',
+            'Content:b\'{"detail": "Validation failed"}\'',
             log,
         )
 

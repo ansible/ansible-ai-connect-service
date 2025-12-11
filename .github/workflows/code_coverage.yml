@@ -20,9 +20,7 @@ jobs:
       ANSIBLE_AI_DATABASE_NAME: wisdom
       ANSIBLE_AI_DATABASE_PASSWORD: wisdom
       ANSIBLE_AI_DATABASE_USER: wisdom
-      ARI_KB_PATH: /etc/ari/kb/
       DJANGO_SETTINGS_MODULE: ansible_ai_connect.main.settings.development
-      ENABLE_ARI_POSTPROCESS: False
       ENABLE_ANSIBLE_LINT_POSTPROCESS: True
       PYTHONUNBUFFERED: 1
       SECRET_KEY: somesecret
@@ -58,18 +56,6 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
         pip install .
-
-    - name: Retrieve ari knowledge base from s3
-      run: |
-        sudo mkdir -p /etc/ari/kb
-        sudo chown -R $USER:$USER /etc/ari/kb
-        aws s3 cp --only-show-errors --recursive ${KB_ARI_PATH}/data /etc/ari/kb/data
-        aws s3 cp --only-show-errors --recursive ${KB_ARI_PATH}/rules /etc/ari/kb/rules
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-1
-        KB_ARI_PATH: ${{ secrets.KB_ARI_PATH }}
 
     - name: Create CA symlink to use RH's certifi on ubuntu-latest
       run: |

@@ -363,11 +363,6 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "ari_changes": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
         "auth": {
             "handlers": ["console"],
             "level": "INFO",
@@ -470,46 +465,6 @@ STATICFILES_DIRS = list(BASE_DIR.glob("*/static/"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 APPEND_SLASH = True
-
-ENABLE_ARI_POSTPROCESS = os.getenv("ENABLE_ARI_POSTPROCESS", "False").lower() == "true"
-ARI_BASE_DIR = os.getenv("ARI_KB_PATH") or "/etc/ari/kb/"
-
-ARI_RULES_DIR = os.path.join(ARI_BASE_DIR, "rules")
-ARI_DATA_DIR = os.path.join(ARI_BASE_DIR, "data")
-ARI_RULES = [
-    "P001",
-    "P002",
-    "P003",
-    "P004",
-    "W001",
-    "W003",
-    "W004",
-    "W005",
-    "W006",
-    "W007",
-    "W008",
-    "W009",
-    "W010",
-    "W011",  # replace with_* loop with the modern loop:
-    "W012",
-    "W013",
-    # "W014",  # anonymizer: already done by the ansible_wisdom app
-    "W015",
-    "W016",
-    "W017",
-    "W018",
-    "W019",
-    "W021",
-    "W022",
-    "W023",
-    "W024",
-    "W025",
-    "W026",
-    "W027",
-]
-if "ARI_RULES" in os.environ:
-    ARI_RULES = os.environ["ARI_RULES"].split(",")
-ARI_RULE_FOR_OUTPUT_RESULT = os.getenv("ARI_RULE_FOR_OUTPUT_RESULT") or "W007"
 
 ENABLE_ANSIBLE_LINT_POSTPROCESS = (
     os.getenv("ENABLE_ANSIBLE_LINT_POSTPROCESS", "False").lower() == "true"

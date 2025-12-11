@@ -383,8 +383,7 @@ class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
-    def test_full_payload_without_ARI(self):
+    def test_full_payload_basic(self):
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
             "suggestionId": str(uuid.uuid4()),
@@ -403,110 +402,9 @@ class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 r = self.client.post(self.api_version_reverse("completions"), payload)
                 self.assertEqual(r.status_code, HTTPStatus.OK)
                 self.assertIsNotNone(r.data["predictions"])
-                self.assertInLog("skipped ari post processing because ari was not initialized", log)
                 self.assertSegmentTimestamp(log)
-
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    def test_full_payload_with_recommendation_with_broken_last_line(self):
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        # quotation in the last line is not closed, but the truncate function can handle this.
-        response_data = {
-            "model_id": "a-model-id",
-            "predictions": [
-                '      ansible.builtin.apt:\n        name: apache2\n      register: "test'
-            ],
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="INFO") as log:
-            with patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
-            ):
-                r = self.client.post(self.api_version_reverse("completions"), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data["predictions"])
-                self.assertNotInLog("the recommendation_yaml is not a valid YAML", log)
-                self.assertSegmentTimestamp(log)
-
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_completions_postprocessing_error_for_invalid_yaml(self):
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        # this prediction has indentation problem with the prompt above
-        response_data = {
-            "model_id": "a-model-id",
-            "predictions": ["      ansible.builtin.apt:\n garbage       name: apache2"],
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(logger="root", level="ERROR") as log:  # Suppress debug output
-            with patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
-            ):
-                r = self.client.post(self.api_version_reverse("completions"), payload)
-                self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assert_error_detail(
-                    r, PostprocessException.default_code, PostprocessException.default_detail
-                )
-                self.assertInLog("error postprocessing prediction for suggestion", log)
-                self.assertSegmentTimestamp(log)
-
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=True)
-    def test_completions_postprocessing_for_invalid_suggestion(self):
-        # the suggested task is invalid because it does not have module name
-        # in this case, ARI should throw an exception
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Install Apache\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        # module name in the prediction is ""
-        response_data = {
-            "model_id": "mock-model",
-            "predictions": ['      "":\n        name: apache2'],
-        }
-        self.client.force_authenticate(user=self.user)
-        with self.assertLogs(
-            logger="root", level="DEBUG"
-        ) as log:  # Enable debug outputs for getting Segment events
-            with patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(return_value=MockedPipelineCompletions(self, payload, response_data)),
-            ):
-                r = self.client.post(self.api_version_reverse("completions"), payload)
-                self.assertEqual(HTTPStatus.NO_CONTENT, r.status_code)
-                self.assertIsNone(r.data)
-                self.assert_error_detail(
-                    r,
-                    PostprocessException.default_code,
-                    PostprocessException.default_detail,
-                )
-                self.assertInLog("error postprocessing prediction for suggestion", log)
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    if event["event"] == "postprocess":
-                        self.assertEqual(
-                            "ARI rule evaluation threw fatal exception: "
-                            "RuleID=W018, error=Invalid task structure: "
-                            "no module name found",
-                            event["properties"]["problem"],
-                        )
-                    self.assertIsNotNone(event["timestamp"])
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_full_payload_without_ansible_lint_with_commercial_user(self):
         self.user.rh_user_has_seat = True
         payload = {
@@ -534,49 +432,8 @@ class TestCompletionView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 self.assertSegmentTimestamp(log)
 
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    def test_full_payload_with_ansible_lint_without_ari_postprocess_with_commercial_user(self):
-        self.user.rh_user_has_seat = True
-        payload = {
-            "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Sample shell\n",
-            "suggestionId": str(uuid.uuid4()),
-        }
-        response_data = {
-            "model_id": self.DUMMY_MODEL_ID,
-            "predictions": ["      ansible.builtin.shell:\n        cmd: echo hello"],
-        }
-        self.client.force_authenticate(user=self.user)
-        with patch.object(
-            apps.get_app_config("ai"),
-            "get_model_pipeline",
-            Mock(
-                return_value=MockedPipelineCompletions(
-                    self, payload, response_data, rh_user_has_seat=True
-                )
-            ),
-        ):
-            with self.assertLogs(logger="root", level="DEBUG") as log:
-                r = self.client.post(self.api_version_reverse("completions"), payload)
-                self.assertEqual(r.status_code, HTTPStatus.OK)
-                self.assertIsNotNone(r.data["predictions"])
-                self.assertEqual(
-                    r.data["predictions"][0],
-                    "      ansible.builtin.command:\n        cmd: echo hello\n",
-                )
-                self.assertSegmentTimestamp(log)
-
-                segment_events = self.extractSegmentEventsFromLog(log)
-                self.assertTrue(len(segment_events) > 0)
-                for event in segment_events:
-                    properties = event["properties"]
-                    self.assertTrue("modelName" in properties)
-                    self.assertEqual(properties["modelName"], self.DUMMY_MODEL_ID)
-
-    @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
-    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    def test_full_payload_with_ansible_lint_with_ari_postprocess_with_commercial_user(self):
+    def test_full_payload_with_ansible_lint_postprocess_with_commercial_user(self):
         self.user.rh_user_has_seat = True
         payload = {
             "prompt": "---\n- hosts: all\n  become: yes\n\n  tasks:\n    - name: Sample shell\n",

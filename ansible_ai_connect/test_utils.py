@@ -164,7 +164,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
             key: patch.object(apps.get_app_config("ai"), key, None)
             for key in [
                 "_ansible_lint_caller",
-                "_ari_caller",
                 "_seat_checker",
                 "_wca_secret_manager",
             ]
@@ -180,10 +179,6 @@ class WisdomAppsBackendMocking(WisdomTestCase):
     @staticmethod
     def mock_ansible_lint_caller_with(mocked):
         apps.get_app_config("ai")._ansible_lint_caller = mocked
-
-    @staticmethod
-    def mock_ari_caller_with(mocked):
-        apps.get_app_config("ai")._ari_caller = mocked
 
     @staticmethod
     def mock_seat_checker_with(mocked):

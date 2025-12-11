@@ -11,7 +11,6 @@
 # ======================================================================
 aiohttp==3.12.14
 ansible-anonymizer==1.5.0
-ansible-risk-insight==0.2.7
 ansible-lint==24.2.2
 boto3==1.40.63
 # pin black on 24.3.0 to address PYSEC-2024-48.
@@ -42,9 +41,6 @@ jwcrypto==1.5.6
 # pin jinja2 on 3.1.6 to address GHSA-cpwx-vrp4-4pq7
 # remove this once ansible-core or torch are updated
 jinja2==3.1.6
-# pin jsonpickle on 3.3.0 to address SNYK-PYTHON-JSONPICKLE-8136229
-# remove this once ansible-risk-insight is updated
-jsonpickle==3.3.0
 langchain==0.3.26
 langchain-core==0.3.80
 langchain-ollama==0.3.5

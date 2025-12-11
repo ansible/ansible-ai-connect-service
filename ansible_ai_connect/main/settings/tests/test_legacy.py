@@ -112,7 +112,6 @@ class TestLegacySettings(SimpleTestCase, WisdomLogAwareMixin):
             "ANSIBLE_AI_MODEL_MESH_API_TIMEOUT": "999",
             "ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL": "True",
             "ANSIBLE_WCA_RETRY_COUNT": "9",
-            "WCA_ENABLE_ARI_POSTPROCESS": "True",
             "ENABLE_HEALTHCHECK_MODEL_MESH": "True",
             "ANSIBLE_WCA_HEALTHCHECK_API_KEY": "health-check-api-key",
             "ANSIBLE_WCA_HEALTHCHECK_MODEL_ID": "health-check-model-id",
@@ -135,9 +134,6 @@ class TestLegacySettings(SimpleTestCase, WisdomLogAwareMixin):
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["timeout"], 999)
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["verify_ssl"], True)
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["retry_count"], 9)
-        self.assertEqual(
-            config["ModelPipelineCompletions"]["config"]["enable_ari_postprocessing"], True
-        )
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["enable_health_check"], True)
         self.assertEqual(
             config["ModelPipelineCompletions"]["config"]["health_check_api_key"],
@@ -171,7 +167,6 @@ class TestLegacySettings(SimpleTestCase, WisdomLogAwareMixin):
             "ANSIBLE_AI_MODEL_MESH_API_TIMEOUT": "999",
             "ANSIBLE_AI_MODEL_MESH_API_VERIFY_SSL": "True",
             "ANSIBLE_WCA_RETRY_COUNT": "9",
-            "WCA_ENABLE_ARI_POSTPROCESS": "True",
             "ENABLE_HEALTHCHECK_MODEL_MESH": "True",
             "ANSIBLE_WCA_HEALTHCHECK_API_KEY": "health-check-api-key",
             "ANSIBLE_WCA_HEALTHCHECK_MODEL_ID": "health-check-model-id",
@@ -190,9 +185,6 @@ class TestLegacySettings(SimpleTestCase, WisdomLogAwareMixin):
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["timeout"], 999)
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["verify_ssl"], True)
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["retry_count"], 9)
-        self.assertEqual(
-            config["ModelPipelineCompletions"]["config"]["enable_ari_postprocessing"], True
-        )
         self.assertEqual(config["ModelPipelineCompletions"]["config"]["enable_health_check"], True)
         self.assertEqual(
             config["ModelPipelineCompletions"]["config"]["health_check_api_key"],

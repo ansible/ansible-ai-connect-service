@@ -93,7 +93,6 @@ class TestCompletionWCAView(
         return model_client, model_input
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -120,7 +119,6 @@ class TestCompletionWCAView(
             )
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_seated_user_missing_api_key(self):
         self.user.rh_user_has_seat = True
@@ -155,7 +153,6 @@ class TestCompletionWCAView(
                         self.assertEqual(properties["problem"], "WcaKeyNotFound")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_user_not_linked_to_org(self):
         self.user.rh_user_has_seat = True
         self.user.organization = None
@@ -182,7 +179,6 @@ class TestCompletionWCAView(
                 self.assertInLog("No default WCA Model ID was found for suggestion", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_missing_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -209,7 +205,6 @@ class TestCompletionWCAView(
                 self.assertInLog("A WCA Model ID was expected but not found", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_garbage_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -237,7 +232,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_not_quite_valid_model_id(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -271,7 +265,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -297,7 +290,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_empty_response(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -323,7 +315,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA returned an empty response", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_cloudflare_rejection(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -352,7 +343,6 @@ class TestCompletionWCAView(
                 self.assertInLog("Cloudflare rejected the request", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_hap_filter_rejection(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -380,7 +370,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Hate, Abuse, and Profanity filter rejected the request", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_wml_api_call_failed(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -409,7 +398,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_trial_expired_rejection(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -433,7 +421,6 @@ class TestCompletionWCAView(
                 self.assertInLog("User trial expired", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_trial_expired(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -459,7 +446,6 @@ class TestCompletionWCAView(
                 self.assertInLog("User trial expired", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_seated_user_model_id_error(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -487,7 +473,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Model ID is invalid", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_timeout_single_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -511,7 +496,6 @@ class TestCompletionWCAView(
             self.assertEqual(model_client.session.post.call_args[1]["timeout"], 1000)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_timeout_multi_task(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -543,7 +527,6 @@ class TestCompletionWCAView(
             self.assertEqual(model_client.session.post.call_args[1]["timeout"], 2000)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_timed_out(self):
         self.user.rh_user_has_seat = True
@@ -582,7 +565,6 @@ class TestCompletionWCAView(
                         self.assertEqual(properties["problem"], "ModelTimeoutError")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_request_id_correlation_failure(self):
         self.user.rh_user_has_seat = True
@@ -667,7 +649,6 @@ class TestCompletionWCAView(
                 self.assertEqual(actual_event.get("promptType"), "MULTITASK")
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_completion_wca_instance_deleted(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -700,7 +681,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA Instance has been deleted", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_inference_failed(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -729,7 +709,6 @@ class TestCompletionWCAView(
                 self.assertInLog("WCA inference failed", log)
 
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
-    @override_settings(ENABLE_ARI_POSTPROCESS=False)
     def test_wca_validation_failed(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
@@ -737,7 +716,7 @@ class TestCompletionWCAView(
 
         model_client, model_input = self.stub_wca_client()
         response = MockResponse(
-            json={"detail": "ARI processing failed."},
+            json={"detail": "Validation failed."},
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             headers={"Content-Type": "application/json"},
         )

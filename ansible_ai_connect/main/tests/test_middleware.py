@@ -44,7 +44,6 @@ class TestMiddleware(
     APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBaseOIDC
 ):
 
-    @override_settings(ENABLE_ARI_POSTPROCESS=True)
     @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=True)
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     @override_settings(SEGMENT_ANALYTICS_WRITE_KEY="DUMMY_KEY_ANALYTICS_VALUE")
@@ -97,7 +96,7 @@ class TestMiddleware(
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("DEBUG:segment:queueing:", log)
                 self.assertInLog("'event': 'prediction',", log)
-                self.assertInLog("'event': 'postprocess',", log)
+                self.assertInLog("'event': 'postprocessLint',", log)
                 self.assertInLog("'event': 'completion',", log)
 
                 segment_events = self.extractSegmentEventsFromLog(log)
@@ -115,9 +114,7 @@ class TestMiddleware(
                     self.assertTrue("rh_user_org_id" in properties)
                     self.assertEqual(hostname, properties["hostname"])
                     if event["event"] == "completion":
-                        self.assertEqual(
-                            "ansible.builtin.package", properties["tasks"][0]["module"]
-                        )
+                        self.assertEqual("ansible.builtin.apt", properties["tasks"][0]["module"])
                         self.assertEqual("ansible.builtin", properties["tasks"][0]["collection"])
                         self.assertIsNotNone(properties["tasks"][0]["prediction"])
                         self.assertEqual(
@@ -137,7 +134,7 @@ class TestMiddleware(
                 self.assertIsNotNone(r.data["predictions"])
                 self.assertInLog("DEBUG:segment:queueing:", log)
                 self.assertInLog("'event': 'prediction',", log)
-                self.assertInLog("'event': 'postprocess',", log)
+                self.assertInLog("'event': 'postprocessLint',", log)
                 self.assertInLog("'event': 'completion',", log)
                 self.assertSegmentTimestamp(log)
 
@@ -150,7 +147,7 @@ class TestMiddleware(
                 self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
                 self.assertInLog("DEBUG:segment:queueing:", log)
                 self.assertNotInLog("'event': 'prediction',", log)
-                self.assertNotInLog("'event': 'postprocess',", log)
+                self.assertNotInLog("'event': 'postprocessLint',", log)
                 self.assertInLog("'event': 'completion',", log)
                 self.assertNotInLog("foo@ansible.com", log)
                 self.assertInLog("username", log)

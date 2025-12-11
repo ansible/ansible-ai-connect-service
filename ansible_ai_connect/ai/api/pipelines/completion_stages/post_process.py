@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
 import logging
 import time
 
@@ -67,18 +66,6 @@ def write_to_segment(
         if isinstance(exception, MarkedYAMLError)
         else str(exception) if str(exception) else exception.__class__.__name__
     )
-    if event_type == "ARI":
-        event_name = "postprocess"
-        event = {
-            "exception": exception is not None,
-            "problem": problem,
-            "duration": duration,
-            "recommendation": recommendation_yaml,
-            "truncated": truncated_yaml,
-            "postprocessed": postprocessed_yaml,
-            "details": postprocess_detail,
-            "suggestionId": str(suggestion_id) if suggestion_id else None,
-        }
     if event_type == "ansible-lint":
         event_name = "postprocessLint"
         event = {
@@ -134,10 +121,6 @@ def completion_post_process(context: CompletionContext):
     post_processed_predictions = context.anonymized_predictions.copy()
     is_multi_task_prompt = fmtr.is_multi_task_prompt(original_prompt)
 
-    ari_caller = apps.get_app_config("ai").get_ari_caller()
-    if not ari_caller:
-        logger.warning("skipped ari post processing because ari was not initialized")
-
     ansible_lint_caller = get_ansible_lint_caller()
 
     exception = None
@@ -158,11 +141,9 @@ def completion_post_process(context: CompletionContext):
     recommendation_yaml = fmtr.restore_original_task_names(
         anonymized_recommendation_yaml, original_prompt, payload_context
     )
-    recommendation_problem = None
     truncated_yaml = None
     postprocessed_yaml = None
     tasks = [{"name": task_name} for task_name in fmtr.get_task_names_from_prompt(prompt)]
-    ari_results = None
 
     # check if the recommendation_yaml is a valid YAML
     try:
@@ -172,6 +153,7 @@ def completion_post_process(context: CompletionContext):
         # because the token size of the wisdom model is limited.
         # so we try truncating the last line of the recommendation here.
         truncated, truncated_yaml = truncate_recommendation_yaml(recommendation_yaml)
+        recommendation_problem = None
         if truncated:
             try:
                 _ = yaml.safe_load(truncated_yaml)
@@ -192,104 +174,14 @@ def completion_post_process(context: CompletionContext):
             )
             # if the recommentation is not a valid yaml, record it as an exception
             exception = recommendation_problem
-    if ari_caller:
-        start_time = time.time()
-        postprocess_details = []
-        try:
-            # otherwise, do postprocess here
-            logger.debug(
-                f"suggestion id: {suggestion_id}, "
-                f"original recommendation: \n{recommendation_yaml}"
-            )
-            postprocessed_yaml, ari_results = ari_caller.postprocess(
-                recommendation_yaml, original_prompt, payload_context
-            )
-            logger.debug(
-                f"suggestion id: {suggestion_id}, "
-                f"post-processed recommendation: \n{postprocessed_yaml}"
-            )
-
-            post_processed_predictions["predictions"][0] = postprocessed_yaml
-            tasks_with_applied_changes = []
-            for index, ari_result in enumerate(ari_results):
-                # Use the anonymized task name in the postprocess segment event
-                postprocess_details.append(
-                    {"name": tasks[index]["name"], "rule_details": ari_result["rule_details"]}
-                )
-                rules_with_applied_changes = [
-                    k for k, v in ari_result["rule_details"].items() if v["applied_changes"]
-                ]
-                if rules_with_applied_changes:
-                    tasks_with_applied_changes.append(
-                        {"name": tasks[index]["name"], "rules": rules_with_applied_changes}
-                    )
-
-            if user.rh_user_has_seat:
-                # Test for changes to the recommendation and if so log as warn.
-                # WCA is already running ARI so we expect no changes.
-                # Ignore any whitespace and single vs double quote changes.
-                pp = (
-                    postprocessed_yaml.replace(" ", "")
-                    .replace("\n", "")
-                    .replace('"', "")
-                    .replace("'", "")
-                )
-                orig = (
-                    recommendation_yaml.replace(" ", "")
-                    .replace("\n", "")
-                    .replace('"', "")
-                    .replace("'", "")
-                )
-
-                if tasks_with_applied_changes or (pp != orig):
-                    ari_changes_logger = logging.getLogger("ari_changes")
-                    ari_changes_logger.info(
-                        f"ARI CHANGES DETECTED. suggestion_id: [{suggestion_id}] "
-                        f"rules_with_applied_changes: {tasks_with_applied_changes} "
-                        f"recommendation_yaml: [{repr(recommendation_yaml)}] "
-                        f"postprocessed_yaml: [{repr(postprocessed_yaml)}] "
-                        f"original_prompt: [{repr(original_prompt)}] "
-                        f"payload_context: [{repr(payload_context)}] "
-                        f"postprocess_details: [{json.dumps(postprocess_details)}] "
-                    )
-
-            logger.debug(
-                f"suggestion id: {suggestion_id}, "
-                f"post-process detail: {json.dumps(postprocess_details)}"
-            )
-        except Exception as exc:
-            exception = exc
-            # return the original recommendation if we failed to postprocess
-            logger.exception(
-                f"failed to postprocess recommendation with prompt {prompt} "
-                f"context {payload_context} and model recommendation {post_processed_predictions}"
-            )
-        finally:
-            write_to_segment(
-                user,
-                suggestion_id,
-                anonymized_recommendation_yaml,
-                truncated_yaml,
-                postprocessed_yaml,
-                postprocess_details,
-                exception,
-                start_time,
-                "ARI",
-                model_id,
-            )
-            if exception:
-                raise exception
 
     if ansible_lint_caller:
         start_time = time.time()
         try:
-            # Ansible Lint the ARI processed yaml else the model prediction
-            input_yaml = postprocessed_yaml if postprocessed_yaml else recommendation_yaml
+            input_yaml = recommendation_yaml
             # Single task predictions are missing the `- name: ` line and fail linter schema check
             if not is_multi_task_prompt:
-                input_yaml = (
-                    f"{original_prompt.lstrip() if ari_caller else original_prompt}{input_yaml}"
-                )
+                input_yaml = f"{original_prompt}{input_yaml}"
             postprocessed_yaml = ansible_lint_caller.run_linter(input_yaml)
             # Stripping the leading STRIP_YAML_LINE that was added by above processing
             if postprocessed_yaml.startswith(STRIP_YAML_LINE):
@@ -324,8 +216,7 @@ def completion_post_process(context: CompletionContext):
             if exception:
                 raise exception
 
-    # If ARI is not enabled, and suggestion is multi-task, add newlines between tasks
-    if not ari_caller and is_multi_task_prompt:
+    if is_multi_task_prompt:
         post_processed_predictions["predictions"][0] = fmtr.normalize_yaml(
             post_processed_predictions["predictions"][0]
         )
@@ -347,7 +238,7 @@ def completion_post_process(context: CompletionContext):
     logger.debug(f"suggestion id: {suggestion_id}, indented recommendation: \n{indented_yaml}")
 
     # gather data for completion segment event
-    for i, task in enumerate(tasks):
+    for task in tasks:
         if fmtr.is_multi_task_prompt(prompt):
             task["prediction"] = fmtr.extract_task(
                 post_processed_predictions["predictions"][0], task["name"]
@@ -355,21 +246,14 @@ def completion_post_process(context: CompletionContext):
         else:
             task["prediction"] = post_processed_predictions["predictions"][0]
 
-        fqcn_module = None
-        if ari_results is not None:
-            ari_result = ari_results[i]
-            fqcn_module = ari_result["fqcn_module"]
-        populate_module_and_collection(fqcn_module, task)
+        populate_module_and_collection(task)
 
     context.task_results = tasks
     context.post_processed_predictions = post_processed_predictions
 
 
-def populate_module_and_collection(fqcn_module, task):
-    if fqcn_module is None or fqcn_module == "":
-        # In case the module is not part of the collections, ARI does not handle it.
-        # This way, parsing the module from the prediction instead.
-        fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
+def populate_module_and_collection(task):
+    fqcn_module = fmtr.get_fqcn_or_module_from_prediction(task["prediction"])
 
     if fqcn_module is not None:
         task["module"] = fqcn_module

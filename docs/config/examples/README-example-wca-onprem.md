@@ -10,7 +10,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>",
@@ -25,7 +24,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>"
@@ -39,7 +37,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>"
@@ -53,7 +50,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>"
@@ -67,7 +63,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>"
@@ -81,7 +76,6 @@
             "model_id": "<model_id>",
             "verify_ssl": "True",
             "retry_count": "4",
-            "enable_ari_postprocessing": "False",
             "health_check_api_key": "<api_key>",
             "health_check_model_id": "<model_id>",
             "username": "<username>"
