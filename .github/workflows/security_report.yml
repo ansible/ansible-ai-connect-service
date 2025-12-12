@@ -22,7 +22,7 @@ jobs:
       - name: Monitor project and report vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk monitor --all-projects
+        run: snyk monitor --all-projects --skip-unresolved
 
       - name: Generate code vulnerability report
         env:
