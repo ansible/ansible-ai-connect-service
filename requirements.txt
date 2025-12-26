@@ -17,7 +17,7 @@ ansible-core==2.16.14
     #   ansible-ai-connect
     #   ansible-compat
     #   ansible-lint
-ansible-lint==25.5.0
+ansible-lint==25.12.2
     # via ansible-ai-connect
 anyio==4.12.0
     # via
@@ -69,8 +69,10 @@ certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5ac
     #   httpx
     #   launchdarkly-server-sdk
     #   requests
-cffi==2.0.0 ; platform_python_implementation != 'PyPy'
-    # via cryptography
+cffi==2.0.0
+    # via
+    #   ansible-lint
+    #   cryptography
 charset-normalizer==3.4.4
     # via requests
 click==8.3.1
@@ -87,6 +89,7 @@ constantly==23.10.4
 cryptography==43.0.1
     # via
     #   ansible-core
+    #   ansible-lint
     #   autobahn
     #   django-ansible-base
     #   jwcrypto
@@ -107,7 +110,9 @@ defusedxml==0.7.1
 diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
-    # via llama-stack-client
+    # via
+    #   ansible-lint
+    #   llama-stack-client
 django==4.2.27
     # via
     #   ansible-ai-connect
@@ -160,8 +165,10 @@ executing==2.2.1
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
-filelock==3.20.0
-    # via ansible-lint
+filelock==3.20.1
+    # via
+    #   ansible-ai-connect
+    #   ansible-lint
 fire==0.7.1
     # via
     #   ansible-ai-connect
@@ -211,8 +218,6 @@ idna==3.7
     #   requests
     #   twisted
     #   yarl
-importlib-metadata==8.7.0
-    # via ansible-lint
 incremental==24.11.0
     # via twisted
 inflection==0.5.1
@@ -366,7 +371,7 @@ pyasn1-modules==0.4.2
     #   google-auth
     #   oauth2client
     #   service-identity
-pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+pycparser==2.23 ; implementation_name != 'PyPy'
     # via cffi
 pydantic==2.12.5
     # via
@@ -457,8 +462,10 @@ rsa==4.9.1
     #   oauth2client
 ruamel-yaml==0.18.16
     # via ansible-lint
-ruamel-yaml-clib==0.2.15 ; python_full_version < '3.14' and platform_python_implementation == 'CPython'
-    # via ruamel-yaml
+ruamel-yaml-clib==0.2.15 ; python_full_version < '3.14'
+    # via
+    #   ansible-lint
+    #   ruamel-yaml
 s3transfer==0.16.0
     # via boto3
 segment-analytics-python==2.2.3
@@ -566,8 +573,6 @@ yamllint==1.37.1
     # via ansible-lint
 yarl==1.22.0
     # via aiohttp
-zipp==3.23.0
-    # via importlib-metadata
 zope-interface==8.1.1
     # via twisted
 zstandard==0.25.0

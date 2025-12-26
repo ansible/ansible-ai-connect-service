@@ -2,7 +2,8 @@ version = 1
 revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
-    "python_full_version >= '3.13'",
+    "python_full_version >= '3.14'",
+    "python_full_version == '3.13.*'",
     "python_full_version < '3.13'",
 ]
 
@@ -124,6 +125,7 @@ dependencies = [
     { name = "django-test-migrations" },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
+    { name = "filelock" },
     { name = "fire" },
     { name = "ipython" },
     { name = "jinja2" },
@@ -168,7 +170,7 @@ requires-dist = [
     { name = "aiohttp", specifier = "~=3.12.14" },
     { name = "ansible-anonymizer", specifier = "~=1.5.0" },
     { name = "ansible-core", specifier = "~=2.16.14" },
-    { name = "ansible-lint", specifier = "~=25.5.0" },
+    { name = "ansible-lint", specifier = "~=25.12.2" },
     { name = "black", marker = "extra == 'dev'", specifier = "~=24.3.0" },
     { name = "boto3", specifier = "~=1.40" },
     { name = "coverage", marker = "extra == 'dev'", specifier = "~=7.2.1" },
@@ -187,6 +189,7 @@ requires-dist = [
     { name = "django-test-migrations", specifier = "~=1.3.0" },
     { name = "djangorestframework", specifier = "~=3.15.2" },
     { name = "drf-spectacular", specifier = "~=0.27.2" },
+    { name = "filelock", specifier = "==3.20.1" },
     { name = "fire", specifier = "~=0.7.0" },
     { name = "flake8", marker = "extra == 'dev'", specifier = "~=6.0.0" },
     { name = "grpcio-tools", marker = "extra == 'dev'", specifier = "~=1.68.1" },
@@ -264,27 +267,30 @@ wheels = [
 
 [[package]]
 name = "ansible-lint"
-version = "25.5.0"
+version = "25.12.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ansible-compat" },
     { name = "ansible-core" },
     { name = "black" },
+    { name = "cffi" },
+    { name = "cryptography" },
+    { name = "distro" },
     { name = "filelock" },
-    { name = "importlib-metadata" },
     { name = "jsonschema" },
     { name = "packaging" },
     { name = "pathspec" },
     { name = "pyyaml" },
     { name = "referencing" },
     { name = "ruamel-yaml" },
+    { name = "ruamel-yaml-clib", marker = "python_full_version < '3.14'" },
     { name = "subprocess-tee" },
     { name = "wcmatch" },
     { name = "yamllint" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b8/11/3644b4821c0b6ea3d09ec2860b2896d6324ee90cffe0440d6e4f98c62917/ansible_lint-25.5.0.tar.gz", hash = "sha256:4182520f233eef4248bc4cf4b6074e25cdaf5be21cf9be944aabc85df5407e9c", size = 556183, upload-time = "2025-05-26T05:55:02.374Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/b1/cbbe86f424d76bb621461d131506e5778556ddf6f5eba0cf7c41db829208/ansible_lint-25.12.2.tar.gz", hash = "sha256:d4dbf2905c868d6f7b330941efc586f19a5e2b3b6826fd6a2edf0d5080329e46", size = 725323, upload-time = "2025-12-22T17:01:20.433Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/90/b39c926692dee3eb42a7e4e5a6815e8bc3771a280fec629e35674d3c5f2e/ansible_lint-25.5.0-py3-none-any.whl", hash = "sha256:25b03f3b58a84bd38f86532a08e38b652252baf175142988cb1071aee49a0eca", size = 314556, upload-time = "2025-05-26T05:54:59.95Z" },
+    { url = "https://files.pythonhosted.org/packages/32/ea/d5620576753c7424a41b9d97ea050297ec2d7cc1e4fa12e44c27289726a2/ansible_lint-25.12.2-py3-none-any.whl", hash = "sha256:cafcd991c9ddfd9a13e5b56e5a4f1d9997973e0c0d6a0f6eb2b148d39f42e2c3", size = 323017, upload-time = "2025-12-22T17:01:18.698Z" },
 ]
 
 [[package]]
@@ -1033,11 +1039,11 @@ wheels = [
 
 [[package]]
 name = "filelock"
-version = "3.20.0"
+version = "3.20.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/58/46/0028a82567109b5ef6e4d2a1f04a583fb513e6cf9527fcdd09afd817deeb/filelock-3.20.0.tar.gz", hash = "sha256:711e943b4ec6be42e1d4e6690b48dc175c822967466bb31c0c293f34334c13f4", size = 18922, upload-time = "2025-10-08T18:03:50.056Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/23/ce7a1126827cedeb958fc043d61745754464eb56c5937c35bbf2b8e26f34/filelock-3.20.1.tar.gz", hash = "sha256:b8360948b351b80f420878d8516519a2204b07aefcdcfd24912a5d33127f188c", size = 19476, upload-time = "2025-12-15T23:54:28.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/91/7216b27286936c16f5b4d0c530087e4a54eead683e6b0b73dd0c64844af6/filelock-3.20.0-py3-none-any.whl", hash = "sha256:339b4732ffda5cd79b13f4e2711a31b0365ce445d95d243bb996273d072546a2", size = 16054, upload-time = "2025-10-08T18:03:48.35Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/7f/a1a97644e39e7316d850784c642093c99df1290a460df4ede27659056834/filelock-3.20.1-py3-none-any.whl", hash = "sha256:15d9e9a67306188a44baa72f569d2bfd803076269365fdea0934385da4dc361a", size = 16666, upload-time = "2025-12-15T23:54:26.874Z" },
 ]
 
 [[package]]
@@ -1414,18 +1420,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/21/ed/f86a79a07470cb07819390452f178b3bef1d375f2ec021ecfc709fc7cf07/idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc", size = 189575, upload-time = "2024-04-11T03:34:43.276Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/3e/741d8c82801c347547f8a2a06aa57dbb1992be9e948df2ea0eda2c8b79e8/idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0", size = 66836, upload-time = "2024-04-11T03:34:41.447Z" },
-]
-
-[[package]]
-name = "importlib-metadata"
-version = "8.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "zipp" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641, upload-time = "2025-04-27T15:29:01.736Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/b0/36bd937216ec521246249be3bf9855081de4c5e06a0c9b4219dbeda50373/importlib_metadata-8.7.0-py3-none-any.whl", hash = "sha256:e5dd1551894c77868a30651cef00984d50e1002d06942a7101d34870c5f02afd", size = 27656, upload-time = "2025-04-27T15:29:00.214Z" },
 ]
 
 [[package]]
@@ -3551,15 +3545,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/86/0f0dccb6e59a9e7f122c5afd43568b1d31b8ab7dda5f1b01fb5c7025c9a9/yarl-1.22.0-cp314-cp314t-win_amd64.whl", hash = "sha256:9fb17ea16e972c63d25d4a97f016d235c78dd2344820eb35bc034bc32012ee27", size = 96292, upload-time = "2025-10-06T14:12:15.398Z" },
     { url = "https://files.pythonhosted.org/packages/48/b7/503c98092fb3b344a179579f55814b613c1fbb1c23b3ec14a7b008a66a6e/yarl-1.22.0-cp314-cp314t-win_arm64.whl", hash = "sha256:9f6d73c1436b934e3f01df1e1b21ff765cd1d28c77dfb9ace207f746d4610ee1", size = 85171, upload-time = "2025-10-06T14:12:16.935Z" },
     { url = "https://files.pythonhosted.org/packages/73/ae/b48f95715333080afb75a4504487cbe142cae1268afc482d06692d605ae6/yarl-1.22.0-py3-none-any.whl", hash = "sha256:1380560bdba02b6b6c90de54133c81c9f2a453dee9912fe58c1dcced1edb7cff", size = 46814, upload-time = "2025-10-06T14:12:53.872Z" },
-]
-
-[[package]]
-name = "zipp"
-version = "3.23.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50ede074e376733dca2ae7c6eb617489437771209d4180/zipp-3.23.0.tar.gz", hash = "sha256:a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166", size = 25547, upload-time = "2025-06-08T17:06:39.4Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276, upload-time = "2025-06-08T17:06:38.034Z" },
 ]
 
 [[package]]
