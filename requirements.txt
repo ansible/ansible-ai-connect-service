@@ -160,8 +160,10 @@ executing==2.2.1
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
-filelock==3.20.0
-    # via ansible-lint
+filelock==3.20.1
+    # via
+    #   ansible-ai-connect
+    #   ansible-lint
 fire==0.7.1
     # via
     #   ansible-ai-connect
@@ -248,7 +250,7 @@ jwcrypto==1.5.6
     #   django-oauth-toolkit
 langchain==0.3.27
     # via ansible-ai-connect
-langchain-core==0.3.80
+langchain-core==0.3.81
     # via
     #   ansible-ai-connect
     #   langchain
