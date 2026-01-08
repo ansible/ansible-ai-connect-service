@@ -17,6 +17,7 @@ import os
 import tempfile
 from copy import deepcopy
 
+from ansiblelint.app import get_app
 from ansiblelint.config import Options
 from ansiblelint.config import options as default_options
 from ansiblelint.constants import DEFAULT_RULESDIR
@@ -33,7 +34,9 @@ TEMP_TASK_FOLDER = "tasks"
 class AnsibleLintCaller:
     def __init__(self) -> None:
         self.config_options = deepcopy(default_options)
-        self.default_rules_collection = RulesCollection(rulesdirs=[DEFAULT_RULESDIR])
+        self.default_rules_collection = RulesCollection(
+            app=get_app(offline=True), rulesdirs=[DEFAULT_RULESDIR]
+        )
         self.config_options.write_list = settings.ANSIBLE_LINT_TRANSFORM_RULES
 
     def run_linter(
