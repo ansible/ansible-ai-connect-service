@@ -34,6 +34,7 @@ TEMP_TASK_FOLDER = "tasks"
 class AnsibleLintCaller:
     def __init__(self) -> None:
         self.config_options = deepcopy(default_options)
+        # Specify app for ansible-lint PR #4891 - https://github.com/ansible/ansible-lint/pull/4891
         self.default_rules_collection = RulesCollection(
             app=get_app(offline=True), rulesdirs=[DEFAULT_RULESDIR]
         )
