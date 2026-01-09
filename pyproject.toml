@@ -7,7 +7,7 @@ name = "ansible-ai-connect"
 description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
-  'aiohttp~=3.12.14',
+  'aiohttp>=3.13.3',
   'ansible-core~=2.16.14',
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
@@ -45,13 +45,14 @@ dependencies = [
   'slack-sdk~=3.31.0',
   'social-auth-app-django~=5.4.1',
   'social-auth-core[openidconnect]>=4.4.2',
-  'urllib3~=2.6.0',
+  'urllib3~=2.6.3',
   'uwsgi~=2.0.28',
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
   'django-csp~=3.7',
   'django-ansible-base[jwt-consumer,resource-registry]>=2025.8.18',
   "filelock==3.20.1",
+  'cbor2>=5.8.0',
 ]
 readme = "README.rst"
 license = {text = "Apache-2.0"}

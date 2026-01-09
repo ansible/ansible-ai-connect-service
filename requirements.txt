@@ -2,7 +2,7 @@
 #    uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.15
+aiohttp==3.13.3
     # via ansible-ai-connect
 aiosignal==1.4.0
     # via aiohttp
@@ -61,8 +61,10 @@ bracex==2.6
     # via wcmatch
 cachetools==6.2.2
     # via google-auth
-cbor2==5.7.1
-    # via autobahn
+cbor2==5.8.0
+    # via
+    #   ansible-ai-connect
+    #   autobahn
 certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
     # via
     #   httpcore
@@ -543,7 +545,7 @@ uritemplate==4.2.0
     # via
     #   drf-spectacular
     #   google-api-python-client
-urllib3==2.6.1
+urllib3==2.6.3
     # via
     #   ansible-ai-connect
     #   botocore
