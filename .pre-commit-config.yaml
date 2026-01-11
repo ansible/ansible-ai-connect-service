@@ -5,7 +5,7 @@ repos:
   - id: isort
     name: isort (python)
 - repo: https://github.com/ambv/black
-  rev: 24.10.0
+  rev: 25.9.0
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
