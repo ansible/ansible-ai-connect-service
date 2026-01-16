@@ -162,7 +162,7 @@ executing==2.2.1
     # via stack-data
 expiringdict==1.2.2
     # via launchdarkly-server-sdk
-filelock==3.20.1
+filelock==3.20.3
     # via
     #   ansible-ai-connect
     #   ansible-lint
@@ -359,8 +359,9 @@ py-ubjson==0.16.1
     # via autobahn
 pyaml==25.7.0
     # via llama-stack-client
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
+    #   ansible-ai-connect
     #   oauth2client
     #   pyasn1-modules
     #   rsa
