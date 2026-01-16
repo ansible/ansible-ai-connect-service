@@ -5,7 +5,6 @@ import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import { Sentiment } from "../Constants";
 import type { ChatFeedback } from "../types/Message";
 import * as fetchEventSourceModule from "@microsoft/fetch-event-source";
-import axios from "axios";
 
 const CONVERSATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -13,9 +12,6 @@ const CONVERSATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 vi.mock("@microsoft/fetch-event-source", () => ({
   fetchEventSource: vi.fn(),
 }));
-
-// Mock axios
-vi.mock("axios");
 
 describe("feedbackMessage", () => {
   it("should return a message with a thank you note for positive feedback", () => {
@@ -86,10 +82,10 @@ describe("feedbackMessage", () => {
 describe("useChatbot - fetchEventSource openWhenHidden", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock axios.get for health check
-    vi.mocked(axios.get).mockResolvedValue({
-      status: 200,
-      data: { "streaming-chatbot-service": "ok" },
+    // Mock fetch for health check
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ "streaming-chatbot-service": "ok" }),
     });
     // Mock fetchEventSource to resolve immediately
     vi.mocked(fetchEventSourceModule.fetchEventSource).mockResolvedValue(

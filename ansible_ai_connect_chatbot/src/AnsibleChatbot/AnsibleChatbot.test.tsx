@@ -4,40 +4,71 @@ import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
 import { screen } from "@testing-library/react";
 import { userEvent } from "@vitest/browser/context";
-import axios from "axios";
 import { AnsibleChatbot } from "./AnsibleChatbot";
 import "@vitest/browser/matchers.d.ts";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-function mockAxiosGet() {
-  const spyGet = vi.spyOn(axios, "get");
-  spyGet.mockResolvedValue({
-    data: {
-      "chatbot-service": "ok",
-      "streaming-chatbot-service": "disabled",
-    },
-    status: 200,
+function mockFetchGet() {
+  const originalFetch = global.fetch;
+  global.fetch = vi.fn((url, options) => {
+    if (
+      typeof url === "string" &&
+      url.includes("/api/v1/health/status/chatbot/") &&
+      (!options || options.method === "GET")
+    ) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          "chatbot-service": "ok",
+          "streaming-chatbot-service": "disabled",
+        }),
+      } as Response);
+    }
+    return originalFetch(url, options);
   });
 }
 
-function mockAxiosPost(status: number) {
-  const spy = vi.spyOn(axios, "post");
-  spy.mockResolvedValue({
-    data: {
-      conversation_id: "test-conversation-id",
-      referenced_documents: [
-        {
-          docs_url: "https://docs.ansible.com/test",
-          title: "Test Documentation",
-        },
-      ],
-      response: "This is a test response.",
-      truncated: false,
-    },
-    status,
+function mockFetchPost(status: number) {
+  const originalFetch = global.fetch;
+  global.fetch = vi.fn((url, options) => {
+    // Handle GET requests for health check
+    if (
+      typeof url === "string" &&
+      url.includes("/api/v1/health/status/chatbot/") &&
+      (!options || options.method === "GET")
+    ) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          "chatbot-service": "ok",
+          "streaming-chatbot-service": "disabled",
+        }),
+      } as Response);
+    }
+
+    // Handle POST requests
+    if (options?.method === "POST") {
+      return Promise.resolve({
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => ({
+          conversation_id: "test-conversation-id",
+          referenced_documents: [
+            {
+              docs_url: "https://docs.ansible.com/test",
+              title: "Test Documentation",
+            },
+          ],
+          response: "This is a test response.",
+          truncated: false,
+        }),
+      } as Response);
+    }
+
+    return originalFetch(url, options);
   });
-  return spy;
+  return global.fetch;
 }
 
 async function renderChatbot() {
@@ -60,7 +91,7 @@ async function renderChatbot() {
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  mockAxiosGet();
+  mockFetchGet();
 });
 
 test("Scroll does not trigger when feedback message is added inline", async () => {
@@ -68,7 +99,7 @@ test("Scroll does not trigger when feedback message is added inline", async () =
   const scrollIntoViewMock = vi.fn();
   Element.prototype.scrollIntoView = scrollIntoViewMock;
 
-  const postSpy = mockAxiosPost(200);
+  mockFetchPost(200);
   const view = await renderChatbot();
 
   // Send first message
@@ -86,10 +117,11 @@ test("Scroll does not trigger when feedback message is added inline", async () =
   expect(scrollCallsAfterFirstMessage).toBeGreaterThan(0);
 
   // Mock feedback API response
-  postSpy.mockResolvedValueOnce({
-    data: {},
+  vi.mocked(global.fetch).mockResolvedValueOnce({
+    ok: true,
     status: 200,
-  });
+    json: async () => ({}),
+  } as Response);
 
   // Click thumbs up on the bot response
   const thumbsUpButton = await screen.findByRole("button", {
@@ -112,7 +144,7 @@ test("Scroll does trigger when new chat message is sent", async () => {
   const scrollIntoViewMock = vi.fn();
   Element.prototype.scrollIntoView = scrollIntoViewMock;
 
-  mockAxiosPost(200);
+  mockFetchPost(200);
   const view = await renderChatbot();
 
   // Reset mock to start counting from 0

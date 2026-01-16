@@ -8,7 +8,10 @@ import "./ReferencedDocuments.scss";
 
 export const ReferencedDocuments = (props: ReferencedDocumentsProp) => {
   const { referenced_documents, caption } = props;
-  if (referenced_documents.length === 0) {
+  if (
+    !Array.isArray(referenced_documents) ||
+    referenced_documents.length === 0
+  ) {
     return <></>;
   }
   return (
