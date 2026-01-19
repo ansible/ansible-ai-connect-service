@@ -493,6 +493,7 @@ export const useChatbot = () => {
             ? "/api/lightspeed/v1/ai/streaming_chat/"
             : "http://localhost:8080/v1/streaming_query",
           {
+            openWhenHidden: true,
             method: "POST",
             headers: {
               "Content-Type": "application/json",
