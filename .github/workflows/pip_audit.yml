@@ -69,3 +69,7 @@ jobs:
             # To remove once we upgrade to Django 5+ (requires major version upgrade)
             # social-auth-app-django vulnerability requires Django>=5.1
             GHSA-wv4w-6qv2-qqfg
+            # To remove once protobuf releases a patched version for CVE-2026-0994
+            # DoS vulnerability in protobuf json_format.ParseDict() - no fix available yet
+            # See: https://github.com/advisories/GHSA-7gcm-g887-7qv7
+            GHSA-7gcm-g887-7qv7
