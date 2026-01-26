@@ -93,6 +93,12 @@ update-openapi-schema:
 	curl -X GET http://localhost:8000/api/schema/ -o tools/openapi-schema/ansible-ai-connect-service.yaml
 	curl -w "\n" -X GET "http://localhost:8000/api/schema/?format=json" > tools/openapi-schema/ansible-ai-connect-service.json
 
+.PHONY: validate-openapi-schema
+# Validate OpenAPI schema against OpenAPI 3.0 specification (requires server to be running)
+validate-openapi-schema:
+	@echo "Validating OpenAPI schema at http://localhost:8000/api/schema/ ..."
+	@python3 -c "from openapi_spec_validator import validate_url; from openapi_spec_validator.validation.validators import OpenAPIV30SpecValidator; validate_url('http://localhost:8000/api/schema/', cls=OpenAPIV30SpecValidator); print('✓ OpenAPI schema is valid!')"
+
 .PHONY: docker-compose-clean
 docker-compose-clean:
 	${COMPOSE_RUNTIME} -f ${PWD}/tools/docker-compose/compose.yaml down
