@@ -136,3 +136,13 @@ jobs:
         make update-openapi-schema
         git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.yaml
         git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.json
+
+    - name: Validate OpenAPI schema
+      continue-on-error: true
+      run: |
+        python3 -c "
+        from openapi_spec_validator import validate_url
+        from openapi_spec_validator.validation.validators import OpenAPIV30SpecValidator
+
+        validate_url('http://localhost:8000/api/schema/', cls=OpenAPIV30SpecValidator)
+        "

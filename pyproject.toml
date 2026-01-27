@@ -70,6 +70,7 @@ dev = [
   'flake8~=6.0.0',
   'grpcio-tools~=1.68.1',
   'isort~=5.10.1',
+  'openapi-spec-validator',
   'pre-commit',
   'responses~=0.24.1',
   'torch-model-archiver',

@@ -386,6 +386,25 @@ with the following steps:
 3. Run `make update-openapi-schema` in the project root.
 4. Commit the updated OpenAPI Schema YAML file with your API changes.
 
+#### OpenAPI Schema Validation
+
+The OpenAPI schema is automatically validated against the OpenAPI 3.0 specification in CI/CD on every PR and push to main. This ensures the schema remains compliant and catches issues early.
+
+To validate the schema locally before pushing:
+
+```bash
+# Install the validator (included in dev dependencies)
+pip install .[dev]
+
+# Start the development server (in one terminal)
+make run-server
+
+# In another terminal, run the validation
+make validate-openapi-schema
+```
+
+**Note:** Schema validation is currently non-blocking in CI/CD, meaning PRs will not be blocked by validation failures. However, validation errors will be visible in the CI logs and should be addressed.
+
 Also a dynamically generated OpenAPI 3.0 Schema YAML file can be downloaded either:
 
 - Click the /api/schema/ link on Swagger UI, or
