@@ -19,6 +19,7 @@ import traceback
 from string import Template
 
 from ansible_anonymizer import anonymizer
+from ansible_base.lib.utils.schema import extend_schema_if_available
 from django.apps import apps
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -833,6 +834,9 @@ class Explanation(AACSAPIView):
         },
         summary="Playbook explanation",
     )
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Create an explanation of a playbook"},
+    )
     def post(self, request) -> Response:
         self.event.playbook_length = len(self.validated_data["content"])
         self.event.explanationId = self.validated_data["explanationId"]
@@ -890,6 +894,7 @@ class ExplanationRole(AACSAPIView):
         },
         summary="Role explanation",
     )
+    @extend_schema_if_available(extensions={"x-ai-description": "Create an explanation of a role"})
     def post(self, request) -> Response:
         llm: ModelPipelineRoleExplanation = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineRoleExplanation
@@ -944,6 +949,9 @@ class GenerationPlaybook(AACSAPIView):
             503: OpenApiResponse(description="Service Unavailable"),
         },
         summary="Playbook generation",
+    )
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Generate a playbook based on a text input"}
     )
     def post(self, request) -> Response:
         self.event.create_outline = self.validated_data["createOutline"]
@@ -1012,6 +1020,9 @@ class GenerationRole(AACSAPIView):
             401: OpenApiResponse(description="Unauthorized"),
         },
         summary="Role generation",
+    )
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Generate a role based on a text input"}
     )
     def post(self, request) -> Response:
         self.event.create_outline = self.validated_data["createOutline"]

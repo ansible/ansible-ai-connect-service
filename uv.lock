@@ -148,7 +148,7 @@ dependencies = [
     { name = "daphne" },
     { name = "django" },
     { name = "django-allow-cidr" },
-    { name = "django-ansible-base", extra = ["jwt-consumer", "resource-registry"] },
+    { name = "django-ansible-base", extra = ["api-documentation", "jwt-consumer", "resource-registry"] },
     { name = "django-csp" },
     { name = "django-deprecate-fields" },
     { name = "django-extensions" },
@@ -215,7 +215,7 @@ requires-dist = [
     { name = "daphne", specifier = "~=4.2.1" },
     { name = "django", specifier = "~=4.2.27" },
     { name = "django-allow-cidr" },
-    { name = "django-ansible-base", extras = ["jwt-consumer", "resource-registry"], specifier = ">=2025.8.18" },
+    { name = "django-ansible-base", extras = ["api-documentation", "jwt-consumer", "resource-registry"], specifier = ">=2026.1.26" },
     { name = "django-csp", specifier = "~=3.7" },
     { name = "django-deprecate-fields", specifier = "~=0.1.1" },
     { name = "django-extensions", specifier = "~=3.2.1" },
@@ -225,7 +225,7 @@ requires-dist = [
     { name = "django-prometheus", specifier = "~=2.2.0" },
     { name = "django-test-migrations", specifier = "~=1.3.0" },
     { name = "djangorestframework", specifier = "~=3.15.2" },
-    { name = "drf-spectacular", specifier = "~=0.27.2" },
+    { name = "drf-spectacular", specifier = "~=0.29.0" },
     { name = "filelock", specifier = "==3.20.3" },
     { name = "fire", specifier = "~=0.7.0" },
     { name = "flake8", marker = "extra == 'dev'", specifier = "~=6.0.0" },
@@ -858,7 +858,7 @@ wheels = [
 
 [[package]]
 name = "django-ansible-base"
-version = "2025.12.3"
+version = "2026.1.26"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
@@ -869,12 +869,16 @@ dependencies = [
     { name = "inflection" },
     { name = "sqlparse" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/df/f1ae91795c198e42f5e1c5eff53878d4e19fe281dfd9735d54d8a162aeca/django_ansible_base-2025.12.3.tar.gz", hash = "sha256:4f404aedff398805481ac01ddae81c3a3b74f212d41450021cd1897e2aa0d861", size = 335874, upload-time = "2025-12-03T14:45:08.731Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/5f/ffd768c2add529831b109a70e0a52414aa21deb4e98fe308f5da80e79900/django_ansible_base-2026.1.26.tar.gz", hash = "sha256:a56a202efb3f50cc7ffe17aa468ad4a5ca520d877e70b9873da3947d9d11763f", size = 339656, upload-time = "2026-01-26T16:36:59.828Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/ed/7f29be7dfabfe4f78b61e1a59f772ba0d119674efff6c828dd27aa94a925/django_ansible_base-2025.12.3-py3-none-any.whl", hash = "sha256:5eb1c6b8f9bddd38dae699ff17f14f5695578ac741a7b0bf1478376cde034d34", size = 443155, upload-time = "2025-12-03T14:45:07.333Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/ee/7dd8c9c17ea5c0f1a4703f240d74d96ffa05b97b6a1e474c9e33aebfa77b/django_ansible_base-2026.1.26-py3-none-any.whl", hash = "sha256:43bbdb054f380837b260666f5661a7184c798065b218d8726a570d228da17368", size = 447582, upload-time = "2026-01-26T16:36:57.512Z" },
 ]
 
 [package.optional-dependencies]
+api-documentation = [
+    { name = "drf-spectacular" },
+    { name = "referencing" },
+]
 jwt-consumer = [
     { name = "pyjwt" },
     { name = "requests" },
@@ -1010,7 +1014,7 @@ wheels = [
 
 [[package]]
 name = "drf-spectacular"
-version = "0.27.2"
+version = "0.29.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
@@ -1020,9 +1024,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "uritemplate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/c9/55311dcbdae9a437eeb8f898f8421a6a3eabf08725c23ddf458cf2479b78/drf-spectacular-0.27.2.tar.gz", hash = "sha256:a199492f2163c4101055075ebdbb037d59c6e0030692fc83a1a8c0fc65929981", size = 235131, upload-time = "2024-04-01T18:00:21.171Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/0e/a4f50d83e76cbe797eda88fc0083c8ca970cfa362b5586359ef06ec6f70a/drf_spectacular-0.29.0.tar.gz", hash = "sha256:0a069339ea390ce7f14a75e8b5af4a0860a46e833fd4af027411a3e94fc1a0cc", size = 241722, upload-time = "2025-11-02T03:40:26.348Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/cd/84c44a5d435f6544e58a9b138305f59bca232157ae4ecb658f9787f87d1c/drf_spectacular-0.27.2-py3-none-any.whl", hash = "sha256:b1c04bf8b2fbbeaf6f59414b4ea448c8787aba4d32f76055c3b13335cf7ec37b", size = 102930, upload-time = "2024-04-01T18:00:17.937Z" },
+    { url = "https://files.pythonhosted.org/packages/32/d9/502c56fc3ca960075d00956283f1c44e8cafe433dada03f9ed2821f3073b/drf_spectacular-0.29.0-py3-none-any.whl", hash = "sha256:d1ee7c9535d89848affb4427347f7c4a22c5d22530b8842ef133d7b72e19b41a", size = 105433, upload-time = "2025-11-02T03:40:24.823Z" },
 ]
 
 [[package]]

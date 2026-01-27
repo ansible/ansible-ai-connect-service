@@ -40,12 +40,17 @@ if DEBUG:
         "TAGS": [
             {"name": "ai", "description": "AI-related operations"},
             {"name": "me", "description": "Authenticated user information"},
-            {"name": "check", "description": "Health check"},
             {"name": "wca", "description": "watsonx Code Assistant"},
         ],
         "SCHEMA_PATH_PREFIX": r"/api/v[0-9]+",
         "SCHEMA_PATH_PREFIX_TRIM": True,
-        "PREPROCESSING_HOOKS": ["ansible_ai_connect.ai.api.openapi.preprocessing_filter_spec"],
+        "PREPROCESSING_HOOKS": [
+            "ansible_ai_connect.ai.api.openapi.preprocessing_filter_spec",
+            "ansible_base.api_documentation.preprocessing_hooks.collect_ai_description_metadata",
+        ],
+        "POSTPROCESSING_HOOKS": [
+            "ansible_base.api_documentation.postprocessing_hooks.add_x_ai_description",
+        ],
     }
 
     # social_django does not process auth exceptions when DEBUG=True by default.

@@ -127,7 +127,7 @@ django==4.2.27
     #   social-auth-app-django
 django-allow-cidr==0.8.0
     # via ansible-ai-connect
-django-ansible-base==2025.12.3
+django-ansible-base==2026.1.26
     # via ansible-ai-connect
 django-crum==0.7.9
     # via django-ansible-base
@@ -152,8 +152,10 @@ djangorestframework==3.15.2
     #   ansible-ai-connect
     #   django-ansible-base
     #   drf-spectacular
-drf-spectacular==0.27.2
-    # via ansible-ai-connect
+drf-spectacular==0.29.0
+    # via
+    #   ansible-ai-connect
+    #   django-ansible-base
 dynaconf==3.2.12
     # via django-ansible-base
 et-xmlfile==2.0.0
@@ -428,6 +430,7 @@ pyyaml==6.0.3
 referencing==0.36.2
     # via
     #   ansible-lint
+    #   django-ansible-base
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.5
