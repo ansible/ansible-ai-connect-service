@@ -1556,7 +1556,6 @@
                     "explanationId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "Explanation ID",
                         "description": "A UUID that identifies the particular explanation data is being requested for."
                     },
@@ -1625,7 +1624,6 @@
                     "explanationId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "Explanation ID",
                         "description": "A UUID that identifies the explanation."
                     }
@@ -1696,7 +1694,6 @@
                     "generationId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "generation ID",
                         "description": "A UUID that identifies the particular generation data is being requested for."
                     },
@@ -1714,7 +1711,6 @@
                     "wizardId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "wizard ID",
                         "description": "A UUID to track the succession of interaction from the user."
                     },
@@ -1826,14 +1822,12 @@
                     "generationId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "generation ID",
                         "description": "A UUID that identifies the particular generation data is being requested for."
                     },
                     "wizardId": {
                         "type": "string",
                         "format": "uuid",
-                        "default": "",
                         "title": "wizard ID",
                         "description": "A UUID to track the succession of interaction from the user."
                     },

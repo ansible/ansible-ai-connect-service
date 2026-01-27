@@ -458,7 +458,7 @@ class ExplanationRequestSerializer(Metadata):
         help_text=(
             "A UUID that identifies the particular explanation data is being requested for."
         ),
-        default="",
+        default=None,
     )
     model = serializers.CharField(required=False, allow_blank=True, default="")
     metadata = Metadata(required=False)
@@ -506,7 +506,7 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
         required=False,
         label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
-        default="",
+        default=None,
     )
     createOutline = serializers.BooleanField(
         required=False,
@@ -528,7 +528,7 @@ class GenerationPlaybookRequestSerializer(serializers.Serializer):
         required=False,
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
-        default="",
+        default=None,
     )
     model = serializers.CharField(required=False, allow_blank=True)
 
@@ -605,14 +605,14 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
         required=False,
         label="generation ID",
         help_text=("A UUID that identifies the particular generation data is being requested for."),
-        default="",
+        default=None,
     )
     wizardId = serializers.UUIDField(
         format="hex_verbose",
         required=False,
         label="wizard ID",
         help_text=("A UUID to track the succession of interaction from the user."),
-        default="",
+        default=None,
     )
     model = serializers.CharField(required=False, allow_blank=True)
 
@@ -681,7 +681,7 @@ class ExplanationRoleRequestSerializer(Metadata):
         required=False,
         label="Explanation ID",
         help_text="A UUID that identifies the explanation.",
-        default="",
+        default=None,
     )
 
     def validate(self, attrs):
