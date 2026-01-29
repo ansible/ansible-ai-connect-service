@@ -1,13 +1,11 @@
 import React from "react";
-import { assert, beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
 import { screen } from "@testing-library/react";
 import { userEvent } from "@vitest/browser/context";
 import { AnsibleChatbot } from "./AnsibleChatbot";
 import "@vitest/browser/matchers.d.ts";
-
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 function mockFetchGet() {
   const originalFetch = global.fetch;
