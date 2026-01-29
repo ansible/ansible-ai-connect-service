@@ -14,6 +14,7 @@
 
 import logging
 
+from ansible_base.lib.utils.schema import extend_schema_if_available
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -137,6 +138,9 @@ class CurrentUserView(RetrieveAPIView):
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Retrieve current user information"}
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -167,6 +171,7 @@ class MarkdownCurrentUserView(RetrieveAPIView):
     throttle_classes = [MeRateThrottle]
 
     @method_decorator(cache_per_user(ME_USER_CACHE_TIMEOUT_SEC))
+    @extend_schema_if_available(extensions={"x-ai-description": "Retrieve current logged in user"})
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 

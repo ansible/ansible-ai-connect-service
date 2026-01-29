@@ -16,6 +16,7 @@ import json
 import logging
 from datetime import datetime
 
+from ansible_base.lib.utils.schema import extend_schema_if_available
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
@@ -136,6 +137,9 @@ class WisdomServiceHealthView(APIView):
         methods=["GET"],
         summary="Health check with backend server status",
     )
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Retrieve health status with backend servers status"},
+    )
     def get(self, request, *args, **kwargs):
         res = self.customView.get(request, *args, **kwargs)
         # res contains status_code = 200 for utilizing view cache.  We need to set the correct
@@ -160,6 +164,9 @@ class WisdomServiceLivenessProbeView(APIView):
         summary="Liveness probe",
     )
     @method_decorator(never_cache)
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Retrieve health status"},
+    )
     def get(self, request, *args, **kwargs):
         data = common_data()
         if settings.DEPLOYMENT_MODE == "onprem":
@@ -192,6 +199,9 @@ class WisdomServiceHealthChatbotView(APIView):
         summary="Chatbot health check",
     )
     @method_decorator(cache_page(CACHE_TIMEOUT))
+    @extend_schema_if_available(
+        extensions={"x-ai-description": "Retrieve chatbot health status"},
+    )
     def get(self, request, *args, **kwargs):
         cb: ModelPipelineHealthCheck = ModelPipelineHealthCheck(pipeline_type=ModelPipelineChatBot)
         cb_streaming: ModelPipelineHealthCheck = ModelPipelineHealthCheck(

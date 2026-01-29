@@ -12,11 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+INTERNAL_PATHS = ["/api/v1/service-index", "/check"]
+
 
 def preprocessing_filter_spec(endpoints):
     filtered = []
+
     for path, path_regex, method, callback in endpoints:
-        # do not add internal endpoints to schema
-        if not path.startswith("/api/v1/service-index"):
-            filtered.append((path, path_regex, method, callback))
+        if any(path.startswith(internal_path) for internal_path in INTERNAL_PATHS):
+            # do not add internal endpoints to schema
+            continue
+        filtered.append((path, path_regex, method, callback))
     return filtered

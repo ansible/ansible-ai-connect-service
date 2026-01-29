@@ -74,7 +74,8 @@
                     "503": {
                         "description": "Service unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create new ai chat"
             }
         },
         "/ai/completions/": {
@@ -162,7 +163,8 @@
                     "503": {
                         "description": "Service Unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create new ai completion"
             }
         },
         "/ai/contentmatches/": {
@@ -227,7 +229,8 @@
                     "503": {
                         "description": "Service Unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create new ai contentmatch"
             }
         },
         "/ai/explanations/": {
@@ -295,7 +298,8 @@
                     "503": {
                         "description": "Service Unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create an explanation of a playbook"
             }
         },
         "/ai/explanations/role/": {
@@ -363,7 +367,8 @@
                     "503": {
                         "description": "Service Unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create an explanation of a role"
             }
         },
         "/ai/feedback/": {
@@ -427,7 +432,8 @@
                     "401": {
                         "description": "Unauthorized"
                     }
-                }
+                },
+                "x-ai-description": "Create new ai feedback"
             }
         },
         "/ai/generations/playbook/": {
@@ -495,7 +501,8 @@
                     "503": {
                         "description": "Service Unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Generate a playbook based on a text input"
             }
         },
         "/ai/generations/role/": {
@@ -551,7 +558,8 @@
                     "401": {
                         "description": "Unauthorized"
                     }
-                }
+                },
+                "x-ai-description": "Generate a role based on a text input"
             }
         },
         "/ai/streaming_chat/": {
@@ -622,7 +630,8 @@
                     "503": {
                         "description": "Service unavailable"
                     }
-                }
+                },
+                "x-ai-description": "Create new ai streaming chat"
             }
         },
         "/health/": {
@@ -643,7 +652,8 @@
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "x-ai-description": "Retrieve health status"
             }
         },
         "/health/status/": {
@@ -699,7 +709,8 @@
                     "500": {
                         "description": "One or more backend services are unavailable."
                     }
-                }
+                },
+                "x-ai-description": "Retrieve health status with backend servers status"
             }
         },
         "/health/status/chatbot/": {
@@ -720,7 +731,8 @@
                     "200": {
                         "description": "OK"
                     }
-                }
+                },
+                "x-ai-description": "Retrieve chatbot health status"
             }
         },
         "/me/": {
@@ -745,7 +757,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-ai-description": "Retrieve current user information"
             }
         },
         "/me/summary/": {
@@ -770,7 +783,8 @@
                         },
                         "description": ""
                     }
-                }
+                },
+                "x-ai-description": "Retrieve current logged in user"
             }
         },
         "/telemetry/": {
@@ -813,7 +827,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Get telemetry settings"
             },
             "post": {
                 "operationId": "telemetry_settings_set",
@@ -883,7 +898,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Set telemetry settings"
             }
         },
         "/wca/apikey/": {
@@ -927,7 +943,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Get wca api key"
             },
             "post": {
                 "operationId": "wca_api_key_set",
@@ -998,7 +1015,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Set wca api key"
             },
             "delete": {
                 "operationId": "wca_api_key_delete",
@@ -1040,7 +1058,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Delete existing wca api key"
             }
         },
         "/wca/apikey/test/": {
@@ -1082,7 +1101,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Get wca api key validator"
             }
         },
         "/wca/modelid/": {
@@ -1125,7 +1145,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Get wca model id"
             },
             "post": {
                 "operationId": "wca_model_id_set",
@@ -1195,7 +1216,8 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
+                },
+                "x-ai-description": "Set wca model id"
             }
         },
         "/wca/modelid/test/": {
@@ -1237,108 +1259,13 @@
                     "501": {
                         "description": "Not implemented"
                     }
-                }
-            }
-        },
-        "/check/": {
-            "get": {
-                "operationId": "check_retrieve",
-                "description": "Service Liveness Probe View",
-                "summary": "Liveness probe",
-                "tags": [
-                    "check"
-                ],
-                "security": [
-                    {
-                        "cookieAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/check/status/": {
-            "get": {
-                "operationId": "check_status_retrieve",
-                "description": "Service Health Check",
-                "summary": "Health check with backend server status",
-                "tags": [
-                    "check"
-                ],
-                "security": [
-                    {
-                        "cookieAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "additionalProperties": {}
-                                },
-                                "examples": {
-                                    "ExampleOutput": {
-                                        "value": {
-                                            "status": "ok",
-                                            "timestamp": "2023-03-13T17:25:17.240683",
-                                            "version": "latest 0.1.202303131417",
-                                            "git_commit": "b987bc43b90f8aca2deaf3bda85596f4b95a10a0",
-                                            "deployed_region": "dev",
-                                            "dependencies": [
-                                                {
-                                                    "name": "db",
-                                                    "status": "ok",
-                                                    "time_taken": 233.538
-                                                },
-                                                {
-                                                    "name": "model-server",
-                                                    "status": "ok",
-                                                    "time_taken": 0.001
-                                                }
-                                            ]
-                                        },
-                                        "summary": "Example output"
-                                    }
-                                }
-                            }
-                        },
-                        "description": ""
-                    },
-                    "500": {
-                        "description": "One or more backend services are unavailable."
-                    }
-                }
+                },
+                "x-ai-description": "Get wca model id validator"
             }
         }
     },
     "components": {
         "schemas": {
-            "Action4c6Enum": {
-                "enum": [
-                    "0",
-                    "1",
-                    "2"
-                ],
-                "type": "string",
-                "description": "* `0` - ACCEPTED\n* `1` - REJECTED\n* `2` - IGNORED"
-            },
-            "Action693Enum": {
-                "enum": [
-                    "0",
-                    "1",
-                    "2",
-                    "3"
-                ],
-                "type": "string",
-                "description": "* `0` - OPEN\n* `1` - CLOSE_CANCEL\n* `2` - TRANSITION\n* `3` - CLOSE_ACCEPT"
-            },
             "ChatFeedback": {
                 "type": "object",
                 "properties": {
@@ -1351,7 +1278,14 @@
                         "$ref": "#/components/schemas/ChatResponse"
                     },
                     "sentiment": {
-                        "$ref": "#/components/schemas/SentimentEnum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "NOT_LIKE"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - LIKE\n* `1` - 1\n* `NOT_LIKE` - NOT_LIKE",
+                        "x-spec-enum-id": "e7383390620e7763"
                     }
                 },
                 "required": [
@@ -1978,7 +1912,14 @@
                         "type": "string"
                     },
                     "action": {
-                        "$ref": "#/components/schemas/Action4c6Enum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "2"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - ACCEPTED\n* `1` - REJECTED\n* `2` - IGNORED",
+                        "x-spec-enum-id": "4c6feea9f2cd2c84"
                     },
                     "error": {
                         "type": "string"
@@ -1999,7 +1940,13 @@
                 "type": "object",
                 "properties": {
                     "type": {
-                        "$ref": "#/components/schemas/TypeEnum"
+                        "enum": [
+                            "bug-report",
+                            "feature-request"
+                        ],
+                        "type": "string",
+                        "description": "* `bug-report` - Bug Report\n* `feature-request` - Feature Request",
+                        "x-spec-enum-id": "230f84d522c678e0"
                     },
                     "title": {
                         "type": "string",
@@ -2090,7 +2037,14 @@
                 "type": "object",
                 "properties": {
                     "action": {
-                        "$ref": "#/components/schemas/Action4c6Enum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "2"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - ACCEPTED\n* `1` - REJECTED\n* `2` - IGNORED",
+                        "x-spec-enum-id": "4c6feea9f2cd2c84"
                     },
                     "explanationId": {
                         "type": "string",
@@ -2108,7 +2062,15 @@
                 "type": "object",
                 "properties": {
                     "action": {
-                        "$ref": "#/components/schemas/Action693Enum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "2",
+                            "3"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - OPEN\n* `1` - CLOSE_CANCEL\n* `2` - TRANSITION\n* `3` - CLOSE_ACCEPT",
+                        "x-spec-enum-id": "693e8c4f477a387e"
                     },
                     "wizardId": {
                         "type": "string",
@@ -2136,7 +2098,14 @@
                 "type": "object",
                 "properties": {
                     "action": {
-                        "$ref": "#/components/schemas/Action4c6Enum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "2"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - ACCEPTED\n* `1` - REJECTED\n* `2` - IGNORED",
+                        "x-spec-enum-id": "4c6feea9f2cd2c84"
                     },
                     "wizardId": {
                         "type": "string",
@@ -2169,7 +2138,15 @@
                 "type": "object",
                 "properties": {
                     "action": {
-                        "$ref": "#/components/schemas/Action693Enum"
+                        "enum": [
+                            "0",
+                            "1",
+                            "2",
+                            "3"
+                        ],
+                        "type": "string",
+                        "description": "* `0` - OPEN\n* `1` - CLOSE_CANCEL\n* `2` - TRANSITION\n* `3` - CLOSE_ACCEPT",
+                        "x-spec-enum-id": "693e8c4f477a387e"
                     },
                     "wizardId": {
                         "type": "string",
@@ -2192,15 +2169,6 @@
                     "action",
                     "wizardId"
                 ]
-            },
-            "SentimentEnum": {
-                "enum": [
-                    "0",
-                    "1",
-                    "NOT_LIKE"
-                ],
-                "type": "string",
-                "description": "* `0` - LIKE\n* `1` - 1\n* `NOT_LIKE` - NOT_LIKE"
             },
             "SentimentFeedback": {
                 "type": "object",
@@ -2303,14 +2271,6 @@
                 "required": [
                     "optOut"
                 ]
-            },
-            "TypeEnum": {
-                "enum": [
-                    "bug-report",
-                    "feature-request"
-                ],
-                "type": "string",
-                "description": "* `bug-report` - Bug Report\n* `feature-request` - Feature Request"
             },
             "UserPlan": {
                 "type": "object",
@@ -2447,10 +2407,6 @@
         {
             "name": "me",
             "description": "Authenticated user information"
-        },
-        {
-            "name": "check",
-            "description": "Health check"
         },
         {
             "name": "wca",
