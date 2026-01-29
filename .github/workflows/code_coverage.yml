@@ -138,7 +138,6 @@ jobs:
         git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.json
 
     - name: Validate OpenAPI schema
-      continue-on-error: true
       run: |
         python3 -c "
         from openapi_spec_validator import validate_url
