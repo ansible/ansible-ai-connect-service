@@ -15,12 +15,33 @@ import { screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import { userEvent, page } from "@vitest/browser/context";
-import axios, { AxiosError, AxiosHeaders } from "axios";
 // See: https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
 import { conversationStore } from "./AnsibleChatbot/AnsibleChatbot";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+// Declare the custom matcher type
+declare module "vitest" {
+  interface AsymmetricMatchersContaining {
+    objectStringContaining(expected: Record<string, any>): any;
+  }
+}
+
+expect.extend({
+  objectStringContaining(received, expected) {
+    const obj = JSON.parse(received);
+    let pass = true;
+    let message = () => `${received} contains ${expected}`;
+    Object.entries(expected).forEach(([k, v]) => {
+      if (obj[k] !== v) {
+        pass = false;
+        message = () => `${received} does not contain ${expected}`;
+      }
+    });
+    return { pass, message };
+  },
+});
 
 async function renderApp(debug = false, stream = false) {
   let rootDiv = document.getElementById("root");
@@ -68,47 +89,7 @@ const referencedDocumentExample = [
   "https://docs\\.redhat\\.com/en/documentation/red_hat_ansible_automation_platform/2\\.5/html-single/getting_started_with_playbooks/index#ref-create-variables",
 ];
 
-function mockAxiosGet(stream = false, reject = false) {
-  const spyGet = vi.spyOn(axios, "get");
-
-  if (reject) {
-    spyGet.mockImplementationOnce(() =>
-      Promise.reject(new Error("mocked error")),
-    );
-  } else {
-    const status = 200;
-    if (stream) {
-      spyGet.mockResolvedValue({
-        data: {
-          "chatbot-service": "ok",
-          "streaming-chatbot-service": "ok",
-        },
-        status,
-      });
-    } else {
-      spyGet.mockResolvedValue({
-        data: {
-          status: "ok",
-          dependencies: [
-            {
-              name: "chatbot-service",
-              status: { provider: "http", models: "ok" },
-              time_taken: 709.4,
-            },
-            {
-              name: "streaming-chatbot-service",
-              status: "disabled",
-              time_taken: 0.002,
-            },
-          ],
-        },
-        status,
-      });
-    }
-  }
-}
-
-function mockAxios(
+function mockFetch(
   status: number,
   reject = false,
   timeout = false,
@@ -116,63 +97,83 @@ function mockAxios(
   stream = false,
   get_reject = false,
 ) {
-  const spy = vi.spyOn(axios, "post");
-  if (reject) {
-    if (timeout) {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(new AxiosError("timeout of 28000ms exceeded")),
-      );
-    } else if (status === 429) {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(createError("Request failed with status code 429", 429)),
-      );
-    } else {
-      spy.mockImplementationOnce(() =>
-        Promise.reject(new Error("mocked error")),
-      );
+  const originalFetch = global.fetch;
+
+  global.fetch = vi.fn((url, options) => {
+    // Handle GET requests for health check
+    if (
+      typeof url === "string" &&
+      url.includes("/api/v1/health/status/chatbot/") &&
+      (!options || options.method === "GET")
+    ) {
+      if (get_reject) {
+        return Promise.reject(new Error("mocked error"));
+      }
+      if (stream) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            "chatbot-service": "ok",
+            "streaming-chatbot-service": "ok",
+          }),
+        } as Response);
+      } else {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            status: "ok",
+            dependencies: [
+              {
+                name: "chatbot-service",
+                status: { provider: "http", models: "ok" },
+                time_taken: 709.4,
+              },
+              {
+                name: "streaming-chatbot-service",
+                status: "disabled",
+                time_taken: 0.002,
+              },
+            ],
+          }),
+        } as Response);
+      }
     }
-  } else {
-    spy.mockResolvedValue({
-      data: {
-        conversation_id: "123e4567-e89b-12d3-a456-426614174000",
-        referenced_documents: refDocs.map((d, index) => ({
-          docs_url: d,
-          title: "Create variables" + (index > 0 ? index : ""),
-        })),
-        response:
-          "In Ansible, the precedence of variables is determined by the order...",
-        truncated: false,
-      },
-      status,
-    });
-  }
-  mockAxiosGet(stream, get_reject);
-  return spy;
-}
 
-function createError(message: string, status: number): AxiosError {
-  const request = { path: "/chat" };
-  const headers = new AxiosHeaders({
-    "Content-Type": "application/json",
+    // Handle POST requests for chat and feedback
+    if (options?.method === "POST") {
+      if (reject) {
+        if (timeout) {
+          const error = new Error("timeout of 28000ms exceeded");
+          error.name = "AbortError";
+          return Promise.reject(error);
+        } else if (status === 429) {
+          const response = new Response(null, { status: 429 });
+          return Promise.reject(response);
+        } else {
+          return Promise.reject(new Error("mocked error"));
+        }
+      } else {
+        return Promise.resolve({
+          ok: status >= 200 && status < 300,
+          status,
+          json: async () => ({
+            conversation_id: "123e4567-e89b-12d3-a456-426614174000",
+            referenced_documents: refDocs.map((d, index) => ({
+              docs_url: d,
+              title: "Create variables" + (index > 0 ? index : ""),
+            })),
+            response:
+              "In Ansible, the precedence of variables is determined by the order...",
+            truncated: false,
+          }),
+        } as Response);
+      }
+    }
+
+    return originalFetch(url, options);
   });
-  const config = {
-    url: "http://localhost:8000",
-    headers,
-  };
-  const code = "SOME_ERR";
 
-  const error = new AxiosError(message, code, config, request);
-  if (status > 0) {
-    const response = {
-      data: {},
-      status,
-      statusText: "",
-      config,
-      headers,
-    };
-    error.response = response;
-  }
-  return error;
+  return global.fetch;
 }
 
 function mockFetchEventSource() {
@@ -363,17 +364,17 @@ beforeEach(() => {
 });
 
 test("Basic chatbot interaction", async () => {
-  const spy = mockAxios(200);
+  const spy = mockFetch(200);
   const view = await renderApp();
 
   await sendMessage("Hello");
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
-      conversation_id: undefined,
-      query: "Hello",
+      body: expect.objectStringContaining({
+        query: "Hello",
+      }),
     }),
-    expect.anything(),
   );
 
   await expect
@@ -473,7 +474,7 @@ test("ThumbsDown icon test", async () => {
     ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   await sendMessage("Hello");
@@ -520,7 +521,7 @@ test("Too many reference documents for the GU issue creation query param.", asyn
   for (let i = 0; i < ahrefToAdd; i++) {
     lotsOfRefDocs.push(referencedDocumentExample[0]);
   }
-  mockAxios(200, false, false, lotsOfRefDocs);
+  mockFetch(200, false, false, lotsOfRefDocs);
   const view = await renderApp();
 
   await sendMessage("Hello");
@@ -555,7 +556,7 @@ test("Too many reference documents for the GU issue creation query param.", asyn
 });
 
 test("Chat service returns 500", async () => {
-  mockAxios(500);
+  mockFetch(500);
   const view = await renderApp();
 
   await sendMessage("Hello");
@@ -565,7 +566,7 @@ test("Chat service returns 500", async () => {
 });
 
 test("Chat service returns a timeout error", async () => {
-  mockAxios(-1, true, true);
+  mockFetch(-1, true, true);
   await renderApp();
 
   await sendMessage("Hello");
@@ -581,7 +582,7 @@ test("Chat service returns a timeout error", async () => {
 });
 
 test("Chat service returns 429 Too Many Requests error", async () => {
-  mockAxios(429, true);
+  mockFetch(429, true);
   await renderApp();
 
   await sendMessage("Hello");
@@ -600,7 +601,7 @@ test("Chat service returns 429 Too Many Requests error", async () => {
 });
 
 test("Chat service returns an unexpected error", async () => {
-  mockAxios(-1, true);
+  mockFetch(-1, true);
   const view = await renderApp();
 
   await sendMessage("Hello");
@@ -612,7 +613,7 @@ test("Chat service returns an unexpected error", async () => {
 });
 
 test("Feedback API returns 500", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
   await sendMessage("Hello");
   await expect
@@ -624,7 +625,7 @@ test("Feedback API returns 500", async () => {
     .toBeVisible();
   await expect.element(page.getByText("Create variables")).toBeVisible();
 
-  mockAxios(500);
+  mockFetch(500);
 
   const thumbsUpIcon = view.getByRole("button", {
     name: "Good response",
@@ -636,7 +637,7 @@ test("Feedback API returns 500", async () => {
 });
 
 test("Feedback API returns an unexpected error", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
   await sendMessage("Hello");
   await expect
@@ -648,7 +649,7 @@ test("Feedback API returns an unexpected error", async () => {
     .toBeVisible();
   await expect.element(page.getByText("Create variables")).toBeVisible();
 
-  mockAxios(-1, true);
+  mockFetch(-1, true);
 
   const thumbsUpIcon = view.getByRole("button", {
     name: "Good response",
@@ -662,7 +663,7 @@ test("Feedback API returns an unexpected error", async () => {
 });
 
 test("Color theme switch", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
   const colorThemeSwitch: HTMLInputElement | null =
     view.container.querySelector("#color-theme-switch");
@@ -683,7 +684,7 @@ test("Color theme switch", async () => {
 });
 
 test("Debug mode test", async () => {
-  mockAxios(200);
+  mockFetch(200);
 
   await renderApp(true);
   await expect.element(page.getByText("gemini-2.5-flash")).toBeVisible();
@@ -705,7 +706,7 @@ test("Debug mode test", async () => {
 });
 
 test("Test system prompt override", async () => {
-  const spy = mockAxios(200);
+  const spy = mockFetch(200);
   await renderApp(true);
 
   await expect.element(page.getByLabelText("SystemPrompt")).toBeVisible();
@@ -723,16 +724,17 @@ test("Test system prompt override", async () => {
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
-      conversation_id: undefined,
-      query: "Hello with system prompt override",
-      system_prompt: "MY SYSTEM PROMPT",
+      body: expect.objectStringContaining({
+        conversation_id: undefined,
+        query: "Hello with system prompt override",
+        system_prompt: "MY SYSTEM PROMPT",
+      }),
     }),
-    expect.anything(),
   );
 });
 
 test("Test system prompt override with no_tools option", async () => {
-  const spy = mockAxios(200);
+  const spy = mockFetch(200);
   await renderApp(true);
 
   await expect.element(page.getByLabelText("SystemPrompt")).toBeVisible();
@@ -756,12 +758,13 @@ test("Test system prompt override with no_tools option", async () => {
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
-      conversation_id: undefined,
-      no_tools: true,
-      query: "Hello with system prompt override with no_tools option",
-      system_prompt: "MY SYSTEM PROMPT WITH NO_TOOLS OPTION",
+      body: expect.objectStringContaining({
+        conversation_id: undefined,
+        no_tools: true,
+        query: "Hello with system prompt override with no_tools option",
+        system_prompt: "MY SYSTEM PROMPT WITH NO_TOOLS OPTION",
+      }),
     }),
-    expect.anything(),
   );
 });
 
@@ -772,7 +775,7 @@ test("Chat streaming test", async () => {
     ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("Hello");
@@ -819,7 +822,7 @@ test("Chat streaming test when streaming is not closed.", async () => {
     ghIssueUrl = url;
     ghIssueLinkSpy++;
   });
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("skip close");
@@ -844,7 +847,7 @@ test("Agent chat streaming test", async () => {
   vi.stubGlobal("open", () => {
     ghIssueLinkSpy++;
   });
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
 
   const view = await renderApp(false, true);
 
@@ -877,7 +880,7 @@ test("Agent chat streaming test with a general greeting", async () => {
   vi.stubGlobal("open", () => {
     ghIssueLinkSpy++;
   });
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
 
   const view = await renderApp(false, true);
 
@@ -890,7 +893,7 @@ test("Agent chat streaming test with a general greeting", async () => {
 });
 
 test("Chat streaming error at API call", async () => {
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("status=400");
@@ -900,7 +903,7 @@ test("Chat streaming error at API call", async () => {
 });
 
 test("Chat streaming error in streaming data", async () => {
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("error in stream");
@@ -914,7 +917,7 @@ test("Chat streaming error in streaming data", async () => {
 });
 
 test("Chat streaming error in status check", async () => {
-  mockAxios(200, false, false, referencedDocumentExample, true, true);
+  mockFetch(200, false, false, referencedDocumentExample, true, true);
 
   const view = await renderApp(false, true);
   await delay(100);
@@ -926,7 +929,7 @@ test("Chat streaming error in status check", async () => {
 });
 
 test("Chat service returns 429 Too Many Requests error in streaming", async () => {
-  mockAxios(200, false, false, referencedDocumentExample, true);
+  mockFetch(200, false, false, referencedDocumentExample, true);
   const view = await renderApp(false, true);
 
   await sendMessage("status=429");
@@ -952,7 +955,7 @@ test("Test reset conversation state once unmounting the component.", async () =>
 });
 
 test("Clicking a welcome prompt sends the correct message", async () => {
-  const spy = mockAxios(200);
+  const spy = mockFetch(200);
   const view = await renderApp();
 
   const promptButton = view.getByRole("button", {
@@ -965,10 +968,11 @@ test("Clicking a welcome prompt sends the correct message", async () => {
   expect(spy).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({
-      conversation_id: undefined,
-      query: "I have a question about using Ansible Automation Platform",
+      body: expect.objectStringContaining({
+        conversation_id: undefined,
+        query: "I have a question about using Ansible Automation Platform",
+      }),
     }),
-    expect.anything(),
   );
 });
 
@@ -998,7 +1002,7 @@ test("All welcome prompts are rendered", async () => {
 });
 
 test("Documentation link appears in chatbot header", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   // Check that the documentation link is visible in the header
@@ -1009,7 +1013,7 @@ test("Documentation link appears in chatbot header", async () => {
 });
 
 test("Documentation modal opens from chatbot header", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   // Click the documentation button in the header
@@ -1026,7 +1030,7 @@ test("Documentation modal opens from chatbot header", async () => {
 });
 
 test("Documentation modal can be closed and reopened", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   // Open the modal
@@ -1069,7 +1073,7 @@ test("Documentation modal can be closed and reopened", async () => {
 });
 
 test("Preview label is visible next to documentation link", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   // Check that the documentation link button is visible
@@ -1095,7 +1099,7 @@ test("Preview label is visible next to documentation link", async () => {
 });
 
 test("Preview label appears in the header actions area", async () => {
-  mockAxios(200);
+  mockFetch(200);
   const view = await renderApp();
 
   // Find the header actions container

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { useEffect, useState } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
@@ -61,11 +60,10 @@ export const inDebugMode = () => {
   return import.meta.env.PROD ? debug === "true" : debug !== "false";
 };
 
-const isTimeoutError = (e: any) =>
-  axios.isAxiosError(e) && e.message === `timeout of ${API_TIMEOUT}ms exceeded`;
+const isTimeoutError = (e: any) => e.name === "AbortError";
 
 const isTooManyRequestsError = (e: any) =>
-  axios.isAxiosError(e) && e.response?.status === 429;
+  e instanceof Response && e.status === 429;
 
 const INFERENCE_MESSAGE_PROMPT = "\n\n`inference>`";
 const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(
@@ -191,14 +189,15 @@ export const useChatbot = () => {
     const checkStatus = async () => {
       const csrfToken = readCookie("csrftoken");
       try {
-        const resp = await axios.get("/api/v1/health/status/chatbot/", {
+        const resp = await fetch("/api/v1/health/status/chatbot/", {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
+            "X-CSRFToken": csrfToken || "",
           },
         });
-        if (resp.status === 200) {
-          const data = resp.data || {};
+        if (resp.ok) {
+          const data = await resp.json();
           if ("streaming-chatbot-service" in data) {
             if (data["streaming-chatbot-service"] === "ok") {
               // If streaming is enabled on the service side, use it.
@@ -391,21 +390,22 @@ export const useChatbot = () => {
   const handleFeedback = async (feedbackRequest: ChatFeedback) => {
     try {
       const csrfToken = readCookie("csrftoken");
-      const resp = await axios.post(
+      const resp = await fetch(
         import.meta.env.PROD
           ? "/api/v1/ai/feedback/"
           : "http://localhost:8080/v1/feedback/",
         {
-          chatFeedback: feedbackRequest,
-        },
-        {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
+            "X-CSRFToken": csrfToken || "",
           },
+          body: JSON.stringify({
+            chatFeedback: feedbackRequest,
+          }),
         },
       );
-      if (resp.status === 200) {
+      if (resp.ok) {
         const newBotMessage = {
           referenced_documents: [],
           ...feedbackMessage(feedbackRequest, getConversationId()),
@@ -586,21 +586,40 @@ export const useChatbot = () => {
           },
         );
       } else {
-        const resp = await axios.post(
-          import.meta.env.PROD
-            ? "/api/v1/ai/chat/"
-            : "http://localhost:8080/v1/query/",
-          chatRequest,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken,
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+        try {
+          const resp = await fetch(
+            import.meta.env.PROD
+              ? "/api/v1/ai/chat/"
+              : "http://localhost:8080/v1/query/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken || "",
+              },
+              body: JSON.stringify(chatRequest),
+              signal: controller.signal,
             },
-            timeout: API_TIMEOUT,
-          },
-        );
-        if (resp.status === 200) {
-          const chatResponse: ChatResponse = resp.data;
+          );
+
+          clearTimeout(timeoutId);
+
+          if (!resp.ok) {
+            if (resp.status === 429) {
+              throw resp;
+            }
+            setAlertMessage({
+              title: "Error",
+              message: `Bot returned status_code ${resp.status}`,
+              variant: "danger",
+            });
+            return;
+          }
+
+          const chatResponse: ChatResponse = await resp.json();
           const referenced_documents = chatResponse.referenced_documents;
           if (!conversationId) {
             setConversationId(chatResponse.conversation_id);
@@ -608,12 +627,9 @@ export const useChatbot = () => {
           const newBotMessage: any = botMessage(chatResponse, query.toString());
           newBotMessage.referenced_documents = referenced_documents;
           addMessage(newBotMessage);
-        } else {
-          setAlertMessage({
-            title: "Error",
-            message: `Bot returned status_code ${resp.status}`,
-            variant: "danger",
-          });
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          throw fetchError;
         }
       }
     } catch (e) {
