@@ -1,0 +1,248 @@
+name: Sync OpenAPI Spec to Central Repo
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+      - stable-2.6
+      - stable-2.7
+    paths:
+      - 'tools/openapi-schema/**'
+      - 'ansible_ai_connect/ai/api/**'
+      - 'ansible_ai_connect/users/**'
+      - 'ansible_ai_connect/healthcheck/**'
+      - '.github/workflows/sync-openapi-spec.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  generate-and-sync-spec:
+    # Only run for specific branches
+    if: contains(fromJSON('["main", "stable-2.6", "stable-2.7"]'), github.ref_name)
+    name: Generate and sync OpenAPI spec
+    runs-on: ubuntu-latest
+
+    env:
+      ANSIBLE_AI_DATABASE_HOST: localhost
+      ANSIBLE_AI_DATABASE_NAME: wisdom
+      ANSIBLE_AI_DATABASE_PASSWORD: wisdom
+      ANSIBLE_AI_DATABASE_USER: wisdom
+      DJANGO_SETTINGS_MODULE: ansible_ai_connect.main.settings.development
+      ENABLE_ANSIBLE_LINT_POSTPROCESS: True
+      PYTHONUNBUFFERED: 1
+      SECRET_KEY: somesecret
+
+    services:
+      postgres:
+        image: docker.io/library/postgres:alpine
+        env:
+          POSTGRES_USER: wisdom
+          POSTGRES_PASSWORD: wisdom
+          POSTGRES_DB: wisdom
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine target branch in spec repo
+        id: branch_mapping
+        run: |
+          SOURCE_BRANCH="${{ github.ref_name }}"
+
+          # Map source branch to target branch in spec repo
+          case "$SOURCE_BRANCH" in
+            "main")
+              TARGET_BRANCH="devel"
+              ;;
+            "stable-2.6")
+              TARGET_BRANCH="stable-2.6"
+              ;;
+            "stable-2.7")
+              TARGET_BRANCH="stable-2.7"
+              ;;
+            *)
+              TARGET_BRANCH="devel"
+              ;;
+          esac
+
+          echo "source_branch=$SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "📍 Source branch: $SOURCE_BRANCH → Target branch: $TARGET_BRANCH"
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .[dev]
+
+      - name: Create CA symlink to use RH's certifi on ubuntu-latest
+        run: |
+          sudo mkdir -p /etc/pki/tls/certs
+          sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+
+      - name: Start Django server and generate OpenAPI spec
+        run: |
+          make run-server &
+          sleep 10
+          make create-cachetable
+          make update-openapi-schema
+
+      - name: Verify spec file exists
+        run: |
+          SPEC_FILE="./tools/openapi-schema/ansible-ai-connect-service.json"
+          if [ ! -f "$SPEC_FILE" ]; then
+            echo "❌ Spec file not found at $SPEC_FILE"
+            ls -la ./tools/openapi-schema/
+            exit 1
+          fi
+          echo "✅ Found spec file at $SPEC_FILE"
+
+      - name: Checkout spec repo
+        uses: actions/checkout@v4
+        with:
+          repository: ansible-automation-platform/aap-openapi-specs
+          ref: ${{ steps.branch_mapping.outputs.target_branch }}
+          path: spec-repo
+          token: ${{ secrets.OPENAPI_SPEC_SYNC_TOKEN }}
+
+      - name: Check if branch exists in spec repo
+        id: check_branch
+        working-directory: spec-repo
+        run: |
+          BRANCH="${{ steps.branch_mapping.outputs.target_branch }}"
+
+          # Check if branch exists locally (already checked out)
+          if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            echo "✅ Branch '$BRANCH' exists in spec repo"
+            echo "branch_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Branch '$BRANCH' does NOT exist in spec repo"
+            echo "branch_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fail if branch doesn't exist
+        if: steps.check_branch.outputs.branch_exists != 'true'
+        run: |
+          echo "##[error]❌ Branch '${{ steps.branch_mapping.outputs.target_branch }}' does not exist in the central spec repository."
+          echo "##[error]Expected branch: ${{ steps.branch_mapping.outputs.target_branch }}"
+          echo "##[error]This branch must be created in the spec repo before specs can be synced."
+          exit 1
+
+      - name: Compare specs
+        id: compare
+        run: |
+          COMPONENT_SPEC="./tools/openapi-schema/ansible-ai-connect-service.json"
+          SPEC_REPO_FILE="spec-repo/lightspeed.json"
+
+          # Check if spec file exists in spec repo
+          if [ ! -f "$SPEC_REPO_FILE" ]; then
+            echo "Spec file doesn't exist in spec repo - will create new file"
+            echo "has_diff=true" >> $GITHUB_OUTPUT
+            echo "is_new_file=true" >> $GITHUB_OUTPUT
+          else
+            # Compare files
+            if diff -q "$COMPONENT_SPEC" "$SPEC_REPO_FILE" > /dev/null; then
+              echo "✅ No differences found - specs are identical"
+              echo "has_diff=false" >> $GITHUB_OUTPUT
+            else
+              echo "📝 Differences found - spec has changed"
+              echo "has_diff=true" >> $GITHUB_OUTPUT
+              echo "is_new_file=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Update spec file
+        if: steps.compare.outputs.has_diff == 'true'
+        run: |
+          cp "./tools/openapi-schema/ansible-ai-connect-service.json" "spec-repo/lightspeed.json"
+          echo "✅ Updated spec-repo/lightspeed.json"
+
+      - name: Create PR in spec repo
+        if: steps.compare.outputs.has_diff == 'true'
+        working-directory: spec-repo
+        env:
+          GH_TOKEN: ${{ secrets.OPENAPI_SPEC_SYNC_TOKEN }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create branch for PR
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          BRANCH_NAME="update-lightspeed-${{ github.ref_name }}-${SHORT_SHA}"
+          git checkout -b "$BRANCH_NAME"
+
+          # Add and commit changes
+          git add "lightspeed.json"
+
+          if [ "${{ steps.compare.outputs.is_new_file }}" == "true" ]; then
+            COMMIT_MSG="Add Lightspeed OpenAPI spec for ${{ github.ref_name }}"
+          else
+            COMMIT_MSG="Update Lightspeed OpenAPI spec for ${{ github.ref_name }}"
+          fi
+
+          git commit -m "$COMMIT_MSG
+
+          Synced from ${{ github.repository }}@${{ github.sha }}
+          Source branch: ${{ github.ref_name }}
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          # Push branch
+          git push origin "$BRANCH_NAME"
+
+          # Create PR
+          PR_TITLE="[${{ github.ref_name }}] Update Lightspeed spec from merged commit"
+
+          # Get commit message
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [ -z "$COMMIT_MSG" ]; then
+            COMMIT_MSG="Manual workflow trigger or commit message unavailable"
+          fi
+
+          PR_BODY="## Summary
+          Automated OpenAPI spec sync from component repository merge.
+
+          **Source:** [${{ github.repository }}@\`${SHORT_SHA}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          **Branch:** \`${{ github.ref_name }}\`
+          **Component:** \`lightspeed\`
+          **Spec File:** \`lightspeed.json\`
+
+          ## Changes
+          $(if [ "${{ steps.compare.outputs.is_new_file }}" == "true" ]; then echo "- 🆕 New spec file created"; else echo "- 📝 Spec file updated with latest changes"; fi)
+
+          ## Source Commit
+          \`\`\`
+          ${COMMIT_MSG}
+          \`\`\`
+
+          ---
+          🤖 This PR was automatically generated by the OpenAPI spec sync workflow."
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --base "${{ steps.branch_mapping.outputs.target_branch }}" \
+            --head "$BRANCH_NAME"
+
+          echo "✅ Created PR in spec repo"
+
+      - name: Report results
+        if: always()
+        run: |
+          if [ "${{ steps.compare.outputs.has_diff }}" == "true" ]; then
+            echo "📝 Spec sync completed - PR created in spec repo"
+          else
+            echo "✅ Spec sync completed - no changes needed"
+          fi
