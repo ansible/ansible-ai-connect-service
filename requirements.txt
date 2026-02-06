@@ -110,7 +110,7 @@ diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
-django==4.2.27
+django==4.2.28
     # via
     #   ansible-ai-connect
     #   django-allow-cidr

@@ -15,7 +15,7 @@ dependencies = [
   'cbor2~=5.8.0',
   'cython',
   'daphne~=4.2.1',
-  'Django~=4.2.27',
+  'Django~=4.2.28',
   'django-deprecate-fields~=0.1.1',
   'django-extensions~=3.2.1',
   'django-health-check~=3.17.0',
