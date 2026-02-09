@@ -77,6 +77,11 @@ pull_request_rules:
     conditions:
       - author=dependabot[bot]
       - -label=security
+      - check-success=pre-commit
+      - check-success=code_coverage
+      - check-success=selftest
+      - "#changes-requested-reviews-by=0"
+      - "#review-requested=0"
     actions:
       review:
         type: APPROVE
