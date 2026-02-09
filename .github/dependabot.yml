@@ -10,6 +10,7 @@ updates:
     labels:
       - "dependencies"
       - "python"
+      - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -29,6 +30,7 @@ updates:
       - "dependencies"
       - "javascript"
       - "admin-portal"
+      - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -44,6 +46,7 @@ updates:
       - "dependencies"
       - "javascript"
       - "chatbot"
+      - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -58,5 +61,6 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+      - "security"
     commit-message:
       prefix: "ci"
