@@ -192,6 +192,56 @@ To update the pre-commit config to the latest repos' versions and run the precom
 pre-commit autoupdate && pre-commit run -a
 ```
 
+## Automated Dependency Updates
+
+This project uses Dependabot and Mergify to automatically manage dependencies and security updates.
+
+### How It Works
+
+1. **Dependabot** checks daily for dependency updates across:
+   - Python packages (requirements.in)
+   - npm packages (admin portal & chatbot)
+   - GitHub Actions
+
+2. **Security updates** (CVEs) are automatically merged when:
+   - All CI/CD tests pass
+   - No merge conflicts exist
+   - No change requests from reviewers
+
+3. **Non-security updates** create PRs for manual review
+
+### Managing Dependabot PRs
+
+**To approve a non-security update:**
+- Review the PR changes and test results
+- Click "Merge pull request" in GitHub UI
+
+**To reject an update:**
+- Close the PR with a comment explaining why
+- Or add to `.github/dependabot.yml`:
+  ```yaml
+  ignore:
+    - dependency-name: "package-name"
+      versions: ["x.y.z"]
+  ```
+
+**To temporarily pin a version:**
+```python
+# In requirements.in, add comment:
+package-name==1.2.3  # Pinned due to issue #XYZ
+```
+
+**To disable auto-merge for a specific PR:**
+- Request changes in a review
+- OR add label `no-auto-merge` (requires Mergify config update)
+
+### Monitoring
+
+- **Security advisories:** GitHub Security tab
+- **Merged updates:** Check commits by `dependabot[bot]`
+- **Mergify dashboard:** https://dashboard.mergify.com
+- **Metrics:** Monthly report in team meeting
+
 ## Updating the Python dependencies
 
 We are now using pip-compile in order to manage our Python
