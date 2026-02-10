@@ -20,6 +20,16 @@ jobs:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-tools
+        run: |
+          pip install --upgrade "pip<24.1"
+          pip install pip-tools
+
       - name: Run pip-compile
         run: make export
 
