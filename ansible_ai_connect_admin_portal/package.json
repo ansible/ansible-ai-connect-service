@@ -62,7 +62,7 @@
     "postcss": "^8.4.28",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-loader": "^6.2.1",
-    "postcss-normalize": "^10.0.1",
+    "postcss-normalize": "^13.0.1",
     "postcss-preset-env": "^7.0.1",
     "prettier": "^3.0.2",
     "react-app-polyfill": "^3.0.0",
