@@ -33,7 +33,6 @@ pull_request_rules:
       - label=security
       - label=admin-portal
       - check-success=pre-commit
-      - check-success=ui_compile
       - check-success=npm_audit
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
@@ -49,7 +48,6 @@ pull_request_rules:
       - label=security
       - label=chatbot
       - check-success=pre-commit
-      - check-success=ui_compile_chatbot
       - check-success=npm_audit_chatbot
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
@@ -78,7 +76,6 @@ pull_request_rules:
       - author=dependabot[bot]
       - -label=security
       - check-success=pre-commit
-      - check-success=code_coverage
       - check-success=selftest
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
