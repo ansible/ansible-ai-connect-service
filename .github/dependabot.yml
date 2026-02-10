@@ -1,0 +1,66 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    target-branch: "ana/aap-52843-mergify"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Ignore major version updates (too risky for auto-merge)
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Admin Portal npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/ansible_ai_connect_admin_portal"
+    schedule:
+      interval: "daily"
+    target-branch: "ana/aap-52843-mergify"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "admin-portal"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # Chatbot npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/ansible_ai_connect_chatbot"
+    schedule:
+      interval: "daily"
+    target-branch: "ana/aap-52843-mergify"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "chatbot"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    target-branch: "ana/aap-52843-mergify"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "security"
+    commit-message:
+      prefix: "ci"
