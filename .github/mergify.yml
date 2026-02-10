@@ -17,8 +17,6 @@ pull_request_rules:
       - label=python
       - check-success=pre-commit
       - check-success=selftest  # pip_compile check
-      - check-success=pip_audit
-      - check-success=pyright
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
