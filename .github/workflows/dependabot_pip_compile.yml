@@ -23,9 +23,6 @@ jobs:
       - name: Run pip-compile
         run: make export
 
-      - name: Run uv update
-        run: uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
-
       - name: Commit lockfile changes
         run: |
           git config user.name "github-actions[bot]"
