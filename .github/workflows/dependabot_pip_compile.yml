@@ -35,6 +35,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No lockfile changes needed"
           else
-            git commit -m "chore: update pip lockfiles for Dependabot PR"
+            git commit -m "chore: update pip lockfiles for ${{ github.event.pull_request.title }}"
             git push
           fi
