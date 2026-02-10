@@ -23,11 +23,15 @@ jobs:
       - name: Run pip-compile
         run: make pip-compile
 
+      - name: Run uv update
+        run: uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+
       - name: Commit lockfile changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add requirements*.txt
+          git add uv.lock
           if git diff --staged --quiet; then
             echo "No lockfile changes needed"
           else
