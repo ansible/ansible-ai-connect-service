@@ -2,7 +2,6 @@ queue_rules:
   - name: ansible-ai-connect-service
     queue_conditions:
       - author~=^dependabot(|-preview)\[bot\]$
-      - check-success=Lint
     merge_conditions:
       - check-success=pre-commit
       - check-success=code_coverage
