@@ -5,6 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+      time: "22:00"  # 22:00 UTC # 17:00 EST
     target-branch: "ana/aap-52843-mergify"
     open-pull-requests-limit: 5
     labels:
