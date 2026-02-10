@@ -35,7 +35,7 @@ jobs:
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Run npm audit
-        uses: oke-py/npm-audit-action@v2
+        uses: oke-py/npm-audit-action@v4
         with:
           audit_level: low
           github_token: ${{ secrets.GITHUB_TOKEN }}
