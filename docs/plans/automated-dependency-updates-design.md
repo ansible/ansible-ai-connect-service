@@ -127,8 +127,8 @@ Existing automation:
 2. PR has label `security`
 3. All required CI checks pass:
    - **Python:** pre-commit, selftest (pip_compile), pip_audit, pyright
-   - **Admin Portal:** pre-commit, ui_compile, npm_audit
-   - **Chatbot:** pre-commit, ui_compile_chatbot, npm_audit_chatbot
+   - **Admin Portal:** pre-commit, npm_audit
+   - **Chatbot:** pre-commit, npm_audit_chatbot
    - **GitHub Actions:** pre-commit
 4. Zero change requests from reviewers
 5. Zero pending review requests
