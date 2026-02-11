@@ -8,23 +8,22 @@ queue_rules:
       - check-success=selftest
 
 pull_request_rules:
-  # Auto-approve security updates for Python
-  - name: Auto-approve Dependabot security updates (Python)
+  # Auto-merge security updates for Python
+  - name: Auto-merge Dependabot security updates (Python)
     conditions:
       - author=dependabot[bot]
       - label=security
       - label=python
-      # - check-success=pre-commit
-      # - check-success=selftest  # pip_compile check
+      - check-success=pre-commit
+      - check-success=selftest  # pip_compile check
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
-      review:
-        type: APPROVE
-        message: "Dependabot security PR auto-approved. Manual merge required."
+      queue:
+        name: ansible-ai-connect-service
 
-  # Auto-approve security updates for Admin Portal
-  - name: Auto-approve Dependabot security updates (Admin Portal)
+  # Auto-merge security updates for Admin Portal
+  - name: Auto-merge Dependabot security updates (Admin Portal)
     conditions:
       - author=dependabot[bot]
       - label=security
@@ -34,12 +33,11 @@ pull_request_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
-      review:
-        type: APPROVE
-        message: "Dependabot security PR auto-approved. Manual merge required."
+      queue:
+        name: ansible-ai-connect-service
 
-  # Auto-approve security updates for Chatbot
-  - name: Auto-approve Dependabot security updates (Chatbot)
+  # Auto-merge security updates for Chatbot
+  - name: Auto-merge Dependabot security updates (Chatbot)
     conditions:
       - author=dependabot[bot]
       - label=security
@@ -49,12 +47,11 @@ pull_request_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
-      review:
-        type: APPROVE
-        message: "Dependabot security PR auto-approved. Manual merge required."
+      queue:
+        name: ansible-ai-connect-service
 
-  # Auto-approve security updates for GitHub Actions
-  - name: Auto-approve Dependabot security updates (GitHub Actions)
+  # Auto-merge security updates for GitHub Actions
+  - name: Auto-merge Dependabot security updates (GitHub Actions)
     conditions:
       - author=dependabot[bot]
       - label=security
@@ -63,23 +60,21 @@ pull_request_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
-      review:
-        type: APPROVE
-        message: "Dependabot security PR auto-approved. Manual merge required."
+      queue:
+        name: ansible-ai-connect-service
 
-  # Auto-approve non-security updates but don't merge
-  - name: Auto-approve non-security Dependabot PRs
+  # Auto-merge non-security updates
+  - name: Auto-merge non-security Dependabot PRs
     conditions:
       - author=dependabot[bot]
       - -label=security
-      # - check-success=pre-commit
-      # - check-success=selftest
+      - check-success=pre-commit
+      - check-success=selftest
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
-      review:
-        type: APPROVE
-        message: "Dependabot PR auto-approved. Manual merge required for non-security updates."
+      queue:
+        name: ansible-ai-connect-service
 
   # Detect when PR conflicts and add label
   - name: warn on conflicts
