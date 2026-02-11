@@ -43,7 +43,7 @@ class UserResponseSerializer(serializers.Serializer):
     family_name = serializers.CharField(required=False)
     given_name = serializers.CharField(required=False)
     org_telemetry_opt_out = serializers.BooleanField(required=False)
-    organization = OrganizationSerializer(required=False)
+    organization = OrganizationSerializer(required=False, allow_null=True)
     rh_org_has_subscription = serializers.BooleanField(read_only=True)
     rh_user_has_seat = serializers.BooleanField(read_only=True)
     rh_user_is_org_admin = serializers.BooleanField(required=False)
