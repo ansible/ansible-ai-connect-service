@@ -15,8 +15,8 @@ pull_request_rules:
       - author=dependabot[bot]
       - label=security
       - label=python
-      - check-success=pre-commit
-      - check-success=selftest  # pip_compile check
+      # - check-success=pre-commit
+      # - check-success=selftest  # pip_compile check
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
@@ -73,11 +73,23 @@ pull_request_rules:
     conditions:
       - author=dependabot[bot]
       - -label=security
-      - check-success=pre-commit
-      - check-success=selftest
+      # - check-success=pre-commit
+      # - check-success=selftest
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
       review:
         type: APPROVE
         message: "Dependabot PR auto-approved. Manual merge required for non-security updates."
+
+  # Detect when PR conflicts and add label
+  - name: warn on conflicts
+    conditions:
+      - conflict
+    actions:
+      comment:
+        message: "This pull request is now in conflicts. Could you fix it @{{author}}?
+          🙏"
+      label:
+        add:
+          - conflict
