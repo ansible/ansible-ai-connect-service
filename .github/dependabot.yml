@@ -5,9 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-      time: "22:00"  # 22:00 UTC # 17:00 EST
-    target-branch: "ana/aap-52843-mergify"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "python"
@@ -25,8 +23,7 @@ updates:
     directory: "/ansible_ai_connect_admin_portal"
     schedule:
       interval: "daily"
-    target-branch: "ana/aap-52843-mergify"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "javascript"
@@ -41,8 +38,7 @@ updates:
     directory: "/ansible_ai_connect_chatbot"
     schedule:
       interval: "daily"
-    target-branch: "ana/aap-52843-mergify"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "javascript"
@@ -57,8 +53,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    target-branch: "ana/aap-52843-mergify"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "github-actions"
