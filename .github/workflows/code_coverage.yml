@@ -91,7 +91,7 @@ jobs:
     # TypeScript tests
     ##################
     - name: Use Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '21.x'
         cache: 'npm'
@@ -109,7 +109,7 @@ jobs:
     # TypeScript tests (chatbot)
     ############################
     - name: Use Node.js (chatbot)
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: '21.x'
         cache: 'npm'
