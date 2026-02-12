@@ -11,15 +11,18 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from dataclasses import dataclass
+from abc import ABCMeta
 from typing import Optional
 
-from ansible_ai_connect.ai.api.model_pipelines.langchain.configuration import (
-    LangchainBasePipelineConfiguration,
-    LangchainConfiguration,
-    LangchainConfigurationSerializer,
+from ansible_ai_connect.ai.api.model_pipelines.config_pipelines import (
+    BaseConfig,
+    PipelineConfiguration,
+)
+from ansible_ai_connect.ai.api.model_pipelines.config_serializers import (
+    BaseConfigSerializer,
 )
 from ansible_ai_connect.ai.api.model_pipelines.registry import Register
+from ansible_ai_connect.main.settings.types import t_model_mesh_api_type
 
 # -- Base
 # ANSIBLE_AI_MODEL_MESH_API_URL
@@ -28,21 +31,28 @@ from ansible_ai_connect.ai.api.model_pipelines.registry import Register
 # ENABLE_HEALTHCHECK_XXX
 
 
-@dataclass
-class OllamaConfiguration(LangchainConfiguration):
+class OllamaConfiguration(BaseConfig):
 
     def __init__(
         self,
         inference_url: str,
         model_id: str,
         timeout: Optional[int],
-        enable_health_check: Optional[bool],
+        enable_health_check: Optional[bool] = False,
     ):
         super().__init__(inference_url, model_id, timeout, enable_health_check)
 
 
+class OllamaBasePipelineConfiguration(
+    PipelineConfiguration[OllamaConfiguration], metaclass=ABCMeta
+):
+
+    def __init__(self, provider: t_model_mesh_api_type, config: OllamaConfiguration):
+        super().__init__(provider=provider, config=config)
+
+
 @Register(api_type="ollama")
-class OllamaPipelineConfiguration(LangchainBasePipelineConfiguration):
+class OllamaPipelineConfiguration(OllamaBasePipelineConfiguration):
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -57,5 +67,5 @@ class OllamaPipelineConfiguration(LangchainBasePipelineConfiguration):
 
 
 @Register(api_type="ollama")
-class OllamaConfigurationSerializer(LangchainConfigurationSerializer):
+class OllamaConfigurationSerializer(BaseConfigSerializer):
     pass
