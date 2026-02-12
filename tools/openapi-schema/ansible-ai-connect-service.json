@@ -2310,7 +2310,12 @@
                         "type": "boolean"
                     },
                     "organization": {
-                        "$ref": "#/components/schemas/Organization"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Organization"
+                            }
+                        ],
+                        "nullable": true
                     },
                     "rh_org_has_subscription": {
                         "type": "boolean",

@@ -1606,7 +1606,9 @@ components:
         org_telemetry_opt_out:
           type: boolean
         organization:
-          $ref: '#/components/schemas/Organization'
+          allOf:
+          - $ref: '#/components/schemas/Organization'
+          nullable: true
         rh_org_has_subscription:
           type: boolean
           readOnly: true
