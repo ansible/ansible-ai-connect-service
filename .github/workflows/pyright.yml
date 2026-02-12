@@ -21,5 +21,5 @@ jobs:
         python-version: '3.12'
     - name: install
       run: |
-        pip install pyright django boto3 requests prometheus_client backoff django_prometheus langchain langchain-ollama django-health-check aiohttp ansible-lint ansible_anonymizer
+        pip install pyright django boto3 requests prometheus_client backoff django_prometheus django-health-check aiohttp ansible-lint ansible_anonymizer
         pyright
