@@ -578,9 +578,8 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
                 "detail": "Internal server error",
             }
 
-        response = StreamingHttpResponse()
+        response = StreamingHttpResponse(streaming_content=[json.dumps(json_response)])
         response.status_code = status_code
-        response.text = json.dumps(json_response)
         return response
 
     @override_settings(CHATBOT_DEFAULT_PROVIDER="wisdom")

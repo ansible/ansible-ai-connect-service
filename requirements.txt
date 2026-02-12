@@ -110,7 +110,7 @@ diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
-django==4.2.28
+django==5.2.11
     # via
     #   ansible-ai-connect
     #   django-allow-cidr
@@ -145,7 +145,7 @@ django-oauth-toolkit==3.0.1
     # via ansible-ai-connect
 django-prometheus==2.2.0
     # via ansible-ai-connect
-django-test-migrations==1.3.0
+django-test-migrations==1.5.0
     # via ansible-ai-connect
 djangorestframework==3.15.2
     # via
