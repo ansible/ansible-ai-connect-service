@@ -70,6 +70,6 @@ slack-sdk==3.31.0
 urllib3==2.5.0
 uwsgi==2.0.22
 uwsgi-readiness-check==0.2.0
-django-allow-cidr==0.6.0
+django-allow-cidr==0.8.0
 django-csp==3.7
 django-ansible-base[jwt-consumer,resource-registry]==2025.8.18

@@ -121,7 +121,7 @@ django==4.2.26
     #   djangorestframework
     #   drf-spectacular
     #   social-auth-app-django
-django-allow-cidr==0.6.0
+django-allow-cidr==0.8.0
     # via -r requirements.in
 django-ansible-base[jwt-consumer,resource-registry]==2025.8.18
     # via -r requirements.in
@@ -311,7 +311,6 @@ packaging==23.2
     #   ansible-core
     #   ansible-lint
     #   black
-    #   django-allow-cidr
     #   langchain-core
     #   langsmith
 pandas==2.2.3
