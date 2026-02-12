@@ -370,7 +370,7 @@ pyasn1-modules==0.4.0
     #   service-identity
 pycparser==2.21
     # via cffi
-pydantic==2.9.2
+pydantic==2.12.5
     # via
     #   -r requirements.in
     #   langchain
@@ -378,7 +378,7 @@ pydantic==2.9.2
     #   langsmith
     #   llama-stack-client
     #   ollama
-pydantic-core==2.23.4
+pydantic-core==2.41.5
     # via pydantic
 pydrive2==1.20.0
     # via -r requirements.in
@@ -533,7 +533,7 @@ twisted[tls]==24.11.0
     # via daphne
 txaio==23.1.1
     # via autobahn
-typing-extensions==4.11.0
+typing-extensions==4.15.0
     # via
     #   aiosignal
     #   django-test-migrations
@@ -545,6 +545,9 @@ typing-extensions==4.11.0
     #   pydantic-core
     #   sqlalchemy
     #   twisted
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via pydantic
 tzdata==2025.2
     # via pandas
 uritemplate==4.1.1

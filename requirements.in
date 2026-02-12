@@ -53,7 +53,7 @@ launchdarkly-server-sdk==8.3.0
 llama-stack-client>=0.2.12
 protobuf==5.29.5
 psycopg[binary]==3.1.8
-pydantic==2.9.2
+pydantic==2.12.5
 PyDrive2==1.20.0
 pytz
 pyjwt==2.8.0
