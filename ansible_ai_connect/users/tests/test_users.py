@@ -30,7 +30,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsOrganisationAdministrator,
     IsOrganisationLightspeedSubscriber,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
@@ -119,7 +119,7 @@ class TestUserSeat(WisdomAppsBackendMocking):
     @override_settings(DEPLOYMENT_MODE="saas")
     def test_rh_user_in_unlimited_org(self):
         user = create_user(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
-        org = Organization(None, None)
+        org = ExternalOrganization(None, None)
         org.is_subscription_check_should_be_bypassed = True
         user.organization = org
         self.assertTrue(user.rh_org_has_subscription)

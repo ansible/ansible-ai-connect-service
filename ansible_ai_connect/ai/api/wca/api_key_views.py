@@ -45,7 +45,7 @@ from ansible_ai_connect.ai.api.permissions import (
 from ansible_ai_connect.ai.api.serializers import WcaKeyRequestSerializer
 from ansible_ai_connect.ai.api.utils.segment import send_segment_event
 from ansible_ai_connect.ai.api.views import ServiceUnavailable
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.signals import (
     user_delete_wca_api_key,
     user_delete_wca_model_id,
@@ -138,7 +138,7 @@ class WCAApiKeyView(RetrieveAPIView, CreateAPIView, DestroyAPIView):
         # See https://issues.redhat.com/browse/AAP-16009
         if not request._request.user.organization:
             return Response(status=HTTP_400_BAD_REQUEST)
-        organization: Organization = request._request.user.organization
+        organization: ExternalOrganization = request._request.user.organization
 
         try:
             # Extract API Key from request
@@ -293,7 +293,7 @@ class WCAApiKeyValidatorView(RetrieveAPIView):
         # See https://issues.redhat.com/browse/AAP-16009
         if not request._request.user.organization:
             return Response(status=HTTP_400_BAD_REQUEST)
-        organization: Organization = request._request.user.organization
+        organization: ExternalOrganization = request._request.user.organization
         try:
             # Validate API Key
             _md = apps.get_app_config("ai").get_model_pipeline(MetaData)

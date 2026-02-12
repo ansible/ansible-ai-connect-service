@@ -22,7 +22,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from oauth2_provider.models import AccessToken
 
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 
 
 class TestCreateToken(TestCase):
@@ -30,7 +30,7 @@ class TestCreateToken(TestCase):
         User = get_user_model()
         AccessToken.objects.filter(token="test-token").delete()
         User.objects.filter(username="my-test-token-user").delete()
-        Organization.objects.filter(id=12345).delete()
+        ExternalOrganization.objects.filter(id=12345).delete()
 
     def call_command(self, *args, **kwargs):
         out = StringIO()

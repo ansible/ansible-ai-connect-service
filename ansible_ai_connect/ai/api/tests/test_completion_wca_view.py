@@ -51,7 +51,7 @@ from ansible_ai_connect.ai.api.model_pipelines.tests.test_wca_client import (
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_saas import (
     WCASaaSCompletionsPipeline,
 )
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
@@ -95,7 +95,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -122,7 +122,7 @@ class TestCompletionWCAView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_seated_user_missing_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -181,7 +181,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_missing_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -207,7 +207,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_garbage_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -234,7 +234,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_not_quite_valid_model_id(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -267,7 +267,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_invalid_model_id_for_api_key(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -292,7 +292,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_empty_response(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -317,7 +317,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_cloudflare_rejection(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -345,7 +345,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_hap_filter_rejection(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -372,7 +372,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_wml_api_call_failed(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -400,7 +400,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_trial_expired_rejection(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -423,7 +423,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_trial_expired(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -448,7 +448,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_seated_user_model_id_error(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -475,7 +475,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
     def test_wca_completion_timeout_single_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -498,7 +498,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid<|sepofid|>valid")
     def test_wca_completion_timeout_multi_task(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -530,7 +530,7 @@ class TestCompletionWCAView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_timed_out(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -568,7 +568,7 @@ class TestCompletionWCAView(
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_wca_completion_request_id_correlation_failure(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -618,7 +618,7 @@ class TestCompletionWCAView(
         self, mock_send_segment_event
     ):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         stub = self.stub_wca_client(
@@ -651,7 +651,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_completion_wca_instance_deleted(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -683,7 +683,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_inference_failed(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
@@ -711,7 +711,7 @@ class TestCompletionWCAView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="1:valid")
     def test_wca_validation_failed(self):
         self.user.rh_user_has_seat = True
-        self.user.organization = Organization.objects.get_or_create(id=1)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
 
         model_client, model_input = self.stub_wca_client()
