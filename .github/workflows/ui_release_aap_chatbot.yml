@@ -43,7 +43,7 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "New AAP Chatbot UI package release."
           committer: GitHub <noreply@github.com>
