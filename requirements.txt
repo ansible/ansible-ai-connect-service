@@ -189,8 +189,6 @@ google-auth-httplib2==0.2.1
     # via google-api-python-client
 googleapis-common-protos==1.72.0
     # via google-api-core
-greenlet==3.3.0 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
-    # via sqlalchemy
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9
@@ -201,10 +199,7 @@ httplib2==0.31.0
     #   google-auth-httplib2
     #   oauth2client
 httpx==0.28.1
-    # via
-    #   langsmith
-    #   llama-stack-client
-    #   ollama
+    # via llama-stack-client
 hyperlink==21.0.0
     # via
     #   autobahn
@@ -237,10 +232,6 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsonpatch==1.33
-    # via langchain-core
-jsonpointer==3.0.0
-    # via jsonpatch
 jsonschema==4.25.1
     # via
     #   ansible-compat
@@ -252,24 +243,6 @@ jwcrypto==1.5.6
     # via
     #   ansible-ai-connect
     #   django-oauth-toolkit
-langchain==0.3.27
-    # via ansible-ai-connect
-langchain-core==0.3.81
-    # via
-    #   ansible-ai-connect
-    #   langchain
-    #   langchain-ollama
-    #   langchain-text-splitters
-langchain-ollama==0.3.10
-    # via ansible-ai-connect
-langchain-text-splitters==0.3.11
-    # via
-    #   ansible-ai-connect
-    #   langchain
-langsmith==0.4.56
-    # via
-    #   langchain
-    #   langchain-core
 launchdarkly-server-sdk==8.3.0
     # via ansible-ai-connect
 llama-stack-client==0.2.22
@@ -303,12 +276,8 @@ oauthlib==3.3.1
     #   social-auth-core
 odfpy==1.4.1
     # via tablib
-ollama==0.6.1
-    # via langchain-ollama
 openpyxl==3.1.5
     # via tablib
-orjson==3.11.5 ; platform_python_implementation != 'PyPy'
-    # via langsmith
 packaging==25.0
     # via
     #   ansible-compat
@@ -316,8 +285,6 @@ packaging==25.0
     #   ansible-lint
     #   black
     #   incremental
-    #   langchain-core
-    #   langsmith
 pandas==2.3.3
     # via llama-stack-client
 parso==0.8.5
@@ -378,11 +345,7 @@ pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementati
 pydantic==2.12.5
     # via
     #   ansible-ai-connect
-    #   langchain
-    #   langchain-core
-    #   langsmith
     #   llama-stack-client
-    #   ollama
 pydantic-core==2.41.5
     # via pydantic
 pydrive2==1.20.0
@@ -421,8 +384,6 @@ pyyaml==6.0.3
     #   ansible-core
     #   ansible-lint
     #   drf-spectacular
-    #   langchain
-    #   langchain-core
     #   pyaml
     #   pydrive2
     #   tablib
@@ -439,18 +400,13 @@ requests==2.32.5
     #   django-ansible-base
     #   django-oauth-toolkit
     #   google-api-core
-    #   langchain
-    #   langsmith
     #   llama-stack-client
     #   requests-oauthlib
-    #   requests-toolbelt
     #   segment-analytics-python
     #   social-auth-core
     #   uwsgi-readiness-check
 requests-oauthlib==2.0.0
     # via social-auth-core
-requests-toolbelt==1.0.0
-    # via langsmith
 resolvelib==1.0.1
     # via ansible-core
 rich==14.2.0
@@ -489,8 +445,6 @@ social-auth-core==4.7.0
     # via
     #   ansible-ai-connect
     #   social-auth-app-django
-sqlalchemy==2.0.44
-    # via langchain
 sqlparse==0.5.2
     # via
     #   django
@@ -503,8 +457,6 @@ subprocess-tee==0.4.2
     #   ansible-lint
 tablib==3.9.0
     # via django-import-export
-tenacity==9.1.2
-    # via langchain-core
 termcolor==3.2.0
     # via
     #   fire
@@ -525,13 +477,11 @@ typing-extensions==4.15.0
     #   anyio
     #   django-test-migrations
     #   jwcrypto
-    #   langchain-core
     #   llama-stack-client
     #   psycopg
     #   pydantic
     #   pydantic-core
     #   referencing
-    #   sqlalchemy
     #   twisted
     #   typing-inspection
 typing-inspection==0.4.2
@@ -556,8 +506,6 @@ urllib3==2.6.3
     #   django-ansible-base
     #   launchdarkly-server-sdk
     #   requests
-uuid-utils==0.12.0
-    # via langsmith
 uwsgi==2.0.31
     # via ansible-ai-connect
 uwsgi-readiness-check==0.2.0
@@ -578,5 +526,3 @@ zipp==3.23.0
     # via importlib-metadata
 zope-interface==8.1.1
     # via twisted
-zstandard==0.25.0
-    # via langsmith
