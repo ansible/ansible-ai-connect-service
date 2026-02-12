@@ -63,7 +63,7 @@ requests==2.32.0
 segment-analytics-python==2.2.2
 # pin sqlparse on 0.5.0 to address GHSA-2m57-hf25-phgg
 # Remove once a Django>4.2.11 is released with an updated dep on sqlparse
-sqlparse==0.5.2
+sqlparse==0.5.5
 social-auth-app-django==5.4.1
 social-auth-core==4.5.4
 slack-sdk==3.31.0

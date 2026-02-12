@@ -502,7 +502,7 @@ social-auth-core==4.5.4
     #   social-auth-app-django
 sqlalchemy==2.0.29
     # via langchain
-sqlparse==0.5.2
+sqlparse==0.5.5
     # via
     #   -r requirements.in
     #   django
