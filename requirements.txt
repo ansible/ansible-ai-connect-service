@@ -412,7 +412,7 @@ pytz==2024.1
     #   -r requirements.in
     #   pandas
     #   pyrfc3339
-pyyaml==6.0
+pyyaml==6.0.3
     # via
     #   -r requirements.in
     #   ansible-compat

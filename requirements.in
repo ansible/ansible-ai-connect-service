@@ -58,7 +58,7 @@ PyDrive2==1.20.0
 pytz
 pyjwt==2.8.0
 pyOpenSSL==24.2.1
-PyYAML==6.0
+PyYAML==6.0.3
 requests==2.32.0
 segment-analytics-python==2.2.2
 # pin sqlparse on 0.5.0 to address GHSA-2m57-hf25-phgg
