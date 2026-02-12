@@ -69,7 +69,7 @@
     "react-router-dom": "^7.5.2",
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.24.0",
+    "typescript-eslint": "^8.55.0",
     "vitest": "^3.2.4",
     "vitest-browser-react": "^0.0.4"
   }
