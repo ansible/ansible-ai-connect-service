@@ -445,7 +445,7 @@ social-auth-core==4.7.0
     # via
     #   ansible-ai-connect
     #   social-auth-app-django
-sqlparse==0.5.2
+sqlparse==0.5.5
     # via
     #   django
     #   django-ansible-base

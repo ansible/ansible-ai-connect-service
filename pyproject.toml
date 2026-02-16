@@ -99,7 +99,7 @@ constraint-dependencies = [
   # Pin pyOpenSSL for compatibility
   'pyOpenSSL==24.2.1',
   # Pin sqlparse to address GHSA-2m57-hf25-phgg
-  'sqlparse==0.5.2',
+  'sqlparse~=0.5.5',
 ]
 
 

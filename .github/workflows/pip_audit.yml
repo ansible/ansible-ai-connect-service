@@ -74,3 +74,5 @@ jobs:
             # DoS vulnerability in protobuf json_format.ParseDict() - no fix available yet
             # See: https://github.com/advisories/GHSA-7gcm-g887-7qv7
             GHSA-7gcm-g887-7qv7
+            # Ignoring cryptography as it should be fixed by a RHEL RPM
+            GHSA-r6ph-v2qm-q3c2
