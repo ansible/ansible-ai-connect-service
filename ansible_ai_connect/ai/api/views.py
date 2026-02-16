@@ -114,7 +114,6 @@ from .permissions import (
     BlockUserWithoutSeatAndWCAReadyOrg,
     BlockUserWithSeatButWCANotReady,
     BlockWCANotReadyButTrialAvailable,
-    IsAAPLicensed,
     IsOrganisationLightspeedSubscriber,
 )
 from .serializers import (
@@ -164,7 +163,6 @@ PERMISSIONS_MAP = {
     "onprem": [
         permissions.IsAuthenticated,
         IsAuthenticatedOrTokenHasScope,
-        IsAAPLicensed,
     ],
     "upstream": [
         permissions.IsAuthenticated,
@@ -573,7 +571,6 @@ class ContentMatches(GenericAPIView):
         [
             permissions.IsAuthenticated,
             IsAuthenticatedOrTokenHasScope,
-            IsAAPLicensed,
         ]
         if settings.DEPLOYMENT_MODE == "onprem"
         else [
