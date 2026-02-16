@@ -6,6 +6,7 @@ invoke_pr_test() {
   WORKFLOW_ID=$1
   TOKEN=$2
   PR_NUMBER=$3
+  echo "test pr deployment"
   echo "invoke_pr_test: PR_NUMBER=${PR_NUMBER}"
 
   run_url=$(curl -sSL \
