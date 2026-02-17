@@ -86,7 +86,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 constantly==23.10.4
     # via twisted
-cryptography==43.0.1
+cryptography==46.0.5
     # via
     #   ansible-core
     #   autobahn
@@ -358,7 +358,7 @@ pyjwt==2.8.0
     # via
     #   django-ansible-base
     #   social-auth-core
-pyopenssl==24.2.1
+pyopenssl==25.3.0
     # via
     #   pydrive2
     #   twisted
@@ -481,6 +481,7 @@ typing-extensions==4.15.0
     #   psycopg
     #   pydantic
     #   pydantic-core
+    #   pyopenssl
     #   referencing
     #   twisted
     #   typing-inspection
