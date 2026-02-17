@@ -5,7 +5,7 @@
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
     "@patternfly/chatbot": "^6.4.0-prerelease.22",
-    "@patternfly/react-table": "^6.3.1",
+    "@patternfly/react-table": "^6.4.1",
     "@types/jest": "^27.5.2",
     "@types/node": "^18.0.0",
     "@types/react": "^18.3.7",
