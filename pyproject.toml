@@ -88,18 +88,6 @@ wisdom-manage = "ansible_ai_connect.manage:main"
 constraint-dependencies = [
   # Use Red Hat's system-certifi for certificate handling
   'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
-  # Pin cryptography to address security vulnerabilities
-  'cryptography==43.0.1',
-  # Pin idna to address GHSA-jjg7-2v4v-x38h
-  'idna==3.7',
-  # Pin jsonpickle to address SNYK-PYTHON-JSONPICKLE-8136229
-  'jsonpickle==3.3.0',
-  # Pin pyjwt for compatibility
-  'pyjwt==2.8.0',
-  # Pin pyOpenSSL for compatibility
-  'pyOpenSSL==24.2.1',
-  # Pin sqlparse to address GHSA-2m57-hf25-phgg
-  'sqlparse~=0.5.5',
 ]
 
 

@@ -76,3 +76,5 @@ jobs:
             GHSA-7gcm-g887-7qv7
             # Ignoring cryptography as it should be fixed by a RHEL RPM
             GHSA-r6ph-v2qm-q3c2
+            # Fix version of social-app-django 5.6.0 doesn't support Django 4.2
+            CVE-2025-61783
