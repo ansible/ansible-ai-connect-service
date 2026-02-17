@@ -12,7 +12,7 @@
 aiohttp==3.12.14
 ansible-anonymizer==1.5.0
 ansible-risk-insight==0.2.7
-ansible-lint==24.2.2
+ansible-lint==24.12.2
 boto3==1.40.63
 # pin black on 24.3.0 to address PYSEC-2024-48.
 black==24.3.0
