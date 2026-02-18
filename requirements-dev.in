@@ -1,7 +1,7 @@
 black==24.3.0
 coverage==7.2.1
 certifi@git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
-flake8==6.0.0
+flake8==6.1.0
 grpcio-tools==1.68.1
 # pin idna until responses -> requests is updated
 idna==3.7
