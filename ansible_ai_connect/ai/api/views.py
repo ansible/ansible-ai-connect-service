@@ -102,7 +102,6 @@ from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
 )
 from ansible_ai_connect.users.models import User
 
-from ...main.middleware import check_csrf
 from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
 from ...users.throttling import EndpointRateThrottle
 from ..feature_flags import FeatureFlags
@@ -1219,7 +1218,6 @@ class StreamingChat(AACSAPIView):
         summary="Streaming chat request",
     )
     def post(self, request) -> StreamingHttpResponse:
-        check_csrf(request)
         if not self.chatbot_enabled:
             raise ChatbotNotEnabledException()
 
