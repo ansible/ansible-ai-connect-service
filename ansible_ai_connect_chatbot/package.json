@@ -57,7 +57,7 @@
     "buffer": "^6.0.3",
     "dompurify": "^3.2.3",
     "empty-module": "^0.0.2",
-    "eslint": "^9.13.0",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-patternfly-react": "^5.4.0",
     "eslint-plugin-prettier": "^5.2.1",
