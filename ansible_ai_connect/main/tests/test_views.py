@@ -52,7 +52,7 @@ class LogoutTest(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_OIDC)
         self.client.force_login(user)
 
-        response = self.client.get(reverse("logout"))
+        response = self.client.post(reverse("logout"))
         self.assertEqual(
             response.url,
             "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid"
@@ -64,7 +64,7 @@ class LogoutTest(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_GITHUB)
         self.client.force_login(user)
 
-        response = self.client.get(reverse("logout"))
+        response = self.client.post(reverse("logout"))
         self.assertEqual(response.url, "/")
 
     @override_settings(AAP_API_URL="http://aap/api")
@@ -72,11 +72,11 @@ class LogoutTest(TestCase):
         user = create_user_with_provider(provider=USER_SOCIAL_AUTH_PROVIDER_AAP)
         self.client.force_login(user)
 
-        response = self.client.get(reverse("logout"))
+        response = self.client.post(reverse("logout"))
         self.assertEqual(response.url, "http://aap/api/logout/?next=http://testserver/")
 
     def test_logout_without_login(self):
-        self.client.get(reverse("logout"))
+        self.client.post(reverse("logout"))
 
 
 class AlreadyAuth(TestCase):
