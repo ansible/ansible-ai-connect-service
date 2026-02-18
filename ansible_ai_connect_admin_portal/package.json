@@ -8,7 +8,7 @@
     "npm": ">=7.0.0"
   },
   "dependencies": {
-    "@ansible/ansible-ui-framework": "^2.4.2606",
+    "@ansible/ansible-ui-framework": "^2.4.2748",
     "@babel/core": "^7.16.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",
     "@patternfly/patternfly": "^5.1",
