@@ -16,7 +16,7 @@
     "@patternfly/react-icons": "^5.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@svgr/webpack": "8.1.0",
-    "i18next-http-backend": "^2.2.1",
+    "i18next-http-backend": "^3.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.1.2"
