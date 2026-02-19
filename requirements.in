@@ -23,7 +23,7 @@ Django==4.2.26
 django-deprecate-fields==0.1.1
 django-extensions==3.2.1
 django-health-check==3.17.0
-django-import-export==3.2.0
+django-import-export==3.3.9
 django-oauth-toolkit==3.0.1
 django_prometheus==2.2.0
 django-test-migrations==1.3.0
