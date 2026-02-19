@@ -162,7 +162,7 @@ filelock==3.13.4
     # via
     #   ansible-lint
     #   ansible-risk-insight
-fire==0.7.0
+fire==0.7.1
     # via -r requirements.in
 frozenlist==1.4.1
     # via
