@@ -1,11 +1,35 @@
 queue_rules:
-  - name: ansible-ai-connect-service
+  - name: ansible-ai-connect-service-python-dep
     queue_conditions:
       - author~=^dependabot(|-preview)\[bot\]$
+      - label=python
     merge_conditions:
       - check-success=pre-commit
       - check-success=code_coverage
       - check-success=selftest
+
+  - name: ansible-ai-connect-service-admin-portal
+    queue_conditions:
+      - author~=^dependabot(|-preview)\[bot\]$
+      - label=admin-portal
+    merge_conditions:
+      - check-success=pre-commit
+      - check-success=npm_audit
+
+  - name: ansible-ai-connect-service-chatbot
+    queue_conditions:
+      - author~=^dependabot(|-preview)\[bot\]$
+      - label=chatbot
+    merge_conditions:
+      - check-success=pre-commit
+      - check-success=npm_audit_chatbot
+
+  - name: ansible-ai-connect-service-github-actions
+    queue_conditions:
+      - author~=^dependabot(|-preview)\[bot\]$
+      - label=github-actions
+    merge_conditions:
+      - check-success=pre-commit
 
 pull_request_rules:
   # Auto-merge security updates for Python
@@ -20,7 +44,7 @@ pull_request_rules:
       - "#review-requested=0"
     actions:
       queue:
-        name: ansible-ai-connect-service
+        name: ansible-ai-connect-service-python-dep
 
   # Auto-merge security updates for Admin Portal
   - name: Auto-merge Dependabot security updates (Admin Portal)
@@ -34,7 +58,7 @@ pull_request_rules:
       - "#review-requested=0"
     actions:
       queue:
-        name: ansible-ai-connect-service
+        name: ansible-ai-connect-service-admin-portal
 
   # Auto-merge security updates for Chatbot
   - name: Auto-merge Dependabot security updates (Chatbot)
@@ -48,7 +72,7 @@ pull_request_rules:
       - "#review-requested=0"
     actions:
       queue:
-        name: ansible-ai-connect-service
+        name: ansible-ai-connect-service-chatbot
 
   # Auto-merge security updates for GitHub Actions
   - name: Auto-merge Dependabot security updates (GitHub Actions)
@@ -61,20 +85,7 @@ pull_request_rules:
       - "#review-requested=0"
     actions:
       queue:
-        name: ansible-ai-connect-service
-
-  # Auto-merge non-security updates
-  - name: Auto-merge non-security Dependabot PRs
-    conditions:
-      - author=dependabot[bot]
-      - -label=security
-      - check-success=pre-commit
-      - check-success=selftest
-      - "#changes-requested-reviews-by=0"
-      - "#review-requested=0"
-    actions:
-      queue:
-        name: ansible-ai-connect-service
+        name: ansible-ai-connect-service-github-actions
 
   # Detect when PR conflicts and add label
   - name: warn on conflicts
