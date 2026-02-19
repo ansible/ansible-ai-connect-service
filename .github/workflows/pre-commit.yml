@@ -10,6 +10,10 @@ on:
       - ansible_ai_connect/**
       - ansible_ai_connect_chatbot/**
       - ansible_ai_connect_admin_portal/**
+      - requirements*.txt
+      - pyproject.toml
+      - uv.lock
+      - .github/**
   pull_request:
     branches:
       - main
@@ -17,6 +21,10 @@ on:
       - ansible_ai_connect/**
       - ansible_ai_connect_chatbot/**
       - ansible_ai_connect_admin_portal/**
+      - requirements*.txt
+      - pyproject.toml
+      - uv.lock
+      - .github/**
 permissions:
   contents: read
 
