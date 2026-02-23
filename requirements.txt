@@ -287,7 +287,7 @@ packaging==25.0
     #   incremental
 pandas==2.3.3
     # via llama-stack-client
-parso==0.8.5
+parso==0.8.6
     # via jedi
 pathspec==0.12.1
     # via
