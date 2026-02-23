@@ -176,7 +176,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-google-api-core==2.28.1
+google-api-core==2.30.0
     # via google-api-python-client
 google-api-python-client==2.187.0
     # via pydrive2
