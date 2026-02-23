@@ -61,7 +61,7 @@
     "eslint-plugin-patternfly-react": "^5.4.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.1",
-    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-testing-library": "^7.1.1",
     "playwright": "^1.53.1",
     "process": "^0.11.10",
