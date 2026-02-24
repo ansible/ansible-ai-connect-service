@@ -47,9 +47,9 @@ dependencies = [
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
   'django-csp~=3.7',
-  "django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.1.26",
-  "filelock==3.20.3",
-  "pyasn1==0.6.2",
+  'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.1.26',
+  'filelock==3.20.3',
+  'pyasn1==0.6.2',
 ]
 readme = "README.rst"
 license = {text = "Apache-2.0"}
