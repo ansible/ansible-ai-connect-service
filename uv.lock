@@ -201,7 +201,7 @@ requires-dist = [
     { name = "coverage", marker = "extra == 'dev'", specifier = "~=7.2.1" },
     { name = "cython" },
     { name = "daphne", specifier = "~=4.2.1" },
-    { name = "django", specifier = "~=4.2.28" },
+    { name = "django", specifier = "~=5.2.11" },
     { name = "django-allow-cidr" },
     { name = "django-ansible-base", extras = ["api-documentation", "jwt-consumer", "resource-registry"], specifier = ">=2026.1.26" },
     { name = "django-csp", specifier = "~=3.7" },
@@ -211,7 +211,7 @@ requires-dist = [
     { name = "django-import-export", specifier = "~=3.2.0" },
     { name = "django-oauth-toolkit", specifier = "~=3.0.1" },
     { name = "django-prometheus", specifier = "~=2.2.0" },
-    { name = "django-test-migrations", specifier = "~=1.3.0" },
+    { name = "django-test-migrations", specifier = "~=1.5.0" },
     { name = "djangorestframework", specifier = "~=3.15.2" },
     { name = "drf-spectacular", specifier = "~=0.29.0" },
     { name = "filelock", specifier = "==3.20.3" },
@@ -840,16 +840,16 @@ wheels = [
 
 [[package]]
 name = "django"
-version = "4.2.28"
+version = "5.2.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "sqlparse" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/a9/25b75b11a4c7a6efe1661c181afe504992e0659ca6eedb72a065cdd91a25/django-4.2.28.tar.gz", hash = "sha256:a4b9cd881991add394cafa8bb3b11ad1742d1e1470ba99c3ef53dc540316ccfe", size = 10464933, upload-time = "2026-02-03T13:55:27.686Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/17/f2/3e57ef696b95067e05ae206171e47a8e53b9c84eec56198671ef9eaa51a6/django-5.2.11.tar.gz", hash = "sha256:7f2d292ad8b9ee35e405d965fbbad293758b858c34bbf7f3df551aeeac6f02d3", size = 10885017, upload-time = "2026-02-03T13:52:50.554Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/20/6d0808bc7500a6c654eae17b53f791a50af2c3f3ac4f328cbec324948c31/django-4.2.28-py3-none-any.whl", hash = "sha256:49a23c1b83ef31525f8d71a57b040f91d34660edb3f086280a8519855655ed3c", size = 7995543, upload-time = "2026-02-03T13:55:09.798Z" },
+    { url = "https://files.pythonhosted.org/packages/91/a7/2b112ab430575bf3135b8304ac372248500d99c352f777485f53fdb9537e/django-5.2.11-py3-none-any.whl", hash = "sha256:e7130df33ada9ab5e5e929bc19346a20fe383f5454acb2cc004508f242ee92c0", size = 8291375, upload-time = "2026-02-03T13:52:42.47Z" },
 ]
 
 [[package]]
@@ -998,14 +998,14 @@ wheels = [
 
 [[package]]
 name = "django-test-migrations"
-version = "1.3.0"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/dc/2252f7c674ea5f8a43415b7a7a5f6b5fee8752f85cbef797e227c2d24733/django_test_migrations-1.3.0.tar.gz", hash = "sha256:b42edb1af481e08c9d91c95aa9b373e76e905a931bc19c086ec00a6cb936876e", size = 19944, upload-time = "2023-04-29T15:20:30.95Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/ed/7fc6f8e89d83565fc4acb93ae0a2387d885ac83cda445cb6c570f302bf55/django_test_migrations-1.5.0.tar.gz", hash = "sha256:1cbff04b1e82c5564a6f635284907b381cc11a2ff883adff46776d9126824f07", size = 20143, upload-time = "2025-04-18T10:15:38.547Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/61/156e4a84aef605765ae7e2d111640de526fbb48ae1b1a77ec032bc116377/django_test_migrations-1.3.0-py3-none-any.whl", hash = "sha256:b52b29475f9a1bcaa4512f2ec8fad08b5f470cf1cf522e86b7d950252fb6fbf1", size = 24690, upload-time = "2023-04-29T15:20:28.266Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/fe/38789c69f71adff9156bda7542d8fd05fcde1a109cf67bd7a1a139f8199f/django_test_migrations-1.5.0-py3-none-any.whl", hash = "sha256:96a08f085fc8bfaa53d44618341d82a2d22fd194c821cd81b147b66f0bec0da8", size = 25099, upload-time = "2025-04-18T10:15:37.16Z" },
 ]
 
 [[package]]

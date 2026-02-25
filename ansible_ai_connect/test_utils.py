@@ -17,6 +17,7 @@ import random
 import string
 from ast import literal_eval
 from datetime import datetime
+from datetime import timezone as dt_timezone
 from http import HTTPStatus
 from typing import Optional, Union
 from unittest.mock import patch
@@ -256,7 +257,7 @@ class WisdomServiceAPITestCaseBaseOIDC(WisdomServiceAPITestCaseBase):
 
     def start_user_plan(self):
         self.trial_plan, _ = Plan.objects.get_or_create(name="Some plan", expires_after="10 days")
-        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        self.trial_plan.created_at = datetime(2000, 1, 1, tzinfo=dt_timezone.utc)
         self.user.plans.add(self.trial_plan)
 
 
