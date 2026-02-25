@@ -58,7 +58,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     VALID_PAYLOAD_WITH_CONVERSATION_ID = {
         "query": "Hello",
-        "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
+        "conversation_id": "ABC-123e4567-e89b-12d3-a456-426614174000",  # Non-UUIDs are fine here.
     }
 
     INVALID_PAYLOAD = {

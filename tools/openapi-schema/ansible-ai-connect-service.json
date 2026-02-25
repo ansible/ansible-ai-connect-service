@@ -1299,8 +1299,7 @@
                 "properties": {
                     "conversation_id": {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "A UUID that identifies the particular conversation is being requested for."
+                        "description": "An ID that identifies the particular conversation is being requested for."
                     },
                     "query": {
                         "type": "string",
@@ -1336,8 +1335,7 @@
                 "properties": {
                     "conversation_id": {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "A UUID that identifies the particular conversation is being requested for."
+                        "description": "An ID that identifies the particular conversation is being requested for."
                     },
                     "referenced_documents": {
                         "type": "array",
@@ -2188,8 +2186,7 @@
                 "properties": {
                     "conversation_id": {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "A UUID that identifies the particular conversation is being requested for."
+                        "description": "An ID that identifies the particular conversation is being requested for."
                     },
                     "query": {
                         "type": "string",

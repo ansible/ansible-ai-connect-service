@@ -319,11 +319,10 @@ class RoleGenerationAction(PlaybookGenerationAction):
 
 
 class ChatRequestSerializer(serializers.Serializer):
-    conversation_id = serializers.UUIDField(
-        format="hex_verbose",
+    conversation_id = serializers.CharField(
         required=False,
         label="conversation ID",
-        help_text=("A UUID that identifies the particular conversation is being requested for."),
+        help_text=("An ID that identifies the particular conversation is being requested for."),
     )
     query = serializers.CharField(
         required=True,
@@ -366,11 +365,10 @@ class ReferencedDocumentsSerializer(serializers.Serializer):
 
 
 class ChatResponseSerializer(serializers.Serializer):
-    conversation_id = serializers.UUIDField(
-        format="hex_verbose",
+    conversation_id = serializers.CharField(
         required=True,
         label="conversation ID",
-        help_text=("A UUID that identifies the particular conversation is being requested for."),
+        help_text=("An ID that identifies the particular conversation is being requested for."),
     )
     referenced_documents = serializers.ListField(
         child=ReferencedDocumentsSerializer(), required=False
