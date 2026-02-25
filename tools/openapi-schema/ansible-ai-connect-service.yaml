@@ -822,8 +822,7 @@ components:
       properties:
         conversation_id:
           type: string
-          format: uuid
-          description: A UUID that identifies the particular conversation is being
+          description: An ID that identifies the particular conversation is being
             requested for.
         query:
           type: string
@@ -852,8 +851,7 @@ components:
       properties:
         conversation_id:
           type: string
-          format: uuid
-          description: A UUID that identifies the particular conversation is being
+          description: An ID that identifies the particular conversation is being
             requested for.
         referenced_documents:
           type: array
@@ -1512,8 +1510,7 @@ components:
       properties:
         conversation_id:
           type: string
-          format: uuid
-          description: A UUID that identifies the particular conversation is being
+          description: An ID that identifies the particular conversation is being
             requested for.
         query:
           type: string
