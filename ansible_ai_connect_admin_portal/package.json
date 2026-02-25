@@ -18,7 +18,6 @@
     "@svgr/webpack": "8.1.0",
     "ajv": "^6.14.0",
     "i18next-http-backend": "^2.2.1",
-    "jsonpath": "^1.2.1",
     "node-forge": "^1.3.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
