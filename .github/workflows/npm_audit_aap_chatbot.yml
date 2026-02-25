@@ -1,0 +1,43 @@
+name: AAP Chatbot - npm-audit
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - aap_chatbot/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - aap_chatbot/**
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    env:
+      WORKING_DIRECTORY: ./aap_chatbot
+
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'
+          cache: 'npm'
+          cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Run npm audit
+        uses: oke-py/npm-audit-action@v2
+        with:
+          audit_level: low
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_issues: false
+          working_directory: ${{env.WORKING_DIRECTORY}}
