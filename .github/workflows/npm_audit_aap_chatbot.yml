@@ -1,5 +1,8 @@
 name: AAP Chatbot - npm-audit
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
