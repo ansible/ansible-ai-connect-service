@@ -35,7 +35,7 @@ jobs:
           cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
 
       - name: Install Dependencies
-        run: npm install && npx playwright install chromium
+        run: npm ci && npx playwright install chromium
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Compile

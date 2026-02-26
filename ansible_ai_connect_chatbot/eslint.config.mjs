@@ -9,12 +9,6 @@ import testingLibrary from "eslint-plugin-testing-library";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-// https://github.com/sindresorhus/globals/issues/239
-const GLOBALS_BROWSER_FIX = Object.assign({}, globals.browser, {
-  AudioWorkletGlobalScope: globals.browser["AudioWorkletGlobalScope "],
-});
-delete GLOBALS_BROWSER_FIX["AudioWorkletGlobalScope "];
-
 export default [
   {
     ignores: [
@@ -38,7 +32,7 @@ export default [
     },
     languageOptions: {
       globals: {
-        ...GLOBALS_BROWSER_FIX,
+        ...globals.browser,
         ...globals.node,
         ...globals.jest,
       },
