@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
 
       - name: Install Dependencies & Test env
-        run: npm install && npx playwright install
+        run: npm ci && npx playwright install
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Compile
