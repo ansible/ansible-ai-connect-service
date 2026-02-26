@@ -1,0 +1,51 @@
+name: AAP Chatbot - Build and Test
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - aap_chatbot/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - aap_chatbot/**
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+
+    env:
+      WORKING_DIRECTORY: ./aap_chatbot
+
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'
+          cache: 'npm'
+          cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
+
+      - name: Install Dependencies
+        run: npm install && npx playwright install chromium
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Compile
+        run: npm run build
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Test
+        run: npm run test
+        working-directory: ${{env.WORKING_DIRECTORY}}
+
+      - name: Run linter
+        run: npm run eslint
+        working-directory: ${{env.WORKING_DIRECTORY}}
