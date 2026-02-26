@@ -310,7 +310,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-proto-plus==1.26.1
+proto-plus==1.27.1
     # via google-api-core
 protobuf==5.29.5
     # via
