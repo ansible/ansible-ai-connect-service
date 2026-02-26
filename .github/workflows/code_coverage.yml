@@ -101,7 +101,7 @@ jobs:
         cache-dependency-path: ./ansible_ai_connect_chatbot/package-lock.json
 
     - name: Install Dependencies (TypeScript) (chatbot)
-      run: npm install
+      run: npm ci
       working-directory: ./ansible_ai_connect_chatbot
 
     - name: Install Chromium dependencies (chatbot)

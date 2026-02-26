@@ -34,7 +34,7 @@ jobs:
           cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
         working-directory: ${{env.WORKING_DIRECTORY}}
 
       - name: Run npm audit
