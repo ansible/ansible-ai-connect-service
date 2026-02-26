@@ -5,19 +5,20 @@ import { BrowserRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 
 describe("AppHeader", () => {
-  // Store the original 'location' object so that it can be restored for other tests.
-  const realLocation = window.location;
+  let submitSpy: jest.SpyInstance;
 
   beforeAll(() => {
-    // Mock the 'location.assign' function so that we can monitor it.
-    // @ts-ignore
-    delete window.location;
-    window.location = { ...realLocation, assign: jest.fn() };
+    submitSpy = jest
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(() => {});
   });
 
   afterAll(() => {
-    // Restore original 'location' object
-    window.location = realLocation;
+    submitSpy.mockRestore();
+  });
+
+  afterEach(() => {
+    submitSpy.mockClear();
   });
 
   it("Rendering", async () => {
@@ -44,6 +45,11 @@ describe("AppHeader", () => {
 
     // Emulate clicking on the logout button
     await userEvent.click(logoutMenuButton);
-    expect(window.location.assign).toBeCalledWith("/logout");
+
+    expect(submitSpy).toHaveBeenCalled();
+    const form = submitSpy.mock.contexts[0] as HTMLFormElement;
+    expect(form).toHaveAttribute("action", "/logout/");
+    expect(form).toHaveAttribute("method", "POST");
+    expect(form).toHaveFormValues({ csrfmiddlewaretoken: "" });
   });
 });

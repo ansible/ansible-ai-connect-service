@@ -92,7 +92,7 @@ constraint-dependencies = [
 
 
 [tool.setuptools.packages.find]
-include = ["ansible_ai_connect*"]
+include = ["ansible_ai_connect", "ansible_ai_connect.*"]
 
 [tool.black]
 line-length = 100
