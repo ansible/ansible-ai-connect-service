@@ -10,7 +10,10 @@
                 <div class="pf-c-empty-state__content">
                     <h1 class="pf-c-title pf-m-lg">You currently do not have access to {{ project_name }}.</h1>
                     {% if user.is_authenticated %}
-                       <a class="pf-c-button pf-m-primary" type="button" href="{% url 'logout' %}">Logout</a>
+                       <form method="post" action="{% url 'logout' %}">
+                           {% csrf_token %}
+                           <button class="pf-c-button pf-m-primary" type="submit">Logout</button>
+                       </form>
                     {% endif %}
                 </div>
             </div>

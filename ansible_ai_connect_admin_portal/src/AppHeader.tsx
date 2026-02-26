@@ -9,6 +9,7 @@ import {
 import { UserCircleIcon } from "@patternfly/react-icons";
 import { PageMastheadDropdown } from "./PageMastheadDropdown";
 import RedHatLogo from "./redhat-logo.svg";
+import { readCookie } from "./api/api";
 
 export interface AppHeaderProps {
   readonly userName: string;
@@ -18,8 +19,19 @@ export function AppHeader(props: AppHeaderProps) {
   const { t } = useTranslation();
   const { userName } = props;
 
-  const logout = () => {
-    window.location.assign("/logout");
+  const handleLogout = () => {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/logout/";
+
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden";
+    csrfInput.name = "csrfmiddlewaretoken";
+    csrfInput.value = readCookie("csrftoken") || "";
+    form.appendChild(csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
   };
 
   return (
@@ -41,7 +53,7 @@ export function AppHeader(props: AppHeaderProps) {
             <DropdownItem
               id="logout"
               label={t("Logout")}
-              onClick={logout}
+              onClick={handleLogout}
               data-testid="app-header__logout"
             >
               {t("Logout")}
