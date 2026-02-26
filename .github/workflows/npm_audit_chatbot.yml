@@ -1,5 +1,8 @@
 name: Chatbot - npm-audit
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
