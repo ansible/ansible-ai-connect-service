@@ -221,6 +221,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             headers["Authorization"] = params.auth_header
         if params.mcp_headers:
             headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
+            logger.debug("MCP headers are set for /query")
 
         response = self.session.post(
             self.config.inference_url + "/v1/query",
@@ -333,6 +334,7 @@ class HttpStreamingChatBotPipeline(
                 headers["Authorization"] = params.auth_header
             if params.mcp_headers:
                 headers["MCP-HEADERS"] = json.dumps(params.mcp_headers)
+                logger.debug("MCP headers are set for /streaming_query")
 
             query = params.query
             conversation_id = params.conversation_id
