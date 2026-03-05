@@ -6,6 +6,7 @@ on:
     #   - v*
     branches:
       - main
+      - 'stable-*'
     paths:
       - .github/workflows/pip_audit.yml
       - ansible_ai_connect/**
@@ -15,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'stable-*'
     paths:
       - .github/workflows/pip_audit.yml
       - ansible_ai_connect/**

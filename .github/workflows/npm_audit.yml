@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
+      - 'stable-*'
     paths:
       - ansible_ai_connect_admin_portal/**
   pull_request:
     branches:
       - main
+      - 'stable-*'
     paths:
       - ansible_ai_connect_admin_portal/**
 

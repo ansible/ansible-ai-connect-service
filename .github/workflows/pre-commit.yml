@@ -6,6 +6,7 @@ on:
     #   - v*
     branches:
       - main
+      - 'stable-*'
     paths:
       - ansible_ai_connect/**
       - ansible_ai_connect_chatbot/**
@@ -17,6 +18,7 @@ on:
   pull_request:
     branches:
       - main
+      - 'stable-*'
     paths:
       - ansible_ai_connect/**
       - ansible_ai_connect_chatbot/**
