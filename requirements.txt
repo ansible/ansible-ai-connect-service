@@ -469,7 +469,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 twisted==25.5.0
     # via daphne
-txaio==25.12.1
+txaio==25.12.2
     # via autobahn
 typing-extensions==4.15.0
     # via
