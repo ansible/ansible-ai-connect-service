@@ -261,11 +261,16 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         self.assert_test(TestChatView.VALID_PAYLOAD)
 
         # User B attempts to hijack user A's conversation.
+        # Mirror the same org/rh_internal setup as self.user so that permission
+        # classes pass and the request reaches the ownership check.
         other_user = get_user_model().objects.create_user(
             username="other_user_cve_0598",
             email="other@example.com",
             password="secret",
         )
+        other_user.organization = self.user.organization
+        other_user.rh_internal = True
+        other_user.save()
         try:
             self.assert_test(
                 {
