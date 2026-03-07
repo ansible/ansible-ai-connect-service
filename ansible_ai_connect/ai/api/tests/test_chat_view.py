@@ -23,6 +23,7 @@ from unittest.mock import Mock, patch
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.http import StreamingHttpResponse
 from django.test import override_settings
 
@@ -241,6 +242,49 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     def test_chat_with_conversation_id(self):
         self.assert_test(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
+
+    def test_chat_owner_can_continue_conversation(self):
+        """CVE-2026-0598: the original owner must be able to continue their own conversation."""
+        # First request: no conversation_id; backend returns one (JSON_RESPONSE["conversation_id"]).
+        self.assert_test(TestChatView.VALID_PAYLOAD)
+        # Second request: reuse the registered conversation_id — must succeed.
+        self.assert_test(
+            {
+                "query": "Hello",
+                "conversation_id": TestChatView.JSON_RESPONSE["conversation_id"],
+            }
+        )
+
+    def test_chat_conversation_id_stolen_by_another_user_is_rejected(self):
+        """CVE-2026-0598: a different user must not use another user's conversation."""
+        # User A performs a successful request which registers the conversation_id.
+        self.assert_test(TestChatView.VALID_PAYLOAD)
+
+        # User B attempts to hijack user A's conversation.
+        # Mirror the same org/rh_internal setup as self.user so that permission
+        # classes pass and the request reaches the ownership check.
+        other_user = get_user_model().objects.create_user(
+            username="other_user_cve_0598",
+            email="other@example.com",
+            password="secret",
+        )
+        other_user.organization = self.user.organization
+        other_user.rh_internal = True
+        other_user.save()
+        try:
+            self.assert_test(
+                {
+                    "query": "Hello",
+                    "conversation_id": TestChatView.JSON_RESPONSE["conversation_id"],
+                },
+                expected_status_code=403,
+                expected_exception=ChatbotForbiddenException,
+                expected_log_message="ChatbotForbiddenException",
+                user=other_user,
+            )
+        finally:
+            other_user.delete()
+            cache.clear()
 
     def test_chat_not_enabled_exception(self):
         self.assert_test(
