@@ -35,7 +35,7 @@ from social_django.models import UserSocialAuth
 
 from ansible_ai_connect.ai.api.utils import segment_analytics_telemetry
 from ansible_ai_connect.ai.api.utils.version import api_version_reverse
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_OIDC
 from ansible_ai_connect.users.models import Plan
 
@@ -52,7 +52,9 @@ def create_user(
     org_opt_out: bool = False,
     **kwargs,
 ):
-    (org, _) = Organization.objects.get_or_create(id=rh_org_id, telemetry_opt_out=org_opt_out)
+    (org, _) = ExternalOrganization.objects.get_or_create(
+        id=rh_org_id, telemetry_opt_out=org_opt_out
+    )
     kwargs.setdefault("username", "u" + "".join(random.choices(string.digits, k=5)))
     kwargs.setdefault("password", "secret")
     kwargs.setdefault("email", kwargs["username"] + "@example.com")
@@ -228,7 +230,7 @@ class WisdomServiceAPITestCaseBase(APITransactionTestCase, WisdomServiceLogAware
         cache.clear()
 
     def tearDown(self):
-        Organization.objects.filter(id=1).delete()
+        ExternalOrganization.objects.filter(id=1).delete()
         self.user.delete()
         super().tearDown()
 

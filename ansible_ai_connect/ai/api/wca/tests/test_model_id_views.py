@@ -40,7 +40,7 @@ from ansible_ai_connect.ai.api.permissions import (
     IsWCASaaSModelPipeline,
 )
 from ansible_ai_connect.ai.api.tests.test_views import WisdomServiceAPITestCaseBase
-from ansible_ai_connect.organizations.models import Organization
+from ansible_ai_connect.organizations.models import ExternalOrganization
 from ansible_ai_connect.test_utils import (
     APIVersionTestCaseBase,
     WisdomAppsBackendMocking,
@@ -110,7 +110,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_model_id_when_undefined(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret.return_value = None
@@ -130,7 +130,7 @@ class TestWCAModelIdView(
         self._test_get_model_id_when_defined(True)
 
     def _test_get_model_id_when_defined(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
@@ -150,7 +150,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_get_model_id_when_defined_throws_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
         mock_secret_manager.get_secret.side_effect = WcaSecretManagerError("Test")
@@ -184,7 +184,7 @@ class TestWCAModelIdView(
         self._test_set_model_id(True)
 
     def _test_set_model_id(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
@@ -251,7 +251,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_model_id_not_valid(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
@@ -282,7 +282,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_model_id_throws_secret_manager_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError("Test")
@@ -299,7 +299,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_model_id_throws_validation_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_secret_manager.save_secret.side_effect = WcaSecretManagerError("Test")
@@ -315,7 +315,7 @@ class TestWCAModelIdView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_set_model_id_empty_response(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
@@ -347,7 +347,7 @@ class TestWCAModelIdViewAsNonSubscriber(
     APIVersionTestCaseBase, WisdomAppsBackendMocking, WisdomServiceAPITestCaseBase
 ):
     def test_get_model_id_as_non_subscriber(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         r = self.client.get(self.api_version_reverse("wca_model_id"))
         self.assertEqual(r.status_code, HTTPStatus.FORBIDDEN)
@@ -381,7 +381,7 @@ class TestWCAModelIdValidatorView(
         super().tearDown()
 
     def test_validate(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.client.force_authenticate(user=self.user)
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
@@ -406,7 +406,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_no_api_key(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -426,7 +426,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_no_model_id(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         self.client.force_authenticate(user=self.user)
 
@@ -453,7 +453,7 @@ class TestWCAModelIdValidatorView(
         self._test_validate_ok(True)
 
     def _test_validate_ok(self, has_seat):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         self.user.rh_user_has_seat = has_seat
         mock_secret_manager = apps.get_app_config("ai").get_wca_secret_manager()
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
@@ -498,7 +498,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_wrong_model_id(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
@@ -513,7 +513,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_api_key_not_found(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
@@ -530,7 +530,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_user_trial_expired(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
@@ -551,7 +551,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_bad_request(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
@@ -568,7 +568,7 @@ class TestWCAModelIdValidatorView(
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_exception(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
@@ -585,7 +585,7 @@ class TestWCAModelIdValidatorView(
     @override_settings(WCA_SECRET_DUMMY_SECRETS="123:my-model-id")
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_validate_error_model_id_empty_response(self, *args):
-        self.user.organization = Organization.objects.get_or_create(id=123)[0]
+        self.user.organization = ExternalOrganization.objects.get_or_create(id=123)[0]
         mock_wca_client: ModelPipelineCompletions = apps.get_app_config("ai").get_model_pipeline(
             ModelPipelineCompletions
         )
