@@ -22,6 +22,7 @@ from ansible_anonymizer import anonymizer
 from ansible_base.lib.utils.schema import extend_schema_if_available
 from django.apps import apps
 from django.conf import settings
+from django.core.cache import cache
 from django.http import StreamingHttpResponse
 from django_prometheus.conf import NAMESPACE
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -37,6 +38,7 @@ from rest_framework.views import APIView
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
     BaseWisdomAPIException,
+    ChatbotForbiddenException,
     ChatbotInvalidResponseException,
     ChatbotNotEnabledException,
     FeedbackInternalServerException,
@@ -176,6 +178,27 @@ PERMISSIONS_MAP = {
         BlockUserWithSeatButWCANotReady,
     ],
 }
+
+
+# CVE-2026-0598: conversation ownership tracking (24-hour TTL matches typical session lifetime)
+_CONVERSATION_OWNER_CACHE_TIMEOUT = 24 * 60 * 60
+
+
+def _claim_or_verify_conversation_ownership(conversation_id: str, user_uuid) -> bool:
+    """
+    Register a conversation as owned by user_uuid if it is not yet tracked, or verify
+    that the conversation already belongs to user_uuid.
+
+    Returns True when the user owns (or just claimed) the conversation.
+    Returns False when the conversation belongs to a different user.
+    """
+    cache_key = f"conversation_owner:{conversation_id}"
+    user_uuid_str = str(user_uuid)
+    # cache.add() is atomic: sets the key only when it does not exist and returns True.
+    # If the key already exists it returns False, meaning someone else registered first.
+    if cache.add(cache_key, user_uuid_str, _CONVERSATION_OWNER_CACHE_TIMEOUT):
+        return True
+    return cache.get(cache_key) == user_uuid_str
 
 
 class AACSAPIView(APIView):
@@ -1132,6 +1155,12 @@ class Chat(AACSAPIView):
         conversation_id = self.validated_data.get("conversation_id")
         no_tools = self.validated_data.get("no_tools", False)
 
+        # CVE-2026-0598: verify the requesting user owns the conversation before proceeding.
+        if conversation_id and not _claim_or_verify_conversation_ownership(
+            conversation_id, request.user.uuid
+        ):
+            raise ChatbotForbiddenException()
+
         # Initialise Segment Event early, in case of exceptions
         self.event.chat_system_prompt = req_system_prompt
         self.event.provider_id = req_provider
@@ -1159,6 +1188,11 @@ class Chat(AACSAPIView):
 
         if not response_serializer.is_valid():
             raise ChatbotInvalidResponseException()
+
+        # Register the backend-issued conversation_id so subsequent requests can be verified.
+        response_conversation_id = data.get("conversation_id")
+        if response_conversation_id:
+            _claim_or_verify_conversation_ownership(response_conversation_id, request.user.uuid)
 
         # Finalise Segment Event with response details
         self.event.chat_truncated = bool(data.get("truncated", False))
@@ -1231,6 +1265,12 @@ class StreamingChat(AACSAPIView):
         conversation_id = self.validated_data.get("conversation_id")
         media_type = self.validated_data.get("media_type")
         no_tools = self.validated_data.get("no_tools", False)
+
+        # CVE-2026-0598: verify the requesting user owns the conversation before proceeding.
+        if conversation_id and not _claim_or_verify_conversation_ownership(
+            conversation_id, request.user.uuid
+        ):
+            raise ChatbotForbiddenException()
 
         # Initialise Segment Event early, in case of exceptions
         self.event.chat_system_prompt = req_system_prompt
