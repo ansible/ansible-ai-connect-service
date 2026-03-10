@@ -29,6 +29,7 @@ from drf_spectacular.utils import (
 )
 from health_check.views import MainView
 from rest_framework import permissions
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
@@ -58,6 +59,10 @@ def common_data():
     if deployed_region:
         data = {**data, "deployed_region": deployed_region}
     return data
+
+
+class HealthCheckThrottle(UserRateThrottle):
+    scope = "health"
 
 
 class HealthCheckCustomView(MainView):
@@ -107,6 +112,7 @@ class WisdomServiceHealthView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [HealthCheckThrottle]
 
     def __init__(self):
         super().__init__()
@@ -156,6 +162,7 @@ class WisdomServiceLivenessProbeView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [HealthCheckThrottle]
 
     @extend_schema(
         responses={
@@ -183,6 +190,7 @@ class WisdomServiceHealthChatbotView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [HealthCheckThrottle]
 
     @staticmethod
     def normalise_status(status: str | dict[str, str]) -> str:

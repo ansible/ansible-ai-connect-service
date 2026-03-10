@@ -270,6 +270,7 @@ REST_FRAMEWORK = {
         "test": "100000/minute",
         "me": ME_USER_RATE_THROTTLE,
         "chat": CHAT_RATE_THROTTLE,
+        "health": "60/minute",
     },
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [
