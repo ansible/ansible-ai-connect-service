@@ -495,9 +495,14 @@ WCA_SECRET_MANAGER_REPLICA_REGIONS = [
     c.strip() for c in os.getenv("WCA_SECRET_MANAGER_REPLICA_REGIONS", "").split(",") if c
 ]
 
-CSP_DEFAULT_SRC = ("'self'", "data:")
+CSP_SELF = "'self'"
+
+CSP_DEFAULT_SRC = (CSP_SELF, "data:")
+CSP_CONNECT_SRC = CSP_SELF
+CSP_BASE_URI = (CSP_SELF,)
+CSP_FORM_ACTION = (CSP_SELF,)
+CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
-CSP_CONNECT_SRC = "'self'"
 
 # Region for where the service is deployed. Used by the Health Check endpoint.
 DEPLOYED_REGION = os.getenv("DEPLOYED_REGION") or "unknown"
