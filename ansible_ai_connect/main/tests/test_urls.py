@@ -48,6 +48,9 @@ class TestUrls(TestCase):
         self.assertNotIn("style-src 'self' 'unsafe-inline'", csp_headers)
         self.assertIn("default-src 'self' data:", csp_headers)
         self.assertIn("connect-src 'self'", csp_headers)
+        self.assertIn("base-uri 'self'", csp_headers)
+        self.assertIn("form-action 'self'", csp_headers)
+        self.assertIn("frame-ancestors 'none'", csp_headers)
 
     def test_telemetry_patterns(self):
         api_versions = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]
