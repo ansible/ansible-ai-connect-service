@@ -45,7 +45,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
-    "eslint": "^9.13.0",
+    "eslint": "^10.0.2",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-patternfly-react": "^5.4.0",
     "eslint-plugin-prettier": "^5.2.1",
