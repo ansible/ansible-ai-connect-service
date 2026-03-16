@@ -174,7 +174,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("models/gemini-2.5-flash");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
