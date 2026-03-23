@@ -14,7 +14,7 @@ ENV BUILD_PATH=/var/www/wisdom/public/static/console
 ENV UWSGI_PROCESSES=10
 
 # Install dependencies
-RUN dnf module enable nodejs:18 nginx:1.22 -y && \
+RUN dnf module enable nodejs:22 nginx:1.22 -y && \
     dnf install -y \
     git \
     python3.12-devel \
