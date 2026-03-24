@@ -170,7 +170,24 @@
   },
   "overrides": {
     "micromatch": "^4.0.8",
-    "minimatch": "^3.1.3",
-    "bfj": "^9.1.2"
+    "minimatch": "^3.1.4",
+    "bfj": "^9.1.2",
+    "flatted": "^3.4.2",
+    "serialize-javascript": "^7.0.3",
+    "http-proxy-agent": "^7.0.0",
+    "@svgr/webpack": {
+      "@svgr/plugin-svgo": {
+        "svgo": "3.3.3"
+      }
+    },
+    "css-minimizer-webpack-plugin": {
+      "cssnano": {
+        "cssnano-preset-default": {
+          "postcss-svgo": {
+            "svgo": "2.8.1"
+          }
+        }
+      }
+    }
   }
 }
