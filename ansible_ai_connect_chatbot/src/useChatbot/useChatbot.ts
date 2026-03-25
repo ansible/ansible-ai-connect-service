@@ -32,7 +32,7 @@ const botName =
   ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
 
 export const modelsSupported: LLMModel[] = [
-  { model: "google/gemini-2.5-flash", provider: "vertexai" },
+  { model: "google/gemini-2.5-pro", provider: "vertexai" },
 ];
 
 export const readCookie = (name: string): string | null => {
@@ -174,7 +174,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("google/gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("google/gemini-2.5-pro");
   const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());

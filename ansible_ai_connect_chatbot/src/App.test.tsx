@@ -687,12 +687,12 @@ test("Debug mode test", async () => {
   mockFetch(200);
 
   await renderApp(true);
-  await expect.element(page.getByText("gemini-2.5-flash")).toBeVisible();
-  await page.getByText("gemini-2.5-flash").click();
+  await expect.element(page.getByText("gemini-2.5-pro")).toBeVisible();
+  await page.getByText("gemini-2.5-pro").click();
   await expect
-    .element(page.getByRole("menuitem", { name: "gemini-2.5-flash" }))
+    .element(page.getByRole("menuitem", { name: "gemini-2.5-pro" }))
     .toBeVisible();
-  await page.getByRole("menuitem", { name: "gemini-2.5-flash" }).click();
+  await page.getByRole("menuitem", { name: "gemini-2.5-pro" }).click();
 
   await sendMessage("Hello");
   await expect
