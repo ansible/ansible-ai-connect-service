@@ -69,9 +69,20 @@ class Application(AbstractApplication):
         """Check that the URI conforms to these rules."""
         schemes_match = allowed_uri.scheme == uri.scheme
 
+        # Per RFC 8252 Section 7.3, loopback redirect URIs should match
+        # regardless of port, as native apps use a random available port.
+        if (
+            allowed_uri.hostname
+            and uri.hostname
+            and is_ip_address(allowed_uri.hostname)
+            and is_ip_address(uri.hostname)
+            and ipaddress.ip_address(allowed_uri.hostname).is_loopback
+            and ipaddress.ip_address(uri.hostname).is_loopback
+        ):
+            netloc_matches_pattern = allowed_uri.hostname == uri.hostname
         # Wildcards ('*') in netloc is supposed to be matched to a hostname,
         # not an ip address.
-        if "*" in allowed_uri.netloc and is_ip_address(uri.hostname):
+        elif "*" in allowed_uri.netloc and is_ip_address(uri.hostname):
             netloc_matches_pattern = None
         else:
             regex = wildcard_string_to_regex(allowed_uri.netloc)

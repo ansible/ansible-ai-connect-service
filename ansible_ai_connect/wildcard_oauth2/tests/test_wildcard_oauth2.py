@@ -29,6 +29,7 @@ redirect_uris = [
     "vscode://redhat.ansible",
     "https://*.github.dev/extension-auth-callback",
     "http://127.0.0.1:8080/*/callback",
+    "http://127.0.0.1/callback",
     "https://*.openshiftapps.com/*/*/*/*/callback",
 ]
 
@@ -74,6 +75,10 @@ class WildcardOAuth2Test(TestCase):
             "http://127.0.0.1:8080/stable-9658969084238651b6dde258e04f4abd9b14bfd1/callback"
             "?vscode-reqid=2&vscode-scheme=code-oss&vscode-authority=redhat.ansible"
         )
+        self.assertTrue(rc)
+
+    def test_valid_loopback_random_port_callback_uri(self):
+        rc = self.app.redirect_uri_allowed("http://127.0.0.1:36743/callback")
         self.assertTrue(rc)
 
 
