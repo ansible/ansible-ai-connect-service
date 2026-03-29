@@ -250,10 +250,12 @@ export const useChatbot = () => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
         const newMessage: ExtendedMessage = botMessage(chunk, query);
+        newMessage.scrollToHere = true;
         chunk = "";
         return [...msgs, newMessage];
       } else {
         lastMessage.content += chunk;
+        lastMessage.scrollToHere = true;
         chunk = "";
         return [...msgs];
       }
@@ -275,9 +277,11 @@ export const useChatbot = () => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
         const newMessage: ExtendedMessage = botMessage("");
+        newMessage.scrollToHere = true;
         return [...msgs, newMessage];
       } else {
         lastMessage.referenced_documents = referenced_documents;
+        lastMessage.scrollToHere = true;
         return [...msgs];
       }
     });
@@ -558,6 +562,7 @@ export const useChatbot = () => {
                     lastMessage.content = lastMessage.content
                       ?.replace(INFERENCE_MESSAGE_PROMPT, "")
                       .replace("<noinput>", "");
+                    lastMessage.scrollToHere = true;
                     return [...msgs];
                   } else if (n > 1) {
                     const i = lastMessage.content?.lastIndexOf(
@@ -570,6 +575,7 @@ export const useChatbot = () => {
                     message.data.token,
                     query.toString(),
                   );
+                  newMessage.scrollToHere = true;
                   return [...msgs, newMessage];
                 });
               }
