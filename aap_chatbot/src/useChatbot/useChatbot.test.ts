@@ -232,8 +232,10 @@ describe("useChatbot - auto-scroll during streaming", () => {
       const messages = result.current.messages;
       const lastMessage = messages[messages.length - 1];
       expect(lastMessage.scrollToHere).toBe(true);
-      expect(lastMessage.referenced_documents).toHaveLength(1);
     });
+    const messages = result.current.messages;
+    const lastMessage = messages[messages.length - 1];
+    expect(lastMessage.referenced_documents).toHaveLength(1);
   });
 
   it("should set scrollToHere flag on turn_complete event", async () => {
@@ -283,7 +285,9 @@ describe("useChatbot - auto-scroll during streaming", () => {
       const messages = result.current.messages;
       const lastMessage = messages[messages.length - 1];
       expect(lastMessage.scrollToHere).toBe(true);
-      expect(lastMessage.content).toBe("Final response");
     });
+    const messages = result.current.messages;
+    const lastMessage = messages[messages.length - 1];
+    expect(lastMessage.content).toBe("Final response");
   });
 });
