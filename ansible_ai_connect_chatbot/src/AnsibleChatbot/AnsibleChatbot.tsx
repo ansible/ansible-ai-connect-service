@@ -35,7 +35,6 @@ import {
   modelsSupported,
   useChatbot,
 } from "../useChatbot/useChatbot";
-import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
 import {
@@ -53,7 +52,6 @@ import {
 import {
   CHAT_HISTORY_HEADER,
   FOOTNOTE_LABEL,
-  REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
 import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 import { InventoryDocumentationModal } from "../InventoryDocumentationModal/InventoryDocumentationModal";
@@ -359,7 +357,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                   {messages.map(
                     (
                       {
-                        referenced_documents,
                         scrollToHere,
                         collapse,
                         ...message
@@ -378,21 +375,11 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                                 {...message}
                                 isLoading={isLoading && !message.content}
                               />
-                              <ReferencedDocuments
-                                key={`m_docs_${index}`}
-                                caption={REFERENCED_DOCUMENTS_CAPTION}
-                                referenced_documents={referenced_documents}
-                              />
                             </ExpandableSection>
                           </div>
                         ) : (
                           <div key={`m_div_${index}`}>
                             <Message key={`m_msg_${index}`} {...message} />
-                            <ReferencedDocuments
-                              key={`m_docs_${index}`}
-                              caption={REFERENCED_DOCUMENTS_CAPTION}
-                              referenced_documents={referenced_documents}
-                            />
                           </div>
                         )}
                         {scrollToHere && (

@@ -30,7 +30,6 @@ describe("feedbackMessage", () => {
         name: "User",
         avatar: "user_avatar",
         quickResponses: [],
-        referenced_documents: [],
       },
     };
     const message: MessageProps = feedbackMessage(feedback, CONVERSATION_ID);
@@ -56,7 +55,6 @@ describe("feedbackMessage", () => {
         name: "User",
         avatar: "user_avatar",
         quickResponses: [],
-        referenced_documents: [],
       },
     };
     const message: MessageProps = feedbackMessage(feedback, CONVERSATION_ID);
@@ -227,15 +225,15 @@ describe("useChatbot - auto-scroll during streaming", () => {
       }),
     });
 
-    // Verify that the message has scrollToHere flag set
+    // Verify that the message has scrollToHere flag set and sources are added
     await waitFor(() => {
       const messages = result.current.messages;
       const lastMessage = messages[messages.length - 1];
       expect(lastMessage.scrollToHere).toBe(true);
+      expect(lastMessage.sources?.sources).toHaveLength(1);
+      expect(lastMessage.sources?.sources[0].title).toBe("Test Doc");
+      expect(lastMessage.sources?.sources[0].link).toBe("https://example.com/test");
     });
-    const messages = result.current.messages;
-    const lastMessage = messages[messages.length - 1];
-    expect(lastMessage.referenced_documents).toHaveLength(1);
   });
 
   it("should set scrollToHere flag on turn_complete event", async () => {
@@ -285,9 +283,7 @@ describe("useChatbot - auto-scroll during streaming", () => {
       const messages = result.current.messages;
       const lastMessage = messages[messages.length - 1];
       expect(lastMessage.scrollToHere).toBe(true);
+      expect(lastMessage.content).toBe("Final response");
     });
-    const messages = result.current.messages;
-    const lastMessage = messages[messages.length - 1];
-    expect(lastMessage.content).toBe("Final response");
   });
 });
