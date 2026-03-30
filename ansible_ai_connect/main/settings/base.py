@@ -500,7 +500,16 @@ CSP_SELF = "'self'"
 CSP_DEFAULT_SRC = (CSP_SELF, "data:")
 CSP_CONNECT_SRC = CSP_SELF
 CSP_BASE_URI = (CSP_SELF,)
-CSP_FORM_ACTION = (CSP_SELF,)
+CSP_FORM_ACTION = (
+    CSP_SELF,
+    "http:",
+    "https:",
+    "vscode:",
+    "vscodium:",
+    "vscode-insiders:",
+    "code-oss:",
+    "checode:",
+)
 CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 
