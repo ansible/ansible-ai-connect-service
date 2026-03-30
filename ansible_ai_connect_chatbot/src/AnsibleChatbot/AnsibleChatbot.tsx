@@ -165,7 +165,10 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
   // https://stackoverflow.com/questions/37620694/how-to-scroll-to-bottom-in-react
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   };
 
   useEffect(
@@ -364,12 +367,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                       index,
                     ) => (
                       <div key={`m_container_div_${index}`}>
-                        {scrollToHere && (
-                          <div
-                            key={`scroll_div_${index}`}
-                            ref={messagesEndRef}
-                          />
-                        )}
                         {collapse ? (
                           <div key={`m_div_${index}`}>
                             <ExpandableSection
@@ -397,6 +394,12 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                               referenced_documents={referenced_documents}
                             />
                           </div>
+                        )}
+                        {scrollToHere && (
+                          <div
+                            key={`scroll_div_${index}`}
+                            ref={messagesEndRef}
+                          />
                         )}
                       </div>
                     ),

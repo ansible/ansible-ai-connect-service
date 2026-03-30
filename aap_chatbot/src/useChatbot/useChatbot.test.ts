@@ -118,3 +118,176 @@ describe("useChatbot - fetchEventSource openWhenHidden", () => {
     );
   });
 });
+
+describe("useChatbot - auto-scroll during streaming", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock fetch for health check
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ "streaming-chatbot-service": "ok" }),
+    });
+  });
+
+  it("should set scrollToHere flag when appending message chunks during streaming", async () => {
+    let onmessageHandler: any;
+
+    // Mock fetchEventSource to capture the onmessage handler
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        // Simulate start event
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    // Wait for streaming to be enabled
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    // Send a message to trigger streaming
+    await result.current.handleSend("test query");
+
+    // Wait for onmessage handler to be captured
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Simulate token events
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Hello" }),
+    });
+
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: " world" }),
+    });
+
+    // Verify that messages have scrollToHere flag set
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.scrollToHere).toBe(true);
+    });
+  });
+
+  it("should set scrollToHere flag when adding referenced documents", async () => {
+    let onmessageHandler: any;
+
+    // Mock fetchEventSource to capture the onmessage handler
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        // Simulate start event
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    // Wait for streaming to be enabled
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    // Send a message to trigger streaming
+    await result.current.handleSend("test query");
+
+    // Wait for onmessage handler to be captured
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Simulate token event first
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Response content" }),
+    });
+
+    // Simulate end event with referenced documents
+    onmessageHandler({
+      event: "end",
+      data: JSON.stringify({
+        referenced_documents: [
+          {
+            doc_title: "Test Doc",
+            doc_url: "https://example.com/test",
+          },
+        ],
+      }),
+    });
+
+    // Verify that the message has scrollToHere flag set
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.scrollToHere).toBe(true);
+    });
+    const messages = result.current.messages;
+    const lastMessage = messages[messages.length - 1];
+    expect(lastMessage.referenced_documents).toHaveLength(1);
+  });
+
+  it("should set scrollToHere flag on turn_complete event", async () => {
+    let onmessageHandler: any;
+
+    // Mock fetchEventSource to capture the onmessage handler
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        // Simulate start event
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    // Wait for streaming to be enabled
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    // Send a message to trigger streaming
+    await result.current.handleSend("test query");
+
+    // Wait for onmessage handler to be captured
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Simulate token event
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Initial response" }),
+    });
+
+    // Simulate turn_complete event
+    onmessageHandler({
+      event: "turn_complete",
+      data: JSON.stringify({ token: "Final response" }),
+    });
+
+    // Verify that the new message has scrollToHere flag set
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.scrollToHere).toBe(true);
+    });
+    const messages = result.current.messages;
+    const lastMessage = messages[messages.length - 1];
+    expect(lastMessage.content).toBe("Final response");
+  });
+});

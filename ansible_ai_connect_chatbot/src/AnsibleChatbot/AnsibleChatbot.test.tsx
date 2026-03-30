@@ -163,3 +163,33 @@ test("Scroll does trigger when new chat message is sent", async () => {
   // Verify scroll was called (new messages should trigger scroll)
   expect(scrollIntoViewMock.mock.calls.length).toBeGreaterThan(0);
 });
+
+test("Scroll uses block end parameter for better positioning", async () => {
+  // Mock scrollIntoView to track calls and arguments
+  const scrollIntoViewMock = vi.fn();
+  Element.prototype.scrollIntoView = scrollIntoViewMock;
+
+  mockFetchPost(200);
+  const view = await renderChatbot();
+
+  // Reset mock to start counting from 0
+  scrollIntoViewMock.mockClear();
+
+  // Send a message
+  const textArea = view.getByLabelText("Send a message...");
+  await textArea.fill("Test message");
+  await userEvent.keyboard("{Enter}");
+
+  // Wait for response
+  await expect
+    .element(view.getByText("This is a test response."))
+    .toBeVisible();
+
+  // Verify scroll was called with block: "end" parameter
+  expect(scrollIntoViewMock).toHaveBeenCalledWith(
+    expect.objectContaining({
+      behavior: "smooth",
+      block: "end",
+    }),
+  );
+});
