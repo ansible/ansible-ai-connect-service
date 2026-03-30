@@ -88,6 +88,7 @@ wisdom-manage = "ansible_ai_connect.manage:main"
 constraint-dependencies = [
   # Use Red Hat's system-certifi for certificate handling
   'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
+  'pyopenssl>=26.0.0',
 ]
 
 
