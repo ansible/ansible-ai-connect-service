@@ -2,9 +2,13 @@ import React from "react";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/esm/icons/external-link-alt-icon";
 import type {
   ReferencedDocument,
-  ReferencedDocumentsProp,
 } from "../types/Message";
 import "./ReferencedDocuments.scss";
+
+export type ReferencedDocumentsProp = {
+  referenced_documents: ReferencedDocument[];
+  caption: string;
+};
 
 export const ReferencedDocuments = (props: ReferencedDocumentsProp) => {
   const { referenced_documents, caption } = props;

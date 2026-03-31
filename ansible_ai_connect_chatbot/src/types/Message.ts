@@ -30,13 +30,7 @@ export type ReferencedDocument = {
   title: string;
 };
 
-export type ReferencedDocumentsProp = {
-  referenced_documents: ReferencedDocument[];
-  caption: string;
-};
-
 export type ExtendedMessage = MessageProps & {
-  referenced_documents: ReferencedDocument[];
   scrollToHere?: boolean;
   collapse?: boolean;
 };

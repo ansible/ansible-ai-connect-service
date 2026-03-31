@@ -267,20 +267,18 @@ export const useChatbot = () => {
       if (ragChunks.length === 0) {
         return msgs;
       }
-      const referenced_documents: ReferencedDocument[] = [];
-      for (const ragChunk of ragChunks) {
-        referenced_documents.push({
-          title: ragChunk.doc_title,
-          docs_url: ragChunk.doc_url,
-        });
-      }
+      const sources = ragChunks.map((ragChunk) => ({
+        title: ragChunk.doc_title,
+        link: ragChunk.doc_url,
+        isExternal: true,
+      }));
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
         const newMessage: ExtendedMessage = botMessage("");
         newMessage.scrollToHere = true;
         return [...msgs, newMessage];
       } else {
-        lastMessage.referenced_documents = referenced_documents;
+        lastMessage.sources = { sources };
         lastMessage.scrollToHere = true;
         return [...msgs];
       }
@@ -297,7 +295,15 @@ export const useChatbot = () => {
       name: botName,
       avatar: logo,
       timestamp: getTimestamp(),
-      referenced_documents: [],
+    };
+    const getReferencedDocuments = (): ReferencedDocument[] => {
+      if (!message.sources?.sources) {
+        return [];
+      }
+      return message.sources.sources.map((source) => ({
+        docs_url: source.link,
+        title: source.title || "",
+      }));
     };
     const sendFeedback = async (
       sentiment: Sentiment,
@@ -323,7 +329,7 @@ export const useChatbot = () => {
           sendFeedback(
             Sentiment.THUMBS_UP,
             message.content,
-            message.referenced_documents,
+            getReferencedDocuments(),
           );
           if (message.actions) {
             message.actions.positive.isDisabled = true;
@@ -338,7 +344,7 @@ export const useChatbot = () => {
           sendFeedback(
             Sentiment.THUMBS_DOWN,
             message.content,
-            message.referenced_documents,
+            getReferencedDocuments(),
           );
           if (message.actions) {
             message.actions.positive.isDisabled = true;
@@ -352,10 +358,11 @@ export const useChatbot = () => {
         onClick: () => {
           if (message.actions) {
             const contents = [message.content];
-            if (message.referenced_documents.length > 0) {
+            const sources = message.sources?.sources || [];
+            if (sources.length > 0) {
               contents.push(`\n${REFERENCED_DOCUMENTS_CAPTION}`);
-              const ref_docs = message.referenced_documents.map(
-                (doc) => `- [${doc.title}](${doc.docs_url})`,
+              const ref_docs = sources.map(
+                (source) => `- [${source.title}](${source.link})`,
               );
               contents.push(...ref_docs);
             }
@@ -411,7 +418,6 @@ export const useChatbot = () => {
       );
       if (resp.ok) {
         const newBotMessage = {
-          referenced_documents: [],
           ...feedbackMessage(feedbackRequest, getConversationId()),
         };
         addMessage(newBotMessage, feedbackRequest.message);
@@ -441,7 +447,6 @@ export const useChatbot = () => {
     // for reducing the number of chat requests when the server is busy.
     await delay(3000);
     const newBotMessage = {
-      referenced_documents: [],
       ...tooManyRequestsMessage(),
     };
     addMessage(newBotMessage);
@@ -454,7 +459,6 @@ export const useChatbot = () => {
       name: userName,
       avatar: userLogo,
       timestamp: getTimestamp(),
-      referenced_documents: [],
     };
     addMessage(userMessage);
 
@@ -630,8 +634,16 @@ export const useChatbot = () => {
           if (!conversationId) {
             setConversationId(chatResponse.conversation_id);
           }
-          const newBotMessage: any = botMessage(chatResponse, query.toString());
-          newBotMessage.referenced_documents = referenced_documents;
+          const newBotMessage: ExtendedMessage = botMessage(chatResponse, query.toString());
+          if (referenced_documents.length > 0) {
+            newBotMessage.sources = {
+              sources: referenced_documents.map((doc) => ({
+                title: doc.title,
+                link: doc.docs_url,
+                isExternal: true,
+              })),
+            };
+          }
           addMessage(newBotMessage);
         } catch (fetchError) {
           clearTimeout(timeoutId);
@@ -641,7 +653,6 @@ export const useChatbot = () => {
     } catch (e) {
       if (isTimeoutError(e)) {
         const newBotMessage = {
-          referenced_documents: [],
           ...timeoutMessage(),
         };
         addMessage(newBotMessage);
