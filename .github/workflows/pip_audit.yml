@@ -52,31 +52,9 @@ jobs:
         with:
           virtual-environment: env/
           ignore-vulns: |
-            # to remove the two following entries once we move to ansible-core >= 2.15.13
-            # See: https://github.com/advisories/GHSA-32p4-gm2c-wmch
-            GHSA-32p4-gm2c-wmch
-            GHSA-jpxc-vmjf-9fcj
-            GHSA-99w6-3xph-cx78
-            # To remove once we can install cryptography 44.0.1
-            # See: https://github.com/ansible/ansible-ai-connect-service/pull/1530
-            GHSA-79v4-65xg-pq4g
-            # See don't use any .netrc
-            GHSA-9hjg-9r4m-mvj7
-            # We don't use urllib3 from Node.js
-            GHSA-pq67-6m6q-mj2v
-            # We don't use urllib3 from Node.js
-            GHSA-48p4-8xcf-vxj5
-            # pip 25.3 is not released yet
+            # pip symlink extraction vulnerability - CI pip version varies
             # See: https://github.com/advisories/GHSA-4xh5-x5gv-qwph
             GHSA-4xh5-x5gv-qwph
-            # To remove once we upgrade to Django 5+ (requires major version upgrade)
-            # social-auth-app-django vulnerability requires Django>=5.1
-            GHSA-wv4w-6qv2-qqfg
-            # To remove once protobuf releases a patched version for CVE-2026-0994
-            # DoS vulnerability in protobuf json_format.ParseDict() - no fix available yet
-            # See: https://github.com/advisories/GHSA-7gcm-g887-7qv7
-            GHSA-7gcm-g887-7qv7
-            # Ignoring cryptography as it should be fixed by a RHEL RPM
-            GHSA-r6ph-v2qm-q3c2
-            # Fix version of social-app-django 5.6.0 doesn't support Django 4.2
-            CVE-2025-61783
+            # No fix available yet for pygments ReDoS
+            # See: https://www.cve.org/CVERecord?id=CVE-2026-4539
+            CVE-2026-4539

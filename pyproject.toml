@@ -12,7 +12,7 @@ dependencies = [
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
   'boto3~=1.40',
-  'cbor2~=5.8.0',
+  'cbor2~=5.9.0',
   'cython',
   'daphne~=4.2.1',
   'Django~=5.2.12',
@@ -31,16 +31,16 @@ dependencies = [
   'jinja2~=3.1.6',
   'launchdarkly-server-sdk~=8.3.0',
   'llama-stack-client==0.2.22',
-  'protobuf~=5.29.5',
+  'protobuf~=5.29.6',
   'psycopg~=3.2.3',
   'PyDrive2~=1.20.0',
   'pydantic==2.*',
   'pytz',
   'PyYAML>=6.0',
-  'requests~=2.32.3',
+  'requests~=2.33.0',
   'segment-analytics-python~=2.2.2',
   'slack-sdk~=3.31.0',
-  'social-auth-app-django~=5.4.1',
+  'social-auth-app-django~=5.6.0',
   'social-auth-core~=4.7.0',
   'urllib3~=2.6.3',
   'uwsgi~=2.0.28',
@@ -49,7 +49,7 @@ dependencies = [
   'django-csp~=3.7',
   'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.1.26',
   'filelock==3.20.3',
-  'pyasn1==0.6.2',
+  'pyasn1==0.6.3',
 ]
 readme = "README.rst"
 license = {text = "Apache-2.0"}
@@ -61,7 +61,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-  'black~=24.3.0',
+  'black~=26.3.1',
   'coverage~=7.2.1',
   'flake8~=6.0.0',
   'grpcio-tools~=1.68.1',
@@ -88,6 +88,11 @@ wisdom-manage = "ansible_ai_connect.manage:main"
 constraint-dependencies = [
   # Use Red Hat's system-certifi for certificate handling
   'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
+  'pyopenssl>=26.0.0',
+  'cryptography>=46.0.6',
+  'dynaconf>=3.2.13',
+  'pyjwt>=2.12.0',
+  'ujson>=5.12.0',
 ]
 
 
