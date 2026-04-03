@@ -1,7 +1,7 @@
 {
   "name": "@ansible/ansible-ai-connect-chatbot",
   "type": "module",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "main": "./dist/ansible-chatbot.umd.cjs",
   "module": "./dist/ansible-chatbot.js",
   "types": "./dist/index.d.ts",
@@ -18,12 +18,13 @@
   ],
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@patternfly/chatbot": "^6.4.1",
+    "@patternfly/chatbot": "^6.5.0",
     "@patternfly/react-icons": "^6.0.0",
     "@types/node": "^22.13.1",
     "@types/react": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.1",
     "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "vite": "^6.4.1",
     "vite-plugin-dts": "^4.5.0",
     "web-vitals": "^2.1.4"
