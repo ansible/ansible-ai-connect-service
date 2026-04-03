@@ -477,3 +477,144 @@ class TestHttpChatBotPipelineAuthorizationHeader(WisdomServiceLogAwareTestCase):
         headers = call_args[1]["headers"]
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertNotIn("Authorization", headers)
+
+
+@override_settings(CHATBOT_DEFAULT_SYSTEM_PROMPT="You are a helpful assistant")
+class TestHttpChatBotPipelineNormalizeReferencedDocuments(WisdomServiceLogAwareTestCase):
+    """
+    Test HTTP ChatBot Pipeline's _normalize_referenced_documents method.
+    """
+
+    def setUp(self):
+        super().setUp()
+        config = mock_pipeline_config(
+            "http", inference_url="https://example.com:8443", verify_ssl=True, ca_cert_file=None
+        )
+        assert isinstance(config, HttpConfiguration)
+        self.config = config
+        self.pipeline = HttpChatBotPipeline(self.config)
+
+    def test_normalize_new_format_to_old_format(self):
+        """Test that new format (doc_title/doc_url) is converted to old format (title/docs_url)"""
+        new_format_docs = [
+            {"doc_title": "Ansible Guide", "doc_url": "https://docs.ansible.com/guide"},
+            {"doc_title": "Best Practices", "doc_url": "https://docs.ansible.com/best-practices"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(new_format_docs)
+
+        expected = [
+            {"title": "Ansible Guide", "docs_url": "https://docs.ansible.com/guide"},
+            {"title": "Best Practices", "docs_url": "https://docs.ansible.com/best-practices"},
+        ]
+        self.assertEqual(result, expected)
+
+    def test_normalize_old_format_unchanged(self):
+        """Test that old format (title/docs_url) is passed through unchanged"""
+        old_format_docs = [
+            {"title": "Ansible Guide", "docs_url": "https://docs.ansible.com/guide"},
+            {"title": "Best Practices", "docs_url": "https://docs.ansible.com/best-practices"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(old_format_docs)
+
+        self.assertEqual(result, old_format_docs)
+
+    def test_normalize_mixed_format_documents(self):
+        """Test that mixed format documents are handled correctly"""
+        mixed_docs = [
+            {"doc_title": "New Format Doc", "doc_url": "https://example.com/new"},
+            {"title": "Old Format Doc", "docs_url": "https://example.com/old"},
+            {"doc_title": "Another New Doc", "doc_url": "https://example.com/new2"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(mixed_docs)
+
+        expected = [
+            {"title": "New Format Doc", "docs_url": "https://example.com/new"},
+            {"title": "Old Format Doc", "docs_url": "https://example.com/old"},
+            {"title": "Another New Doc", "docs_url": "https://example.com/new2"},
+        ]
+        self.assertEqual(result, expected)
+
+    def test_normalize_empty_list(self):
+        """Test that empty list is handled correctly"""
+        result = self.pipeline._normalize_referenced_documents([])
+        self.assertEqual(result, [])
+
+    def test_normalize_documents_with_additional_fields(self):
+        """Test that documents with additional fields preserve those fields"""
+        docs_with_extra_fields = [
+            {
+                "doc_title": "Guide",
+                "doc_url": "https://example.com/guide",
+                "score": 0.95,
+                "metadata": {"source": "ansible-docs"},
+            }
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(docs_with_extra_fields)
+
+        # Only title and docs_url should be in the result
+        expected = [{"title": "Guide", "docs_url": "https://example.com/guide"}]
+        self.assertEqual(result, expected)
+
+    def test_invoke_normalizes_referenced_documents(self):
+        """Test that invoke() uses _normalize_referenced_documents on response data"""
+        # Mock the session to prevent actual HTTP calls
+        self.pipeline.session = Mock()
+
+        response_data = {
+            "response": "Test response",
+            "referenced_documents": [
+                {"doc_title": "Doc 1", "doc_url": "https://example.com/1"},
+                {"doc_title": "Doc 2", "doc_url": "https://example.com/2"},
+            ],
+        }
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = ChatBotParameters(
+            query="Test query",
+            conversation_id="test-123",
+            provider="test-provider",
+            model_id="test-model",
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+        )
+
+        result = self.pipeline.invoke(params)
+
+        # Verify that referenced_documents were normalized
+        expected_docs = [
+            {"title": "Doc 1", "docs_url": "https://example.com/1"},
+            {"title": "Doc 2", "docs_url": "https://example.com/2"},
+        ]
+        self.assertEqual(result["referenced_documents"], expected_docs)
+        self.assertEqual(result["response"], "Test response")
+        self.assertFalse(result["truncated"])  # Default value added
+
+    def test_invoke_handles_missing_referenced_documents(self):
+        """Test that invoke() handles response without referenced_documents field"""
+        # Mock the session to prevent actual HTTP calls
+        self.pipeline.session = Mock()
+
+        response_data = {"response": "Test response"}
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = ChatBotParameters(
+            query="Test query",
+            conversation_id="test-123",
+            provider="test-provider",
+            model_id="test-model",
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+        )
+
+        result = self.pipeline.invoke(params)
+
+        # Verify that empty list is returned for referenced_documents
+        self.assertEqual(result["referenced_documents"], [])
+        self.assertEqual(result["response"], "Test response")
+        self.assertFalse(result["truncated"])
