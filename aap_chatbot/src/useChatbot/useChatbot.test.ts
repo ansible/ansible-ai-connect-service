@@ -291,3 +291,426 @@ describe("useChatbot - auto-scroll during streaming", () => {
     expect(lastMessage.content).toBe("Final response");
   });
 });
+
+describe("useChatbot - markdown URL buffering", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Mock fetch for health check to enable streaming
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ "streaming-chatbot-service": "ok" }),
+    });
+  });
+
+  it("should handle normal text without markdown links", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Send normal text
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "This is normal text" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("This is normal text");
+    });
+  });
+
+  it("should buffer markdown URL when ]( is in single chunk", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Send link title
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Check [this link](" }),
+    });
+
+    // At this point, ']' should be shown but '(' should be buffered
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Check [this link]");
+    });
+
+    // Send URL characters (should be buffered)
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "https://example.com/very-long-url" }),
+    });
+
+    // Content should still be the same (URL buffered)
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Check [this link]");
+    });
+
+    // Send closing parenthesis
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: ")" }),
+    });
+
+    // Now the full link should appear
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe(
+        "Check [this link](https://example.com/very-long-url)",
+      );
+    });
+  });
+
+  it("should handle ]( split across chunks", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Send chunk ending with ']'
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Check [link]" }),
+    });
+
+    // ']' is buffered as it might be start of ']('
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Check [link");
+    });
+
+    // Send '(' in next chunk
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "(https://example.com" }),
+    });
+
+    // Now ']' should be shown and '(https://example.com' buffered
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Check [link]");
+    });
+
+    // Complete the URL
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: ")" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Check [link](https://example.com)");
+    });
+  });
+
+  it("should handle false alarm when ] is not followed by (", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Send chunk ending with ']'
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Array[5]" }),
+    });
+
+    // ']' is buffered
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Array[5");
+    });
+
+    // Next chunk doesn't start with '('
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: " is good" }),
+    });
+
+    // Both buffered ']' and new text should appear
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Array[5] is good");
+    });
+  });
+
+  it("should handle multiple markdown links in sequence", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // First link
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "[link1](" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[link1]");
+    });
+
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "url1)" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[link1](url1)");
+    });
+
+    // Second link
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: " and [link2](" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[link1](url1) and [link2]");
+    });
+
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "url2)" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[link1](url1) and [link2](url2)");
+    });
+  });
+
+  it("should reset buffering state on new user message", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    // First message with incomplete link
+    await result.current.handleSend("test query 1");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "[link](" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      expect(messages.length).toBeGreaterThan(0);
+    });
+
+    // Send second message - should reset buffering state
+    await result.current.handleSend("test query 2");
+
+    // The new message handler should work normally
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "Normal text" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("Normal text");
+    });
+  });
+
+  it("should handle URL with query parameters and fragments", async () => {
+    let onmessageHandler: any;
+
+    vi.mocked(fetchEventSourceModule.fetchEventSource).mockImplementation(
+      async (_url, options: any) => {
+        onmessageHandler = options.onmessage;
+        onmessageHandler({
+          event: "start",
+          data: JSON.stringify({ conversation_id: CONVERSATION_ID }),
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatbot());
+
+    await waitFor(() => {
+      expect(result.current.isStreamingSupported()).toBe(true);
+    });
+
+    await result.current.handleSend("test query");
+
+    await waitFor(() => {
+      expect(onmessageHandler).toBeDefined();
+    });
+
+    // Start link
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: "[docs](" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[docs]");
+    });
+
+    // Send complex URL in chunks
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({
+        token: "https://example.com/path?param=value&other=123#section",
+      }),
+    });
+
+    // URL should be buffered
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe("[docs]");
+    });
+
+    // Close the link
+    onmessageHandler({
+      event: "token",
+      data: JSON.stringify({ token: ")" }),
+    });
+
+    await waitFor(() => {
+      const messages = result.current.messages;
+      const lastMessage = messages[messages.length - 1];
+      expect(lastMessage.content).toBe(
+        "[docs](https://example.com/path?param=value&other=123#section)",
+      );
+    });
+  });
+});

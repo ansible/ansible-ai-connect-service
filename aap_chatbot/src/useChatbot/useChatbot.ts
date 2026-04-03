@@ -1,5 +1,5 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   AlertMessage,
@@ -182,6 +182,10 @@ export const useChatbot = () => {
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
 
+  // Markdown URL buffering refs to prevent screen flickering
+  const linkBufferRef = useRef<string>("");
+  const inMarkdownUrlRef = useRef<boolean>(false);
+
   const [stream, setStream] = useState(false);
   useEffect(() => {
     const frameWindow = window[0];
@@ -248,17 +252,70 @@ export const useChatbot = () => {
   };
 
   const appendMessageChunk = (chunk: string, query: string = "") => {
+    // Process chunk with markdown URL buffering before updating messages
+    let processedChunk = "";
+    let i = 0;
+
+    while (i < chunk.length) {
+      const char = chunk[i];
+
+      if (inMarkdownUrlRef.current) {
+        // We're inside a markdown URL, buffer until we find ')'
+        linkBufferRef.current += char;
+
+        if (char === ')') {
+          // Found closing parenthesis, flush the buffer
+          processedChunk += linkBufferRef.current;
+          linkBufferRef.current = "";
+          inMarkdownUrlRef.current = false;
+        }
+      } else {
+        // Check if we're starting a markdown URL pattern ']('
+        if (char === ']' && i + 1 < chunk.length && chunk[i + 1] === '(') {
+          // Add ']' to processed chunk so user sees '[title]' immediately
+          processedChunk += char;
+          // Start buffering from '(' onwards
+          linkBufferRef.current = chunk[i + 1];
+          inMarkdownUrlRef.current = true;
+          i++; // Skip the '(' since we already processed it
+        } else if (char === ']' && i + 1 >= chunk.length) {
+          // ']' at the end of chunk, might be start of '](' in next chunk
+          // Buffer it to check in next chunk
+          linkBufferRef.current = char;
+        } else if (linkBufferRef.current === ']') {
+          // Previous chunk ended with ']', check if this starts with '('
+          if (char === '(') {
+            // Add buffered ']' to processed chunk so user sees it
+            processedChunk += linkBufferRef.current;
+            // Start buffering from '('
+            linkBufferRef.current = char;
+            inMarkdownUrlRef.current = true;
+          } else {
+            // False alarm, flush the buffered ']' and continue
+            processedChunk += linkBufferRef.current + char;
+            linkBufferRef.current = "";
+          }
+        } else {
+          // Normal character, add to processed chunk
+          processedChunk += char;
+        }
+      }
+
+      i++;
+    }
+
     setMessages((msgs: ExtendedMessage[]) => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
-        const newMessage: ExtendedMessage = botMessage(chunk, query);
+        const newMessage: ExtendedMessage = botMessage(processedChunk, query);
         newMessage.scrollToHere = true;
-        chunk = "";
         return [...msgs, newMessage];
       } else {
-        lastMessage.content += chunk;
+        // Only update content if we have something to add (not buffering)
+        if (processedChunk.length > 0) {
+          lastMessage.content += processedChunk;
+        }
         lastMessage.scrollToHere = true;
-        chunk = "";
         return [...msgs];
       }
     });
@@ -450,6 +507,10 @@ export const useChatbot = () => {
   };
 
   const handleSend = async (query: string | number) => {
+    // Reset markdown URL buffering state for new message
+    linkBufferRef.current = "";
+    inMarkdownUrlRef.current = false;
+
     const userMessage: ExtendedMessage = {
       role: "user",
       content: query.toString(),
