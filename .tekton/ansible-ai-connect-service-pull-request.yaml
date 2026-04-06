@@ -291,6 +291,11 @@ spec:
             echo -n $(date -d @$(git log -1 --format=%at) "+%Y%m%d%H%M") > $(results.commit-timestamp.path)
         workspaces:
         - name: source
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values:
+        - "true"
       workspaces:
       - name: source
         workspace: workspace
