@@ -466,7 +466,9 @@ class HttpStreamingChatBotPipeline(
                                         )
                                         truncated = data.get("truncated", False)
                                         ev.conversation_id = conversation_id
-                                        ev.chat_referenced_documents = referenced_documents  # type: ignore[assignment]
+                                        ev.chat_referenced_documents = (
+                                            referenced_documents
+                                        )  # type: ignore[assignment]
                                         ev.chat_truncated = truncated
                                         self.send_schema1_event(ev)
                         except JSONDecodeError:
