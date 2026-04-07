@@ -638,3 +638,119 @@ class TestHttpStreamingChatBotPipelineNormalizeReferencedDocuments(
                 pass
 
         return MyAsyncContextManager(stream_data, status)
+
+
+class TestHttpStreamingChatBotPipelineGenerateTopicSummary(
+    IsolatedAsyncioTestCase, WisdomLogAwareMixin
+):
+    """
+    Test HTTP Streaming ChatBot Pipeline's generate_topic_summary field.
+    """
+
+    def setUp(self):
+        config = cast(
+            HttpConfiguration,
+            mock_pipeline_config("http", inference_url="https://example.com:8443", verify_ssl=True),
+        )
+        self.pipeline = HttpStreamingChatBotPipeline(config)
+
+    def get_params(self) -> StreamingChatBotParameters:
+        """Helper to create test parameters"""
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
+        return StreamingChatBotParameters(
+            query="Hello, how are you?",
+            conversation_id="test-conversation-123",
+            provider="test-provider",
+            model_id="test-model",
+            system_prompt="You are a helpful assistant",
+            media_type="application/json",
+            no_tools=False,
+            event=event,
+        )
+
+    def get_return_value(self, stream_data, status=200):
+        """Helper method to create async context manager for mocking"""
+
+        class MyAsyncContextManager:
+            def __init__(self, stream_data, status=200):
+                self.stream_data = stream_data
+                self.status = status
+                self.reason = ""
+
+            async def my_async_generator(self):
+                for data in self.stream_data:
+                    s = json.dumps(data)
+                    yield (f"data: {s}\n\n".encode())
+
+            async def __aenter__(self):
+                self.content = self.my_async_generator()
+                self.status = self.status
+                return self
+
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        return MyAsyncContextManager(stream_data, status)
+
+    @patch("aiohttp.ClientSession.post")
+    @override_settings(CHATBOT_GENERATE_TOPIC_SUMMARY=False)
+    async def test_async_invoke_with_generate_topic_summary_false(self, mock_post):
+        """Test that generate_topic_summary is set to False when setting is False"""
+        stream_data = [
+            {"event": "start", "data": {"conversation_id": "test-conversation-123"}},
+            {"event": "token", "data": {"id": 0, "token": "Hello"}},
+            {
+                "event": "end",
+                "data": {
+                    "referenced_documents": [],
+                    "truncated": False,
+                },
+            },
+        ]
+
+        mock_post.return_value = self.get_return_value(stream_data)
+
+        params = self.get_params()
+        async for _ in self.pipeline.async_invoke(params):
+            pass
+
+        # Verify the HTTP call was made with correct parameters
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+
+        # Check JSON data includes generate_topic_summary with correct value
+        json_data = call_args[1]["json"]
+        self.assertIn("generate_topic_summary", json_data)
+        self.assertFalse(json_data["generate_topic_summary"])
+
+    @patch("aiohttp.ClientSession.post")
+    @override_settings(CHATBOT_GENERATE_TOPIC_SUMMARY=True)
+    async def test_async_invoke_with_generate_topic_summary_true(self, mock_post):
+        """Test that generate_topic_summary is set to True when setting is True"""
+        stream_data = [
+            {"event": "start", "data": {"conversation_id": "test-conversation-123"}},
+            {"event": "token", "data": {"id": 0, "token": "Hello"}},
+            {
+                "event": "end",
+                "data": {
+                    "referenced_documents": [],
+                    "truncated": False,
+                },
+            },
+        ]
+
+        mock_post.return_value = self.get_return_value(stream_data)
+
+        params = self.get_params()
+        async for _ in self.pipeline.async_invoke(params):
+            pass
+
+        # Verify the HTTP call was made with correct parameters
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+
+        # Check JSON data includes generate_topic_summary with correct value
+        json_data = call_args[1]["json"]
+        self.assertIn("generate_topic_summary", json_data)
+        self.assertTrue(json_data["generate_topic_summary"])

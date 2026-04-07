@@ -230,6 +230,7 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             "query": query,
             "model": model_id,
             "provider": provider,
+            "generate_topic_summary": settings.CHATBOT_GENERATE_TOPIC_SUMMARY,
         }
         if conversation_id:
             data["conversation_id"] = str(conversation_id)
@@ -371,6 +372,7 @@ class HttpStreamingChatBotPipeline(
                 "query": query,
                 "model": model_id,
                 "provider": provider,
+                "generate_topic_summary": settings.CHATBOT_GENERATE_TOPIC_SUMMARY,
             }
             if conversation_id:
                 data["conversation_id"] = str(conversation_id)
