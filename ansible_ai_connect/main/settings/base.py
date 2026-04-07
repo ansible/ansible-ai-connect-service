@@ -568,6 +568,11 @@ CHATBOT_DEFAULT_SYSTEM_PROMPT = os.getenv("CHATBOT_DEFAULT_SYSTEM_PROMPT")
 CHATBOT_API_KEY = os.getenv("CHATBOT_API_KEY")
 # by default do not return chatbot tool_call event
 CHATBOT_RETURN_TOOL_CALL = os.environ.get("CHATBOT_RETURN_TOOL_CALL", "False").lower() == "true"
+# Whether to generate topic summary for new conversations
+# by default do not generate topic summary
+CHATBOT_GENERATE_TOPIC_SUMMARY = (
+    os.getenv("CHATBOT_GENERATE_TOPIC_SUMMARY", "False").lower() == "true"
+)
 # ==========================================
 
 # ==========================================

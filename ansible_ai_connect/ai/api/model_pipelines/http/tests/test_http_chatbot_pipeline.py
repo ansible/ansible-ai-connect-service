@@ -618,3 +618,83 @@ class TestHttpChatBotPipelineNormalizeReferencedDocuments(WisdomServiceLogAwareT
         self.assertEqual(result["referenced_documents"], [])
         self.assertEqual(result["response"], "Test response")
         self.assertFalse(result["truncated"])
+
+
+@override_settings(CHATBOT_DEFAULT_SYSTEM_PROMPT="You are a helpful assistant")
+class TestHttpChatBotPipelineGenerateTopicSummary(WisdomServiceLogAwareTestCase):
+    """
+    Test HTTP ChatBot Pipeline's generate_topic_summary field.
+    """
+
+    def setUp(self):
+        super().setUp()
+        config = mock_pipeline_config(
+            "http", inference_url="https://example.com:8443", verify_ssl=True, ca_cert_file=None
+        )
+        assert isinstance(config, HttpConfiguration)
+        self.config = config
+        self.pipeline = HttpChatBotPipeline(self.config)
+        self.pipeline.session = Mock()
+
+    def get_params(self) -> ChatBotParameters:
+        """Helper to create test parameters"""
+        return ChatBotParameters(
+            query="Hello, how are you?",
+            conversation_id="test-conversation-123",
+            provider="test-provider",
+            model_id="test-model",
+            system_prompt="You are a helpful assistant",
+            no_tools=False,
+        )
+
+    @override_settings(CHATBOT_GENERATE_TOPIC_SUMMARY=False)
+    def test_invoke_with_generate_topic_summary_false(self):
+        """Test that generate_topic_summary is set to False when setting is False"""
+        response_data = {
+            "response": "Hello!",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = self.get_params()
+        result = self.pipeline.invoke(params)
+
+        # Verify the response
+        self.assertEqual(result["response"], "Hello!")
+
+        # Verify the HTTP call includes generate_topic_summary
+        self.pipeline.session.post.assert_called_once()
+        call_args = self.pipeline.session.post.call_args
+
+        # Check JSON data includes generate_topic_summary with correct value
+        json_data = call_args[1]["json"]
+        self.assertIn("generate_topic_summary", json_data)
+        self.assertFalse(json_data["generate_topic_summary"])
+
+    @override_settings(CHATBOT_GENERATE_TOPIC_SUMMARY=True)
+    def test_invoke_with_generate_topic_summary_true(self):
+        """Test that generate_topic_summary is set to True when setting is True"""
+        response_data = {
+            "response": "Hello with topic summary!",
+            "truncated": False,
+            "referenced_documents": [],
+        }
+
+        self.pipeline.session.post.return_value = MockResponse(response_data, 200)
+
+        params = self.get_params()
+        result = self.pipeline.invoke(params)
+
+        # Verify the response
+        self.assertEqual(result["response"], "Hello with topic summary!")
+
+        # Verify the HTTP call includes generate_topic_summary
+        self.pipeline.session.post.assert_called_once()
+        call_args = self.pipeline.session.post.call_args
+
+        # Check JSON data includes generate_topic_summary with correct value
+        json_data = call_args[1]["json"]
+        self.assertIn("generate_topic_summary", json_data)
+        self.assertTrue(json_data["generate_topic_summary"])
