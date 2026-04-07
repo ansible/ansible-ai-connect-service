@@ -189,6 +189,28 @@ class HttpChatBotMetaData(HttpMetaData):
             # Return raw text if JSON parsing fails, but limit length for safety
             return response_text[:500] if len(response_text) <= 500 else response_text[:500] + "..."
 
+    def _normalize_referenced_documents(
+        self, documents: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """
+        Normalize referenced documents to the legacy format.
+        Older version of chatbot service returned "title" and "docs_url" in reference docs,
+        but newer versions changed to "doc_title" and "doc_url". This method converts
+        the new format to the old format for backward compatibility.
+        """
+        referenced_documents = []
+        for doc in documents:
+            if "doc_title" in doc:
+                referenced_documents.append(
+                    {
+                        "title": doc["doc_title"],
+                        "docs_url": doc["doc_url"],
+                    }
+                )
+            else:
+                referenced_documents.append(doc)
+        return referenced_documents
+
 
 @Register(api_type="http")
 class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfiguration]):
@@ -236,8 +258,9 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
             # lightspeed-stack does not currently return them.
             if "truncated" not in data:
                 data["truncated"] = False
-            if "referenced_documents" not in data:
-                data["referenced_documents"] = []
+            data["referenced_documents"] = self._normalize_referenced_documents(
+                data.get("referenced_documents", [])
+            )
             return data
 
         elif response.status_code == 401:
@@ -438,25 +461,14 @@ class HttpStreamingChatBotPipeline(
                                             "truncated": False,
                                         }
                                         data = o.get("data", default_data)
-                                        referenced_documents = []
-                                        for doc in data.get("referenced_documents", []):
-                                            # Current version of ansible-chatbot-service
-                                            # uses incompatible document data structure
-                                            # between streaming and non-streaming chats.
-                                            # Following is the code to solve that
-                                            # incompatibility.
-                                            if "doc_title" in doc:
-                                                referenced_documents.append(
-                                                    {
-                                                        "title": doc["doc_title"],
-                                                        "docs_url": doc["doc_url"],
-                                                    }
-                                                )
-                                            else:
-                                                referenced_documents.append(doc)
+                                        referenced_documents = self._normalize_referenced_documents(
+                                            data.get("referenced_documents", [])
+                                        )
                                         truncated = data.get("truncated", False)
                                         ev.conversation_id = conversation_id
-                                        ev.chat_referenced_documents = referenced_documents
+                                        ev.chat_referenced_documents = (
+                                            referenced_documents
+                                        )  # type: ignore[assignment]
                                         ev.chat_truncated = truncated
                                         self.send_schema1_event(ev)
                         except JSONDecodeError:

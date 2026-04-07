@@ -498,3 +498,143 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 # Reset mocks for next iteration
                 mock_tcp_connector.reset_mock()
                 mock_post.reset_mock()
+
+
+class TestHttpStreamingChatBotPipelineNormalizeReferencedDocuments(
+    IsolatedAsyncioTestCase, WisdomLogAwareMixin
+):
+    """Test HTTP Streaming ChatBot Pipeline's _normalize_referenced_documents method."""
+
+    def setUp(self):
+        self.pipeline = HttpStreamingChatBotPipeline(
+            cast(HttpConfiguration, mock_pipeline_config("http"))
+        )
+
+    def test_normalize_new_format_to_old_format(self):
+        """Test that new format (doc_title/doc_url) is converted to old format (title/docs_url)"""
+        new_format_docs = [
+            {"doc_title": "Ansible Guide", "doc_url": "https://docs.ansible.com/guide"},
+            {"doc_title": "Best Practices", "doc_url": "https://docs.ansible.com/best-practices"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(new_format_docs)
+
+        expected = [
+            {"title": "Ansible Guide", "docs_url": "https://docs.ansible.com/guide"},
+            {"title": "Best Practices", "docs_url": "https://docs.ansible.com/best-practices"},
+        ]
+        self.assertEqual(result, expected)
+
+    def test_normalize_old_format_unchanged(self):
+        """Test that old format (title/docs_url) is passed through unchanged"""
+        old_format_docs = [
+            {"title": "Ansible Guide", "docs_url": "https://docs.ansible.com/guide"},
+            {"title": "Best Practices", "docs_url": "https://docs.ansible.com/best-practices"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(old_format_docs)
+
+        self.assertEqual(result, old_format_docs)
+
+    def test_normalize_mixed_format_documents(self):
+        """Test that mixed format documents are handled correctly"""
+        mixed_docs = [
+            {"doc_title": "New Format Doc", "doc_url": "https://example.com/new"},
+            {"title": "Old Format Doc", "docs_url": "https://example.com/old"},
+            {"doc_title": "Another New Doc", "doc_url": "https://example.com/new2"},
+        ]
+
+        result = self.pipeline._normalize_referenced_documents(mixed_docs)
+
+        expected = [
+            {"title": "New Format Doc", "docs_url": "https://example.com/new"},
+            {"title": "Old Format Doc", "docs_url": "https://example.com/old"},
+            {"title": "Another New Doc", "docs_url": "https://example.com/new2"},
+        ]
+        self.assertEqual(result, expected)
+
+    def test_normalize_empty_list(self):
+        """Test that empty list is handled correctly"""
+        result = self.pipeline._normalize_referenced_documents([])
+        self.assertEqual(result, [])
+
+    @patch("aiohttp.ClientSession.post")
+    async def test_async_invoke_normalizes_referenced_documents(self, mock_post):
+        """Test that async_invoke normalizes referenced documents in 'end' event"""
+
+        stream_data = [
+            {"event": "start", "data": {"conversation_id": "test-conv-123"}},
+            {"event": "token", "data": {"id": 0, "token": "Hello"}},
+            {
+                "event": "end",
+                "data": {
+                    "referenced_documents": [
+                        {"doc_title": "New Doc 1", "doc_url": "https://example.com/1"},
+                        {"title": "Old Doc 2", "docs_url": "https://example.com/2"},
+                    ],
+                    "truncated": False,
+                },
+            },
+        ]
+
+        mock_post.return_value = self._get_return_value(stream_data)
+
+        event = StreamingChatBotOperationalEvent()
+        event.rh_user_has_seat = True
+        params = StreamingChatBotParameters(
+            query="Test",
+            provider="test-provider",
+            model_id="test-model",
+            conversation_id=None,
+            system_prompt="Test prompt",
+            media_type="application/json",
+            no_tools=False,
+            event=event,
+        )
+
+        normalized_docs = None
+
+        # Patch send_schema1_event to capture the normalized documents
+        def capture_event(ev):
+            nonlocal normalized_docs
+            if ev.phase == "end":
+                normalized_docs = ev.chat_referenced_documents
+
+        with patch(
+            "ansible_ai_connect.ai.api.model_pipelines.http.pipelines"
+            ".HttpStreamingChatBotPipeline.send_schema1_event",
+            wraps=capture_event,
+        ):
+            async for _ in self.pipeline.async_invoke(params):
+                pass
+
+        # Verify that the documents were normalized to the old format
+        expected_docs = [
+            {"title": "New Doc 1", "docs_url": "https://example.com/1"},
+            {"title": "Old Doc 2", "docs_url": "https://example.com/2"},
+        ]
+        self.assertEqual(normalized_docs, expected_docs)
+
+    def _get_return_value(self, stream_data, status=200):
+        """Helper method to create async context manager for mocking"""
+
+        class MyAsyncContextManager:
+            def __init__(self, stream_data, status=200):
+                self.stream_data = stream_data
+                self.status = status
+                self.reason = ""
+
+            async def my_async_generator(self):
+                for data in self.stream_data:
+                    s = json.dumps(data)
+                    yield (f"data: {s}\n\n".encode())
+
+            async def __aenter__(self):
+                self.content = self.my_async_generator()
+                self.status = self.status
+                return self
+
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        return MyAsyncContextManager(stream_data, status)
