@@ -1,5 +1,5 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   AlertMessage,
@@ -25,6 +25,7 @@ import {
   TOO_MANY_REQUESTS_MSG,
 } from "../Constants";
 import { setClipboard } from "../Clipboard";
+import { MarkdownLinkBuffer } from "../utils/MarkdownLinkBuffer";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -180,9 +181,8 @@ export const useChatbot = () => {
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
 
-  // Markdown URL buffering refs to prevent screen flickering
-  const linkBufferRef = useRef<string>("");
-  const inMarkdownUrlRef = useRef<boolean>(false);
+  // Markdown URL buffer to prevent screen flickering
+  const linkBuffer = useMemo(() => new MarkdownLinkBuffer(), []);
 
   const [stream, setStream] = useState(false);
   useEffect(() => {
@@ -251,56 +251,7 @@ export const useChatbot = () => {
 
   const appendMessageChunk = (chunk: string, query: string = "") => {
     // Process chunk with markdown URL buffering before updating messages
-    let processedChunk = "";
-    let i = 0;
-
-    while (i < chunk.length) {
-      const char = chunk[i];
-
-      if (inMarkdownUrlRef.current) {
-        // We're inside a markdown URL, buffer until we find ')'
-        linkBufferRef.current += char;
-
-        if (char === ")") {
-          // Found closing parenthesis, flush the buffer
-          processedChunk += linkBufferRef.current;
-          linkBufferRef.current = "";
-          inMarkdownUrlRef.current = false;
-        }
-      } else {
-        // Check if we're starting a markdown URL pattern ']('
-        if (char === "]" && i + 1 < chunk.length && chunk[i + 1] === "(") {
-          // Add ']' to processed chunk so user sees '[title]' immediately
-          processedChunk += char;
-          // Start buffering from '(' onwards
-          linkBufferRef.current = chunk[i + 1];
-          inMarkdownUrlRef.current = true;
-          i++; // Skip the '(' since we already processed it
-        } else if (char === "]" && i + 1 >= chunk.length) {
-          // ']' at the end of chunk, might be start of '](' in next chunk
-          // Buffer it to check in next chunk
-          linkBufferRef.current = char;
-        } else if (linkBufferRef.current === "]") {
-          // Previous chunk ended with ']', check if this starts with '('
-          if (char === "(") {
-            // Add buffered ']' to processed chunk so user sees it
-            processedChunk += linkBufferRef.current;
-            // Start buffering from '('
-            linkBufferRef.current = char;
-            inMarkdownUrlRef.current = true;
-          } else {
-            // False alarm, flush the buffered ']' and continue
-            processedChunk += linkBufferRef.current + char;
-            linkBufferRef.current = "";
-          }
-        } else {
-          // Normal character, add to processed chunk
-          processedChunk += char;
-        }
-      }
-
-      i++;
-    }
+    const processedChunk = linkBuffer.process(chunk);
 
     setMessages((msgs: ExtendedMessage[]) => {
       const lastMessage = msgs[msgs.length - 1];
@@ -444,8 +395,8 @@ export const useChatbot = () => {
 
   // Flush any remaining buffered content before stream ends
   const flushLinkBuffer = () => {
-    if (linkBufferRef.current) {
-      const bufferedContent = linkBufferRef.current;
+    const bufferedContent = linkBuffer.flush();
+    if (bufferedContent) {
       setMessages((msgs: ExtendedMessage[]) => {
         const lastMessage = msgs[msgs.length - 1];
         if (lastMessage && lastMessage.role === "bot") {
@@ -453,8 +404,6 @@ export const useChatbot = () => {
         }
         return [...msgs];
       });
-      linkBufferRef.current = "";
-      inMarkdownUrlRef.current = false;
     }
   };
 
@@ -536,8 +485,7 @@ export const useChatbot = () => {
 
   const handleSend = async (query: string | number) => {
     // Reset markdown URL buffering state for new message
-    linkBufferRef.current = "";
-    inMarkdownUrlRef.current = false;
+    linkBuffer.reset();
 
     const userMessage: ExtendedMessage = {
       role: "user",
