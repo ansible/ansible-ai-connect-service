@@ -1,5 +1,5 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import type {
   AlertMessage,
@@ -25,6 +25,7 @@ import {
   TOO_MANY_REQUESTS_MSG,
 } from "../Constants";
 import { setClipboard } from "../Clipboard";
+import { MarkdownLinkBuffer } from "../utils/MarkdownLinkBuffer";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName =
@@ -180,6 +181,9 @@ export const useChatbot = () => {
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
 
+  // Markdown URL buffer to prevent screen flickering
+  const linkBuffer = useMemo(() => new MarkdownLinkBuffer(), []);
+
   const [stream, setStream] = useState(false);
   useEffect(() => {
     const frameWindow = window[0];
@@ -246,17 +250,21 @@ export const useChatbot = () => {
   };
 
   const appendMessageChunk = (chunk: string, query: string = "") => {
+    // Process chunk with markdown URL buffering before updating messages
+    const processedChunk = linkBuffer.process(chunk);
+
     setMessages((msgs: ExtendedMessage[]) => {
       const lastMessage = msgs[msgs.length - 1];
       if (!lastMessage || lastMessage.role === "user") {
-        const newMessage: ExtendedMessage = botMessage(chunk, query);
+        const newMessage: ExtendedMessage = botMessage(processedChunk, query);
         newMessage.scrollToHere = true;
-        chunk = "";
         return [...msgs, newMessage];
       } else {
-        lastMessage.content += chunk;
+        // Only update content if we have something to add (not buffering)
+        if (processedChunk.length > 0) {
+          lastMessage.content += processedChunk;
+        }
         lastMessage.scrollToHere = true;
-        chunk = "";
         return [...msgs];
       }
     });
@@ -325,7 +333,11 @@ export const useChatbot = () => {
             message.content,
             message.referenced_documents,
           );
-          if (message.actions) {
+          if (
+            message.actions &&
+            "positive" in message.actions &&
+            "negative" in message.actions
+          ) {
             message.actions.positive.isDisabled = true;
             message.actions.negative.isDisabled = true;
             message.actions.positive.className = "action-button-clicked";
@@ -340,7 +352,11 @@ export const useChatbot = () => {
             message.content,
             message.referenced_documents,
           );
-          if (message.actions) {
+          if (
+            message.actions &&
+            "positive" in message.actions &&
+            "negative" in message.actions
+          ) {
             message.actions.positive.isDisabled = true;
             message.actions.negative.isDisabled = true;
             message.actions.negative.className = "action-button-clicked";
@@ -377,11 +393,31 @@ export const useChatbot = () => {
     return message;
   };
 
+  // Flush any remaining buffered content before stream ends
+  const flushLinkBuffer = () => {
+    const bufferedContent = linkBuffer.flush();
+    if (bufferedContent) {
+      setMessages((msgs: ExtendedMessage[]) => {
+        const lastMessage = msgs[msgs.length - 1];
+        if (lastMessage && lastMessage.role === "bot") {
+          lastMessage.content += bufferedContent;
+        }
+        return [...msgs];
+      });
+    }
+  };
+
   // Show action icons when the end of
   const showActionIcons = () => {
     setMessages((msgs: ExtendedMessage[]) => {
       const message = msgs[msgs.length - 1];
-      if (message?.actions && message?.role === "bot") {
+      if (
+        message?.actions &&
+        message?.role === "bot" &&
+        "positive" in message.actions &&
+        "negative" in message.actions &&
+        "copy" in message.actions
+      ) {
         message.actions.positive.className =
           message.actions.negative.className =
           message.actions.copy.className =
@@ -448,6 +484,9 @@ export const useChatbot = () => {
   };
 
   const handleSend = async (query: string | number) => {
+    // Reset markdown URL buffering state for new message
+    linkBuffer.reset();
+
     const userMessage: ExtendedMessage = {
       role: "user",
       content: query.toString(),
@@ -555,8 +594,18 @@ export const useChatbot = () => {
                     "\n```\n",
                 );
               } else if (message.event === "turn_complete") {
+                // Flush any buffered content before starting new turn
+                const bufferedContent = linkBuffer.flush();
                 setMessages((msgs: ExtendedMessage[]) => {
                   const lastMessage = msgs[msgs.length - 1];
+                  // Append any buffered content to the last message
+                  if (
+                    bufferedContent &&
+                    lastMessage &&
+                    lastMessage.role === "bot"
+                  ) {
+                    lastMessage.content += bufferedContent;
+                  }
                   const n = countInferenceMessagePrompts(lastMessage.content);
                   if (n === 1) {
                     lastMessage.content = lastMessage.content
@@ -582,10 +631,12 @@ export const useChatbot = () => {
             },
             onclose() {
               console.log("Connection closed by the server");
+              flushLinkBuffer();
               showActionIcons();
             },
             onerror(err) {
               console.log("There was an error from server", err);
+              flushLinkBuffer();
               showActionIcons();
             },
             signal: abortController.signal,
