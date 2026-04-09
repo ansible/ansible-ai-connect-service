@@ -596,8 +596,18 @@ export const useChatbot = () => {
                     "\n```\n",
                 );
               } else if (message.event === "turn_complete") {
+                // Flush any buffered content before starting new turn
+                const bufferedContent = linkBuffer.flush();
                 setMessages((msgs: ExtendedMessage[]) => {
                   const lastMessage = msgs[msgs.length - 1];
+                  // Append any buffered content to the last message
+                  if (
+                    bufferedContent &&
+                    lastMessage &&
+                    lastMessage.role === "bot"
+                  ) {
+                    lastMessage.content += bufferedContent;
+                  }
                   const n = countInferenceMessagePrompts(lastMessage.content);
                   if (n === 1) {
                     lastMessage.content = lastMessage.content

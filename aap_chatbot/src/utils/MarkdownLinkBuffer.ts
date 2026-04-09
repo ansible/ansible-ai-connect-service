@@ -32,19 +32,8 @@ export class MarkdownLinkBuffer {
           this.inUrl = false;
         }
       } else {
-        // Check if we're starting a markdown URL pattern ']('
-        if (char === "]" && i + 1 < chunk.length && chunk[i + 1] === "(") {
-          // Add ']' to processed chunk so user sees '[title]' immediately
-          processedChunk += char;
-          // Start buffering from '(' onwards
-          this.buffer = chunk[i + 1];
-          this.inUrl = true;
-          i++; // Skip the '(' since we already processed it
-        } else if (char === "]" && i + 1 >= chunk.length) {
-          // ']' at the end of chunk, might be start of '](' in next chunk
-          // Buffer it to check in next chunk
-          this.buffer = char;
-        } else if (this.buffer === "]") {
+        // Check if previous chunk ended with ']' first
+        if (this.buffer === "]") {
           // Previous chunk ended with ']', check if this starts with '('
           if (char === "(") {
             // Add buffered ']' to processed chunk so user sees it
@@ -57,6 +46,22 @@ export class MarkdownLinkBuffer {
             processedChunk += this.buffer + char;
             this.buffer = "";
           }
+        } else if (
+          char === "]" &&
+          i + 1 < chunk.length &&
+          chunk[i + 1] === "("
+        ) {
+          // Check if we're starting a markdown URL pattern ']('
+          // Add ']' to processed chunk so user sees '[title]' immediately
+          processedChunk += char;
+          // Start buffering from '(' onwards
+          this.buffer = chunk[i + 1];
+          this.inUrl = true;
+          i++; // Skip the '(' since we already processed it
+        } else if (char === "]" && i + 1 >= chunk.length) {
+          // ']' at the end of chunk, might be start of '](' in next chunk
+          // Buffer it to check in next chunk
+          this.buffer = char;
         } else {
           // Normal character, add to processed chunk
           processedChunk += char;

@@ -199,4 +199,43 @@ describe("MarkdownLinkBuffer", () => {
       expect(buffer.hasBufferedContent()).toBe(false);
     });
   });
+
+  describe("bug fixes", () => {
+    it("should not drop buffered ] on consecutive ] chunks", () => {
+      // Bug fix: When buffer has ']' and next chunk is ']',
+      // both should be flushed (previously the first was being overwritten)
+      const result1 = buffer.process("text]");
+      expect(result1).toBe("text");
+      expect(buffer.hasBufferedContent()).toBe(true);
+
+      const result2 = buffer.process("]");
+      expect(result2).toBe("]]");
+      expect(buffer.hasBufferedContent()).toBe(false);
+
+      const result3 = buffer.process(" more");
+      expect(result3).toBe(" more");
+      expect(buffer.hasBufferedContent()).toBe(false);
+    });
+
+    it("should handle multiple consecutive ] characters correctly", () => {
+      let result = buffer.process("array]");
+      expect(result).toBe("array");
+      expect(buffer.hasBufferedContent()).toBe(true);
+
+      // When buffer has ']' and we get ']', it flushes both
+      result = buffer.process("]");
+      expect(result).toBe("]]");
+      expect(buffer.hasBufferedContent()).toBe(false);
+
+      // Next ']' at end of chunk is buffered
+      result = buffer.process("]");
+      expect(result).toBe("");
+      expect(buffer.hasBufferedContent()).toBe(true);
+
+      // Finally flush the last ']'
+      result = buffer.process(" text");
+      expect(result).toBe("] text");
+      expect(buffer.hasBufferedContent()).toBe(false);
+    });
+  });
 });
