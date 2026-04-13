@@ -86,7 +86,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 constantly==23.10.4
     # via twisted
-cryptography==46.0.6
+cryptography==46.0.7
     # via
     #   ansible-core
     #   autobahn
@@ -110,7 +110,7 @@ diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
-django==5.2.12
+django==5.2.13
     # via
     #   ansible-ai-connect
     #   django-allow-cidr
@@ -239,7 +239,7 @@ jsonschema==4.25.1
     #   drf-spectacular
 jsonschema-specifications==2025.9.1
     # via jsonschema
-jwcrypto==1.5.6
+jwcrypto==1.5.7
     # via
     #   ansible-ai-connect
     #   django-oauth-toolkit
