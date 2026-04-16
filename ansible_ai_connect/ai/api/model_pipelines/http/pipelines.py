@@ -349,7 +349,14 @@ class HttpStreamingChatBotPipeline(
         # Create connector with proper SSL handling
         connector = self._get_aiohttp_connector(verify_ssl=self.config.verify_ssl)
 
-        async with aiohttp.ClientSession(raise_for_status=True, connector=connector) as session:
+        # aiohttp defaults to read_bufsize=64KB, which caps a single SSE line
+        # at 128KB (2x buffer). Large tool_call/tool_result payloads from the
+        # chatbot backend can exceed that, raising "ValueError: Chunk too big".
+        # 1MB buffer allows single SSE lines up to 2MB.
+        sse_read_bufsize = 1024 * 1024  # 1 MB
+        async with aiohttp.ClientSession(
+            raise_for_status=True, connector=connector, read_bufsize=sse_read_bufsize
+        ) as session:
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json,text/event-stream",
@@ -404,79 +411,99 @@ class HttpStreamingChatBotPipeline(
                     ev.modelName = params.model_id
                     ev.no_tools = params.no_tools
 
-                    async for chunk in response.content:
-                        try:
-                            if chunk:
-                                chunk_string = chunk.decode("utf-8").strip()
-                                if chunk_string and chunk_string.startswith("data: "):
-                                    o = json.loads(chunk_string[len("data: ") :])
-                                    event = o.get("event")
-                                    if event == "error":
-                                        default_data = {
-                                            "response": "(not provided)",
-                                            "cause": "(not provided)",
-                                        }
-                                        data = o.get("data", default_data)
-                                        logger.error(
-                                            "An error received in chat streaming content:"
-                                            + " response="
-                                            + str(data.get("response"))
-                                            + ", cause="
-                                            + str(data.get("cause"))
-                                        )
-                                    elif event == "start":
-                                        ev.phase = event
-                                        default_data = {
-                                            "conversation_id": conversation_id,
-                                        }
-                                        data = o.get("data", default_data)
-                                        conversation_id = data.get("conversation_id")
-                                        ev.conversation_id = conversation_id
-                                        self.send_schema1_event(ev)
-                                    elif event in ("tool_call", "tool_result"):
-                                        if not settings.CHATBOT_RETURN_TOOL_CALL:
-                                            # do not return tool_call event to final user response
-                                            # and send an empty token data instead
-                                            # include also the original tool_call/tool_response
-                                            data = o.get("data", {"id": 0})
-                                            chunk_id = data.get("id")
-                                            logger.debug(
-                                                "hide tool_call/tool_result from final result, "
-                                                "original chunk: %s",
-                                                chunk_string,
-                                            )
-                                            new_chunk_data = {
-                                                "event": "token",
-                                                "data": {"id": chunk_id, "token": ""},
-                                                "original": o,
+                    try:
+                        async for chunk in response.content:
+                            try:
+                                if chunk:
+                                    chunk_string = chunk.decode("utf-8").strip()
+                                    if chunk_string and chunk_string.startswith("data: "):
+                                        o = json.loads(chunk_string[len("data: ") :])
+                                        event = o.get("event")
+                                        if event == "error":
+                                            default_data = {
+                                                "response": "(not provided)",
+                                                "cause": "(not provided)",
                                             }
-                                            new_chunk_data_json = json.dumps(new_chunk_data)
-                                            chunk = (
-                                                b"data: "
-                                                + new_chunk_data_json.encode("utf-8")
-                                                + b"\n"
+                                            data = o.get("data", default_data)
+                                            logger.error(
+                                                "An error received in chat streaming content:"
+                                                + " response="
+                                                + str(data.get("response"))
+                                                + ", cause="
+                                                + str(data.get("cause"))
                                             )
-                                    elif event == "end":
-                                        ev.phase = event
-                                        default_data = {
-                                            "referenced_documents": [],
-                                            "truncated": False,
-                                        }
-                                        data = o.get("data", default_data)
-                                        referenced_documents = self._normalize_referenced_documents(
-                                            data.get("referenced_documents", [])
-                                        )
-                                        truncated = data.get("truncated", False)
-                                        ev.conversation_id = conversation_id
-                                        ev.chat_referenced_documents = (
-                                            referenced_documents
-                                        )  # type: ignore[assignment]
-                                        ev.chat_truncated = truncated
-                                        self.send_schema1_event(ev)
-                        except JSONDecodeError:
-                            pass
-                        logger.debug(chunk)
-                        yield chunk
+                                        elif event == "start":
+                                            ev.phase = event
+                                            default_data = {
+                                                "conversation_id": conversation_id,
+                                            }
+                                            data = o.get("data", default_data)
+                                            conversation_id = data.get("conversation_id")
+                                            ev.conversation_id = conversation_id
+                                            self.send_schema1_event(ev)
+                                        elif event in ("tool_call", "tool_result"):
+                                            if not settings.CHATBOT_RETURN_TOOL_CALL:
+                                                # do not return tool_call event to final user response
+                                                # and send an empty token data instead
+                                                # include also the original tool_call/tool_response
+                                                data = o.get("data", {"id": 0})
+                                                chunk_id = data.get("id")
+                                                logger.debug(
+                                                    "hide tool_call/tool_result from final result, "
+                                                    "original chunk: %s",
+                                                    chunk_string,
+                                                )
+                                                new_chunk_data = {
+                                                    "event": "token",
+                                                    "data": {"id": chunk_id, "token": ""},
+                                                    "original": o,
+                                                }
+                                                new_chunk_data_json = json.dumps(new_chunk_data)
+                                                chunk = (
+                                                    b"data: "
+                                                    + new_chunk_data_json.encode("utf-8")
+                                                    + b"\n"
+                                                )
+                                        elif event == "end":
+                                            ev.phase = event
+                                            default_data = {
+                                                "referenced_documents": [],
+                                                "truncated": False,
+                                            }
+                                            data = o.get("data", default_data)
+                                            referenced_documents = self._normalize_referenced_documents(
+                                                data.get("referenced_documents", [])
+                                            )
+                                            truncated = data.get("truncated", False)
+                                            ev.conversation_id = conversation_id
+                                            ev.chat_referenced_documents = (
+                                                referenced_documents
+                                            )  # type: ignore[assignment]
+                                            ev.chat_truncated = truncated
+                                            self.send_schema1_event(ev)
+                            except JSONDecodeError:
+                                pass
+                            logger.debug(chunk)
+                            yield chunk
+                    except ValueError as e:
+                        if "Chunk too big" in str(e):
+                            logger.error(
+                                "Chatbot response too large to process: %s", str(e)
+                            )
+                            error = {
+                                "event": "error",
+                                "data": {
+                                    "response": "The response was too large to process.",
+                                    "cause": "A chatbot response event exceeded"
+                                    " the maximum supported size.",
+                                },
+                            }
+                            yield (
+                                b"data: " + json.dumps(error).encode("utf-8") + b"\n"
+                            )
+                            return
+                        else:
+                            raise
                 else:
                     logging.error(
                         "Streaming query API returned status code="
