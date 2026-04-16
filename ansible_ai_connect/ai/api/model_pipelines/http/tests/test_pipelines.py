@@ -547,11 +547,11 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
         self.assertEqual(error_data["event"], "error")
         self.assertEqual(
             error_data["data"]["response"],
-            "The response was too large to process.",
+            "Unable to process chatbot response",
         )
         self.assertEqual(
             error_data["data"]["cause"],
-            "A chatbot response event exceeded the maximum supported size.",
+            "The response exceeded the maximum supported size. Please try again.",
         )
 
     @patch("aiohttp.ClientSession.post")

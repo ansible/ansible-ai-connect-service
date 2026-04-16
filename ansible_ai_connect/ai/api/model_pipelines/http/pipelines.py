@@ -443,9 +443,9 @@ class HttpStreamingChatBotPipeline(
                                             self.send_schema1_event(ev)
                                         elif event in ("tool_call", "tool_result"):
                                             if not settings.CHATBOT_RETURN_TOOL_CALL:
-                                                # do not return tool_call event to final user response
-                                                # and send an empty token data instead
-                                                # include also the original tool_call/tool_response
+                                                # Hide tool_call/tool_result from
+                                                # final response; send empty token
+                                                # with original data attached.
                                                 data = o.get("data", {"id": 0})
                                                 chunk_id = data.get("id")
                                                 logger.debug(
@@ -497,12 +497,12 @@ class HttpStreamingChatBotPipeline(
                             error = {
                                 "event": "error",
                                 "data": {
-                                    "response": "The response was too large to process.",
-                                    "cause": "A chatbot response event exceeded"
-                                    " the maximum supported size.",
+                                    "response": "Unable to process chatbot response",
+                                    "cause": "The response exceeded the maximum"
+                                    " supported size. Please try again.",
                                 },
                             }
-                            yield (b"data: " + json.dumps(error).encode("utf-8") + b"\n")
+                            yield (b"data: " + json.dumps(error).encode("utf-8") + b"\n\n")
                             return
                         else:
                             raise

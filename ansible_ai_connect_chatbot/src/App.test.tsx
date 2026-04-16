@@ -910,9 +910,7 @@ test("Chat streaming error in streaming data", async () => {
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
   expect(textContent).toEqual(
-    "Bot returned an error: " +
-      'response="Oops, something went wrong during LLM invocation", ' +
-      "cause=\"Error code: 404 - {'detail': 'Not Found'}\"",
+    "Error code: 404 - {'detail': 'Not Found'}",
   );
 });
 
