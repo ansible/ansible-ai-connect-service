@@ -2376,7 +2376,17 @@
             },
             "oauth2": {
                 "type": "oauth2",
-                "flows": {}
+                "flows": {
+                    "authorizationCode": {
+                        "authorizationUrl": "/o/authorize/",
+                        "tokenUrl": "/o/token/",
+                        "scopes": {
+                            "read": "Read basic user information",
+                            "write": "Request Ansible content suggestions",
+                            "delete": "Delete resources"
+                        }
+                    }
+                }
             }
         }
     },
