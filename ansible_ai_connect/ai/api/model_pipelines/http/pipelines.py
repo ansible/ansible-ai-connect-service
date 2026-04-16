@@ -471,8 +471,10 @@ class HttpStreamingChatBotPipeline(
                                                 "truncated": False,
                                             }
                                             data = o.get("data", default_data)
-                                            referenced_documents = self._normalize_referenced_documents(
-                                                data.get("referenced_documents", [])
+                                            referenced_documents = (
+                                                self._normalize_referenced_documents(
+                                                    data.get("referenced_documents", [])
+                                                )
                                             )
                                             truncated = data.get("truncated", False)
                                             ev.conversation_id = conversation_id
@@ -486,10 +488,12 @@ class HttpStreamingChatBotPipeline(
                             logger.debug(chunk)
                             yield chunk
                     except ValueError as e:
+                        # aiohttp raises ValueError with this message when a
+                        # single line exceeds _high_water. There is no specific
+                        # exception type, so we match by message. If aiohttp
+                        # changes the wording, this will re-raise instead.
                         if "Chunk too big" in str(e):
-                            logger.error(
-                                "Chatbot response too large to process: %s", str(e)
-                            )
+                            logger.error("Chatbot response too large to process: %s", e)
                             error = {
                                 "event": "error",
                                 "data": {
@@ -498,9 +502,7 @@ class HttpStreamingChatBotPipeline(
                                     " the maximum supported size.",
                                 },
                             }
-                            yield (
-                                b"data: " + json.dumps(error).encode("utf-8") + b"\n"
-                            )
+                            yield (b"data: " + json.dumps(error).encode("utf-8") + b"\n")
                             return
                         else:
                             raise
