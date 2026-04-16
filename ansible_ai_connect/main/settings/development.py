@@ -51,6 +51,24 @@ if DEBUG:
         "POSTPROCESSING_HOOKS": [
             "ansible_base.api_documentation.postprocessing_hooks.add_x_ai_description",
         ],
+        "APPEND_COMPONENTS": {
+            "securitySchemes": {
+                "oauth2": {
+                    "type": "oauth2",
+                    "flows": {
+                        "authorizationCode": {
+                            "authorizationUrl": "/o/authorize/",
+                            "tokenUrl": "/o/token/",
+                            "scopes": {
+                                "read": "Read basic user information",
+                                "write": "Request Ansible content suggestions",
+                                "delete": "Delete resources",
+                            },
+                        }
+                    },
+                }
+            }
+        },
     }
 
     # social_django does not process auth exceptions when DEBUG=True by default.
