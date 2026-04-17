@@ -828,7 +828,7 @@ class WcaModelIdRequestSerializer(serializers.Serializer):
             summary="Request Telemetry settings",
             description="A valid request to set the Telemetry settings.",
             value={
-                "optOut": "true",
+                "optOut": True,
             },
             request_only=True,
             response_only=False,

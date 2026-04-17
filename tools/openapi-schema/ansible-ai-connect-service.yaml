@@ -537,7 +537,7 @@ paths:
             examples:
               ValidExample:
                 value:
-                  optOut: 'true'
+                  optOut: true
                 summary: Request Telemetry settings
                 description: A valid request to set the Telemetry settings.
           application/x-www-form-urlencoded:
