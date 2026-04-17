@@ -573,10 +573,8 @@ export const useChatbot = () => {
               } else if (message.event === "error") {
                 const data = message.data;
                 setAlertMessage({
-                  title: "Error",
-                  message:
-                    `Bot returned an error: response="${data.response}", ` +
-                    `cause="${data.cause}"`,
+                  title: data.response,
+                  message: data.cause,
                   variant: "danger",
                 });
               } else if (

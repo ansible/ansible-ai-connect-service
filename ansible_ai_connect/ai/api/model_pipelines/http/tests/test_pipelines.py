@@ -157,6 +157,31 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             event=event,
         )
 
+    def get_return_value_with_error(self, stream_data_before_error, error):
+        """Return a mock whose async generator raises an exception mid-stream."""
+
+        class MyAsyncContextManager:
+            def __init__(self, stream_data, error, status=200):
+                self.stream_data = stream_data
+                self.error = error
+                self.status = status
+                self.reason = ""
+
+            async def my_async_generator(self):
+                for data in self.stream_data:
+                    s = json.dumps(data)
+                    yield (f"data: {s}\n\n".encode())
+                raise self.error
+
+            async def __aenter__(self):
+                self.content = self.my_async_generator()
+                return self
+
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        return MyAsyncContextManager(stream_data_before_error, error)
+
     def send_event(self, ev):
         self.call_counter += 1
         self.assertEqual(ev.conversation_id, "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f")
@@ -498,6 +523,51 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 # Reset mocks for next iteration
                 mock_tcp_connector.reset_mock()
                 mock_post.reset_mock()
+
+    @patch("aiohttp.ClientSession.post")
+    async def test_async_invoke_chunk_too_big_yields_error_event(self, mock_post):
+        """Test that ValueError 'Chunk too big' yields an SSE error event."""
+        stream_data_before_error = [
+            {"event": "start", "data": {"conversation_id": "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f"}},
+            {"event": "token", "data": {"id": 0, "token": "Hello"}},
+        ]
+        mock_post.return_value = self.get_return_value_with_error(
+            stream_data_before_error, ValueError("Chunk too big")
+        )
+
+        chunks = []
+        async for chunk in self.pipeline.async_invoke(self.get_params()):
+            chunks.append(chunk.decode("utf-8"))
+
+        # Should have: start, token, and the error event
+        self.assertEqual(len(chunks), 3)
+        error_chunk = chunks[-1]
+        self.assertTrue(error_chunk.startswith("data: "))
+        error_data = json.loads(error_chunk[len("data: ") :])
+        self.assertEqual(error_data["event"], "error")
+        self.assertEqual(
+            error_data["data"]["response"],
+            "Unable to process chatbot response",
+        )
+        self.assertEqual(
+            error_data["data"]["cause"],
+            "The response exceeded the maximum supported size. Please try again.",
+        )
+
+    @patch("aiohttp.ClientSession.post")
+    async def test_async_invoke_other_value_error_is_reraised(self, mock_post):
+        """Test that a ValueError other than 'Chunk too big' is re-raised."""
+        stream_data_before_error = [
+            {"event": "start", "data": {"conversation_id": "92766ddd-dfc8-4830-b269-7a4b3dbc7c3f"}},
+        ]
+        mock_post.return_value = self.get_return_value_with_error(
+            stream_data_before_error, ValueError("something else")
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            async for _ in self.pipeline.async_invoke(self.get_params()):
+                pass
+        self.assertIn("something else", str(ctx.exception))
 
 
 class TestHttpStreamingChatBotPipelineNormalizeReferencedDocuments(

@@ -37,6 +37,9 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "dompurify": ">=3.4.0"
+  },
   "devDependencies": {
     "@eslint/compat": "^1.2.1",
     "@eslint/js": "^9.13.0",
