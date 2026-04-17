@@ -432,7 +432,7 @@ paths:
             application/json:
               schema:
                 type: object
-                additionalProperties: {}
+                additionalProperties: true
               examples:
                 ExampleOutput:
                   value:
@@ -887,7 +887,7 @@ components:
           description: Ansible file type (playbook/tasks_in_role/tasks)
         additionalContext:
           type: object
-          additionalProperties: {}
+          additionalProperties: true
           title: Additional Context
           description: Additional context for completion API
     CompletionRequest:
@@ -1201,7 +1201,7 @@ components:
             of the Ansible Role.
         additionalContext:
           type: object
-          additionalProperties: {}
+          additionalProperties: true
           title: inline suggestions
           description: Parameter use for the inline suggestions.
         fileTypes:
