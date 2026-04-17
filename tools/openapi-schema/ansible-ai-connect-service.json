@@ -676,7 +676,7 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
-                                    "additionalProperties": {}
+                                    "additionalProperties": true
                                 },
                                 "examples": {
                                     "ExampleOutput": {
@@ -845,7 +845,7 @@
                             "examples": {
                                 "ValidExample": {
                                     "value": {
-                                        "optOut": "true"
+                                        "optOut": true
                                     },
                                     "summary": "Request Telemetry settings",
                                     "description": "A valid request to set the Telemetry settings."
@@ -1381,7 +1381,7 @@
                     },
                     "additionalContext": {
                         "type": "object",
-                        "additionalProperties": {},
+                        "additionalProperties": true,
                         "title": "Additional Context",
                         "description": "Additional context for completion API"
                     }
@@ -1801,7 +1801,7 @@
                     },
                     "additionalContext": {
                         "type": "object",
-                        "additionalProperties": {},
+                        "additionalProperties": true,
                         "title": "inline suggestions",
                         "description": "Parameter use for the inline suggestions."
                     },

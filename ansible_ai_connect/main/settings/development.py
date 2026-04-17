@@ -50,6 +50,7 @@ if DEBUG:
         ],
         "POSTPROCESSING_HOOKS": [
             "ansible_base.api_documentation.postprocessing_hooks.add_x_ai_description",
+            "ansible_ai_connect.ai.api.openapi.postprocessing_fix_additional_properties",
         ],
         "APPEND_COMPONENTS": {
             "securitySchemes": {

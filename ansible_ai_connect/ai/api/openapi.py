@@ -24,3 +24,49 @@ def preprocessing_filter_spec(endpoints):
             continue
         filtered.append((path, path_regex, method, callback))
     return filtered
+
+
+def postprocessing_fix_additional_properties(result, generator, request, public):
+    """
+    Fix empty additionalProperties objects that cause ZAP parser failures.
+
+    drf-spectacular generates 'additionalProperties: {}' for DictField without
+    a child parameter. This empty object is ambiguous and causes some OpenAPI
+    parsers (including ZAP) to fail with NullPointerException.
+
+    This hook replaces 'additionalProperties: {}' with 'additionalProperties: true'
+    which correctly represents "allow any additional properties".
+    """
+
+    def fix_schema(schema):
+        """Recursively fix additionalProperties in schema objects."""
+        if not isinstance(schema, dict):
+            return schema
+
+        # Fix additionalProperties: {} → additionalProperties: true
+        if "additionalProperties" in schema:
+            if schema["additionalProperties"] == {}:
+                schema["additionalProperties"] = True
+
+        # Recursively process nested objects
+        for key, value in schema.items():
+            if isinstance(value, dict):
+                fix_schema(value)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict):
+                        fix_schema(item)
+
+        return schema
+
+    # Fix in components/schemas
+    if "components" in result and "schemas" in result["components"]:
+        for schema_name, schema_def in result["components"]["schemas"].items():
+            fix_schema(schema_def)
+
+    # Fix in paths (inline schemas)
+    if "paths" in result:
+        for path_def in result["paths"].values():
+            fix_schema(path_def)
+
+    return result
