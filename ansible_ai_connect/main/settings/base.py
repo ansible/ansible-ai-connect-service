@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import sys
+from urllib.parse import urlparse
 from importlib.resources import files
 from pathlib import Path
 from typing import cast
@@ -500,16 +501,39 @@ CSP_SELF = "'self'"
 CSP_DEFAULT_SRC = (CSP_SELF, "data:")
 CSP_CONNECT_SRC = CSP_SELF
 CSP_BASE_URI = (CSP_SELF,)
-CSP_FORM_ACTION = (
-    CSP_SELF,
-    "http:",
-    "https:",
+
+# OAuth2 redirect URI schemes and loopback support
+_OAUTH_SCHEMES = (
     "vscode:",
     "vscodium:",
     "vscode-insiders:",
     "code-oss:",
     "checode:",
 )
+
+# For loopback addresses (RFC 8252 - OAuth 2.0 for Native Apps)
+# These support dynamic ports as required by the spec
+_LOOPBACK_PATTERNS = (
+    "http://127.0.0.1",
+    "http://[::1]",
+    "http://localhost",
+)
+
+# OAuth provider origins from existing configuration
+# Extract origins from AAP_API_URL and SOCIAL_AUTH_OIDC_OIDC_ENDPOINT
+_oauth_origins = []
+if AAP_API_URL:
+    parsed = urlparse(AAP_API_URL)
+    if parsed.scheme and parsed.netloc:
+        _oauth_origins.append(f"{parsed.scheme}://{parsed.netloc}")
+if SOCIAL_AUTH_OIDC_OIDC_ENDPOINT:
+    parsed = urlparse(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT)
+    if parsed.scheme and parsed.netloc:
+        _oauth_origins.append(f"{parsed.scheme}://{parsed.netloc}")
+_OAUTH_ORIGINS = tuple(_oauth_origins)
+
+CSP_FORM_ACTION = (CSP_SELF,) + _OAUTH_SCHEMES + _LOOPBACK_PATTERNS + _OAUTH_ORIGINS
+
 CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_INCLUDE_NONCE_IN = ["script-src-elem"]
 

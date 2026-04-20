@@ -50,6 +50,14 @@ class TestUrls(TestCase):
         self.assertIn("connect-src 'self'", csp_headers)
         self.assertIn("base-uri 'self'", csp_headers)
         self.assertIn("form-action 'self'", csp_headers)
+        self.assertIn("vscode:", csp_headers)
+        self.assertIn("http://127.0.0.1", csp_headers)
+        # Ensure no wildcard schemes that would allow any http/https URL
+        # Check for both space and semicolon separators
+        self.assertNotIn("http: ", csp_headers)
+        self.assertNotIn("http:;", csp_headers)
+        self.assertNotIn("https: ", csp_headers)
+        self.assertNotIn("https:;", csp_headers)
         self.assertIn("frame-ancestors 'none'", csp_headers)
 
     def test_telemetry_patterns(self):
