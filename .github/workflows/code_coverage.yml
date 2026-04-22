@@ -70,7 +70,7 @@ jobs:
     # See https://sonarsource.atlassian.net/browse/SONARPY-1203
     - name: Fix paths in coverage file
       run: |
-        sed -i 's,/home/runner/work/ansible-wisdom-service/ansible-wisdom-service/,/github/workspace/,g' coverage.xml
+        sed -i "s,/home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/,/github/workspace/,g" coverage.xml
 
     ##################
     # TypeScript tests
@@ -119,11 +119,29 @@ jobs:
     #####################
     # SonarCloud coverage
     #####################
+    - name: Extract repo owner and name
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [ "${{ github.event.repository.fork }}" = "true" ]; then
+          PARENT_REPO_SLUG=$(gh api repos/${{ github.repository }} | jq -r '.parent.full_name')
+          IFS="/" read -r REPO_OWNER REPO_NAME <<< "$PARENT_REPO_SLUG"
+        else
+          IFS="/" read -r REPO_OWNER REPO_NAME <<< "${GITHUB_REPOSITORY}"
+        fi
+        echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+        echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
     - name: SonarCloud Scan
       uses: SonarSource/sonarqube-scan-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.projectKey=${{ env.REPO_OWNER }}_${{ env.REPO_NAME }}
+          -Dsonar.organization=${{ env.REPO_OWNER }}
 
     ####################
     # OpenAPI file check
