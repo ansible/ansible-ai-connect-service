@@ -65,35 +65,53 @@ class TestUrls(TestCase):
 
     def test_csp_oauth_origin_parsing(self):
         """Test URL parsing logic for OAuth origins in CSP configuration"""
-        from urllib.parse import urlparse
+        from ansible_ai_connect.main.settings.base import _extract_oauth_origins
 
-        # Test cases for AAP_API_URL and OIDC endpoint parsing
-        test_cases = [
-            ("https://aap.example.com:8443", "https://aap.example.com:8443"),
-            ("https://aap.example.com:8443/api/v2", "https://aap.example.com:8443"),
-            ("http://localhost:8080/api", "http://localhost:8080"),
-            ("https://sso.redhat.com/auth/realms/test", "https://sso.redhat.com"),
-            ("https://sso.redhat.com", "https://sso.redhat.com"),
-        ]
+        # Test single URL
+        result = _extract_oauth_origins("https://aap.example.com:8443/api/v2")
+        self.assertEqual(result, ("https://aap.example.com:8443",))
 
-        for url, expected_origin in test_cases:
-            with self.subTest(url=url):
-                parsed = urlparse(url)
-                if parsed.scheme and parsed.netloc:
-                    result = f"{parsed.scheme}://{parsed.netloc}"
-                    self.assertEqual(
-                        result,
-                        expected_origin,
-                        f"URL {url} should parse to origin {expected_origin}",
-                    )
+        # Test multiple URLs
+        result = _extract_oauth_origins(
+            "https://aap.example.com:8443",
+            "https://sso.redhat.com/auth/realms/test",
+        )
+        self.assertEqual(
+            result,
+            ("https://aap.example.com:8443", "https://sso.redhat.com"),
+        )
 
-        # Test that netloc preserves ports (not hostname)
-        parsed = urlparse("https://aap.example.com:9080")
-        self.assertEqual(parsed.netloc, "aap.example.com:9080")
-        self.assertEqual(parsed.hostname, "aap.example.com")
-        # We should use netloc to preserve the port
-        origin_with_netloc = f"{parsed.scheme}://{parsed.netloc}"
-        self.assertEqual(origin_with_netloc, "https://aap.example.com:9080")
+        # Test with None values (should be skipped)
+        result = _extract_oauth_origins(None, "https://sso.redhat.com")
+        self.assertEqual(result, ("https://sso.redhat.com",))
+
+        # Test with all None values
+        result = _extract_oauth_origins(None, None)
+        self.assertEqual(result, ())
+
+        # Test with empty string (should be skipped)
+        result = _extract_oauth_origins("", "https://sso.redhat.com")
+        self.assertEqual(result, ("https://sso.redhat.com",))
+
+        # Test with localhost and port
+        result = _extract_oauth_origins("http://localhost:8080/api")
+        self.assertEqual(result, ("http://localhost:8080",))
+
+        # Test that ports are preserved (netloc, not hostname)
+        result = _extract_oauth_origins("https://aap.example.com:9080")
+        self.assertEqual(result, ("https://aap.example.com:9080",))
+
+        # Test standard ports (no explicit port in URL)
+        result = _extract_oauth_origins("https://sso.redhat.com/path")
+        self.assertEqual(result, ("https://sso.redhat.com",))
+
+        # Test invalid URL (no scheme)
+        result = _extract_oauth_origins("example.com")
+        self.assertEqual(result, ())
+
+        # Test URL with only scheme (no netloc)
+        result = _extract_oauth_origins("http://")
+        self.assertEqual(result, ())
 
     def test_telemetry_patterns(self):
         api_versions = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]

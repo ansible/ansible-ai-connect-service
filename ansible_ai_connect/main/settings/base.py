@@ -522,16 +522,18 @@ _LOOPBACK_PATTERNS = (
 
 # OAuth provider origins from existing configuration
 # Extract origins from AAP_API_URL and SOCIAL_AUTH_OIDC_OIDC_ENDPOINT
-_oauth_origins = []
-if AAP_API_URL:
-    parsed = urlparse(AAP_API_URL)
-    if parsed.scheme and parsed.netloc:
-        _oauth_origins.append(f"{parsed.scheme}://{parsed.netloc}")
-if SOCIAL_AUTH_OIDC_OIDC_ENDPOINT:
-    parsed = urlparse(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT)
-    if parsed.scheme and parsed.netloc:
-        _oauth_origins.append(f"{parsed.scheme}://{parsed.netloc}")
-_OAUTH_ORIGINS = tuple(_oauth_origins)
+def _extract_oauth_origins(*urls):
+    """Extract origins (scheme://netloc) from OAuth provider URLs."""
+    origins = []
+    for url in urls:
+        if url:
+            parsed = urlparse(url)
+            if parsed.scheme and parsed.netloc:
+                origins.append(f"{parsed.scheme}://{parsed.netloc}")
+    return tuple(origins)
+
+
+_OAUTH_ORIGINS = _extract_oauth_origins(AAP_API_URL, SOCIAL_AUTH_OIDC_OIDC_ENDPOINT)
 
 CSP_FORM_ACTION = (CSP_SELF,) + _OAUTH_SCHEMES + _LOOPBACK_PATTERNS + _OAUTH_ORIGINS
 
