@@ -520,6 +520,7 @@ _LOOPBACK_PATTERNS = (
     "http://localhost:*",
 )
 
+
 # OAuth provider origins from existing configuration
 # Extract origins from AAP_API_URL and SOCIAL_AUTH_OIDC_OIDC_ENDPOINT
 def _extract_oauth_origins(*urls):
