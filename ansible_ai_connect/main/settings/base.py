@@ -28,10 +28,10 @@ import json
 import logging
 import os
 import sys
-from urllib.parse import urlparse
 from importlib.resources import files
 from pathlib import Path
 from typing import cast
+from urllib.parse import urlparse
 
 from ansible_ai_connect.main.settings.legacy import load_from_env_vars
 from ansible_ai_connect.main.settings.types import (
