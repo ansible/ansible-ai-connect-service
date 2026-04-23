@@ -51,7 +51,10 @@ class TestUrls(TestCase):
         self.assertIn("base-uri 'self'", csp_headers)
         self.assertIn("form-action 'self'", csp_headers)
         self.assertIn("vscode:", csp_headers)
-        self.assertIn("http://127.0.0.1", csp_headers)
+        # Check loopback patterns with port wildcards for dynamic OAuth ports
+        self.assertIn("http://127.0.0.1:*", csp_headers)
+        self.assertIn("http://[::1]:*", csp_headers)
+        self.assertIn("http://localhost:*", csp_headers)
         # Ensure no wildcard schemes that would allow any http/https URL
         # Check for both space and semicolon separators
         self.assertNotIn("http: ", csp_headers)
@@ -59,6 +62,38 @@ class TestUrls(TestCase):
         self.assertNotIn("https: ", csp_headers)
         self.assertNotIn("https:;", csp_headers)
         self.assertIn("frame-ancestors 'none'", csp_headers)
+
+    def test_csp_oauth_origin_parsing(self):
+        """Test URL parsing logic for OAuth origins in CSP configuration"""
+        from urllib.parse import urlparse
+
+        # Test cases for AAP_API_URL and OIDC endpoint parsing
+        test_cases = [
+            ("https://aap.example.com:8443", "https://aap.example.com:8443"),
+            ("https://aap.example.com:8443/api/v2", "https://aap.example.com:8443"),
+            ("http://localhost:8080/api", "http://localhost:8080"),
+            ("https://sso.redhat.com/auth/realms/test", "https://sso.redhat.com"),
+            ("https://sso.redhat.com", "https://sso.redhat.com"),
+        ]
+
+        for url, expected_origin in test_cases:
+            with self.subTest(url=url):
+                parsed = urlparse(url)
+                if parsed.scheme and parsed.netloc:
+                    result = f"{parsed.scheme}://{parsed.netloc}"
+                    self.assertEqual(
+                        result,
+                        expected_origin,
+                        f"URL {url} should parse to origin {expected_origin}",
+                    )
+
+        # Test that netloc preserves ports (not hostname)
+        parsed = urlparse("https://aap.example.com:9080")
+        self.assertEqual(parsed.netloc, "aap.example.com:9080")
+        self.assertEqual(parsed.hostname, "aap.example.com")
+        # We should use netloc to preserve the port
+        origin_with_netloc = f"{parsed.scheme}://{parsed.netloc}"
+        self.assertEqual(origin_with_netloc, "https://aap.example.com:9080")
 
     def test_telemetry_patterns(self):
         api_versions = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]

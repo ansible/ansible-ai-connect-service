@@ -513,10 +513,11 @@ _OAUTH_SCHEMES = (
 
 # For loopback addresses (RFC 8252 - OAuth 2.0 for Native Apps)
 # These support dynamic ports as required by the spec
+# Port wildcard (:*) is required because OAuth clients bind to random available ports
 _LOOPBACK_PATTERNS = (
-    "http://127.0.0.1",
-    "http://[::1]",
-    "http://localhost",
+    "http://127.0.0.1:*",
+    "http://[::1]:*",
+    "http://localhost:*",
 )
 
 # OAuth provider origins from existing configuration
