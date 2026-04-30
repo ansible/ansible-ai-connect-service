@@ -17,7 +17,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@svgr/webpack": "8.1.0",
     "i18next": "^23.0.0",
-    "i18next-http-backend": "^2.2.1",
+    "i18next-http-backend": "^3.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.1.2"
@@ -170,6 +170,7 @@
   },
   "overrides": {
     "micromatch": "^4.0.8",
+    "uuid": ">=14.0.0",
     "minimatch": "^3.1.4",
     "bfj": "^9.1.2",
     "flatted": "^3.4.2",
