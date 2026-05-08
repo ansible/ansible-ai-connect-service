@@ -41,7 +41,7 @@ attrs==25.4.0
     #   referencing
     #   service-identity
     #   twisted
-autobahn==25.11.1
+autobahn==25.12.2
     # via daphne
 automat==25.4.16
     # via twisted
