@@ -139,7 +139,7 @@ django-extensions==3.2.3
     # via ansible-ai-connect
 django-health-check==3.17.0
     # via ansible-ai-connect
-django-import-export==3.2.0
+django-import-export==4.4.1
     # via ansible-ai-connect
 django-oauth-toolkit==3.0.1
     # via ansible-ai-connect
