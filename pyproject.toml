@@ -29,7 +29,7 @@ dependencies = [
   'ipython~=8.10.0',
   'jwcrypto~=1.5.7',
   'jinja2~=3.1.6',
-  'launchdarkly-server-sdk~=8.3.0',
+  'launchdarkly-server-sdk~=9.15.1',
   'llama-stack-client==0.2.22',
   'protobuf~=5.29.6',
   'psycopg~=3.2.3',
