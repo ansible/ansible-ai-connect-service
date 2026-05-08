@@ -342,7 +342,7 @@ pyasn1-modules==0.4.2
     #   service-identity
 pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
-pydantic==2.12.5
+pydantic==2.13.4
     # via
     #   ansible-ai-connect
     #   llama-stack-client
