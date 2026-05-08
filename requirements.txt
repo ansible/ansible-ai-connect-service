@@ -131,7 +131,7 @@ django-ansible-base==2026.1.26
     # via ansible-ai-connect
 django-crum==0.7.9
     # via django-ansible-base
-django-csp==3.8
+django-csp==4.0
     # via ansible-ai-connect
 django-deprecate-fields==0.1.2
     # via ansible-ai-connect
