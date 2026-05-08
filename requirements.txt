@@ -187,7 +187,7 @@ google-auth==2.43.0
     #   google-auth-httplib2
 google-auth-httplib2==0.2.1
     # via google-api-python-client
-googleapis-common-protos==1.72.0
+googleapis-common-protos==1.75.0
     # via google-api-core
 h11==0.16.0
     # via httpcore
