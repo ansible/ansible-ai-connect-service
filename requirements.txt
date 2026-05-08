@@ -459,7 +459,7 @@ subprocess-tee==0.4.2
     #   ansible-lint
 tablib==3.9.0
     # via django-import-export
-termcolor==3.2.0
+termcolor==3.3.0
     # via
     #   fire
     #   llama-stack-client
