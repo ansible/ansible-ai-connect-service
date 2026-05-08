@@ -247,7 +247,7 @@ launchdarkly-server-sdk==8.3.0
     # via ansible-ai-connect
 llama-stack-client==0.2.22
     # via ansible-ai-connect
-markdown-it-py==4.0.0
+markdown-it-py==4.2.0
     # via rich
 markupsafe==3.0.3
     # via jinja2
