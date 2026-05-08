@@ -362,7 +362,7 @@ pyopenssl==26.0.0
     # via
     #   pydrive2
     #   twisted
-pyparsing==3.2.5
+pyparsing==3.3.2
     # via httplib2
 pyrfc3339==2.1.0
     # via launchdarkly-server-sdk
