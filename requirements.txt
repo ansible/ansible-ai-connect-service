@@ -135,7 +135,7 @@ django-csp==3.8
     # via ansible-ai-connect
 django-deprecate-fields==0.1.2
     # via ansible-ai-connect
-django-extensions==3.2.3
+django-extensions==4.1
     # via ansible-ai-connect
 django-health-check==3.17.0
     # via ansible-ai-connect
