@@ -242,7 +242,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = "~=2.33.0" },
     { name = "responses", marker = "extra == 'dev'", specifier = "~=0.24.1" },
-    { name = "segment-analytics-python", specifier = "~=2.2.2" },
+    { name = "segment-analytics-python", specifier = "~=2.3.6" },
     { name = "slack-sdk", specifier = "~=3.31.0" },
     { name = "social-auth-app-django", specifier = "~=5.6.0" },
     { name = "social-auth-core", specifier = "~=4.7.0" },
@@ -1780,15 +1780,6 @@ wheels = [
 ]
 
 [[package]]
-name = "monotonic"
-version = "1.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ea/ca/8e91948b782ddfbd194f323e7e7d9ba12e5877addf04fb2bf8fca38e86ac/monotonic-1.6.tar.gz", hash = "sha256:3a55207bcfed53ddd5c5bae174524062935efed17792e9de2ad0205ce9ad63f7", size = 7615, upload-time = "2021-08-11T14:37:28.79Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/67/7e8406a29b6c45be7af7740456f7f37025f0506ae2e05fb9009a53946860/monotonic-1.6-py2.py3-none-any.whl", hash = "sha256:68687e19a14f11f26d140dd5c86f3dba4bf5df58003000ed467e0e2a69bca96c", size = 8154, upload-time = "2021-04-09T21:58:05.122Z" },
-]
-
-[[package]]
 name = "msgpack"
 version = "1.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2949,17 +2940,17 @@ wheels = [
 
 [[package]]
 name = "segment-analytics-python"
-version = "2.2.3"
+version = "2.3.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
-    { name = "monotonic" },
+    { name = "pyjwt" },
     { name = "python-dateutil" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/75/28/789d895e59cbe9037de2308139629c3b1479c621efc4360b8fa0f0bb4a41/segment-analytics-python-2.2.3.tar.gz", hash = "sha256:0df5908e3df74b4482f33392fdd450df4c8351bf54974376fbe6bf33b0700865", size = 29335, upload-time = "2023-06-12T20:43:15.93Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/7f/74dd70484cc33eb6b49499ac4afbc1ca9bbac40d0dee5712f75fb77b0c62/segment_analytics_python-2.3.6.tar.gz", hash = "sha256:b07779d90432399fdd08f8cbeb483139cab862b5dca1bb3f0711f415def776a8", size = 35997, upload-time = "2026-04-07T17:16:44.03Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/48/b00bc8b5d9f2f5bc6ca3a42846e78585e7460cb889af65cc62b33a201008/segment_analytics_python-2.2.3-py2.py3-none-any.whl", hash = "sha256:06cc3d8e79103f02c3878ec66cb66152415473d0d2a142b98a0ee18da972e109", size = 24668, upload-time = "2023-06-12T20:43:13.161Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/5f/487b415925aac0f232a8aaae1f372f39ae13ca46207d923c4762efdddae5/segment_analytics_python-2.3.6-py2.py3-none-any.whl", hash = "sha256:a8c5c0f542be3be39aa57cd77e7e6b85b2a3c348174bc1192a296aeb81626594", size = 33477, upload-time = "2026-04-07T17:16:42.853Z" },
 ]
 
 [[package]]
