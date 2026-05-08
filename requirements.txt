@@ -147,7 +147,7 @@ django-prometheus==2.2.0
     # via ansible-ai-connect
 django-test-migrations==1.5.0
     # via ansible-ai-connect
-djangorestframework==3.15.2
+djangorestframework==3.17.1
     # via
     #   ansible-ai-connect
     #   django-ansible-base
