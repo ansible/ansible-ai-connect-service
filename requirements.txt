@@ -73,7 +73,7 @@ certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5ac
     #   requests
 cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
-charset-normalizer==3.4.4
+charset-normalizer==3.4.7
     # via requests
 click==8.3.1
     # via
