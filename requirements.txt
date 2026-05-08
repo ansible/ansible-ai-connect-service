@@ -515,7 +515,7 @@ uwsgi-readiness-check==0.2.0
     # via ansible-ai-connect
 wcmatch==10.1
     # via ansible-lint
-wcwidth==0.2.14
+wcwidth==0.7.0
     # via prompt-toolkit
 xlrd==2.0.2
     # via tablib
