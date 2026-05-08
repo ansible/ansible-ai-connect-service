@@ -409,7 +409,7 @@ requests==2.33.1
     #   uwsgi-readiness-check
 requests-oauthlib==2.0.0
     # via social-auth-core
-resolvelib==1.0.1
+resolvelib==1.2.1
     # via ansible-core
 rich==14.2.0
     # via llama-stack-client
