@@ -289,7 +289,7 @@ pandas==2.3.3
     # via llama-stack-client
 parso==0.8.5
     # via jedi
-pathspec==1.0.4
+pathspec==1.1.1
     # via
     #   ansible-lint
     #   black
