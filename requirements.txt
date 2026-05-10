@@ -496,7 +496,7 @@ tzdata==2025.2
     #   psycopg
 u-msgpack-python==2.8.0 ; platform_python_implementation != 'CPython'
     # via autobahn
-ujson==5.12.0
+ujson==5.12.1
     # via autobahn
 uritemplate==4.2.0
     # via
