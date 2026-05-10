@@ -326,7 +326,7 @@ pure-eval==0.2.3
     # via stack-data
 py-ubjson==0.16.1
     # via autobahn
-pyaml==25.7.0
+pyaml==26.2.1
     # via llama-stack-client
 pyasn1==0.6.3
     # via
