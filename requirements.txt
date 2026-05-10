@@ -411,7 +411,7 @@ requests-oauthlib==2.0.0
     # via social-auth-core
 resolvelib==1.0.1
     # via ansible-core
-rich==14.2.0
+rich==15.0.0
     # via llama-stack-client
 rpds-py==0.30.0
     # via
