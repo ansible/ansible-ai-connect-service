@@ -212,7 +212,7 @@ idna==3.7
     #   requests
     #   twisted
     #   yarl
-importlib-metadata==8.7.0
+importlib-metadata==9.0.0
     # via ansible-lint
 incremental==24.11.0
     # via twisted
