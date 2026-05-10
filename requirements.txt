@@ -340,7 +340,7 @@ pyasn1-modules==0.4.2
     #   google-auth
     #   oauth2client
     #   service-identity
-pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 pydantic==2.12.5
     # via
