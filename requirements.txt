@@ -278,7 +278,7 @@ odfpy==1.4.1
     # via tablib
 openpyxl==3.1.5
     # via tablib
-packaging==25.0
+packaging==26.2
     # via
     #   ansible-compat
     #   ansible-core
