@@ -226,7 +226,7 @@ requires-dist = [
     { name = "flake8", marker = "extra == 'dev'", specifier = "~=6.0.0" },
     { name = "grpcio-tools", marker = "extra == 'dev'", specifier = "~=1.68.1" },
     { name = "ipython", specifier = "~=8.10.0" },
-    { name = "isort", marker = "extra == 'dev'", specifier = "~=5.10.1" },
+    { name = "isort", marker = "extra == 'dev'", specifier = "~=5.13.2" },
     { name = "jinja2", specifier = "~=3.1.6" },
     { name = "jwcrypto", specifier = "~=1.5.7" },
     { name = "launchdarkly-server-sdk", specifier = "~=8.3.0" },
@@ -1505,11 +1505,11 @@ wheels = [
 
 [[package]]
 name = "isort"
-version = "5.10.1"
+version = "5.13.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ab/e9/964cb0b2eedd80c92f5172f1f8ae0443781a9d461c1372a3ce5762489593/isort-5.10.1.tar.gz", hash = "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951", size = 174062, upload-time = "2021-11-09T05:42:46.759Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/f9/c1eb8635a24e87ade2efce21e3ce8cd6b8630bb685ddc9cdaca1349b2eb5/isort-5.13.2.tar.gz", hash = "sha256:48fdfcb9face5d58a4f6dde2e72a1fb8dcaf8ab26f95ab49fab84c2ddefb0109", size = 175303, upload-time = "2023-12-13T20:37:26.124Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/5b/f18e227df38b94b4ee30d2502fd531bebac23946a2497e5595067a561274/isort-5.10.1-py3-none-any.whl", hash = "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7", size = 103430, upload-time = "2021-11-09T05:42:44.651Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/b3/8def84f539e7d2289a02f0524b944b15d7c75dab7628bedf1c4f0992029c/isort-5.13.2-py3-none-any.whl", hash = "sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6", size = 92310, upload-time = "2023-12-13T20:37:23.244Z" },
 ]
 
 [[package]]
