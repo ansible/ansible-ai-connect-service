@@ -179,14 +179,14 @@
     "follow-redirects": ">=1.16.0",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
-        "svgo": "3.3.3"
+        "svgo": "4.0.1"
       }
     },
     "css-minimizer-webpack-plugin": {
       "cssnano": {
         "cssnano-preset-default": {
           "postcss-svgo": {
-            "svgo": "2.8.1"
+            "svgo": "4.0.1"
           }
         }
       }
