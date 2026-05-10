@@ -175,7 +175,7 @@
     "bfj": "^9.1.2",
     "flatted": "^3.4.2",
     "serialize-javascript": "^7.0.5",
-    "http-proxy-agent": "^7.0.0",
+    "http-proxy-agent": "^9.0.0",
     "follow-redirects": ">=1.16.0",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
