@@ -222,7 +222,7 @@ inflection==0.5.1
     #   drf-spectacular
 ipython==8.10.0
     # via ansible-ai-connect
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 jinja2==3.1.6
     # via
