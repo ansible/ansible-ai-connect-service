@@ -17,7 +17,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@svgr/webpack": "8.1.0",
     "i18next": "^23.0.0",
-    "i18next-http-backend": "^3.0.6",
+    "i18next-http-backend": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^13.1.2"
