@@ -142,6 +142,7 @@ jobs:
         args: >
           -Dsonar.projectKey=${{ env.REPO_OWNER }}_${{ env.REPO_NAME }}
           -Dsonar.organization=${{ env.REPO_OWNER }}
+          -Dsonar.scm.revision=${{ github.sha }}
           ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.key={0}', github.event.pull_request.number) || '' }}
           ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.branch={0}', github.event.pull_request.head.ref) || '' }}
           ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.base={0}', github.event.pull_request.base.ref) || '' }}
