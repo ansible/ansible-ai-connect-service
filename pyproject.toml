@@ -15,7 +15,7 @@ dependencies = [
   'cbor2~=5.9.0',
   'cython',
   'daphne~=4.2.1',
-  'Django~=5.2.13',
+  'Django~=5.2.14',
   'django-deprecate-fields~=0.1.1',
   'django-extensions~=3.2.1',
   'django-health-check~=3.17.0',
@@ -42,7 +42,7 @@ dependencies = [
   'slack-sdk~=3.31.0',
   'social-auth-app-django~=5.6.0',
   'social-auth-core~=4.7.0',
-  'urllib3~=2.6.3',
+  'urllib3~=2.7.0',
   'uwsgi~=2.0.28',
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
@@ -93,6 +93,8 @@ constraint-dependencies = [
   'dynaconf>=3.2.13',
   'pyjwt>=2.12.0',
   'ujson>=5.12.0',
+  'twisted>=26.4.0',
+  'pygments>=2.20.0',
 ]
 
 
