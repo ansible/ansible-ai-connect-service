@@ -16,7 +16,7 @@ import json
 import logging
 import sys
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Generic, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Mapping, Optional, TypeVar, cast
 
 import backoff
 import requests
@@ -403,7 +403,7 @@ class WCABaseCompletionsPipeline(
         def post_request():
             return self.session.post(
                 prediction_url,
-                headers=headers,
+                headers=cast(Mapping[str, str], headers),
                 json=data,
                 timeout=self.task_gen_timeout(task_count),
             )
@@ -555,7 +555,7 @@ class WCABasePlaybookGenerationPipeline(
         def post_request():
             return self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
-                headers=headers,
+                headers=cast(Mapping[str, str], headers),
                 json=data,
             )
 
@@ -642,7 +642,7 @@ class WCABaseRoleGenerationPipeline(
         def post_request():
             return self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
-                headers=headers,
+                headers=cast(Mapping[str, str], headers),
                 json=data,
             )
 
@@ -729,8 +729,8 @@ class WCABasePlaybookExplanationPipeline(
         def post_request():
             return self.session.post(
                 f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
-                headers=headers,
-                json=data,
+                headers=cast(Mapping[str, str], headers),
+                json=cast(Any, data),
             )
 
         result = post_request()
@@ -794,7 +794,7 @@ class WCABaseRoleExplanationPipeline(
         def post_request():
             return self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
-                headers=headers,
+                headers=cast(Mapping[str, str], headers),
                 json=data,
             )
 
