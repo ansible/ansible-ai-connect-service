@@ -164,6 +164,9 @@ class LogoutTokenRevocationTest(TestCase):
         self.assertIsNone(other_rt.revoked)
 
     def test_logout_revokes_access_token_without_refresh_token(self):
+        # OAuth-issued AccessToken (Application is set) but no associated
+        # RefreshToken — covers grant types like client_credentials or the
+        # legacy implicit grant.
         at = self.AccessToken.objects.create(
             user=self.user,
             token="at-no-refresh",
@@ -176,6 +179,25 @@ class LogoutTokenRevocationTest(TestCase):
         self.client.post(reverse("logout"))
 
         self.assertFalse(self.AccessToken.objects.filter(pk=at.pk).exists())
+
+    def test_logout_does_not_delete_non_oauth_tokens(self):
+        # Tokens created via `wisdom-manage createtoken` have no
+        # Application FK. They are admin-minted service tokens, not OAuth
+        # session tokens, and must survive a user logout.
+        non_oauth = self.AccessToken.objects.create(
+            user=self.user,
+            token="non-oauth-admin-token",
+            application=None,
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
+            scope="read write",
+        )
+        oauth_at, _ = self._make_tokens(self.user, "oauth-at", "oauth-rt")
+        self.client.force_login(self.user)
+
+        self.client.post(reverse("logout"))
+
+        self.assertTrue(self.AccessToken.objects.filter(pk=non_oauth.pk).exists())
+        self.assertFalse(self.AccessToken.objects.filter(pk=oauth_at.pk).exists())
 
 
 class AlreadyAuth(TestCase):
