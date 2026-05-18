@@ -24,6 +24,11 @@ from django.contrib.auth.models import AnonymousUser, Group
 from django.http import HttpResponseRedirect
 from django.test import RequestFactory, TestCase, modify_settings, override_settings
 from django.urls import reverse
+from oauth2_provider.models import (
+    get_access_token_model,
+    get_application_model,
+    get_refresh_token_model,
+)
 from rest_framework.test import APITransactionTestCase
 
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
@@ -77,6 +82,100 @@ class LogoutTest(TestCase):
 
     def test_logout_without_login(self):
         self.client.post(reverse("logout"))
+
+
+class LogoutTokenRevocationTest(TestCase):
+    """CVE-2026-44188: OAuth tokens must be invalidated when the user logs out."""
+
+    def setUp(self):
+        Application = get_application_model()
+        self.AccessToken = get_access_token_model()
+        self.RefreshToken = get_refresh_token_model()
+
+        self.user = create_user_with_provider(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC, username="logout_user"
+        )
+        self.other_user = create_user_with_provider(
+            provider=USER_SOCIAL_AUTH_PROVIDER_OIDC,
+            username="other_user",
+            external_username="other-external",
+        )
+        self.app = Application.objects.create(
+            name="test-app",
+            user=self.user,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+            redirect_uris="http://localhost/",
+        )
+
+    def _make_tokens(self, user, access_token_str, refresh_token_str):
+        at = self.AccessToken.objects.create(
+            user=user,
+            token=access_token_str,
+            application=self.app,
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
+            scope="read write",
+        )
+        rt = self.RefreshToken.objects.create(
+            user=user,
+            token=refresh_token_str,
+            application=self.app,
+            access_token=at,
+        )
+        return at, rt
+
+    def test_logout_revokes_user_oauth_tokens(self):
+        at, rt = self._make_tokens(self.user, "at-abc", "rt-abc")
+        self.client.force_login(self.user)
+
+        self.client.post(reverse("logout"))
+
+        self.assertFalse(self.AccessToken.objects.filter(pk=at.pk).exists())
+        rt.refresh_from_db()
+        self.assertIsNotNone(rt.revoked)
+
+    def test_logout_does_not_touch_other_users_tokens(self):
+        self._make_tokens(self.user, "at-mine", "rt-mine")
+        other_at, other_rt = self._make_tokens(self.other_user, "at-other", "rt-other")
+        self.client.force_login(self.user)
+
+        self.client.post(reverse("logout"))
+
+        self.assertTrue(self.AccessToken.objects.filter(pk=other_at.pk).exists())
+        other_rt.refresh_from_db()
+        self.assertIsNone(other_rt.revoked)
+
+    def test_logout_with_no_tokens_is_noop(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse("logout"))
+
+        self.assertIn(response.status_code, (302, 200))
+        self.assertEqual(self.AccessToken.objects.filter(user=self.user).count(), 0)
+
+    def test_anonymous_logout_does_not_error(self):
+        other_at, other_rt = self._make_tokens(self.other_user, "at-other", "rt-other")
+
+        response = self.client.post(reverse("logout"))
+
+        self.assertIn(response.status_code, (302, 200))
+        self.assertTrue(self.AccessToken.objects.filter(pk=other_at.pk).exists())
+        other_rt.refresh_from_db()
+        self.assertIsNone(other_rt.revoked)
+
+    def test_logout_revokes_access_token_without_refresh_token(self):
+        at = self.AccessToken.objects.create(
+            user=self.user,
+            token="at-no-refresh",
+            application=self.app,
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
+            scope="read write",
+        )
+        self.client.force_login(self.user)
+
+        self.client.post(reverse("logout"))
+
+        self.assertFalse(self.AccessToken.objects.filter(pk=at.pk).exists())
 
 
 class AlreadyAuth(TestCase):

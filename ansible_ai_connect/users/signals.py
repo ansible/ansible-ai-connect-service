@@ -21,6 +21,10 @@ from django.contrib.auth.signals import (
     user_login_failed,
 )
 from django.dispatch import Signal, receiver
+from oauth2_provider.models import (
+    get_access_token_model,
+    get_refresh_token_model,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +54,29 @@ def user_login_failed_log(sender, user=None, **kwargs):
 def user_logout_log(sender, user, **kwargs):
     """User logout log to user log"""
     logger.info(f"User: {user} LOGOUT successful")
+
+
+@receiver(user_logged_out)
+def revoke_oauth_tokens_on_logout(sender, user, **kwargs):
+    # CVE-2026-44188: invalidate the user's OAuth tokens at logout so a
+    # stolen-but-still-valid bearer token cannot outlive the session.
+    if user is None or not getattr(user, "is_authenticated", False):
+        return
+
+    AccessToken = get_access_token_model()
+    RefreshToken = get_refresh_token_model()
+
+    # Refresh tokens first: rt.revoke() in django-oauth-toolkit also
+    # revokes (deletes) the linked AccessToken, so handle that cascade
+    # before deleting any orphan access tokens below.
+    for rt in RefreshToken.objects.filter(user=user, revoked__isnull=True):
+        rt.revoke()
+
+    # Catch access tokens that were never paired with a refresh token,
+    # e.g. tokens minted by `wisdom-manage createtoken`.
+    AccessToken.objects.filter(user=user).delete()
+
+    logger.info(f"User: {user} OAuth tokens revoked on logout (CVE-2026-44188)")
 
 
 @receiver(user_set_wca_api_key)
