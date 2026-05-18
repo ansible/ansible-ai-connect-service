@@ -21,10 +21,7 @@ from django.contrib.auth.signals import (
     user_login_failed,
 )
 from django.dispatch import Signal, receiver
-from oauth2_provider.models import (
-    get_access_token_model,
-    get_refresh_token_model,
-)
+from oauth2_provider.models import get_access_token_model, get_refresh_token_model
 
 logger = logging.getLogger(__name__)
 
