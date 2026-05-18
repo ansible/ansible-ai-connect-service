@@ -99,7 +99,7 @@ cython==3.2.2
     # via ansible-ai-connect
 daphne==4.2.1
     # via ansible-ai-connect
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
     # via
