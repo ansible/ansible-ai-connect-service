@@ -21,6 +21,7 @@ from django.contrib.auth.signals import (
     user_login_failed,
 )
 from django.dispatch import Signal, receiver
+from oauth2_provider.models import get_access_token_model, get_refresh_token_model
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,33 @@ def user_login_failed_log(sender, user=None, **kwargs):
 def user_logout_log(sender, user, **kwargs):
     """User logout log to user log"""
     logger.info(f"User: {user} LOGOUT successful")
+
+
+@receiver(user_logged_out)
+def revoke_oauth_tokens_on_logout(sender, user, **kwargs):
+    # CVE-2026-44188: invalidate the user's OAuth-issued tokens at logout
+    # so a stolen-but-still-valid bearer token cannot outlive the session.
+    # Scope is strictly OAuth tokens (rows with an Application FK set);
+    # standalone tokens minted by `wisdom-manage createtoken` have
+    # application=NULL and are left alone.
+    if user is None or not getattr(user, "is_authenticated", False):
+        return
+
+    AccessToken = get_access_token_model()
+    RefreshToken = get_refresh_token_model()
+
+    # Refresh tokens always have an Application, so this pass only touches
+    # OAuth-issued rows. rt.revoke() also deletes the linked AccessToken.
+    for rt in RefreshToken.objects.filter(user=user, revoked__isnull=True):
+        rt.revoke()
+
+    # Catch OAuth access tokens that were issued without a refresh token
+    # (e.g. client_credentials or implicit grants). The application
+    # filter keeps non-OAuth admin tokens (created via
+    # `wisdom-manage createtoken`) untouched.
+    AccessToken.objects.filter(user=user, application__isnull=False).delete()
+
+    logger.info(f"User: {user} OAuth tokens revoked on logout (CVE-2026-44188)")
 
 
 @receiver(user_set_wca_api_key)
