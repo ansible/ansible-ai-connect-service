@@ -55,6 +55,7 @@ from ansible_ai_connect.healthcheck.backends import (
 
 logger = logging.getLogger(__name__)
 
+
 def _get_instructions():
     name = settings.ANSIBLE_AI_CHATBOT_NAME
     return f"""
@@ -91,6 +92,7 @@ def _get_instructions():
     - The latest version of Ansible Automation Platform is 2.5, and it's services are available
     through paid subscription.
 """
+
 
 VECTOR_DB_ID = "aap-product-docs-2_5"
 RAG_TOOL_GROUP_NAME = "builtin::rag/knowledge_search"
