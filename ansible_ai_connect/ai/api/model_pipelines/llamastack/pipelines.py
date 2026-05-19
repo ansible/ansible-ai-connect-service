@@ -75,7 +75,8 @@ def _get_instructions():
     Example Input:
     What is EDA?
     Example Tool Call Response:
-    <tool_call>[{"name": "knowledge_search", "arguments": {"query": "EDA in Ansible"}}]</tool_call>
+    <tool_call>[{{"name": "knowledge_search",
+    "arguments": {{"query": "EDA in Ansible"}}}}]</tool_call>
 
     If a tool does not exist in the provided list of tools, notify the user that you do not
     have the ability to fulfill the request.
