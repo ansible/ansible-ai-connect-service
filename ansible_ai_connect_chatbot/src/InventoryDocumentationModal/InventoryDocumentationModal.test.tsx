@@ -125,7 +125,7 @@ describe("InventoryDocumentationModal", () => {
 
     // Look for the logo within the modal title element
     const lightspeedLogo = modalTitleElement?.querySelector(
-      'img[alt="Ansible Lightspeed"]',
+      'img[alt="Ansible Lightspeed Intelligent Assistant"]',
     );
     expect(lightspeedLogo).toBeInTheDocument();
     expect(lightspeedLogo).toBeVisible();
