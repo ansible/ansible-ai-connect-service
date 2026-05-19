@@ -525,7 +525,7 @@ yamllint==1.37.1
     # via ansible-lint
 yarl==1.22.0
     # via aiohttp
-zipp==3.23.0
+zipp==4.1.0
     # via importlib-metadata
 zope-interface==8.1.1
     # via twisted
