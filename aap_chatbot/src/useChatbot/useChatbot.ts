@@ -14,11 +14,11 @@ import type { LLMModel } from "../types/Model";
 import logo from "../public/lightspeed.svg";
 import userLogo from "../public/user_logo.png";
 import {
-  ANSIBLE_LIGHTSPEED_PRODUCT_NAME,
+  getProductName,
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
-  INITIAL_NOTICE,
-  QUERY_SYSTEM_INSTRUCTION,
+  getInitialNotice,
+  getSystemInstruction,
   REFERENCED_DOCUMENTS_CAPTION,
   Sentiment,
   TIMEOUT_MSG,
@@ -28,9 +28,7 @@ import { setClipboard } from "../Clipboard";
 import { MarkdownLinkBuffer } from "../utils/MarkdownLinkBuffer";
 
 const userName = document.getElementById("user_name")?.innerText ?? "User";
-const botName =
-  document.getElementById("bot_name")?.innerText ??
-  ANSIBLE_LIGHTSPEED_PRODUCT_NAME;
+const botName = getProductName();
 
 export const modelsSupported: LLMModel[] = [
   { model: "granite-3.3-8b-instruct", provider: "rhoai" },
@@ -158,7 +156,7 @@ export const useChatbot = () => {
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alertMessage, setAlertMessage] = useState<AlertMessage | undefined>(
-    INITIAL_NOTICE,
+    getInitialNotice(),
   );
   const [conversationId, setConversationId] = useState<
     string | null | undefined
@@ -178,7 +176,7 @@ export const useChatbot = () => {
   };
 
   const [selectedModel, setSelectedModel] = useState("granite-3.3-8b-instruct");
-  const [systemPrompt, setSystemPrompt] = useState(QUERY_SYSTEM_INSTRUCTION);
+  const [systemPrompt, setSystemPrompt] = useState(getSystemInstruction());
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
@@ -504,7 +502,7 @@ export const useChatbot = () => {
       query: query.toString(),
     };
 
-    if (systemPrompt !== QUERY_SYSTEM_INSTRUCTION) {
+    if (systemPrompt !== getSystemInstruction()) {
       chatRequest.system_prompt = systemPrompt;
     }
     if (bypassTools) {

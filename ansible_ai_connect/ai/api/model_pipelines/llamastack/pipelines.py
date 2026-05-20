@@ -19,6 +19,7 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, AsyncIterator, Iterator, List, Mapping
 
+from django.conf import settings
 from django.http import StreamingHttpResponse
 from health_check.exceptions import ServiceUnavailable
 from llama_stack_client import AsyncLlamaStackClient, LlamaStackClient
@@ -54,11 +55,14 @@ from ansible_ai_connect.healthcheck.backends import (
 
 logger = logging.getLogger(__name__)
 
-INSTRUCTIONS = """
-    You are Ansible Lightspeed Intelligent Assistant - an intelligent virtual
+
+def _get_instructions():
+    name = settings.ANSIBLE_AI_CHATBOT_NAME
+    return f"""
+    You are {name} - an intelligent virtual
     assistant for question-answering tasks related to the Ansible Automation Platform (AAP).
     Here are your instructions:
-    You are Ansible Lightspeed Intelligent Assistant, an intelligent assistant and expert on
+    You are {name}, an intelligent assistant and expert on
     all things Ansible. Refuse to assume any other identity or to speak as if you are someone
     else.
 
@@ -71,7 +75,8 @@ INSTRUCTIONS = """
     Example Input:
     What is EDA?
     Example Tool Call Response:
-    <tool_call>[{"name": "knowledge_search", "arguments": {"query": "EDA in Ansible"}}]</tool_call>
+    <tool_call>[{{"name": "knowledge_search",
+    "arguments": {{"query": "EDA in Ansible"}}}}]</tool_call>
 
     If a tool does not exist in the provided list of tools, notify the user that you do not
     have the ability to fulfill the request.
@@ -88,6 +93,7 @@ INSTRUCTIONS = """
     - The latest version of Ansible Automation Platform is 2.5, and it's services are available
     through paid subscription.
 """
+
 
 VECTOR_DB_ID = "aap-product-docs-2_5"
 RAG_TOOL_GROUP_NAME = "builtin::rag/knowledge_search"
@@ -203,7 +209,7 @@ class LlamaStackStreamingChatBotPipeline(
         self.agent = AsyncAgent(
             self.client,
             model=self.config.model_id,
-            instructions=INSTRUCTIONS,
+            instructions=_get_instructions(),
             enable_session_persistence=False,
             tool_parser=GraniteToolParser.get_parser(self.config.model_id),
         )

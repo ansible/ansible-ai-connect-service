@@ -58,3 +58,6 @@ jobs:
             # No fix available yet for pygments ReDoS
             # See: https://www.cve.org/CVERecord?id=CVE-2026-4539
             CVE-2026-4539
+            # Disputed — pyjwt 2.12.1 is latest, no fix version available
+            # See: https://osv.dev/vulnerability/PYSEC-2025-183
+            PYSEC-2025-183

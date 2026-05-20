@@ -12,6 +12,7 @@ import {
   ListItem,
 } from "@patternfly/react-core";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/esm/icons/external-link-alt-icon";
+import { getProductName } from "../Constants";
 import lightspeedLogo from "../assets/lightspeed.svg";
 import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
@@ -27,14 +28,14 @@ export const InventoryDocumentationModal: React.FunctionComponent = () => {
       <div className="show-light">
         <Brand
           src={lightspeedLogo}
-          alt="Ansible Lightspeed"
+          alt={getProductName()}
           style={{ height: "24px" }}
         />
       </div>
       <div className="show-dark">
         <Brand
           src={lightspeedLogoDark}
-          alt="Ansible Lightspeed"
+          alt={getProductName()}
           style={{ height: "24px" }}
         />
       </div>
