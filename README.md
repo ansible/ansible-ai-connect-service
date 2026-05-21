@@ -169,6 +169,39 @@ Response:
 }
 ```
 
+## Contributing
+
+All changes must be submitted via **Pull Requests** (PRs) against the `main` branch.
+
+### Workflow
+
+1. Fork the repository (external contributors) or create a feature branch.
+2. Make your changes locally.
+3. Run [pre-commit checks](#using-pre-commit) and [tests](#testing) before pushing.
+4. Open a PR targeting `main` (or `stable-*` for backports).
+5. Wait for CI checks to pass and get a review.
+
+### CI Checks on PRs
+
+The following checks run automatically on every PR:
+
+| Check | Description |
+|---|---|
+| [pre-commit](.github/workflows/pre-commit.yml) | Linting and formatting |
+| [Code coverage](.github/workflows/code_coverage.yml) | Unit tests + SonarCloud scan |
+| [Pyright](.github/workflows/pyright.yml) | Type checking |
+| [pip audit](.github/workflows/pip_audit.yml) | Python dependency security scan |
+| [npm audit](.github/workflows/npm_audit.yml) | JS dependency security scan |
+| [UI compile](.github/workflows/ui_compile.yml) | TypeScript build verification |
+| [OpenAPI schema](.github/workflows/code_coverage.yml) | Schema validation and drift detection |
+| [uv export](.github/workflows/uv_export.yml) | Dependency lockfile consistency |
+
+All CI checks must pass before a PR can be merged.
+
+### Backports
+
+To backport a merged PR to a `stable-*` branch, add the label `backport/<branch>` (e.g., `backport/stable-2.6`). A backport PR is created automatically.
+
 ## Using pre-commit
 
 Pre-commit should be used before pushing a new PR.
