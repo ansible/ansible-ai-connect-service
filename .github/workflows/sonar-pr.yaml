@@ -1,0 +1,111 @@
+# Two-stage workflow for SonarCloud analysis
+# Stage 1: Code Coverage workflow runs tests and uploads coverage
+# Stage 2: This workflow downloads coverage and runs SonarCloud scan
+#
+# Benefits:
+# - Better security isolation for forked PRs
+# - Separate test execution from static analysis
+# - SonarCloud scan failures don't re-run tests
+#
+# References:
+# https://community.sonarsource.com/t/how-to-use-sonarcloud-with-a-forked-repository-on-github/7363/30
+# https://community.sonarsource.com/t/how-to-use-sonarcloud-with-a-forked-repository-on-github/7363/32
+
+name: SonarCloud
+on:
+  workflow_run:
+    workflows:
+      - Code Coverage
+    types:
+      - completed
+
+jobs:
+  sonar:
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    name: Upload to SonarCloud
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+          show-progress: false
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: coverage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Extract PR metadata and validate workflow_run
+        env:
+          REPO_NAME: ${{ github.event.repository.full_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+        run: |
+          # Extract PR number from coverage.xml
+          PR_NUMBER=$(grep -m 1 '<!-- PR' coverage.xml | awk '{print $3}')
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::PR number not found or invalid in coverage.xml"
+            exit 1
+          fi
+
+          # Fetch PR data from GitHub API
+          PR_DATA=$(gh api "repos/$REPO_NAME/pulls/$PR_NUMBER")
+          PR_BASE=$(echo "$PR_DATA" | jq -r '.base.ref')
+          PR_HEAD=$(echo "$PR_DATA" | jq -r '.head.ref')
+          PR_HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha')
+          PR_HEAD_REPO=$(echo "$PR_DATA" | jq -r '.head.repo.full_name')
+
+          # Validate that workflow_run still matches current PR head
+          if [ "$PR_HEAD" != "$WORKFLOW_HEAD_BRANCH" ] || \
+             [ "$PR_HEAD_SHA" != "$WORKFLOW_HEAD_SHA" ] || \
+             [ "$PR_HEAD_REPO" != "$WORKFLOW_HEAD_REPO" ]; then
+            echo "::warning::Workflow run no longer matches PR #$PR_NUMBER head"
+            echo "::warning::PR head: $PR_HEAD_REPO/$PR_HEAD @ $PR_HEAD_SHA"
+            echo "::warning::Workflow: $WORKFLOW_HEAD_REPO/$WORKFLOW_HEAD_BRANCH @ $WORKFLOW_HEAD_SHA"
+            echo "::notice::Skipping SonarCloud analysis - PR has been updated since workflow started"
+            exit 0
+          fi
+
+          # Export validated variables
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "PR_BASE=$PR_BASE" >> $GITHUB_ENV
+          echo "PR_HEAD=$PR_HEAD" >> $GITHUB_ENV
+
+          # Checkout PR branch
+          gh pr checkout "$PR_NUMBER"
+
+      - name: Extract repo owner and name (fork-aware)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event.repository.fork }}" = "true" ]; then
+            PARENT_REPO_SLUG=$(gh api repos/${{ github.repository }} | jq -r '.parent.full_name')
+            IFS="/" read -r REPO_OWNER REPO_NAME <<< "$PARENT_REPO_SLUG"
+          else
+            IFS="/" read -r REPO_OWNER REPO_NAME <<< "${GITHUB_REPOSITORY}"
+          fi
+          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets[format('{0}', vars.SONAR_TOKEN_SECRET_NAME)] }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ env.REPO_OWNER }}_${{ env.REPO_NAME }}
+            -Dsonar.organization=${{ env.REPO_OWNER }}
+            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }}
+            -Dsonar.pullrequest.key=${{ env.PR_NUMBER }}
+            -Dsonar.pullrequest.branch=${{ env.PR_HEAD }}
+            -Dsonar.pullrequest.base=${{ env.PR_BASE }}
