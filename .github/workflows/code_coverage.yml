@@ -117,35 +117,24 @@ jobs:
       working-directory: ./ansible_ai_connect_chatbot
 
     #####################
-    # SonarCloud coverage
+    # Upload coverage for SonarCloud
     #####################
-    - name: Extract repo owner and name
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
+    - name: Embed PR number in coverage.xml
+      if: github.event_name == 'pull_request'
       run: |
-        if [ "${{ github.event.repository.fork }}" = "true" ]; then
-          PARENT_REPO_SLUG=$(gh api repos/${{ github.repository }} | jq -r '.parent.full_name')
-          IFS="/" read -r REPO_OWNER REPO_NAME <<< "$PARENT_REPO_SLUG"
-        else
-          IFS="/" read -r REPO_OWNER REPO_NAME <<< "${GITHUB_REPOSITORY}"
-        fi
-        echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
-        echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+        sed -i '2i<!-- PR ${{ github.event.pull_request.number }} -->' coverage.xml
 
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarqube-scan-action@v5
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets[format('{0}', vars.SONAR_TOKEN_SECRET_NAME)] }}
+    - name: Upload coverage artifacts
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v4
       with:
-        args: >
-          -Dsonar.projectKey=${{ env.REPO_OWNER }}_${{ env.REPO_NAME }}
-          -Dsonar.organization=${{ env.REPO_OWNER }}
-          -Dsonar.scm.revision=${{ github.sha }}
-          ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.key={0}', github.event.pull_request.number) || '' }}
-          ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.branch={0}', github.event.pull_request.head.ref) || '' }}
-          ${{ github.event_name == 'pull_request' && format('-Dsonar.pullrequest.base={0}', github.event.pull_request.base.ref) || '' }}
+        name: coverage
+        path: |
+          coverage.xml
+          ansible_ai_connect_*/coverage/lcov.info
+          aap_chatbot/coverage/lcov.info
+        retention-days: 1
+        if-no-files-found: warn
 
     ####################
     # OpenAPI file check
