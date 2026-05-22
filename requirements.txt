@@ -59,7 +59,7 @@ botocore==1.42.5
     #   s3transfer
 bracex==2.6
     # via wcmatch
-cachetools==6.2.2
+cachetools==7.1.4
     # via google-auth
 cbor2==5.9.0
     # via
