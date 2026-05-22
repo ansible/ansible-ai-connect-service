@@ -89,6 +89,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "ansible_ai_connect.main.middleware.EnsureCsrfCookieMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
@@ -104,6 +105,30 @@ if os.environ.get("CSRF_TRUSTED_ORIGINS"):
     CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
 else:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+
+# SameSite=Lax (not Strict) because OAuth/OIDC login flows redirect back from
+# external identity providers (Red Hat SSO, GitHub, AAP). Strict would drop the
+# session cookie on that redirect, making the user appear unauthenticated.
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_NAME = "__Host-sessionid"
+SESSION_COOKIE_AGE = 1209600  # 2 weeks, aligned with CSRF_COOKIE_AGE
+
+CSRF_COOKIE_SECURE = True
+# JS must read the CSRF cookie to echo it in the X-CSRFToken header
+CSRF_COOKIE_HTTPONLY = False
+# SameSite=Lax (not Strict) so the CSRF cookie survives OAuth/OIDC redirects
+# from external identity providers, matching the session cookie policy above.
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_NAME = "__Host-csrftoken"
+CSRF_COOKIE_AGE = 1209600  # 2 weeks; reduced from Django's 1-year default
+
+# When behind AAP gateway, the gateway owns CSRF validation using its own
+# cookie. These settings let the middleware detect gateway-proxied requests
+# and alias the gateway's CSRF cookie so Django's validation passes.
+GATEWAY_SESSION_COOKIE_NAME = os.environ.get("GATEWAY_SESSION_COOKIE_NAME", "gateway_sessionid")
+GATEWAY_CSRF_COOKIE_NAME = os.environ.get("GATEWAY_CSRF_COOKIE_NAME", "csrftoken")
 
 # Allow Prometheus to scrape metrics
 ALLOWED_CIDR_NETS = [os.environ.get("ALLOWED_CIDR_NETS", "10.0.0.0/8")]

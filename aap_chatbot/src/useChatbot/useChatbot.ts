@@ -46,6 +46,17 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
+// Mirror the gateway detection logic from EnsureCsrfCookieMiddleware:
+// gateway session cookie present AND Django's own session cookie absent.
+const isGatewayRequest = (): boolean =>
+  readCookie("gateway_sessionid") !== null &&
+  readCookie("__Host-sessionid") === null;
+
+export const readCsrfCookie = (): string | null =>
+  isGatewayRequest()
+    ? readCookie("csrftoken")
+    : (readCookie("__Host-csrftoken") ?? readCookie("csrftoken"));
+
 const getTimestamp = () => {
   const date = new Date();
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
@@ -191,7 +202,7 @@ export const useChatbot = () => {
       bodyElement = frameWindow.document.getElementsByTagName("body")[0];
     }
     const checkStatus = async () => {
-      const csrfToken = readCookie("csrftoken");
+      const csrfToken = readCsrfCookie();
       try {
         const resp = await fetch("/api/lightspeed/v1/health/status/chatbot/", {
           method: "GET",
@@ -429,7 +440,7 @@ export const useChatbot = () => {
 
   const handleFeedback = async (feedbackRequest: ChatFeedback) => {
     try {
-      const csrfToken = readCookie("csrftoken");
+      const csrfToken = readCsrfCookie();
       const resp = await fetch(
         import.meta.env.PROD
           ? "/api/lightspeed/v1/ai/feedback/"
@@ -521,7 +532,7 @@ export const useChatbot = () => {
     setIsLoading(true);
 
     try {
-      const csrfToken = readCookie("csrftoken");
+      const csrfToken = readCsrfCookie();
 
       if (isStreamingSupported()) {
         setHasStopButton(true);
@@ -536,7 +547,7 @@ export const useChatbot = () => {
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json,text/event-stream",
-              "X-CSRFToken": csrfToken!,
+              ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
             },
             body: JSON.stringify(chatRequest),
             async onopen(resp: any) {

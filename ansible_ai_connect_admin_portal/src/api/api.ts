@@ -19,21 +19,30 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
+// In cross-origin proxy deployments (e.g. OAuth via AAP gateway), the browser
+// may not send the CSRF cookie due to domain mismatch. The Django template
+// embeds the token in a hidden DOM element as a reliable fallback.
+export const readCsrfCookie = (): string | null =>
+  readCookie("__Host-csrftoken") ??
+  document.getElementById("csrf_token")?.textContent?.trim() ??
+  readCookie("csrftoken") ??
+  null;
+
 export const getWcaKey = () => {
   return axios.get(API_WCA_KEY_PATH);
 };
 
 export const saveWcaKey = (wcaKey: WcaKeyRequest) => {
-  const csrfToken = readCookie("csrftoken");
+  const csrfToken = readCsrfCookie();
   return axios.post(API_WCA_KEY_PATH, wcaKey, {
-    headers: { "X-CSRFToken": csrfToken },
+    headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
   });
 };
 
 export const deleteWcaKey = () => {
-  const csrfToken = readCookie("csrftoken");
+  const csrfToken = readCsrfCookie();
   return axios.delete(API_WCA_KEY_PATH, {
-    headers: { "X-CSRFToken": csrfToken },
+    headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
   });
 };
 
@@ -46,9 +55,9 @@ export const getWcaModelId = () => {
 };
 
 export const saveWcaModelId = (wcaModelId: WcaModelIdRequest) => {
-  const csrfToken = readCookie("csrftoken");
+  const csrfToken = readCsrfCookie();
   return axios.post(API_WCA_MODEL_ID_PATH, wcaModelId, {
-    headers: { "X-CSRFToken": csrfToken },
+    headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
   });
 };
 
@@ -61,8 +70,8 @@ export const getTelemetrySettings = () => {
 };
 
 export const saveTelemetrySettings = (telemetry: TelemetryRequest) => {
-  const csrfToken = readCookie("csrftoken");
+  const csrfToken = readCsrfCookie();
   return axios.post(API_TELEMETRY_PATH, telemetry, {
-    headers: { "X-CSRFToken": csrfToken },
+    headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
   });
 };

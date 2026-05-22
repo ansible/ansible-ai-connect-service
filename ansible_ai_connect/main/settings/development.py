@@ -83,6 +83,11 @@ if DEBUG:
             "ansible_ai_connect.main.middleware.WisdomSocialAuthExceptionMiddleware"  # noqa: F405
         )
 
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_NAME = "sessionid"
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_NAME = "csrftoken"
+
 CSP_REPORT_ONLY = True
 AUTHZ_BACKEND_TYPE = os.getenv("AUTHZ_BACKEND_TYPE") or "dummy"
 # e.g:
