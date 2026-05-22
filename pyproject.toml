@@ -68,7 +68,7 @@ dev = [
   'isort~=5.10.1',
   'openapi-spec-validator',
   'pre-commit',
-  'responses~=0.24.1',
+  'responses~=0.26.1',
   'torch-model-archiver',
   'virtualenv>=20.28.0',
 ]
