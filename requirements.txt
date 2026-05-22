@@ -354,7 +354,7 @@ pygments==2.20.0
     # via
     #   ipython
     #   rich
-pyjwt==2.12.1
+pyjwt==2.13.0
     # via
     #   django-ansible-base
     #   social-auth-core
