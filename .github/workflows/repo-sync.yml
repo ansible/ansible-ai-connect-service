@@ -1,0 +1,68 @@
+name: "Sync to downstream"
+
+on:
+  push:
+    branches:
+      - main
+    # Tags are not mirrored by this workflow — branch sync only.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_ORG: "ansible"
+  TARGET_ORG: "ansible-automation-platform"
+  TARGET_REPO: "ansible-wisdom-service"
+
+jobs:
+  sync:
+    name: "Sync → ansible-wisdom-service"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.ANSIBLE_CICD_BOT_ORG_RW_TOKEN_APP_ID }}
+          private-key: ${{ secrets.ANSIBLE_CICD_BOT_ORG_RW_TOKEN_PRIVATE_KEY }}
+          owner: ${{ env.TARGET_ORG }}
+          repositories: ${{ env.TARGET_REPO }}
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: "Sync repository"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          SOURCE_REPO: ${{ github.event.repository.name }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          echo "▶ Cloning ${SOURCE_ORG}/${SOURCE_REPO} (branch: ${BRANCH})"
+          git clone --single-branch --branch "${BRANCH}" \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${SOURCE_ORG}/${SOURCE_REPO}.git"
+          cd "${SOURCE_REPO}"
+
+          # Fast-forward push only — if downstream main has diverged, this fails
+          # loudly rather than overwriting downstream commits. Resolve manually.
+          echo "▶ Pushing ${BRANCH} to ${TARGET_ORG}/${TARGET_REPO}"
+          git push "https://x-access-token:${TARGET_GITHUB_TOKEN}@github.com/${TARGET_ORG}/${TARGET_REPO}.git" "HEAD:${BRANCH}"
+          echo "✔ Mirrored ${SOURCE_ORG}/${SOURCE_REPO}:${BRANCH} to ${TARGET_ORG}/${TARGET_REPO}:${BRANCH}"
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf "${{ github.event.repository.name }}"
