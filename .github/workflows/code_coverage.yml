@@ -15,6 +15,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Only run for ansible organization
+    if: github.repository_owner == 'ansible'
+
+    permissions:
+      contents: read
+      pull-requests: read
+
     env:
       ANSIBLE_AI_DATABASE_HOST: localhost
       ANSIBLE_AI_DATABASE_NAME: wisdom
@@ -78,7 +85,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '21.x'
+        node-version: '22.x'
         cache: 'npm'
         cache-dependency-path: ./ansible_ai_connect_admin_portal/package-lock.json
 
@@ -96,7 +103,7 @@ jobs:
     - name: Use Node.js (chatbot)
       uses: actions/setup-node@v3
       with:
-        node-version: '21.x'
+        node-version: '22.x'
         cache: 'npm'
         cache-dependency-path: ./ansible_ai_connect_chatbot/package-lock.json
 
